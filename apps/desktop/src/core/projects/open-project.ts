@@ -1,6 +1,6 @@
 import { opendir } from 'node:fs/promises'
 import { isRecord, requestIdentifier } from '../../boundary'
-import { isProjectOpenRequest, type ProjectOpenReply, projectError } from './contract'
+import { type ProjectOpenReply, projectError, projectOpenRequestSchema } from './contract'
 import { readRegistry, toSummary } from './registry'
 
 // Opening reads storage that must already exist, so an absent registry is a storage failure here
@@ -16,20 +16,22 @@ export async function openProject(value: unknown, registryPath: string): Promise
   if (isRecord(value) && typeof value.version === 'number' && value.version !== 1) {
     return projectError('unsupported-version', requestId)
   }
-  if (!isProjectOpenRequest(value)) return projectError('invalid-request', requestId)
+  const parsed = projectOpenRequestSchema.safeParse(value)
+  if (!parsed.success) return projectError('invalid-request', requestId)
+  const request = parsed.data
   const projects = await loadProjects(registryPath)
-  if (!Array.isArray(projects)) return { ...projects, requestId: value.requestId }
-  const project = projects.find((entry) => entry.id === value.projectId)
-  if (!project) return projectError('missing-project', value.requestId)
+  if (!Array.isArray(projects)) return { ...projects, requestId: request.requestId }
+  const project = projects.find((entry) => entry.id === request.projectId)
+  if (!project) return projectError('missing-project', request.requestId)
   const failure = await projectAccessFailure(project.path)
-  if (failure) return projectError(failure, value.requestId)
+  if (failure) return projectError(failure, request.requestId)
   // The display name is the registry's, so the cockpit's listing and its opened Project cannot
   // disagree about what a Project is called.
   const summary = toSummary(project)
   return {
     version: 1,
     type: 'project.opened',
-    requestId: value.requestId,
+    requestId: request.requestId,
     project: { id: summary.id, name: summary.name },
   }
 }

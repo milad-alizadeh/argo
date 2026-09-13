@@ -11,16 +11,8 @@ import {
 } from '../../agents/claude/drive/start-session'
 import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
-import {
-  SESSION_CLAUDE_INTERRUPT_CHANNEL,
-  SESSION_CLAUDE_PERMISSION_CHANNEL,
-  SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
-  SESSION_CLAUDE_SEND_CHANNEL,
-  SESSION_CLAUDE_START_CHANNEL,
-  SESSION_FEED_CHANNEL,
-  SESSION_LIST_CHANNEL,
-  sessionError,
-} from './contract'
+import { sessionError } from './contract'
+import { SESSION_OPERATIONS } from './operations'
 
 export type SessionReader = {
   listSessions(request: unknown): Promise<unknown>
@@ -46,15 +38,21 @@ export function attachSessionBridge(
       return read(request)
     })
   }
-  answer(SESSION_LIST_CHANNEL, storage.reader.listSessions)
-  answer(SESSION_FEED_CHANNEL, storage.reader.readSessionFeed)
-  answer(SESSION_CLAUDE_START_CHANNEL, (request) => startClaudeSession(request, storage.starter))
-  answer(SESSION_CLAUDE_SEND_CHANNEL, (request) => driveClaudeSession(request, storage.driver))
-  answer(SESSION_CLAUDE_INTERRUPT_CHANNEL, (request) => driveClaudeSession(request, storage.driver))
-  answer(SESSION_CLAUDE_PERMISSION_CHANNEL, (request) =>
-    readClaudePermission(request, storage.driver),
-  )
-  answer(SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL, (request) =>
-    decideClaudePermission(request, storage.driver),
-  )
+  const handlers = {
+    list: storage.reader.listSessions,
+    feed: storage.reader.readSessionFeed,
+    startClaude: (request: unknown) => startClaudeSession(request, storage.starter),
+    sendClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
+    interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
+    readClaudePermission: (request: unknown) => readClaudePermission(request, storage.driver),
+    decideClaudePermission: (request: unknown) => decideClaudePermission(request, storage.driver),
+  } satisfies Record<
+    keyof typeof SESSION_OPERATIONS,
+    (request: unknown) => Promise<unknown> | unknown
+  >
+  for (const operation of Object.keys(SESSION_OPERATIONS) as Array<
+    keyof typeof SESSION_OPERATIONS
+  >) {
+    answer(SESSION_OPERATIONS[operation].channel, handlers[operation])
+  }
 }

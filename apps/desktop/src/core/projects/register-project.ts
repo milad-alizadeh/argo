@@ -2,9 +2,9 @@
 // and neither ever creates a second identity for a repository that already has one.
 import { type ProjectError, type ProjectErrorCode, projectError } from './contract'
 import {
-  isProjectRegisterRequest,
-  isProjectRelocateRequest,
   type ProjectListReply,
+  projectRegisterRequestSchema,
+  projectRelocateRequestSchema,
 } from './messages'
 import {
   EMPTY_REGISTRY,
@@ -85,45 +85,49 @@ export async function registerProject(
   value: unknown,
   store: ProjectStore,
 ): Promise<ProjectListReply> {
-  if (!isProjectRegisterRequest(value)) return projectError('invalid-request', null)
+  const parsed = projectRegisterRequestSchema.safeParse(value)
+  if (!parsed.success) return projectError('invalid-request', null)
+  const request = parsed.data
   // Storage that cannot be read is reported before a chooser opens over it.
-  const opened = await currentRegistry(store, value.requestId)
+  const opened = await currentRegistry(store, request.requestId)
   if ('type' in opened) return opened
-  const picked = await chooseAndReread(store, value.requestId)
+  const picked = await chooseAndReread(store, request.requestId)
   if ('type' in picked) return picked
   const { root, registry } = picked
   // One git root is one Project. A folder already registered is selected, never registered twice.
   const known = registry.projects.find((project) => project.path === root)
   const project: Registration = known ?? { id: newProjectId(), path: root }
   const projects = known ? registry.projects : [...registry.projects, project]
-  return commit(store, value.requestId, { ...registry, projects, selectedId: project.id })
+  return commit(store, request.requestId, { ...registry, projects, selectedId: project.id })
 }
 
 export async function relocateProject(
   value: unknown,
   store: ProjectStore,
 ): Promise<ProjectListReply> {
-  if (!isProjectRelocateRequest(value)) return projectError('invalid-request', null)
-  const opened = await currentRegistry(store, value.requestId)
+  const parsed = projectRelocateRequestSchema.safeParse(value)
+  if (!parsed.success) return projectError('invalid-request', null)
+  const request = parsed.data
+  const opened = await currentRegistry(store, request.requestId)
   if ('type' in opened) return opened
-  if (!opened.projects.some((project) => project.id === value.projectId)) {
-    return projectError('missing-project', value.requestId)
+  if (!opened.projects.some((project) => project.id === request.projectId)) {
+    return projectError('missing-project', request.requestId)
   }
-  const picked = await chooseAndReread(store, value.requestId)
+  const picked = await chooseAndReread(store, request.requestId)
   if ('type' in picked) return picked
   const { root, registry } = picked
   // The identity is checked again on the re-read. A Project another window removed while the
   // chooser was open would otherwise be written back as a selection that names nothing.
-  if (!registry.projects.some((project) => project.id === value.projectId)) {
-    return projectError('missing-project', value.requestId)
+  if (!registry.projects.some((project) => project.id === request.projectId)) {
+    return projectError('missing-project', request.requestId)
   }
   const taken = registry.projects.find(
-    (project) => project.path === root && project.id !== value.projectId,
+    (project) => project.path === root && project.id !== request.projectId,
   )
-  if (taken) return projectError('already-registered', value.requestId)
+  if (taken) return projectError('already-registered', request.requestId)
   // The path moves and the identity does not, which is the whole point of relocation.
   const projects = registry.projects.map((project) =>
-    project.id === value.projectId ? { ...project, path: root } : project,
+    project.id === request.projectId ? { ...project, path: root } : project,
   )
-  return commit(store, value.requestId, { ...registry, projects, selectedId: value.projectId })
+  return commit(store, request.requestId, { ...registry, projects, selectedId: request.projectId })
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
-import { isSessionListReply } from '../../../core/sessions/replies.ts'
 import { stitchChains } from '../sessions/chains.ts'
 import { projectRosterRow } from '../sessions/roster.ts'
 import { fixtureFiles } from './session-fixtures'
@@ -94,15 +94,23 @@ test('refuses a row whose signals are missing or malformed at the boundary', asy
     filesRead: 1,
     filesUnreadable: 0,
   })
-  assert.equal(isSessionListReply(reply([row])), true)
+  assert.equal(sessionListReplySchema.safeParse(reply([row])).success, true)
   const { plan: _plan, ...planless } = row
-  assert.equal(isSessionListReply(reply([planless])), false)
+  assert.equal(sessionListReplySchema.safeParse(reply([planless])).success, false)
   assert.equal(
-    isSessionListReply(reply([{ ...row, plan: { total: -1, completed: 0, inProgress: 0 } }])),
+    sessionListReplySchema.safeParse(
+      reply([{ ...row, plan: { total: -1, completed: 0, inProgress: 0 } }]),
+    ).success,
     false,
   )
-  assert.equal(isSessionListReply(reply([{ ...row, delegations: [{ id: 'x' }] }])), false)
+  assert.equal(
+    sessionListReplySchema.safeParse(reply([{ ...row, delegations: [{ id: 'x' }] }])).success,
+    false,
+  )
   const { pullRequest: _pullRequest, ...unlinked } = row
-  assert.equal(isSessionListReply(reply([unlinked])), false)
-  assert.equal(isSessionListReply(reply([{ ...row, pullRequest: { number: 1312 } }])), false)
+  assert.equal(sessionListReplySchema.safeParse(reply([unlinked])).success, false)
+  assert.equal(
+    sessionListReplySchema.safeParse(reply([{ ...row, pullRequest: { number: 1312 } }])).success,
+    false,
+  )
 })

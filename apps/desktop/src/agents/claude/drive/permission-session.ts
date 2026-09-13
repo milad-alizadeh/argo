@@ -2,8 +2,8 @@ import { requestIdentifier } from '@/boundary'
 import {
   type ClaudeSessionPermissionDecisionReply,
   type ClaudeSessionPermissionReply,
-  isClaudeSessionPermissionDecisionRequest,
-  isClaudeSessionPermissionRequest,
+  claudeSessionPermissionDecisionRequestSchema,
+  claudeSessionPermissionRequestSchema,
   sessionError,
 } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
@@ -13,13 +13,15 @@ export function readClaudePermission(
   driver: ClaudeSessionDriver,
 ): ClaudeSessionPermissionReply {
   const requestId = requestIdentifier(value)
-  if (!isClaudeSessionPermissionRequest(value)) return sessionError('invalid-request', requestId)
+  const parsed = claudeSessionPermissionRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', requestId)
+  const request = parsed.data
   return {
     version: 1,
     type: 'session.claude.permission.read',
-    requestId: value.requestId,
-    sessionId: value.sessionId,
-    permission: driver.pendingPermission(value.sessionId),
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+    permission: driver.pendingPermission(request.sessionId),
   }
 }
 
@@ -28,15 +30,16 @@ export function decideClaudePermission(
   driver: ClaudeSessionDriver,
 ): ClaudeSessionPermissionDecisionReply {
   const requestId = requestIdentifier(value)
-  if (!isClaudeSessionPermissionDecisionRequest(value))
-    return sessionError('invalid-request', requestId)
-  if (!driver.decidePermission(value.sessionId, value.permissionId, value.decision)) {
-    return sessionError('stale-permission', value.requestId)
+  const parsed = claudeSessionPermissionDecisionRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', requestId)
+  const request = parsed.data
+  if (!driver.decidePermission(request.sessionId, request.permissionId, request.decision)) {
+    return sessionError('stale-permission', request.requestId)
   }
   return {
     version: 1,
     type: 'session.claude.accepted',
-    requestId: value.requestId,
-    sessionId: value.sessionId,
+    requestId: request.requestId,
+    sessionId: request.sessionId,
   }
 }

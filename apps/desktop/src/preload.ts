@@ -1,47 +1,35 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
+import { z } from 'zod'
 import { createAccountClient } from './core/accounts/client'
 import { ACCOUNT_CHANNEL } from './core/accounts/contract'
 import {
   APPEARANCE_CHANGED_CHANNEL,
-  APPEARANCE_CHANNEL,
+  APPEARANCE_OPERATIONS,
   createAppearanceClient,
 } from './core/appearance/appearance'
 import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 import { createProjectClient } from './core/projects/client'
-import { PROJECT_CHANNEL } from './core/projects/contract'
+import { PROJECT_OPERATIONS } from './core/projects/operations'
 import { createSessionClient } from './core/sessions/client'
-import {
-  SESSION_CLAUDE_INTERRUPT_CHANNEL,
-  SESSION_CLAUDE_PERMISSION_CHANNEL,
-  SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
-  SESSION_CLAUDE_SEND_CHANNEL,
-  SESSION_CLAUDE_START_CHANNEL,
-  SESSION_FEED_CHANNEL,
-  SESSION_LIST_CHANNEL,
-} from './core/sessions/contract'
+import { SESSION_OPERATIONS } from './core/sessions/operations'
 import { createTicketClient } from './core/tickets/client'
 import { TICKET_CHANNEL } from './core/tickets/contract'
 
-const SESSION_CHANNELS = {
-  list: SESSION_LIST_CHANNEL,
-  feed: SESSION_FEED_CHANNEL,
-  startClaude: SESSION_CLAUDE_START_CHANNEL,
-  sendClaude: SESSION_CLAUDE_SEND_CHANNEL,
-  interruptClaude: SESSION_CLAUDE_INTERRUPT_CHANNEL,
-  readClaudePermission: SESSION_CLAUDE_PERMISSION_CHANNEL,
-  decideClaudePermission: SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
-}
+// Electron's isolated preload world blocks Zod's generated validator path.
+z.config({ jitless: true })
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
-  ...createProjectClient((request) => ipcRenderer.invoke(PROJECT_CHANNEL, request)),
+  ...createProjectClient((operation, request) =>
+    ipcRenderer.invoke(PROJECT_OPERATIONS[operation].channel, request),
+  ),
   ...createAccountClient((request) => ipcRenderer.invoke(ACCOUNT_CHANNEL, request)),
   ...createTicketClient((request) => ipcRenderer.invoke(TICKET_CHANNEL, request)),
   ...createSessionClient((operation, request) =>
-    ipcRenderer.invoke(SESSION_CHANNELS[operation], request),
+    ipcRenderer.invoke(SESSION_OPERATIONS[operation].channel, request),
   ),
   ...createAppearanceClient(
-    (appearance) => ipcRenderer.invoke(APPEARANCE_CHANNEL, appearance),
+    (operation, request) => ipcRenderer.invoke(APPEARANCE_OPERATIONS[operation].channel, request),
     (listener) => {
       const forward = (_event: unknown, state: unknown) => listener(state)
       ipcRenderer.on(APPEARANCE_CHANGED_CHANNEL, forward)

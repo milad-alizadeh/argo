@@ -2,7 +2,7 @@
 // never carries one Session's rows under another's name, and the renderer authority the Session
 // bridge asserts for itself.
 import assert from 'node:assert/strict'
-import { listing, openSession } from './session-roster-cases'
+import { openSession } from './session-roster-cases'
 
 // The three things a reader does with a Feed on the first open: it stands at the tail, it says
 // which Session it is showing, and its prose can be selected with a mouse.
@@ -134,6 +134,6 @@ export async function proveRendererAuthority(page, application) {
     await BrowserWindow.getAllWindows()[0].loadURL('data:text/html,<h1>Untrusted page</h1>')
   })
   await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
-  const reply = await page.evaluate((value) => window.argo.listSessions(value), listing)
+  const reply = await page.evaluate(() => window.argo.listSessions())
   assert.equal(reply.code, 'access-denied')
 }
