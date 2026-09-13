@@ -8,7 +8,7 @@ export async function proveToolCalls(page) {
   const reply = await page.evaluate(() =>
     window.argo.readSessionFeed({ revision: null, sessionId: 'toolCalls' }),
   )
-  assert.equal(reply.type, 'session.feed.read')
+  assert.equal(reply.type, 'session.feed.read', JSON.stringify(reply))
   assert.deepEqual(
     reply.rows.map((row) => row.shape),
     ['prose', 'tool-group'],
