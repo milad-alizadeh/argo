@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
@@ -6,21 +6,13 @@ import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { TicketsSidebarContent } from '../components/TicketsSidebar'
 import {
   backlog,
+  connection,
   engine,
   longBacklog,
   standalone,
   ticketsView,
 } from '../components/ticket-fixtures'
 import { TicketsScreen } from './TicketsScreenView'
-
-const connection = {
-  accountId: 'github:583231',
-  provider: 'github',
-  login: 'octocat',
-  scope: 'octocat/hello-world',
-  label: 'octocat/hello-world',
-  state: 'ready',
-} as const
 
 const meta: Meta<typeof TicketsScreen> = {
   title: 'Tickets/Screen',
@@ -33,7 +25,7 @@ const meta: Meta<typeof TicketsScreen> = {
           <CockpitShell
             sidebar={
               <TicketsSidebarContent
-                connection={connection}
+                connection={connection('github')}
                 notice={null}
                 onManageAccounts={fn()}
                 openCount="3"

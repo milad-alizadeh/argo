@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
 import { connectionProblem, failureProblem } from '../lib/problems'
 import { TicketProblem } from './TicketProblem'
+import { connection } from './ticket-fixtures'
 
 const recovery = { onRetry: fn(), onReconnect: fn(), onDisconnectSource: fn(), provider: null }
 
@@ -41,17 +42,7 @@ export const FailedRead: Story = {
 
 // A Connection whose Account GitHub refused: reconnecting brings it back, disconnecting forgets it.
 export const AccountRefused: Story = {
-  args: connectionProblem(
-    {
-      accountId: 'github:583231',
-      provider: 'github',
-      login: 'octocat',
-      scope: 'octocat/hello-world',
-      label: 'octocat/hello-world',
-      state: 'account-revoked',
-    },
-    recovery,
-  ),
+  args: connectionProblem(connection('github', 'account-revoked'), recovery),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('GitHub no longer accepts octocat')).toBeInTheDocument()
@@ -65,17 +56,7 @@ export const AccountRefused: Story = {
 
 // A Linear sign-in Linear would not renew: only that Connection waits, named for its team.
 export const LinearExpired: Story = {
-  args: connectionProblem(
-    {
-      accountId: 'linear:user-ada',
-      provider: 'linear',
-      login: 'ada@analytical.dev',
-      scope: 'team-engine',
-      label: 'Engine',
-      state: 'account-expired',
-    },
-    recovery,
-  ),
+  args: connectionProblem(connection('linear', 'account-expired'), recovery),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('The sign-in for ada@analytical.dev expired')).toBeInTheDocument()
