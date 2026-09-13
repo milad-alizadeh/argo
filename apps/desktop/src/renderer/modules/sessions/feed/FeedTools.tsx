@@ -66,7 +66,7 @@ export function FeedToolLine({
     <button
       type="button"
       aria-current={activeEvidenceId === call.id ? 'location' : undefined}
-      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${failed ? 'text-destructive hover:text-destructive' : 'text-muted-foreground hover:text-foreground'} ${activeEvidenceId === call.id ? 'text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${failed ? 'text-destructive hover:text-destructive' : 'text-muted-foreground hover:text-foreground'} ${activeEvidenceId === call.id && !failed ? 'text-foreground' : ''}`}
       data-feed-evidence-id={call.id}
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
