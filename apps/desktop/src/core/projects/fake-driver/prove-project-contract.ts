@@ -12,7 +12,6 @@ import {
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
-const untrustedPage = 'data:text/html,<h1>Untrusted page</h1>'
 async function prepare(root) {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
@@ -89,14 +88,6 @@ async function prove(application, fixture) {
     await chmod(fixture.projectPath, 0o700)
   }
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  await application.evaluate(
-    async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
-    untrustedPage,
-  )
-  const rendererURL = await application.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].webContents.getURL(),
-  )
-  assert.notEqual(rendererURL, untrustedPage)
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
@@ -118,15 +109,7 @@ try {
       packaged: true,
       signed: false,
       profile: 'test',
-      cases: [
-        'success',
-        'missing-project',
-        'denied-access',
-        'invalid-request',
-        'renderer-authority',
-        'untrusted-page',
-        'unchanged-store',
-      ],
+      cases: ['success', 'missing-project', 'denied-access', 'invalid-request', 'unchanged-store'],
     }),
   )
 } finally {

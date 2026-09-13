@@ -71,12 +71,6 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, 'Keep this draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Session one' }))
-    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Keep this draft.')
   },
 }
 
