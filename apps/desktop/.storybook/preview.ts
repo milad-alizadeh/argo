@@ -1,7 +1,9 @@
 import type { Preview } from '@storybook/react'
+import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
 import '../src/renderer/styles/globals.css'
+import { CockpitProviders } from '../src/renderer/modules/cockpit/components/CockpitProviders'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
@@ -27,6 +29,16 @@ const storybookSession = {
   shell: [],
   pullRequest: null,
   archived: false,
+}
+const storybookProjects = {
+  version: 1,
+  type: 'project.listed',
+  requestId: 'storybook-projects',
+  projects: [
+    { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
+    { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
+  ],
+  selectedId: 'storybook-project',
 }
 host.argo = {
   ...host.argo,
@@ -56,17 +68,7 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
-  listProjects: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.listed',
-      requestId: 'storybook-projects',
-      projects: [
-        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-      ],
-      selectedId: 'storybook-project',
-    }),
+  listProjects: () => Promise.resolve(storybookProjects),
   openProject: () =>
     Promise.resolve({
       version: 1,
@@ -74,16 +76,23 @@ host.argo = {
       requestId: 'storybook-project',
       project: { id: 'storybook-project', name: 'argo' },
     }),
-  registerProject: () =>
+  registerProject: () => Promise.resolve(storybookProjects),
+  // No Account and no Binding: the Tickets room draws its first-run screen.
+  listAccounts: (request: { requestId: string }) =>
     Promise.resolve({
       version: 1,
-      type: 'project.listed',
-      requestId: 'storybook-projects',
-      projects: [
-        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-      ],
-      selectedId: 'storybook-project',
+      type: 'account.listed',
+      requestId: request.requestId,
+      accounts: [],
+      notice: false,
+    }),
+  readBinding: (request: { requestId: string; projectId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'ticket.bound',
+      requestId: request.requestId,
+      projectId: request.projectId,
+      binding: null,
     }),
   zoomFactor: () => 1,
 }
@@ -98,7 +107,8 @@ const preview: Preview = {
       }
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-      return Story()
+      // A story mounts its own Query cache and Project reading, so no reply leaks between stories.
+      return createElement(CockpitProviders, null, Story())
     },
   ],
   globalTypes: {

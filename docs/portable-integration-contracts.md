@@ -108,6 +108,37 @@ The operation does not retry automatically or emit background events.
 | `git-unavailable` | git cannot be run on this computer. |
 | `storage-not-written` | The registry cannot be saved. |
 
+## Accounts and Tickets
+
+[#1848](https://github.com/milad-alizadeh/argo/issues/1848) adds two more channels with the same rules: `argo:account` and `argo:ticket`.
+Their version 1 messages are zod schemas in `src/core/accounts/contract.ts` and `src/core/tickets/contract.ts`.
+The preload and the main process parse every message with the same schema, so a field that is not in the schema is refused.
+
+The Account channel connects GitHub Accounts through the device flow.
+An Account is keyed by the provider's stable user ID, not by the login.
+A sign-in as an identity that is already connected renews that Account (`outcome: "renewed"`). A different identity is always a second Account.
+The actions are `account.list`, `account.connect`, `account.verify`, `account.await`, `account.cancel`, `account.disconnect`, and `account.dismiss-notice`.
+The renderer sees the user code and the verification URL. The device code and the token stay in the main process.
+`account.verify` opens the URL that the main process received from GitHub. The renderer cannot name a URL to open.
+
+The grant is sealed with Electron safeStorage in `<userData>/portable-v1/grants.json`.
+Account metadata is in `accounts.json` beside it. No message carries a token, and the strict schemas refuse a reply that does.
+If GitHub refuses a stored grant, the Account becomes `revoked`. It is not called again until the person reconnects it.
+A refusal of a token that a newer sign-in already replaced does not change the Account.
+If this computer cannot open a stored grant, the Account reads as `unreadable` until the person reconnects it.
+An Account summary lists its Bindings, so a revoked or disconnected Account shows which Projects it affects.
+This slice imports no Swift Accounts. Every person sees a one-time notice that asks them to connect GitHub again.
+
+The Ticket channel binds a Project to one repository and reads its open Tickets.
+The actions are `ticket.binding`, `ticket.bind`, `ticket.unbind`, and `ticket.list`, and each one carries a `projectId`.
+`ticket.bind` also carries an `accountId` and a `scope` (`owner/name`).
+The main process asks GitHub whether that Account can read the repository and whether its Issues are on. Only then does it write `bindings.json`.
+A Binding stays when its Account is disconnected, revoked, or unreadable. Its summary names that state: `account-missing`, `account-revoked`, or `account-unreadable`.
+`ticket.list` returns the open Issues without pull requests. Each Ticket has its title, body, state, labels, type, children, and the Tickets that block it.
+`blockedBy` is `null` when GitHub serves no dependency facts for that Ticket. This is different from an empty list.
+The error codes and their text are `ACCOUNT_ERRORS` and `TICKET_ERRORS`.
+Ticket mutations are #1850 and are not part of this contract.
+
 ## Authority and imports
 
 The renderer holds presentation data and named actions only.
@@ -127,16 +158,14 @@ The `portable-v1` directory separates these files from the Swift store even when
 | Data | Owner and import boundary |
 | --- | --- |
 | Projects and Bindings | Argo owns registrations and validated links. Preserve stable IDs and mutable paths in separate destination files. |
-| Account metadata | Argo owns provider identity records. Import metadata only and reconnect Accounts. |
+| Account metadata | Argo owns provider identity records. Nothing is imported, and every person connects their Accounts again. |
 | Credentials | The main process uses Electron safeStorage under #1824. Never import Swift tokens or send credentials to the renderer. |
 | Asserted links | Argo stores only human assertions without a positive external derivation. Preserve their referenced identities. |
 | Tickets and Delivery facts | Providers and git remain authoritative. Read through their adapters and rebuild joins. |
 | Sessions | CLI transcripts remain authoritative. Observe their files without moving them into an Argo registry. |
 | Derived joins and indexes | Rebuildable data only. No new database or persisted source of truth. |
 
-The import entry point must read the Swift source without modifying it.
-It must commit to separate destination storage atomically and remain safe after interruption or repetition.
-This proof writes no store and claims no import acceptance.
+Nothing is imported from the Swift app. Projects, Bindings, and Accounts start fresh in the desktop app.
 The Swift reference shapes are `ProjectRegistryStore.swift`, `ProjectRegistry.swift`, and `ProjectRecord+Codable.swift` under `ArgoEngine/Project`.
 The Swift reader silently treats corrupt storage as empty. This proof exposes that condition and leaves its recovery UI undecided.
 
@@ -144,9 +173,7 @@ The Swift reader silently treats corrupt storage as empty. This proof exposes th
 
 The accepted #1824 spec already records agreement on storage ownership, one-way import, source preservation, and Account reauthentication.
 This implementation preserves that agreement and does not introduce another product policy.
-The startup/import slice still needs agreement on recovery when Swift input is corrupt or only partly readable.
-It also needs agreement on conflicts when an import meets existing destination records, including changed paths for the same ID.
-The application must not declare those choices settled from this proof's error codes or partial storage shape.
+The Swift import is descoped, so no recovery or conflict policy for imported records is needed.
 
 Codex process transport belongs to #1826 and has no field in this contract.
 The application bridge does not depend on an initialize method inventory or a provider's transport mechanism.
@@ -169,6 +196,14 @@ It reads back the original package's production fuses after the run.
 `bun run capture:cockpit` writes one PNG per deck state and appearance from the same packaged app.
 `bun run measure:cockpit` records startup and idle evidence for #1863 from five launches of it.
 Only a run on the 120 Hz reference display is judged. Every other run reports `unjudged` and exits zero.
+
+`bun run test:packaged-tickets` drives the same packaged copy with GitHub replaced by a fake on a loopback port.
+The fake is used only when the proof store is set, and only at a `127.0.0.1` origin.
+The proof connects an Account, signs in again as the same identity, and connects a second identity.
+It makes sure that no token reaches the renderer or an unsealed file.
+It binds a repository after one refusal, reads the backlog and one Ticket, and restarts while GitHub is down.
+It then reads again, revokes the grant, reconnects, disconnects, and unbinds.
+It uses the mock keychain switch, so safeStorage does not use the login keychain of the person who runs it.
 
 The proof reports an unsigned test profile, not signed-release acceptance.
 It uses the packaged renderer, preload, and main process, but does not prove an import workflow.

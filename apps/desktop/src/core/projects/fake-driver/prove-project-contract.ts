@@ -31,14 +31,23 @@ async function prepare(root) {
 }
 
 const SURFACE = [
+  'awaitAccount',
+  'bindTickets',
+  'cancelAccount',
+  'connectAccount',
   'decideClaudePermission',
+  'disconnectAccount',
+  'dismissAccountNotice',
   'getAppearance',
   'interruptClaudeSession',
+  'listAccounts',
   'listProjects',
   'listSessions',
+  'listTickets',
   'onAppearanceChanged',
   'onCommand',
   'openProject',
+  'readBinding',
   'readClaudePermission',
   'readSessionFeed',
   'registerProject',
@@ -46,6 +55,8 @@ const SURFACE = [
   'sendClaudeSession',
   'setAppearance',
   'startClaudeSession',
+  'unbindTickets',
+  'verifyAccount',
   'versions',
   'zoomFactor',
 ]

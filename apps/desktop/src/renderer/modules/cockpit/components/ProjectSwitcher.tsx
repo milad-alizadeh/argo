@@ -10,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu'
-import { useProjects } from '../../projects/hooks/useProjects'
+import { useProjectsContext } from '../../projects/state/ProjectsContext'
 
 export function ProjectSwitcher() {
-  const [cockpit, actions] = useProjects()
+  const [cockpit, actions] = useProjectsContext()
   const projectName = cockpit.project?.name ?? 'Select project'
 
   return (
