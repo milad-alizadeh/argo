@@ -103,7 +103,7 @@ export const ChoosesByKeyboard: Story = {
 }
 
 export const NewSessionChoosesHarness: Story = {
-  render: () => <RunSetupStory started={false} />,
+  args: { started: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
