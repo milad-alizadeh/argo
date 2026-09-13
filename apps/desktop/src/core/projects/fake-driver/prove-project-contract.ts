@@ -32,6 +32,34 @@ async function prepare(root) {
   return { application, userData, projectPath, registryPath }
 }
 
+// Every method the preload hands the renderer, sorted; nothing else reaches it.
+const SURFACE = [
+  'awaitAccount',
+  'bindTickets',
+  'cancelAccount',
+  'connectAccount',
+  'disconnectAccount',
+  'dismissAccountNotice',
+  'getAppearance',
+  'listAccounts',
+  'listProjects',
+  'listSessions',
+  'listTickets',
+  'onAppearanceChanged',
+  'onCommand',
+  'openProject',
+  'readBinding',
+  'readSessionFeed',
+  'registerProject',
+  'relocateProject',
+  'setAppearance',
+  'startClaudeSession',
+  'unbindTickets',
+  'verifyAccount',
+  'versions',
+  'zoomFactor',
+]
+
 async function prove(application, fixture) {
   const page = await application.firstWindow()
   page.setDefaultTimeout(30_000)
@@ -50,21 +78,7 @@ async function prove(application, fixture) {
     {
       node: 'undefined',
       process: 'undefined',
-      methods: [
-        'getAppearance',
-        'listProjects',
-        'listSessions',
-        'onAppearanceChanged',
-        'onCommand',
-        'openProject',
-        'readSessionFeed',
-        'registerProject',
-        'relocateProject',
-        'setAppearance',
-        'startClaudeSession',
-        'versions',
-        'zoomFactor',
-      ],
+      methods: SURFACE,
     },
   )
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)

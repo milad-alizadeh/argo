@@ -1,22 +1,24 @@
-import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+import { z } from 'zod'
+import {
+  type ContractError,
+  errorFactory,
+  errorSchema,
+  guard,
+  identifier,
+  message,
+} from '../contract/messages'
 
 // One channel carries every Project action. The action is a field of the message, never a channel
 // the renderer picks, so the bridge has one entry point to validate.
 export const PROJECT_CHANNEL = 'argo:project'
 
-export type ProjectOpenRequest = {
-  version: 1
-  type: 'project.open'
-  requestId: string
-  projectId: string
-}
+const openRequest = message('project.open', { projectId: identifier })
+const opened = message('project.opened', {
+  project: z.strictObject({ id: identifier, name: z.string().min(1) }),
+})
 
-export type ProjectOpened = {
-  version: 1
-  type: 'project.opened'
-  requestId: string
-  project: { id: string; name: string }
-}
+export type ProjectOpenRequest = z.infer<typeof openRequest>
+export type ProjectOpened = z.infer<typeof opened>
 
 export const PROJECT_ERRORS = {
   'missing-project': 'This Project is not registered.',
@@ -36,67 +38,11 @@ export const PROJECT_ERRORS = {
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS
-export type ProjectError = {
-  version: 1
-  type: 'project.error'
-  requestId: string | null
-  code: ProjectErrorCode
-  message: string
-}
+export type ProjectError = ContractError<'project.error', ProjectErrorCode>
 export type ProjectOpenReply = ProjectOpened | ProjectError
 
-export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
-  return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }
-}
+export const projectError = errorFactory('project.error', PROJECT_ERRORS)
+export const projectErrorSchema = errorSchema('project.error', PROJECT_ERRORS)
 
-// Every action shares one shape: version 1, a named type, a request ID, and zero or more further
-// identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
-// path or a channel past the guard.
-export function isAction(value: unknown, type: string, identifiers: string[] = []): boolean {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', ...identifiers]) &&
-    value.version === 1 &&
-    value.type === type &&
-    isIdentifier(value.requestId) &&
-    identifiers.every((key) => isIdentifier(value[key]))
-  )
-}
-
-export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
-  return isAction(value, 'project.open', ['projectId'])
-}
-
-export function isProjectOpened(value: unknown): value is ProjectOpened {
-  return (
-    isRecord(value) &&
-    value.version === 1 &&
-    value.type === 'project.opened' &&
-    hasKeys(value, ['version', 'type', 'requestId', 'project']) &&
-    isIdentifier(value.requestId) &&
-    isRecord(value.project) &&
-    hasKeys(value.project, ['id', 'name']) &&
-    isIdentifier(value.project.id) &&
-    typeof value.project.name === 'string' &&
-    value.project.name.length > 0
-  )
-}
-
-// The error text has to be one of the table's own strings, so a reply cannot carry a message the
-// main process assembled from an exception.
-export function isProjectErrorMessage(value: unknown): value is ProjectError {
-  return (
-    isRecord(value) &&
-    value.version === 1 &&
-    value.type === 'project.error' &&
-    hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
-    (value.requestId === null || isIdentifier(value.requestId)) &&
-    Object.entries(PROJECT_ERRORS).some(
-      ([code, message]) => value.code === code && value.message === message,
-    )
-  )
-}
-
-export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {
-  return isProjectOpened(value) || isProjectErrorMessage(value)
-}
+export const isProjectOpenRequest = guard(openRequest)
+export const isProjectOpenReply = guard(z.union([opened, projectErrorSchema]))

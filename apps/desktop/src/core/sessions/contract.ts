@@ -1,30 +1,35 @@
 // The two operations the renderer holds for observed Sessions, and the shapes both sides parse.
 // Named operations only: the renderer never receives the IPC object or picks a channel.
-import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+import { z } from 'zod'
+import {
+  type ContractError,
+  errorFactory,
+  errorSchema,
+  guard,
+  identifier,
+  message,
+} from '../contract/messages'
 import type { SessionFeedRow, SessionRosterRow } from './models'
 
 export const SESSION_LIST_CHANNEL = 'argo:session:list'
 export const SESSION_FEED_CHANNEL = 'argo:session:feed'
 export const SESSION_CLAUDE_START_CHANNEL = 'argo:session:claude:start'
 
-export type SessionListRequest = { version: 1; type: 'session.list'; requestId: string }
-export type SessionFeedRequest = {
-  version: 1
-  type: 'session.feed'
-  requestId: string
-  sessionId: string
-  // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
-  // a reloaded or evicted deck without rows to draw.
-  revision: string | null
-}
+const listRequest = message('session.list', {})
+// `revision` is the document the renderer already holds, if any. This keeps an unchanged reply
+// from leaving a reloaded or evicted deck without rows to draw.
+const feedRequest = message('session.feed', {
+  sessionId: identifier,
+  revision: z.string().nullable(),
+})
+const claudeStartRequest = message('session.claude.start', {
+  cwd: z.string().min(1),
+  prompt: z.string().refine((prompt) => prompt.trim().length > 0),
+})
 
-export type ClaudeSessionStartRequest = {
-  version: 1
-  type: 'session.claude.start'
-  requestId: string
-  cwd: string
-  prompt: string
-}
+export type SessionListRequest = z.infer<typeof listRequest>
+export type SessionFeedRequest = z.infer<typeof feedRequest>
+export type ClaudeSessionStartRequest = z.infer<typeof claudeStartRequest>
 
 export type ClaudeSessionStarted = {
   version: 1
@@ -86,75 +91,15 @@ export const SESSION_ERRORS = {
 } as const
 
 export type SessionErrorCode = keyof typeof SESSION_ERRORS
-export type SessionError = {
-  version: 1
-  type: 'session.error'
-  requestId: string | null
-  code: SessionErrorCode
-  message: string
-}
+export type SessionError = ContractError<'session.error', SessionErrorCode>
 
 export type SessionListReply = SessionsListed | SessionError
 export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
 export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
 
-export function sessionError(code: SessionErrorCode, requestId: string | null): SessionError {
-  return { version: 1, type: 'session.error', requestId, code, message: SESSION_ERRORS[code] }
-}
+export const sessionError = errorFactory('session.error', SESSION_ERRORS)
+export const sessionErrorSchema = errorSchema('session.error', SESSION_ERRORS)
 
-export function isSessionListRequest(value: unknown): value is SessionListRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId']) &&
-    value.version === 1 &&
-    value.type === 'session.list' &&
-    isIdentifier(value.requestId)
-  )
-}
-
-export function isSessionFeedRequest(value: unknown): value is SessionFeedRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'revision']) &&
-    value.version === 1 &&
-    value.type === 'session.feed' &&
-    isIdentifier(value.requestId) &&
-    isIdentifier(value.sessionId) &&
-    (value.revision === null || typeof value.revision === 'string')
-  )
-}
-
-export function isClaudeSessionStartRequest(value: unknown): value is ClaudeSessionStartRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'cwd', 'prompt']) &&
-    value.version === 1 &&
-    value.type === 'session.claude.start' &&
-    isIdentifier(value.requestId) &&
-    typeof value.cwd === 'string' &&
-    value.cwd.length > 0 &&
-    typeof value.prompt === 'string' &&
-    value.prompt.trim().length > 0
-  )
-}
-
-export function isClaudeSessionStarted(value: unknown): value is ClaudeSessionStarted {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId']) &&
-    value.version === 1 &&
-    value.type === 'session.claude.started' &&
-    isIdentifier(value.requestId) &&
-    isIdentifier(value.sessionId)
-  )
-}
-
-export function isSessionError(value: Record<string, unknown>): value is SessionError {
-  return (
-    hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
-    (value.requestId === null || isIdentifier(value.requestId)) &&
-    Object.entries(SESSION_ERRORS).some(
-      ([code, message]) => value.code === code && value.message === message,
-    )
-  )
-}
+export const isSessionListRequest = guard(listRequest)
+export const isSessionFeedRequest = guard(feedRequest)
+export const isClaudeSessionStartRequest = guard(claudeStartRequest)

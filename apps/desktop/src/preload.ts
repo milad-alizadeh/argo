@@ -1,4 +1,6 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
+import { createAccountClient } from './core/accounts/client'
+import { ACCOUNT_CHANNEL } from './core/accounts/contract'
 import {
   APPEARANCE_CHANGED_CHANNEL,
   APPEARANCE_CHANNEL,
@@ -13,6 +15,8 @@ import {
   SESSION_FEED_CHANNEL,
   SESSION_LIST_CHANNEL,
 } from './core/sessions/contract'
+import { createTicketClient } from './core/tickets/client'
+import { TICKET_CHANNEL } from './core/tickets/contract'
 
 const SESSION_CHANNELS = {
   list: SESSION_LIST_CHANNEL,
@@ -23,6 +27,8 @@ const SESSION_CHANNELS = {
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
   ...createProjectClient((request) => ipcRenderer.invoke(PROJECT_CHANNEL, request)),
+  ...createAccountClient((request) => ipcRenderer.invoke(ACCOUNT_CHANNEL, request)),
+  ...createTicketClient((request) => ipcRenderer.invoke(TICKET_CHANNEL, request)),
   ...createSessionClient((operation, request) =>
     ipcRenderer.invoke(SESSION_CHANNELS[operation], request),
   ),

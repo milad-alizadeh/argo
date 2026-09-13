@@ -295,3 +295,10 @@ jobs:
         # machine, but nothing in CI takes a screenshot any more (#1910): the assertions above read
         # the DOM, and reviewers inspect pixels in Storybook outside this workflow.
         run: bun run test:packaged-session
+
+      # Connect, bind, list, detail, restart, revoked access, disconnect and a visible failure,
+      # through the shipped cockpit with GitHub faked on a loopback port (#1848).
+      - name: Test the Tickets workflow in a packaged copy
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: bun run test:packaged-tickets

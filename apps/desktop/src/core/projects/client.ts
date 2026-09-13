@@ -1,6 +1,6 @@
 import { requestIdentifier } from '../../boundary'
+import { createSender } from '../contract/messages'
 import {
-  isProjectErrorMessage,
   isProjectOpenReply,
   type ProjectError,
   type ProjectOpenReply,
@@ -8,8 +8,7 @@ import {
   projectError,
 } from './contract'
 import {
-  isProjectCancelled,
-  isProjectListed,
+  isProjectListReply,
   type ProjectListReply,
   type ProjectListRequest,
   type ProjectRegisterRequest,
@@ -23,29 +22,8 @@ export type ProjectClient = {
   relocateProject(request: ProjectRelocateRequest): Promise<ProjectListReply>
 }
 
-function isProjectListReply(value: unknown): value is ProjectListReply {
-  return isProjectListed(value) || isProjectCancelled(value) || isProjectErrorMessage(value)
-}
-
 export function createProjectClient(invoke: (request: unknown) => Promise<unknown>): ProjectClient {
-  // One send for every action. It is the renderer's whole trust boundary: an unrecognised reply,
-  // or one answering another request, becomes `invalid-response` rather than reaching a component.
-  async function send<T extends { requestId: string | null }>(
-    request: unknown,
-    accept: (reply: unknown) => reply is T,
-  ): Promise<T | ProjectError> {
-    const requestId = requestIdentifier(request)
-    let reply: unknown
-    try {
-      reply = await invoke(request)
-    } catch {
-      return projectError('connection-lost', requestId)
-    }
-    if (!accept(reply) || reply.requestId !== requestId) {
-      return projectError('invalid-response', requestId)
-    }
-    return reply
-  }
+  const send = createSender<ProjectError>(invoke, projectError)
 
   return {
     async openProject(request) {

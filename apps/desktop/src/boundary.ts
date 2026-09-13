@@ -1,6 +1,5 @@
-// The predicates every contract in this app parses its outside data with. They live here rather
-// than in one domain's contract because two now share them, and a copy would be a second place
-// for "what counts as an identifier" to drift.
+// The predicates every boundary in this app parses outside data with, the IPC schemas included
+// (src/core/contract/messages.ts), so "what counts as an identifier" has one place to drift.
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -17,8 +16,4 @@ export function isIdentifier(value: unknown): value is string {
 
 export function requestIdentifier(value: unknown): string | null {
   return isRecord(value) && isIdentifier(value.requestId) ? value.requestId : null
-}
-
-export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
-  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
 }
