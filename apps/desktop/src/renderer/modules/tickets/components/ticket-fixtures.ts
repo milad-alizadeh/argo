@@ -72,10 +72,11 @@ export const standalone: Ticket = {
   ...issue(273),
   title: 'The Next-up planner',
   createdAt: '2026-01-15T09:00:00Z',
+  // The colours milad-alizadeh/argo gives these labels on GitHub.
   labels: [
-    { name: 'planning', color: null },
-    { name: 'wayfinder', color: null },
-    { name: 'needs-triage', color: null },
+    { name: 'enhancement', color: 'a2eeef' },
+    { name: 'wayfinder', color: '5319e7' },
+    { name: 'needs-triage', color: 'fbca04' },
   ],
   blockedBy: [],
 }

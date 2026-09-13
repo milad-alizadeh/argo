@@ -311,6 +311,7 @@
   --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
+  --ticket-label-lean: 55%;
 }
 
 :root:not(.dark) {
@@ -319,6 +320,8 @@
   --color-faint: var(--muted-foreground);
   --color-off: oklch(0.72 0 0);
   --color-plan-track: rgb(0 0 0 / 0.1);
+  /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
+  --ticket-label-lean: 40%;
 }
 
 .ticket-title {
