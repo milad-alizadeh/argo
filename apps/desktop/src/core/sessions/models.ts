@@ -131,11 +131,13 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     shape: z.literal('tool'),
     id: identifierSchema,
     label: z.string(),
-    evidence: z.discriminatedUnion('kind', [
-      z.strictObject({ kind: z.literal('output'), title: z.string(), source: z.string() }),
-      z.strictObject({ kind: z.literal('document'), title: z.string(), source: z.string() }),
-      z.strictObject({ kind: z.literal('diff'), title: z.string(), source: z.string() }),
-    ]).nullable(),
+    evidence: z
+      .discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('output'), title: z.string(), source: z.string() }),
+        z.strictObject({ kind: z.literal('document'), title: z.string(), source: z.string() }),
+        z.strictObject({ kind: z.literal('diff'), title: z.string(), source: z.string() }),
+      ])
+      .nullable(),
   }),
   // Laid out by Blink at the real column width, and drawn by the layout that measured it.
   z.strictObject({

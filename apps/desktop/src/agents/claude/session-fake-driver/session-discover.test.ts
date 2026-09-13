@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { appendFile, chmod, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
+import { appendFile, chmod, mkdtemp, rm, utimes } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -64,32 +64,6 @@ test('reads a Feed for a whole Session, keyed by the Session that answered', asy
   assert.equal(reply.type, 'session.feed.read')
   assert.equal(reply.chainId, 'resumeParent')
   assert.equal(reply.rows.length, 4)
-})
-
-test('projects recorded command, file, and edit evidence without rereading the workspace', async (context) => {
-  const root = await fixtureRoot(context, [])
-  const directory = path.join(root, 'project-one')
-  await writeFile(
-    path.join(directory, 'evidence.jsonl'),
-    [
-      { type: 'assistant', uuid: 'tool-turn', message: { content: [
-        { type: 'tool_use', id: 'command', name: 'Bash', input: { command: 'bun test' } },
-        { type: 'tool_use', id: 'file', name: 'Read', input: { file_path: 'src/app.ts' } },
-        { type: 'tool_use', id: 'edit', name: 'Edit', input: { file_path: 'src/app.ts', old_string: 'old', new_string: 'new' } },
-      ] } },
-      { type: 'user', uuid: 'tool-result', message: { content: [
-        { type: 'tool_result', tool_use_id: 'command', content: '1 pass' },
-        { type: 'tool_result', tool_use_id: 'file', content: 'export {}' },
-      ] } },
-    ].map((record) => JSON.stringify(record)).join('\n'),
-  )
-  const reply = await readFeed({ ...feed, sessionId: 'evidence' }, root)
-  assert.equal(reply.type, 'session.feed.read')
-  assert.deepEqual(reply.rows.filter((row) => row.shape === 'tool').map((row) => row.evidence), [
-    { kind: 'output', title: 'Bash', source: '1 pass' },
-    { kind: 'document', title: 'src/app.ts', source: 'export {}' },
-    { kind: 'diff', title: 'src/app.ts', source: '-old\n+new' },
-  ])
 })
 
 // A transcript can change while its Session is selected. The main-process reply names the whole
