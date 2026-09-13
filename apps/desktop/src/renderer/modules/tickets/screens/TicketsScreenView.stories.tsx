@@ -179,8 +179,8 @@ export const LinearBacklog: Story = {
     const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
     await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
     await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
-    const row = canvas.getByRole('button', { name: /^ENG-12/ })
-    await expect(row).toHaveTextContent('In Review')
+    await expect(canvas.getByRole('button', { name: /^ENG-12/ })).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Status: In Review' })).toBeVisible()
   },
 }
 
