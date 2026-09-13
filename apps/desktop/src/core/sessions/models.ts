@@ -64,6 +64,8 @@ export type SessionRosterRow = {
   // Whether the reader has archived this Session. Argo keeps no flag of its own: this is the
   // Claude desktop app's own `isArchived`, joined on the CLI Session id (`sessions/archive.ts`).
   archived: boolean
+  contextTokens?: number | null
+  spentTokens?: number | null
 }
 
 export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | 'retiredIds'>>(

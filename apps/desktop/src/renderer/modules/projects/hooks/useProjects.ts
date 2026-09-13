@@ -3,8 +3,14 @@
 // renderer never assembles storage out of a sequence of replies.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type ProjectError, type ProjectErrorCode, projectError } from '@/core/projects/contract'
-import type { ProjectListReply, ProjectSummary } from '@/core/projects/messages'
+import {
+  isProjectSummary,
+  type ProjectListReply,
+  type ProjectSummary,
+} from '@/core/projects/messages'
 import { listRequest, openRequest, registerRequest, relocateRequest } from '../lib/requests'
+
+const PROJECT_SELECTED_EVENT = 'argo:project-selected'
 
 export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
@@ -87,6 +93,24 @@ export function useProjects(): [Cockpit, ProjectActions] {
     void run(() => window.argo.listProjects(listRequest()))
   }, [run])
 
+  useEffect(() => {
+    const synchronizeSelectedProject = (event: Event) => {
+      if (!(event instanceof CustomEvent) || !isProjectSummary(event.detail)) return
+      setCockpit((current) => {
+        const project = event.detail
+        return {
+          ...current,
+          project,
+          projects: current.projects.some((candidate) => candidate.id === project.id)
+            ? current.projects
+            : [...current.projects, project],
+        }
+      })
+    }
+    window.addEventListener(PROJECT_SELECTED_EVENT, synchronizeSelectedProject)
+    return () => window.removeEventListener(PROJECT_SELECTED_EVENT, synchronizeSelectedProject)
+  }, [])
+
   // The menu item, the chord and the deck's own control are one action (apps/desktop/AGENTS.md), so
   // what a refused Project offers on screen is what the chord does.
   const open = useCallback(() => {
@@ -102,7 +126,11 @@ export function useProjects(): [Cockpit, ProjectActions] {
     (projectId: string) => {
       void run(async () => {
         const reply = await window.argo.listProjects(listRequest())
-        return reply.type === 'project.listed' ? { ...reply, selectedId: projectId } : reply
+        if (reply.type !== 'project.listed') return reply
+        const project = reply.projects.find((candidate) => candidate.id === projectId)
+        if (project)
+          window.dispatchEvent(new CustomEvent(PROJECT_SELECTED_EVENT, { detail: project }))
+        return { ...reply, selectedId: projectId }
       })
     },
     [run],

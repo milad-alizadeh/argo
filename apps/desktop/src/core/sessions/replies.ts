@@ -3,7 +3,13 @@
 // anything from outside: once, into a shape, before anything draws them.
 import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
+  type ClaudeSessionInterruptReply,
+  type ClaudeSessionPermissionDecisionReply,
+  type ClaudeSessionPermissionReply,
+  type ClaudeSessionSendReply,
   type ClaudeSessionStartReply,
+  isClaudeSessionAccepted,
+  isClaudeSessionPermissionRead,
   isClaudeSessionStarted,
   isSessionError,
   type SessionFeedReply,
@@ -103,4 +109,26 @@ export function isSessionFeedReply(value: unknown): value is SessionFeedReply {
 
 export function isClaudeSessionStartReply(value: unknown): value is ClaudeSessionStartReply {
   return isClaudeSessionStarted(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionSendReply(value: unknown): value is ClaudeSessionSendReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionInterruptReply(
+  value: unknown,
+): value is ClaudeSessionInterruptReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionPermissionReply(
+  value: unknown,
+): value is ClaudeSessionPermissionReply {
+  return isClaudeSessionPermissionRead(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionPermissionDecisionReply(
+  value: unknown,
+): value is ClaudeSessionPermissionDecisionReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
 }

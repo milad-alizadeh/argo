@@ -97,7 +97,7 @@ export const Discovered: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
-    await expect(canvas.getByRole('button', { name: 'New Session' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'New Session' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'Find a Session' })).toBeDisabled()
     const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await userEvent.click(row)
