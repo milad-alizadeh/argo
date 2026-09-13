@@ -155,6 +155,7 @@ function ReviewScreen() {
         feed={feed}
         feedError={null}
         inspector={<SessionFacts session={session} />}
+        onOpenEvidence={() => {}}
         selectedSessionId={selectedSessionId}
       />
     </CockpitShell>

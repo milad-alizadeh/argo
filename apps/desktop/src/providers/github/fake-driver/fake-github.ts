@@ -3,7 +3,8 @@
 // the packaged proof both drive this server, and both leave the cockpit's own code running for real.
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { answer, type FakeState, send } from './fake-routes'
+import { type FakeState, send } from './fake-exchange'
+import { answer } from './fake-routes'
 
 export type FakeUser = { id: number; login: string }
 

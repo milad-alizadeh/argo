@@ -12,9 +12,13 @@ const config: StorybookConfig = {
     resolve: {
       ...viteConfig.resolve,
       dedupe: ['react', 'react-dom'],
-      alias: {
-        '@': path.resolve(import.meta.dirname, '../src'),
-      },
+      alias: [
+        { find: '@', replacement: path.resolve(import.meta.dirname, '../src') },
+        {
+          find: /^cn$/,
+          replacement: path.resolve(import.meta.dirname, '../src/renderer/lib/utils.ts'),
+        },
+      ],
     },
   }),
 }

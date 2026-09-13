@@ -65,11 +65,7 @@ export function ComposerEditor({
             aria-placeholder={COMPOSER_PLACEHOLDER}
             className="min-h-(--size-composer-field) flex-1 px-(--spacing-shell-inset) py-(--spacing-shell-gutter) pr-(--inset-composer-plan) type-prose outline-none [&_a]:underline [&_a]:decoration-border [&_a]:underline-offset-4 [&_blockquote]:my-(--spacing-shell-item) [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-(--spacing-shell-inset) [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_h1]:mt-(--spacing-shell-tight) [&_h1]:mb-(--spacing-shell-item) [&_h1]:type-heading [&_h1]:font-semibold [&_h1]:text-foreground [&_h2]:mt-(--spacing-shell-section) [&_h2]:mb-(--spacing-shell-item) [&_h2]:type-prose [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-(--spacing-shell-item) [&_h3]:mb-(--spacing-shell-tight) [&_h3]:type-prose [&_h3]:font-medium [&_h3]:text-foreground [&_hr]:my-(--spacing-shell-section) [&_hr]:border-border [&_ol]:my-(--spacing-shell-item) [&_ol]:list-decimal [&_ol]:pl-(--spacing-shell-section) [&_p]:mb-(--spacing-shell-item) [&_ul]:my-(--spacing-shell-item) [&_ul]:list-disc [&_ul]:pl-(--spacing-shell-section) [&>code]:my-(--spacing-shell-item) [&>code]:block [&>code]:rounded-lg [&>code]:bg-muted [&>code]:p-(--spacing-shell-inset) [&>code]:font-mono"
             onKeyDown={(event) => {
-              if (
-                event.key !== 'Enter' ||
-                (!event.metaKey && !event.ctrlKey) ||
-                event.nativeEvent.isComposing
-              ) {
+              if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
                 return
               }
               event.preventDefault()

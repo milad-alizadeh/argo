@@ -1,5 +1,9 @@
 // Every Ticket request the cockpit sends. Each names the Project it asks about.
-import type { TicketConnectRequest, TicketListRequest } from '@/core/tickets/contract'
+import type {
+  TicketConnectRequest,
+  TicketDiscoverRequest,
+  TicketListRequest,
+} from '@/core/tickets/contract'
 import { nextRequestId } from '../../../lib/requests'
 
 export const projectRequest = <const Type extends string>(type: Type, projectId: string) => ({
@@ -18,4 +22,9 @@ export const listRequest = (projectId: string, query: string, page: number): Tic
   ...projectRequest('ticket.list', projectId),
   query,
   page,
+})
+
+export const discoverRequest = (projectId: string, accountId: string): TicketDiscoverRequest => ({
+  ...projectRequest('ticket.discover', projectId),
+  accountId,
 })

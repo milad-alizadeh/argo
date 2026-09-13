@@ -17,10 +17,10 @@ import {
   type TicketProblemProps,
 } from '../lib/problems'
 import { useSettledQuery } from '../state/useTicketSearch'
+import { type ConnectForm, useConnectForm } from './useConnectForm'
 import {
   type TicketPages,
   useConnection,
-  useConnectRepository,
   useDisconnectRepository,
   useTicketList,
 } from './useTickets'
@@ -45,12 +45,10 @@ const failure = (title: string, error: ContractFailure, onRetry: () => void): Ti
   }),
 })
 
-type ConnectRepository = ReturnType<typeof useConnectRepository>
-
 function unconnectedView(
   project: ProjectSummary,
   accounts: UseQueryResult<AccountListing, ContractFailure>,
-  connectRepository: ConnectRepository,
+  form: ConnectForm,
 ): TicketsView {
   if (accounts.isPending) return loading('Reading GitHub Accounts')
   if (accounts.error) return failure('Unable to read Accounts', accounts.error, accounts.refetch)
@@ -59,10 +57,7 @@ function unconnectedView(
     projectId: project.id,
     projectName: project.name,
     accounts: accounts.data.accounts,
-    pending: connectRepository.isPending,
-    error: connectRepository.variables?.projectId === project.id ? connectRepository.error : null,
-    onConnectRepository: (target) => connectRepository.mutate({ projectId: project.id, ...target }),
-    onConnectAccount: openAccountsDialog,
+    ...form,
   }
 }
 
@@ -125,7 +120,7 @@ export function useTicketsView(): TicketsScreenProps {
   const connection = useConnection(projectId)
   const query = useSettledQuery()
   const list = useTicketList(projectId, connection.data ?? null, query)
-  const connectRepository = useConnectRepository()
+  const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
   const disconnectRepository = useDisconnectRepository()
 
   function view(): TicketsView {
@@ -137,7 +132,7 @@ export function useTicketsView(): TicketsScreenProps {
         connection.error,
         connection.refetch,
       )
-    if (connection.data === null) return unconnectedView(project, accounts, connectRepository)
+    if (connection.data === null) return unconnectedView(project, accounts, form)
     const onDisconnectRepository = () => disconnectRepository.mutate({ projectId: project.id })
     return connectedView({
       projectId: project.id,
