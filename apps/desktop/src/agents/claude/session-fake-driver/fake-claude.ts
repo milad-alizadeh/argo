@@ -1,46 +1,59 @@
-import type { ClaudeTurnSetup } from '@/core/sessions/contract.ts'
-import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
-import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
+// A stand-in `claude` for the packaged resume proof, run by node's type stripping. It answers the
+// flags Argo launches with and writes each Turn it is sent where the real CLI writes transcripts.
+import { randomUUID } from 'node:crypto'
+import { appendFileSync, mkdirSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
 
-export const OPENING: ClaudeTurnSetup = { model: 'opus', effort: 'high', mode: 'manual' }
-// The Modes this fake offers, in the order Shift+Tab reaches them.
-export const FOOTERS = ['manual mode on', 'accept edits on', 'plan mode on', 'auto mode on']
+const ESCAPE = String.fromCharCode(27)
+// Argo's bracketed paste, then its carriage return, which the line discipline turns into a
+// newline when it arrives before this process has switched the terminal to raw mode.
+const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 
-// A Claude TUI that redraws its Mode footer on Ctrl+L, advanced one Mode per Shift+Tab.
-export function fakeClaude() {
-  const writes: string[] = []
-  const calls: { command: string; commandArguments: string[]; environment: NodeJS.ProcessEnv }[] =
-    []
-  let listener: (data: string) => void = () => {}
-  let footer = 0
-  const driver = createClaudeSessionDriver({
-    findExecutable: () => '/usr/local/bin/claude',
-    mintSessionId: () => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c',
-    schedule: (callback) => callback(),
-    spawn: (command, commandArguments, options) => {
-      calls.push({ command, commandArguments, environment: options.env })
-      return {
-        write: (text) => {
-          writes.push(text)
-          if (text === CYCLE_MODE) footer = (footer + 1) % FOOTERS.length
-          if (text === REDRAW) listener(`\u001b[2J\u001b[38;5;246m⏵⏵ ${FOOTERS[footer]}\u001b[39m`)
-        },
-        onData: (next) => {
-          listener = next
-        },
-      }
-    },
-  })
-  return { calls, driver, writes }
+const [transcripts, ...flags] = process.argv.slice(2)
+
+function flagValue(flag: string): string | null {
+  const index = flags.indexOf(flag)
+  return index === -1 ? null : (flags[index + 1] ?? null)
 }
 
-export const settle = () => new Promise((resolve) => setImmediate(resolve))
+// claude 2.1.270 continues `--resume <id>` in that id's own transcript file (ADR-0026).
+const sessionId = flagValue('--session-id') ?? flagValue('--resume')
+if (transcripts === undefined || sessionId === null) process.exit(2)
 
-// A started Session whose opening Turn has gone out, with the writes cleared.
-export async function startedSession() {
-  const claude = fakeClaude()
-  const sessionId = claude.driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
-  await settle()
-  claude.writes.length = 0
-  return { ...claude, sessionId }
+const folder = path.join(transcripts, 'fake-claude')
+mkdirSync(folder, { recursive: true })
+const transcript = path.join(folder, `${sessionId}.jsonl`)
+let parentUuid: string | null = null
+
+function write(type: 'user' | 'assistant', message: Record<string, unknown>) {
+  const uuid = randomUUID()
+  const record = {
+    type,
+    sessionId,
+    cwd: process.cwd(),
+    timestamp: new Date().toISOString(),
+    uuid,
+    parentUuid,
+    message,
+  }
+  appendFileSync(transcript, `${JSON.stringify(record)}\n`)
+  parentUuid = uuid
 }
+
+let pending = ''
+if (process.stdin.isTTY) process.stdin.setRawMode(true)
+process.stdin.setEncoding('utf8')
+process.stdin.on('data', (chunk: string) => {
+  pending += chunk
+  for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
+    pending = pending.slice(turn.index + turn[0].length)
+    const text = turn[1] ?? ''
+    write('user', { role: 'user', content: text })
+    write('assistant', {
+      role: 'assistant',
+      stop_reason: 'end_turn',
+      content: [{ type: 'text', text: `Fake Claude read: ${text}` }],
+    })
+  }
+})

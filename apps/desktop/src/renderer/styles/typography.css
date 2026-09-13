@@ -36,6 +36,13 @@
     letter-spacing: var(--text-label-tracking);
   }
 
+  .type-composer-control.type-composer-control {
+    font-size: var(--text-composer-control);
+    line-height: var(--text-composer-control--line-height);
+    font-weight: var(--text-composer-control-weight);
+    letter-spacing: var(--text-composer-control-tracking);
+  }
+
   /* The approved Session metadata is 12px; the existing text-meta utility remains 11px. */
   .type-meta.type-meta {
     font-size: var(--text-session-meta);

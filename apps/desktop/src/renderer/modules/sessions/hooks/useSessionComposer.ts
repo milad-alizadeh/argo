@@ -14,6 +14,9 @@ import type { useSessions } from './useSessions'
 
 const NO_ROWS: SessionRosterRow[] = []
 
+// A failure belongs to the Session it happened on, so selecting another Session does not show it.
+type Failure = { sessionId: string | null; message: string }
+
 type SessionComposerOptions = {
   cli: SessionCli
   cockpit: Cockpit
@@ -51,7 +54,7 @@ export function useSessionComposer({
   failure: string | null
   props: Omit<SessionComposerProps, 'plan' | 'harness'>
 } {
-  const [failure, setFailure] = useState<string | null>(null)
+  const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { interrupt, send, start } = useMutationsFor(cli)
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
@@ -68,18 +71,17 @@ export function useSessionComposer({
       if (selectedSessionId !== null) {
         const since =
           roster?.sessions.find(({ id }) => id === selectedSessionId)?.turnStartedAt ?? null
-        const sent = await sendMessage({
-          send,
-          prompt,
-          setup,
-          sessionId: selectedSessionId,
-          setFailure,
-        })
-        if (sent && setup !== null) watchTurn(selectedSessionId, setup, since)
-        return sent
+        return sendMessage(
+          { send, prompt, setup, sessionId: selectedSessionId, setFailure },
+          () => {
+            if (setup !== null) watchTurn(selectedSessionId, setup, since)
+            // A Send can resume the Session (ADR-0026), so its posture may have changed.
+            return invalidateSessionRoster(queryClient)
+          },
+        )
       }
       if (cockpit.project === null) {
-        setFailure('Select a Project before starting a Session.')
+        setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
         return false
       }
       try {
@@ -90,14 +92,17 @@ export function useSessionComposer({
         navigate(`/sessions/${reply.sessionId}`)
         return true
       } catch (error) {
-        setFailure(messageFrom(error, 'Argo could not start this Session.'))
+        setFailure({
+          sessionId: null,
+          message: messageFrom(error, 'Argo could not start this Session.'),
+        })
         return false
       }
     },
     [cockpit.project, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
   )
   return {
-    failure,
+    failure: failure?.sessionId === selectedSessionId ? failure.message : null,
     props: {
       isRunning: managedSessionIsRunning(roster, selectedSessionId),
       onInterrupt,
@@ -111,7 +116,7 @@ export function useSessionComposer({
 function useInterrupt(
   interrupt: ReturnType<typeof useMutationsFor>['interrupt'],
   sessionId: string | null,
-  setFailure: (message: string | null) => void,
+  setFailure: (failure: Failure | null) => void,
 ) {
   return useCallback(async () => {
     if (sessionId === null) return false
@@ -119,33 +124,35 @@ function useInterrupt(
       await interrupt.mutateAsync(sessionId)
       return true
     } catch (error) {
-      setFailure(messageFrom(error, 'Argo could not interrupt this Session.'))
+      setFailure({
+        sessionId,
+        message: messageFrom(error, 'Argo could not interrupt this Session.'),
+      })
       return false
     }
   }, [interrupt, sessionId, setFailure])
 }
 
-async function sendMessage({
-  send,
-  prompt,
-  setup,
-  sessionId,
-  setFailure,
-}: {
-  send: ReturnType<typeof useMutationsFor>['send']
-  prompt: string
-  setup: TurnSetup | null
-  sessionId: string
-  setFailure: (message: string | null) => void
-}) {
+async function sendMessage(
+  request: {
+    send: ReturnType<typeof useMutationsFor>['send']
+    prompt: string
+    setup: TurnSetup | null
+    sessionId: string
+    setFailure: (failure: Failure | null) => void
+  },
+  afterSend: () => Promise<void>,
+) {
+  const { send, prompt, setup, sessionId, setFailure } = request
   try {
     await send.mutateAsync({ prompt, sessionId, setup })
     setFailure(null)
-    return true
   } catch (error) {
-    setFailure(messageFrom(error, 'Argo could not send this message.'))
+    setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
     return false
   }
+  await afterSend()
+  return true
 }
 
 function messageFrom(error: unknown, fallback: string) {

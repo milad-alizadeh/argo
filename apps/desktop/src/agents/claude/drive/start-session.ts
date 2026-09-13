@@ -5,7 +5,8 @@ import {
   sessionError,
 } from '@/core/sessions/contract'
 
-import { type ClaudeSessionDriver, ClaudeSessionDriverError } from './claude-session-driver'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './drive-channel'
 
 export type ClaudeSessionStarter = Pick<ClaudeSessionDriver, 'start'>
 

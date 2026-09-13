@@ -50,7 +50,7 @@ export function useTurnSetup({
   choices: TurnSetupChoices | null
   composerKey: string
   rows: SessionRosterRow[]
-  onRefusal: (message: string) => void
+  onRefusal: (refusal: { sessionId: string; message: string }) => void
 }) {
   const [chosen, setChosen] = useState(() => new Map<string, TurnSetup>())
   const [remembered, setRemembered] = useState(restoredRemembered)
@@ -87,7 +87,7 @@ export function useTurnSetup({
       const refusal = refusalOf(choices, requested, row.setup)
       if (refusal === null) continue
       choose(sessionId, refusal.setup)
-      onRefusal(refusal.message)
+      onRefusal({ sessionId, message: refusal.message })
     }
   }, [choices, choose, expectations, onRefusal, rows])
 

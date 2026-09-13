@@ -1,87 +1,16 @@
-import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
-import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
+import type { LexicalEditor } from 'lexical'
 import { ArrowUp } from 'lucide-react'
 import type { RefObject } from 'react'
+
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
 import type { HarnessControl } from '../harness/harnesses'
 import { ModeMenu } from './ModeMenu'
 import { PendingTurns } from './PendingTurns'
 import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
+import { ComposerEditor } from './SessionComposerEditor'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
-
-function editorState(text: string) {
-  return () => {
-    const root = $getRoot()
-    root.clear()
-    root.append($createParagraphNode().append($createTextNode(text)))
-  }
-}
-
-function ComposerEditor({
-  draft,
-  editorRef,
-  onChange,
-  onSend,
-}: {
-  draft: string
-  editorRef: RefObject<LexicalEditor | null>
-  onChange: (text: string) => void
-  onSend: () => void
-}) {
-  return (
-    <LexicalComposer
-      initialConfig={{
-        editorState: editorState(draft),
-        namespace: 'argo-session-composer',
-        onError: (error) => {
-          throw error
-        },
-      }}
-    >
-      <PlainTextPlugin
-        ErrorBoundary={({ children }) => children}
-        contentEditable={
-          <ContentEditable
-            aria-label="Message"
-            aria-placeholder="Direct the next move…"
-            className="min-h-20 flex-1 whitespace-pre-wrap px-4 py-3 pr-28 text-sm leading-6 outline-none"
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
-              event.preventDefault()
-              onSend()
-            }}
-            placeholder={
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 left-0 px-4 py-3 text-sm text-muted-foreground"
-              >
-                Direct the next move…
-              </span>
-            }
-          />
-        }
-        placeholder={
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute top-0 left-0 px-4 py-3 text-sm text-muted-foreground"
-          >
-            Direct the next move…
-          </span>
-        }
-      />
-      <OnChangePlugin
-        onChange={(state) => state.read(() => onChange($getRoot().getTextContent()))}
-      />
-      <EditorRefPlugin editorRef={editorRef} />
-    </LexicalComposer>
-  )
-}
 
 export function ComposerForm({
   draft,
@@ -116,7 +45,7 @@ export function ComposerForm({
 }) {
   return (
     <form
-      className="mx-auto w-full max-w-4xl px-(--spacing-shell-gutter) pt-6 pb-8"
+      className="mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter) pt-(--spacing-shell-section) pb-(--spacing-shell-region)"
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
@@ -129,9 +58,9 @@ export function ComposerForm({
         onReorder={onReorder}
       />
       <div
-        className={`@container relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
+        className={`@container relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
       >
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
           <SessionPlanPopover plan={plan} />
         </div>
         <div className="relative min-w-0 flex-1">
@@ -143,13 +72,14 @@ export function ComposerForm({
             onSend={onSend}
           />
         </div>
-        <div className="flex items-center gap-1 p-2 @[36rem]:gap-2">
+        <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
           {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
           <div className="ml-auto flex items-center gap-1">
             {setup ? <ModeMenu {...setup} /> : null}
             {isRunning ? (
               <Button
                 aria-label="Interrupt"
+                className="type-composer-control"
                 onClick={() => void onInterrupt?.()}
                 size="sm"
                 type="button"

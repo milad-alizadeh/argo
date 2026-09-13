@@ -1,6 +1,7 @@
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
+import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
 import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
@@ -14,13 +15,17 @@ type ManagedSession = {
   prompt: string
   turnId: string | null
   failed: boolean
+  messages: LiveMessages
 }
+
+export type { LiveMessage }
 
 export type CodexSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => Promise<string>
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   roster: () => SessionRosterRow[]
+  liveMessages: (sessionId: string) => LiveMessage[]
   close: () => void
 }
 
@@ -73,12 +78,14 @@ async function beginManagedSession(
     channel.notify('initialized')
     const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
     threadId = startedThreadId
-    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false })
+    const messages = createLiveMessages(startedThreadId)
+    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false, messages })
     channel.onExit(() => {
       const session = sessions.get(startedThreadId)
       if (session) session.failed = true
     })
     channel.onNotification((message) => {
+      if (messages.record(message)) return
       const completed = readCompletedTurn(message)
       if (completed?.threadId !== startedThreadId) return
       const session = sessions.get(startedThreadId)
@@ -104,6 +111,8 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   }
 
   async function turn(channel: CodexChannel, threadId: string, prompt: string) {
+    const previous = sessions.get(threadId)
+    previous?.messages.keepOnly(previous.turnId)
     const started = await channel.request(
       'turn/start',
       { threadId, input: [{ type: 'text', text: prompt, text_elements: [] }] },
@@ -137,6 +146,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
           setup: { model: null, effort: null, mode: null },
         }),
       ),
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     close() {
       for (const session of sessions.values()) session.channel.close()
       sessions.clear()

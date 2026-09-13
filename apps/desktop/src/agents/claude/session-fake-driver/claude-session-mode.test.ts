@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
-import { FOOTERS, OPENING, startedSession } from './fake-claude.ts'
+import { FOOTERS, OPENING, startedSession } from './claude-driver-launch.ts'
 
-test('cycles the Mode until the Claude footer shows the chosen Mode, then sends the Turn', async () => {
-  const { driver, sessionId, writes } = await startedSession()
+test('cycles the Mode until the Claude footer shows the chosen Mode, then sends the Turn', async (context) => {
+  const { driver, sessionId, writes } = await startedSession(context)
 
   await driver.send(sessionId, { prompt: 'Next.', setup: { ...OPENING, mode: 'plan' } })
 
@@ -19,8 +19,8 @@ test('cycles the Mode until the Claude footer shows the chosen Mode, then sends 
   ])
 })
 
-test('stops cycling at the starting Mode when the chosen Mode is not offered, and still sends the Turn', async () => {
-  const { driver, sessionId, writes } = await startedSession()
+test('stops cycling at the starting Mode when the chosen Mode is not offered, and still sends the Turn', async (context) => {
+  const { driver, sessionId, writes } = await startedSession(context)
 
   await driver.send(sessionId, {
     prompt: 'Next.',
@@ -34,8 +34,8 @@ test('stops cycling at the starting Mode when the chosen Mode is not offered, an
   ])
 })
 
-test('does not cycle again after reaching the chosen Mode', async () => {
-  const { driver, sessionId, writes } = await startedSession()
+test('does not cycle again after reaching the chosen Mode', async (context) => {
+  const { driver, sessionId, writes } = await startedSession(context)
   await driver.send(sessionId, { prompt: 'Plan it.', setup: { ...OPENING, mode: 'auto' } })
   writes.length = 0
 

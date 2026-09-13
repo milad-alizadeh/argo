@@ -136,6 +136,18 @@ export const feedMarkerSchema = z.enum(FEED_MARKERS)
 export type FeedMarker = z.infer<typeof feedMarkerSchema>
 
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
+  z.strictObject({
+    shape: z.literal('tool'),
+    id: identifierSchema,
+    label: z.string(),
+    evidence: z
+      .discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('output'), title: z.string(), source: z.string() }),
+        z.strictObject({ kind: z.literal('document'), title: z.string(), source: z.string() }),
+        z.strictObject({ kind: z.literal('diff'), title: z.string(), source: z.string() }),
+      ])
+      .nullable(),
+  }),
   // Laid out by Blink at the real column width, and drawn by the layout that measured it.
   z.strictObject({
     shape: z.literal('prose'),

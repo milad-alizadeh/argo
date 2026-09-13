@@ -3,6 +3,7 @@ import { CYCLE_MODE, footerMode, REDRAW, setupCommands } from './claude-setup'
 import { claudeTurn } from './claude-turn'
 
 export type Wait = (milliseconds: number) => Promise<void>
+export type ClaudeTurnRequest = { prompt: string; setup: ClaudeTurnSetup }
 
 // The part of a managed Session a Turn is typed into; `screen` holds what the TUI drew last.
 export type TurnTarget = {
@@ -18,11 +19,7 @@ const COMMAND_SETTLE_MS = 1500
 const MODE_PRESS_DELAY_MS = 400
 const MODE_REDRAW_DELAY_MS = 800
 
-export async function deliverTurn(
-  session: TurnTarget,
-  turn: { prompt: string; setup: ClaudeTurnSetup },
-  wait: Wait,
-) {
+export async function deliverTurn(session: TurnTarget, turn: ClaudeTurnRequest, wait: Wait) {
   for (const command of setupCommands(session.applied, turn.setup)) {
     session.process.write(command)
     await wait(COMMAND_SUBMIT_DELAY_MS)

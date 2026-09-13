@@ -8,15 +8,25 @@ A screenshot is evidence. It belongs in the tracker, not only in the session.
   the hosted component story, or the render command. If the change is a fix, describe the before
   as well as the after.
 
-**Two routes, and an agent has one of them.** `gh issue` and `gh pr` cannot attach a file, so the
-image reaches GitHub one of two ways:
+**An agent attaches the image itself**, through github.com in a browser where the user is signed
+in (Claude in Chrome). `gh` and the REST API cannot attach a file; the page's upload is the only
+route, and GitHub hosts the file on its own CDN, outside the repository.
 
-- **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
-  and outside the repository. This is the route for a bug report's screenshot and for a design
-  ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
-- **An agent writes a link.** A hosted component site gives one deep link per component;
-  otherwise give the render command and the state names, so a reader draws it themselves.
+1. Put the file inside the working directory, untracked. `file_upload` refuses paths the session
+   was not given, temp dirs included.
+2. Open the issue or PR. In the "Add a comment" box, capture GitHub's file input without the native
+   picker: with `javascript_tool`, wrap `HTMLInputElement.prototype.click` so a `type=file` input
+   is kept rather than clicked, click the "Paste, drop, or click to add files" button, and restore
+   the original `click`.
+3. `find` the input (the tree shows it as a `type="file"` button) and pass the path to
+   `file_upload`.
+4. After a few seconds the box holds `<img … src="https://github.com/user-attachments/assets/<id>" />`.
+   Copy that tag, empty the box through the native `value` setter plus an `input` event, and put
+   the tag in the body with `gh issue edit --body-file`. Delete the local file.
 
-An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
+Beside an image, a PR still links the hosted component story or gives the render command and state
+names, so a reader can draw the current one.
+
+An agent's local captures are **disposable**: a temp dir, judged, deleted. A PNG in a git object
 has no version, so a later reader cannot tell whether it shows the code beside it or the code it
 replaced.

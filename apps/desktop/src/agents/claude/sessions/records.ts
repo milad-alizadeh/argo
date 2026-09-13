@@ -1,35 +1,24 @@
-// One JSONL line of a Claude transcript, parsed into the shapes this slice reads and nothing
-// else. Grounded on the records real transcripts under `~/.claude/projects` carry today: `user`,
-// `assistant`, `last-prompt`, `ai-title`, `custom-title`, `pr-link`, and the `compact_boundary`
-// system record. Every other `type` is bookkeeping this slice does not draw, and is skipped rather
-// than guessed at.
 import { isRecord } from '@/boundary'
 import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
 import type {
   ContentBlock,
   ToolCall,
+  ToolResult,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
-// CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
-// vocabulary this slice reads.
 export { SESSION_ENTRIES }
 
 const HEADLESS_ENTRYPOINTS = ['sdk-cli']
 
-// CONTEXT.md L2 · Entry: the word is matched, never interpreted, and everything else — absent,
-// unread, or a word this list has not heard of — reads `interactive`. The error that rule
-// prevents is one-way: folding a Session somebody is steering out of sight.
 function readEntry(value: unknown): SessionEntry {
   return typeof value === 'string' && HEADLESS_ENTRYPOINTS.includes(value)
     ? 'headless'
     : 'interactive'
 }
 
-// The text the CLI writes as the person's own prompt when they stop a Turn. It is the CLI's
-// punctuation, not something the person typed, so it is read as a marker and never as a prompt.
 const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
 
 function readBlock(value: unknown): ContentBlock {
@@ -63,11 +52,16 @@ function readToolCalls(content: unknown): ToolCall[] {
   )
 }
 
-function readAnsweredCalls(content: unknown) {
+function readToolResults(content: unknown): ToolResult[] {
   if (!Array.isArray(content)) return []
   return content.flatMap((block: unknown) =>
     isRecord(block) && block.type === 'tool_result' && typeof block.tool_use_id === 'string'
-      ? [block.tool_use_id]
+      ? [
+          {
+            callId: block.tool_use_id,
+            content: typeof block.content === 'string' ? block.content : null,
+          },
+        ]
       : [],
   )
 }
@@ -89,11 +83,6 @@ function readUsage(value: unknown) {
   }
 }
 
-// `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
-function readModel(value: unknown) {
-  return typeof value === 'string' && value !== '<synthetic>' ? value : null
-}
-
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
@@ -102,7 +91,8 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   if (typeof record.uuid !== 'string') return null
   const parsed: TranscriptMessage = {
     toolCalls: readToolCalls(message.content),
-    answeredCalls: readAnsweredCalls(message.content),
+    toolResults: readToolResults(message.content),
+    answeredCalls: readToolResults(message.content).map((result) => result.callId),
     kind: 'message',
     uuid: record.uuid,
     parentUuid: typeof record.parentUuid === 'string' ? record.parentUuid : null,
@@ -114,7 +104,9 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
-    model: readModel(message.model),
+    // `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
+    model:
+      typeof message.model === 'string' && message.model !== '<synthetic>' ? message.model : null,
     effort: typeof record.effort === 'string' ? record.effort : null,
     mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
@@ -123,8 +115,6 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   return parsed
 }
 
-// A title Argo reads off a record it does not own (CONTEXT.md L2 · CLI title). `custom` is what
-// a person typed; `summarised` is what the CLI's own summariser wrote.
 function readTitle(record: Record<string, unknown>): TranscriptRecord | null {
   if (record.type === 'custom-title' && typeof record.customTitle === 'string') {
     return { kind: 'title', title: record.customTitle, source: 'custom' }
@@ -135,8 +125,6 @@ function readTitle(record: Record<string, unknown>): TranscriptRecord | null {
   return null
 }
 
-// The two bookkeeping records a reading draws from: the pull request the CLI linked the Session
-// to, and the point where it condensed the history.
 function readMark(record: Record<string, unknown>): TranscriptRecord | null {
   if (
     record.type === 'pr-link' &&

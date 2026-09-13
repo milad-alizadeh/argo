@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
+import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { HarnessControl, SessionCli } from '../harness/harnesses'
@@ -10,6 +11,7 @@ import { useClaudePermission } from '../hooks/useClaudePermission'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
+import type { SessionFeedRow } from '../types'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -17,6 +19,7 @@ type SessionShellProps = {
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
   selectedSessionId: string | null
+  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 
 const SESSION_SPLIT = {
@@ -35,6 +38,7 @@ export function SessionScreenView() {
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
   const harness: HarnessControl =
     selectedSessionId === null
       ? { cli: lastHarness, onChange: chooseHarness }
@@ -42,12 +46,12 @@ export function SessionScreenView() {
   const cli = harness.cli
   const composer = useSessionComposer({ cli, cockpit, navigate, roster, selectedSessionId })
   const permission = useClaudePermission(selectedSessionId)
-
   return (
     <SessionShell
       feed={feed}
       feedError={feedError}
       selectedSessionId={selectedSessionId}
+      onOpenEvidence={setEvidence}
       composer={
         <SessionComposerArea
           composer={composer}
@@ -56,7 +60,13 @@ export function SessionScreenView() {
           harness={harness}
         />
       }
-      inspector={<SessionFacts session={session} />}
+      inspector={
+        evidence === null ? (
+          <SessionFacts session={session} />
+        ) : (
+          <SessionEvidenceInspector evidence={evidence} />
+        )
+      }
     />
   )
 }
@@ -73,6 +83,7 @@ export function SessionShell({
   feed,
   feedError,
   selectedSessionId,
+  onOpenEvidence,
 }: SessionShellProps) {
   return (
     <main
@@ -89,9 +100,21 @@ export function SessionShell({
               <span className="flex-1" />
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1">
-              <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} />
+              <BasicFeed
+                feed={feed}
+                failure={feedError}
+                selectedSessionId={selectedSessionId}
+                onOpenEvidence={onOpenEvidence}
+              />
             </section>
-            <section aria-label="Session composer" className="shrink-0 border-t border-border/60">
+            <section
+              aria-label="Session composer"
+              className="relative isolate shrink-0 bg-background"
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+              />
               {composer}
             </section>
           </section>
