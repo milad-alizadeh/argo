@@ -8,9 +8,9 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 ## Where things are written down
 
-- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
-  screenshot reaches a body only when a person drags it in; an agent records the Storybook route
-  instead, and keeps its own captures in a temp dir. Every issue is
+- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. An
+  agent attaches a screenshot to a body itself, through github.com in Chrome, and keeps no
+  capture in git. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
   Before triage, read `docs/agents/triage-labels.md`.
@@ -21,7 +21,7 @@ Everything here is a fact about this repository. Process belongs to the skill th
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
   Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
-  Code comments cite it as `CONTEXT.md L1 · Binding`. Change a term only after
+  Code comments cite it as `CONTEXT.md L1 · Connection`. Change a term only after
   `docs/domain/rationale.md`. A concept the model does not name is a signal: either the name is
   invented and wants reconsidering, or the gap is real and wants recording.
 - **Decisions** — `docs/adr/`. Nothing loads these. Read the ones covering an area before
@@ -144,23 +144,21 @@ the naming guard and the push guard both let it through.
 
 `skills-lock.json` is the bundle manifest and this repo's install record. **`skills add` only
 adds**, so renaming or deleting a skill means deleting the installed copy by hand, and editing
-one of Argo's own skills needs a push to `main` before a reinstall sees it. **The install is
-interactive and a `--yes` add leaves Claude Code with nothing**: the exact commands, the question
-that trap turns on, and the add/sweep workflow are `packages/argo-skills/README.md`.
+one of Argo's own skills needs a push to `main` before a reinstall sees it. **Name the agents on
+every add** (`--agent claude-code codex --yes`), or `--yes` installs for every agent the machine
+has: the exact commands and the add/sweep workflow are `packages/argo-skills/README.md`.
 
 ## Design work
 
-**A design is a ticket and a throwaway branch, and neither outlives the screen.** The
-measurements, the frozen component names and the state renders are the body of the **design
-ticket**; its explorable page is the only content of `design/#<N>-<screen>`, a branch named for
-that ticket and reaped by `bun run worktrees:gc` once it closes. **Nothing lands on `main`**, so
-there is no third copy to drift from the other two, and a ticket whose branch is gone is still
-the whole spec.
+For UI work, read `docs/agents/code-review.md` for the third review axis, `interface-review`.
+The implementation ticket records selected decisions and their reasons.
 
-A UI ticket whose screen has a design ticket is built with `design-to-code`.
+Existing design tickets remain optional specification inputs.
+Their `design/#<N>-<screen>` branches remain readable until cleanup removes them after ticket closure.
+New UI work needs no separate design ticket or permanent design page.
 
 `docs/design-stack.md` is the stack: the token contract, the `docs/design/` kit, where components
-live, and the render commands. Every design skill reads it rather than guessing a framework.
+live, and the render commands. Interface review reads it rather than guessing the stack.
 
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.
@@ -169,7 +167,10 @@ goes there.
 
 **A component is reviewed in Storybook, and a screen is reviewed by running a render command.**
 Vercel owns Storybook preview deployments. Its project configuration and credentials stay outside
-this repository. The local commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
+this repository. When a preview finishes, `storybook-links.yml` writes every story that renders a
+file the PR changed, linked to that commit's preview, between the `storybook-links` markers in the
+PR body (#1953): that section is CI's, and the rest of the body is the author's. The local
+commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
 
 **Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
 ref holds one, because a PNG in a git object carries no version.
@@ -202,8 +203,8 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   A new variant of an existing kind is one new file plus one registration line.
 - **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
   beside its only caller and hoists on the third.
-- **Tokens by name.** Every colour, spacing, radius, duration and type size is a named token
-  from the design package, never an inline literal or hex.
+- **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
+  Resolve experimental values into those tokens before review.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 

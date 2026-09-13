@@ -2,7 +2,7 @@
 // never carries one Session's rows under another's name, and the renderer authority the Session
 // bridge asserts for itself.
 import assert from 'node:assert/strict'
-import { listing, openSession } from './session-roster-cases'
+import { openSession } from './session-roster-cases'
 
 // The three things a reader does with a Feed on the first open: it stands at the tail, it says
 // which Session it is showing, and its prose can be selected with a mouse.
@@ -110,12 +110,8 @@ export async function proveNoMislabelledFeed(page) {
 // height, laid out by Blink rather than by the pass (ADR-0033). The Session opened here is opened
 // for the FIRST time in this run, so a real measure pass stands between the choice and the draw
 // and the window is frames wide rather than instants; a Session already measured answers from the
-// cache inside one flush and leaves nothing to sample.
-//
-// What this gates, measured rather than assumed: two guards hold the window shut — the renderer's
-// `shown`, which keeps rows and the chosen id travelling together, and `useSettledFeed`'s own
-// `settledHere`. Removing either alone leaves the proof green, and removing both turns this case
-// red. It is the pair that is asserted here, not one of them.
+// cache and leaves nothing to sample. This gates the `shown` contract and `useSettledFeed`'s own
+// `settledHere` together.
 export async function proveNoUnmeasuredRow(page) {
   await openSession(page, 'Pick the ink', 'askPending')
   const watching = watchFrames(page, 'resumeParent')
@@ -138,6 +134,6 @@ export async function proveRendererAuthority(page, application) {
     await BrowserWindow.getAllWindows()[0].loadURL('data:text/html,<h1>Untrusted page</h1>')
   })
   await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
-  const reply = await page.evaluate((value) => window.argo.listSessions(value), listing)
+  const reply = await page.evaluate(() => window.argo.listSessions())
   assert.equal(reply.code, 'access-denied')
 }

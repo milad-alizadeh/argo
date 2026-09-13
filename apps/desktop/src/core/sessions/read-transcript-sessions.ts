@@ -4,10 +4,10 @@ import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
 import {
-  isSessionFeedRequest,
-  isSessionListRequest,
   type SessionFeedRequest,
   sessionError,
+  sessionFeedRequestSchema,
+  sessionListRequestSchema,
 } from './contract'
 import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
 import type { SessionFeedRow, SessionRosterRow } from './models'
@@ -23,6 +23,20 @@ type TranscriptSessionSource = {
   discoverSessions: () => Promise<Discovery>
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
+}
+
+// A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
+// discovery sweep alone can miss it, or hold a stale posture for one it has already found.
+export function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]): Discovery {
+  const managedById = new Map(managed.map((session) => [session.id, session]))
+  const observed = discovered.rows.map((session) => {
+    const held = managedById.get(session.id)
+    return held === undefined ? session : { ...session, posture: held.posture }
+  })
+  const unobserved = managed.filter(
+    (session) => !discovered.rows.some(({ id }) => id === session.id),
+  )
+  return { ...discovered, rows: [...observed, ...unobserved] }
 }
 
 function versionFailure(value: unknown) {
@@ -75,29 +89,31 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
   return {
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
-      if (!isSessionListRequest(value)) return sessionError('invalid-request', null)
+      const parsed = sessionListRequestSchema.safeParse(value)
+      if (!parsed.success) return sessionError('invalid-request', null)
       try {
         const discovery = await source.discoverSessions()
         return {
           version: 1,
           type: 'session.listed',
-          requestId: value.requestId,
+          requestId: parsed.data.requestId,
           sessions: discovery.rows,
           filesFound: discovery.filesFound,
           filesRead: discovery.filesRead,
           filesUnreadable: discovery.filesUnreadable,
         }
       } catch (error) {
-        return sessionError(readFailure(error), value.requestId)
+        return sessionError(readFailure(error), parsed.data.requestId)
       }
     },
     async readSessionFeed(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
-      if (!isSessionFeedRequest(value)) return sessionError('invalid-request', null)
+      const parsed = sessionFeedRequestSchema.safeParse(value)
+      if (!parsed.success) return sessionError('invalid-request', null)
       try {
-        return await readFeed({ source, feeds, value })
+        return await readFeed({ source, feeds, value: parsed.data })
       } catch (error) {
-        return sessionError(readFailure(error), value.requestId)
+        return sessionError(readFailure(error), parsed.data.requestId)
       }
     },
   }

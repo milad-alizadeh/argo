@@ -1,160 +1,111 @@
 // The two operations the renderer holds for observed Sessions, and the shapes both sides parse.
 // Named operations only: the renderer never receives the IPC object or picks a channel.
-import { hasKeys, isIdentifier, isRecord } from '../../boundary'
-import type { SessionFeedRow, SessionRosterRow } from './models'
+import { z } from 'zod'
+import { identifierSchema } from '../../boundary'
+import {
+  claudeSessionAcceptedSchema,
+  claudeSessionPermissionReadSchema,
+  claudeSessionStartedSchema,
+} from './claude-contract'
+import { codexSessionAcceptedSchema, codexSessionStartedSchema } from './codex-contract'
+import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { sessionErrorSchema } from './session-error'
 
-export const SESSION_LIST_CHANNEL = 'argo:session:list'
-export const SESSION_FEED_CHANNEL = 'argo:session:feed'
-export const SESSION_CLAUDE_START_CHANNEL = 'argo:session:claude:start'
+export * from './claude-contract'
+export * from './codex-contract'
+export * from './session-error'
 
-export type SessionListRequest = { version: 1; type: 'session.list'; requestId: string }
-export type SessionFeedRequest = {
-  version: 1
-  type: 'session.feed'
-  requestId: string
-  sessionId: string
+export const sessionListRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.list'),
+  requestId: identifierSchema,
+})
+export type SessionListRequest = z.infer<typeof sessionListRequestSchema>
+export const sessionFeedRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
   // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
   // a reloaded or evicted deck without rows to draw.
-  revision: string | null
-}
+  revision: z.string().nullable(),
+})
+export type SessionFeedRequest = z.infer<typeof sessionFeedRequestSchema>
 
-export type ClaudeSessionStartRequest = {
-  version: 1
-  type: 'session.claude.start'
-  requestId: string
-  cwd: string
-  prompt: string
-}
-
-export type ClaudeSessionStarted = {
-  version: 1
-  type: 'session.claude.started'
-  requestId: string
-  sessionId: string
-}
-
-export type SessionsListed = {
-  version: 1
-  type: 'session.listed'
-  requestId: string
-  sessions: SessionRosterRow[]
+export const sessionsListedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.listed'),
+  requestId: identifierSchema,
+  sessions: z.array(sessionRosterRowSchema),
   // What the pass reached, stated rather than implied. A Roster that read 200 of 1,055 files
   // says so; one that silently showed 200 rows would read as the whole machine.
-  filesFound: number
-  filesRead: number
-  filesUnreadable: number
-}
+  filesFound: z.number(),
+  filesRead: z.number(),
+  filesUnreadable: z.number(),
+})
+export type SessionsListed = z.infer<typeof sessionsListedSchema>
 
-export type SessionFeedRead = {
-  version: 1
-  type: 'session.feed.read'
-  requestId: string
+export const sessionFeedReadSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.read'),
+  requestId: identifierSchema,
   // The id that was ASKED for, echoed so the caller can prove the reply is its own.
-  sessionId: string
+  sessionId: identifierSchema,
   // The Session that answered. A retired id follows the chain that took it, so this is not always
   // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
   // is here so a caller can tell that the two differ, and it is what the proofs assert against.
-  chainId: string
+  chainId: identifierSchema,
   // A main-process token for the exact projected document this reply carries. A different
   // revision must be measured before its rows enter the viewport, even when ids stay the same.
-  revision: string
-  rows: SessionFeedRow[]
-}
+  revision: z.string(),
+  rows: z.array(sessionFeedRowSchema),
+})
+export type SessionFeedRead = z.infer<typeof sessionFeedReadSchema>
 
 // The selected chain's file stamps did not move, so the main process returns this compact reply
 // instead of copying an unchanged whole document over IPC on every observation pass.
-export type SessionFeedUnchanged = {
-  version: 1
-  type: 'session.feed.unchanged'
-  requestId: string
-  sessionId: string
-  chainId: string
-  revision: string
-}
+export const sessionFeedUnchangedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.unchanged'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  chainId: identifierSchema,
+  revision: z.string(),
+})
+export type SessionFeedUnchanged = z.infer<typeof sessionFeedUnchangedSchema>
 
-export const SESSION_ERRORS = {
-  'missing-session': 'Argo cannot find this Session.',
-  'invalid-request': 'The Session request is invalid.',
-  'unsupported-version': 'This Session contract version is not supported.',
-  'transcripts-unavailable': 'Argo cannot read the Claude transcript folder.',
-  'access-denied': 'Argo cannot access these Sessions.',
-  'internal-error': 'Argo could not read these Sessions.',
-  'invalid-response': 'Argo received an invalid Session response.',
-  'connection-lost': 'The connection to Argo was lost.',
-  'cli-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',
-  'launch-failed': 'Argo could not start Claude Code.',
-} as const
+export const sessionListReplySchema = z.union([sessionsListedSchema, sessionErrorSchema])
+export const sessionFeedReplySchema = z.union([
+  sessionFeedReadSchema,
+  sessionFeedUnchangedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionStartReplySchema = z.union([
+  claudeSessionStartedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionSendReplySchema = z.union([
+  claudeSessionAcceptedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionPermissionReplySchema = z.union([
+  claudeSessionPermissionReadSchema,
+  sessionErrorSchema,
+])
+export const codexSessionStartReplySchema = z.union([codexSessionStartedSchema, sessionErrorSchema])
+export const codexSessionSendReplySchema = z.union([codexSessionAcceptedSchema, sessionErrorSchema])
 
-export type SessionErrorCode = keyof typeof SESSION_ERRORS
-export type SessionError = {
-  version: 1
-  type: 'session.error'
-  requestId: string | null
-  code: SessionErrorCode
-  message: string
-}
+export type SessionListReply = z.infer<typeof sessionListReplySchema>
+export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
+export type ClaudeSessionStartReply = z.infer<typeof claudeSessionStartReplySchema>
+export type ClaudeSessionSendReply = z.infer<typeof claudeSessionSendReplySchema>
+export type ClaudeSessionInterruptReply = z.infer<typeof claudeSessionSendReplySchema>
+export type ClaudeSessionPermissionReply = z.infer<typeof claudeSessionPermissionReplySchema>
+export type ClaudeSessionPermissionDecisionReply = z.infer<typeof claudeSessionSendReplySchema>
+export type CodexSessionStartReply = z.infer<typeof codexSessionStartReplySchema>
+export type CodexSessionSendReply = z.infer<typeof codexSessionSendReplySchema>
+export type CodexSessionInterruptReply = z.infer<typeof codexSessionSendReplySchema>
 
-export type SessionListReply = SessionsListed | SessionError
-export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
-export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
-
-export function sessionError(code: SessionErrorCode, requestId: string | null): SessionError {
-  return { version: 1, type: 'session.error', requestId, code, message: SESSION_ERRORS[code] }
-}
-
-export function isSessionListRequest(value: unknown): value is SessionListRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId']) &&
-    value.version === 1 &&
-    value.type === 'session.list' &&
-    isIdentifier(value.requestId)
-  )
-}
-
-export function isSessionFeedRequest(value: unknown): value is SessionFeedRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'revision']) &&
-    value.version === 1 &&
-    value.type === 'session.feed' &&
-    isIdentifier(value.requestId) &&
-    isIdentifier(value.sessionId) &&
-    (value.revision === null || typeof value.revision === 'string')
-  )
-}
-
-export function isClaudeSessionStartRequest(value: unknown): value is ClaudeSessionStartRequest {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'cwd', 'prompt']) &&
-    value.version === 1 &&
-    value.type === 'session.claude.start' &&
-    isIdentifier(value.requestId) &&
-    typeof value.cwd === 'string' &&
-    value.cwd.length > 0 &&
-    typeof value.prompt === 'string' &&
-    value.prompt.trim().length > 0
-  )
-}
-
-export function isClaudeSessionStarted(value: unknown): value is ClaudeSessionStarted {
-  return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId']) &&
-    value.version === 1 &&
-    value.type === 'session.claude.started' &&
-    isIdentifier(value.requestId) &&
-    isIdentifier(value.sessionId)
-  )
-}
-
-export function isSessionError(value: Record<string, unknown>): value is SessionError {
-  return (
-    hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
-    (value.requestId === null || isIdentifier(value.requestId)) &&
-    Object.entries(SESSION_ERRORS).some(
-      ([code, message]) => value.code === code && value.message === message,
-    )
-  )
-}
+// This table is the Session IPC contract. Adding an operation means adding its four wire facts
+// here and one handler; clients and bridges select this entry rather than maintaining a second
+// channel or operation list.

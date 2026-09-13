@@ -1,7 +1,21 @@
 import type { BrowserWindow } from 'electron'
+import type { ClaudeSessionDriver } from '../../agents/claude/drive/claude-session-driver'
+import { driveClaudeSession } from '../../agents/claude/drive/drive-session'
+import {
+  decideClaudePermission,
+  readClaudePermission,
+} from '../../agents/claude/drive/permission-session'
+import {
+  type ClaudeSessionStarter,
+  startClaudeSession,
+} from '../../agents/claude/drive/start-session'
+import type { CodexSessionDriver } from '../../agents/codex/drive/codex-session-driver'
+import { driveCodexSession } from '../../agents/codex/drive/drive-session'
+import { type CodexSessionStarter, startCodexSession } from '../../agents/codex/drive/start-session'
 import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
-import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL, sessionError } from './contract'
+import { sessionError } from './contract'
+import { SESSION_OPERATIONS } from './operations'
 
 export type SessionReader = {
   listSessions(request: unknown): Promise<unknown>
@@ -12,9 +26,16 @@ export type SessionReader = {
 // renderer URL this app loaded. A page that navigated away holds no Session.
 export function attachSessionBridge(
   window: BrowserWindow,
-  storage: { reader: SessionReader; rendererURL: string },
+  storage: {
+    driver: ClaudeSessionDriver
+    codexDriver: CodexSessionDriver
+    codexStarter: CodexSessionStarter
+    reader: SessionReader
+    starter: ClaudeSessionStarter
+    rendererURL: string
+  },
 ): void {
-  const answer = (channel: string, read: (request: unknown) => Promise<unknown>) => {
+  const answer = (channel: string, read: (request: unknown) => Promise<unknown> | unknown) => {
     window.webContents.ipc.handle(channel, (event, request: unknown) => {
       if (!isTrustedRendererFrame(event, window, storage.rendererURL)) {
         return sessionError('access-denied', requestIdentifier(request))
@@ -22,6 +43,24 @@ export function attachSessionBridge(
       return read(request)
     })
   }
-  answer(SESSION_LIST_CHANNEL, storage.reader.listSessions)
-  answer(SESSION_FEED_CHANNEL, storage.reader.readSessionFeed)
+  const handlers = {
+    list: storage.reader.listSessions,
+    feed: storage.reader.readSessionFeed,
+    startClaude: (request: unknown) => startClaudeSession(request, storage.starter),
+    sendClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
+    interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
+    readClaudePermission: (request: unknown) => readClaudePermission(request, storage.driver),
+    decideClaudePermission: (request: unknown) => decideClaudePermission(request, storage.driver),
+    startCodex: (request: unknown) => startCodexSession(request, storage.codexStarter),
+    sendCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
+    interruptCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
+  } satisfies Record<
+    keyof typeof SESSION_OPERATIONS,
+    (request: unknown) => Promise<unknown> | unknown
+  >
+  for (const operation of Object.keys(SESSION_OPERATIONS) as Array<
+    keyof typeof SESSION_OPERATIONS
+  >) {
+    answer(SESSION_OPERATIONS[operation].channel, handlers[operation])
+  }
 }

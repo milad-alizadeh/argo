@@ -8,9 +8,9 @@ pull request arrives in well under a second where the poll would take up to a mi
 only one. `gh` remains how *agents* operate the repo — a different layer.
 
 A port names the *kind* of external truth; an **Account** is who Argo is when it reads, and a
-**Binding** is which Account one Project reads through. Authorizing is Account-level and done
-once per identity per machine; choosing is Binding-level and done per Project — so a second
-Project on an already-authorized provider **binds without a second OAuth round-trip**.
+**Connection** is which Account one Project reads through. Authorizing is Account-level and done
+once per identity per machine; choosing is Connection-level and done per Project — so a second
+Project on an already-authorized provider **connects without a second OAuth round-trip**.
 
 - **Ticket provider** — sources intent. GitHub Issues / Linear for v1; pluggable. The read
   contract is children **in author order** (native on every provider); per ticket the verbatim

@@ -1,6 +1,6 @@
 import type { SessionChain } from './chains'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
-import type { TranscriptRecord } from './transcript'
+import type { ToolCall, TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
 
@@ -11,20 +11,54 @@ export function feedProjection(rows: readonly SessionFeedRow[]): string {
   return JSON.stringify(rows)
 }
 
-function rowsOfRecord(record: TranscriptRecord, position: string): SessionFeedRow[] {
+function evidenceKind(call: ToolCall): 'output' | 'document' | 'diff' {
+  if (call.name === 'Bash') return 'output'
+  if (call.name === 'Read') return 'document'
+  return 'diff'
+}
+
+function toolRow(
+  call: ToolCall,
+  results: Map<string, string | null>,
+): Extract<SessionFeedRow, { shape: 'tool' }> {
+  const recorded = results.get(call.id) ?? null
+  const path = typeof call.input.file_path === 'string' ? call.input.file_path : call.name
+  const kind = evidenceKind(call)
+  const source =
+    kind === 'diff' &&
+    typeof call.input.old_string === 'string' &&
+    typeof call.input.new_string === 'string'
+      ? `-${call.input.old_string}\n+${call.input.new_string}`
+      : recorded
+  return {
+    shape: 'tool',
+    id: call.id,
+    label:
+      call.name === 'Bash' ? String(call.input.command ?? 'Ran command') : `${call.name} ${path}`,
+    evidence: source === null ? null : { kind, title: path, source },
+  }
+}
+
+function rowsOfRecord(
+  record: TranscriptRecord,
+  position: string,
+  results: Map<string, string | null>,
+): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
     return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
-  return record.blocks.map((block, index) => {
+  const prose: SessionFeedRow[] = record.blocks.map((block, index) => {
     const id = `${record.uuid}:${index}`
     if (block.shape === 'prose') return { shape: 'prose', id, role: record.role, text: block.text }
     if (block.shape === 'thought') return { shape: 'thought', id, text: block.text }
     if (block.shape === 'marker') return { shape: 'marker', id, marker: block.marker }
     return { shape: 'source', id, role: record.role, label: block.label, source: block.source }
   })
+  const tools = record.toolCalls.map((call) => toolRow(call, results))
+  return [...prose, ...tools]
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -38,10 +72,19 @@ function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] {
 }
 
 export function projectFeed(chain: SessionChain): SessionFeedRow[] {
+  const results = new Map(
+    chain.files
+      .flatMap((file) =>
+        file.records.flatMap((record) =>
+          record.kind === 'message' ? (record.toolResults ?? []) : [],
+        ),
+      )
+      .map((result) => [result.callId, result.content] as const),
+  )
   return withoutRepeatedBreaks(
     chain.files.flatMap((file, fileIndex) =>
       file.records.flatMap((record, recordIndex) =>
-        rowsOfRecord(record, `${fileIndex}:${recordIndex}`),
+        rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
       ),
     ),
   )

@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionClient } from '@/core/sessions/client.ts'
+import { claudeSessionStartRequestSchema } from '@/core/sessions/contract.ts'
 
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 const feed = {
-  version: 1,
-  type: 'session.feed',
-  requestId: 'feed-1',
   sessionId: 'session-a',
   revision: null,
 }
@@ -14,7 +11,6 @@ const feed = {
 const listed = {
   version: 1,
   type: 'session.listed',
-  requestId: 'list-1',
   sessions: [],
   filesFound: 0,
   filesRead: 0,
@@ -23,7 +19,6 @@ const listed = {
 const read = {
   version: 1,
   type: 'session.feed.read',
-  requestId: 'feed-1',
   sessionId: 'session-a',
   chainId: 'session-a',
   revision: '1:row',
@@ -31,16 +26,22 @@ const read = {
 }
 
 function clientReturning(reply) {
-  return createSessionClient(async () => reply)
+  return createSessionClient(async (_operation, request) => ({
+    ...reply,
+    requestId: request.requestId,
+  }))
 }
 
 test('passes a reply of the shape it asked for through', async () => {
-  assert.deepEqual(await clientReturning(listed).listSessions(listing), listed)
-  assert.deepEqual(await clientReturning(read).readSessionFeed(feed), read)
+  const listedReply = await clientReturning(listed).listSessions()
+  assert.deepEqual({ ...listedReply, requestId: undefined }, { ...listed, requestId: undefined })
+  const feedReply = await clientReturning(read).readSessionFeed(feed)
+  assert.deepEqual({ ...feedReply, requestId: undefined }, { ...read, requestId: undefined })
 })
 
 test('refuses a reply that answers a different request', async () => {
-  const reply = await clientReturning({ ...listed, requestId: 'list-2' }).listSessions(listing)
+  const client = createSessionClient(async () => ({ ...listed, requestId: 'list-2' }))
+  const reply = await client.listSessions()
   assert.equal(reply.code, 'invalid-response')
 })
 
@@ -50,7 +51,8 @@ test('refuses a Feed that answers for a different Session', async () => {
   const reply = await clientReturning({ ...read, sessionId: 'session-b' }).readSessionFeed(feed)
   assert.equal(reply.code, 'invalid-response')
   const followed = { ...read, chainId: 'session-origin' }
-  assert.deepEqual(await clientReturning(followed).readSessionFeed(feed), followed)
+  const result = await clientReturning(followed).readSessionFeed(feed)
+  assert.deepEqual({ ...result, requestId: undefined }, { ...followed, requestId: undefined })
 })
 
 test('refuses a reply that is not one of the shapes this contract holds', async () => {
@@ -72,7 +74,7 @@ test('names a lost connection, which the renderer can see no other way', async (
   const client = createSessionClient(async () => {
     throw new Error('the window went away')
   })
-  assert.equal((await client.listSessions(listing)).code, 'connection-lost')
+  assert.equal((await client.listSessions()).code, 'connection-lost')
   assert.equal((await client.readSessionFeed(feed)).code, 'connection-lost')
 })
 
@@ -80,32 +82,31 @@ test('passes an error reply through as itself', async () => {
   const error = {
     version: 1,
     type: 'session.error',
-    requestId: 'list-1',
     code: 'access-denied',
     message: 'Argo cannot access these Sessions.',
   }
-  assert.deepEqual(await clientReturning(error).listSessions(listing), error)
+  const reply = await clientReturning(error).listSessions()
+  assert.deepEqual({ ...reply, requestId: undefined }, { ...error, requestId: undefined })
 })
 
 test('starts a managed Claude Session through the named Session action', async () => {
   const request = {
-    version: 1,
-    type: 'session.claude.start',
-    requestId: 'start-1',
     cwd: '/projects/argo',
     prompt: 'Inspect the failing test.',
   }
   const reply = {
     version: 1,
     type: 'session.claude.started',
-    requestId: 'start-1',
     sessionId: 'managed-1',
   }
   const client = createSessionClient(async (operation, received) => {
     assert.equal(operation, 'startClaude')
-    assert.deepEqual(received, request)
-    return reply
+    const parsed = claudeSessionStartRequestSchema.parse(received)
+    assert.equal(parsed.cwd, request.cwd)
+    assert.equal(parsed.prompt, request.prompt)
+    return { ...reply, requestId: parsed.requestId }
   })
 
-  assert.deepEqual(await client.startClaudeSession(request), reply)
+  const result = await client.startClaudeSession(request)
+  assert.deepEqual({ ...result, requestId: undefined }, { ...reply, requestId: undefined })
 })

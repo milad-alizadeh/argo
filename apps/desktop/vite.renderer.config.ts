@@ -8,8 +8,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, 'src'),
-    },
+    dedupe: ['react', 'react-dom'],
+    alias: [
+      { find: '@', replacement: path.resolve(import.meta.dirname, 'src') },
+      { find: /^cn$/, replacement: path.resolve(import.meta.dirname, 'src/renderer/lib/utils.ts') },
+    ],
   },
 })

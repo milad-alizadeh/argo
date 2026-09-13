@@ -2,11 +2,11 @@
 // window frame follows the page, and it writes the choice to `userData` (apps/desktop/AGENTS.md).
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { type BrowserWindow, nativeTheme } from 'electron'
+import { type BrowserWindow, type IpcMainInvokeEvent, nativeTheme } from 'electron'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import {
   APPEARANCE_CHANGED_CHANNEL,
-  APPEARANCE_CHANNEL,
+  APPEARANCE_OPERATIONS,
   type Appearance,
   type AppearanceState,
   DEFAULT_APPEARANCE,
@@ -51,16 +51,25 @@ export type AppearanceStorage = { userData: string; rendererURL: string }
 
 export function attachAppearanceBridge(window: BrowserWindow, storage: AppearanceStorage): void {
   const { userData, rendererURL } = storage
-  window.webContents.ipc.handle(APPEARANCE_CHANNEL, async (event, chosen: unknown) => {
-    // The same authority check the Project bridge performs, through the same function: a frame that
-    // is not the window's own trusted document changes nothing, and reads back the state rather
-    // than an error, because the appearance is not a secret.
-    if (isTrustedRendererFrame(event, window, rendererURL) && isAppearance(chosen)) {
-      nativeTheme.themeSource = chosen
-      await writeAppearance(userData, chosen)
-    }
-    return state()
-  })
+  const handlers = {
+    get: () => state(),
+    set: async (event: IpcMainInvokeEvent, request: unknown) => {
+      const parsed = APPEARANCE_OPERATIONS.set.request.safeParse(request)
+      if (isTrustedRendererFrame(event, window, rendererURL) && parsed.success) {
+        nativeTheme.themeSource = parsed.data.appearance
+        await writeAppearance(userData, parsed.data.appearance)
+      }
+      return state()
+    },
+  } satisfies Record<
+    keyof typeof APPEARANCE_OPERATIONS,
+    (event: IpcMainInvokeEvent, request: unknown) => Promise<AppearanceState> | AppearanceState
+  >
+  for (const operation of Object.keys(APPEARANCE_OPERATIONS) as Array<
+    keyof typeof APPEARANCE_OPERATIONS
+  >) {
+    window.webContents.ipc.handle(APPEARANCE_OPERATIONS[operation].channel, handlers[operation])
+  }
   // System has to follow the operating system while the window is open, and only the main process
   // is told when that changes.
   const push = () => {

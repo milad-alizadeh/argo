@@ -46,21 +46,16 @@ guessing restores files the project never had.
 
 ### 2. First install
 
-Ask the **user** to run this from the project root, interactively:
+Run this from the project root:
 
 ```sh
-npx skills@latest add milad-alizadeh/argo
+npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes
 ```
 
-They answer two wizard questions. At "Which agents do you want to install to?" they pick
-`claude-code` plus at least one universal agent (`codex`, `cursor`). At "Installation method"
-they pick Symlink, the recommended one. That pairing is what makes the CLI build
-`.claude/skills/<name> -> ../../.agents/skills/<name>` itself.
-
-Interactive matters. The method question is asked only when the chosen agents span more than one
-skills directory: agents that all share one directory get copy mode silently and Claude Code gets
-nothing, and `--yes` suppresses the question the same way. So this run is interactive and spans
-both directories, or Claude Code ends up with no skills.
+It asks nothing. The skills land in `.agents/skills/`, and the CLI builds
+`.claude/skills/<name> -> ../../.agents/skills/<name>` for Claude Code. Keep `--agent`: without
+it, `--yes` installs for every agent the machine has. Add another agent to the list when the user
+uses one. Step 2 is done when `.claude/skills/` holds a symlink for every installed skill.
 
 ### 3. Repeat run, and update
 
@@ -71,8 +66,7 @@ npx skills update --project --yes
 ```
 
 It reads the installed agent set off disk (it prints, for example, `Updating for: Universal,
-Claude Code`), so `--yes` is safe here where it is not in step 2: a fresh non-interactive install
-drops Claude Code, an update cannot. It fetches the latest upstream content, not a pinned
+Claude Code`), so it needs no `--agent`. It fetches the latest upstream content, not a pinned
 revision. A lock entry may carry a `ref` field, Argo's entries carry none, so the default branch
 is what resolves. `computedHash` is drift detection, not a pin.
 
@@ -195,9 +189,8 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Design infra and the token values | `setup-design-infra` | project has UI | 2 |
-| Always-on task tracking | this skill, below | always | 3 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
+| Always-on task tracking | this skill, below | always | 2 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 3 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -207,7 +200,7 @@ Done when the user has answered the one question.
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
 
-Five sections are not skills. Each is a file in `templates/`, appended to the project doc that
+The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
 any section of the same heading in place.
 
@@ -232,8 +225,19 @@ than invent one; where no tracker is detected, skip the section.
 
 Done when the installed Labels section has zero hits for `{{`.
 
+### Connect interface review
+
+When the project has UI and `interface-review` is installed, read `templates/ui-workflow.md`.
+Install its `UI work` section in `docs/agents/code-review.md`, replacing that section on repeat runs.
+Preserve the document's other sections. Create the document if it is absent.
+Add a pointer in `AGENTS.md` to read that section for UI work.
+Update `CLAUDE.md` only when it carries independent instructions rather than importing `AGENTS.md`.
+
+Keep the installed review and implementation skills unchanged.
+Done when UI work reaches the third review axis and non-UI work retains the existing route.
+
 ## Phase 4: report
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
-the reason, and how to re-run any single piece (`/setup-<piece>`). If design infra was
-installed, the next step is `/prototype` on the first screen.
+the reason, and how to re-run each selected skill by its actual name.
+For UI work, point to the installed section in `docs/agents/code-review.md`.

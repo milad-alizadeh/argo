@@ -1,10 +1,10 @@
 ## Relationships (the whole graph)
 
-- **Project** `1—N` **Session**, `1—N` **Delivery**; holds **`0..1` Binding per port** (Work
+- **Project** `1—N` **Session**, `1—N` **Delivery**; holds **`0..1` Connection per port** (Work
   Item, Code host), which is what scopes the providers it reads.
-- **Account** `0—N` **Binding**, across any number of Projects; a **Binding** names exactly
+- **Account** `0—N` **Connection**, across any number of Projects; a **Connection** names exactly
   **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so
-  Account is the level a grant, a token and a revocation all sit at, and Binding is the level a
+  Account is the level a grant, a token and a revocation all sit at, and Connection is the level a
   provider *choice* and its health sit at.
 - **L1 triangle** (all optional): **Session—Ticket** (branchless-fallback assertion, else
   derived), **Session—Delivery** (**`0..1` at a time**, N over a resume chain),

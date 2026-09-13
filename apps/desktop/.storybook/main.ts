@@ -4,15 +4,21 @@ import tailwindcss from '@tailwindcss/vite'
 
 const config: StorybookConfig = {
   stories: ['../src/renderer/**/*.stories.@(ts|tsx|js|jsx)'],
+  addons: ['@storybook/addon-vitest'],
   framework: { name: '@storybook/react-vite', options: {} },
   viteFinal: async (viteConfig) => ({
     ...viteConfig,
     plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
     resolve: {
       ...viteConfig.resolve,
-      alias: {
-        '@': path.resolve(import.meta.dirname, '../src'),
-      },
+      dedupe: ['react', 'react-dom'],
+      alias: [
+        { find: '@', replacement: path.resolve(import.meta.dirname, '../src') },
+        {
+          find: /^cn$/,
+          replacement: path.resolve(import.meta.dirname, '../src/renderer/lib/utils.ts'),
+        },
+      ],
     },
   }),
 }

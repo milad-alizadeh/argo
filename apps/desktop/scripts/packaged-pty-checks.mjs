@@ -11,7 +11,7 @@
 // So nothing here trusts the step that was supposed to produce the property. It reads the asar
 // header, stats the unpacked files, and reads the fuse wire back out of the shipped binary.
 
-import { closeSync, openSync, readSync, statSync } from 'node:fs'
+import { closeSync, openSync, readFileSync, readSync, statSync } from 'node:fs'
 import path from 'node:path'
 import asar from '@electron/asar'
 import { FuseState, FuseV1Options, FuseVersion, getCurrentFuseWire } from '@electron/fuses'
@@ -20,12 +20,22 @@ const NODE_PTY = 'node_modules/node-pty'
 const HELPER = 'spawn-helper'
 const BINARY = 'pty.node'
 
-// What `npm ci --omit=dev` is expected to leave behind, and therefore the whole of what may ship.
-// `prune: false` hands the production install sole responsibility for keeping the package small,
-// and nothing else notices if it stops doing that: dropping `--omit=dev` would carry electron,
-// vite and the Forge toolchain into a signed app at exit code 0. #1791 chose node-pty on 400 KB
-// against 62 MB, so the size IS the decision. Add a name here when a real dependency arrives.
-const SHIPPABLE_MODULES = new Set(['node-pty', 'node-addon-api'])
+// The desktop lockfile records npm's production closure. `prune: false` hands the production
+// install sole responsibility for keeping the package small, so the artifact must contain no
+// package lock entry marked as dev.
+const packageLock = JSON.parse(
+  readFileSync(path.join(import.meta.dirname, '..', 'package-lock.json'), 'utf8'),
+)
+const SHIPPABLE_MODULES = new Set(
+  Object.entries(packageLock.packages)
+    .filter(([entry, manifest]) => entry.startsWith('node_modules/') && manifest.dev !== true)
+    .map(([entry]) =>
+      entry
+        .split('/')
+        .slice(1, entry.startsWith('node_modules/@') ? 3 : 2)
+        .join('/'),
+    ),
+)
 
 // node-pty's own search order, from `lib/utils.js`. It requires the FIRST of these that holds
 // `pty.node` and then derives `spawn-helper` from that same directory, rewriting `app.asar` to

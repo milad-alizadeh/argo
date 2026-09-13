@@ -13,47 +13,33 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import {
-  proveGeometry,
-  proveGrownSession,
-  proveOwnedHeights,
-  proveRepeatOpening,
-} from '../../../agents/claude/session-fake-driver/session-geometry-cases'
-import {
-  provePaneDrag,
-  proveWindowHoldsStill,
-} from '../../../agents/claude/session-fake-driver/session-pane-cases'
+  provePackagedResume,
+  writeFakeClaude,
+} from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { appExecutable, assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
   SESSION_CLAUDE_ARCHIVE_ENV,
+  SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
 import {
-  proveCodexFeed,
-  proveFirstOpen,
-  proveNoMislabelledFeed,
-  proveNoUnmeasuredRow,
-  proveRendererAuthority,
-} from './session-feed-cases'
-import {
   appendProse,
-  capture,
   growCodexTranscript,
-  growStranded,
-  openSessionsScreen,
   prepare,
+  removeProse,
   streamProse,
 } from './session-feed-fixture'
-import { writeFixtureTree } from './session-fixture-files'
+import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
+import { proveSessionPlan } from './session-plan-cases'
+import { updatePlan } from './session-plan-fixture'
 import {
-  proveArchive,
-  proveCodexReread,
-  proveContract,
-  proveReread,
-  proveRoster,
-} from './session-roster-cases'
+  provePackagedRosterRestart,
+  provePackagedRosterSelection,
+} from './session-roster-interaction-cases'
+import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
@@ -61,28 +47,38 @@ let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
   const fixture = await prepare(root)
-  application = await electron.launch({
-    executablePath: appExecutable(fixture.application),
-    env: {
-      ...process.env,
-      [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
-      [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
-      [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
-      [PROJECT_PROOF_STORE_ENV]: fixture.userData,
-      [ACCEPTANCE_ENV]: '0',
-    },
-    timeout: 30_000,
-  })
-  const page = await application.firstWindow()
-  page.setDefaultTimeout(30_000)
-  await application.evaluate(({ BrowserWindow }, viewport) => {
-    BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
-  }, SESSION_VIEWPORT)
-  await page.waitForFunction(
-    (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
-    SESSION_VIEWPORT,
-  )
-  await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+  const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
+  const launch = async () => {
+    application = await electron.launch({
+      executablePath: appExecutable(fixture.application),
+      env: {
+        ...process.env,
+        [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
+        [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
+        [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
+        [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
+        [PROJECT_PROOF_STORE_ENV]: fixture.userData,
+        [ACCEPTANCE_ENV]: '0',
+      },
+      timeout: 30_000,
+    })
+    const page = await application.firstWindow()
+    page.setDefaultTimeout(30_000)
+    await application.evaluate(({ BrowserWindow }, viewport) => {
+      BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
+    }, SESSION_VIEWPORT)
+    await page.waitForFunction(
+      (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
+      SESSION_VIEWPORT,
+    )
+    await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+    return page
+  }
+  const restart = async () => {
+    await application?.close()
+    return launch()
+  }
+  let page = await launch()
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   // Each case names itself as it passes, so the list printed below is what ran rather than a list
   // kept by hand beside it. The value comes back, so a case that also reports a number goes
@@ -92,58 +88,50 @@ try {
     cases.push(...names)
     return reading
   }
-  await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
-  await openSessionsScreen(page)
-  const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
-  const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
-  await capture(page, application, 'roster-and-feed.png')
-  const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
-    proveFirstOpen(page),
-  )
-  await capture(page, application, 'feed-at-the-tail.png')
-  const owned = await ran(['owned-heights', 'settled-font'], () => proveOwnedHeights(page))
-  const pane = await ran(['pane-drag'], () => provePaneDrag(page))
-  await ran(['window-holds-still'], () => proveWindowHoldsStill(page))
-  await ran(['repeat-opening'], () => proveRepeatOpening(page))
-  await ran(['no-mislabelled-feed'], () => proveNoMislabelledFeed(page))
-  await ran(['no-unmeasured-row'], () => proveNoUnmeasuredRow(page))
-  const live = await ran(['live-feed-anchor', 'kept-feed'], () =>
+  await ran(['session-shell'], () => proveSessionShell(page))
+  await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
+  await ran(['session-feed-reader-anchor'], () =>
     proveLiveFeed(page, {
+      transcripts: fixture.claudeTranscripts,
       append: appendProse,
       stream: streamProse,
-      transcripts: fixture.claudeTranscripts,
     }),
   )
-  await ran(['codex-feed'], () => proveCodexFeed(page))
-  await ran(['roster-reread'], () => proveReread(page, fixture.claudeTranscripts, writeFixtureTree))
-  await ran(['grown-session'], () =>
-    proveGrownSession(page, fixture.claudeTranscripts, growStranded),
+  const formatted = await ran(['session-feed-formatted'], () =>
+    proveFormattedFeed(page, {
+      root,
+      transcripts: fixture.claudeTranscripts,
+      append: appendProse,
+    }),
   )
-  await capture(page, application, 'roster-read-again.png')
-  await ran(['archived-sessions'], () => proveArchive(page))
-  await capture(page, application, 'roster-archived.png')
-  await ran(['codex-reread'], () =>
-    proveCodexReread(page, fixture.codexTranscripts, growCodexTranscript),
+  await ran(['session-plan'], () =>
+    proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
-  await ran(['renderer-authority'], () => proveRendererAuthority(page, application))
+  await ran(['session-roster-restart'], () =>
+    provePackagedRosterRestart(page, {
+      remove: () => removeProse(fixture.claudeTranscripts),
+      restart: async () => {
+        page = await restart()
+        return page
+      },
+      updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
+    }),
+  )
+  // Last, because the Session it starts becomes the newest row and reorders the Roster.
+  await ran(['session-claude-resume'], async () => {
+    page = await provePackagedResume(page, {
+      project: fixture.project,
+      restart,
+      transcripts: fixture.claudeTranscripts,
+    })
+  })
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
       ok: true,
       packaged: true,
-      sessions: roster.count,
-      measuredRows: geometry.rowHeights.length,
-      ownedRows: owned.rows,
-      // First-draw evidence for #1863, read off the shipped app rather than a dev server, for the
-      // first open of the `prose` fixture. Two numbers because one cannot answer both questions:
-      // `measureMs` is the pass itself, and `settleMs` is what the reader waited, which carries
-      // the three warm frames and the font wait as well. Reporting only the second would report a
-      // fixed floor of about three frames as if it were the cost of laying out this Feed.
-      measureMs: firstOpen.measureMs,
-      settleMs: firstOpen.settleMs,
-      pane,
-      live,
       cases,
+      formatted,
     }),
   )
 } finally {

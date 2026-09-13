@@ -1,15 +1,45 @@
 // The appearance contract, shared by the bundled main process and renderer. System, Light and
 // Dark, with System the default and System following the operating system (#1820).
-export const APPEARANCE_CHANNEL = 'argo:appearance'
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
 export const APPEARANCES = ['system', 'light', 'dark'] as const
-export type Appearance = (typeof APPEARANCES)[number]
+export const appearanceSchema = z.enum(APPEARANCES)
+export type Appearance = z.infer<typeof appearanceSchema>
 
 // `dark` is the resolved answer: what the window actually draws once System has asked the
 // operating system. The renderer needs both, because the control shows the choice and the page
 // shows the resolution.
-export type AppearanceState = { appearance: Appearance; dark: boolean }
+export const appearanceStateSchema = z.strictObject({
+  appearance: appearanceSchema,
+  dark: z.boolean(),
+})
+export type AppearanceState = z.infer<typeof appearanceStateSchema>
+
+// Appearance has two request shapes on its one private channel. The renderer selects a named
+// client operation; only the preload table resolves that operation to IPC.
+export const APPEARANCE_OPERATIONS = {
+  get: {
+    name: 'appearance.get',
+    channel: 'argo:appearance:get',
+    request: z.strictObject({
+      version: z.literal(1),
+      type: z.literal('appearance.get'),
+      requestId: z.string().min(1),
+    }),
+    reply: appearanceStateSchema,
+  },
+  set: {
+    name: 'appearance.set',
+    channel: 'argo:appearance:set',
+    request: z.strictObject({
+      version: z.literal(1),
+      type: z.literal('appearance.set'),
+      requestId: z.string().min(1),
+      appearance: appearanceSchema,
+    }),
+    reply: appearanceStateSchema,
+  },
+} as const
 
 export const DEFAULT_APPEARANCE: Appearance = 'system'
 
@@ -24,16 +54,11 @@ export function windowBackground(dark: boolean): string {
 }
 
 export function isAppearance(value: unknown): value is Appearance {
-  return APPEARANCES.includes(value as Appearance)
+  return appearanceSchema.safeParse(value).success
 }
 
 export function isAppearanceState(value: unknown): value is AppearanceState {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    isAppearance((value as AppearanceState).appearance) &&
-    typeof (value as AppearanceState).dark === 'boolean'
-  )
+  return appearanceStateSchema.safeParse(value).success
 }
 
 export type AppearanceClient = {
@@ -48,20 +73,32 @@ export type AppearanceClient = {
 const FALLBACK: AppearanceState = { appearance: DEFAULT_APPEARANCE, dark: true }
 
 export function createAppearanceClient(
-  invoke: (appearance: Appearance | null) => Promise<unknown>,
+  invoke: (operation: keyof typeof APPEARANCE_OPERATIONS, request: unknown) => Promise<unknown>,
   subscribe: (listener: (state: unknown) => void) => () => void,
 ): AppearanceClient {
-  async function ask(appearance: Appearance | null): Promise<AppearanceState> {
+  async function ask(
+    operation: keyof typeof APPEARANCE_OPERATIONS,
+    appearance: Appearance | null,
+  ): Promise<AppearanceState> {
     try {
-      const state = await invoke(appearance)
+      const request =
+        appearance === null
+          ? { version: 1, type: APPEARANCE_OPERATIONS.get.name, requestId: crypto.randomUUID() }
+          : {
+              version: 1,
+              type: APPEARANCE_OPERATIONS.set.name,
+              requestId: crypto.randomUUID(),
+              appearance,
+            }
+      const state = await invoke(operation, request)
       return isAppearanceState(state) ? state : FALLBACK
     } catch {
       return FALLBACK
     }
   }
   return {
-    getAppearance: () => ask(null),
-    setAppearance: (appearance) => ask(isAppearance(appearance) ? appearance : null),
+    getAppearance: () => ask('get', null),
+    setAppearance: (appearance) => ask('set', isAppearance(appearance) ? appearance : null),
     // The disposer is what keeps a remounted component from leaving a listener behind: React runs a
     // mount effect twice in development, and a subscription with no undo is then permanent.
     onAppearanceChanged(listener) {
@@ -71,3 +108,5 @@ export function createAppearanceClient(
     },
   }
 }
+
+import { z } from 'zod'

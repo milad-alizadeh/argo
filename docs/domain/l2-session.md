@@ -13,8 +13,9 @@
   channel dies with the owning process and cannot be re-adopted, so a `managed` session whose owner
   is gone demotes to **orphaned** — read-only *now*, because there is no live channel. It is not
   read-only forever: a Session is a resume-chain, and `claude --resume` continues one in a fresh
-  process, so the channel is **re-opened rather than re-adopted**. Selecting an orphaned Session
-  resumes it and it is `managed` again; CONVENTION comes back with the plugin the resume loads.
+  process, so the channel is **re-opened rather than re-adopted**. The next Turn sent to an
+  orphaned Session resumes it and it is `managed` again; CONVENTION comes back with the plugin the
+  resume loads. Selecting it only opens its Feed and composer.
   Orphaned is a third posture of the `managed | external` axis, not a fourth stored kind.
 
   Telling `orphaned` from `external` after a relaunch needs a durable record of past ownership —

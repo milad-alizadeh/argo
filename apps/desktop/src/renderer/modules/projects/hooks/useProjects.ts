@@ -1,10 +1,12 @@
 // The cockpit's whole picture of the Project surface. Every action answers with the entire known
 // set (src/projects/messages.ts), so one settle turns any reply into the next screen and the
 // renderer never assembles storage out of a sequence of replies.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type ProjectError, type ProjectErrorCode, projectError } from '@/core/projects/contract'
-import type { ProjectListReply, ProjectSummary } from '@/core/projects/messages'
-import { listRequest, openRequest, registerRequest, relocateRequest } from '../lib/requests'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
+import type { ProjectError, ProjectErrorCode } from '@/core/projects/contract'
+import type { ProjectListed, ProjectListReply, ProjectSummary } from '@/core/projects/messages'
+import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
+import { projectListQueryKey, projectMutationKey } from '../project-queries'
 
 export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
@@ -14,6 +16,7 @@ export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 export type Cockpit = {
   status: CockpitStatus
   project: ProjectSummary | null
+  projects: readonly ProjectSummary[]
   message: string | null
   code: ProjectErrorCode | null
   busy: boolean
@@ -21,9 +24,9 @@ export type Cockpit = {
 
 // One action, because what opening a Project means depends on the screen: with a refused Project
 // on it, the folder the person picks is that Project's new home rather than a new Project.
-export type ProjectActions = { open: () => void }
+export type ProjectActions = { open: () => void; select: (projectId: string) => void }
 
-const IDLE = { project: null, message: null, code: null, busy: false } as const
+const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: Cockpit = { status: 'loading', ...IDLE }
 const EMPTY: Cockpit = { status: 'empty', ...IDLE }
 
@@ -34,61 +37,133 @@ function refuse(previous: Cockpit, reply: ProjectError): Cockpit {
 
 // Opening is what proves the registered folder is still reachable, so it runs on every listing
 // rather than only on the first one. A refusal keeps the identity: relocation needs it.
-async function settle(reply: ProjectListReply, previous: Cockpit): Promise<Cockpit> {
-  if (reply.type === 'project.cancelled') return { ...previous, busy: false }
-  if (reply.type === 'project.error') return refuse(previous, reply)
+async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
   const project = reply.projects.find((candidate) => candidate.id === reply.selectedId)
-  if (!project) return EMPTY
-  const opened = await window.argo.openProject(openRequest(project.id))
+  if (!project) return { ...EMPTY, projects: reply.projects }
+  const opened = await window.argo.openProject({ projectId: project.id })
   if (opened.type === 'project.error') {
     const { message, code } = opened
-    return { status: 'refused', project, message, code, busy: false }
+    return { status: 'refused', project, projects: reply.projects, message, code, busy: false }
   }
-  return { status: 'selected', project, message: null, code: null, busy: false }
+  return {
+    status: 'selected',
+    project,
+    projects: reply.projects,
+    message: null,
+    code: null,
+    busy: false,
+  }
+}
+
+function useProjectListing() {
+  return useQuery<Cockpit, ProjectContractError>({
+    queryKey: projectListQueryKey,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async () => {
+      const reply = await window.argo.listProjects()
+      switch (reply.type) {
+        case 'project.listed':
+          return cockpitForListing(reply)
+        case 'project.error':
+          return throwProjectContractError(reply)
+        case 'project.cancelled':
+          throw new Error('Argo cancelled a Project listing.')
+      }
+    },
+  })
+}
+
+function useProjectMutationCallbacks() {
+  const queryClient = useQueryClient()
+  const settleMutation = useCallback(
+    async (reply: ProjectListReply) => {
+      switch (reply.type) {
+        case 'project.listed':
+          queryClient.setQueryData(projectListQueryKey, await cockpitForListing(reply))
+          return
+        case 'project.cancelled':
+          return
+        case 'project.error':
+          return throwProjectContractError(reply)
+      }
+    },
+    [queryClient],
+  )
+  return {
+    onSuccess: settleMutation,
+    onError: (error: ProjectContractError) => {
+      queryClient.setQueryData<Cockpit>(projectListQueryKey, (current = LOADING) =>
+        refuse(current, error),
+      )
+    },
+  }
+}
+
+function useProjectMutations() {
+  const queryClient = useQueryClient()
+  const mutationOptions = useProjectMutationCallbacks()
+  const register = useMutation<ProjectListReply, ProjectContractError, void>({
+    ...mutationOptions,
+    mutationKey: projectMutationKey,
+    mutationFn: () => window.argo.registerProject(),
+  })
+  const relocate = useMutation<ProjectListReply, ProjectContractError, string>({
+    ...mutationOptions,
+    mutationKey: projectMutationKey,
+    mutationFn: (projectId) => window.argo.relocateProject({ projectId }),
+  })
+  const selectProject = useMutation<ProjectListReply, ProjectContractError, string>({
+    ...mutationOptions,
+    mutationKey: projectMutationKey,
+    mutationFn: async (projectId) => {
+      const reply = await window.argo.listProjects()
+      if (reply.type !== 'project.listed') return reply
+      return reply.projects.some((project) => project.id === projectId)
+        ? { ...reply, selectedId: projectId }
+        : reply
+    },
+  })
+  return {
+    isPending: register.isPending || relocate.isPending || selectProject.isPending,
+    isRunning: () => queryClient.isMutating({ mutationKey: projectMutationKey }) > 0,
+    register,
+    relocate,
+    selectProject,
+  }
 }
 
 export function useProjects(): [Cockpit, ProjectActions] {
-  const [cockpit, setCockpit] = useState<Cockpit>(LOADING)
-  const latest = useRef(cockpit)
-  useEffect(() => {
-    latest.current = cockpit
-  })
+  const projects = useProjectListing()
+  const mutations = useProjectMutations()
 
-  // One action at a time, held in a ref rather than in state, because a modal folder chooser must
-  // not be opened twice and a state updater is not the place to decide that.
-  const running = useRef(false)
-  // `finally` is what keeps the guard honest: a throw that left it set would disable every control
-  // on the screen for the window's life, with nothing on screen to say why.
-  const run = useCallback(async (act: () => Promise<ProjectListReply>) => {
-    if (running.current) return
-    running.current = true
-    // The refusal stays on screen for as long as the action runs. A native folder chooser is open
-    // for as long as the person browses, and clearing the message here dropped the refused Project
-    // back to the empty deck underneath it for that whole time.
-    setCockpit((current) => ({ ...current, busy: true }))
-    try {
-      setCockpit(await settle(await act(), latest.current))
-    } catch {
-      setCockpit(refuse(latest.current, projectError('internal-error', null)))
-    } finally {
-      running.current = false
-    }
-  }, [])
-
-  useEffect(() => {
-    void run(() => window.argo.listProjects(listRequest()))
-  }, [run])
+  const queryCockpit = projects.data ?? LOADING
+  const error = projects.error
+  // A native folder chooser stays open while its mutation is pending. Keeping the cached refusal
+  // in place is what prevents its Project identity and message vanishing underneath the chooser.
+  const cockpit = useMemo(
+    () => ({ ...(error ? refuse(queryCockpit, error) : queryCockpit), busy: mutations.isPending }),
+    [error, mutations.isPending, queryCockpit],
+  )
 
   // The menu item, the chord and the deck's own control are one action (apps/desktop/AGENTS.md), so
   // what a refused Project offers on screen is what the chord does.
   const open = useCallback(() => {
-    const { status, project } = latest.current
+    if (mutations.isRunning()) return
+    const { status, project } = cockpit
     if (status === 'refused' && project) {
-      void run(() => window.argo.relocateProject(relocateRequest(project.id)))
+      mutations.relocate.mutate(project.id)
       return
     }
-    void run(() => window.argo.registerProject(registerRequest()))
-  }, [run])
+    mutations.register.mutate()
+  }, [cockpit, mutations])
 
-  return [cockpit, useMemo(() => ({ open }), [open])]
+  const select = useCallback(
+    (projectId: string) => {
+      if (!mutations.isRunning()) mutations.selectProject.mutate(projectId)
+    },
+    [mutations],
+  )
+
+  return [cockpit, useMemo(() => ({ open, select }), [open, select])]
 }

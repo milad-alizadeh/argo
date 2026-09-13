@@ -4,13 +4,38 @@
   "subtitle": "CLI messages",
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
+  "newSession": "New Session",
+  "findSession": "Find a Session",
   "reading": "Reading this Session",
+  "errors": {
+    "roster": "Argo could not read the Sessions again.",
+    "feed": "Argo cannot read this Session's history."
+  },
   "feedLabel": "Session Feed",
   "historyLabel": "Session history",
   "composer": {
+    "label": "Session input",
+    "message": "Message",
+    "placeholder": "Direct the next move…",
+    "plan": "Step {{current}}/{{total}}",
+    "addContext": "Add context",
+    "attach": "Attach a file",
+    "dictate": "Dictate",
+    "send": "Send",
+    "interrupt": "Interrupt",
+    "usage": "Usage",
+    "compact": "Compact the conversation",
+    "handoff": "Hand off to a new Session",
+    "removeQueued": "Remove queued message",
+    "context": "Context",
+    "permission": "Allow this command?",
+    "question": "Question from the agent",
+    "deny": "Deny",
+    "allow": "Allow",
+    "skip": "Skip",
+    "answer": "Answer",
     "unavailable": {
       "label": "Session input",
-      "observed": "Read-only. Session input is not available in this build.",
       "read-only": "Read-only. Argo did not start this Session.",
       "orphaned": "This Session is disconnected.",
       "ended": "This Session ended. There is nothing left to send."
@@ -26,6 +51,10 @@
     "blank": {
       "title": "No messages",
       "description": "This Session has no messages to show."
+    },
+    "no-sessions": {
+      "title": "No Sessions on this machine",
+      "description": "Argo lists a Session here as soon as a CLI writes one."
     },
     "roster": {
       "title": "No Sessions on this machine",
@@ -54,6 +83,8 @@
     "placeUnknown": "working directory unknown"
   },
   "rail": {
+    "backgroundAgents": "Background agents",
+    "shellSection": "Shell",
     "agents": "Background agents {{count}}",
     "agentsUnknown": "Background agents",
     "shell": "Shell {{count}}",

@@ -33,6 +33,9 @@
     .file-button:hover { color:var(--ink); background:var(--selected); }
     .file-button[aria-current="page"] { color:var(--ink); background:var(--selected); border-color:var(--focus); }
     .file-label { padding:0 2px 2px; line-height:1.35; }
+    iframe,img { display:block; border:0; }
+    iframe { transform-origin:top left; position:absolute; left:0; top:0; }
+    img { width:100%; height:100%; object-fit:contain; }
     .thumbnail { position:relative; display:block; width:100%; overflow:hidden; background:var(--white); border-radius:3px; box-shadow:0 0 0 1px var(--line); pointer-events:none; }
     .thumbnail iframe { pointer-events:none; }
     .thumbnail img { position:absolute; inset:0; }
@@ -51,9 +54,6 @@
     #stage { min-width:0; min-height:0; overflow:auto; display:flex; align-items:center; justify-content:center; position:relative; background:var(--stage); padding:24px; }
     #stage.actual { align-items:flex-start; justify-content:flex-start; }
     #canvas { flex-shrink:0; position:relative; background:var(--white); box-shadow:0 2px 12px #0000000b; }
-    iframe,img { display:block; border:0; }
-    iframe { transform-origin:top left; position:absolute; left:0; top:0; }
-    img { width:100%; height:100%; object-fit:contain; }
     #message { max-width:420px; text-align:center; color:var(--muted); padding:30px; }
     footer { display:flex; align-items:center; justify-content:space-between; gap:18px; border-top:1px solid var(--line); padding:0 26px; }
     #summary { color:var(--muted); font-size:var(--small); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -63,7 +63,7 @@
     .arrow:not(:disabled):hover { background:var(--selected); }
     #menu,#scrim { display:none; }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    [hidden] { display:none !important; }
+    [hidden] { display:none; }
     @media(max-width:760px) {
       .shell { grid-template-columns:minmax(0,1fr); }
       aside { position:fixed; inset:0 auto 0 0; width:min(290px,84vw); transform:translateX(-100%); transition:transform var(--motion) ease; }
@@ -78,12 +78,12 @@
       #source { display:none; }
       .actions { gap:5px; }
     }
-    @media(prefers-reduced-motion:reduce) { * { transition:none !important; } }
+    @media(prefers-reduced-motion:reduce) { * { transition:none; } }
   </style>
 </head>
 <body>
   <div class="shell">
-    <button id="scrim" aria-label="Close variations"></button>
+    <button id="scrim" type="button" aria-label="Close variations"></button>
     <aside aria-label="Visual directions">
       <div class="identity"><div class="eyebrow">Visual exploration</div><h1 id="project-title">Style directions</h1><p id="inventory">Loading presentation</p></div>
       <nav id="navigation" aria-label="Variations and specimens"></nav>
@@ -91,11 +91,11 @@
     </aside>
     <main>
       <header>
-        <div class="heading"><button id="menu" class="tool icon-tool" aria-label="Open variations" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="heading-text"><div id="direction-title">Visual direction</div><div id="file-title">Presentation</div></div></div>
-        <div class="actions"><button id="zoom" class="tool" aria-pressed="false" disabled>Actual size</button><a id="source" class="tool" target="_blank" rel="noopener" hidden>Open file</a><button id="fullscreen" class="tool icon-tool" aria-label="Enter full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
+        <div class="heading"><button id="menu" type="button" class="tool icon-tool" aria-label="Open variations" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="heading-text"><div id="direction-title">Visual direction</div><div id="file-title">Presentation</div></div></div>
+        <div class="actions"><button id="zoom" type="button" class="tool" aria-pressed="false" disabled>Actual size</button><a id="source" class="tool" href="./" target="_blank" rel="noopener" hidden>Open file</a><button id="fullscreen" type="button" class="tool icon-tool" aria-label="Enter full screen"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
       </header>
       <section id="stage" aria-label="Current specimen"><div id="message" role="status">Loading the style set...</div><div id="canvas" hidden></div></section>
-      <footer><div id="summary"></div><div class="pager"><button id="previous" class="arrow" aria-label="Previous specimen" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m14 5-7 7 7 7"/></svg></button><span id="position">0 / 0</span><button id="next" class="arrow" aria-label="Next specimen" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m10 5 7 7-7 7"/></svg></button></div></footer>
+      <footer><div id="summary"></div><div class="pager"><button id="previous" type="button" class="arrow" aria-label="Previous specimen" disabled><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m14 5-7 7 7 7"/></svg></button><span id="position">0 / 0</span><button id="next" type="button" class="arrow" aria-label="Next specimen" disabled><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m10 5 7 7-7 7"/></svg></button></div></footer>
       <div id="announcement" class="sr-only" aria-live="polite"></div>
     </main>
   </div>
@@ -200,27 +200,35 @@
     elements.fullscreen.onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { elements.announcement.textContent = 'Full screen is unavailable in this browser.'; } };
     document.addEventListener('fullscreenchange',() => elements.fullscreen.setAttribute('aria-label',document.fullscreenElement ? 'Exit full screen' : 'Enter full screen'));
     document.addEventListener('keydown',handleKeys); new ResizeObserver(fitCanvas).observe(elements.stage);
+    function requireWebUrl(value,message) {
+      const url = new URL(value,location.href);
+      if (!['http:','https:'].includes(url.protocol)) throw new Error(message);
+      return url.href;
+    }
+    function parseFile(file) {
+      if (typeof file.title !== 'string' || typeof file.src !== 'string' || !['image','html'].includes(file.kind)) throw new Error('Each file needs a title, src, and kind (image or html).');
+      const src = requireWebUrl(file.src,'Specimen files must use HTTP or HTTPS.');
+      let thumbnail;
+      if (file.thumbnail !== undefined) {
+        if (typeof file.thumbnail !== 'string' || !file.thumbnail.trim()) throw new Error('A thumbnail must be a preview image path.');
+        thumbnail = requireWebUrl(file.thumbnail,'Thumbnails must use HTTP or HTTPS.');
+      }
+      for (const dimension of ['width','height']) if (file[dimension] !== undefined && (!Number.isFinite(file[dimension]) || file[dimension] <= 0)) throw new Error('Canvas dimensions must be positive numbers.');
+      return {...file,src,thumbnail};
+    }
+    function parseDirection(direction) {
+      if (typeof direction.name !== 'string' || !Array.isArray(direction.files) || !direction.files.length) throw new Error('Each direction needs a name and at least one file.');
+      return {...direction,files:direction.files.map(parseFile)};
+    }
     (async () => {
       try {
         const response = await fetch('./directions.json'); if (!response.ok) throw new Error('Place directions.json beside this viewer and serve the folder over HTTP.');
         const data = await response.json();
         if (!Array.isArray(data.directions) || !data.directions.length) throw new Error('Add at least one direction to directions.json.');
-        directions = data.directions.map(direction => {
-          if (typeof direction.name !== 'string' || !Array.isArray(direction.files) || !direction.files.length) throw new Error('Each direction needs a name and at least one file.');
-          return {...direction, files:direction.files.map(file => {
-            if (typeof file.title !== 'string' || typeof file.src !== 'string' || !['image','html'].includes(file.kind)) throw new Error('Each file needs a title, src, and kind (image or html).');
-            const url = new URL(file.src,location.href); if (!['http:','https:'].includes(url.protocol)) throw new Error('Specimen files must use HTTP or HTTPS.');
-            let thumbnail;
-            if (file.thumbnail !== undefined) {
-              if (typeof file.thumbnail !== 'string' || !file.thumbnail.trim()) throw new Error('A thumbnail must be a preview image path.');
-              const preview = new URL(file.thumbnail,location.href); if (!['http:','https:'].includes(preview.protocol)) throw new Error('Thumbnails must use HTTP or HTTPS.');
-              thumbnail = preview.href;
-            }
-            for (const dimension of ['width','height']) if (file[dimension] !== undefined && (!Number.isFinite(file[dimension]) || file[dimension] <= 0)) throw new Error('Canvas dimensions must be positive numbers.');
-            return {...file,src:url.href,thumbnail};
-          })};
+        directions = data.directions.map(parseDirection);
+        directions.forEach((direction,directionIndex) => {
+          direction.files.forEach((_file,fileIndex) => { pages.push({directionIndex,fileIndex}); });
         });
-        directions.forEach((direction,directionIndex) => direction.files.forEach((file,fileIndex) => pages.push({directionIndex,fileIndex})));
         elements['project-title'].textContent = typeof data.title === 'string' ? data.title : 'Style directions'; document.title = elements['project-title'].textContent;
         elements.inventory.textContent = `${directions.length} directions / ${pages.length} specimens`;
         const requested = Number(location.hash.slice(1)); showPage(Number.isInteger(requested) && requested > 0 && requested <= pages.length ? requested-1 : 0);

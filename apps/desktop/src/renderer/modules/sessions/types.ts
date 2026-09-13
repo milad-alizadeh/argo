@@ -1,4 +1,5 @@
 import type {
+  SessionError,
   SessionFeedRead,
   SessionFeedRequest,
   SessionListRequest,
@@ -6,6 +7,7 @@ import type {
 } from '@/core/sessions/contract'
 
 export type {
+  SessionError,
   SessionFeedRead as SessionFeed,
   SessionFeedRequest,
   SessionListRequest,

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Setup Argo Skills"
+  short_description: "Install and configure the Argo skill bundle"
+policy:
+  allow_implicit_invocation: false

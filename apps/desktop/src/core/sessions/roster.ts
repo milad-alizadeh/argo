@@ -80,6 +80,19 @@ function readPullRequest(chain: SessionChain) {
     : { number: newest.number, url: newest.url, repository: newest.repository }
 }
 
+function readUsage(messages: TranscriptMessage[]) {
+  const reported = messages.flatMap((message) => (message.usage === null ? [] : [message.usage]))
+  const latest = reported.at(-1)
+  return {
+    contextTokens:
+      latest === undefined ? null : Object.values(latest).reduce((sum, value) => sum + value, 0),
+    spentTokens:
+      reported.length === 0
+        ? null
+        : reported.reduce((sum, usage) => sum + usage.inputTokens + usage.outputTokens, 0),
+  }
+}
+
 export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
   const stamps = messages.flatMap((message) =>
@@ -110,5 +123,6 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     // Claude desktop app's own store, joined in by `agents/claude/sessions/discover.ts` after
     // this projection runs. Every other caller — Codex included — reads false.
     archived: false,
+    ...readUsage(messages),
   }
 }

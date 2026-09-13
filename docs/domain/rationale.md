@@ -21,7 +21,7 @@ hence the Hub holds the join as a throwaway in-memory projection rather than wri
 
 ## L1
 
-**Account and Binding are two levels, not one.** The model said a Project "carries a Ticket
+**Account and Connection are two levels, not one.** The model said a Project "carries a Ticket
 provider," which reads as if choosing a provider and authorizing it were one act. They are not:
 authorizing happens once per identity per machine, choosing happens once per Project. Collapsing
 them forces a re-grant on every new Project and makes a personal-vs-work GitHub unrepresentable
@@ -31,13 +31,13 @@ them forces a re-grant on every new Project and makes a personal-vs-work GitHub 
 id-vs-path: a renamed GitHub login or Linear workspace must not read as a new identity, and the
 same identity added twice must not become two Accounts with two tokens drifting apart.
 
-**Binding is per-port, not per-Project.** One GitHub Account filling both ports is the normal
+**Connection is per-port, not per-Project.** One GitHub Account filling both ports is the normal
 case and stays a single act in the UI, but it is a *coincidence of the common case*, not a
 constraint worth encoding — and per-port costs nothing, since the ports already have separate
 adapters and separate failures.
 
-**Bind-time validation is load-bearing.** A wrong Account is silent: every read returns 404,
-which is indistinguishable from an issue that does not exist. Validating at bind time is the
+**Connect-time validation is load-bearing.** A wrong Account is silent: every read returns 404,
+which is indistinguishable from an issue that does not exist. Validating at connect time is the
 only point where the two can still be told apart.
 
 **Ticket, and not Work Item or Issue (#881).** The term was `Work Item` until 2026-08-28, defined
