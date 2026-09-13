@@ -9,10 +9,8 @@ export function rereadSessions() {
   window.dispatchEvent(new Event(REREAD_EVENT))
 }
 
-// The Roster is a reading of files Argo does not own and cannot be told about: nothing here
-// watches the transcripts, so what a reader sees is what the last pass found. `reread` is the
-// reader asking for another one, and it is the only thing that moves the Roster on.
-function useRoster() {
+// A selected Session polls its unreadable transcript so its current Plan reaches the composer.
+function useRoster(observeChanges: boolean) {
   const [roster, setRoster] = useState<SessionsListed | null>(null)
   const [rosterError, setRosterError] = useState<SessionError | null>(null)
   const [passes, setPasses] = useState(0)
@@ -45,6 +43,12 @@ function useRoster() {
     window.addEventListener(REREAD_EVENT, rereadFromSessionAction)
     return () => window.removeEventListener(REREAD_EVENT, rereadFromSessionAction)
   }, [])
+
+  useEffect(() => {
+    if (!observeChanges) return
+    const timer = window.setInterval(() => setPasses((pass) => pass + 1), FEED_REFRESH_MS)
+    return () => window.clearInterval(timer)
+  }, [observeChanges])
 
   const reread = useCallback(() => setPasses((pass) => pass + 1), [])
   return { roster, rosterError, reread }
@@ -97,7 +101,7 @@ function useFeed(sessionId: SessionId | null) {
 }
 
 export function useSessions(selectedSessionId: SessionId | null) {
-  const { roster, rosterError, reread } = useRoster()
+  const { roster, rosterError, reread } = useRoster(selectedSessionId !== null)
   const { feed, feedError } = useFeed(selectedSessionId)
   // The Feed on hand is drawn only while it is the Feed for the chosen Session. Choosing another
   // renders the screen with the new id before the effect that clears the rows has run, so for one

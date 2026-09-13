@@ -24,6 +24,7 @@ function ComposerStory() {
           setSent(text)
           return true
         }}
+        plan={null}
         sessionId={sessionId}
       />
       <output className="mt-4 block text-sm" data-testid="sent-message">
@@ -45,6 +46,7 @@ function ManagedComposerStory() {
           return true
         }}
         onSend={async () => false}
+        plan={null}
         sessionId="managed-session"
       />
     </div>
@@ -72,6 +74,7 @@ function PendingSendStory() {
             finish.current = resolve
           })
         }
+        plan={null}
         sessionId={sessionId}
       />
     </div>

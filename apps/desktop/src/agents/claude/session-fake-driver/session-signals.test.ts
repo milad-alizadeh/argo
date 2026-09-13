@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
+import { readPlan } from '../../../core/sessions/signals.ts'
+import type { TranscriptMessage } from '../../../core/sessions/transcript.ts'
 import { stitchChains } from '../sessions/chains.ts'
 import { projectRosterRow } from '../sessions/roster.ts'
 import { fixtureFiles } from './session-fixtures'
@@ -10,11 +12,38 @@ async function rowOf(names) {
   return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
 }
 
-test('reads the Plan off the newest snapshot the agent could have written', async () => {
-  // The second call in the same record has an entry with no status, so it is skipped whole and
-  // the snapshot before it stands.
-  assert.deepEqual((await rowOf(['plannedWork'])).plan, { total: 4, completed: 1, inProgress: 1 })
+test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
+  assert.deepEqual((await rowOf(['plannedWork'])).plan, {
+    state: 'available',
+    entries: [
+      { content: 'Read the rail', position: 0, status: 'completed' },
+      { content: 'Draw the dots', position: 1, status: 'in_progress' },
+      { content: 'Count the running', position: 2, status: 'pending' },
+      { content: 'Check the ceiling', position: 3, status: 'pending' },
+    ],
+  })
   assert.equal((await rowOf(['externalBasic'])).plan, null)
+})
+
+test('marks an unreadable latest Plan snapshot as malformed', () => {
+  const malformedPlan: TranscriptMessage = {
+    kind: 'message',
+    uuid: 'malformed-plan',
+    parentUuid: null,
+    originSessionId: null,
+    role: 'assistant',
+    sidechain: false,
+    cwd: null,
+    branch: null,
+    timestamp: null,
+    entry: 'interactive',
+    stopReason: null,
+    blocks: [],
+    toolCalls: [{ id: 'plan', name: 'TodoWrite', input: { todos: [{ content: 'No status' }] } }],
+    answeredCalls: [],
+    usage: null,
+  }
+  assert.deepEqual(readPlan([malformedPlan]), { state: 'malformed' })
 })
 
 test('starts the Turn at the last prompt, never at a tool result', async () => {
@@ -99,7 +128,15 @@ test('refuses a row whose signals are missing or malformed at the boundary', asy
   assert.equal(sessionListReplySchema.safeParse(reply([planless])).success, false)
   assert.equal(
     sessionListReplySchema.safeParse(
-      reply([{ ...row, plan: { total: -1, completed: 0, inProgress: 0 } }]),
+      reply([
+        {
+          ...row,
+          plan: {
+            state: 'available',
+            entries: [{ content: '', position: 0, status: 'completed' }],
+          },
+        },
+      ]),
     ).success,
     false,
   )

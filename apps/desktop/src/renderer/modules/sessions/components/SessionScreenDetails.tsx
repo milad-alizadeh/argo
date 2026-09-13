@@ -12,7 +12,7 @@ type SessionScreenDetailsProps = {
   session: SessionRosterRow | null
 }
 
-export function SessionComposerArea({ composer, permission }: SessionScreenDetailsProps) {
+export function SessionComposerArea({ composer, permission, session }: SessionScreenDetailsProps) {
   return (
     <>
       {composer.failure ? <Failure message={composer.failure} /> : null}
@@ -20,7 +20,7 @@ export function SessionComposerArea({ composer, permission }: SessionScreenDetai
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} />
+      <SessionComposer {...composer.props} plan={session?.plan ?? null} />
     </>
   )
 }
