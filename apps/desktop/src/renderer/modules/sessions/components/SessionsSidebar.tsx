@@ -1,4 +1,4 @@
-import { Inbox, RefreshCw, TriangleAlert } from 'lucide-react'
+import { Inbox, Plus, RefreshCw, Search, TriangleAlert } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
@@ -120,6 +120,11 @@ export function SessionsSidebarContent({
     >
       <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-4">
         <h2 className="flex-1 text-sm font-medium">Sessions</h2>
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Plus aria-hidden="true" className="size-4" />
+          <Search aria-hidden="true" className="size-4" />
+          <span className="sr-only">New Session and search are not available yet.</span>
+        </div>
         <Button aria-label="Read again" onClick={onReread} size="icon-sm" variant="ghost">
           <RefreshCw />
         </Button>
