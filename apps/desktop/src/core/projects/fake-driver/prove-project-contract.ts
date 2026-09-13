@@ -13,8 +13,16 @@ import {
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
-async function serveUntrustedPage() {
-  const server = createServer((_request, response) => response.end('<h1>Untrusted page</h1>'))
+async function serveUntrustedPage(message: unknown) {
+  const server = createServer((_request, response) => {
+    response.end(`<output id="reply" hidden></output><script>
+      window.argo.openProject(${JSON.stringify(message)}).then((reply) => {
+        const output = document.getElementById('reply')
+        output.textContent = JSON.stringify(reply)
+        output.hidden = false
+      })
+    </script>`)
+  })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
   assert(address && typeof address !== 'string')
@@ -97,15 +105,16 @@ async function prove(application, fixture) {
     await chmod(fixture.projectPath, 0o700)
   }
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  const untrustedPage = await serveUntrustedPage()
+  const untrustedPage = await serveUntrustedPage(request)
   try {
     await application.evaluate(async ({ BrowserWindow }, url) => {
       const contents = BrowserWindow.getAllWindows()[0].webContents
       contents.removeAllListeners('will-navigate')
       await contents.loadURL(url)
     }, untrustedPage.url)
-    await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
-    assert.equal((await invoke(request)).code, 'access-denied')
+    const reply = page.locator('#reply')
+    await reply.waitFor({ state: 'visible' })
+    assert.equal(JSON.parse((await reply.textContent()) ?? '').code, 'access-denied')
   } finally {
     await new Promise<void>((resolve, reject) =>
       untrustedPage.server.close((error) => (error ? reject(error) : resolve())),
