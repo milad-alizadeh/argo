@@ -133,19 +133,22 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
-export const Unavailable: Story = {
-  args: { roster: null, rosterError: unavailable },
+export const Failure: Story = {
+  render: (args) => (
+    <div className="grid h-dvh grid-rows-2">
+      <SessionsSidebarContent {...args} roster={null} rosterError={unavailable} />
+      <SessionsSidebarContent {...args} roster={null} rosterError={readFailure} />
+    </div>
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot read these Sessions.')
-  },
-}
-export const ReadFailure: Story = {
-  args: { roster: null, rosterError: readFailure },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot read these Sessions.')
+    const [unavailableAlert, readFailureAlert] = canvas.getAllByRole('alert')
+
+    await expect(unavailableAlert).toHaveAttribute('data-slot', 'alert')
+    await expect(unavailableAlert).toHaveTextContent('Sessions unavailable')
+    await expect(unavailableAlert).toHaveTextContent('Argo cannot access these Sessions.')
+    await expect(readFailureAlert).toHaveAttribute('data-slot', 'alert')
+    await expect(readFailureAlert).toHaveTextContent('Read failure')
+    await expect(readFailureAlert).toHaveTextContent('Argo could not read these Sessions.')
   },
 }

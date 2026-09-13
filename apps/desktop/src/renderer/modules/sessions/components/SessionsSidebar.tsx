@@ -23,6 +23,15 @@ function rosterState(
   return count === 0 ? 'empty' : 'ready'
 }
 
+const rosterFailureHeadings: Record<ReturnType<typeof sessionFailureState>, string> = {
+  unavailable: 'Sessions unavailable',
+  error: 'Read failure',
+}
+
+function rosterFailureHeading(failure: SessionError) {
+  return rosterFailureHeadings[sessionFailureState(failure)]
+}
+
 export type SessionsSidebarContentProps = {
   roster: SessionsListed | null
   rosterError: SessionError | null
@@ -102,9 +111,9 @@ export function SessionsSidebarContent({
         </Button>
       </header>
       {rosterError ? (
-        <Alert className="mx-3 mt-3" variant="destructive">
+        <Alert className="mx-3 mt-3 border-destructive/50 bg-destructive/10" variant="destructive">
           <TriangleAlert aria-hidden="true" />
-          <AlertTitle>Argo cannot read these Sessions.</AlertTitle>
+          <AlertTitle>{rosterFailureHeading(rosterError)}</AlertTitle>
           <AlertDescription>{rosterError.message}</AlertDescription>
         </Alert>
       ) : null}
