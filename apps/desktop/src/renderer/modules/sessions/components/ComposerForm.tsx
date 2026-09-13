@@ -6,9 +6,8 @@ import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { ArrowUp } from 'lucide-react'
 import type { RefObject } from 'react'
-
-import { Button } from '../../../components/ui/button'
 import type { SessionPlan } from '@/core/sessions/models'
+import { Button } from '../../../components/ui/button'
 import type { SessionCli } from '../hooks/useSessionComposer'
 import { ComposerCliToggle } from './ComposerCliToggle'
 import { PendingTurns } from './PendingTurns'
@@ -129,8 +128,12 @@ export function ComposerForm({
         onRemove={onRemove}
         onReorder={onReorder}
       />
-      <div className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}>
-        <div className="absolute top-4 right-4 z-20"><SessionPlanPopover plan={plan} /></div>
+      <div
+        className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
+      >
+        <div className="absolute top-4 right-4 z-20">
+          <SessionPlanPopover plan={plan} />
+        </div>
         <div className="min-w-0 flex-1">
           <ComposerEditor
             key={sessionId}
