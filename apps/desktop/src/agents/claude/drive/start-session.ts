@@ -5,7 +5,7 @@ import {
   sessionError,
 } from '@/core/sessions/contract'
 
-import { ClaudeSessionDriverError } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './drive-channel'
 
 export type ClaudeSessionStarter = {
   start: (request: { cwd: string; prompt: string }) => string

@@ -1,12 +1,15 @@
+import { useRef } from 'react'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Message, MessageContent } from '@/renderer/components/ui/message'
 import type { SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
+import { type Reveal, useRevealAnimation } from './reveal'
 
 export type FeedRowProps = {
   row: SessionFeedRow
   height?: number
+  reveal?: Reveal
   activeEvidenceId: string | null
   openToolGroups: ReadonlySet<string>
   onOpenToolGroup: (id: string, open: boolean) => void
@@ -16,16 +19,21 @@ export type FeedRowProps = {
 export function FeedRow({
   row,
   height,
+  reveal,
   activeEvidenceId,
   onOpenEvidence,
   openToolGroups,
   onOpenToolGroup,
 }: FeedRowProps) {
+  const element = useRef<HTMLElement>(null)
+  useRevealAnimation(element, reveal)
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
+      data-revealing={reveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
+      ref={element}
       style={height === undefined || height === 0 ? undefined : { height: `${height}px` }}
     >
       <FeedRowContent

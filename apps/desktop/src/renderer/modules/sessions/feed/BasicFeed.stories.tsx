@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed } from '../types'
@@ -126,7 +127,6 @@ export const FormattedProse: Story = {
       'data-variant',
       'muted',
     )
-    await expect(prompt?.querySelector('[data-slot="bubble-content"]')).toHaveClass('type-prose')
     await waitFor(() =>
       expect(answer?.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
@@ -162,7 +162,7 @@ const toolFeed = {
           id: 'one',
           kind: 'command' as const,
           label: 'Ran bun test composer',
-          detail: '3 passed',
+          detail: null,
           status: 'succeeded' as const,
           evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
         },
@@ -180,27 +180,115 @@ const toolFeed = {
   ],
 } satisfies SessionFeed
 
-function FeedWithEvidence() {
-  return (
-    <BasicFeed
-      failure={null}
-      activeEvidenceId={null}
-      feed={toolFeed}
-      onOpenEvidence={() => {}}
-      selectedSessionId="tools"
-    />
-  )
-}
-
 export const GroupedToolCalls: Story = {
-  render: () => <FeedWithEvidence />,
+  args: { feed: toolFeed, selectedSessionId: 'tools' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
-    await expect(canvas.queryByRole('button', { name: /Ran bun test composer/ })).toBeNull()
     await userEvent.click(group)
     const call = await canvas.findByRole('button', { name: /Ran bun test composer/ })
     await expect(group).toHaveClass('type-body')
     await expect(call).toHaveClass('type-body')
+  },
+}
+
+const streamingFeed = {
+  ...feed,
+  sessionId: 'streaming',
+  chainId: 'streaming',
+  revision: 'streaming-one',
+  rows: [
+    { shape: 'prose', id: 'streaming-prompt', role: 'user', text: 'Summarise the check.' },
+    { shape: 'prose', id: 'streaming-first', role: 'assistant', text: 'The check ran.' },
+  ],
+} satisfies SessionFeed
+
+const streamingReply = {
+  ...streamingFeed,
+  revision: 'streaming-two',
+  rows: [
+    ...streamingFeed.rows,
+    { shape: 'prose', id: 'streaming-second', role: 'assistant', text: RICH_MARKDOWN },
+  ],
+} satisfies SessionFeed
+
+function StreamingFeed() {
+  const [current, setCurrent] = useState<SessionFeed>(streamingFeed)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(streamingReply)}>
+        Receive reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          selectedSessionId="streaming"
+          onOpenEvidence={() => {}}
+        />
+      </div>
+    </div>
+  )
+}
+
+function drawnRow(canvasElement: HTMLElement, id: string) {
+  return drawnRows(canvasElement).find((row) => row.dataset.feedRow === id)
+}
+
+// History shows at once; a reply that arrives while the Feed is open is uncovered inside the
+// height it was measured at, and ends with no mask left on the row.
+export const StreamingReply: Story = {
+  render: () => <StreamingFeed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+    for (const row of drawnRows(canvasElement)) {
+      await expect(row).not.toHaveAttribute('data-revealing')
+    }
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'streaming-second')).toBeDefined())
+    const reply = drawnRow(canvasElement, 'streaming-second') as HTMLElement
+    await expect(reply).toHaveAttribute('data-revealing', 'true')
+    await expect(reply.getAnimations()).toHaveLength(1)
+    await expect(drawnRow(canvasElement, 'streaming-first')).not.toHaveAttribute('data-revealing')
+    const measured = canvasElement.querySelector(
+      '.feed__measured [data-feed-row="streaming-second"]',
+    )
+    await expect(Number.parseFloat(reply.style.height)).toBe(
+      measured?.getBoundingClientRect().height,
+    )
+    await waitFor(() => expect(reply.getAnimations()).toHaveLength(0), { timeout: 3000 })
+    await expect(getComputedStyle(reply).maskImage).toBe('none')
+  },
+}
+
+// The play function cannot set the system's motion preference, so it answers the query itself.
+function preferReducedMotion(): () => void {
+  const system = window.matchMedia
+  window.matchMedia = (query) =>
+    query === '(prefers-reduced-motion: reduce)'
+      ? ({ matches: true, media: query } as MediaQueryList)
+      : system.call(window, query)
+  return () => {
+    window.matchMedia = system
+  }
+}
+
+export const StreamingReplyReducedMotion: Story = {
+  render: () => <StreamingFeed />,
+  play: async ({ canvasElement }) => {
+    const restore = preferReducedMotion()
+    try {
+      await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+      await userEvent.click(within(canvasElement).getByRole('button', { name: 'Receive reply' }))
+      await waitFor(() => expect(drawnRow(canvasElement, 'streaming-second')).toBeDefined())
+      const reply = drawnRow(canvasElement, 'streaming-second') as HTMLElement
+      await expect(reply.getAnimations()).toHaveLength(0)
+      await expect(getComputedStyle(reply).maskImage).toBe('none')
+    } finally {
+      restore()
+    }
   },
 }

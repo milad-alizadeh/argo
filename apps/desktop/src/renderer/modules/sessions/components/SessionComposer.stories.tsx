@@ -130,6 +130,25 @@ function FailedQueuedComposerStory() {
   )
 }
 
+// The send never settles, so the composer is read before a successful send clears it (#1999).
+function UnsettledSendStory() {
+  const [sent, setSent] = useState<string[]>([])
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <SessionComposer
+        onSend={(text) => {
+          setSent((current) => [...current, text])
+          return new Promise<boolean>(() => {})
+        }}
+        plan={null}
+        sessionId="unsettled-session"
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </div>
+  )
+}
+
 // The send stays pending until the reader finishes it, so a Session switch can land mid-send.
 function PendingSendStory() {
   const [sessionId, setSessionId] = useState('session-one')
@@ -200,6 +219,37 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
+
+export const EnterSendsWithoutANewLine: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.keyboard('Send this once.')
+    await userEvent.keyboard('{Enter}')
+
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(composer.innerText).toBe('Send this once.')
+  },
+}
+
+export const ShiftEnterAddsALine: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.keyboard('First line')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await userEvent.keyboard('Second line')
+
+    await expect(composer.innerText).toBe('First line\nSecond line')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
   },
 }
 

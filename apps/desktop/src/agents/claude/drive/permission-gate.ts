@@ -10,6 +10,7 @@ export type ClaudePermissionGate = {
   open: (sessionId: string) => { pluginRoot: string; close: () => void }
   pending: (sessionId: string) => ClaudePermission | null
   decide: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  close: () => void
 }
 
 const PLUGIN_MANIFEST = JSON.stringify({
@@ -40,9 +41,10 @@ deny() { printf '%s\\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","pe
 hold=$(mktemp -d) || { deny; exit 1; }
 trap 'kill "$writer" "$dialler" 2>/dev/null; rm -rf "$hold"' EXIT
 mkfifo "$hold/request" || { deny; exit 1; }
+# sh gives a background job /dev/null as stdin, so the request is read before the fork (#2004).
+request=$(tr '\\n' ' ')
 {
-  tr '\\n' ' '
-  printf '\\n'
+  printf '%s\\n' "$request"
   while kill -0 $$ 2>/dev/null; do sleep 1; done
 } > "$hold/request" &
 writer=$!
@@ -98,6 +100,9 @@ export function createClaudePermissionGate(root: string): ClaudePermissionGate {
       waiting.delete(sessionId)
       held.socket.end(decisionLine(decision))
       return true
+    },
+    close() {
+      rmSync(socketRoot, { recursive: true, force: true })
     },
   }
 }

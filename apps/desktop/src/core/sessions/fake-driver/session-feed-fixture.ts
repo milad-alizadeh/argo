@@ -111,7 +111,7 @@ export async function prepare(root) {
       selectedId: 'session-proof-project',
     }),
   )
-  return { application, claudeTranscripts, codexTranscripts, archive, userData }
+  return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
 }
 
 export async function growCodexTranscript(transcripts) {

@@ -1,5 +1,5 @@
 import { Inbox } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useCallback, useRef, useState } from 'react'
 import {
   Empty,
   EmptyDescription,
@@ -10,13 +10,28 @@ import {
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { FeedRow } from './FeedRow'
-import { useSettledFeed } from './useSettledFeed'
+import { type Reveal, useReveals } from './reveal'
+import { type Settled, useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
   active: boolean
   activeEvidenceId: string | null
   feed: SessionFeed
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+}
+type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
+
+function useToolGroups() {
+  const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
+  const onOpenToolGroup = (id: string, open: boolean) => {
+    setOpenToolGroups((previous) => {
+      const next = new Set(previous)
+      if (open) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+  return { onOpenToolGroup, openToolGroups }
 }
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
@@ -27,7 +42,7 @@ export function FeedDocument({
   feed,
   onOpenEvidence,
 }: FeedDocumentProps) {
-  const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
+  const { onOpenToolGroup, openToolGroups } = useToolGroups()
   const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
   const { column, measured, settled } = useSettledFeed({
     active,
@@ -35,21 +50,30 @@ export function FeedDocument({
     revision: layoutRevision,
     rows: feed.rows,
   })
-  const onOpenToolGroup = (id: string, open: boolean) => {
-    setOpenToolGroups((previous) => {
-      const next = new Set(previous)
-      if (open) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-  const content = feedContent({
-    settled,
-    activeEvidenceId,
-    onOpenEvidence,
-    openToolGroups,
-    onOpenToolGroup,
-  })
+  const revealsFor = useReveals()
+  const openEvidence = useRef(onOpenEvidence)
+  openEvidence.current = onOpenEvidence
+  const toolGroups = useRef<ReadonlySet<string>>(openToolGroups)
+  toolGroups.current = openToolGroups
+  const evidence = useRef(activeEvidenceId)
+  evidence.current = activeEvidenceId
+  const openToolGroup = useRef(onOpenToolGroup)
+  openToolGroup.current = onOpenToolGroup
+  // One component for the life of the deck: a new one each render would remount every row and
+  // replay its reveal.
+  const DrawnRow = useCallback(
+    (props: DrawnRowProps) => (
+      <FeedRow
+        {...props}
+        activeEvidenceId={evidence.current}
+        onOpenEvidence={(row) => openEvidence.current(row)}
+        onOpenToolGroup={openToolGroup.current}
+        openToolGroups={toolGroups.current}
+      />
+    ),
+    [],
+  )
+  const content = feedContent(settled, DrawnRow, revealsFor)
 
   return (
     <div
@@ -67,7 +91,7 @@ export function FeedDocument({
               key={row.id}
               activeEvidenceId={activeEvidenceId}
               onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={onOpenToolGroup}
+              onOpenToolGroup={openToolGroup.current}
               openToolGroups={openToolGroups}
               row={row}
             />
@@ -79,19 +103,11 @@ export function FeedDocument({
   )
 }
 
-function feedContent({
-  settled,
-  activeEvidenceId,
-  onOpenEvidence,
-  openToolGroups,
-  onOpenToolGroup,
-}: {
-  settled: ReturnType<typeof useSettledFeed>['settled']
-  activeEvidenceId: string | null
-  onOpenEvidence: FeedDocumentProps['onOpenEvidence']
-  openToolGroups: ReadonlySet<string>
-  onOpenToolGroup: (id: string, open: boolean) => void
-}) {
+function feedContent(
+  settled: ReturnType<typeof useSettledFeed>['settled'],
+  DrawnRow: (props: DrawnRowProps) => ReactNode,
+  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>,
+) {
   if (settled === null) return null
   if (settled.rows.length === 0)
     return (
@@ -109,15 +125,8 @@ function feedContent({
     <AnchoredFeed
       rows={settled.rows}
       settled={settled}
-      FeedRow={(props) => (
-        <FeedRow
-          {...props}
-          activeEvidenceId={activeEvidenceId}
-          onOpenEvidence={onOpenEvidence}
-          onOpenToolGroup={onOpenToolGroup}
-          openToolGroups={openToolGroups}
-        />
-      )}
+      FeedRow={DrawnRow}
+      revealsFor={revealsFor}
     />
   )
 }
