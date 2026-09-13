@@ -15,14 +15,6 @@ const feed = {
   rows: [{ shape: 'prose', id: 'prose-1', role: 'assistant', text: 'The matching Session Feed.' }],
 } satisfies SessionFeed
 
-const unavailable = {
-  version: 1,
-  type: 'session.error',
-  requestId: 'storybook-feed-unavailable',
-  code: 'missing-session',
-  message: 'Argo cannot find this Session.',
-} satisfies SessionError
-
 const readFailure = {
   version: 1,
   type: 'session.error',
@@ -58,7 +50,15 @@ export const Loaded: Story = {
     )
   },
 }
-export const Loading: Story = { args: { feed: null, failure: null, selectedSessionId: 'prose' } }
+export const Loading: Story = {
+  args: { feed: null, failure: null, selectedSessionId: 'prose' },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status', { name: 'Loading' })).toHaveAttribute(
+      'data-slot',
+      'spinner',
+    )
+  },
+}
 export const Empty: Story = {
   args: { feed: { ...feed, rows: [] }, failure: null },
   play: async ({ canvasElement }) => {
@@ -80,21 +80,12 @@ export const Unselected: Story = {
     ).not.toBeNull()
   },
 }
-export const Unavailable: Story = {
-  args: { feed: null, failure: unavailable },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
-    await expect(canvas.getByRole('alert')).toHaveTextContent('This Session is unavailable.')
-  },
-}
-export const ReadFailure: Story = {
+export const Failure: Story = {
   args: { feed: null, failure: readFailure },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
-    await expect(canvas.getByRole('alert')).toHaveTextContent(
-      "Argo cannot read this Session's history.",
-    )
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Unable to load Session')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
   },
 }

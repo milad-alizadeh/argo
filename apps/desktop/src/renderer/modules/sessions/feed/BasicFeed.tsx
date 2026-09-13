@@ -8,6 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
+import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionFeed, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
@@ -24,11 +25,7 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
       >
         <Alert className="max-w-sm" variant="destructive">
           <TriangleAlert aria-hidden="true" />
-          <AlertTitle>
-            {sessionFailureState(failure) === 'unavailable'
-              ? 'This Session is unavailable.'
-              : "Argo cannot read this Session's history."}
-          </AlertTitle>
+          <AlertTitle>Unable to load Session</AlertTitle>
           <AlertDescription>{failure.message}</AlertDescription>
         </Alert>
       </section>
@@ -46,12 +43,8 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
       </Empty>
     )
   return (
-    <section
-      className="grid h-full place-items-center text-sm text-muted-foreground"
-      data-state="loading"
-      role="status"
-    >
-      Reading this Session
+    <section className="grid h-full place-items-center" data-state="loading">
+      <Spinner className="size-6" />
     </section>
   )
 }

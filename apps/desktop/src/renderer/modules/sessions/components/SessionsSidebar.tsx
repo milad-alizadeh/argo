@@ -1,9 +1,8 @@
-import { Inbox, Plus, RefreshCw, Search, TriangleAlert } from 'lucide-react'
+import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { useSessions } from '../hooks/useSessions'
@@ -24,15 +23,6 @@ function rosterState(
   return count === 0 ? 'empty' : 'ready'
 }
 
-const rosterFailureHeadings: Record<ReturnType<typeof sessionFailureState>, string> = {
-  unavailable: 'Sessions unavailable',
-  error: 'Read failure',
-}
-
-function rosterFailureHeading(failure: SessionError) {
-  return rosterFailureHeadings[sessionFailureState(failure)]
-}
-
 function RosterLoading() {
   return (
     <div aria-label="Reading Sessions" className="space-y-4 px-5 py-4" role="status">
@@ -50,7 +40,6 @@ export type SessionsSidebarContentProps = {
   roster: SessionsListed | null
   rosterError: SessionError | null
   selectedSessionId: SessionId | null
-  onReread: () => void
   onSelect: (sessionId: SessionId) => void
 }
 
@@ -58,7 +47,6 @@ export function SessionsSidebarContent({
   roster,
   rosterError,
   selectedSessionId,
-  onReread,
   onSelect,
 }: SessionsSidebarContentProps) {
   const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)
@@ -125,14 +113,14 @@ export function SessionsSidebarContent({
           <Search aria-hidden="true" className="size-4" />
           <span className="sr-only">New Session and search are not available yet.</span>
         </div>
-        <Button aria-label="Read again" onClick={onReread} size="icon-sm" variant="ghost">
-          <RefreshCw />
-        </Button>
       </header>
       {rosterError ? (
-        <Alert className="mx-3 mt-3 border-destructive/50 bg-destructive/10" variant="destructive">
+        <Alert
+          className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
+          variant="destructive"
+        >
           <TriangleAlert aria-hidden="true" />
-          <AlertTitle>{rosterFailureHeading(rosterError)}</AlertTitle>
+          <AlertTitle>Unable to load Sessions</AlertTitle>
           <AlertDescription>{rosterError.message}</AlertDescription>
         </Alert>
       ) : null}
@@ -163,10 +151,9 @@ export function SessionsSidebarContent({
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const { roster, rosterError, reread } = useSessions(null)
+  const { roster, rosterError } = useSessions(null)
   return (
     <SessionsSidebarContent
-      onReread={reread}
       onSelect={(selectedSessionId) => navigate(`/sessions/${selectedSessionId}`)}
       roster={roster}
       rosterError={rosterError}

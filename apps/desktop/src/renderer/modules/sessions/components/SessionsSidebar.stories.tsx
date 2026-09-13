@@ -41,14 +41,6 @@ const listed = {
   filesUnreadable: 0,
 } satisfies SessionsListed
 
-const unavailable = {
-  version: 1,
-  type: 'session.error',
-  requestId: 'storybook-roster-unavailable',
-  code: 'access-denied',
-  message: 'Argo cannot access these Sessions.',
-} satisfies SessionError
-
 const readFailure = {
   version: 1,
   type: 'session.error',
@@ -90,7 +82,6 @@ const meta: Meta<typeof SessionsSidebarContent> = {
     ),
   ],
   args: {
-    onReread: fn(),
     onSelect: fn(),
     roster: listed,
     rosterError: null,
@@ -123,8 +114,6 @@ export const Discovered: Story = {
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       '/sessions/second-session',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Read again' }))
-    await expect(args.onReread).toHaveBeenCalled()
   },
 }
 
@@ -147,21 +136,12 @@ export const Empty: Story = {
   },
 }
 export const Failure: Story = {
-  render: (args) => (
-    <div className="grid h-dvh grid-rows-2">
-      <SessionsSidebarContent {...args} roster={null} rosterError={unavailable} />
-      <SessionsSidebarContent {...args} roster={null} rosterError={readFailure} />
-    </div>
-  ),
+  args: { roster: null, rosterError: readFailure },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const [unavailableAlert, readFailureAlert] = canvas.getAllByRole('alert')
-
-    await expect(unavailableAlert).toHaveAttribute('data-slot', 'alert')
-    await expect(unavailableAlert).toHaveTextContent('Sessions unavailable')
-    await expect(unavailableAlert).toHaveTextContent('Argo cannot access these Sessions.')
-    await expect(readFailureAlert).toHaveAttribute('data-slot', 'alert')
-    await expect(readFailureAlert).toHaveTextContent('Read failure')
-    await expect(readFailureAlert).toHaveTextContent('Argo could not read these Sessions.')
+    const alert = canvas.getByRole('alert')
+    await expect(alert).toHaveAttribute('data-slot', 'alert')
+    await expect(alert).toHaveTextContent('Unable to load Sessions')
+    await expect(alert).toHaveTextContent('Argo could not read these Sessions.')
   },
 }
