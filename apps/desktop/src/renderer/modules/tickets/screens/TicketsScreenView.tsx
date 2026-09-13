@@ -9,7 +9,7 @@ import {
 } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { AccountsDialog } from '../../accounts/components/AccountsDialog'
-import { ConnectRepositoryForm } from '../components/ConnectRepositoryForm'
+import { ConnectSourceForm } from '../components/ConnectSourceForm'
 import { TicketDeck } from '../components/TicketDeck'
 import { TicketProblem } from '../components/TicketProblem'
 import { type TicketsScreenProps, type TicketsView, useTicketsView } from '../hooks/useTicketsView'
@@ -25,7 +25,7 @@ function Loading({ label }: { label: string }) {
       <div className="grid max-w-md gap-(--spacing-shell-gutter) p-(--spacing-shell-inset)">
         {[0, 1, 2, 3].map((index) => (
           <div className="flex items-center gap-(--spacing-shell-item)" key={index}>
-            <Skeleton className="h-3 w-(--size-ticket-number)" />
+            <Skeleton className="h-3 w-(--size-ticket-key)" />
             <Skeleton className="h-4 flex-1" />
           </div>
         ))}
@@ -43,7 +43,7 @@ function NoProject() {
         </EmptyMedia>
         <EmptyTitle>Select a Project to read its Tickets</EmptyTitle>
         <EmptyDescription>
-          A Project reads its Tickets from the GitHub repository it is connected to.
+          A Project reads its Tickets from the GitHub repository or Linear team it is connected to.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -59,7 +59,7 @@ function Body({ view }: { view: TicketsView }) {
     case 'problem':
       return <TicketProblem {...view} />
     case 'unconnected':
-      return <ConnectRepositoryForm key={view.projectId} {...view} />
+      return <ConnectSourceForm key={view.projectId} {...view} />
     case 'tickets':
       // A new Project starts with nothing selected, as the connect form starts empty.
       return <TicketDeck key={view.projectId} {...view} />

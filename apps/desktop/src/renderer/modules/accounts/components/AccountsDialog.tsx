@@ -21,7 +21,7 @@ import { type SignedIn, SignInPanel, type SignInPanelProps } from './SignInPanel
 export type AccountsPanelProps = {
   listing: AccountListing | null
   listError: ContractFailure | null
-  signIn: SignInPanelProps
+  signIn: Omit<SignInPanelProps, 'providers'>
   disconnecting: string | null
   disconnectError: ContractFailure | null
   onDisconnect: (accountId: string) => void
@@ -57,11 +57,11 @@ export function AccountsPanel({
         </p>
       ) : null}
       {listing && accounts.length === 0 ? (
-        <p className="type-body text-muted-foreground">No GitHub Account is connected.</p>
+        <p className="type-body text-muted-foreground">No Account is connected.</p>
       ) : null}
       {accounts.length > 0 ? (
         <ul
-          aria-label="GitHub Accounts"
+          aria-label="Accounts"
           className="grid divide-y divide-border/60 rounded-lg border border-border/60"
         >
           {accounts.map((account) => (
@@ -70,13 +70,13 @@ export function AccountsPanel({
               busy={disconnecting === account.id}
               key={account.id}
               onDisconnect={() => onDisconnect(account.id)}
-              onReconnect={signIn.start}
+              onReconnect={() => signIn.start(account.provider)}
             />
           ))}
         </ul>
       ) : null}
       {disconnectError ? <Failure error={disconnectError} /> : null}
-      <SignInPanel {...signIn} />
+      <SignInPanel {...signIn} providers={listing?.providers ?? []} />
     </div>
   )
 }
@@ -110,9 +110,10 @@ export function AccountsDialog() {
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md" finalFocus={() => returnFocus(opener)}>
         <DialogHeader>
-          <DialogTitle>GitHub Accounts</DialogTitle>
+          <DialogTitle>Accounts</DialogTitle>
           <DialogDescription>
-            Argo reads Tickets through these Accounts. Each GitHub identity is its own Account.
+            Argo reads Tickets through these Accounts. Each GitHub or Linear identity is its own
+            Account.
           </DialogDescription>
         </DialogHeader>
         <AccountsPanel

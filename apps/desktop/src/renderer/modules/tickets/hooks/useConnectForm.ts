@@ -1,15 +1,16 @@
-// The connect form's own state: the Account picked, the repositories it can see and the connect
+// The connect form's own state: the Account picked, the sources it can see and the connect
 // action, resolved before the form draws.
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/core/accounts/contract'
+import type { TicketScope } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
-import type { ConnectRepositoryFormProps } from '../components/ConnectRepositoryForm'
-import type { RepositoryDiscovery } from '../components/RepositoryField'
-import { useConnectRepository, useRepositories } from './useTickets'
+import type { ConnectSourceFormProps } from '../components/ConnectSourceForm'
+import type { SourceDiscovery } from '../components/SourceField'
+import { useConnectSource, useSources } from './useTickets'
 
-export type ConnectForm = Omit<ConnectRepositoryFormProps, 'projectName' | 'accounts'>
+export type ConnectForm = Omit<ConnectSourceFormProps, 'projectName' | 'accounts'>
 
 // The Account the person picked while it stays connected, else the first connected one.
 function chosenAccount(accounts: readonly AccountSummary[] | undefined, picked: string | null) {
@@ -17,16 +18,16 @@ function chosenAccount(accounts: readonly AccountSummary[] | undefined, picked: 
   return (connected.find((account) => account.id === picked) ?? connected[0])?.id ?? null
 }
 
-function discovery(repositories: UseQueryResult<string[], ContractFailure>): RepositoryDiscovery {
-  if (repositories.isPending) return { state: 'loading' }
-  if (repositories.error) {
-    const onRetry = () => void repositories.refetch()
-    return { state: 'failed', message: repositories.error.message, onRetry }
+function discovery(sources: UseQueryResult<TicketScope[], ContractFailure>): SourceDiscovery {
+  if (sources.isPending) return { state: 'loading' }
+  if (sources.error) {
+    const onRetry = () => void sources.refetch()
+    return { state: 'failed', message: sources.error.message, onRetry }
   }
-  return { state: 'listed', scopes: repositories.data }
+  return { state: 'listed', scopes: sources.data }
 }
 
-// Nothing is read from GitHub while `open` is false, which is while the Project has a Connection.
+// Nothing is read from a provider while `open` is false, which is while the Project has a Connection.
 export function useConnectForm(
   projectId: string | null,
   accounts: readonly AccountSummary[] | undefined,
@@ -34,16 +35,16 @@ export function useConnectForm(
 ): ConnectForm {
   const [picked, setPicked] = useState<string | null>(null)
   const accountId = chosenAccount(accounts, picked)
-  const repositories = useRepositories(projectId, open ? accountId : null)
-  const connectRepository = useConnectRepository()
+  const sources = useSources(projectId, open ? accountId : null)
+  const connectSource = useConnectSource()
   return {
     accountId,
-    repositories: discovery(repositories),
+    sources: discovery(sources),
     onSelectAccount: setPicked,
-    pending: connectRepository.isPending,
-    error: connectRepository.variables?.projectId === projectId ? connectRepository.error : null,
-    onConnectRepository: (target) => {
-      if (projectId) connectRepository.mutate({ projectId, ...target })
+    pending: connectSource.isPending,
+    error: connectSource.variables?.projectId === projectId ? connectSource.error : null,
+    onConnectSource: (target) => {
+      if (projectId) connectSource.mutate({ projectId, ...target })
     },
     onConnectAccount: openAccountsDialog,
   }

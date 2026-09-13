@@ -13,16 +13,16 @@ export const projectRequest = <const Type extends string>(type: Type, projectId:
   projectId,
 })
 
-export const connectRepositoryRequest = (
+export const connectSourceRequest = (
   projectId: string,
   target: { accountId: string; scope: string },
 ): TicketConnectRequest => ({ ...projectRequest('ticket.connect', projectId), ...target })
 
-export const listRequest = (projectId: string, query: string, page: number): TicketListRequest => ({
-  ...projectRequest('ticket.list', projectId),
-  query,
-  page,
-})
+export const listRequest = (
+  projectId: string,
+  query: string,
+  cursor: string | null,
+): TicketListRequest => ({ ...projectRequest('ticket.list', projectId), query, cursor })
 
 export const discoverRequest = (projectId: string, accountId: string): TicketDiscoverRequest => ({
   ...projectRequest('ticket.discover', projectId),

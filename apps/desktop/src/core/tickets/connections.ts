@@ -1,15 +1,21 @@
-// The Connection store: which repository each Project reads its Tickets from, and through which
+// The Connection store: which repository or team each Project reads its Tickets from, and through which
 // Account (CONTEXT.md L1 · Connection). Its own file beside `projects.json`, because a registration's
 // identity and its validated links are separate destination files
 // (docs/portable-integration-contracts.md).
 import { isIdentifier, isRecord } from '../../boundary'
+import type { Provider } from '../accounts/contract'
+import { providerOf } from '../accounts/registry'
 import { otherFields, readDocument, writeDocument } from '../storage/portable-file'
 
+// `scope` is the provider's id for the source, and `label` its name when it was connected: a
+// GitHub repository is both at once, a Linear team an id and a name.
 export type TicketConnection = {
   projectId: string
   port: 'ticket'
+  provider: Provider
   accountId: string
   scope: string
+  label: string
   [key: string]: unknown
 }
 
@@ -26,8 +32,14 @@ export type ConnectionRead =
 
 const OWNED = ['version', 'connections']
 
-function isTicketConnection(value: Record<string, unknown>): value is TicketConnection {
-  return isIdentifier(value.projectId) && isIdentifier(value.accountId) && isIdentifier(value.scope)
+// The provider is read from the Account ID, and a record from before labels names its scope.
+function ticketConnection(value: Record<string, unknown>): TicketConnection | null {
+  const { projectId, accountId, scope } = value
+  if (!isIdentifier(projectId) || !isIdentifier(accountId) || !isIdentifier(scope)) return null
+  const provider = providerOf(accountId)
+  if (!provider) return null
+  const label = typeof value.label === 'string' && value.label !== '' ? value.label : scope
+  return { ...value, projectId, port: 'ticket', provider, accountId, scope, label }
 }
 
 function parse(document: unknown): ConnectionDocument {
@@ -42,13 +54,11 @@ function parse(document: unknown): ConnectionDocument {
       continue
     }
     // One Ticket source per Project: a second is ambiguous, and guessing would read the wrong one.
-    if (
-      !isTicketConnection(entry) ||
-      connections.some((known) => known.projectId === entry.projectId)
-    ) {
+    const connection = ticketConnection(entry)
+    if (!connection || connections.some((known) => known.projectId === connection.projectId)) {
       throw new Error('Invalid Connection store')
     }
-    connections.push(entry)
+    connections.push(connection)
   }
   return { connections, others, other: otherFields(document, OWNED) }
 }
@@ -73,9 +83,11 @@ export function writeConnections(
   document: ConnectionDocument,
 ): Promise<boolean> {
   const { connections, others, other } = document
+  // The provider is read from the Account ID each time, so it is not written a second time.
+  const written = connections.map(({ provider: _provider, ...connection }) => connection)
   return writeDocument(connectionsPath, {
     ...other,
     version: 1,
-    connections: [...others, ...connections],
+    connections: [...others, ...written],
   })
 }

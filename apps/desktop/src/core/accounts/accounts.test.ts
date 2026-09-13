@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { markRevoked } from './access'
 import { connect, harness, OCTOCAT } from './harness'
+import { tokenFor } from './tokens'
 
 const WORK = { id: 9001, login: 'octocat-at-work' }
+const GITHUB = { provider: 'github' }
 
 test('connecting GitHub adds one Account keyed by the provider id and opens only its own page', async (context) => {
   const cockpit = await harness(context)
@@ -16,6 +19,7 @@ test('connecting GitHub adds one Account keyed by the provider id and opens only
       id: 'github:583231',
       provider: 'github',
       login: 'octocat',
+      workspace: null,
       state: 'connected',
       connections: [],
     },
@@ -92,7 +96,7 @@ test('a sign-in that ends without a grant says how it ended and stores nothing',
 test('a cancelled sign-in answers the waiting step as cancelled', async (context) => {
   const cockpit = await harness(context)
   cockpit.github.signIn(OCTOCAT, 1_000_000)
-  await cockpit.account('account.connect')
+  await cockpit.account('account.connect', GITHUB)
   const waiting = cockpit.account('account.await')
   await cockpit.account('account.cancel')
   assert.equal((await waiting).code, 'sign-in-cancelled')
@@ -102,14 +106,17 @@ test('a cancelled sign-in answers the waiting step as cancelled', async (context
 test('a machine that cannot store a grant securely is refused before GitHub is called', async (context) => {
   const cockpit = await harness(context)
   cockpit.cipher.enabled = false
-  assert.equal((await cockpit.account('account.connect')).code, 'secure-storage-unavailable')
+  assert.equal(
+    (await cockpit.account('account.connect', GITHUB)).code,
+    'secure-storage-unavailable',
+  )
   assert.deepEqual(cockpit.github.requests, [])
 })
 
 test('an unreachable GitHub is a named failure', async (context) => {
   const cockpit = await harness(context)
   await cockpit.github.close()
-  assert.equal((await cockpit.account('account.connect')).code, 'github-unreachable')
+  assert.equal((await cockpit.account('account.connect', GITHUB)).code, 'github-unreachable')
 })
 
 test('an unknown action, a stray field and another version are refused by name', async (context) => {
@@ -118,4 +125,17 @@ test('an unknown action, a stray field and another version are refused by name',
   assert.equal((await cockpit.account('account.list', { token: 'x' })).code, 'invalid-request')
   const disconnect = await cockpit.account('account.disconnect')
   assert.equal(disconnect.code, 'invalid-request')
+})
+
+test('a refusal of a grant renewed since leaves the Account connected', async (context) => {
+  const cockpit = await harness(context)
+  cockpit.github.signIn(OCTOCAT)
+  await connect(cockpit)
+  const before = await tokenFor(cockpit.access(), 'github:583231')
+  cockpit.github.signIn(OCTOCAT)
+  await connect(cockpit)
+  assert.ok(before.ok)
+  await markRevoked(cockpit.access(), 'github:583231', before.token)
+  const accounts = (await cockpit.account('account.list')).accounts as { state: string }[]
+  assert.equal(accounts[0]?.state, 'connected')
 })
