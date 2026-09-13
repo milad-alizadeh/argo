@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { stitchChains } from '../sessions/chains.ts'
-import { fixtureFiles } from './session-fixtures'
+import { fixtureFile, fixtureFiles } from './session-fixtures'
 
 async function chainsOf(names) {
   return stitchChains(await fixtureFiles(names))
@@ -16,6 +16,20 @@ test('stitches a resume onto the file whose leaf it names', async () => {
     chains[0].files.map((file) => file.sessionId),
     ['resumeParent', 'resumeChild'],
   )
+})
+
+test('stitches a resume onto local command output', async () => {
+  const parent = await fixtureFile('harnessNoise')
+  const source = await fixtureFile('externalBasic')
+  const child = {
+    ...source,
+    path: '/tmp/resumed-from-command-output.jsonl',
+    sessionId: 'resumedFromCommandOutput',
+    resumedFrom: 'u-stdout',
+  }
+  const [chain] = stitchChains([parent, child])
+  assert.equal(chain.id, 'harnessNoise')
+  assert.deepEqual(chain.retiredIds, ['resumedFromCommandOutput'])
 })
 
 // A relocation writes no shared uuid: the child's first `last-prompt` names a leaf in its own

@@ -7,6 +7,7 @@ import {
   readTranscriptFile,
   type TranscriptFile,
   type TranscriptParser,
+  type TranscriptRecord,
   withoutBlocks,
 } from './transcript'
 import { ROSTER_FILE_LIMIT, readTranscriptLines } from './transcript-lines'
@@ -26,6 +27,7 @@ type TranscriptDiscoverySource = {
   cli: string
   transcriptPaths: (root: string) => Promise<TranscriptPath[]>
   parse: TranscriptParser
+  normalizeRecords?: (records: TranscriptRecord[]) => TranscriptRecord[]
 }
 
 function holdsMessage(file: TranscriptFile): boolean {
@@ -37,11 +39,15 @@ async function readFile(
   file: TranscriptPath,
 ): Promise<TranscriptFile | null> {
   try {
-    return readTranscriptFile(file.path, {
+    const read = readTranscriptFile(file.path, {
       fileName: file.name,
       lines: await readTranscriptLines(file.path),
       parse: source.parse,
     })
+    return {
+      ...read,
+      records: source.normalizeRecords?.(read.records) ?? read.records,
+    }
   } catch {
     return null
   }
