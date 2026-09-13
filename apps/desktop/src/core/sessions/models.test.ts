@@ -22,6 +22,7 @@ const roster = {
   shell: [],
   pullRequest: null,
   archived: false,
+  setup: { model: null, effort: null, mode: null },
 }
 
 test('accepts only complete Roster rows', () => {

@@ -32,6 +32,7 @@ const orphaned: SessionRosterRow = {
   archived: false,
   contextTokens: null,
   spentTokens: null,
+  setup: { model: null, effort: null, mode: null },
 }
 
 // The bridge a restarted Argo answers with: the Roster lists the orphaned Session, and a Send

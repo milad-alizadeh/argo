@@ -1,14 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
+import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
+import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
+import type { TurnSetup } from '../turn-setup/turn-setup'
+import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { useClaudeSessionMutations } from './useClaudeSessionMutations'
 import { useCodexSessionMutations } from './useCodexSessionMutations'
 import type { useSessions } from './useSessions'
 
-export type SessionCli = 'claude' | 'codex'
+const NO_ROWS: SessionRosterRow[] = []
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.
 type Failure = { sessionId: string | null; message: string }
@@ -48,39 +52,42 @@ export function useSessionComposer({
   selectedSessionId,
 }: SessionComposerOptions): {
   failure: string | null
-  props: Omit<SessionComposerProps, 'plan'>
+  props: Omit<SessionComposerProps, 'plan' | 'harness'>
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { interrupt, send, start } = useMutationsFor(cli)
-  const onInterrupt = useCallback(async () => {
-    if (selectedSessionId === null) return false
-    try {
-      await interrupt.mutateAsync(selectedSessionId)
-      return true
-    } catch (error) {
-      setFailure({
-        sessionId: selectedSessionId,
-        message: messageFrom(error, 'Argo could not interrupt this Session.'),
-      })
-      return false
-    }
-  }, [interrupt, selectedSessionId])
+  const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
+  const { control, watchTurn } = useTurnSetup({
+    cli,
+    choices: HARNESSES[cli].setup,
+    composerKey,
+    rows: roster?.sessions ?? NO_ROWS,
+    onRefusal: setFailure,
+  })
+  const onInterrupt = useInterrupt(interrupt, selectedSessionId, setFailure)
   const onSend = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, setup: TurnSetup | null) => {
       if (selectedSessionId !== null) {
-        const sent = await sendMessage({ send, prompt, sessionId: selectedSessionId, setFailure })
-        // A Send can resume the Session (ADR-0026), so its posture may have changed.
-        if (sent) await invalidateSessionRoster(queryClient)
-        return sent
+        const since =
+          roster?.sessions.find(({ id }) => id === selectedSessionId)?.turnStartedAt ?? null
+        return sendMessage(
+          { send, prompt, setup, sessionId: selectedSessionId, setFailure },
+          () => {
+            if (setup !== null) watchTurn(selectedSessionId, setup, since)
+            // A Send can resume the Session (ADR-0026), so its posture may have changed.
+            return invalidateSessionRoster(queryClient)
+          },
+        )
       }
       if (cockpit.project === null) {
         setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
         return false
       }
       try {
-        const reply = await start.mutateAsync({ cwd: cockpit.project.path, prompt })
+        const reply = await start.mutateAsync({ cwd: cockpit.project.path, prompt, setup })
         setFailure(null)
+        if (setup !== null) watchTurn(reply.sessionId, setup, null)
         await invalidateSessionRoster(queryClient)
         navigate(`/sessions/${reply.sessionId}`)
         return true
@@ -92,7 +99,7 @@ export function useSessionComposer({
         return false
       }
     },
-    [cockpit.project, navigate, queryClient, selectedSessionId, send, start],
+    [cockpit.project, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
   )
   return {
     failure: failure?.sessionId === selectedSessionId ? failure.message : null,
@@ -100,30 +107,52 @@ export function useSessionComposer({
       isRunning: managedSessionIsRunning(roster, selectedSessionId),
       onInterrupt,
       onSend,
-      sessionId: selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`,
+      sessionId: composerKey,
+      setup: control,
     },
   }
 }
 
-async function sendMessage({
-  send,
-  prompt,
-  sessionId,
-  setFailure,
-}: {
-  send: ReturnType<typeof useMutationsFor>['send']
-  prompt: string
-  sessionId: string
-  setFailure: (failure: Failure | null) => void
-}) {
+function useInterrupt(
+  interrupt: ReturnType<typeof useMutationsFor>['interrupt'],
+  sessionId: string | null,
+  setFailure: (failure: Failure | null) => void,
+) {
+  return useCallback(async () => {
+    if (sessionId === null) return false
+    try {
+      await interrupt.mutateAsync(sessionId)
+      return true
+    } catch (error) {
+      setFailure({
+        sessionId,
+        message: messageFrom(error, 'Argo could not interrupt this Session.'),
+      })
+      return false
+    }
+  }, [interrupt, sessionId, setFailure])
+}
+
+async function sendMessage(
+  request: {
+    send: ReturnType<typeof useMutationsFor>['send']
+    prompt: string
+    setup: TurnSetup | null
+    sessionId: string
+    setFailure: (failure: Failure | null) => void
+  },
+  afterSend: () => Promise<void>,
+) {
+  const { send, prompt, setup, sessionId, setFailure } = request
   try {
-    await send.mutateAsync({ prompt, sessionId })
+    await send.mutateAsync({ prompt, sessionId, setup })
     setFailure(null)
-    return true
   } catch (error) {
     setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
     return false
   }
+  await afterSend()
+  return true
 }
 
 function messageFrom(error: unknown, fallback: string) {

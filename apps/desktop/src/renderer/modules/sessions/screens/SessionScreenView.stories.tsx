@@ -40,6 +40,7 @@ const SESSION_ROSTER = [
     archived: false,
     contextTokens: 54_000,
     spentTokens: 11_200,
+    setup: { model: null, effort: null, mode: null },
   },
   {
     id: 'shortcut-review',
@@ -63,6 +64,7 @@ const SESSION_ROSTER = [
     archived: false,
     contextTokens: 21_000,
     spentTokens: 4_600,
+    setup: { model: null, effort: null, mode: null },
   },
   {
     id: 'feed-review',
@@ -86,6 +88,7 @@ const SESSION_ROSTER = [
     archived: false,
     contextTokens: 18_000,
     spentTokens: 2_900,
+    setup: { model: null, effort: null, mode: null },
   },
 ] satisfies Session[]
 
