@@ -11,7 +11,7 @@ export type SessionComposerProps = {
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string) => Promise<boolean>
-  plan: SessionPlan | null
+  plan?: SessionPlan | null
 }
 
 function restorePendingTurn(
@@ -33,7 +33,7 @@ export function SessionComposer({
   onInterrupt,
   sessionId,
   onSend,
-  plan,
+  plan = null,
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
