@@ -1,69 +1,78 @@
-import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import type { ClaudePermission } from '@/core/sessions/contract'
-import { rereadSessions } from './useSessions'
+import {
+  type SessionContractError,
+  throwSessionContractError,
+  throwUnexpectedSessionReply,
+} from '../session-contract-error'
+import { invalidateSessionRoster, sessionPermissionQueryKey } from '../session-queries'
 
 export function useClaudePermission(sessionId: string | null) {
-  const [permission, setPermission] = useState<ClaudePermission | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
-  useEffect(() => {
-    setPermission(null)
-    setFailure(null)
-    if (sessionId === null) return
-    let live = true
-    let timer: number | null = null
-    const read = async () => {
-      const reply = await readPermission(sessionId)
-      if (!live) return
-      applyPermissionReply(reply, setFailure, setPermission)
-      timer = window.setTimeout(read, 500)
-    }
-    void read()
-    return () => {
-      live = false
-      if (timer !== null) window.clearTimeout(timer)
-    }
-  }, [sessionId])
+  const queryClient = useQueryClient()
+  const permission = useQuery<ClaudePermission | null, SessionContractError>({
+    queryKey:
+      sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId),
+    enabled: sessionId !== null,
+    refetchInterval: 500,
+    retry: false,
+    queryFn: async () => {
+      if (sessionId === null) return null
+      const reply = await window.argo.readClaudePermission({ sessionId })
+      switch (reply.type) {
+        case 'session.claude.permission.read':
+          return reply.permission
+        case 'session.error':
+          return throwSessionContractError(reply)
+        default:
+          return throwUnexpectedSessionReply(reply)
+      }
+    },
+  })
+  const permissionDecision = usePermissionDecision()
   const decide = async (decision: 'allow' | 'deny') => {
-    if (permission === null) return false
-    const reply = await window.argo.decideClaudePermission({
-      sessionId: permission.sessionId,
-      permissionId: permission.id,
-      decision,
-    })
-    if (reply.type === 'session.error') {
-      setFailure(reply.message)
+    if (permission.data === null || permission.data === undefined) return false
+    try {
+      await permissionDecision.mutateAsync({ decision, permission: permission.data })
+      queryClient.setQueryData(sessionPermissionQueryKey(permission.data.sessionId), null)
+      await invalidateSessionRoster(queryClient)
+      setFailure(null)
+      return true
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : 'Argo could not decide this permission.')
       return false
     }
-    setPermission(null)
-    rereadSessions()
-    return true
   }
-  return { decide, failure, permission }
-}
-
-async function readPermission(sessionId: string) {
-  try {
-    return await window.argo.readClaudePermission({
-      sessionId,
-    })
-  } catch {
-    return null
+  return {
+    decide,
+    failure: failure ?? permission.error?.message ?? null,
+    permission: permission.data ?? null,
   }
 }
 
-function applyPermissionReply(
-  reply: Awaited<ReturnType<typeof window.argo.readClaudePermission>> | null,
-  setFailure: (value: string | null) => void,
-  setPermission: (value: ClaudePermission | null) => void,
-) {
-  if (reply === null) {
-    setFailure('Argo could not read this Claude permission.')
-    return
-  }
-  if (reply.type === 'session.error') {
-    setFailure(reply.message)
-    return
-  }
-  setFailure(null)
-  setPermission(reply.permission)
+function usePermissionDecision() {
+  return useMutation({
+    mutationFn: async ({
+      decision,
+      permission,
+    }: {
+      decision: 'allow' | 'deny'
+      permission: ClaudePermission
+    }) => {
+      const reply = await window.argo.decideClaudePermission({
+        sessionId: permission.sessionId,
+        permissionId: permission.id,
+        decision,
+      })
+      switch (reply.type) {
+        case 'session.claude.accepted':
+          return
+        case 'session.error':
+          return throwSessionContractError(reply)
+        default:
+          return throwUnexpectedSessionReply(reply)
+      }
+    },
+  })
 }
