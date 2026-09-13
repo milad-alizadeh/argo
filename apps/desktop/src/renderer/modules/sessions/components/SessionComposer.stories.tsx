@@ -189,9 +189,22 @@ export const QueuedTurn: Story = {
     await userEvent.keyboard('{Enter}')
     await userEvent.click(
       canvas.getByRole('button', {
+        name: 'Move queued message up: Then prepare the release notes.',
+      }),
+    )
+    await expect(canvas.getAllByRole('listitem')[0]).toHaveTextContent(
+      'Then prepare the release notes.',
+    )
+    await userEvent.click(
+      canvas.getByRole('button', {
         name: 'Remove queued message: Then prepare the release notes.',
       }),
     )
+    await expect(
+      canvas.getByRole('button', {
+        name: 'Steer queued message: Run the focused checks after this Turn.',
+      }),
+    ).toHaveFocus()
     await userEvent.click(
       canvas.getByRole('button', {
         name: 'Edit queued message: Run the focused checks after this Turn.',
