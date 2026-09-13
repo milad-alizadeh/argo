@@ -1,14 +1,16 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 import { isRecord } from '../../boundary'
+import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
 import {
-  TICKET_PAGE_SIZE,
+  labelColor,
   type Ticket,
   type TicketLabel,
   type TicketLink,
-} from '../../core/tickets/contract'
+} from '../../core/tickets/ticket'
 import type { GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, getAll, getPage } from './http'
+import { githubStatus } from './statuses'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
 // requests in flight, bounded because GitHub's secondary limits refuse a wide fan-out.
@@ -30,7 +32,7 @@ const isNumber = (value: unknown): value is number =>
 function label(value: unknown): TicketLabel | null {
   if (typeof value === 'string') return { name: value, color: null }
   if (!isRecord(value) || typeof value.name !== 'string') return null
-  return { name: value.name, color: typeof value.color === 'string' ? value.color : null }
+  return { name: value.name, color: labelColor(value.color) }
 }
 
 function count(summary: unknown, key: string): number {
@@ -56,9 +58,8 @@ function issue(value: unknown, page: string): Issue | null {
       title,
       body: prose === '' ? null : prose,
       state,
-      // GitHub has no workflow word beyond open and closed, and no priority.
-      status: null,
-      stateReason: typeof value.state_reason === 'string' ? value.state_reason : null,
+      status: githubStatus(state, value.state_reason),
+      // GitHub keeps no priority.
       priority: null,
       createdAt,
       labels: labels.filter((entry) => entry !== null),

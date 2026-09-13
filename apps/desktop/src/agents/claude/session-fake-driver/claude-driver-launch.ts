@@ -1,3 +1,4 @@
+import { mkdtempSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -8,6 +9,7 @@ import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import type { ResumeTarget } from '../drive/drive-channel.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
+import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
 
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 
@@ -30,6 +32,20 @@ export async function ledgerFile(context: TestContext) {
   return path.join(folder, 'claude-session-ownership.json')
 }
 
+// A gate that never raises a Permission, for a test with nothing to say about Permission behavior.
+// It still writes a real (inert) hook into the plugin, the way the real gate's `open` would.
+function fakePermissionGate(): ClaudePermissionGate {
+  return {
+    open: () => ({
+      hook: { event: 'PreToolUse', file: 'permission-hook.sh', script: '' },
+      close: () => {},
+    }),
+    pending: () => null,
+    decide: () => false,
+    close: () => {},
+  }
+}
+
 // One Argo launch: a ledger for this window, and a spawn that records each process it opened. Each
 // process is a Claude TUI that redraws its Mode footer on Ctrl+L, one Mode on per Shift+Tab.
 export function launch(
@@ -39,6 +55,7 @@ export function launch(
     resumeTarget?: (sessionId: string) => Promise<ResumeTarget | null>
     findExecutable?: () => string | null
     spawnFails?: boolean
+    gate?: ClaudePermissionGate
   } = {},
 ) {
   const spawned: Spawned[] = []
@@ -50,6 +67,7 @@ export function launch(
     owner: { pid: process.pid, registry: options.registry ?? 'window-a' },
     isAlive: (pid) => pid === process.pid,
   })
+  const pluginRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-claude-plugins-'))
   const driver = createClaudeSessionDriver({
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
     mintSessionId: () => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c',
@@ -65,14 +83,16 @@ export function launch(
       spawned.push(record)
       return { ...terminal(record.writes), onExit: (listener) => exits.push(listener) }
     },
-    prepare: (sessionId, record) => {
+    gate: options.gate ?? fakePermissionGate(),
+    pluginRoot,
+    extraParts: (sessionId, record) => {
       displays.set(sessionId, record)
-      return { commandArguments: [], close: () => {} }
+      return []
     },
   })
   const state: Launch = { spawned, exit: (index) => exits[index]?.() }
   const display = (sessionId: string, batch: unknown) => displays.get(sessionId)?.(batch)
-  return { driver, ledger, display, ...state }
+  return { driver, ledger, display, pluginRoot, ...state }
 }
 
 // A Session a previous launch started and released when it quit.

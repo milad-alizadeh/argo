@@ -1,9 +1,25 @@
-// Linear's GraphQL as the fake answers it: the four documents the cockpit sends, told apart by their
+// Linear's GraphQL as the fake answers it: the documents the cockpit sends, told apart by their
 // operation name, and Linear's refusals as a 400 whose error carries a code.
 import type { FakeLinearIssue, FakeLinearTeam, FakeLinearUser } from './fake-linear'
-import { bodyOf, type FakeLinearState, type Route, reply } from './fake-linear-state'
+import {
+  bodyOf,
+  type FakeConsent,
+  type FakeLinearState,
+  type Route,
+  reply,
+} from './fake-linear-state'
+import { findIssue, issueState, moveIssue, teamStates } from './fake-linear-workflow'
 
-type Variables = { team?: string; term?: string; first?: number; after?: string | null }
+type Variables = {
+  team?: string
+  teamId?: string
+  term?: string
+  first?: number
+  after?: string | null
+  key?: string
+  id?: string
+  state?: string
+}
 type Answer = (state: FakeLinearState, user: FakeLinearUser, variables: Variables) => unknown
 
 const refusal = (code: string) => ({ errors: [{ message: code, extensions: { code } }] })
@@ -25,26 +41,18 @@ function paged<T>(items: T[], variables: Variables) {
   }
 }
 
-function find(state: FakeLinearState, identifier: string): FakeLinearIssue | undefined {
-  for (const team of state.teams.values()) {
-    const issue = team.issues.find((candidate) => candidate.identifier === identifier)
-    if (issue) return issue
-  }
-}
-
-const stateOf = (issue: FakeLinearIssue) => ({
-  name: issue.status ?? 'Todo',
-  type: issue.stateType ?? 'unstarted',
-})
+const typeOf = (issue: FakeLinearIssue) => issue.stateType ?? 'unstarted'
 
 function link(state: FakeLinearState, identifier: string) {
-  const issue = find(state, identifier)
-  return issue ? { identifier, title: issue.title, state: { type: stateOf(issue).type } } : null
+  const issue = findIssue(state, identifier)?.issue
+  return issue ? { identifier, title: issue.title, state: { type: typeOf(issue) } } : null
 }
 
 const PRIORITY_LABELS = ['No priority', 'Urgent', 'High', 'Medium', 'Low']
 
-function issueJSON(state: FakeLinearState, user: FakeLinearUser, issue: FakeLinearIssue) {
+type Place = { team: FakeLinearTeam; user: FakeLinearUser }
+
+function issueJSON(state: FakeLinearState, { team, user }: Place, issue: FakeLinearIssue) {
   const links = (identifiers: string[] = []) =>
     identifiers.map((identifier) => link(state, identifier)).filter((entry) => entry !== null)
   const priority = issue.priority ?? 0
@@ -57,7 +65,7 @@ function issueJSON(state: FakeLinearState, user: FakeLinearUser, issue: FakeLine
     createdAt: issue.createdAt ?? '2026-09-01T09:00:00.000Z',
     priority,
     priorityLabel: PRIORITY_LABELS[priority],
-    state: stateOf(issue),
+    state: issueState(team, issue),
     labels: { nodes: issue.labels ?? [] },
     children: { nodes: links(issue.children) },
     inverseRelations: {
@@ -66,13 +74,28 @@ function issueJSON(state: FakeLinearState, user: FakeLinearUser, issue: FakeLine
   }
 }
 
+const teamOf = (state: FakeLinearState, user: FakeLinearUser, id: string | undefined) =>
+  visible(state, user).find((candidate) => candidate.id === id)
+
 function openIssues(state: FakeLinearState, user: FakeLinearUser, variables: Variables) {
-  const team: FakeLinearTeam | undefined = visible(state, user).find(
-    (candidate) => candidate.id === variables.team,
-  )
-  return (team?.issues ?? [])
-    .filter((issue) => !CLOSED.has(stateOf(issue).type))
-    .map((issue) => issueJSON(state, user, issue))
+  const team = teamOf(state, user, variables.team)
+  if (!team) return []
+  return team.issues
+    .filter((issue) => !CLOSED.has(typeOf(issue)))
+    .map((issue) => issueJSON(state, { team, user }, issue))
+}
+
+function workflow(state: FakeLinearState, user: FakeLinearUser, variables: Variables) {
+  const team = teamOf(state, user, variables.teamId)
+  return team ? { states: { nodes: teamStates(team) } } : null
+}
+
+// An issue out of the caller's sight is one Linear cannot find.
+function target(state: FakeLinearState, user: FakeLinearUser, key: string) {
+  const found = findIssue(state, key)
+  if (!found?.team.visibleTo.includes(user.id)) return null
+  const states = { nodes: teamStates(found.team).map(({ id }) => ({ id })) }
+  return { id: `issue-${found.issue.identifier}`, team: { id: found.team.id, states } }
 }
 
 const ANSWERS: Record<string, Answer> = {
@@ -92,29 +115,41 @@ const ANSWERS: Record<string, Answer> = {
   }),
   Backlog: (state, user, variables) => {
     const { pageInfo, nodes } = paged(openIssues(state, user, variables), variables)
-    return { issues: { pageInfo, nodes } }
+    return { issues: { pageInfo, nodes }, team: workflow(state, user, variables) }
   },
   Search: (state, user, variables) => {
     const term = (variables.term ?? '').toLowerCase()
     const matches = openIssues(state, user, variables).filter((issue) =>
       `${issue.title} ${issue.description ?? ''}`.toLowerCase().includes(term),
     )
-    return { searchIssues: paged(matches, variables) }
+    return { searchIssues: paged(matches, variables), team: workflow(state, user, variables) }
+  },
+  Target: (state, user, variables) => ({ issue: target(state, user, variables.key ?? '') }),
+  Move: (state, _user, variables) => {
+    const moved = moveIssue(state, variables.id ?? '', variables.state ?? '')
+    return { issueUpdate: { success: moved !== null, issue: moved ? { state: moved } : null } }
   },
 }
 
-function caller(state: FakeLinearState, header: string | undefined): FakeLinearUser | null {
+// Linear refuses a write made with a token granted `read` alone.
+const WRITES = new Set(['Move'])
+
+function caller(state: FakeLinearState, header: string | undefined): FakeConsent | null {
   const grant = state.access.get((header ?? '').replace(/^Bearer /, ''))
-  return grant && grant.expiresAt > Date.now() ? grant.user : null
+  return grant && grant.expiresAt > Date.now() ? grant : null
 }
 
 export const answerGraphQL: Route = async (state, request, response) => {
   if (state.outage === 'down') return reply(response, 503, { error: 'unavailable' })
   if (state.outage === 'rate-limited') return reply(response, 400, refusal('RATELIMITED'))
-  const user = caller(state, request.headers.authorization)
-  if (!user) return reply(response, 400, refusal('AUTHENTICATION_ERROR'))
+  const grant = caller(state, request.headers.authorization)
+  if (!grant) return reply(response, 400, refusal('AUTHENTICATION_ERROR'))
   const body = JSON.parse(await bodyOf(request)) as { query?: string; variables?: Variables }
-  const answer = ANSWERS[/query (\w+)/.exec(body.query ?? '')?.[1] ?? '']
+  const operation = /(?:query|mutation) (\w+)/.exec(body.query ?? '')?.[1] ?? ''
+  const answer = ANSWERS[operation]
   if (!answer) return reply(response, 400, refusal('GRAPHQL_VALIDATION_FAILED'))
-  reply(response, 200, { data: answer(state, user, body.variables ?? {}) })
+  if (WRITES.has(operation) && !grant.scope.split(' ').includes('write')) {
+    return reply(response, 400, refusal('FORBIDDEN'))
+  }
+  reply(response, 200, { data: answer(state, grant.user, body.variables ?? {}) })
 }

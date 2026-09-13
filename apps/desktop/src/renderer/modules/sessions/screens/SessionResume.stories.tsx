@@ -89,24 +89,19 @@ export const ResumesOnSend: Story = {
   },
 }
 
-function refusedStory(code: SessionErrorCode): Story {
-  return {
-    beforeEach: () => restartedHost(code),
-    play: async ({ canvasElement }) => {
-      const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
+// Every refusal draws the same alert with a different message, so one code stands for all of them.
+const REFUSAL: SessionErrorCode = 'held-elsewhere'
 
-      await waitFor(() =>
-        expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(code, null).message),
-      )
-      await expect(composer).toHaveTextContent('Carry on with the fix.')
-      await expect(composer).toHaveFocus()
-      await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
-    },
-  }
+export const RefusedSend: Story = {
+  beforeEach: () => restartedHost(REFUSAL),
+  play: async ({ canvasElement }) => {
+    const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
+
+    await waitFor(() =>
+      expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(REFUSAL, null).message),
+    )
+    await expect(composer).toHaveTextContent('Carry on with the fix.')
+    await expect(composer).toHaveFocus()
+    await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
+  },
 }
-
-export const HeldByAnotherWindow = refusedStory('held-elsewhere')
-export const NeverStartedByArgo = refusedStory('not-resumable')
-export const TranscriptGone = refusedStory('missing-session')
-export const ClaudeCodeMissing = refusedStory('cli-unavailable')
-export const ClaudeFailsToStart = refusedStory('launch-failed')

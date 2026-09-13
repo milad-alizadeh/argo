@@ -1,3 +1,4 @@
+import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionRosterRow } from './models'
 
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
@@ -33,4 +34,25 @@ export function managedRow(
     spentTokens: null,
     setup: session.setup,
   }
+}
+
+// A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
+// discovery sweep alone can miss it, or hold a stale posture for one it has already found.
+export function mergeManagedRoster(
+  discovered: TranscriptDiscovery,
+  managed: SessionRosterRow[],
+  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
+    ...observed,
+    posture: held.posture,
+  }),
+): TranscriptDiscovery {
+  const managedById = new Map(managed.map((session) => [session.id, session]))
+  const observed = discovered.rows.map((session) => {
+    const held = managedById.get(session.id)
+    return held === undefined ? session : reconcile(session, held)
+  })
+  const unobserved = managed.filter(
+    (session) => !discovered.rows.some(({ id }) => id === session.id),
+  )
+  return { ...discovered, rows: [...observed, ...unobserved] }
 }

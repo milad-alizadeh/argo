@@ -4,15 +4,21 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
-import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
+import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
-import { createCodexSessionReader, listSessions } from './read-sessions'
+import { createCodexSessionReader } from './read-sessions'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 
+function listSessions(value: unknown, root: string) {
+  return createCodexSessionReader(root).listSessions(value)
+}
+
 function listed(reply: Awaited<ReturnType<typeof listSessions>>) {
-  if (reply.type !== 'session.listed') throw new Error(`Expected sessions, received ${reply.type}.`)
-  return reply
+  const parsed = sessionListReplySchema.parse(reply)
+  if (parsed.type !== 'session.listed')
+    throw new Error(`Expected sessions, received ${parsed.type}.`)
+  return parsed
 }
 
 test('does not list transcripts without messages, but counts and re-reads them', async (context) => {
@@ -123,18 +129,20 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
     ],
   })
 
-  const roster = listed((await reader.listSessions(listing)) as SessionListReply)
+  const roster = listed(await reader.listSessions(listing))
   assert.deepEqual(
     roster.sessions.map(({ id, posture, status }) => ({ id, posture, status })),
     [{ id: sessionId, posture: 'managed', status: 'running' }],
   )
-  const feed = (await reader.readSessionFeed({
-    version: 1,
-    type: 'session.feed',
-    requestId: 'feed-1',
-    sessionId,
-    revision: null,
-  })) as SessionFeedReply
+  const feed = sessionFeedReplySchema.parse(
+    await reader.readSessionFeed({
+      version: 1,
+      type: 'session.feed',
+      requestId: 'feed-1',
+      sessionId,
+      revision: null,
+    }),
+  )
   assert.equal(feed.type, 'session.feed.read')
   if (feed.type !== 'session.feed.read') return
   assert.equal(feed.chainId, sessionId)

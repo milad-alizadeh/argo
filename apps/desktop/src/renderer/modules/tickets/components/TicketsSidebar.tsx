@@ -63,9 +63,6 @@ export function TicketsSidebarContent({
         aria-label="Ticket views"
         className="min-h-0 flex-1 overflow-y-auto p-(--spacing-shell-item)"
       >
-        <h3 className="px-(--spacing-shell-item) py-(--spacing-shell-icon) type-label text-muted-foreground">
-          Backlog
-        </h3>
         <div
           aria-current="page"
           className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"

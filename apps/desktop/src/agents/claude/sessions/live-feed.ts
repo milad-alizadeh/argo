@@ -1,5 +1,5 @@
-import type { FeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionFeedRow } from '@/core/sessions/models'
+import type { FeedOverlay } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
 
 type Prose = Extract<SessionFeedRow, { shape: 'prose' }>

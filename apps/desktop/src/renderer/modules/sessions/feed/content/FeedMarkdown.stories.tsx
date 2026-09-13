@@ -91,6 +91,23 @@ export const LinksFromKeyboard: Story = {
   },
 }
 
+const DIAGRAM_MARKDOWN = [
+  '```mermaid',
+  'flowchart LR',
+  '  Backlog --> Ticket --> Session',
+  '```',
+].join('\n')
+
+export const Diagram: Story = {
+  args: { text: DIAGRAM_MARKDOWN },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const diagram = canvas.getByRole('figure', { name: 'Mermaid diagram' })
+    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
+    await expect(diagram).toHaveTextContent('Session')
+  },
+}
+
 export const Images: Story = {
   args: {
     text: `Two images in one row:\n\n![The attached reference](${SAMPLE_PICTURE}) ![A file the Session moved](shots/missing.png)\n\nAnd one inside a sentence: ![A second reference](${SAMPLE_PICTURE}) there.`,

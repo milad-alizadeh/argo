@@ -80,9 +80,7 @@ export const SignInNotice: Story = {
   args: { connection: null, openCount: null, notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ args, canvasElement }) => {
     const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
-    await expect(notice).toHaveTextContent(
-      'Accounts from the earlier Argo app are not carried over.',
-    )
+    await expect(notice).toHaveTextContent('Sign-ins from the earlier Argo app do not carry over.')
     await userEvent.click(within(notice).getByRole('button', { name: 'Connect an Account' }))
     await expect(args.notice?.onConnect).toHaveBeenCalled()
   },
