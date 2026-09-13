@@ -16,8 +16,7 @@ export type Operation<Request, Reply> = {
   reply: SafeParse<Reply>
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: an operation table holds entries of differing request/reply shapes.
-export type OperationTable = Record<string, Operation<any, any>>
+export type OperationTable = Record<string, Operation<unknown, unknown>>
 
 type RequestOf<O> = O extends Operation<infer Request, unknown> ? Request : never
 type ReplyOf<O> = O extends Operation<unknown, infer Reply> ? Reply : never
