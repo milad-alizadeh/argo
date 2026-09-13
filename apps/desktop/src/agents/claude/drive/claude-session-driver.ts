@@ -47,11 +47,17 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
-        managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
+        managedRow(id, {
+          ...session,
+          cli: 'claude',
+          status: options.gate.pending(id) === null ? 'running' : 'permission',
+          setup: session.applied,
+        }),
       ),
     orphans: options.ledger.orphans,
-    pendingPermission: () => null,
-    decidePermission: () => false,
+    pendingPermission: (sessionId) => options.gate.pending(sessionId),
+    decidePermission: (sessionId, permissionId, decision) =>
+      options.gate.decide(sessionId, permissionId, decision),
     close() {
       channel.close()
       for (const [sessionId, session] of sessions) {
@@ -61,6 +67,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
         options.ledger.release(sessionId)
       }
       sessions.clear()
+      options.gate.close()
     },
   }
 }
