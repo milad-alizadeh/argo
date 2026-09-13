@@ -70,12 +70,11 @@ cockpit raises the Permission; the user's answer returns as
 `hookSpecificOutput.permissionDecision`. `--permission-mode` sets the standing baseline; the hook
 is the per-action layer on top.
 
-**The socket lives in a short temp folder, not under `userData`.** macOS limits a Unix socket
-path to 103 bytes, and a path under `userData` runs past that (124 bytes on a typical home
-folder), where a failed listen would crash the main process (#1842). Each gate makes one folder
-in the system temp folder, names each socket with a short random id, and deletes the folder when
-the app quits. A gate that cannot listen leaves the hook nothing to dial, so the hook denies every
-gated tool.
+**The socket lives in a short temp folder, not under `userData`.** Node on macOS rejects a Unix
+socket path of 104 bytes or more, and a path under `userData` runs past that (#1996). Each gate
+makes one folder in the system temp folder, names each socket with a short hash of the Session
+id, and deletes the folder when the app quits (#1842). A gate that cannot listen logs the error,
+and the hook then has nothing to dial, so it denies every gated tool.
 
 > The hook must return **`allow` or `deny`, never `ask`.** `ask` falls through to the TUI's own
 > dialog — which is hidden, so the session would stall against a prompt with no reader.

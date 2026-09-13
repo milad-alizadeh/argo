@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import net from 'node:net'
 import os from 'node:os'
@@ -86,10 +86,10 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
 // gets its own Unix socket and plugin directory, so a late answer cannot reach a different turn.
 export function createClaudePermissionGate(root: string): ClaudePermissionGate {
   const waiting = new Map<string, { permission: ClaudePermission; socket: net.Socket }>()
-  // macOS caps a socket path at 103 bytes, which a path under userData passes.
-  const sockets = mkdtempSync(path.join(os.tmpdir(), 'argo-'))
+  // macOS caps a Unix socket path at 104 bytes and userData plus a UUID passes it (#1996).
+  const socketRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-'))
   return {
-    open: (sessionId) => openPermissionGate({ root, sockets }, sessionId, waiting),
+    open: (sessionId) => openPermissionGate({ root, socketRoot }, sessionId, waiting),
     pending(sessionId) {
       return waiting.get(sessionId)?.permission ?? null
     },
@@ -101,18 +101,21 @@ export function createClaudePermissionGate(root: string): ClaudePermissionGate {
       return true
     },
     close() {
-      rmSync(sockets, { recursive: true, force: true })
+      rmSync(socketRoot, { recursive: true, force: true })
     },
   }
 }
 
 function openPermissionGate(
-  folders: { root: string; sockets: string },
+  roots: { root: string; socketRoot: string },
   sessionId: string,
   waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>,
 ) {
-  const socketPath = path.join(folders.sockets, `${randomBytes(4).toString('hex')}.sock`)
-  const pluginRoot = writePlugin(folders.root, sessionId, socketPath)
+  const socketPath = path.join(
+    roots.socketRoot,
+    `${createHash('sha256').update(sessionId).digest('hex').slice(0, 16)}.sock`,
+  )
+  const pluginRoot = writePlugin(roots.root, sessionId, socketPath)
   const server = net.createServer((socket) => {
     let received = ''
     socket.setEncoding('utf8')
@@ -135,8 +138,8 @@ function openPermissionGate(
       socket.write('__ARGO_GATE_HELD__\n')
     })
   })
-  // A gate that cannot listen leaves the hook nothing to dial, so every tool is denied.
-  server.on('error', () => server.close())
+  // Without a listener a failed listen is an uncaught main-process exception; the hook then denies.
+  server.on('error', (error) => console.error('Claude permission gate stopped listening', error))
   server.listen(socketPath)
   return {
     pluginRoot,
@@ -154,6 +157,7 @@ function openPermissionGate(
 function writePlugin(root: string, sessionId: string, socketPath: string) {
   const pluginRoot = path.join(root, sessionId)
   rmSync(pluginRoot, { recursive: true, force: true })
+  rmSync(socketPath, { force: true })
   mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true })
   mkdirSync(path.join(pluginRoot, 'hooks'), { recursive: true })
   const hookPath = path.join(pluginRoot, 'permission-hook.sh')
