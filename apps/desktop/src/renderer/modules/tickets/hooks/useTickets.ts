@@ -17,7 +17,12 @@ import type {
   TicketListed,
 } from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import { connectRepositoryRequest, listRequest, projectRequest } from '../lib/requests'
+import {
+  connectRepositoryRequest,
+  discoverRequest,
+  listRequest,
+  projectRequest,
+} from '../lib/requests'
 
 const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.
@@ -72,6 +77,25 @@ export function useTicketList(
     initialPageParam: 1,
     getNextPageParam: (last) => last.nextPage ?? undefined,
     placeholderData: keepPreviousData,
+  })
+}
+
+// The repositories an Account could connect this Project to, read only while the form is open.
+export function useRepositories(projectId: string | null, accountId: string | null) {
+  const client = useQueryClient()
+  return useQuery<string[], ContractFailure>({
+    queryKey: [...QUERY_KEYS.tickets, projectId, 'repositories', accountId],
+    queryFn:
+      projectId && accountId
+        ? () =>
+            settle(window.argo.discoverRepositories(discoverRequest(projectId, accountId))).then(
+              (reply) => reply.scopes,
+              (failure: ContractFailure) => {
+                onRefused(client, projectId, failure)
+                throw failure
+              },
+            )
+        : skipToken,
   })
 }
 

@@ -18,7 +18,7 @@
   "scripts": {
     "build": "turbo run build --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
-    "design:tokens": "node scripts/design-token-mirror.mjs",
+    "design:tokens": "node scripts/design-token-mirror.mjs && node scripts/design-token-class-groups.mjs",
     "dev": "turbo run dev",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
