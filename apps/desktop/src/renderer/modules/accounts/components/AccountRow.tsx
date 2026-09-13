@@ -25,9 +25,9 @@ export type AccountRowProps = {
   onReconnect: () => void
 }
 
-// What a revoked grant or a disconnect affects is named at Account scope, one line per Binding.
-function Bindings({ account }: { account: AccountSummary }) {
-  if (account.bindings.length === 0) {
+// What a revoked grant or a disconnect affects is named at Account scope, one line per Connection.
+function Connections({ account }: { account: AccountSummary }) {
+  if (account.connections.length === 0) {
     return (
       <p className="type-meta text-muted-foreground">
         No Project reads Tickets through this Account.
@@ -39,19 +39,21 @@ function Bindings({ account }: { account: AccountSummary }) {
       aria-label={`Repositories for ${account.login}`}
       className="grid gap-(--spacing-shell-tight)"
     >
-      {account.bindings.map((binding) => (
-        <li className="type-meta text-muted-foreground" key={binding.projectId}>
-          {binding.projectName} · <span className="font-mono">{binding.scope}</span>
+      {account.connections.map((connection) => (
+        <li className="type-meta text-muted-foreground" key={connection.projectId}>
+          {connection.projectName} · <span className="font-mono">{connection.scope}</span>
         </li>
       ))}
     </ul>
   )
 }
 
-function disconnectQuestion({ login, bindings }: AccountSummary): string {
-  if (bindings.length === 0) return `Disconnect ${login}?`
+function disconnectQuestion({ login, connections }: AccountSummary): string {
+  if (connections.length === 0) return `Disconnect ${login}?`
   const subject =
-    bindings.length === 1 ? 'Its repository stops' : `Its ${bindings.length} repositories stop`
+    connections.length === 1
+      ? 'Its repository stops'
+      : `Its ${connections.length} repositories stop`
   return `Disconnect ${login}? ${subject} reading Tickets until you connect it again.`
 }
 
@@ -108,7 +110,7 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
           </Button>
         )}
       </div>
-      <Bindings account={account} />
+      <Connections account={account} />
       {note ? (
         <div className="grid justify-items-start gap-(--spacing-shell-item)">
           <p className="type-meta text-destructive">{note}</p>

@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { expect, within } from 'storybook/test'
 
-import { BindingStatusMark } from './BindingStatusMark'
+import { ConnectionStatusMark } from './ConnectionStatusMark'
 
-const meta: Meta<typeof BindingStatusMark> = {
-  title: 'Tickets/Binding Status Mark',
-  component: BindingStatusMark,
+const meta: Meta<typeof ConnectionStatusMark> = {
+  title: 'Tickets/Connection Status Mark',
+  component: ConnectionStatusMark,
   args: { children: 'GitHub · octocat' },
   decorators: [
     (Story) => (
@@ -17,7 +17,7 @@ const meta: Meta<typeof BindingStatusMark> = {
 }
 
 export default meta
-type Story = StoryObj<typeof BindingStatusMark>
+type Story = StoryObj<typeof ConnectionStatusMark>
 
 const says =
   (text: string): Story['play'] =>

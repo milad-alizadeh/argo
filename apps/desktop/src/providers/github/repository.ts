@@ -1,5 +1,6 @@
-// Can this Account see this repository, and does the repository source Tickets? Asked at bind
-// time, the only moment a wrong Account and a missing Ticket can be told apart (ADR-0018).
+// Can this Account see this repository, and does the repository source Tickets? Asked when a
+// repository is connected, the only moment a wrong Account and a missing Ticket can be told
+// apart (ADR-0018).
 import { isRecord } from '../../boundary'
 import type { GitHubEndpoints } from './endpoints'
 import { failed, type GitHubFailure, get } from './http'
@@ -27,7 +28,7 @@ export async function checkRepository(
     return failed('unreachable')
   }
   if (!isRepositoryScope(repository.full_name)) return failed('unreachable')
-  // A repository with Issues off is visible and sources nothing, which after bind time reads the
+  // A repository with Issues off is visible and sources nothing, which after connect time reads the
   // same as one nobody has filed anything in.
   if (repository.has_issues !== true) return { ok: false, failure: 'issues-disabled' }
   return { ok: true, fullName: repository.full_name }

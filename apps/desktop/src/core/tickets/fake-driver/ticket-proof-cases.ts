@@ -42,20 +42,20 @@ export async function proveConnect(run: Run) {
   await press(accountsDialog(run.page), 'Close')
 }
 
-export async function proveBind(run: Run) {
+export async function proveConnectRepository(run: Run) {
   const form = run.page.getByRole('form', { name: 'Connect a repository' })
   await form.getByRole('combobox', { name: 'GitHub Account' }).selectOption({ label: 'octocat' })
   const scope = form.getByRole('textbox', { name: 'Repository' })
-  // GitHub, not the form, decides what the Account can read, and a refusal binds nothing.
+  // GitHub, not the form, decides what the Account can read, and a refusal connects nothing.
   await scope.fill('octocat/secret')
   await press(form, 'Connect repository')
   await form.getByText('This GitHub Account cannot see that repository.').waitFor()
-  assert.equal(await storeText(run.fixture, 'bindings.json'), '')
+  assert.equal(await storeText(run.fixture, 'connections.json'), '')
   await scope.fill('octocat/hello-world')
   await press(form, 'Connect repository')
   await backlog(run.page).waitFor()
   assert.equal(
-    (await storeText(run.fixture, 'bindings.json')).includes('octocat/hello-world'),
+    (await storeText(run.fixture, 'connections.json')).includes('octocat/hello-world'),
     true,
   )
 }

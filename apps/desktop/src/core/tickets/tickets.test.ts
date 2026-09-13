@@ -21,7 +21,7 @@ async function connected(context: TestContext) {
   return cockpit
 }
 
-test('a Binding is accepted only after GitHub shows the Account the repository', async (context) => {
+test('a Connection is accepted only after GitHub shows the Account the repository', async (context) => {
   const cockpit = await connected(context)
   cockpit.github.addRepository({ fullName: 'octo/secret', visibleTo: [], issues: [] })
   cockpit.github.addRepository({
@@ -35,11 +35,11 @@ test('a Binding is accepted only after GitHub shows the Account the repository',
     ['octo/quiet', 'issues-disabled'],
     ['octo', 'invalid-scope'],
   ] as const) {
-    assert.equal((await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope })).code, code)
+    assert.equal((await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope })).code, code)
   }
-  assert.equal((await cockpit.ticket('ticket.binding')).binding, null)
-  const bound = await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'octo/hello' })
-  assert.deepEqual(bound.binding, {
+  assert.equal((await cockpit.ticket('ticket.connection')).connection, null)
+  const reply = await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'octo/hello' })
+  assert.deepEqual(reply.connection, {
     accountId: ACCOUNT,
     login: 'octocat',
     scope: 'Octo/Hello',
@@ -47,9 +47,9 @@ test('a Binding is accepted only after GitHub shows the Account the repository',
   })
 })
 
-test('a bound Project lists its open Tickets with hierarchy and dependencies, after a restart too', async (context) => {
+test('a connected Project lists its open Tickets with hierarchy and dependencies, after a restart too', async (context) => {
   const cockpit = await connected(context)
-  await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
   cockpit.restart()
   const listed = await cockpit.ticket('ticket.list', LIST)
   assert.equal(listed.type, 'ticket.listed')
@@ -62,16 +62,16 @@ test('a bound Project lists its open Tickets with hierarchy and dependencies, af
   assert.deepEqual(tickets[1]?.blockedBy, [{ number: 3, title: 'Done', state: 'closed' }])
 })
 
-test('an unbound Project, or one no longer registered, is refused by name', async (context) => {
+test('an unconnected Project, or one no longer registered, is refused by name', async (context) => {
   const cockpit = await connected(context)
-  assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'not-bound')
-  const elsewhere = await cockpit.ticket('ticket.binding', { projectId: 'project-gone' })
+  assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'not-connected')
+  const elsewhere = await cockpit.ticket('ticket.connection', { projectId: 'project-gone' })
   assert.equal(elsewhere.code, 'missing-project')
 })
 
-test('a revoked grant marks the Account and names the Bindings it affects', async (context) => {
+test('a revoked grant marks the Account and names the Connections it affects', async (context) => {
   const cockpit = await connected(context)
-  await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
   cockpit.github.revoke('octocat')
   assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'account-revoked')
   const listed = await cockpit.account('account.list')
@@ -81,11 +81,11 @@ test('a revoked grant marks the Account and names the Bindings it affects', asyn
       provider: 'github',
       login: 'octocat',
       state: 'revoked',
-      bindings: [{ projectId: PROJECT_ID, projectName: 'argo-demo', scope: 'Octo/Hello' }],
+      connections: [{ projectId: PROJECT_ID, projectName: 'argo-demo', scope: 'Octo/Hello' }],
     },
   ])
   assert.equal(
-    ((await cockpit.ticket('ticket.binding')).binding as { state: string }).state,
+    ((await cockpit.ticket('ticket.connection')).connection as { state: string }).state,
     'account-revoked',
   )
   cockpit.github.signIn(OCTOCAT)
@@ -104,12 +104,12 @@ test('a refusal of a grant renewed since leaves the Account connected', async (c
   assert.equal(accounts[0]?.state, 'connected')
 })
 
-test('a disconnected Account leaves its Binding waiting for the same identity', async (context) => {
+test('a disconnected Account leaves its Connection waiting for the same identity', async (context) => {
   const cockpit = await connected(context)
-  await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
   await cockpit.account('account.disconnect', { accountId: ACCOUNT })
-  const binding = (await cockpit.ticket('ticket.binding')).binding as { state: string }
-  assert.equal(binding.state, 'account-missing')
+  const connection = (await cockpit.ticket('ticket.connection')).connection as { state: string }
+  assert.equal(connection.state, 'account-missing')
   assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'missing-account')
   cockpit.github.signIn(OCTOCAT)
   await connect(cockpit)
@@ -118,7 +118,7 @@ test('a disconnected Account leaves its Binding waiting for the same identity', 
 
 test('a throttled or unreachable GitHub is a visible failure and leaves the Account alone', async (context) => {
   const cockpit = await connected(context)
-  await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
   cockpit.github.outage('rate-limited')
   assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'rate-limited')
   cockpit.github.outage('down')
@@ -127,9 +127,9 @@ test('a throttled or unreachable GitHub is a visible failure and leaves the Acco
   assert.equal(accounts[0]?.state, 'connected')
 })
 
-test('unbinding forgets the repository', async (context) => {
+test('disconnecting forgets the repository', async (context) => {
   const cockpit = await connected(context)
-  await cockpit.ticket('ticket.bind', { accountId: ACCOUNT, scope: 'Octo/Hello' })
-  assert.equal((await cockpit.ticket('ticket.unbind')).binding, null)
-  assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'not-bound')
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+  assert.equal((await cockpit.ticket('ticket.disconnect')).connection, null)
+  assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'not-connected')
 })

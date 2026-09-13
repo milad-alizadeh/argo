@@ -1,7 +1,7 @@
 import { BookMarked, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 
-import type { BindingSummary } from '@/core/tickets/contract'
+import type { ConnectionSummary } from '@/core/tickets/contract'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import {
@@ -15,11 +15,11 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import type { ContractFailure } from '../../../lib/query-client'
-import { BindingStatusMark } from './BindingStatusMark'
+import { ConnectionStatusMark } from './ConnectionStatusMark'
 
 export type RepositorySettingsProps = {
-  // Undefined while the Binding is read; null when the Project has none.
-  binding: BindingSummary | null | undefined
+  // Undefined while the Connection is read; null when the Project has none.
+  connection: ConnectionSummary | null | undefined
   error: ContractFailure | null
   disconnecting: boolean
   onDisconnect: () => void
@@ -28,8 +28,13 @@ export type RepositorySettingsProps = {
 
 const mediaTile = 'size-8 rounded-md bg-muted text-muted-foreground'
 
-function Repository({ binding, disconnecting, onDisconnect, onConnect }: RepositorySettingsProps) {
-  if (binding === undefined) {
+function Repository({
+  connection,
+  disconnecting,
+  onDisconnect,
+  onConnect,
+}: RepositorySettingsProps) {
+  if (connection === undefined) {
     return (
       <Item role="status" variant="outline">
         <ItemMedia className={mediaTile} variant="icon">
@@ -41,7 +46,7 @@ function Repository({ binding, disconnecting, onDisconnect, onConnect }: Reposit
       </Item>
     )
   }
-  if (binding === null) {
+  if (connection === null) {
     return (
       <Item className="border-dashed" variant="outline">
         <ItemMedia className={mediaTile} variant="icon">
@@ -49,7 +54,7 @@ function Repository({ binding, disconnecting, onDisconnect, onConnect }: Reposit
         </ItemMedia>
         <ItemContent>
           <ItemTitle>No repository connected</ItemTitle>
-          <ItemDescription>Connect a GitHub repository to read its open issues.</ItemDescription>
+          <ItemDescription>Connect a GitHub repository.</ItemDescription>
         </ItemContent>
         <ItemActions>
           <Button aria-label="Connect a repository" onClick={onConnect} size="sm">
@@ -65,11 +70,11 @@ function Repository({ binding, disconnecting, onDisconnect, onConnect }: Reposit
         <BookMarked aria-hidden="true" />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="max-w-full truncate font-mono">{binding.scope}</ItemTitle>
+        <ItemTitle className="max-w-full truncate font-mono">{connection.scope}</ItemTitle>
         <ItemDescription className="flex items-center gap-(--spacing-shell-icon)">
-          <BindingStatusMark state={binding.state}>
-            Read through {binding.login ?? 'a disconnected Account'}
-          </BindingStatusMark>
+          <ConnectionStatusMark state={connection.state}>
+            Read through {connection.login ?? 'a disconnected Account'}
+          </ConnectionStatusMark>
         </ItemDescription>
       </ItemContent>
       <ItemActions>
@@ -87,11 +92,11 @@ function Repository({ binding, disconnecting, onDisconnect, onConnect }: Reposit
   )
 }
 
-// The one GitHub repository a Project reads its Tickets from (CONTEXT.md · Binding).
+// The one GitHub repository a Project reads its Tickets from (CONTEXT.md · Connection).
 export function RepositorySettings(props: RepositorySettingsProps) {
   const section = useRef<HTMLElement>(null)
   // Disconnecting removes the control that did it.
-  useFocusRescue(section, props.binding === null)
+  useFocusRescue(section, props.connection === null)
   return (
     <section aria-label="Repository" className="grid gap-(--spacing-shell-item)" ref={section}>
       <div className="grid gap-(--spacing-shell-tight)">

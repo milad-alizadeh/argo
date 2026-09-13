@@ -24,18 +24,18 @@ import { Input } from '../../../components/ui/input'
 import { NativeSelect, NativeSelectOption } from '../../../components/ui/native-select'
 import type { ContractFailure } from '../../../lib/query-client'
 
-export type BindTarget = { accountId: string; scope: string }
+export type ConnectTarget = { accountId: string; scope: string }
 
-export type BindFormProps = {
+export type ConnectRepositoryFormProps = {
   projectName: string
   accounts: readonly AccountSummary[]
   pending: boolean
   error: ContractFailure | null
-  onBind: (target: BindTarget) => void
-  onConnect: () => void
+  onConnectRepository: (target: ConnectTarget) => void
+  onConnectAccount: () => void
 }
 
-function NoAccount({ onConnect }: { onConnect: () => void }) {
+function NoAccount({ onConnectAccount }: { onConnectAccount: () => void }) {
   return (
     <Empty className="h-full">
       <EmptyHeader>
@@ -48,26 +48,26 @@ function NoAccount({ onConnect }: { onConnect: () => void }) {
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button onClick={onConnect}>Connect GitHub</Button>
+        <Button onClick={onConnectAccount}>Connect GitHub</Button>
       </EmptyContent>
     </Empty>
   )
 }
 
 // GitHub decides whether the repository is readable; the form only refuses to send nothing.
-export function BindForm({
+export function ConnectRepositoryForm({
   projectName,
   accounts,
   pending,
   error,
-  onBind,
-  onConnect,
-}: BindFormProps) {
+  onConnectRepository,
+  onConnectAccount,
+}: ConnectRepositoryFormProps) {
   const connected = accounts.filter((account) => account.state === 'connected')
   const [accountId, setAccountId] = useState(connected[0]?.id ?? '')
   const [scope, setScope] = useState('')
   const [missingScope, setMissingScope] = useState(false)
-  if (connected.length === 0) return <NoAccount onConnect={onConnect} />
+  if (connected.length === 0) return <NoAccount onConnectAccount={onConnectAccount} />
   const chosen = connected.some((account) => account.id === accountId)
     ? accountId
     : connected[0]?.id
@@ -79,7 +79,7 @@ export function BindForm({
       return
     }
     setMissingScope(false)
-    if (chosen) onBind({ accountId: chosen, scope: trimmedScope })
+    if (chosen) onConnectRepository({ accountId: chosen, scope: trimmedScope })
   }
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
@@ -96,10 +96,10 @@ export function BindForm({
           <CardContent>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="bind-account">GitHub Account</FieldLabel>
+                <FieldLabel htmlFor="connect-account">GitHub Account</FieldLabel>
                 <NativeSelect
                   className="w-full"
-                  id="bind-account"
+                  id="connect-account"
                   onChange={(event) => setAccountId(event.target.value)}
                   value={chosen}
                 >
@@ -111,12 +111,12 @@ export function BindForm({
                 </NativeSelect>
               </Field>
               <Field data-invalid={error || missingScope ? true : undefined}>
-                <FieldLabel htmlFor="bind-scope">Repository</FieldLabel>
+                <FieldLabel htmlFor="connect-scope">Repository</FieldLabel>
                 <Input
-                  aria-describedby={error || missingScope ? 'bind-scope-error' : undefined}
+                  aria-describedby={error || missingScope ? 'connect-scope-error' : undefined}
                   aria-invalid={error || missingScope ? true : undefined}
                   autoComplete="off"
-                  id="bind-scope"
+                  id="connect-scope"
                   onChange={(event) => {
                     setScope(event.target.value)
                     if (missingScope) setMissingScope(false)
@@ -126,7 +126,7 @@ export function BindForm({
                   value={scope}
                 />
                 {error || missingScope ? (
-                  <FieldError id="bind-scope-error">
+                  <FieldError id="connect-scope-error">
                     {error?.message ?? 'Enter the GitHub repository as owner/name.'}
                   </FieldError>
                 ) : null}

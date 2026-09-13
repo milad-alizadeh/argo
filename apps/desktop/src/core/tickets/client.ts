@@ -3,29 +3,29 @@
 import { requestIdentifier } from '../../boundary'
 import { createSender } from '../contract/messages'
 import {
-  isTicketBoundReply,
+  isTicketConnectedReply,
   isTicketListReply,
-  type TicketBindingRequest,
-  type TicketBindRequest,
-  type TicketBoundReply,
+  type TicketConnectedReply,
+  type TicketConnectionRequest,
+  type TicketConnectRequest,
+  type TicketDisconnectRequest,
   type TicketError,
   type TicketListReply,
   type TicketListRequest,
-  type TicketUnbindRequest,
   ticketError,
 } from './contract'
 
 export type TicketClient = {
-  readBinding(request: TicketBindingRequest): Promise<TicketBoundReply>
-  bindTickets(request: TicketBindRequest): Promise<TicketBoundReply>
-  unbindTickets(request: TicketUnbindRequest): Promise<TicketBoundReply>
+  readConnection(request: TicketConnectionRequest): Promise<TicketConnectedReply>
+  connectRepository(request: TicketConnectRequest): Promise<TicketConnectedReply>
+  disconnectRepository(request: TicketDisconnectRequest): Promise<TicketConnectedReply>
   listTickets(request: TicketListRequest): Promise<TicketListReply>
 }
 
 export function createTicketClient(invoke: (request: unknown) => Promise<unknown>): TicketClient {
   const send = createSender<TicketError>(invoke, ticketError)
   // A reply about another Project is refused, not drawn on this one.
-  async function forProject<T extends TicketBoundReply | TicketListReply>(
+  async function forProject<T extends TicketConnectedReply | TicketListReply>(
     request: { projectId: string },
     accept: (value: unknown) => value is T,
   ): Promise<T | TicketError> {
@@ -36,9 +36,9 @@ export function createTicketClient(invoke: (request: unknown) => Promise<unknown
     return reply
   }
   return {
-    readBinding: (request) => forProject(request, isTicketBoundReply),
-    bindTickets: (request) => forProject(request, isTicketBoundReply),
-    unbindTickets: (request) => forProject(request, isTicketBoundReply),
+    readConnection: (request) => forProject(request, isTicketConnectedReply),
+    connectRepository: (request) => forProject(request, isTicketConnectedReply),
+    disconnectRepository: (request) => forProject(request, isTicketConnectedReply),
     listTickets: (request) => forProject(request, isTicketListReply),
   }
 }

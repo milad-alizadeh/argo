@@ -58,7 +58,7 @@ export const octocat: AccountSummary = {
   provider: 'github',
   login: 'octocat',
   state: 'connected',
-  bindings: [],
+  connections: [],
 }
 
 export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({

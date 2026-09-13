@@ -1,4 +1,4 @@
-// A Project's Binding and the Tickets read through it. A Binding is validated against its Account
+// A Project's Connection and the Tickets read through it. A Connection is validated against its Account
 // when it is made, the one moment a wrong Account and a missing repository can be told apart
 // (ADR-0018).
 import type { GitHubFailure } from '../../providers/github/http'
@@ -13,10 +13,10 @@ import {
   tokenFor,
 } from '../accounts/access'
 import { readAccounts } from '../accounts/registry'
-import { readBindings, type TicketBinding, writeBindings } from './bindings'
+import { readConnections, type TicketConnection, writeConnections } from './connections'
 import {
-  type BindingSummary,
-  type TicketBoundReply,
+  type ConnectionSummary,
+  type TicketConnectedReply,
   type TicketErrorCode,
   type TicketListReply,
   ticketError,
@@ -50,70 +50,78 @@ type Call = { access: AccountAccess; requestId: string; projectId: string }
 
 type Sent = { accountId: string; token: string }
 
-// GitHub refusing the token is an Account fact, recorded before the Binding reports it.
+// GitHub refusing the token is an Account fact, recorded before the Connection reports it.
 async function refused(call: Call, sent: Sent, failure: GitHubFailure | 'issues-disabled') {
   if (failure === 'unauthorized') await markRevoked(call.access, sent.accountId, sent.token)
   return ticketError(FAILURE_ERRORS[failure], call.requestId)
 }
 
-async function summary(access: AccountAccess, binding: TicketBinding): Promise<BindingSummary> {
+async function summary(
+  access: AccountAccess,
+  connection: TicketConnection,
+): Promise<ConnectionSummary> {
   const read = await readAccounts(access.paths.accounts)
   const account = read.ok
-    ? read.registry.accounts.find((candidate) => candidate.id === binding.accountId)
+    ? read.registry.accounts.find((candidate) => candidate.id === connection.accountId)
     : undefined
-  const { accountId, scope } = binding
+  const { accountId, scope } = connection
   if (!account) return { accountId, login: null, scope, state: 'account-missing' }
   const state = ACCOUNT_STATES[await accountState(access, account)]
   return { accountId, login: account.login, scope, state }
 }
 
-async function bound(call: Call, binding: TicketBinding | undefined): Promise<TicketBoundReply> {
+async function connected(
+  call: Call,
+  connection: TicketConnection | undefined,
+): Promise<TicketConnectedReply> {
   const { requestId, projectId } = call
-  const value = binding ? await summary(call.access, binding) : null
-  return { version: 1, type: 'ticket.bound', requestId, projectId, binding: value }
+  const value = connection ? await summary(call.access, connection) : null
+  return { version: 1, type: 'ticket.connected', requestId, projectId, connection: value }
 }
 
 async function projectExists(call: Call): Promise<boolean> {
   return (await projectNames(call.access)).has(call.projectId)
 }
 
-export async function readBinding(call: Call): Promise<TicketBoundReply> {
+export async function readConnection(call: Call): Promise<TicketConnectedReply> {
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)
-  const read = await readBindings(call.access.paths.bindings)
+  const read = await readConnections(call.access.paths.connections)
   if (!read.ok) return ticketError(STORAGE_ERRORS[read.reason], call.requestId)
-  return bound(
+  return connected(
     call,
-    read.document.bindings.find((entry) => entry.projectId === call.projectId),
+    read.document.connections.find((entry) => entry.projectId === call.projectId),
   )
 }
 
-// Replace this Project's Binding with `next`, or remove it when `next` is null.
-function saveBinding(call: Call, next: TicketBinding | null): Promise<TicketBoundReply> {
+// Replace this Project's Connection with `next`, or remove it when `next` is null.
+function saveConnection(call: Call, next: TicketConnection | null): Promise<TicketConnectedReply> {
   return call.access.exclusive(async () => {
-    const read = await readBindings(call.access.paths.bindings)
+    const read = await readConnections(call.access.paths.connections)
     if (!read.ok) return ticketError(STORAGE_ERRORS[read.reason], call.requestId)
-    const kept = read.document.bindings.filter((entry) => entry.projectId !== call.projectId)
-    const bindings = next ? [...kept, next] : kept
-    if (!(await writeBindings(call.access.paths.bindings, { ...read.document, bindings }))) {
+    const kept = read.document.connections.filter((entry) => entry.projectId !== call.projectId)
+    const connections = next ? [...kept, next] : kept
+    if (
+      !(await writeConnections(call.access.paths.connections, { ...read.document, connections }))
+    ) {
       return ticketError('storage-not-written', call.requestId)
     }
-    return bound(call, next ?? undefined)
+    return connected(call, next ?? undefined)
   })
 }
 
-export async function bind(
+export async function connectRepository(
   call: Call,
   target: { accountId: string; scope: string },
-): Promise<TicketBoundReply> {
+): Promise<TicketConnectedReply> {
   if (!isRepositoryScope(target.scope)) return ticketError('invalid-scope', call.requestId)
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)
   const token = await tokenFor(call.access, target.accountId)
   if (!token.ok) return ticketError(TOKEN_ERRORS[token.reason], call.requestId)
   const check = await checkRepository(call.access.endpoints, token.token, target.scope)
   if (!check.ok) return refused(call, { ...target, token: token.token }, check.failure)
-  // GitHub's canonical name is what is stored, so the Binding survives a person's casing.
+  // GitHub's canonical name is what is stored, so the Connection survives a person's casing.
   const { projectId } = call
-  return saveBinding(call, {
+  return saveConnection(call, {
     projectId,
     port: 'ticket',
     accountId: target.accountId,
@@ -121,9 +129,9 @@ export async function bind(
   })
 }
 
-export async function unbind(call: Call): Promise<TicketBoundReply> {
+export async function disconnectRepository(call: Call): Promise<TicketConnectedReply> {
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)
-  return saveBinding(call, null)
+  return saveConnection(call, null)
 }
 
 export async function listTickets(
@@ -131,14 +139,14 @@ export async function listTickets(
   request: { query: string; page: number },
 ): Promise<TicketListReply> {
   const { requestId, projectId } = call
-  const read = await readBindings(call.access.paths.bindings)
+  const read = await readConnections(call.access.paths.connections)
   if (!read.ok) return ticketError(STORAGE_ERRORS[read.reason], requestId)
-  const binding = read.document.bindings.find((entry) => entry.projectId === projectId)
-  if (!binding) return ticketError('not-bound', requestId)
-  const token = await tokenFor(call.access, binding.accountId)
+  const connection = read.document.connections.find((entry) => entry.projectId === projectId)
+  if (!connection) return ticketError('not-connected', requestId)
+  const token = await tokenFor(call.access, connection.accountId)
   if (!token.ok) return ticketError(TOKEN_ERRORS[token.reason], requestId)
-  const { scope } = binding
+  const { scope } = connection
   const page = await readTicketPage(call.access.endpoints, token.token, { scope, ...request })
-  if (!page.ok) return refused(call, { ...binding, token: token.token }, page.failure)
+  if (!page.ok) return refused(call, { ...connection, token: token.token }, page.failure)
   return { version: 1, type: 'ticket.listed', requestId, projectId, scope, ...page.value }
 }

@@ -2,26 +2,26 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
-import { BindForm, type BindFormProps } from './BindForm'
+import { ConnectRepositoryForm, type ConnectRepositoryFormProps } from './ConnectRepositoryForm'
 import { octocat } from './ticket-fixtures'
 
-const meta: Meta<typeof BindForm> = {
-  title: 'Tickets/Bind Form',
-  component: BindForm,
+const meta: Meta<typeof ConnectRepositoryForm> = {
+  title: 'Tickets/Connect Repository Form',
+  component: ConnectRepositoryForm,
   args: {
     projectName: 'argo',
     accounts: [octocat, { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' }],
     pending: false,
     error: null,
-    onBind: fn(),
-    onConnect: fn(),
-  } satisfies BindFormProps,
+    onConnectRepository: fn(),
+    onConnectAccount: fn(),
+  } satisfies ConnectRepositoryFormProps,
 }
 
 export default meta
-type Story = StoryObj<typeof BindForm>
+type Story = StoryObj<typeof ConnectRepositoryForm>
 
-export const Bind: Story = {
+export const ConnectRepository: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const submit = canvas.getByRole('button', { name: 'Connect repository' })
@@ -40,7 +40,7 @@ export const Bind: Story = {
       ' octocat/hello-world ',
     )
     await userEvent.click(submit)
-    await expect(args.onBind).toHaveBeenCalledWith({
+    await expect(args.onConnectRepository).toHaveBeenCalledWith({
       accountId: 'github:583231',
       scope: 'octocat/hello-world',
     })
@@ -74,6 +74,6 @@ export const NoAccount: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Connect GitHub to read Tickets')).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Connect GitHub' }))
-    await expect(args.onConnect).toHaveBeenCalled()
+    await expect(args.onConnectAccount).toHaveBeenCalled()
   },
 }

@@ -4,12 +4,12 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { useTicketSearch } from '../state/useTicketSearch'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './TicketsSidebar'
 
-const binding = {
+const connection = {
   accountId: 'github:583231',
   login: 'octocat',
   scope: 'octocat/hello-world',
   state: 'ready',
-} satisfies TicketsSidebarContentProps['binding']
+} satisfies TicketsSidebarContentProps['connection']
 
 const meta: Meta<typeof TicketsSidebarContent> = {
   title: 'Tickets/Sidebar',
@@ -25,7 +25,7 @@ const meta: Meta<typeof TicketsSidebarContent> = {
   // The search store outlives a story, so each starts with the field closed.
   beforeEach: () => useTicketSearch.setState({ open: false, query: '' }),
   args: {
-    binding,
+    connection,
     notice: null,
     openCount: '25+',
     onManageAccounts: fn(),
@@ -35,7 +35,7 @@ const meta: Meta<typeof TicketsSidebarContent> = {
 export default meta
 type Story = StoryObj<typeof TicketsSidebarContent>
 
-export const Bound: Story = {
+export const Connected: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const views = canvas.getByRole('navigation', { name: 'Ticket views' })
@@ -58,8 +58,8 @@ export const Bound: Story = {
   },
 }
 
-export const Unbound: Story = {
-  args: { binding: null, openCount: null },
+export const NotConnected: Story = {
+  args: { connection: null, openCount: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'New Ticket' })).toBeDisabled()
@@ -70,7 +70,7 @@ export const Unbound: Story = {
 
 // Shown to everyone once, above the Account it asks the person to connect.
 export const SignInNotice: Story = {
-  args: { binding: null, openCount: null, notice: { onConnect: fn(), onDismiss: fn() } },
+  args: { connection: null, openCount: null, notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ args, canvasElement }) => {
     const notice = within(canvasElement).getByRole('region', { name: 'GitHub sign-in notice' })
     await expect(notice).toHaveTextContent(

@@ -8,7 +8,7 @@ export type AccountListing = Pick<AccountListed, 'accounts' | 'notice'>
 
 const listing = ({ accounts, notice }: AccountListing): AccountListing => ({ accounts, notice })
 
-// A Binding's summary names its Account's state, so a new listing is a new reading of Bindings too.
+// A Connection's summary names its Account's state, so a new listing is a new reading of Connections too.
 export function storeListing(client: QueryClient, next: AccountListing): void {
   client.setQueryData(QUERY_KEYS.accounts, listing(next))
   void client.invalidateQueries({ queryKey: QUERY_KEYS.tickets })

@@ -1,7 +1,6 @@
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
-import { Button } from '../../../components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -10,6 +9,7 @@ import {
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
+import { useToastManager } from '../../../components/ui/toast'
 import { type Backlog, backlogRows, count } from '../lib/backlog'
 import { TicketRow } from './TicketRow'
 
@@ -27,13 +27,33 @@ function tally({ tickets, query, total, hasMore, searching }: Backlog): string {
     : `All open · ${count(tickets.length, 'Ticket')}`
 }
 
+// A page GitHub failed to send is a passing fault: a toast offers the retry, the rows read stay.
+function useLoadMoreFailure({ loadMoreError, loadingMore, onRetryLoadMore }: Backlog) {
+  // The manager object changes with every toast; its add and close do not.
+  const { add, close } = useToastManager()
+  const retry = useRef(onRetryLoadMore)
+  retry.current = onRetryLoadMore
+  useEffect(() => {
+    if (!loadMoreError || loadingMore) return
+    const id = add({
+      title: loadMoreError,
+      type: 'error',
+      priority: 'high',
+      timeout: 0,
+      actionProps: { children: 'Try again', onClick: () => retry.current() },
+    })
+    return () => close(id)
+  }, [add, close, loadMoreError, loadingMore])
+}
+
 // Reading the next page starts a screen before the end; keyed by the rows read, it observes
 // afresh after each page, so an end still in view reads again.
 function NextPage({ backlog }: { backlog: Backlog }) {
   const mark = useRef<HTMLLIElement>(null)
   const load = useRef(backlog.onLoadMore)
   load.current = backlog.onLoadMore
-  const { hasMore, loadingMore, loadMoreError, onRetryLoadMore } = backlog
+  const { hasMore, loadingMore, loadMoreError } = backlog
+  useLoadMoreFailure(backlog)
   useEffect(() => {
     const node = mark.current
     if (!(node && hasMore) || loadingMore || loadMoreError) return
@@ -47,22 +67,6 @@ function NextPage({ backlog }: { backlog: Backlog }) {
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loadMoreError])
   if (!hasMore) return null
-  if (loadMoreError) {
-    return (
-      <li className="flex justify-center py-(--spacing-shell-item)">
-        <div
-          aria-live="polite"
-          className="flex items-center gap-(--spacing-shell-item) type-meta"
-          role="alert"
-        >
-          <span>{loadMoreError}</span>
-          <Button onClick={onRetryLoadMore} size="xs" variant="outline">
-            Try again
-          </Button>
-        </div>
-      </li>
-    )
-  }
   return (
     <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
       {loadingMore ? <Spinner aria-label="Reading more Tickets" className="text-faint" /> : null}

@@ -1,30 +1,36 @@
-// The Tickets screen's one reading of state: the selected Project, its Binding, the Accounts and
+// The Tickets screen's one reading of state: the selected Project, its Connection, the Accounts and
 // the Tickets, resolved into the single view the screen draws.
 import type { UseInfiniteQueryResult, UseQueryResult } from '@tanstack/react-query'
 import type { ProjectSummary } from '@/core/projects/messages'
-import type { BindingSummary } from '@/core/tickets/contract'
+import type { ConnectionSummary } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
 import { type AccountListing, useAccounts } from '../../accounts/hooks/useAccounts'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
-import type { BindFormProps } from '../components/BindForm'
+import type { ConnectRepositoryFormProps } from '../components/ConnectRepositoryForm'
 import type { TicketDeckProps } from '../components/TicketDeck'
 import { type Backlog, uniqueTickets } from '../lib/backlog'
 import {
-  bindingProblem,
+  connectionProblem,
   failureProblem,
-  isBindingProblem,
+  isConnectionProblem,
   type TicketProblemProps,
 } from '../lib/problems'
 import { useSettledQuery } from '../state/useTicketSearch'
-import { type TicketPages, useBind, useBinding, useTicketList, useUnbind } from './useTickets'
+import {
+  type TicketPages,
+  useConnection,
+  useConnectRepository,
+  useDisconnectRepository,
+  useTicketList,
+} from './useTickets'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =
   | { kind: 'no-project' }
   | { kind: 'loading'; label: string }
   | ({ kind: 'problem' } & TicketProblemProps)
-  | ({ kind: 'unbound'; projectId: string } & BindFormProps)
+  | ({ kind: 'unconnected'; projectId: string } & ConnectRepositoryFormProps)
   | ({ kind: 'tickets'; projectId: string } & TicketDeckProps)
 
 export type TicketsScreenProps = { view: TicketsView }
@@ -39,35 +45,35 @@ const failure = (title: string, error: ContractFailure, onRetry: () => void): Ti
   }),
 })
 
-type Bind = ReturnType<typeof useBind>
+type ConnectRepository = ReturnType<typeof useConnectRepository>
 
-function unboundView(
+function unconnectedView(
   project: ProjectSummary,
   accounts: UseQueryResult<AccountListing, ContractFailure>,
-  bind: Bind,
+  connectRepository: ConnectRepository,
 ): TicketsView {
   if (accounts.isPending) return loading('Reading GitHub Accounts')
   if (accounts.error) return failure('Unable to read Accounts', accounts.error, accounts.refetch)
   return {
-    kind: 'unbound',
+    kind: 'unconnected',
     projectId: project.id,
     projectName: project.name,
     accounts: accounts.data.accounts,
-    pending: bind.isPending,
-    error: bind.variables?.projectId === project.id ? bind.error : null,
-    onBind: (target) => bind.mutate({ projectId: project.id, ...target }),
-    onConnect: openAccountsDialog,
+    pending: connectRepository.isPending,
+    error: connectRepository.variables?.projectId === project.id ? connectRepository.error : null,
+    onConnectRepository: (target) => connectRepository.mutate({ projectId: project.id, ...target }),
+    onConnectAccount: openAccountsDialog,
   }
 }
 
 type TicketListing = UseInfiniteQueryResult<TicketPages, ContractFailure>
 
-type Bound = {
+type Connected = {
   projectId: string
-  binding: BindingSummary
+  connection: ConnectionSummary
   list: TicketListing
   query: string
-  onUnbind: () => void
+  onDisconnectRepository: () => void
 }
 
 function backlog(pages: TicketPages, list: TicketListing, query: string): Omit<Backlog, 'scope'> {
@@ -88,11 +94,17 @@ function backlog(pages: TicketPages, list: TicketListing, query: string): Omit<B
   }
 }
 
-function boundView({ projectId, binding, list, query, onUnbind }: Bound): TicketsView {
-  if (isBindingProblem(binding)) {
+function connectedView({
+  projectId,
+  connection,
+  list,
+  query,
+  onDisconnectRepository,
+}: Connected): TicketsView {
+  if (isConnectionProblem(connection)) {
     return {
       kind: 'problem',
-      ...bindingProblem(binding, { onReconnect: openAccountsDialog, onUnbind }),
+      ...connectionProblem(connection, { onReconnect: openAccountsDialog, onDisconnectRepository }),
     }
   }
   if (list.isPending) return loading('Reading Tickets')
@@ -102,7 +114,7 @@ function boundView({ projectId, binding, list, query, onUnbind }: Bound): Ticket
   return {
     kind: 'tickets',
     projectId,
-    backlog: { ...backlog(list.data, list, query), scope: binding.scope },
+    backlog: { ...backlog(list.data, list, query), scope: connection.scope },
   }
 }
 
@@ -110,20 +122,30 @@ export function useTicketsView(): TicketsScreenProps {
   const project = useSelectedProject()
   const projectId = project?.id ?? null
   const accounts = useAccounts()
-  const binding = useBinding(projectId)
+  const connection = useConnection(projectId)
   const query = useSettledQuery()
-  const list = useTicketList(projectId, binding.data ?? null, query)
-  const bind = useBind()
-  const unbind = useUnbind()
+  const list = useTicketList(projectId, connection.data ?? null, query)
+  const connectRepository = useConnectRepository()
+  const disconnectRepository = useDisconnectRepository()
 
   function view(): TicketsView {
     if (!project) return { kind: 'no-project' }
-    if (binding.isPending) return loading('Reading the connected repository')
-    if (binding.error)
-      return failure('Unable to read the connected repository', binding.error, binding.refetch)
-    if (binding.data === null) return unboundView(project, accounts, bind)
-    const onUnbind = () => unbind.mutate({ projectId: project.id })
-    return boundView({ projectId: project.id, binding: binding.data, list, query, onUnbind })
+    if (connection.isPending) return loading('Reading the connected repository')
+    if (connection.error)
+      return failure(
+        'Unable to read the connected repository',
+        connection.error,
+        connection.refetch,
+      )
+    if (connection.data === null) return unconnectedView(project, accounts, connectRepository)
+    const onDisconnectRepository = () => disconnectRepository.mutate({ projectId: project.id })
+    return connectedView({
+      projectId: project.id,
+      connection: connection.data,
+      list,
+      query,
+      onDisconnectRepository,
+    })
   }
 
   return { view: view() }

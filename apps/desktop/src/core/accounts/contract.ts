@@ -14,13 +14,13 @@ import {
 export const ACCOUNT_CHANNEL = 'argo:account'
 
 // `revoked` is GitHub refusing the stored grant and `unreadable` is this computer unable to open it;
-// either way the Account stays, its Bindings drawn at Account scope to show what it affects.
+// either way the Account stays, its Connections drawn at Account scope to show what it affects.
 const accountSummary = z.strictObject({
   id: identifier,
   provider: z.literal('github'),
   login: identifier,
   state: z.enum(['connected', 'revoked', 'unreadable']),
-  bindings: z.array(
+  connections: z.array(
     z.strictObject({ projectId: identifier, projectName: z.string(), scope: identifier }),
   ),
 })
@@ -49,7 +49,7 @@ const disconnectRequest = message('account.disconnect', { accountId: identifier 
 type Action<Type extends string> = { version: 1; type: Type; requestId: string }
 
 export type AccountSummary = z.infer<typeof accountSummary>
-export type AccountBinding = AccountSummary['bindings'][number]
+export type AccountConnection = AccountSummary['connections'][number]
 export type AccountState = AccountSummary['state']
 export type AccountListRequest = Action<'account.list'>
 export type AccountConnectRequest = Action<'account.connect'>

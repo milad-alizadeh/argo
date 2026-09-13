@@ -18,8 +18,8 @@ test('no reply on the Account or Ticket channel carries a token, and each one pa
   })
   await cockpit.account('account.list')
   await connect(cockpit)
-  await cockpit.ticket('ticket.bind', { accountId: 'github:583231', scope: 'octo/hello' })
-  await cockpit.ticket('ticket.binding')
+  await cockpit.ticket('ticket.connect', { accountId: 'github:583231', scope: 'octo/hello' })
+  await cockpit.ticket('ticket.connection')
   await cockpit.ticket('ticket.list', LIST)
   cockpit.github.revoke('octocat')
   await cockpit.ticket('ticket.list', LIST)
@@ -59,11 +59,11 @@ test('a grant the cipher can no longer open reads as needing a reconnect', async
   cockpit.github.signIn(OCTOCAT)
   cockpit.github.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: [] })
   await connect(cockpit)
-  await cockpit.ticket('ticket.bind', { accountId: 'github:583231', scope: 'octo/hello' })
+  await cockpit.ticket('ticket.connect', { accountId: 'github:583231', scope: 'octo/hello' })
   cockpit.cipher.enabled = false
   assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'grant-unreadable')
   const accounts = (await cockpit.account('account.list')).accounts as { state: string }[]
   assert.equal(accounts[0]?.state, 'unreadable')
-  const binding = (await cockpit.ticket('ticket.binding')).binding as { state: string }
-  assert.equal(binding.state, 'account-unreadable')
+  const connection = (await cockpit.ticket('ticket.connection')).connection as { state: string }
+  assert.equal(connection.state, 'account-unreadable')
 })

@@ -1,5 +1,5 @@
 // Every Ticket request the cockpit sends. Each names the Project it asks about.
-import type { TicketBindRequest, TicketListRequest } from '@/core/tickets/contract'
+import type { TicketConnectRequest, TicketListRequest } from '@/core/tickets/contract'
 import { nextRequestId } from '../../../lib/requests'
 
 export const projectRequest = <const Type extends string>(type: Type, projectId: string) => ({
@@ -9,10 +9,10 @@ export const projectRequest = <const Type extends string>(type: Type, projectId:
   projectId,
 })
 
-export const bindRequest = (
+export const connectRepositoryRequest = (
   projectId: string,
   target: { accountId: string; scope: string },
-): TicketBindRequest => ({ ...projectRequest('ticket.bind', projectId), ...target })
+): TicketConnectRequest => ({ ...projectRequest('ticket.connect', projectId), ...target })
 
 export const listRequest = (projectId: string, query: string, page: number): TicketListRequest => ({
   ...projectRequest('ticket.list', projectId),

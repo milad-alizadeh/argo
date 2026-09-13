@@ -16,9 +16,9 @@ const idle: SignInPanelProps = {
   cancel: fn(),
 }
 
-const bound = {
+const connected = {
   ...octocat,
-  bindings: [{ projectId: 'argo', projectName: 'argo', scope: 'octocat/hello-world' }],
+  connections: [{ projectId: 'argo', projectName: 'argo', scope: 'octocat/hello-world' }],
 }
 const revoked = { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
@@ -34,7 +34,7 @@ const meta: Meta<typeof AccountsPanel> = {
     ),
   ],
   args: {
-    listing: { accounts: [bound, revoked], notice: false },
+    listing: { accounts: [connected, revoked], notice: false },
     listError: null,
     signIn: idle,
     disconnecting: null,
@@ -50,8 +50,8 @@ export const Accounts: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const row = canvas.getByRole('listitem', { name: 'GitHub Account octocat' })
-    const bindings = within(row).getByRole('list', { name: 'Repositories for octocat' })
-    await expect(bindings).toHaveTextContent('argo · octocat/hello-world')
+    const connections = within(row).getByRole('list', { name: 'Repositories for octocat' })
+    await expect(connections).toHaveTextContent('argo · octocat/hello-world')
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
     // Asking lands on the harmless answer, and answering puts focus back on the row.
     await expect(within(row).getByRole('button', { name: 'Keep' })).toHaveFocus()
@@ -129,7 +129,7 @@ export const NoAccounts: Story = {
 }
 
 export const UnreadableSignIn: Story = {
-  args: { listing: { accounts: [{ ...bound, state: 'unreadable' }], notice: false } },
+  args: { listing: { accounts: [{ ...connected, state: 'unreadable' }], notice: false } },
   play: async ({ args, canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
     await expect(row).toHaveTextContent('Sign-in unreadable')

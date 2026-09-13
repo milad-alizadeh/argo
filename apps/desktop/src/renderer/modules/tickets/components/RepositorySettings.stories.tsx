@@ -21,7 +21,7 @@ type Story = StoryObj<typeof RepositorySettings>
 
 export const Connected: Story = {
   args: {
-    binding: {
+    connection: {
       accountId: 'github:583231',
       login: 'octocat',
       scope: 'octocat/hello-world',
@@ -38,7 +38,7 @@ export const Connected: Story = {
 }
 
 export const NotConnected: Story = {
-  args: { binding: null },
+  args: { connection: null },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No repository connected')).toBeVisible()

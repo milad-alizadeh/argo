@@ -1,4 +1,4 @@
-// The Ticket port filled by GitHub Issues: one Binding's open Tickets with their hierarchy and
+// The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 import { isRecord } from '../../boundary'
 import type { Ticket, TicketLabel, TicketLink } from '../../core/tickets/contract'

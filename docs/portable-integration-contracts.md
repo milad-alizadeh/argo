@@ -126,14 +126,14 @@ Account metadata is in `accounts.json` beside it. No message carries a token, an
 If GitHub refuses a stored grant, the Account becomes `revoked`. It is not called again until the person reconnects it.
 A refusal of a token that a newer sign-in already replaced does not change the Account.
 If this computer cannot open a stored grant, the Account reads as `unreadable` until the person reconnects it.
-An Account summary lists its Bindings, so a revoked or disconnected Account shows which Projects it affects.
+An Account summary lists its Connections, so a revoked or disconnected Account shows which Projects it affects.
 This slice imports no Swift Accounts. Every person sees a one-time notice that asks them to connect GitHub again.
 
-The Ticket channel binds a Project to one repository and reads its open Tickets.
-The actions are `ticket.binding`, `ticket.bind`, `ticket.unbind`, and `ticket.list`, and each one carries a `projectId`.
-`ticket.bind` also carries an `accountId` and a `scope` (`owner/name`).
-The main process asks GitHub whether that Account can read the repository and whether its Issues are on. Only then does it write `bindings.json`.
-A Binding stays when its Account is disconnected, revoked, or unreadable. Its summary names that state: `account-missing`, `account-revoked`, or `account-unreadable`.
+The Ticket channel connects a Project to one repository and reads its open Tickets.
+The actions are `ticket.connection`, `ticket.connect`, `ticket.disconnect`, and `ticket.list`, and each one carries a `projectId`.
+`ticket.connect` also carries an `accountId` and a `scope` (`owner/name`).
+The main process asks GitHub whether that Account can read the repository and whether its Issues are on. Only then does it write `connections.json`.
+A Connection stays when its Account is disconnected, revoked, or unreadable. Its summary names that state: `account-missing`, `account-revoked`, or `account-unreadable`.
 `ticket.list` returns the open Issues without pull requests. Each Ticket has its title, body, state, labels, type, children, and the Tickets that block it.
 `blockedBy` is `null` when GitHub serves no dependency facts for that Ticket. This is different from an empty list.
 The error codes and their text are `ACCOUNT_ERRORS` and `TICKET_ERRORS`.
@@ -157,7 +157,7 @@ The `portable-v1` directory separates these files from the Swift store even when
 
 | Data | Owner and import boundary |
 | --- | --- |
-| Projects and Bindings | Argo owns registrations and validated links. Preserve stable IDs and mutable paths in separate destination files. |
+| Projects and Connections | Argo owns registrations and validated links. Preserve stable IDs and mutable paths in separate destination files. |
 | Account metadata | Argo owns provider identity records. Nothing is imported, and every person connects their Accounts again. |
 | Credentials | The main process uses Electron safeStorage under #1824. Never import Swift tokens or send credentials to the renderer. |
 | Asserted links | Argo stores only human assertions without a positive external derivation. Preserve their referenced identities. |
@@ -165,7 +165,7 @@ The `portable-v1` directory separates these files from the Swift store even when
 | Sessions | CLI transcripts remain authoritative. Observe their files without moving them into an Argo registry. |
 | Derived joins and indexes | Rebuildable data only. No new database or persisted source of truth. |
 
-Nothing is imported from the Swift app. Projects, Bindings, and Accounts start fresh in the desktop app.
+Nothing is imported from the Swift app. Projects, Connections, and Accounts start fresh in the desktop app.
 The Swift reference shapes are `ProjectRegistryStore.swift`, `ProjectRegistry.swift`, and `ProjectRecord+Codable.swift` under `ArgoEngine/Project`.
 The Swift reader silently treats corrupt storage as empty. This proof exposes that condition and leaves its recovery UI undecided.
 
@@ -201,8 +201,8 @@ Only a run on the 120 Hz reference display is judged. Every other run reports `u
 The fake is used only when the proof store is set, and only at a `127.0.0.1` origin.
 The proof connects an Account, signs in again as the same identity, and connects a second identity.
 It makes sure that no token reaches the renderer or an unsealed file.
-It binds a repository after one refusal, reads the backlog and one Ticket, and restarts while GitHub is down.
-It then reads again, revokes the grant, reconnects, disconnects, and unbinds.
+It connects a repository after one refusal, reads the backlog and one Ticket, and restarts while GitHub is down.
+It then reads again, revokes the grant, reconnects, disconnects the Account, and disconnects the repository.
 It uses the mock keychain switch, so safeStorage does not use the login keychain of the person who runs it.
 
 The proof reports an unsigned test profile, not signed-release acceptance.

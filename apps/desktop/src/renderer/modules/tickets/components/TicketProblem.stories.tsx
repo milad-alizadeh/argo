@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
-import { bindingProblem, failureProblem } from '../lib/problems'
+import { connectionProblem, failureProblem } from '../lib/problems'
 import { TicketProblem } from './TicketProblem'
 
-const recovery = { onRetry: fn(), onReconnect: fn(), onUnbind: fn() }
+const recovery = { onRetry: fn(), onReconnect: fn(), onDisconnectRepository: fn() }
 
 const meta: Meta<typeof TicketProblem> = {
   title: 'Tickets/Ticket Problem',
@@ -36,9 +36,9 @@ export const FailedRead: Story = {
   },
 }
 
-// A Binding whose Account GitHub refused: reconnecting brings it back, disconnecting forgets it.
+// A Connection whose Account GitHub refused: reconnecting brings it back, disconnecting forgets it.
 export const AccountRefused: Story = {
-  args: bindingProblem(
+  args: connectionProblem(
     {
       accountId: 'github:583231',
       login: 'octocat',
@@ -54,6 +54,6 @@ export const AccountRefused: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Reconnect GitHub' }))
     await expect(recovery.onReconnect).toHaveBeenCalled()
     await userEvent.click(canvas.getByRole('button', { name: 'Disconnect repository' }))
-    await expect(recovery.onUnbind).toHaveBeenCalled()
+    await expect(recovery.onDisconnectRepository).toHaveBeenCalled()
   },
 }

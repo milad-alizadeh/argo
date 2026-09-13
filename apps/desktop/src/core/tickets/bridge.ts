@@ -1,4 +1,4 @@
-// The Ticket channel's main-process end. The renderer names a Project; the Binding, the Account's
+// The Ticket channel's main-process end. The renderer names a Project; the Connection, the Account's
 // grant and every GitHub call are resolved here.
 import type { BrowserWindow } from 'electron'
 import { requestIdentifier } from '../../boundary'
@@ -6,14 +6,14 @@ import type { AccountAccess } from '../accounts/access'
 import { createRouter } from '../contract/messages'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import {
-  isTicketBindingRequest,
-  isTicketBindRequest,
+  isTicketConnectionRequest,
+  isTicketConnectRequest,
+  isTicketDisconnectRequest,
   isTicketListRequest,
-  isTicketUnbindRequest,
   TICKET_CHANNEL,
   ticketError,
 } from './contract'
-import { bind, listTickets, readBinding, unbind } from './service'
+import { connectRepository, disconnectRepository, listTickets, readConnection } from './service'
 
 type Call = { access: AccountAccess; requestId: string; projectId: string }
 
@@ -29,11 +29,11 @@ const handler =
       : ticketError('invalid-request', requestIdentifier(request))
 
 const HANDLERS = {
-  'ticket.binding': handler(isTicketBindingRequest, readBinding),
-  'ticket.bind': handler(isTicketBindRequest, (call, { accountId, scope }) =>
-    bind(call, { accountId, scope }),
+  'ticket.connection': handler(isTicketConnectionRequest, readConnection),
+  'ticket.connect': handler(isTicketConnectRequest, (call, { accountId, scope }) =>
+    connectRepository(call, { accountId, scope }),
   ),
-  'ticket.unbind': handler(isTicketUnbindRequest, unbind),
+  'ticket.disconnect': handler(isTicketDisconnectRequest, disconnectRepository),
   'ticket.list': handler(isTicketListRequest, (call, { query, page }) =>
     listTickets(call, { query, page }),
   ),

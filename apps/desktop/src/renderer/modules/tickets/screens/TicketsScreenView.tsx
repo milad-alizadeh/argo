@@ -9,7 +9,7 @@ import {
 } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { AccountsDialog } from '../../accounts/components/AccountsDialog'
-import { BindForm } from '../components/BindForm'
+import { ConnectRepositoryForm } from '../components/ConnectRepositoryForm'
 import { TicketDeck } from '../components/TicketDeck'
 import { TicketProblem } from '../components/TicketProblem'
 import { type TicketsScreenProps, type TicketsView, useTicketsView } from '../hooks/useTicketsView'
@@ -43,7 +43,7 @@ function NoProject() {
         </EmptyMedia>
         <EmptyTitle>Select a Project to read its Tickets</EmptyTitle>
         <EmptyDescription>
-          A Project reads its Tickets from the GitHub repository it is bound to.
+          A Project reads its Tickets from the GitHub repository it is connected to.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -58,10 +58,10 @@ function Body({ view }: { view: TicketsView }) {
       return <Loading label={view.label} />
     case 'problem':
       return <TicketProblem {...view} />
-    case 'unbound':
-      return <BindForm key={view.projectId} {...view} />
+    case 'unconnected':
+      return <ConnectRepositoryForm key={view.projectId} {...view} />
     case 'tickets':
-      // A new Project starts with nothing selected, as the bind form starts empty.
+      // A new Project starts with nothing selected, as the connect form starts empty.
       return <TicketDeck key={view.projectId} {...view} />
     default:
       return view satisfies never

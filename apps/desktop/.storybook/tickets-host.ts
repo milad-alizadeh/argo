@@ -1,4 +1,4 @@
-// No Account and no Binding: a story that reaches the Tickets screen draws its first-run screen.
+// No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.
 export const ticketsHost = {
   listAccounts: (request: { requestId: string }) =>
     Promise.resolve({
@@ -8,12 +8,12 @@ export const ticketsHost = {
       accounts: [],
       notice: false,
     }),
-  readBinding: (request: { requestId: string; projectId: string }) =>
+  readConnection: (request: { requestId: string; projectId: string }) =>
     Promise.resolve({
       version: 1,
-      type: 'ticket.bound',
+      type: 'ticket.connected',
       requestId: request.requestId,
       projectId: request.projectId,
-      binding: null,
+      connection: null,
     }),
 }

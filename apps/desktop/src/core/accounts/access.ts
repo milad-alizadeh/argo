@@ -10,7 +10,7 @@ import { type AccountRecord, readAccounts, writeAccounts } from './registry'
 export type AccountAccess = {
   endpoints: GitHubEndpoints
   grants: GrantStore
-  paths: { accounts: string; bindings: string; projects: string }
+  paths: { accounts: string; connections: string; projects: string }
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
   // Opens a URL the main process already validated. Never a URL the renderer named.
   openExternal: (url: string) => Promise<void>
@@ -28,7 +28,7 @@ export function createAccountAccess(options: {
     grants: createGrantStore(portablePath(userData, 'grants.json'), cipher),
     paths: {
       accounts: portablePath(userData, 'accounts.json'),
-      bindings: portablePath(userData, 'bindings.json'),
+      connections: portablePath(userData, 'connections.json'),
       projects: portablePath(userData, 'projects.json'),
     },
     exclusive: createWriteQueue(),
@@ -36,7 +36,7 @@ export function createAccountAccess(options: {
   }
 }
 
-// Project names by ID, for drawing a Binding. A registry that cannot be read names nothing.
+// Project names by ID, for drawing a Connection. A registry that cannot be read names nothing.
 export async function projectNames(access: AccountAccess): Promise<Map<string, string>> {
   const read = await readRegistry(access.paths.projects)
   const registrations = read.ok ? read.registry.projects : []
@@ -60,7 +60,7 @@ export async function tokenFor(access: AccountAccess, accountId: string): Promis
   return { ok: true, token: grant.grant.accessToken, account }
 }
 
-// What calling GitHub as this Account would meet, read afresh so the Account row and every Binding
+// What calling GitHub as this Account would meet, read afresh so the Account row and every Connection
 // naming it agree.
 export async function accountState(
   access: AccountAccess,
@@ -70,7 +70,7 @@ export async function accountState(
   return (await access.grants.read(account.id)).ok ? 'connected' : 'unreadable'
 }
 
-// GitHub refused `refusedToken`. The Account keeps its record, marked, so every Binding naming it
+// GitHub refused `refusedToken`. The Account keeps its record, marked, so every Connection naming it
 // can say why it stopped reading. A grant renewed while that request was in flight is not the one
 // refused, and stays connected.
 export function markRevoked(

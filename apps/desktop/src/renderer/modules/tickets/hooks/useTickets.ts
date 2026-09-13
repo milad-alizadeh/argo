@@ -1,4 +1,4 @@
-// A Project's Binding and the open Tickets read through it, cached per Project.
+// A Project's Connection and the open Tickets read through it, cached per Project.
 import {
   type InfiniteData,
   keepPreviousData,
@@ -11,15 +11,15 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import type {
-  BindingSummary,
-  TicketBound,
-  TicketBoundReply,
+  ConnectionSummary,
+  TicketConnected,
+  TicketConnectedReply,
   TicketListed,
 } from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import { bindRequest, listRequest, projectRequest } from '../lib/requests'
+import { connectRepositoryRequest, listRequest, projectRequest } from '../lib/requests'
 
-const bindingKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'binding']
+const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.
 const listKey = (projectId: string | null, query?: string) =>
   query === undefined
@@ -28,23 +28,23 @@ const listKey = (projectId: string | null, query?: string) =>
 
 export type TicketPages = InfiniteData<TicketListed, number>
 
-// A refused or unreadable grant is an Account fact, so the Account listing and this Binding's
+// A refused or unreadable grant is an Account fact, so the Account listing and this Connection's
 // summary are both stale.
 const ACCOUNT_FAILURES = new Set(['account-revoked', 'grant-unreadable'])
 
 function onRefused(client: QueryClient, projectId: string, failure: ContractFailure): void {
   if (!ACCOUNT_FAILURES.has(failure.code)) return
   void client.invalidateQueries({ queryKey: QUERY_KEYS.accounts })
-  void client.invalidateQueries({ queryKey: bindingKey(projectId) })
+  void client.invalidateQueries({ queryKey: connectionKey(projectId) })
 }
 
-export function useBinding(projectId: string | null) {
-  return useQuery<BindingSummary | null, ContractFailure>({
-    queryKey: bindingKey(projectId),
+export function useConnection(projectId: string | null) {
+  return useQuery<ConnectionSummary | null, ContractFailure>({
+    queryKey: connectionKey(projectId),
     queryFn: projectId
       ? async () =>
-          (await settle(window.argo.readBinding(projectRequest('ticket.binding', projectId))))
-            .binding
+          (await settle(window.argo.readConnection(projectRequest('ticket.connection', projectId))))
+            .connection
       : skipToken,
   })
 }
@@ -53,11 +53,11 @@ export function useBinding(projectId: string | null) {
 // answer on screen until its own arrives.
 export function useTicketList(
   projectId: string | null,
-  binding: BindingSummary | null,
+  connection: ConnectionSummary | null,
   query = '',
 ) {
   const client = useQueryClient()
-  const ready = projectId !== null && binding?.state === 'ready'
+  const ready = projectId !== null && connection?.state === 'ready'
   return useInfiniteQuery<TicketListed, ContractFailure, TicketPages, QueryKey, number>({
     queryKey: listKey(projectId, query),
     queryFn: ready
@@ -76,14 +76,14 @@ export function useTicketList(
 }
 
 // Each action names its Project, so a reply lands in that Project's cache whatever is on screen.
-function useBindingAction<Input extends { projectId: string }>(
-  act: (input: Input) => Promise<TicketBoundReply>,
+function useConnectionAction<Input extends { projectId: string }>(
+  act: (input: Input) => Promise<TicketConnectedReply>,
 ) {
   const client = useQueryClient()
-  return useMutation<TicketBound, ContractFailure, Input>({
+  return useMutation<TicketConnected, ContractFailure, Input>({
     mutationFn: (input: Input) => settle(act(input)),
     onSuccess: (reply, { projectId }) => {
-      client.setQueryData(bindingKey(projectId), reply.binding)
+      client.setQueryData(connectionKey(projectId), reply.connection)
       void client.invalidateQueries({ queryKey: listKey(projectId) })
       void client.invalidateQueries({ queryKey: QUERY_KEYS.accounts })
     },
@@ -91,14 +91,14 @@ function useBindingAction<Input extends { projectId: string }>(
   })
 }
 
-export type BindInput = { projectId: string; accountId: string; scope: string }
+export type ConnectInput = { projectId: string; accountId: string; scope: string }
 
-export const useBind = () =>
-  useBindingAction(({ projectId, ...target }: BindInput) =>
-    window.argo.bindTickets(bindRequest(projectId, target)),
+export const useConnectRepository = () =>
+  useConnectionAction(({ projectId, ...target }: ConnectInput) =>
+    window.argo.connectRepository(connectRepositoryRequest(projectId, target)),
   )
 
-export const useUnbind = () =>
-  useBindingAction(({ projectId }: { projectId: string }) =>
-    window.argo.unbindTickets(projectRequest('ticket.unbind', projectId)),
+export const useDisconnectRepository = () =>
+  useConnectionAction(({ projectId }: { projectId: string }) =>
+    window.argo.disconnectRepository(projectRequest('ticket.disconnect', projectId)),
   )

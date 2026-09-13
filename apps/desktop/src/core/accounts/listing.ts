@@ -1,8 +1,8 @@
-// The Account set as the renderer draws it: secret-free records with the Bindings each one feeds.
-import { readBindings } from '../tickets/bindings'
+// The Account set as the renderer draws it: secret-free records with the Connections each one feeds.
+import { readConnections } from '../tickets/connections'
 import { type AccountAccess, accountState, projectNames } from './access'
 import {
-  type AccountBinding,
+  type AccountConnection,
   type AccountError,
   type AccountListed,
   type AccountState,
@@ -16,29 +16,29 @@ import { type AccountRecord, type AccountRegistry, readAccounts, writeAccounts }
 function summary(
   account: AccountRecord,
   state: AccountState,
-  bindings: AccountBinding[],
+  connections: AccountConnection[],
 ): AccountSummary {
-  return { id: account.id, provider: 'github', login: account.login, state, bindings }
+  return { id: account.id, provider: 'github', login: account.login, state, connections }
 }
 
 export async function listing(
   access: AccountAccess,
   registry: AccountRegistry,
 ): Promise<Pick<AccountListed, 'accounts' | 'notice'>> {
-  const [bindings, names] = await Promise.all([
-    readBindings(access.paths.bindings),
+  const [connections, names] = await Promise.all([
+    readConnections(access.paths.connections),
     projectNames(access),
   ])
-  const known = bindings.ok ? bindings.document.bindings : []
+  const known = connections.ok ? connections.document.connections : []
   const accounts = await Promise.all(
     registry.accounts.map(async (account) =>
       summary(
         account,
         await accountState(access, account),
-        known.flatMap((binding) => {
-          const projectName = names.get(binding.projectId)
-          if (binding.accountId !== account.id || projectName === undefined) return []
-          return [{ projectId: binding.projectId, projectName, scope: binding.scope }]
+        known.flatMap((connection) => {
+          const projectName = names.get(connection.projectId)
+          if (connection.accountId !== account.id || projectName === undefined) return []
+          return [{ projectId: connection.projectId, projectName, scope: connection.scope }]
         }),
       ),
     ),

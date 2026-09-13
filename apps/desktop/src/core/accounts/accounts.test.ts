@@ -12,7 +12,13 @@ test('connecting GitHub adds one Account keyed by the provider id and opens only
   assert.equal(connected.accountId, 'github:583231')
   assert.equal(connected.outcome, 'added')
   assert.deepEqual(connected.accounts, [
-    { id: 'github:583231', provider: 'github', login: 'octocat', state: 'connected', bindings: [] },
+    {
+      id: 'github:583231',
+      provider: 'github',
+      login: 'octocat',
+      state: 'connected',
+      connections: [],
+    },
   ])
   assert.deepEqual(cockpit.opened, [`${cockpit.github.origin}/login/device`])
 })

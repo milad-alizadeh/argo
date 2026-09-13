@@ -7,7 +7,7 @@ import { TicketsSidebarContent } from '../components/TicketsSidebar'
 import { backlog, longBacklog, standalone, ticketsView } from '../components/ticket-fixtures'
 import { TicketsScreen } from './TicketsScreenView'
 
-const binding = {
+const connection = {
   accountId: 'github:583231',
   login: 'octocat',
   scope: 'octocat/hello-world',
@@ -25,7 +25,7 @@ const meta: Meta<typeof TicketsScreen> = {
           <CockpitShell
             sidebar={
               <TicketsSidebarContent
-                binding={binding}
+                connection={connection}
                 notice={null}
                 onManageAccounts={fn()}
                 openCount="3"
@@ -118,8 +118,13 @@ export const MoreTicketsUnavailable: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /^#607/ })).toBeInTheDocument()
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot reach GitHub.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Try again' }))
+    // The toast draws in a portal outside the canvas, hidden from the accessibility tree while an
+    // offscreen alert announces its words, so it is found by its slot rather than by role.
+    const body = canvasElement.ownerDocument.body
+    await waitFor(() => expect(body.querySelector('[data-slot="toast"]')).not.toBeNull())
+    const shown = within(body.querySelector('[data-slot="toast"]') as HTMLElement)
+    await expect(shown.getByText('Argo cannot reach GitHub.')).toBeInTheDocument()
+    await userEvent.click(shown.getByText('Try again'))
     await expect(retryLoadMore).toHaveBeenCalled()
   },
 }

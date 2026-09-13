@@ -1,28 +1,28 @@
 import { useRef } from 'react'
 
-import type { BindingSummary } from '@/core/tickets/contract'
+import type { ConnectionSummary } from '@/core/tickets/contract'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import { SignInNotice, type SignInNoticeProps } from '../../accounts/components/SignInNotice'
 import { useAccounts, useDismissNotice } from '../../accounts/hooks/useAccounts'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
-import { useBinding, useTicketList } from '../hooks/useTickets'
+import { useConnection, useTicketList } from '../hooks/useTickets'
 import { uniqueTickets } from '../lib/backlog'
-import { BindingStatusMark } from './BindingStatusMark'
+import { ConnectionStatusMark } from './ConnectionStatusMark'
 import { TicketsSidebarHeader } from './TicketsSidebarHeader'
 
 export type TicketsSidebarContentProps = {
-  binding: BindingSummary | null
+  connection: ConnectionSummary | null
   // The open Tickets read so far, with a `+` while more pages remain.
   openCount: string | null
   notice: SignInNoticeProps | null
   onManageAccounts: () => void
 }
 
-type AccountFootProps = Pick<TicketsSidebarContentProps, 'binding' | 'onManageAccounts'>
+type AccountFootProps = Pick<TicketsSidebarContentProps, 'connection' | 'onManageAccounts'>
 
-// The foot names the Account this Project reads through; with no Binding it opens the Accounts.
-function AccountFoot({ binding, onManageAccounts }: AccountFootProps) {
+// The foot names the Account this Project reads through; with no Connection it opens the Accounts.
+function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
   return (
     <footer className="shrink-0 border-t border-border/60 p-(--spacing-shell-item)">
       <button
@@ -30,10 +30,10 @@ function AccountFoot({ binding, onManageAccounts }: AccountFootProps) {
         onClick={onManageAccounts}
         type="button"
       >
-        {binding ? (
-          <BindingStatusMark state={binding.state}>
-            GitHub · {binding.login ?? 'no Account'}
-          </BindingStatusMark>
+        {connection ? (
+          <ConnectionStatusMark state={connection.state}>
+            GitHub · {connection.login ?? 'no Account'}
+          </ConnectionStatusMark>
         ) : (
           <span className="min-w-0 flex-1 truncate">GitHub Accounts</span>
         )}
@@ -43,7 +43,7 @@ function AccountFoot({ binding, onManageAccounts }: AccountFootProps) {
 }
 
 export function TicketsSidebarContent({
-  binding,
+  connection,
   openCount,
   notice,
   onManageAccounts,
@@ -57,7 +57,7 @@ export function TicketsSidebarContent({
       className="flex h-full min-h-0 flex-col bg-sidebar"
       ref={sidebar}
     >
-      <TicketsSidebarHeader scope={binding?.scope ?? null} />
+      <TicketsSidebarHeader scope={connection?.scope ?? null} />
       <nav
         aria-label="Ticket views"
         className="min-h-0 flex-1 overflow-y-auto p-(--spacing-shell-item)"
@@ -76,21 +76,21 @@ export function TicketsSidebarContent({
         </div>
       </nav>
       {notice ? <SignInNotice {...notice} /> : null}
-      <AccountFoot binding={binding} onManageAccounts={onManageAccounts} />
+      <AccountFoot connection={connection} onManageAccounts={onManageAccounts} />
     </aside>
   )
 }
 
 export function TicketsSidebar() {
   const projectId = useSelectedProject()?.id ?? null
-  const binding = useBinding(projectId).data ?? null
-  const list = useTicketList(projectId, binding)
+  const connection = useConnection(projectId).data ?? null
+  const list = useTicketList(projectId, connection)
   const dismiss = useDismissNotice()
   const showNotice = useAccounts().data?.notice ?? false
   const opened = list.data ? uniqueTickets(list.data.pages).length : null
   return (
     <TicketsSidebarContent
-      binding={binding}
+      connection={connection}
       notice={
         showNotice
           ? { onConnect: openAccountsDialog, onDismiss: () => dismiss.mutate(undefined) }

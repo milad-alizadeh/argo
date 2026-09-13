@@ -1,4 +1,4 @@
-// The packaged Ticket proof (#1848): connect, bind, list, detail, restart, revoked access,
+// The packaged Ticket proof (#1848): connect an Account, connect a repository, list, detail, restart, revoked access,
 // disconnect and a visible failure, all through the shipped cockpit against a fake GitHub.
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -7,8 +7,8 @@ import type { ElectronApplication } from 'playwright-core'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import {
   proveBacklog,
-  proveBind,
   proveConnect,
+  proveConnectRepository,
   proveDisconnect,
   proveRestartAndFailure,
   proveRevoked,
@@ -32,7 +32,7 @@ try {
   let run = await start(fixture)
   application = run.application
   await proveConnect(run)
-  await proveBind(run)
+  await proveConnectRepository(run)
   await proveBacklog(run)
   await run.application.close()
   fixture.github.outage('down')
@@ -54,7 +54,7 @@ try {
         'second-identity',
         'sealed-grant',
         'refused-repository',
-        'bind',
+        'connectRepository',
         'list',
         'detail',
         'restart',
@@ -62,7 +62,7 @@ try {
         'revoked-access',
         'reconnect',
         'disconnect',
-        'unbind',
+        'disconnectRepository',
       ],
     }),
   )

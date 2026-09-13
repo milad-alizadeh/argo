@@ -11,7 +11,7 @@ import {
   TriangleAlert,
   Unplug,
 } from 'lucide-react'
-import type { BindingSummary, TicketErrorCode } from '@/core/tickets/contract'
+import type { ConnectionSummary, TicketErrorCode } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
@@ -20,7 +20,7 @@ export type TicketProblemProps = {
   icon: LucideIcon
   title: string
   description: string
-  // A failed read is announced; a Binding waiting on its Account is a state, not an event.
+  // A failed read is announced; a Connection waiting on its Account is a state, not an event.
   alert: boolean
   actions: readonly ProblemAction[]
 }
@@ -59,40 +59,42 @@ export function failureProblem(
   }
 }
 
-type Problem = Exclude<BindingSummary['state'], 'ready'>
-export type TroubledBinding = BindingSummary & { state: Problem }
+type Problem = Exclude<ConnectionSummary['state'], 'ready'>
+export type TroubledConnection = ConnectionSummary & { state: Problem }
 
-export const isBindingProblem = (binding: BindingSummary): binding is TroubledBinding =>
-  binding.state !== 'ready'
+export const isConnectionProblem = (
+  connection: ConnectionSummary,
+): connection is TroubledConnection => connection.state !== 'ready'
 
-// The Binding stays when its Account goes, so reconnecting the same identity brings it back.
-const BINDING_PROBLEMS: Record<Problem, { icon: LucideIcon; title: (login: string) => string }> = {
-  'account-missing': {
-    icon: Unplug,
-    title: () => 'The GitHub Account for this repository is disconnected',
-  },
-  'account-revoked': { icon: KeyRound, title: (login) => `GitHub no longer accepts ${login}` },
-  'account-unreadable': {
-    icon: LockKeyhole,
-    title: (login) => `Argo cannot read the sign-in for ${login}`,
-  },
-}
+// The Connection stays when its Account goes, so reconnecting the same identity brings it back.
+const CONNECTION_PROBLEMS: Record<Problem, { icon: LucideIcon; title: (login: string) => string }> =
+  {
+    'account-missing': {
+      icon: Unplug,
+      title: () => 'The GitHub Account for this repository is disconnected',
+    },
+    'account-revoked': { icon: KeyRound, title: (login) => `GitHub no longer accepts ${login}` },
+    'account-unreadable': {
+      icon: LockKeyhole,
+      title: (login) => `Argo cannot read the sign-in for ${login}`,
+    },
+  }
 
-type BindingRecovery = { onReconnect: () => void; onUnbind: () => void }
+type ConnectionRecovery = { onReconnect: () => void; onDisconnectRepository: () => void }
 
-export function bindingProblem(
-  binding: TroubledBinding,
-  { onReconnect, onUnbind }: BindingRecovery,
+export function connectionProblem(
+  connection: TroubledConnection,
+  { onReconnect, onDisconnectRepository }: ConnectionRecovery,
 ): TicketProblemProps {
-  const { icon, title } = BINDING_PROBLEMS[binding.state]
+  const { icon, title } = CONNECTION_PROBLEMS[connection.state]
   return {
     icon,
-    title: title(binding.login ?? 'this Account'),
-    description: `Reconnect it to read ${binding.scope} again.`,
+    title: title(connection.login ?? 'this Account'),
+    description: `Reconnect it to read ${connection.scope} again.`,
     alert: false,
     actions: [
       { label: 'Reconnect GitHub', onClick: onReconnect, primary: true },
-      { label: 'Disconnect repository', onClick: onUnbind, primary: false },
+      { label: 'Disconnect repository', onClick: onDisconnectRepository, primary: false },
     ],
   }
 }
