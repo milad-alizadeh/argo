@@ -1,7 +1,8 @@
 import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
-import { type KeyboardEvent, useState } from 'react'
+import { type KeyboardEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
+import { currentSessionId } from '@/core/sessions/models'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
@@ -9,10 +10,10 @@ import { Skeleton } from '../../../components/ui/skeleton'
 import { useSessions } from '../hooks/useSessions'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
+import { ArchivedSessions } from './ArchivedSessions'
+import { SessionRosterItem } from './SessionRosterItem'
 
-function sessionName(session: { id: string; title: { text: string } | null }) {
-  return session.title?.text ?? session.id
-}
+const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
 function rosterState(
   roster: SessionsListed | null,
@@ -105,24 +106,15 @@ export function SessionsSidebarContent({
     <nav aria-label={label}>
       <ul className="flex flex-col gap-1 px-3" onKeyDown={moveFocus}>
         {items.map((session) => {
-          const selected = session.id === selectedSessionId
           return (
-            <li key={session.id}>
-              <button
-                aria-current={selected ? 'page' : undefined}
-                className={`w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
-                data-session-id={session.id}
-                onClick={() => onSelect(session.id)}
-                onFocus={() => setFocusedSessionId(session.id)}
-                tabIndex={session.id === tabStop ? 0 : -1}
-                type="button"
-              >
-                <span className="block truncate font-medium">{sessionName(session)}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {session.status}
-                </span>
-              </button>
-            </li>
+            <SessionRosterItem
+              key={session.id}
+              onFocus={() => setFocusedSessionId(session.id)}
+              onSelect={() => onSelect(session.id)}
+              selected={session.id === selectedSessionId}
+              session={session}
+              tabIndex={session.id === tabStop ? 0 : -1}
+            />
           )
         })}
       </ul>
@@ -160,12 +152,7 @@ export function SessionsSidebarContent({
         </Empty>
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto py-3">{rows(visible, 'Sessions')}</div>
-      {archived.length > 0 ? (
-        <details className="border-t border-border/60 py-3">
-          <summary className="cursor-pointer px-4 text-sm">Archived {archived.length}</summary>
-          <div className="pt-2">{rows(archived, 'Archived')}</div>
-        </details>
-      ) : null}
+      <ArchivedSessions archived={archived} rows={rows} selectedSessionId={selectedSessionId} />
     </aside>
   )
 }
@@ -174,9 +161,24 @@ export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const { roster, rosterError } = useSessions(null)
+  useEffect(() => {
+    if (sessionId !== undefined || roster === null || rosterError !== null) return
+    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
+    if (storedId === null) return
+    const restoredId = currentSessionId(roster.sessions, storedId)
+    if (restoredId === null) {
+      window.localStorage.removeItem(SELECTED_SESSION_KEY)
+      return
+    }
+    navigate(`/sessions/${restoredId}`, { replace: true })
+  }, [navigate, roster, rosterError, sessionId])
+
   return (
     <SessionsSidebarContent
-      onSelect={(selectedSessionId) => navigate(`/sessions/${selectedSessionId}`)}
+      onSelect={(selectedSessionId) => {
+        window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
+        navigate(`/sessions/${selectedSessionId}`)
+      }}
       roster={roster}
       rosterError={rosterError}
       selectedSessionId={sessionId ?? null}
