@@ -12,7 +12,7 @@ function issueJson(repository: FakeRepository, issue: FakeIssue) {
     title: issue.title,
     body: issue.body ?? null,
     state: issue.state ?? 'open',
-    state_reason: null,
+    state_reason: issue.stateReason ?? null,
     created_at: issue.createdAt ?? '2026-01-01T00:00:00Z',
     labels: issue.labels ?? [],
     type: issue.type ? { name: issue.type } : null,
@@ -112,6 +112,31 @@ function apiRead(exchange: Exchange) {
   repositoryRead(exchange, user)
 }
 
+const ISSUE_PATH = /^\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/
+
+// GitHub's issue update, as far as the cockpit sends it: a state, and a reason for closing.
+async function issueWrite(exchange: Exchange) {
+  const { state, request, response, url } = exchange
+  const user = state.tokens.get(request.headers.authorization?.replace(/^Bearer /, '') ?? '')
+  if (!user) return send(response, 401, { message: 'Bad credentials' })
+  const match = url.pathname.match(ISSUE_PATH)
+  const repository = match?.[1] ? state.repositories.get(match[1].toLowerCase()) : undefined
+  const issue = repository?.issues.find((candidate) => candidate.number === Number(match?.[2]))
+  if (!(repository?.visibleTo.includes(user.id) && issue)) {
+    return send(response, 404, { message: 'Not Found' })
+  }
+  if (!(repository.writers ?? repository.visibleTo).includes(user.id)) {
+    return send(response, 403, { message: 'Must have admin rights to Repository.' })
+  }
+  let text = ''
+  for await (const chunk of request) text += chunk
+  const change = JSON.parse(text) as Pick<FakeIssue, 'state'> & { state_reason?: string }
+  issue.state = change.state ?? issue.state
+  issue.stateReason =
+    issue.state === 'open' ? null : (change.state_reason as FakeIssue['stateReason'])
+  send(response, 200, issueJson(repository, issue))
+}
+
 export async function answer(state: FakeState, request: IncomingMessage, response: ServerResponse) {
   const exchange = { state, request, response, url: new URL(request.url ?? '/', state.origin) }
   const route = `${request.method} ${exchange.url.pathname}`
@@ -119,5 +144,6 @@ export async function answer(state: FakeState, request: IncomingMessage, respons
   if (route === 'POST /login/oauth/access_token') return accessToken(exchange)
   if (route === 'GET /login/device') return enterCode(exchange)
   if (request.method === 'GET') return apiRead(exchange)
+  if (request.method === 'PATCH') return issueWrite(exchange)
   send(response, 405, { message: 'Method not allowed' })
 }

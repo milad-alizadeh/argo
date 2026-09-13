@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { CockpitNavigationRail } from './CockpitNavigationRail'
 
 const meta: Meta<typeof CockpitNavigationRail> = {
-  title: 'Cockpit/NavigationRail',
+  title: 'Cockpit/Navigation Rail',
   component: CockpitNavigationRail,
   parameters: {
     layout: 'fullscreen',

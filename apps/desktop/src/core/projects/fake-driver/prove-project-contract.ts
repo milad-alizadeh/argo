@@ -60,6 +60,7 @@ const SURFACE = [
   'setAppearance',
   'startClaudeSession',
   'startCodexSession',
+  'updateStatus',
   'verifyAccount',
   'versions',
   'zoomFactor',

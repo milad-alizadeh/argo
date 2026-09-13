@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-
 import { SourceSettings } from './SourceSettings'
+import { connection } from './ticket-fixtures'
 
 const meta: Meta<typeof SourceSettings> = {
   title: 'Tickets/Source Settings',
@@ -20,16 +20,7 @@ export default meta
 type Story = StoryObj<typeof SourceSettings>
 
 export const Connected: Story = {
-  args: {
-    connection: {
-      accountId: 'github:583231',
-      provider: 'github',
-      login: 'octocat',
-      scope: 'octocat/hello-world',
-      label: 'octocat/hello-world',
-      state: 'ready',
-    },
-  },
+  args: { connection: connection('github') },
   play: async ({ args, canvasElement }) => {
     const section = within(canvasElement).getByRole('region', { name: 'Ticket source' })
     await expect(section).toHaveTextContent('octocat/hello-world')
@@ -41,16 +32,7 @@ export const Connected: Story = {
 
 // A Linear team shows its name, not its id, and an expired sign-in says so beside it.
 export const LinearExpired: Story = {
-  args: {
-    connection: {
-      accountId: 'linear:user-ada',
-      provider: 'linear',
-      login: 'ada@analytical.dev',
-      scope: 'team-engine',
-      label: 'Engine',
-      state: 'account-expired',
-    },
-  },
+  args: { connection: connection('linear', 'account-expired') },
   play: async ({ canvasElement }) => {
     const section = within(canvasElement).getByRole('region', { name: 'Ticket source' })
     await expect(section).toHaveTextContent('Engine')

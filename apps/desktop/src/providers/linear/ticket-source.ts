@@ -2,18 +2,28 @@
 import type { SourceFailure, TicketSource } from '../../core/tickets/sources'
 import type { LinearFailure } from './http'
 import { readTicketPage } from './issues'
+import { updateIssueStatus } from './statuses'
 import { checkTeam, listTeams } from './teams'
 
-const FAILURES: Record<LinearFailure | 'team-not-visible', SourceFailure> = {
+type Failure = LinearFailure | 'team-not-visible' | 'ticket-not-found' | 'status-unknown'
+
+const FAILURES: Record<Failure, SourceFailure> = {
   unauthorized: 'refused',
   forbidden: 'team-not-visible',
   'rate-limited': 'linear-rate-limited',
   unreachable: 'linear-unreachable',
   'team-not-visible': 'team-not-visible',
+  'ticket-not-found': 'ticket-not-found',
+  'status-unknown': 'status-unknown',
 }
 
-const failed = (failure: LinearFailure | 'team-not-visible') =>
-  ({ ok: false, failure: FAILURES[failure] }) as const
+// A write Linear refuses is a Ticket out of reach, not a team out of sight.
+const WRITE_FAILURES: Record<Failure, SourceFailure> = {
+  ...FAILURES,
+  forbidden: 'ticket-not-writable',
+}
+
+const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] }) as const
 
 // A build without Linear's endpoints has no Linear Account to read through; a stored one reaches
 // nothing.
@@ -41,5 +51,11 @@ export const linearTickets: TicketSource = {
     if (!endpoints.linear) return UNREACHABLE
     const read = await readTicketPage(endpoints.linear, token, request)
     return read.ok ? read : failed(read.failure)
+  },
+
+  async update({ endpoints, token }, change) {
+    if (!endpoints.linear) return UNREACHABLE
+    const written = await updateIssueStatus(endpoints.linear, token, change)
+    return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
 }

@@ -3,18 +3,28 @@ import type { SourceFailure, TicketSource } from '../../core/tickets/sources'
 import type { GitHubFailure } from './http'
 import { readTicketPage } from './issues'
 import { checkRepository, isRepositoryScope, listRepositories } from './repository'
+import { GITHUB_STATUSES, updateIssueStatus } from './statuses'
 
-const FAILURES: Record<GitHubFailure | 'issues-disabled', SourceFailure> = {
+type Failure = GitHubFailure | 'issues-disabled' | 'status-unknown'
+
+const FAILURES: Record<Failure, SourceFailure> = {
   unauthorized: 'refused',
   forbidden: 'repository-not-visible',
   'not-found': 'repository-not-visible',
   'rate-limited': 'rate-limited',
   unreachable: 'github-unreachable',
   'issues-disabled': 'issues-disabled',
+  'status-unknown': 'status-unknown',
 }
 
-const failed = (failure: GitHubFailure | 'issues-disabled') =>
-  ({ ok: false, failure: FAILURES[failure] }) as const
+// A write GitHub refuses is a Ticket out of reach, not a repository out of sight.
+const WRITE_FAILURES: Record<Failure, SourceFailure> = {
+  ...FAILURES,
+  forbidden: 'ticket-not-writable',
+  'not-found': 'ticket-not-found',
+}
+
+const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] }) as const
 
 // GitHub pages by number, so its cursor is the page number written out.
 const PAGE_CURSOR = /^[1-9]\d{0,5}$/
@@ -44,6 +54,11 @@ export const githubTickets: TicketSource = {
     if (!read.ok) return failed(read.failure)
     const { tickets, nextPage, total } = read.value
     const nextCursor = nextPage === null ? null : String(nextPage)
-    return { ok: true, value: { tickets, nextCursor, total } }
+    return { ok: true, value: { tickets, statuses: [...GITHUB_STATUSES], nextCursor, total } }
+  },
+
+  async update({ endpoints, token }, change) {
+    const written = await updateIssueStatus(endpoints.github, token, change)
+    return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
 }

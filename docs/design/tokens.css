@@ -17,6 +17,7 @@
   --color-pr-merged: #a371f7;
   --color-pr-closed: #f85149;
   --color-pr-draft: #8b949e;
+  --color-ticket-done: #5e6ad2;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
   --text-code: 12px;
@@ -64,7 +65,7 @@
   --text-control--line-height: 16px;
   --size-chrome-bar: 52px;
   --size-navigation-rail: 88px;
-  --size-cockpit-sidebar-default: 336px;
+  --size-cockpit-sidebar-default: 368px;
   --size-cockpit-sidebar-max: 460px;
   --size-cockpit-content-min: 360px;
   --size-navigation-item: 36px;
@@ -266,6 +267,7 @@
   --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
+  --ticket-label-lean: 55%;
 }
 
 :root:not(.dark) {
@@ -274,5 +276,7 @@
   --color-faint: var(--muted-foreground);
   --color-off: oklch(0.72 0 0);
   --color-plan-track: rgb(0 0 0 / 0.1);
+  /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
+  --ticket-label-lean: 40%;
 }
 

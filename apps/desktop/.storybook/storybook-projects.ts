@@ -1,3 +1,5 @@
+import type { ProjectClient } from '../src/core/projects/client'
+
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
   { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
@@ -5,7 +7,7 @@ const projects = [
 
 function listed(selectedId: string) {
   return {
-    version: 1,
+    version: 1 as const,
     type: 'project.listed' as const,
     requestId: 'storybook-projects',
     projects,
@@ -13,7 +15,7 @@ function listed(selectedId: string) {
   }
 }
 
-export const storybookProjectBridge = {
+export const storybookProjectBridge: ProjectClient = {
   listProjects: () => Promise.resolve(listed('storybook-project')),
   openProject: () =>
     Promise.resolve({
