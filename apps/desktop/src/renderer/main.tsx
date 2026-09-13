@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
-import { SessionQueryProvider } from './session-query-provider'
+import { AppQueryProvider } from './app-query-provider'
 import './styles/globals.css'
 
 const host = document.getElementById('root')
@@ -9,8 +9,8 @@ if (!host) throw new Error('index.html is missing #root')
 
 createRoot(host).render(
   <StrictMode>
-    <SessionQueryProvider>
+    <AppQueryProvider>
       <App />
-    </SessionQueryProvider>
+    </AppQueryProvider>
   </StrictMode>,
 )

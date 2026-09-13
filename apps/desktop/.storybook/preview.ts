@@ -2,9 +2,10 @@ import type { Preview } from '@storybook/react'
 import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
-import { SessionQueryProvider } from '../src/renderer/session-query-provider'
+import { AppQueryProvider } from '../src/renderer/app-query-provider'
 import '../src/renderer/styles/globals.css'
-import { ProjectsProvider } from '../src/renderer/modules/projects/state/ProjectsContext'
+import { subscribeToStorybookCommands } from './storybook-commands'
+import { storybookProjectBridge } from './storybook-projects'
 import { ticketsHost } from './tickets-host'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
@@ -32,22 +33,12 @@ const storybookSession = {
   pullRequest: null,
   archived: false,
 }
-const storybookProjects = {
-  version: 1,
-  type: 'project.listed',
-  requestId: 'storybook-projects',
-  projects: [
-    { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-    { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-  ],
-  selectedId: 'storybook-project',
-}
 host.argo = {
   ...host.argo,
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
-  onCommand: () => () => {},
+  onCommand: subscribeToStorybookCommands,
   listSessions: () =>
     Promise.resolve({
       version: 1,
@@ -78,15 +69,7 @@ host.argo = {
       sessionId: request.sessionId,
       permission: null,
     }),
-  listProjects: () => Promise.resolve(storybookProjects),
-  openProject: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.opened',
-      requestId: 'storybook-project',
-      project: { id: 'storybook-project', name: 'argo' },
-    }),
-  registerProject: () => Promise.resolve(storybookProjects),
+  ...storybookProjectBridge,
   ...ticketsHost,
   zoomFactor: () => 1,
 }
@@ -101,12 +84,7 @@ const preview: Preview = {
       }
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-      // A story mounts its own Query cache and Project reading, so no reply leaks between stories.
-      return createElement(
-        SessionQueryProvider,
-        null,
-        createElement(ProjectsProvider, null, Story()),
-      )
+      return createElement(AppQueryProvider, null, Story())
     },
   ],
   globalTypes: {

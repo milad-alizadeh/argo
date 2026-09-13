@@ -1,16 +1,12 @@
 import type { SessionError, SessionErrorCode } from '@/core/sessions/contract'
+import { ContractError } from '../../contract-error'
 
-export class SessionContractError extends Error {
-  version: 1 = 1
-  type: 'session.error' = 'session.error'
-  requestId: string | null
-  code: SessionErrorCode
+export class SessionContractError extends ContractError<SessionError> {
+  declare code: SessionErrorCode
 
-  constructor({ code, message, requestId }: SessionError) {
-    super(message)
+  constructor(reply: SessionError) {
+    super(reply)
     this.name = 'SessionContractError'
-    this.requestId = requestId
-    this.code = code
   }
 }
 

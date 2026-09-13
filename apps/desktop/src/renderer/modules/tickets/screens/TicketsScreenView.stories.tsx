@@ -44,9 +44,8 @@ const meta: Meta<typeof TicketsScreen> = {
 export default meta
 type Story = StoryObj<typeof TicketsScreen>
 
-type Canvas = ReturnType<typeof within>
-
-async function readsTheBacklog(canvas: Canvas) {
+async function readsTheBacklog(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
   await expect(canvas.getByText('All open · 3 Tickets')).toBeInTheDocument()
   const rows = canvas.getAllByRole('button', { name: /^#\d+/ })
   // A listed child sits under its parent, whatever order GitHub listed them in.
@@ -67,7 +66,8 @@ async function readsTheBacklog(canvas: Canvas) {
   await expect(within(detail).getByRole('region', { name: 'Blocked by · 2' })).toBeInTheDocument()
 }
 
-async function readsNoDependencyFacts(canvas: Canvas) {
+async function readsNoDependencyFacts(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: /^#609/ }))
   await expect(canvas.getByText('No description.')).toBeInTheDocument()
   await expect(
@@ -75,7 +75,8 @@ async function readsNoDependencyFacts(canvas: Canvas) {
   ).toBeInTheDocument()
 }
 
-async function movesTheInspector(canvas: Canvas) {
+async function movesTheInspector(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Ticket inspector' }))
   await waitFor(() =>
     expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
@@ -94,10 +95,9 @@ async function movesTheInspector(canvas: Canvas) {
 
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await readsTheBacklog(canvas)
-    await readsNoDependencyFacts(canvas)
-    await movesTheInspector(canvas)
+    await readsTheBacklog(canvasElement)
+    await readsNoDependencyFacts(canvasElement)
+    await movesTheInspector(canvasElement)
   },
 }
 
