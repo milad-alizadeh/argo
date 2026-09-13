@@ -13,10 +13,30 @@ export type Run = { application: ElectronApplication; page: Page; fixture: Ticke
 export const press = (scope: Page | Locator, name: string) =>
   scope.getByRole('button', { name, exact: true }).dispatchEvent('click')
 
-export const accountsDialog = (page: Page) => page.getByRole('dialog', { name: 'GitHub Accounts' })
+// Base UI opens a select or a menu from the keyboard; a select's option ignores a dispatched click
+// and takes Enter.
+export async function choose(
+  page: Page,
+  trigger: Locator,
+  choice: { role: 'option' | 'menuitemradio'; name: string },
+) {
+  await trigger.press('ArrowDown')
+  await page.getByRole(choice.role, { name: choice.name, exact: true }).press('Enter')
+}
 
-export const accountRow = (page: Page, login: string) =>
-  accountsDialog(page).getByRole('listitem', { name: `GitHub Account ${login}` })
+export const connectForm = (page: Page) =>
+  page.getByRole('form', { name: 'Connect a Ticket source' })
+
+export const chooseAccount = (page: Page, name: string) =>
+  choose(page, connectForm(page).getByRole('combobox', { name: 'Account' }), {
+    role: 'option',
+    name,
+  })
+
+export const accountsDialog = (page: Page) => page.getByRole('dialog', { name: 'Accounts' })
+
+export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
+  accountsDialog(page).getByRole('listitem', { name: `${provider} Account ${login}` })
 
 export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog' })
 
@@ -27,11 +47,15 @@ export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
   if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
 }
 
-export async function backlogNumbers(page: Page): Promise<string[]> {
+// The keys of the backlog's rows in order: `#607` on GitHub, `ENG-1` on Linear.
+export async function backlogKeys(page: Page, key = /^#\d+/): Promise<string[]> {
   await backlog(page).waitFor()
   return backlog(page)
-    .getByRole('button', { name: /^#\d+/ })
-    .evaluateAll((rows) => rows.map((row) => row.textContent?.match(/^#\d+/)?.[0] ?? ''))
+    .getByRole('button', { name: key })
+    .evaluateAll(
+      (rows, source) => rows.map((row) => row.textContent?.match(new RegExp(source))?.[0] ?? ''),
+      key.source,
+    )
 }
 
 // One device-flow sign-in through the dialog, from the control that starts it to the line that

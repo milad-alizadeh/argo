@@ -1,6 +1,16 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 
+export {
+  FEED_MARKERS,
+  type FeedMarker,
+  feedMarkerSchema,
+  type SessionFeedRow,
+  sessionFeedRowSchema,
+  UNREADABLE_ROW,
+  unreadableRowHeight,
+} from './feed-rows'
+
 export const SESSION_POSTURES = ['managed', 'external', 'orphaned'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
 export const SESSION_ENTRIES = ['interactive', 'headless'] as const
@@ -81,6 +91,14 @@ export const sessionShellCommandSchema = z.strictObject({
 })
 export type SessionShellCommand = z.infer<typeof sessionShellCommandSchema>
 
+// The newest Turn's Model, Effort and Mode, verbatim; null where no record states it yet.
+export const sessionSetupSchema = z.strictObject({
+  model: z.string().nullable(),
+  effort: z.string().nullable(),
+  mode: z.string().nullable(),
+})
+export type SessionSetup = z.infer<typeof sessionSetupSchema>
+
 export const sessionRosterRowSchema = z.strictObject({
   id: identifierSchema,
   retiredIds: z.array(identifierSchema),
@@ -107,6 +125,7 @@ export const sessionRosterRowSchema = z.strictObject({
   archived: z.boolean(),
   contextTokens: countSchema.nullable().optional(),
   spentTokens: countSchema.nullable().optional(),
+  setup: sessionSetupSchema,
 })
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
 
@@ -119,61 +138,4 @@ export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | '
       (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
     )?.id ?? null
   )
-}
-
-// The closed set of points a Feed marks, written once and derived from.
-export const FEED_MARKERS = ['compacted', 'interrupted'] as const
-export const feedMarkerSchema = z.enum(FEED_MARKERS)
-export type FeedMarker = z.infer<typeof feedMarkerSchema>
-
-export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
-  z.strictObject({
-    shape: z.literal('tool'),
-    id: identifierSchema,
-    label: z.string(),
-    evidence: z
-      .discriminatedUnion('kind', [
-        z.strictObject({ kind: z.literal('output'), title: z.string(), source: z.string() }),
-        z.strictObject({ kind: z.literal('document'), title: z.string(), source: z.string() }),
-        z.strictObject({ kind: z.literal('diff'), title: z.string(), source: z.string() }),
-      ])
-      .nullable(),
-  }),
-  // Laid out by Blink at the real column width, and drawn by the layout that measured it.
-  z.strictObject({
-    shape: z.literal('prose'),
-    id: identifierSchema,
-    role: z.enum(['user', 'assistant']),
-    text: z.string(),
-  }),
-  // A Thought (CONTEXT.md L3 · Thought): the agent's own reasoning, always the agent's, and often
-  // written with its text withheld, so `text` can be empty.
-  z.strictObject({ shape: z.literal('thought'), id: identifierSchema, text: z.string() }),
-  // A point in the Turn sequence rather than something said in it: history condensed
-  // (CONTEXT.md L3 · Compaction), or a Turn the person stopped. It carries no text of its own.
-  z.strictObject({ shape: z.literal('marker'), id: identifierSchema, marker: feedMarkerSchema }),
-  // The honest source fallback for content this Feed does not draw richly yet. The label is the
-  // block's own type verbatim, the body is its own JSON, and neither is summarised.
-  z.strictObject({
-    shape: z.literal('source'),
-    id: identifierSchema,
-    role: z.enum(['user', 'assistant']),
-    label: z.string(),
-    source: z.string(),
-  }),
-  // A transcript line Argo could not read. Drawn rather than dropped, so a damaged file reads as
-  // damaged instead of as a shorter Session. Its height is arithmetic; see UNREADABLE_ROW.
-  z.strictObject({ shape: z.literal('unreadable'), id: identifierSchema }),
-])
-export type SessionFeedRow = z.infer<typeof sessionFeedRowSchema>
-
-// The stated height formula for the one row shape Blink does not lay out from content
-// (ADR-0033 rule 1). Drawn height is `padding * 2 + itemHeight`, the row's own padding around the
-// error Item it holds, and the packaged proof asserts
-// the formula equals the drawn box. It lives beside the row shape rather than in the agent that
-// projects rows or the component that draws one, because both read it and neither owns it.
-export const UNREADABLE_ROW = { paddingBlock: 4, itemHeight: 36 }
-
-export function unreadableRowHeight(): number {
-  return UNREADABLE_ROW.paddingBlock * 2 + UNREADABLE_ROW.itemHeight
 }

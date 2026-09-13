@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import type { Backlog } from '../lib/backlog'
-import { TicketDetail } from './TicketDetail'
+import { TicketBar, TicketDetail } from './TicketDetail'
 import { TicketList } from './TicketList'
 
 export type TicketDeckProps = { backlog: Backlog }
@@ -15,28 +15,32 @@ const TICKET_SPLIT = {
 
 // A selection that a new listing no longer holds falls back to nothing selected.
 export function TicketDeck({ backlog }: TicketDeckProps) {
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
-  const selected = backlog.tickets.find((ticket) => ticket.number === selectedNumber) ?? null
-  const listed = new Set(backlog.tickets.map((ticket) => ticket.number))
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
+  const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   return (
     <InspectorSplit
+      bar={<TicketBar provider={backlog.provider} ticket={selected} />}
       inspector={
         <TicketDetail
           listed={listed}
-          onSelect={setSelectedNumber}
-          scope={backlog.scope}
+          onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
+          onSelect={setSelectedKey}
+          provider={backlog.provider}
+          statuses={backlog.statuses}
           ticket={selected}
         />
       }
       noun="Ticket"
-      reveal={selected?.number}
+      reveal={selected?.key}
       sizes={TICKET_SPLIT}
       workspace={
         <div className="flex h-full min-h-0 flex-col">
           <TicketList
             backlog={backlog}
-            onSelect={setSelectedNumber}
-            selectedNumber={selected?.number ?? null}
+            now={Date.now()}
+            onSelect={setSelectedKey}
+            selectedKey={selected?.key ?? null}
           />
         </div>
       }

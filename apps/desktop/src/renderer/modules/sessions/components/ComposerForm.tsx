@@ -4,17 +4,22 @@ import type { RefObject } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
-import type { SessionCli } from '../hooks/useSessionComposer'
-import { ComposerCliToggle } from './ComposerCliToggle'
-import { ComposerEditor } from './ComposerEditor'
+import type { HarnessControl } from '../harness/harnesses'
+import { ModeMenu } from './ModeMenu'
 import { PendingTurns } from './PendingTurns'
+import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
+import { ComposerEditor } from './SessionComposerEditor'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
+// The column the composer card sits in; a message about the composer shares it, so it is never wider.
+export const COMPOSER_COLUMN =
+  'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
+
 export function ComposerForm({
-  cliPicker,
   draft,
   editorRef,
+  focusOnMount,
   isRunning,
   onChange,
   onEdit,
@@ -25,10 +30,12 @@ export function ComposerForm({
   pendingTurns,
   plan,
   sessionId,
+  harness,
+  setup,
 }: {
-  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
+  focusOnMount: boolean
   isRunning: boolean
   onChange: (text: string) => void
   onEdit: (turn: (typeof pendingTurns)[number]) => void
@@ -39,18 +46,17 @@ export function ComposerForm({
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
   plan: SessionPlan | null
   sessionId: string
+  harness: HarnessControl | null
+  setup: TurnSetupControlProps | null
 }) {
   return (
     <form
-      className="mx-auto w-full max-w-4xl px-(--spacing-shell-gutter) pt-6 pb-8"
+      className={`${COMPOSER_COLUMN} pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
       }}
     >
-      {cliPicker ? (
-        <ComposerCliToggle cli={cliPicker.cli} onChangeCli={cliPicker.onChangeCli} />
-      ) : null}
       <PendingTurns
         turns={pendingTurns}
         onEdit={onEdit}
@@ -58,35 +64,46 @@ export function ComposerForm({
         onReorder={onReorder}
       />
       <div
-        className={`relative flex overflow-visible rounded-xl border bg-card${plan?.state === 'available' ? ' min-h-40' : ''}`}
+        className={`@container relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
       >
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
           <SessionPlanPopover plan={plan} />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1">
           <ComposerEditor
             key={sessionId}
             draft={draft}
             editorRef={editorRef}
+            focusOnMount={focusOnMount}
             onChange={onChange}
             onSend={onSend}
           />
         </div>
-        <div className="flex items-end p-2">
-          {isRunning ? (
-            <Button
-              aria-label="Interrupt"
-              onClick={() => void onInterrupt?.()}
-              size="sm"
-              type="button"
-            >
-              Interrupt
-            </Button>
-          ) : (
-            <Button aria-label="Send message" disabled={!draft.trim()} size="icon-sm" type="submit">
-              <ArrowUp />
-            </Button>
-          )}
+        <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
+          {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
+          <div className="ml-auto flex items-center gap-1">
+            {setup ? <ModeMenu {...setup} /> : null}
+            {isRunning ? (
+              <Button
+                aria-label="Interrupt"
+                className="type-composer-control"
+                onClick={() => void onInterrupt?.()}
+                size="sm"
+                type="button"
+              >
+                Interrupt
+              </Button>
+            ) : (
+              <Button
+                aria-label="Send message"
+                disabled={!draft.trim()}
+                size="icon-sm"
+                type="submit"
+              >
+                <ArrowUp />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </form>

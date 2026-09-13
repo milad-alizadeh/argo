@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { roleColors } from './appearanceProbe'
 import { FeedMarkdown } from './FeedMarkdown'
@@ -88,6 +88,23 @@ export const LinksFromKeyboard: Story = {
     await expect(canvas.getByRole('link', { name: 'write to us' })).toHaveFocus()
     await userEvent.tab()
     await expect(canvasElement.contains(document.activeElement)).toBe(false)
+  },
+}
+
+const DIAGRAM_MARKDOWN = [
+  '```mermaid',
+  'flowchart LR',
+  '  Backlog --> Ticket --> Session',
+  '```',
+].join('\n')
+
+export const Diagram: Story = {
+  args: { text: DIAGRAM_MARKDOWN },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const diagram = canvas.getByRole('figure', { name: 'Mermaid diagram' })
+    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
+    await expect(diagram).toHaveTextContent('Session')
   },
 }
 

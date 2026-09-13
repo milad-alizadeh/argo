@@ -5,11 +5,10 @@ import {
   sessionError,
 } from '@/core/sessions/contract'
 
-import { ClaudeSessionDriverError } from './claude-session-driver'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './driver-error'
 
-export type ClaudeSessionStarter = {
-  start: (request: { cwd: string; prompt: string }) => string
-}
+export type ClaudeSessionStarter = Pick<ClaudeSessionDriver, 'start'>
 
 export function startClaudeSession(
   value: unknown,
@@ -24,7 +23,7 @@ export function startClaudeSession(
       version: 1,
       type: 'session.claude.started',
       requestId: request.requestId,
-      sessionId: starter.start({ cwd: request.cwd, prompt: request.prompt }),
+      sessionId: starter.start({ cwd: request.cwd, prompt: request.prompt, setup: request.setup }),
     }
   } catch (error) {
     const code = error instanceof ClaudeSessionDriverError ? error.code : 'launch-failed'

@@ -3,9 +3,11 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
-import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
+import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
-import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
+import { codexSessionSource } from './agents/codex/sessions/read-sessions'
+import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
 import { safeStorageCipher } from './core/accounts/safe-storage'
@@ -20,19 +22,11 @@ import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
-import { combineSessionReaders } from './core/sessions/combine-readers'
-import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from './core/sessions/proof-protocol'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from './core/sessions/proof-protocol'
+import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
-import { GITHUB_PROOF_ORIGIN_ENV } from './core/tickets/fake-driver/ticket-proof-protocol'
-import {
-  GITHUB_ENDPOINTS,
-  type GitHubEndpoints,
-  proofEndpoints,
-} from './providers/github/endpoints'
+import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
+import { providerEndpoints } from './providers/endpoints'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -57,62 +51,26 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
-// The Ticket proof (#1848) points GitHub at a fake on a loopback port. Only a proof run may, and
-// a value that is not a loopback origin stops the launch rather than reaching the real GitHub.
-function githubEndpoints(): GitHubEndpoints {
-  const origin = process.env[GITHUB_PROOF_ORIGIN_ENV]
-  if (!PROOF_ENABLED || origin === undefined) return GITHUB_ENDPOINTS
-  const endpoints = proofEndpoints(origin)
-  if (!endpoints) throw new Error(`${GITHUB_PROOF_ORIGIN_ENV} is not a loopback origin`)
-  return endpoints
-}
-
-function claudeTranscriptsRoot(): string {
-  return (
-    process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] ??
-    path.join(app.getPath('home'), '.claude', 'projects')
-  )
-}
-
-function codexTranscriptsRoot(): string {
-  return (
-    process.env[SESSION_CODEX_TRANSCRIPTS_ENV] ??
-    path.join(app.getPath('home'), '.codex', 'sessions')
-  )
-}
-
-// The Claude desktop app's own store, read for its archive flag alone (`sessions/archive.ts`). It
-// sits under the app's support folder, and a machine without that app has no folder there: the
-// reading degrades to no archived Sessions rather than to a failure.
-function claudeArchiveRoot(): string {
-  return (
-    process.env[SESSION_CLAUDE_ARCHIVE_ENV] ??
-    path.join(
-      app.getPath('home'),
-      'Library',
-      'Application Support',
-      'Claude',
-      'claude-code-sessions',
-    )
-  )
-}
-
 function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
-  const claudeSessionDriver = createSystemClaudeSessionDriver(
-    path.join(userData, 'claude-permission-plugins'),
-  )
+  const home = app.getPath('home')
+  const claudeSessionDriver = createSystemClaudeSessionDriver({
+    permissions: path.join(userData, 'claude-permission-plugins'),
+    ledger: path.join(userData, 'claude-session-ownership.json'),
+    transcripts: claudeTranscriptsRoot(home),
+    executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
+  })
   const codexSessionDriver = createSystemCodexSessionDriver()
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
-    reader: combineSessionReaders([
-      createClaudeSessionReader({
-        transcripts: claudeTranscriptsRoot(),
-        archive: claudeArchiveRoot(),
+    reader: createSessionReader([
+      claudeSessionSource({
+        transcripts: claudeTranscriptsRoot(home),
+        archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
+        orphans: claudeSessionDriver.orphans,
+        liveMessages: claudeSessionDriver.liveMessages,
       }),
-      createCodexSessionReader(codexTranscriptsRoot(), {
-        managedSessions: codexSessionDriver.roster,
-      }),
+      codexSessionSource(codexTranscriptsRoot(home), codexSessionDriver),
     ]),
     driver: claudeSessionDriver,
     starter: claudeSessionDriver,
@@ -123,7 +81,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
   attachAppearanceBridge(window, { userData, rendererURL })
   const access = createAccountAccess({
     userData,
-    endpoints: githubEndpoints(),
+    endpoints: providerEndpoints(PROOF_ENABLED),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),
   })
@@ -140,6 +98,7 @@ function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: WINDOW_MINIMUM_WIDTH,
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
     // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
     // the frame keeps the native controls and gives up the native title bar.

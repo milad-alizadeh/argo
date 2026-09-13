@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 
+import type { SessionRosterRow } from '@/core/sessions/models'
+
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.
@@ -105,6 +107,60 @@ export function readCompletedTurn(message: WireMessage) {
   return {
     threadId: string(message.params.threadId, 'Completed Turn thread ID'),
     turn: readTurn(message.params.turn),
+  }
+}
+
+export function readThreadStatus(
+  message: WireMessage,
+): { threadId: string; status: SessionRosterRow['status'] } | undefined {
+  if (!('method' in message) || message.method !== 'thread/status/changed') return undefined
+  const status = record(message.params.status, 'Thread status')
+  const threadId = string(message.params.threadId, 'Thread status thread ID')
+  switch (string(status.type, 'Thread status type')) {
+    case 'active':
+      assert(
+        Array.isArray(status.activeFlags) &&
+          status.activeFlags.every((flag) => typeof flag === 'string'),
+        'Active thread status has invalid flags',
+      )
+      if (status.activeFlags.includes('waitingOnApproval')) {
+        return { threadId, status: 'permission' }
+      }
+      if (status.activeFlags.includes('waitingOnUserInput')) return { threadId, status: 'asking' }
+      return { threadId, status: 'running' }
+    case 'idle':
+      return { threadId, status: 'idle' }
+    case 'systemError':
+    case 'notLoaded':
+      return { threadId, status: 'unknown' }
+    default:
+      assert.fail('Invalid thread status type')
+  }
+}
+
+export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
+
+// A piece of the agent message a Turn is still writing, in order, under the item's id.
+export function readAgentMessageDelta(message: WireMessage): AgentMessageText | undefined {
+  if (!('method' in message) || message.method !== 'item/agentMessage/delta') return undefined
+  return {
+    threadId: string(message.params.threadId, 'Delta thread ID'),
+    turnId: string(message.params.turnId, 'Delta Turn ID'),
+    itemId: string(message.params.itemId, 'Delta item ID'),
+    text: string(message.params.delta, 'Delta text'),
+  }
+}
+
+// The whole text of an agent message once Codex finishes it. Other item types are not messages.
+export function readCompletedAgentMessage(message: WireMessage): AgentMessageText | undefined {
+  if (!('method' in message) || message.method !== 'item/completed') return undefined
+  const item = record(message.params.item, 'Completed item')
+  if (item.type !== 'agentMessage') return undefined
+  return {
+    threadId: string(message.params.threadId, 'Completed item thread ID'),
+    turnId: string(message.params.turnId, 'Completed item Turn ID'),
+    itemId: string(item.id, 'Completed item ID'),
+    text: string(item.text, 'Completed agent message text'),
   }
 }
 

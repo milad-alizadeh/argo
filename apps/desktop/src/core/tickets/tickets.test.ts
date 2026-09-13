@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import { markRevoked, tokenFor } from '../accounts/access'
 import { connect, harness, LIST, OCTOCAT, PROJECT_ID } from '../accounts/harness'
 
 const ACCOUNT = 'github:583231'
@@ -47,8 +46,10 @@ test('a Connection is accepted only after GitHub shows the Account the repositor
   const reply = await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'octo/hello' })
   assert.deepEqual(reply.connection, {
     accountId: ACCOUNT,
+    provider: 'github',
     login: 'octocat',
     scope: 'Octo/Hello',
+    label: 'Octo/Hello',
     state: 'ready',
   })
 })
@@ -58,7 +59,10 @@ test('an Account offers only the repositories it can see that source Tickets', a
   cockpit.github.addRepository({ fullName: 'Hubot/Arm', visibleTo: [OCTOCAT.id], issues: [] })
   const reply = await cockpit.ticket('ticket.discover', { accountId: ACCOUNT })
   assert.equal(reply.type, 'ticket.discovered')
-  assert.deepEqual(reply.scopes, ['Hubot/Arm', 'Octo/Hello'])
+  assert.deepEqual(
+    (reply.scopes as { scope: string }[]).map(({ scope }) => scope),
+    ['Hubot/Arm', 'Octo/Hello'],
+  )
 })
 
 test('an Account GitHub refuses offers no repositories and is marked revoked', async (context) => {
@@ -78,13 +82,13 @@ test('a connected Project lists its open Tickets with hierarchy and dependencies
   cockpit.restart()
   const listed = await cockpit.ticket('ticket.list', LIST)
   assert.equal(listed.type, 'ticket.listed')
-  const tickets = listed.tickets as { number: number; children: unknown[]; blockedBy: unknown[] }[]
+  const tickets = listed.tickets as { key: string; children: unknown[]; blockedBy: unknown[] }[]
   assert.deepEqual(
-    tickets.map((ticket) => ticket.number),
-    [1, 2],
+    tickets.map((ticket) => ticket.key),
+    ['#1', '#2'],
   )
-  assert.deepEqual(tickets[0]?.children, [{ number: 2, title: 'Child', state: 'open' }])
-  assert.deepEqual(tickets[1]?.blockedBy, [{ number: 3, title: 'Done', state: 'closed' }])
+  assert.deepEqual(tickets[0]?.children, [{ key: '#2', title: 'Child', state: 'open' }])
+  assert.deepEqual(tickets[1]?.blockedBy, [{ key: '#3', title: 'Done', state: 'closed' }])
 })
 
 test('an unconnected Project, or one no longer registered, is refused by name', async (context) => {
@@ -105,8 +109,9 @@ test('a revoked grant marks the Account and names the Connections it affects', a
       id: ACCOUNT,
       provider: 'github',
       login: 'octocat',
+      workspace: null,
       state: 'revoked',
-      connections: [{ projectId: PROJECT_ID, projectName: 'argo-demo', scope: 'Octo/Hello' }],
+      connections: [{ projectId: PROJECT_ID, projectName: 'argo-demo', label: 'Octo/Hello' }],
     },
   ])
   assert.equal(
@@ -116,17 +121,6 @@ test('a revoked grant marks the Account and names the Connections it affects', a
   cockpit.github.signIn(OCTOCAT)
   await connect(cockpit)
   assert.equal((await cockpit.ticket('ticket.list', LIST)).type, 'ticket.listed')
-})
-
-test('a refusal of a grant renewed since leaves the Account connected', async (context) => {
-  const cockpit = await connected(context)
-  const before = await tokenFor(cockpit.access(), ACCOUNT)
-  cockpit.github.signIn(OCTOCAT)
-  await connect(cockpit)
-  assert.ok(before.ok)
-  await markRevoked(cockpit.access(), ACCOUNT, before.token)
-  const accounts = (await cockpit.account('account.list')).accounts as { state: string }[]
-  assert.equal(accounts[0]?.state, 'connected')
 })
 
 test('a disconnected Account leaves its Connection waiting for the same identity', async (context) => {

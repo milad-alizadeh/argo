@@ -1,71 +1,43 @@
+import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
-import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
+import { CodexSessionDriverError } from './codex-session-error'
+import { codexLaunchEnvironment } from './launch-environment'
+import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
+import {
+  readCompletedTurn,
+  readInterrupt,
+  readStartedTurn,
+  readThreadId,
+  readThreadStatus,
+} from './protocol'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
   findExecutable: () => string | null
+  now: () => Date
   openChannel: (executable: string, options: SpawnOptions) => CodexChannel
 }
 type ManagedSession = {
   channel: CodexChannel
   cwd: string
   prompt: string
+  startedAt: string
   turnId: string | null
-  failed: boolean
+  status: SessionRosterRow['status']
+  messages: LiveMessages
 }
+
+export type { LiveMessage }
+export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => Promise<string>
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   roster: () => SessionRosterRow[]
+  liveMessages: (sessionId: string) => LiveMessage[]
   close: () => void
-}
-
-export class CodexSessionDriverError extends Error {
-  constructor(readonly code: 'codex-cli-unavailable' | 'codex-launch-failed') {
-    super(
-      code === 'codex-cli-unavailable'
-        ? 'Codex is not available. Run codex doctor to repair it.'
-        : 'Argo could not start Codex.',
-    )
-  }
-}
-
-// The scrub ADR-0024 requires: an exported credential is the one way a spawned Session could be
-// billed outside the ChatGPT sign-in Argo owns.
-function launchEnvironment(): NodeJS.ProcessEnv {
-  const environment = { ...process.env }
-  delete environment.OPENAI_API_KEY
-  delete environment.CODEX_API_KEY
-  return environment
-}
-
-function rosterRow(id: string, session: ManagedSession): SessionRosterRow {
-  return {
-    id,
-    retiredIds: [],
-    cli: 'codex',
-    posture: 'managed',
-    title: { text: session.prompt, source: 'first-prompt' },
-    status: session.failed ? 'unknown' : 'running',
-    entry: 'interactive',
-    cwd: session.cwd,
-    branch: null,
-    updatedAt: null,
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
-    contextTokens: null,
-    spentTokens: null,
-  }
 }
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
@@ -81,7 +53,7 @@ async function beginManagedSession(
   if (!executable) throw new CodexSessionDriverError('codex-cli-unavailable')
   let channel: CodexChannel
   try {
-    channel = options.openChannel(executable, { cwd, env: launchEnvironment() })
+    channel = options.openChannel(executable, { cwd, env: codexLaunchEnvironment() })
   } catch {
     throw new CodexSessionDriverError('codex-launch-failed')
   }
@@ -98,16 +70,25 @@ async function beginManagedSession(
     channel.notify('initialized')
     const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
     threadId = startedThreadId
-    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false })
+    const started = { channel, cwd, prompt, startedAt: options.now().toISOString() }
+    const messages = createLiveMessages(startedThreadId)
+    sessions.set(startedThreadId, { ...started, turnId: null, status: 'running', messages })
     channel.onExit(() => {
       const session = sessions.get(startedThreadId)
-      if (session) session.failed = true
+      if (session) session.status = 'ended'
     })
     channel.onNotification((message) => {
+      if (messages.record(message)) return
+      const threadStatus = readThreadStatus(message)
+      if (threadStatus?.threadId === startedThreadId) {
+        const session = sessions.get(startedThreadId)
+        if (session) session.status = threadStatus.status
+        return
+      }
       const completed = readCompletedTurn(message)
       if (completed?.threadId !== startedThreadId) return
       const session = sessions.get(startedThreadId)
-      if (session && completed.turn.status === 'failed') session.failed = true
+      if (session && completed.turn.status === 'failed') session.status = 'unknown'
     })
     await turn(channel, startedThreadId, prompt)
     return startedThreadId
@@ -122,13 +103,15 @@ async function beginManagedSession(
 export function createCodexSessionDriver(options: DriverOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
 
-  function runningSession(sessionId: string): ManagedSession {
+  function heldSession(sessionId: string): ManagedSession {
     const session = sessions.get(sessionId)
     if (!session) throw new Error('Codex Session is no longer running.')
     return session
   }
 
   async function turn(channel: CodexChannel, threadId: string, prompt: string) {
+    const previous = sessions.get(threadId)
+    previous?.messages.keepOnly(previous.turnId)
     const started = await channel.request(
       'turn/start',
       { threadId, input: [{ type: 'text', text: prompt, text_elements: [] }] },
@@ -141,19 +124,27 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   return {
     start: (request) => beginManagedSession(options, { sessions, turn }, request),
     async send(sessionId, text) {
-      const session = runningSession(sessionId)
+      const session = heldSession(sessionId)
       await turn(session.channel, sessionId, text)
     },
     async interrupt(sessionId) {
-      const session = runningSession(sessionId)
-      if (session.turnId === null) return
+      const session = heldSession(sessionId)
+      if (session.status !== 'running' || session.turnId === null) return
       await session.channel.request(
         'turn/interrupt',
         { threadId: sessionId, turnId: session.turnId },
         readInterrupt,
       )
     },
-    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRow(id, {
+          ...session,
+          cli: 'codex',
+          setup: { model: null, effort: null, mode: null },
+        }),
+      ),
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     close() {
       for (const session of sessions.values()) session.channel.close()
       sessions.clear()

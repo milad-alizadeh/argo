@@ -12,10 +12,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
+import {
+  provePackagedResume,
+  writeFakeClaude,
+} from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { appExecutable, assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
   SESSION_CLAUDE_ARCHIVE_ENV,
+  SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
@@ -35,6 +40,8 @@ import {
   provePackagedRosterSelection,
 } from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
+import { proveToolCalls } from './session-tool-calls-case'
+import { proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
@@ -42,6 +49,7 @@ let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
   const fixture = await prepare(root)
+  const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const launch = async () => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
@@ -50,6 +58,7 @@ try {
         [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
         [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
         [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
+        [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
@@ -83,6 +92,7 @@ try {
   }
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
+  await ran(['session-tool-calls'], () => proveToolCalls(page))
   await ran(['session-feed-reader-anchor'], () =>
     proveLiveFeed(page, {
       transcripts: fixture.claudeTranscripts,
@@ -100,6 +110,7 @@ try {
   await ran(['session-plan'], () =>
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
+  await ran(['session-turn-setup'], () => proveTurnSetup(page))
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {
       remove: () => removeProse(fixture.claudeTranscripts),
@@ -110,6 +121,14 @@ try {
       updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
     }),
   )
+  // Last, because the Session it starts becomes the newest row and reorders the Roster.
+  await ran(['session-claude-resume'], async () => {
+    page = await provePackagedResume(page, {
+      project: fixture.project,
+      restart,
+      transcripts: fixture.claudeTranscripts,
+    })
+  })
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({

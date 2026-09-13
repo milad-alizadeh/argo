@@ -1,5 +1,5 @@
+import { Command, FileText, type LucideIcon, Plug, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Command, FileText, Plug, WandSparkles, type LucideIcon } from 'lucide-react'
 import { Badge } from '../../../components/ui/badge'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
@@ -16,7 +16,12 @@ export const sessionReferences = [
   { detail: 'Pressure-test the brief', kind: 'command', label: 'Grill Me', source: '/grill-me' },
   { detail: 'Compress the task context', kind: 'command', label: 'Compact', source: '/compact' },
   { detail: 'Repository instructions', kind: 'file', label: 'AGENTS.md', source: '@AGENTS.md' },
-  { detail: 'Current desktop folder', kind: 'file', label: 'apps/desktop', source: '@apps/desktop' },
+  {
+    detail: 'Current desktop folder',
+    kind: 'file',
+    label: 'apps/desktop',
+    source: '@apps/desktop',
+  },
   {
     detail: 'Frequently used skill',
     kind: 'skill',

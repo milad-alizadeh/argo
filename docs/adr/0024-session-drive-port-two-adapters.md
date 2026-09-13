@@ -1,6 +1,6 @@
 # 0024 · The session-drive port; one adapter per CLI
 
-Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26
+Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26 · permission socket placement amended (#1842) · 2026-09-13
 
 ## Context
 
@@ -70,6 +70,12 @@ cockpit raises the Permission; the user's answer returns as
 `hookSpecificOutput.permissionDecision`. `--permission-mode` sets the standing baseline; the hook
 is the per-action layer on top.
 
+**The socket lives in a short temp folder, not under `userData`.** Node on macOS rejects a Unix
+socket path of 104 bytes or more, and a path under `userData` runs past that (#1996). Each gate
+makes one folder in the system temp folder, names each socket with a short hash of the Session
+id, and deletes the folder when the app quits (#1842). A gate that cannot listen logs the error,
+and the hook then has nothing to dial, so it denies every gated tool.
+
 > The hook must return **`allow` or `deny`, never `ask`.** `ask` falls through to the TUI's own
 > dialog — which is hidden, so the session would stall against a prompt with no reader.
 
@@ -87,6 +93,13 @@ plugin's `hooks/hooks.json` and loaded with `--plugin-dir <root>` registers and 
 beyond configuration: an unregistered hook fails **open**, silently, because the CLI treats a hook
 that produced nothing as no opinion. The gate is therefore covered by a live-CLI test rather than
 by a fixture that could only ever prove Argo talks to itself.
+
+**The same plugin also carries a `MessageDisplay` hook (#2001).** Claude Code runs it for each
+batch of reply text and holds that batch until the hook returns. The hook sends the batch to a
+second Unix socket for the Session, does not wait for an answer, and prints no `displayContent`, so
+the terminal text does not change. If Argo is not listening, `nc` fails at once and the hook exits
+0. The Feed shows the text as a draft row, and the transcript row takes its place when the block
+lands. `bun run test:live-claude-display` covers this against the installed claude (2.1.270).
 
 *`codex`* — with `approvalPolicy` at `untrusted` or `on-request`, the app-server raises an
 approval as a **server→client JSON-RPC request**: `item/commandExecution/requestApproval` for a

@@ -2,6 +2,7 @@
 // answer. Nothing here opens a browser; that is the main process's own authority.
 import { setTimeout as sleep } from 'node:timers/promises'
 import { isRecord } from '../../boundary'
+import { type GrantOutcome, grantedScopes, type Identity } from '../grant'
 import { GITHUB_CLIENT_ID, GITHUB_SCOPES, type GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, get, postForm } from './http'
 
@@ -12,15 +13,6 @@ export type DeviceChallenge = {
   expiresIn: number
   interval: number
 }
-
-// The scopes recorded are the ones granted, never the ones asked for: an org can grant less.
-export type Grant = { accessToken: string; scopes: string[] }
-
-export type GrantOutcome =
-  | { kind: 'granted'; grant: Grant }
-  | { kind: 'declined' | 'expired' | 'cancelled' | 'unreachable' | 'refused' }
-
-export type GitHubIdentity = { providerAccountId: string; login: string }
 
 // GitHub's documented step when it asks for slower polls without naming an interval.
 const SLOW_DOWN_SECONDS = 5
@@ -86,8 +78,13 @@ async function poll(
   const body = reply.value
   if (!isRecord(body)) return { kind: 'unreachable' }
   if (isText(body.access_token)) {
-    const scopes = typeof body.scope === 'string' ? body.scope.split(/[\s,]+/).filter(Boolean) : []
-    return { kind: 'granted', grant: { accessToken: body.access_token, scopes } }
+    // An org can grant less than was asked for, and GitHub's OAuth App tokens do not lapse.
+    const grant = {
+      accessToken: body.access_token,
+      scopes: grantedScopes(body.scope),
+      renewal: null,
+    }
+    return { kind: 'granted', grant }
   }
   switch (body.error) {
     case 'authorization_pending':
@@ -134,10 +131,11 @@ export async function awaitGrant(
 export async function readIdentity(
   endpoints: GitHubEndpoints,
   token: string,
-): Promise<GitHubRead<GitHubIdentity>> {
+): Promise<GitHubRead<Identity>> {
   const reply = await get(`${endpoints.api}/user`, token)
   if (!reply.ok) return reply
   const user = reply.value
   if (!isRecord(user) || !isCount(user.id) || !isText(user.login)) return failed('unreachable')
-  return { ok: true, value: { providerAccountId: String(user.id), login: user.login } }
+  const identity = { providerAccountId: String(user.id), login: user.login, workspace: null }
+  return { ok: true, value: identity }
 }

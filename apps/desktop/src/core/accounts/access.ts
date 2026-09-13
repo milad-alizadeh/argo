@@ -1,6 +1,6 @@
-// Everything the main process holds to reach GitHub on an Account's behalf. Built once per window
-// in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
-import type { GitHubEndpoints } from '../../providers/github/endpoints'
+// Everything the main process holds to reach a provider on an Account's behalf. Built once per
+// window in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
+import type { ProviderEndpoints } from '../../providers/endpoints'
 import { readRegistry, toSummary } from '../projects/registry'
 import { createWriteQueue, portablePath } from '../storage/portable-file'
 import type { AccountState } from './contract'
@@ -8,7 +8,7 @@ import { type Cipher, createGrantStore, type GrantStore } from './grants'
 import { type AccountRecord, readAccounts, writeAccounts } from './registry'
 
 export type AccountAccess = {
-  endpoints: GitHubEndpoints
+  endpoints: ProviderEndpoints
   grants: GrantStore
   paths: { accounts: string; connections: string; projects: string }
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
@@ -18,7 +18,7 @@ export type AccountAccess = {
 
 export function createAccountAccess(options: {
   userData: string
-  endpoints: GitHubEndpoints
+  endpoints: ProviderEndpoints
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
 }): AccountAccess {
@@ -43,36 +43,32 @@ export async function projectNames(access: AccountAccess): Promise<Map<string, s
   return new Map(registrations.map((project) => [project.id, toSummary(project).name]))
 }
 
-export type TokenRead =
-  | { ok: true; token: string; account: AccountRecord }
-  | { ok: false; reason: 'storage' | 'missing-account' | 'account-revoked' | 'grant-unreadable' }
-
-// The one way a provider call gets a token. A revoked Account is not called again until the
-// person reconnects it: its grant is known to be refused.
-export async function tokenFor(access: AccountAccess, accountId: string): Promise<TokenRead> {
-  const registry = await readAccounts(access.paths.accounts)
-  if (!registry.ok) return { ok: false, reason: 'storage' }
-  const account = registry.registry.accounts.find((candidate) => candidate.id === accountId)
-  if (!account) return { ok: false, reason: 'missing-account' }
-  if (account.state === 'revoked') return { ok: false, reason: 'account-revoked' }
-  const grant = await access.grants.read(accountId)
-  if (!grant.ok) return { ok: false, reason: 'grant-unreadable' }
-  return { ok: true, token: grant.grant.accessToken, account }
-}
-
-// What calling GitHub as this Account would meet, read afresh so the Account row and every Connection
-// naming it agree.
+// What calling the provider as this Account would meet, read afresh so the Account row and every
+// Connection naming it agree.
 export async function accountState(
   access: AccountAccess,
   account: AccountRecord,
 ): Promise<AccountState> {
-  if (account.state === 'revoked') return 'revoked'
+  if (account.state !== 'connected') return account.state
   return (await access.grants.read(account.id)).ok ? 'connected' : 'unreadable'
 }
 
-// GitHub refused `refusedToken`. The Account keeps its record, marked, so every Connection naming it
-// can say why it stopped reading. A grant renewed while that request was in flight is not the one
-// refused, and stays connected.
+// Record why an Account stopped reading. Called inside the write queue only.
+export async function writeState(
+  access: AccountAccess,
+  change: { accountId: string; state: 'expired' | 'revoked' },
+): Promise<boolean> {
+  const read = await readAccounts(access.paths.accounts)
+  if (!read.ok) return false
+  const accounts = read.registry.accounts.map((account) =>
+    account.id === change.accountId ? { ...account, state: change.state } : account,
+  )
+  return writeAccounts(access.paths.accounts, { ...read.registry, accounts })
+}
+
+// The provider refused `refusedToken`. The Account keeps its record, marked, so every Connection
+// naming it can say why it stopped reading. A grant renewed while that request was in flight is not
+// the one refused, and stays connected.
 export function markRevoked(
   access: AccountAccess,
   accountId: string,
@@ -81,11 +77,6 @@ export function markRevoked(
   return access.exclusive(async () => {
     const current = await access.grants.read(accountId)
     if (current.ok && current.grant.accessToken !== refusedToken) return false
-    const read = await readAccounts(access.paths.accounts)
-    if (!read.ok) return false
-    const accounts = read.registry.accounts.map((account) =>
-      account.id === accountId ? { ...account, state: 'revoked' as const } : account,
-    )
-    return writeAccounts(access.paths.accounts, { ...read.registry, accounts })
+    return writeState(access, { accountId, state: 'revoked' })
   })
 }

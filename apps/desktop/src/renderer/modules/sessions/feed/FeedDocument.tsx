@@ -1,4 +1,5 @@
 import { Inbox } from 'lucide-react'
+import { type ReactNode, useCallback, useRef, useState } from 'react'
 import {
   Empty,
   EmptyDescription,
@@ -6,79 +7,76 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { SessionReferenceText } from '../components/SessionReference'
+import { Spinner } from '../../../components/ui/spinner'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
-import { FeedMarkdown } from './content/FeedMarkdown'
-import { useSettledFeed } from './useSettledFeed'
+import { FeedRow } from './FeedRow'
+import { type Reveal, useReveals } from './reveal'
+import { type Settled, useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
   active: boolean
+  activeEvidenceId: string | null
   feed: SessionFeed
+  isRunning: boolean
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
+type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 
-function FeedRow({
-  row,
-  height,
-  onOpenEvidence,
-}: {
-  row: SessionFeedRow
-  height?: number
-  onOpenEvidence: FeedDocumentProps['onOpenEvidence']
-}) {
-  return (
-    <article
-      className={`feed-row feed-row--${row.shape}`}
-      data-feed-row={row.id}
-      data-role={'role' in row ? row.role : undefined}
-      style={height === undefined ? undefined : { height: `${height}px` }}
-    >
-      {row.shape === 'tool' ? (
-        <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>
-          {row.label}
-        </button>
-      ) : (
-        feedRowContent(row)
-      )}
-    </article>
-  )
-}
-
-function PlainText({ text }: { text: string }) {
-  return (
-    <p className="whitespace-pre-wrap break-words">
-      <SessionReferenceText text={text} />
-    </p>
-  )
-}
-
-function feedRowContent(row: SessionFeedRow) {
-  switch (row.shape) {
-    case 'prose':
-      if (row.role === 'assistant') return <FeedMarkdown text={row.text} />
-      return <PlainText text={row.text} />
-    case 'thought':
-      return <PlainText text={row.text} />
-    case 'source':
-      return <p>{row.label}</p>
-    case 'marker':
-      return <p>{row.marker === 'compacted' ? 'Conversation compacted' : 'Interrupted'}</p>
-    case 'unreadable':
-      return <p>Part of this transcript is damaged, so Argo cannot show it.</p>
+function useToolGroups() {
+  const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
+  const onOpenToolGroup = (id: string, open: boolean) => {
+    setOpenToolGroups((previous) => {
+      const next = new Set(previous)
+      if (open) next.add(id)
+      else next.delete(id)
+      return next
+    })
   }
+  return { onOpenToolGroup, openToolGroups }
 }
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
-export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps) {
+export function FeedDocument({
+  active,
+  activeEvidenceId,
+  feed,
+  isRunning,
+  onOpenEvidence,
+}: FeedDocumentProps) {
+  const { onOpenToolGroup, openToolGroups } = useToolGroups()
+  const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
   const { column, measured, settled } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
-    revision: feed.revision,
+    revision: layoutRevision,
     rows: feed.rows,
   })
-  const content = feedContent(settled, onOpenEvidence)
+  const revealsFor = useReveals()
+  const openEvidence = useRef(onOpenEvidence)
+  openEvidence.current = onOpenEvidence
+  const toolGroups = useRef<ReadonlySet<string>>(openToolGroups)
+  toolGroups.current = openToolGroups
+  const evidence = useRef(activeEvidenceId)
+  evidence.current = activeEvidenceId
+  const openToolGroup = useRef(onOpenToolGroup)
+  openToolGroup.current = onOpenToolGroup
+  // One component for the life of the deck: a new one each render would remount every row and
+  // replay its reveal.
+  const DrawnRow = useCallback(
+    (props: DrawnRowProps) => (
+      <FeedRow
+        {...props}
+        activeEvidenceId={evidence.current}
+        onOpenEvidence={(row) => openEvidence.current(row)}
+        onOpenToolGroup={openToolGroup.current}
+        openToolGroups={toolGroups.current}
+      />
+    ),
+    [],
+  )
+  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
 
   return (
     <div
@@ -92,7 +90,14 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
       <div className="feed__column" ref={column}>
         <div aria-hidden="true" className="feed__measured" ref={measured}>
           {feed.rows.map((row) => (
-            <FeedRow key={row.id} row={row} onOpenEvidence={onOpenEvidence} />
+            <FeedRow
+              key={row.id}
+              activeEvidenceId={activeEvidenceId}
+              onOpenEvidence={onOpenEvidence}
+              onOpenToolGroup={openToolGroup.current}
+              openToolGroups={openToolGroups}
+              row={row}
+            />
           ))}
         </div>
         {content}
@@ -101,11 +106,19 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
   )
 }
 
-function feedContent(
-  settled: ReturnType<typeof useSettledFeed>['settled'],
-  onOpenEvidence: FeedDocumentProps['onOpenEvidence'],
-) {
-  if (settled === null) return null
+function feedContent({
+  settled,
+  isRunning,
+  DrawnRow,
+  revealsFor,
+}: {
+  settled: ReturnType<typeof useSettledFeed>['settled']
+  isRunning: boolean
+  DrawnRow: (props: DrawnRowProps) => ReactNode
+  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+}) {
+  if (settled === null) return isRunning ? <RunningFeed /> : null
+  if (settled.rows.length === 0 && isRunning) return <RunningFeed />
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">
@@ -122,7 +135,16 @@ function feedContent(
     <AnchoredFeed
       rows={settled.rows}
       settled={settled}
-      FeedRow={(props) => <FeedRow {...props} onOpenEvidence={onOpenEvidence} />}
+      FeedRow={DrawnRow}
+      revealsFor={revealsFor}
     />
+  )
+}
+
+function RunningFeed() {
+  return (
+    <section className="grid h-full place-items-center" data-state="running">
+      <Spinner className="size-6" />
+    </section>
   )
 }

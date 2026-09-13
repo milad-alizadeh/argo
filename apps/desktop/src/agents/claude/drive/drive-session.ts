@@ -6,45 +6,45 @@ import {
   claudeSessionSendRequestSchema,
   sessionError,
 } from '@/core/sessions/contract'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './driver-error'
 
-type ClaudeSessionDrive = {
-  interrupt: (sessionId: string) => void
-  send: (sessionId: string, prompt: string) => void
-}
+type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
 
-export function driveClaudeSession(
+export async function driveClaudeSession(
   value: unknown,
   driver: ClaudeSessionDrive,
-): ClaudeSessionSendReply | ClaudeSessionInterruptReply {
+): Promise<ClaudeSessionSendReply | ClaudeSessionInterruptReply> {
   const send = claudeSessionSendRequestSchema.safeParse(value)
   if (send.success) {
     const request = send.data
-    try {
-      driver.send(request.sessionId, request.prompt)
-      return {
-        version: 1,
-        type: 'session.claude.accepted',
-        requestId: request.requestId,
-        sessionId: request.sessionId,
-      }
-    } catch {
-      return sessionError('not-drivable', request.requestId)
-    }
+    return accept(request, () =>
+      driver.send(request.sessionId, { prompt: request.prompt, setup: request.setup }),
+    )
   }
   const interrupt = claudeSessionInterruptRequestSchema.safeParse(value)
   if (interrupt.success) {
     const request = interrupt.data
-    try {
-      driver.interrupt(request.sessionId)
-      return {
-        version: 1,
-        type: 'session.claude.accepted',
-        requestId: request.requestId,
-        sessionId: request.sessionId,
-      }
-    } catch {
-      return sessionError('not-drivable', request.requestId)
-    }
+    return accept(request, () => driver.interrupt(request.sessionId))
   }
   return sessionError('invalid-request', requestIdentifier(value))
+}
+
+async function accept(
+  request: { requestId: string; sessionId: string },
+  drive: () => Promise<void> | void,
+): Promise<ClaudeSessionSendReply> {
+  try {
+    await drive()
+    return {
+      version: 1,
+      type: 'session.claude.accepted',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+    }
+  } catch (error) {
+    // A refusal the driver names reaches the composer as itself; anything else lost the channel.
+    const code = error instanceof ClaudeSessionDriverError ? error.code : 'not-drivable'
+    return sessionError(code, request.requestId)
+  }
 }

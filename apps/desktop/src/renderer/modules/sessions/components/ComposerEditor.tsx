@@ -17,7 +17,7 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import type { LexicalEditor } from 'lexical'
-import { useRef, useState, type RefObject } from 'react'
+import { type RefObject, useRef, useState } from 'react'
 import { ComposerReferenceMenuPlugin } from './ComposerReferenceMenuPlugin'
 import { ComposerReferenceNode } from './ComposerReferenceNode'
 import { ComposerReferencePlugin } from './ComposerReferencePlugin'
@@ -59,7 +59,7 @@ export function ComposerEditor({
         },
       }}
     >
-      <ComposerTextArea referencesOpen={referencesOpen} onSend={onSend} />
+      <ComposerTextArea referencesOpen={referencesOpen} />
       <HistoryPlugin />
       <LinkPlugin />
       <ListPlugin />
@@ -75,13 +75,7 @@ export function ComposerEditor({
   )
 }
 
-function ComposerTextArea({
-  onSend,
-  referencesOpen,
-}: {
-  onSend: () => void
-  referencesOpen: boolean
-}) {
+function ComposerTextArea({ referencesOpen }: { referencesOpen: boolean }) {
   const focusCameFromPointer = useRef(false)
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
   return (

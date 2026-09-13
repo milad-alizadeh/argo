@@ -1,12 +1,22 @@
-// The packaged Ticket proof (#1848): connect an Account, connect a repository, list, detail, restart, revoked access,
-// disconnect and a visible failure, all through the shipped cockpit against a fake GitHub.
+// The packaged Ticket proof (#1848, #1849, #2013): connect an Account, connect a source, list,
+// detail, a status change, restart, revoked access, an expired renewal, disconnect and a visible
+// failure, all through the shipped cockpit against a fake GitHub and a fake Linear.
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { ElectronApplication } from 'playwright-core'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import {
+  proveLinearBacklog,
+  proveLinearConnect,
+  proveLinearDisconnect,
+  proveLinearExpired,
+  proveLinearRestart,
+  proveLinearStatus,
+} from './linear-proof-cases'
+import {
   proveBacklog,
+  proveChangeState,
   proveConnect,
   proveConnectRepository,
   proveDisconnect,
@@ -40,7 +50,17 @@ try {
   application = run.application
   await proveRestartAndFailure(run)
   await proveRevoked(run)
+  await proveChangeState(run)
   await proveDisconnect(run)
+  await proveLinearConnect(run)
+  await proveLinearBacklog(run)
+  await proveLinearStatus(run)
+  await run.application.close()
+  run = await start(fixture)
+  application = run.application
+  await proveLinearRestart(run)
+  await proveLinearExpired(run)
+  await proveLinearDisconnect(run)
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
@@ -54,16 +74,28 @@ try {
         'second-identity',
         'sealed-grant',
         'unlisted-repository',
-        'discoverRepositories',
-        'connectRepository',
+        'discoverSources',
+        'connectSource',
         'list',
         'detail',
         'restart',
         'visible-failure',
         'revoked-access',
         'reconnect',
+        'change-state',
         'disconnect',
-        'disconnectRepository',
+        'disconnectSource',
+        'linear-connect',
+        'linear-sealed-grant',
+        'linear-hidden-team',
+        'linear-bind',
+        'linear-list',
+        'linear-detail',
+        'linear-change-status',
+        'linear-restart-renewal',
+        'linear-refresh-failure',
+        'linear-reconnect',
+        'linear-disconnect',
       ],
     }),
   )
@@ -72,6 +104,7 @@ try {
     if (application) await application.close()
   } finally {
     await fixture?.github.close()
+    await fixture?.linear.close()
     await rm(root, { recursive: true, force: true })
   }
 }

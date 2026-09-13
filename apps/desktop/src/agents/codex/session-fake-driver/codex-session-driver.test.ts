@@ -5,12 +5,15 @@ import type { CodexChannel } from '../drive/codex-channel.ts'
 import { CodexSessionDriverError, createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import type { RequestParams } from '../drive/protocol.ts'
 
+const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
+
 function fakeChannel(): CodexChannel & {
   calls: Array<{ method: string; params: unknown }>
   notifications: Array<(message: never) => void>
 } {
   const calls: Array<{ method: string; params: unknown }> = []
   const notifications: Array<(message: never) => void> = []
+  let turns = 0
   return {
     calls,
     notifications,
@@ -22,7 +25,10 @@ function fakeChannel(): CodexChannel & {
     ) {
       calls.push({ method, params })
       if (method === 'thread/start') return decode({ thread: { id: 'thread-1' } })
-      if (method === 'turn/start') return decode({ turn: { id: 'turn-1', status: 'inProgress' } })
+      if (method === 'turn/start') {
+        turns += 1
+        return decode({ turn: { id: `turn-${turns}`, status: 'inProgress' } })
+      }
       if (method === 'turn/interrupt') return decode({})
       return decode({})
     },
@@ -37,6 +43,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
   const channel = fakeChannel()
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
+    now: () => STARTED_AT,
     openChannel: (executable, options) => {
       assert.equal(executable, '/usr/local/bin/codex')
       environments.push(options.env)
@@ -61,8 +68,17 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
       ['initialize', 'thread/start', 'turn/start'],
     )
     assert.deepEqual(
-      driver.roster().map(({ id, posture, status }) => ({ id, posture, status })),
-      [{ id: sessionId, posture: 'managed', status: 'running' }],
+      driver
+        .roster()
+        .map(({ id, posture, status, updatedAt }) => ({ id, posture, status, updatedAt })),
+      [
+        {
+          id: sessionId,
+          posture: 'managed',
+          status: 'running',
+          updatedAt: STARTED_AT.toISOString(),
+        },
+      ],
     )
   } finally {
     if (previous.key === undefined) delete process.env.OPENAI_API_KEY
@@ -75,6 +91,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
 test('reports Codex as unavailable rather than throwing an unrelated error', async () => {
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
+    now: () => STARTED_AT,
     openChannel: () => fakeChannel(),
   })
 
@@ -95,6 +112,7 @@ test('a Session whose opening Turn fails to start leaves no phantom Roster row',
   }
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
+    now: () => STARTED_AT,
     openChannel: () => channel,
   })
 
@@ -106,6 +124,7 @@ test('marks a Session unknown once its Turn is reported failed', async () => {
   const channel = fakeChannel()
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
+    now: () => STARTED_AT,
     openChannel: () => channel,
   })
 
@@ -121,4 +140,24 @@ test('marks a Session unknown once its Turn is reported failed', async () => {
     driver.roster().map(({ id, status }) => ({ id, status })),
     [{ id: sessionId, status: 'unknown' }],
   )
+})
+
+test('keeps the streamed messages of the last Turn through a quick reply, and forgets older ones', async () => {
+  const channel = fakeChannel()
+  const driver = createCodexSessionDriver({
+    findExecutable: () => '/usr/local/bin/codex',
+    now: () => STARTED_AT,
+    openChannel: () => channel,
+  })
+  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Write about ducks.' })
+  channel.notifications[0]?.({
+    method: 'item/agentMessage/delta',
+    params: { threadId: sessionId, turnId: 'turn-1', itemId: 'msg-1', delta: 'Ducks' },
+  } as never)
+
+  await driver.send(sessionId, 'And geese?')
+  assert.deepEqual(driver.liveMessages(sessionId), [{ id: 'msg-1', text: 'Ducks' }])
+
+  await driver.send(sessionId, 'And swans?')
+  assert.deepEqual(driver.liveMessages(sessionId), [])
 })

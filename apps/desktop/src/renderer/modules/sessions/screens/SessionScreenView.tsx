@@ -1,16 +1,17 @@
-import type { ReactNode } from 'react'
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { type ReactNode, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
+import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
+import type { HarnessControl, SessionCli } from '../harness/harnesses'
 import { useClaudePermission } from '../hooks/useClaudePermission'
-import type { SessionCli } from '../hooks/useSessionComposer'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessions } from '../hooks/useSessions'
+import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
 
 type SessionShellProps = {
@@ -18,7 +19,9 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  isRunning: boolean
   selectedSessionId: string | null
+  activeEvidenceId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 
@@ -30,33 +33,44 @@ const SESSION_SPLIT = {
 
 export function SessionScreenView() {
   const { sessionId } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const newSession = sessionId === 'new'
   const selectedSessionId = newSession ? null : (sessionId ?? null)
   const { feed, feedError, roster } = useSessions(selectedSessionId)
-  const [newSessionCli, setNewSessionCli] = useState<SessionCli>('claude')
+  const lastHarness = useComposerStore(({ harness }) => harness)
+  const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
-  const cli: SessionCli = selectedSessionId === null ? newSessionCli : sessionCliOf(session)
-  const composer = useSessionComposer({ cli, cockpit, navigate, roster, selectedSessionId })
+  const harness: HarnessControl =
+    selectedSessionId === null
+      ? { cli: lastHarness, onChange: chooseHarness }
+      : { cli: sessionCliOf(session) }
+  const cli = harness.cli
+  const composer = useSessionComposer({
+    cli,
+    cockpit,
+    focusOnMount: location.state === COMPOSER_FOCUS_STATE,
+    navigate,
+    roster,
+    selectedSessionId,
+  })
   const permission = useClaudePermission(selectedSessionId)
   return (
     <SessionShell
       feed={feed}
       feedError={feedError}
+      isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
+      activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
       composer={
         <SessionComposerArea
           composer={composer}
           permission={permission}
           session={session}
-          cliPicker={
-            selectedSessionId === null
-              ? { cli: newSessionCli, onChangeCli: setNewSessionCli }
-              : null
-          }
+          harness={harness}
         />
       }
       inspector={
@@ -81,7 +95,9 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  isRunning,
   selectedSessionId,
+  activeEvidenceId,
   onOpenEvidence,
 }: SessionShellProps) {
   return (
@@ -100,13 +116,22 @@ export function SessionShell({
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed
+                activeEvidenceId={activeEvidenceId}
                 feed={feed}
                 failure={feedError}
+                isRunning={isRunning}
                 selectedSessionId={selectedSessionId}
                 onOpenEvidence={onOpenEvidence}
               />
             </section>
-            <section aria-label="Session composer" className="shrink-0 border-t border-border/60">
+            <section
+              aria-label="Session composer"
+              className="relative isolate shrink-0 bg-background"
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+              />
               {composer}
             </section>
           </section>

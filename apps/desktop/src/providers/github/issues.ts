@@ -1,15 +1,23 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 import { isRecord } from '../../boundary'
-import type { Ticket, TicketLabel, TicketLink } from '../../core/tickets/contract'
+import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
+import {
+  labelColor,
+  type Ticket,
+  type TicketLabel,
+  type TicketLink,
+} from '../../core/tickets/ticket'
 import type { GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, getAll, getPage } from './http'
+import { githubStatus } from './statuses'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
 // requests in flight, bounded because GitHub's secondary limits refuse a wide fan-out.
 const CONCURRENT_TICKETS = 8
 
 type Issue = {
+  number: number
   ticket: Omit<Ticket, 'children' | 'blockedBy'>
   hasChildren: boolean
   hasBlockers: boolean
@@ -24,15 +32,17 @@ const isNumber = (value: unknown): value is number =>
 function label(value: unknown): TicketLabel | null {
   if (typeof value === 'string') return { name: value, color: null }
   if (!isRecord(value) || typeof value.name !== 'string') return null
-  return { name: value.name, color: typeof value.color === 'string' ? value.color : null }
+  return { name: value.name, color: labelColor(value.color) }
 }
 
 function count(summary: unknown, key: string): number {
   return isRecord(summary) && typeof summary[key] === 'number' ? summary[key] : 0
 }
 
+const keyOf = (number: number) => `#${number}`
+
 // GitHub serves pull requests from `/issues` too, and a Delivery is not a Ticket (CONTEXT.md L1).
-function issue(value: unknown): Issue | null {
+function issue(value: unknown, page: string): Issue | null {
   if (!isRecord(value) || Object.hasOwn(value, 'pull_request')) return null
   const { number, title, body, state, created_at: createdAt } = value
   if (!isNumber(number) || typeof title !== 'string') return null
@@ -41,12 +51,16 @@ function issue(value: unknown): Issue | null {
   const prose = typeof body === 'string' ? body.trim() : ''
   const labels = Array.isArray(value.labels) ? value.labels.map(label) : []
   return {
+    number,
     ticket: {
-      number,
+      key: keyOf(number),
+      url: `${page}/${number}`,
       title,
       body: prose === '' ? null : prose,
       state,
-      stateReason: typeof value.state_reason === 'string' ? value.state_reason : null,
+      status: githubStatus(state, value.state_reason),
+      // GitHub keeps no priority.
+      priority: null,
       createdAt,
       labels: labels.filter((entry) => entry !== null),
       type: isRecord(value.type) && typeof value.type.name === 'string' ? value.type.name : null,
@@ -61,7 +75,7 @@ function links(values: unknown[]): TicketLink[] {
   return values.flatMap((value) => {
     if (!isRecord(value) || !isNumber(value.number) || typeof value.title !== 'string') return []
     if (value.state !== 'open' && value.state !== 'closed') return []
-    return [{ number: value.number, title: value.title, state: value.state }]
+    return [{ key: keyOf(value.number), title: value.title, state: value.state }]
   })
 }
 
@@ -74,7 +88,7 @@ const edges = (present: boolean, url: string, token: string) =>
 // The edges are asked for only where the issue's own summary says one exists: the summaries
 // carry counts, never numbers.
 async function withEdges(reader: Reader, read: Issue): Promise<GitHubRead<Ticket>> {
-  const path = `${reader.base}/issues/${read.ticket.number}`
+  const path = `${reader.base}/issues/${read.number}`
   const children = await edges(read.hasChildren, `${path}/sub_issues`, reader.token)
   if (!children.ok) return children
   const blockers = await edges(read.hasBlockers, `${path}/dependencies/blocked_by`, reader.token)
@@ -102,9 +116,6 @@ async function inBatches(reader: Reader, issues: Issue[]): Promise<GitHubRead<Ti
   }
   return { ok: true, value: tickets }
 }
-
-// One screenful: small enough that its edge reads land before a person scrolls to the next.
-export const TICKET_PAGE_SIZE = 25
 
 export type TicketPage = { tickets: Ticket[]; nextPage: number | null; total: number | null }
 
@@ -146,7 +157,8 @@ export async function readTicketPage(
   if (!read.ok) return read
   const served = listing(read.value.body)
   if (!served) return failed('unreachable')
-  const issues = served.items.map(issue).filter((entry) => entry !== null)
+  const page = `${endpoints.web}/${request.scope}/issues`
+  const issues = served.items.map((item) => issue(item, page)).filter((entry) => entry !== null)
   const tickets = await inBatches(
     { base: `${endpoints.api}/repos/${request.scope}`, token },
     issues,

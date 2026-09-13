@@ -1,10 +1,12 @@
-// The packaged app, its own application data and a fake GitHub, for the Ticket proof. GitHub is
-// the one thing faked; the cockpit, its stores and Electron's safeStorage all run for real.
+// The packaged app, its own application data, a fake GitHub and a fake Linear, for the Ticket proof.
+// The providers are the one thing faked; the cockpit, its stores and safeStorage all run for real.
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import { type FakeGitHub, startFakeGitHub } from '../../../providers/github/fake-driver/fake-github'
+import { type FakeLinear, startFakeLinear } from '../../../providers/linear/fake-driver/fake-linear'
+import { HIDDEN, TEAM } from '../../../providers/linear/fake-driver/fake-linear-cast'
 import { appExecutable, packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import { repository } from '../../projects/fake-driver/project-proof-fixture'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
@@ -13,10 +15,12 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../sessions/proof-protocol'
-import { GITHUB_PROOF_ORIGIN_ENV } from './ticket-proof-protocol'
+import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from './ticket-proof-protocol'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
 export const HUBOT = { id: 2, login: 'hubot' }
+// Short enough that every read renews the grant first, so a relaunch proves the refresh.
+export const LINEAR_TOKEN_LIFETIME = 60
 
 export type TicketFixture = {
   application: string
@@ -24,6 +28,7 @@ export type TicketFixture = {
   // An empty folder, so the Sessions room reads no transcript of the person running the proof.
   noSessions: string
   github: FakeGitHub
+  linear: FakeLinear
 }
 
 function serveRepositories(github: FakeGitHub) {
@@ -49,6 +54,12 @@ function serveRepositories(github: FakeGitHub) {
   github.addRepository({ fullName: 'octocat/secret', visibleTo: [], issues: [] })
 }
 
+function serveTeams(linear: FakeLinear) {
+  linear.addTeam(TEAM)
+  linear.addTeam(HIDDEN)
+  linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
+}
+
 export async function prepare(root: string): Promise<TicketFixture> {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
@@ -64,7 +75,9 @@ export async function prepare(root: string): Promise<TicketFixture> {
   )
   const github = await startFakeGitHub()
   serveRepositories(github)
-  return { application, userData, noSessions: path.join(root, 'no-sessions'), github }
+  const linear = await startFakeLinear()
+  serveTeams(linear)
+  return { application, userData, noSessions: path.join(root, 'no-sessions'), github, linear }
 }
 
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.
@@ -76,6 +89,7 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [GITHUB_PROOF_ORIGIN_ENV]: fixture.github.origin,
+      [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.noSessions,
@@ -84,7 +98,7 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
     timeout: 30_000,
   })
   // The browser is the main process's to open, so the stub replaces it there. It records the URL
-  // and loads it, which is the person reaching GitHub's device page and entering the code.
+  // and loads it: the person entering GitHub's code, or allowing Argo on Linear's consent page.
   await application.evaluate(({ shell }) => {
     const opened: string[] = []
     Object.assign(globalThis, { openedURLs: opened })

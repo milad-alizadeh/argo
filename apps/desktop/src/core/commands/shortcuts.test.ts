@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  COMPOSER_SEND,
   DESTINATIONS,
   matchesChord,
   matchesShortcut,
@@ -10,6 +9,7 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
   ROSTER_MOVES,
+  SEND_MESSAGE_COMMAND,
   SHORTCUTS,
 } from './shortcuts'
 
@@ -65,8 +65,8 @@ test('the Roster movement chords fire on one element', () => {
 })
 
 test('the composer sends only with Shift+Enter', () => {
-  assert.equal(matchesShortcut(COMPOSER_SEND, pressed('Enter')), false)
-  assert.equal(matchesShortcut(COMPOSER_SEND, pressed('Enter', { shift: true })), true)
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter')), false)
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter', { shift: true })), true)
 })
 
 test('a plain chord refuses a modifier', () => {

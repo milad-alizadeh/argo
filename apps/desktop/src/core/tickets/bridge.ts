@@ -1,5 +1,5 @@
 // The Ticket channel's main-process end. The renderer names a Project; the Connection, the Account's
-// grant and every GitHub call are resolved here.
+// grant and every provider call are resolved here.
 import type { BrowserWindow } from 'electron'
 import { requestIdentifier } from '../../boundary'
 import type { AccountAccess } from '../accounts/access'
@@ -11,18 +11,19 @@ import {
   isTicketDisconnectRequest,
   isTicketDiscoverRequest,
   isTicketListRequest,
+  isTicketUpdateRequest,
   TICKET_CHANNEL,
   ticketError,
 } from './contract'
+import type { Call } from './read-as'
 import {
-  connectRepository,
-  disconnectRepository,
-  discoverRepositories,
+  connectSource,
+  disconnectSource,
+  discoverSources,
   listTickets,
   readConnection,
+  updateStatus,
 } from './service'
-
-type Call = { access: AccountAccess; requestId: string; projectId: string }
 
 // Each handler validates its own request and hands the service a call it can trust.
 const handler =
@@ -38,14 +39,17 @@ const handler =
 const HANDLERS = {
   'ticket.connection': handler(isTicketConnectionRequest, readConnection),
   'ticket.connect': handler(isTicketConnectRequest, (call, { accountId, scope }) =>
-    connectRepository(call, { accountId, scope }),
+    connectSource(call, { accountId, scope }),
   ),
-  'ticket.disconnect': handler(isTicketDisconnectRequest, disconnectRepository),
+  'ticket.disconnect': handler(isTicketDisconnectRequest, disconnectSource),
   'ticket.discover': handler(isTicketDiscoverRequest, (call, { accountId }) =>
-    discoverRepositories(call, accountId),
+    discoverSources(call, accountId),
   ),
-  'ticket.list': handler(isTicketListRequest, (call, { query, page }) =>
-    listTickets(call, { query, page }),
+  'ticket.list': handler(isTicketListRequest, (call, { query, cursor }) =>
+    listTickets(call, { query, cursor }),
+  ),
+  'ticket.update': handler(isTicketUpdateRequest, (call, { key, statusId }) =>
+    updateStatus(call, { key, statusId }),
   ),
 }
 

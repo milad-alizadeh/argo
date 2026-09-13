@@ -8,6 +8,7 @@ export const TEXT_SIZES = [
   'code',
   'code-tracking',
   'code-weight',
+  'composer-control',
   'composer-section',
   'control',
   'eyebrow',

@@ -1,0 +1,103 @@
+import type { CompanionPart } from './companion-plugin'
+import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
+import { ClaudeSessionDriverError } from './driver-error'
+import type { LiveMessages } from './live-messages'
+import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
+import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
+import type { ClaudePermissionGate } from './permission-gate'
+
+// ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
+// Session by its chain id. Held together so a caller cannot name one without the other.
+export type ResumeTarget = { cwd: string; tipId: string }
+export type DriverOptions = {
+  findExecutable: () => string | null
+  mintSessionId: () => string
+  now: () => Date
+  schedule: (callback: () => void, milliseconds: number) => void
+  spawn: (
+    command: string,
+    commandArguments: string[],
+    options: { cwd: string; env: NodeJS.ProcessEnv },
+  ) => ClaudeProcess
+  gate: ClaudePermissionGate
+  // Where each Session's companion plugin directory is written, one subfolder per Session.
+  pluginRoot: string
+  // `record` takes each batch the Session's MessageDisplay hook delivers. Any companion parts
+  // beyond the Permission gate — today, only the MessageDisplay hook — join the same plugin.
+  extraParts?: (sessionId: string, record: (batch: unknown) => void) => CompanionPart[]
+  ledger: OwnershipLedger
+  resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
+}
+export type ManagedSession = TurnTarget & {
+  close: () => void
+  cwd: string
+  messages: LiveMessages
+  process: ClaudeProcess
+  prompt: string
+  queue: Promise<void>
+  startedAt: string
+  // Set when `claude` exits or the driver closes; a Turn queued or mid-pause then types nothing.
+  ended: boolean
+}
+
+function refuseUnlessResumable(standing: OwnershipStanding) {
+  switch (standing) {
+    case 'never-owned':
+      throw new ClaudeSessionDriverError('not-resumable')
+    case 'held-elsewhere':
+      throw new ClaudeSessionDriverError('held-elsewhere')
+    case 'orphaned':
+    case 'held-here':
+      return
+  }
+}
+
+export function channelActions(options: DriverOptions, sessions: Map<string, ManagedSession>) {
+  const resuming = new Map<string, Promise<ManagedSession>>()
+  let closed = false
+  const open = (seed: Seed) => openChannel(options, sessions, seed)
+  const waitWhileLive =
+    (session: ManagedSession): Wait =>
+    async (milliseconds) => {
+      await new Promise<void>((resolve) => options.schedule(resolve, milliseconds))
+      if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+    }
+
+  const resume = async (sessionId: string, turn: ClaudeTurnRequest) => {
+    refuseUnlessResumable(options.ledger.standing(sessionId))
+    const target = await options.resumeTarget(sessionId)
+    if (target === null) throw new ClaudeSessionDriverError('missing-session')
+    if (closed) throw new ClaudeSessionDriverError('not-drivable')
+    const live = sessions.get(sessionId)
+    if (live) return live
+    // Another window may have resumed it while the transcript was read.
+    refuseUnlessResumable(options.ledger.standing(sessionId))
+    return open({ sessionId, cwd: target.cwd, ...turn, sessionFlags: ['--resume', target.tipId] })
+  }
+
+  return {
+    open,
+    close() {
+      closed = true
+    },
+    // Turns queue so one's slash commands and Mode presses finish before the next is typed.
+    write(session: ManagedSession, turn: ClaudeTurnRequest) {
+      const delivery = session.queue.then(() => {
+        if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+        session.messages.retire()
+        return deliverTurn(session, turn, waitWhileLive(session))
+      })
+      session.queue = delivery.catch(() => {})
+      return delivery
+    },
+    // ADR-0026 (#1842): the next Turn reopens a channel; Turns sent during one startup share it.
+    channelFor(sessionId: string, turn: ClaudeTurnRequest): Promise<ManagedSession> {
+      const live = sessions.get(sessionId)
+      if (live) return Promise.resolve(live)
+      const pending =
+        resuming.get(sessionId) ?? resume(sessionId, turn).finally(() => resuming.delete(sessionId))
+      resuming.set(sessionId, pending)
+      return pending
+    },
+  }
+}

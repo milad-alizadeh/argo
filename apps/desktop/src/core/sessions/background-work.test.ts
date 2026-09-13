@@ -23,6 +23,7 @@ const session: SessionRosterRow = {
   shell: [],
   pullRequest: null,
   archived: false,
+  setup: { model: null, effort: null, mode: null },
 }
 
 test('finds running background work only on a managed Session', () => {

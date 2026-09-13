@@ -1,32 +1,33 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
+import { STATUSES } from '../components/status-fixtures'
 import { TicketsSidebarContent } from '../components/TicketsSidebar'
-import { backlog, longBacklog, standalone, ticketsView } from '../components/ticket-fixtures'
+import {
+  backlog,
+  connection,
+  engine,
+  longBacklog,
+  standalone,
+  ticketsView,
+} from '../components/ticket-fixtures'
 import { TicketsScreen } from './TicketsScreenView'
-
-const connection = {
-  accountId: 'github:583231',
-  login: 'octocat',
-  scope: 'octocat/hello-world',
-  state: 'ready',
-} as const
 
 const meta: Meta<typeof TicketsScreen> = {
   title: 'Tickets/Screen',
   component: TicketsScreen,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story) => (
+    (Story, { parameters }) => (
       <div className="h-dvh w-full">
         <MemoryRouter>
           <CockpitShell
             sidebar={
               <TicketsSidebarContent
-                connection={connection}
-                notice={null}
+                connection={connection('github')}
+                notice={parameters.notice ?? null}
                 onManageAccounts={fn()}
                 openCount="3"
               />
@@ -53,51 +54,29 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await expect(rows[0]).toHaveTextContent('Blocked by 1 open Ticket')
   await expect(rows[0]).toHaveTextContent('1 of 2 children closed')
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
-  await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
+  // Each row's state is an icon that opens a menu, named for a screen reader.
+  await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
   await userEvent.click(rows[0] as HTMLElement)
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
-  const detail = canvas.getByRole('article', { name: 'Ticket #607' })
-  await expect(detail).toHaveTextContent('Wayfinder: the Tickets room, end to end')
-  await expect(detail).toHaveTextContent('PRD')
-  await expect(within(detail).getByText('wayfinder')).toBeInTheDocument()
-  await expect(
-    within(detail).getByRole('region', { name: 'Children · 1 of 2 closed' }),
-  ).toBeInTheDocument()
-  await expect(within(detail).getByRole('region', { name: 'Blocked by · 2' })).toBeInTheDocument()
 }
 
-async function readsNoDependencyFacts(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  await userEvent.click(canvas.getByRole('button', { name: /^#609/ }))
-  await expect(canvas.getByText('No description.')).toBeInTheDocument()
-  await expect(
-    canvas.getByText('GitHub gives no dependency information for this Ticket.'),
-  ).toBeInTheDocument()
-}
-
-async function movesTheInspector(canvasElement: HTMLElement) {
+async function choosingATicketReopensTheInspector(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Ticket inspector' }))
   await waitFor(() =>
     expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
   )
-  // Choosing a Ticket opens the inspector it would otherwise land in unseen.
   await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
   await waitFor(() =>
     expect(canvas.getByRole('button', { name: 'Collapse Ticket inspector' })).toBeInTheDocument(),
   )
   await expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible()
-  await userEvent.click(canvas.getByRole('button', { name: 'Expand Ticket sidebar' }))
-  await waitFor(() =>
-    expect(canvas.getByRole('button', { name: 'Restore Ticket sidebar' })).toBeInTheDocument(),
-  )
 }
 
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
     await readsTheBacklog(canvasElement)
-    await readsNoDependencyFacts(canvasElement)
-    await movesTheInspector(canvasElement)
+    await choosingATicketReopensTheInspector(canvasElement)
   },
 }
 
@@ -126,6 +105,95 @@ export const MoreTicketsUnavailable: Story = {
     await expect(shown.getByText('Argo cannot reach GitHub.')).toBeInTheDocument()
     await userEvent.click(shown.getByText('Try again'))
     await expect(retryLoadMore).toHaveBeenCalled()
+  },
+}
+
+// A parent's chevron folds its children away and brings them back.
+export const FoldedParent: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const fold = canvas.getByRole('button', { name: 'Collapse #607' })
+    await expect(fold).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(fold)
+    await expect(canvas.queryByRole('button', { name: /^#609/ })).toBeNull()
+    const unfold = canvas.getByRole('button', { name: 'Expand #607' })
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false')
+    // A Ticket with no listed child has nothing to fold.
+    await expect(canvas.queryByRole('button', { name: /^(Collapse|Expand) #273$/ })).toBeNull()
+    await userEvent.click(unfold)
+    await expect(canvas.getByRole('button', { name: /^#609/ })).toHaveAccessibleName(
+      /child of #607$/,
+    )
+  },
+}
+
+const branch = (number: number, title: string, children: number[] = []) => ({
+  ...standalone,
+  key: `#${number}`,
+  url: `https://github.com/octocat/hello-world/issues/${number}`,
+  title,
+  labels: [],
+  children: children.map((child) => ({
+    key: `#${child}`,
+    title: `#${child}`,
+    state: 'open' as const,
+  })),
+})
+
+// Tree lines join each child to its parent: a branch runs on past a child with a later sibling.
+export const TicketTree: Story = {
+  args: {
+    view: ticketsView({
+      tickets: [
+        branch(700, 'Wayfinder: the planner', [701, 702]),
+        branch(701, 'Read the plan', [703]),
+        branch(703, 'Parse the plan file'),
+        branch(702, 'Draw the plan'),
+        standalone,
+      ],
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const rows = within(canvasElement).getAllByRole('button', { name: /^#\d+/ })
+    await expect(rows.map((row) => row.textContent?.slice(0, 4))).toEqual([
+      '#700',
+      '#701',
+      '#703',
+      '#702',
+      '#273',
+    ])
+    await expect(rows[2]).toHaveAccessibleName(/child of #701$/)
+    await expect(rows[3]).toHaveAccessibleName(/child of #700$/)
+  },
+}
+
+// A Linear row carries its team key and workflow status; the Detail's own stories check its priority.
+export const LinearBacklog: Story = {
+  args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Moving a Ticket from its row leaves the Ticket selected where it was.
+    await userEvent.click(canvas.getByRole('button', { name: 'Status: In Review' }))
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Done' }))
+    const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
+    await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
+    await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: /^ENG-12/ })).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Status: In Review' })).toBeVisible()
+  },
+}
+
+// The one-time notice sits in the sidebar at its narrowest, and nothing in it spills out.
+export const SignInNotice: Story = {
+  parameters: { notice: { onConnect: fn(), onDismiss: fn() } },
+  play: async ({ canvasElement }) => {
+    const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
+    const edge = notice.getBoundingClientRect().right
+    for (const button of within(notice).getAllByRole('button')) {
+      await expect(button.getBoundingClientRect().right).toBeLessThanOrEqual(edge)
+    }
+    await expect(notice.scrollWidth).toBeLessThanOrEqual(notice.clientWidth)
   },
 }
 

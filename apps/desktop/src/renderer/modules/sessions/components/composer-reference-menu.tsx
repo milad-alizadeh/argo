@@ -1,7 +1,7 @@
 import {
   referenceSuggestions,
-  SessionReferenceIcon,
   type SessionReference,
+  SessionReferenceIcon,
 } from './SessionReference'
 
 export type ReferenceSuggestion = SessionReference

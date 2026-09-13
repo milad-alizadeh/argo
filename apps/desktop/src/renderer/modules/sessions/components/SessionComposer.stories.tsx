@@ -1,23 +1,60 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
+import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
-import type { SessionCli } from '../hooks/useSessionComposer'
-import { ComposerEditor } from './ComposerEditor'
+import type { SessionCli } from '../harness/harnesses'
+import { useComposerStore } from '../state/useComposerStore'
+import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import { SessionComposer } from './SessionComposer'
 
-const plan = {
+const FRAME = 'mx-auto max-w-4xl p-8'
+const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
+
+const plan: SessionPlan = {
   state: 'available' as const,
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
 
-function ComposerStory() {
+const RICH_FORMATTING_DRAFT = `# Release notes
+
+The main highlight: **one confirmation** now covers the complete route, with _every step_ shown in context.
+
+## What is new
+
+### Cross-network swaps
+
+- Start with XTZ and choose an asset on another network.
+  - Compare route speed before you sign.
+  - See the destination fee before the final step.
+- [Release notes](https://example.com/release-notes) stay attached to the work.
+
+### Approval flow
+
+1. Review the route.
+2. Confirm each required signature.
+3. Reopen a settling swap from Activity.
+
+> Keep a small amount of the destination network's native coin for its final step.
+
+Use \`bun run quality\` before handing the work over.
+
+\`\`\`sh
+bun run test
+bun run quality
+\`\`\`
+
+---
+
+Formatting is preserved while you edit.`
+
+function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
   const [sessionId, setSessionId] = useState('session-one')
   const [sent, setSent] = useState<string | null>(null)
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <>
       <div className="mb-4 flex gap-2">
         <Button onClick={() => setSessionId('session-one')} type="button" variant="outline">
           Session one
@@ -31,13 +68,27 @@ function ComposerStory() {
           setSent(text)
           return true
         }}
-        plan={null}
+        plan={plan}
         sessionId={sessionId}
       />
       <output className="mt-4 block text-sm" data-testid="sent-message">
         {sent}
       </output>
-    </div>
+    </>
+  )
+}
+
+// Closing the composer stands in for leaving the Session page and coming back to it.
+function ClosableComposerStory() {
+  const [open, setOpen] = useState(true)
+
+  return (
+    <>
+      <Button onClick={() => setOpen(!open)} type="button" variant="outline">
+        {open ? 'Leave the Session' : 'Return to the Session'}
+      </Button>
+      {open ? <SessionComposer onSend={async () => true} sessionId="closable-session" /> : null}
+    </>
   )
 }
 
@@ -45,18 +96,16 @@ function ManagedComposerStory() {
   const [running, setRunning] = useState(true)
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <SessionComposer
-        isRunning={running}
-        onInterrupt={async () => {
-          setRunning(false)
-          return true
-        }}
-        onSend={async () => false}
-        plan={null}
-        sessionId="managed-session"
-      />
-    </div>
+    <SessionComposer
+      isRunning={running}
+      onInterrupt={async () => {
+        setRunning(false)
+        return true
+      }}
+      onSend={async () => false}
+      plan={null}
+      sessionId="managed-session"
+    />
   )
 }
 
@@ -65,7 +114,7 @@ function QueuedComposerStory() {
   const [sent, setSent] = useState<string[]>([])
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <>
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
@@ -78,7 +127,7 @@ function QueuedComposerStory() {
         sessionId="queued-session"
       />
       <output data-testid="sent-messages">{sent.join(' · ')}</output>
-    </div>
+    </>
   )
 }
 
@@ -86,7 +135,7 @@ function FailedQueuedComposerStory() {
   const [running, setRunning] = useState(true)
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <>
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
@@ -95,7 +144,26 @@ function FailedQueuedComposerStory() {
         onSend={async () => false}
         sessionId="failed-queued-session"
       />
-    </div>
+    </>
+  )
+}
+
+// The send never settles, so the composer is read before a successful send clears it (#1999).
+function UnsettledSendStory() {
+  const [sent, setSent] = useState<string[]>([])
+
+  return (
+    <>
+      <SessionComposer
+        onSend={(text) => {
+          setSent((current) => [...current, text])
+          return new Promise<boolean>(() => {})
+        }}
+        plan={null}
+        sessionId="unsettled-session"
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </>
   )
 }
 
@@ -105,7 +173,7 @@ function PendingSendStory() {
   const finish = useRef<(sent: boolean) => void>(() => {})
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <>
       <div className="mb-4 flex gap-2">
         <Button onClick={() => setSessionId('session-two')} type="button" variant="outline">
           Session two
@@ -123,7 +191,7 @@ function PendingSendStory() {
         plan={null}
         sessionId={sessionId}
       />
-    </div>
+    </>
   )
 }
 
@@ -132,9 +200,9 @@ function NewSessionCliStory() {
   const [started, setStarted] = useState<string | null>(null)
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <>
       <SessionComposer
-        cliPicker={{ cli, onChangeCli: setCli }}
+        harness={{ cli, onChange: setCli }}
         onSend={async (text) => {
           setStarted(`${cli}: ${text}`)
           return true
@@ -145,52 +213,66 @@ function NewSessionCliStory() {
       <output className="mt-4 block text-sm" data-testid="started-session">
         {started}
       </output>
-    </div>
+    </>
   )
 }
 
-function RichDocumentStory({ draft }: { draft: string }) {
-  const editorRef = useRef(null)
-  const [value, setValue] = useState(draft)
+function SetupComposerStory({
+  running = false,
+  sessionId,
+}: {
+  running?: boolean
+  sessionId: string
+}) {
+  const [isRunning, setRunning] = useState(running)
+  const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
+  const [sent, setSent] = useState<string[]>([])
+
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <div className="relative overflow-hidden rounded-xl border bg-card">
-        <ComposerEditor editorRef={editorRef} draft={value} onChange={setValue} onSend={() => {}} />
-      </div>
-      <output className="mt-4 block type-body" data-testid="serialized-document">
-        {value}
-      </output>
-    </div>
+    <>
+      <Button onClick={() => setRunning(false)} type="button" variant="outline">
+        Finish turn
+      </Button>
+      <SessionComposer
+        isRunning={isRunning}
+        onSend={async (text, turnSetup) => {
+          setSent((current) => [
+            ...current,
+            `${text} (${turnSetup?.model} ${turnSetup?.effort} ${turnSetup?.mode})`,
+          ])
+          return true
+        }}
+        sessionId={sessionId}
+        harness={{ cli: 'claude' }}
+        setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </>
   )
 }
 
-function MarkdownShortcutCase({ name }: { name: string }) {
-  const editorRef = useRef(null)
-  const [value, setValue] = useState('')
-  return (
-    <section className="mb-6" data-testid={name}>
-      <ComposerEditor editorRef={editorRef} draft={value} onChange={setValue} onSend={() => {}} />
-    </section>
+async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
+  await userEvent.click(
+    within(canvasElement).getByRole('button', { name: /^Choose permission mode/ }),
   )
-}
-
-function MarkdownShortcutMatrixStory() {
-  return (
-    <div className="mx-auto max-w-4xl p-8">
-      <MarkdownShortcutCase name="heading-one" />
-      <MarkdownShortcutCase name="heading-two" />
-      <MarkdownShortcutCase name="heading-three" />
-      <MarkdownShortcutCase name="bullet-list" />
-      <MarkdownShortcutCase name="numbered-list" />
-      <MarkdownShortcutCase name="quote" />
-      <MarkdownShortcutCase name="code-fence" />
-    </div>
-  )
+  await userEvent.click(await within(document.body).findByRole('menuitemradio', { name: mode }))
+  await waitFor(() => expect(within(document.body).queryByRole('menu')).toBeNull())
 }
 
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
+  decorators: [
+    (Story, { parameters }) => (
+      <div className={(parameters.frame as string | undefined) ?? FRAME}>
+        <Story />
+      </div>
+    ),
+  ],
+  // Drafts outlive a story like they outlive a page, so each story starts from none.
+  beforeEach: () => {
+    useComposerStore.setState(useComposerStore.getInitialState())
+  },
 }
 
 export default meta
@@ -202,186 +284,144 @@ export const PlainText: Story = {
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await expect(composer).toHaveAttribute('data-keyboard-focus', 'false')
-    await userEvent.type(composer, 'Review the new')
-    await userEvent.keyboard('{Enter}')
-    await userEvent.type(composer, 'Session shell.')
-    await expect(composer.querySelectorAll('p')).toHaveLength(2)
-    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
-    await expect(canvas.getByTestId('sent-message').textContent).toBe('Review the new\n\nSession shell.')
+    await userEvent.type(composer, 'Review the new Session shell.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+      'Review the new Session shell.',
+    )
     await expect(composer.textContent).toBe('')
   },
 }
 
-export const ReferenceMenu: Story = {
+export const DraftOutlivesItsComposer: Story = {
+  render: () => <ClosableComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Half a thought.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Half a thought.')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
+  },
+}
+
+export const EnterAddsANewLine: Story = {
+  render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, '/')
-    await expect(canvas.getByRole('listbox', { name: 'References' })).toBeVisible()
-    await expect(canvas.getByRole('option', { name: /Implement/ })).toHaveAttribute(
-      'data-reference-kind',
-      'command',
-    )
-    await userEvent.keyboard('{ArrowDown}{Enter}')
-    await expect(composer).toHaveTextContent('/grill-me')
+    await userEvent.keyboard('Send this once.')
+    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('Then this.')
+
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
+    await expect(composer.innerText).toBe('Send this once.\n\nThen this.')
+  },
+}
+
+export const ShiftEnterSends: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.keyboard('Send this once.')
     await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent('/grill-me')
-  },
-}
 
-export const SkillReferenceMenu: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '@$front')
-    await expect(canvas.getByRole('option', { name: /frontend-design/ })).toHaveAttribute(
-      'data-reference-kind',
-      'skill',
-    )
-  },
-}
-
-export const EscapeKeepsReferenceText: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '/imp')
-    await userEvent.keyboard('{Escape}')
-    await expect(composer).toHaveTextContent('/imp')
-    await expect(canvas.queryByRole('listbox', { name: 'References' })).toBeNull()
-  },
-}
-
-export const FilteredFileReferenceMenu: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '@agent')
-    await expect(canvas.getByRole('option', { name: /AGENTS.md/ })).toBeVisible()
-    await userEvent.keyboard('{Enter}')
-    await expect(composer).toHaveTextContent('@AGENTS.md ')
-  },
-}
-
-export const MarkdownDocument: Story = {
-  render: () => (
-    <RichDocumentStory
-      draft={
-        '# Heading\n\n- A list item\n\n> A quote\n\n```ts\nconst answer = 42\n```\n\n[Argo](https://argo.example) and `inline` **bold** *italic* ~~struck~~'
-      }
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const heading = canvas.getByRole('heading', { level: 1, name: 'Heading' })
-    await expect(heading).toBeVisible()
-    await expect(getComputedStyle(heading).fontSize).toBe('20px')
-    await expect(getComputedStyle(heading).fontWeight).toBe('600')
-    await expect(canvas.getByRole('listitem')).toHaveTextContent('A list item')
-    await expect(canvas.getByText('A quote')).toBeVisible()
-    await expect(canvas.getByText('const answer = 42')).toBeVisible()
-    await expect(canvas.getByRole('link', { name: 'Argo' })).toHaveAttribute(
-      'href',
-      'https://argo.example',
-    )
-    await expect(canvas.getByTestId('serialized-document')).toHaveTextContent('**bold**')
-    await expect(canvas.getByTestId('serialized-document')).toHaveTextContent('~~struck~~')
-  },
-}
-
-export const MarkdownShortcuts: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '# ')
-    await userEvent.type(composer, 'Heading')
-    await expect(canvas.getByRole('heading', { level: 1, name: 'Heading' })).toBeVisible()
-    await userEvent.keyboard('{Enter}')
-    await userEvent.type(composer, '- ')
-    await userEvent.type(composer, 'List item')
-    await expect(canvas.getByRole('listitem')).toHaveTextContent('List item')
-  },
-}
-
-export const MarkdownShortcutMatrix: Story = {
-  render: () => <MarkdownShortcutMatrixStory />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const typeShortcut = async (name: string, source: string, content: string) => {
-      const composer = within(canvas.getByTestId(name)).getByLabelText('Message')
-      await userEvent.click(composer)
-      await userEvent.type(composer, source)
-      if (content) await userEvent.type(composer, content)
-      return composer
-    }
-
-    await typeShortcut('heading-one', '# ', 'Heading one')
-    await expect(canvas.getByRole('heading', { level: 1, name: 'Heading one' })).toBeVisible()
-
-    await typeShortcut('heading-two', '## ', 'Heading two')
-    await expect(canvas.getByRole('heading', { level: 2, name: 'Heading two' })).toBeVisible()
-
-    await typeShortcut('heading-three', '### ', 'Heading three')
-    await expect(canvas.getByRole('heading', { level: 3, name: 'Heading three' })).toBeVisible()
-
-    await typeShortcut('bullet-list', '* ', 'Bullet item')
-    await expect(within(canvas.getByTestId('bullet-list')).getByRole('listitem')).toHaveTextContent(
-      'Bullet item',
-    )
-
-    await typeShortcut('numbered-list', '1. ', 'Numbered item')
-    await expect(within(canvas.getByTestId('numbered-list')).getByRole('listitem')).toHaveTextContent(
-      'Numbered item',
-    )
-
-    await typeShortcut('quote', '> ', 'Quoted text')
-    await expect(within(canvas.getByTestId('quote')).getByText('Quoted text')).toBeVisible()
-
-    const codeComposer = await typeShortcut('code-fence', '```', '')
-    await expect(codeComposer.querySelector('code')).toBeVisible()
-    await userEvent.type(codeComposer, 'const answer = 42')
-    await expect(within(canvas.getByTestId('code-fence')).getByText('const answer = 42')).toBeVisible()
-  },
-}
-
-export const MarkdownInlineShortcuts: Story = {
-  render: () => <RichDocumentStory draft="" />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '**bold** *italic* ~~struck~~ `inline`')
-
-    await expect(composer.querySelector('strong')).toHaveTextContent('bold')
-    await expect(composer.querySelector('em')).toHaveTextContent('italic')
-    await expect(composer.querySelector('code')).toHaveTextContent('inline')
-    await expect(canvas.getByTestId('serialized-document')).toHaveTextContent('~~struck~~')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(composer.innerText).toBe('Send this once.')
   },
 }
 
 export const WithPlan: Story = {
-  render: () => (
-    <div className="mx-auto max-w-4xl p-8">
-      <SessionComposer onSend={async () => true} plan={plan} sessionId="planned-session" />
-    </div>
-  ),
+  args: { plan },
   play: async ({ canvasElement }) => {
-    const composer = within(canvasElement).getByLabelText('Message')
-    await expect(composer.parentElement?.parentElement).toHaveClass('min-h-40')
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'Open task plan' })
+
+    await userEvent.click(trigger)
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
   },
 }
+
+export const RichFormatting: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.paste(RICH_FORMATTING_DRAFT)
+    await expect(canvas.getByRole('heading', { name: 'Release notes' })).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: 'What is new' })).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: 'Approval flow' })).toBeVisible()
+    await expect(canvas.getAllByRole('list')).toHaveLength(2)
+    await expect(canvas.getByRole('link', { name: 'Release notes' })).toBeVisible()
+    await expect(canvas.getByText('bun run quality')).toBeVisible()
+    await expect(canvas.getByRole('separator')).toBeVisible()
+  },
+}
+
+function markdownShortcutStory(
+  type: (composer: HTMLElement) => Promise<unknown>,
+  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>,
+): Story {
+  return {
+    play: async ({ canvasElement }) => {
+      const canvas = within(canvasElement)
+      const composer = canvas.getByLabelText('Message')
+
+      await userEvent.click(composer)
+      await type(composer)
+      await assert(canvas, composer)
+    },
+  }
+}
+
+export const MarkdownHeadingShortcut: Story = markdownShortcutStory(
+  (composer) => userEvent.type(composer, '# Heading'),
+  async (canvas) => {
+    await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
+  },
+)
+
+export const MarkdownListShortcut: Story = markdownShortcutStory(
+  (composer) => userEvent.type(composer, '- First list item'),
+  async (canvas) => {
+    await expect(canvas.getByRole('list')).toBeVisible()
+  },
+)
+
+export const MarkdownQuoteShortcut: Story = markdownShortcutStory(
+  (composer) => userEvent.type(composer, '> Quoted detail'),
+  async (canvas, composer) => {
+    await expect(canvas.getByText('Quoted detail')).toBeVisible()
+    await expect(composer.querySelector('blockquote')).not.toBeNull()
+  },
+)
+
+export const MarkdownInlineCodeShortcut: Story = markdownShortcutStory(
+  (composer) => userEvent.type(composer, '`inline code`'),
+  async (canvas) => {
+    await expect(canvas.getByText('inline code')).toBeVisible()
+  },
+)
+
+export const MarkdownCodeBlockShortcut: Story = markdownShortcutStory(
+  async (composer) => {
+    await userEvent.type(composer, '``')
+    await userEvent.keyboard('`')
+    await userEvent.type(composer, 'const result = true')
+  },
+  async (_canvas, composer) => {
+    await expect(composer.querySelector(':scope > code')).not.toBeNull()
+  },
+)
 
 export const ManagedTurn: Story = {
   render: () => <ManagedComposerStory />,
@@ -397,32 +437,53 @@ export const ManagedTurn: Story = {
   },
 }
 
+export const Narrow: Story = {
+  parameters: { frame: 'w-(--size-session-feed-min)' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    const composerForm = composer.closest('form')
+
+    if (!composerForm) throw new Error('Session composer form is missing.')
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Keep the composer usable at narrow widths.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+      'Keep the composer usable at narrow widths.',
+    )
+    await expect(composerForm.scrollWidth).toBeLessThanOrEqual(composerForm.clientWidth)
+  },
+}
+
+export const NarrowShowsModelAndEffort: Story = {
+  render: () => <SetupComposerStory sessionId="setup-narrow" />,
+  parameters: { frame: 'w-(--size-session-feed-min) pt-96' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    const row = trigger.parentElement
+
+    if (!row) throw new Error('Composer control row is missing.')
+    await expect(within(trigger).getByText('Opus 5')).toBeVisible()
+    await expect(within(trigger).getByText('Medium')).toBeVisible()
+    await expect(within(trigger).getByText('Claude Code')).not.toBeVisible()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeVisible()
+    await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
+  },
+}
+
 export const NewSessionChoosesCli: Story = {
   render: () => <NewSessionCliStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const claudeOption = canvas.getByRole('radio', { name: 'Claude Code' })
-    const codexOption = canvas.getByRole('radio', { name: 'Codex' })
+    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code')
 
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.click(codexOption)
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-
-    // Arrow-key navigation per the WAI-ARIA radiogroup pattern: focus moves back to Claude Code,
-    // and moving selection also moves the roving tabIndex.
-    await expect(codexOption).toHaveFocus()
-    await userEvent.keyboard('{ArrowLeft}')
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveFocus()
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.keyboard('{End}')
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-    await expect(codexOption).toHaveFocus()
+    await userEvent.click(trigger)
+    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
+    await userEvent.keyboard('{Escape}')
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')
@@ -510,6 +571,62 @@ export const FailedQueuedTurn: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Keep this pending when Claude rejects it.',
+    )
+  },
+}
+
+export const SendsTheChosenSetup: Story = {
+  render: () => <SetupComposerStory sessionId="setup-session" />,
+  parameters: { frame: SETUP_FRAME },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const placeholder = canvas.getAllByText('Direct the next move…')[0]?.getBoundingClientRect()
+    const controls = canvas
+      .getByRole('button', { name: /^Choose run setup/ })
+      .getBoundingClientRect()
+    await expect(placeholder?.bottom).toBeLessThanOrEqual(controls.top)
+    await userEvent.click(canvas.getByRole('button', { name: /^Choose run setup/ }))
+    await userEvent.click(await within(document.body).findByRole('radio', { name: /Sonnet 5/ }))
+    await userEvent.keyboard('{Escape}')
+    await chooseMode(canvasElement, /Plan/)
+    await expect(canvas.getByRole('button', { name: /^Choose run setup/ })).toHaveTextContent(
+      'Claude Code·Sonnet 5·Medium',
+    )
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Plan the migration.')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      'Plan the migration. (sonnet medium plan)',
+    )
+  },
+}
+
+export const QueuedTurnKeepsItsSetup: Story = {
+  render: () => <SetupComposerStory running sessionId="queued-setup-session" />,
+  parameters: { frame: SETUP_FRAME },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    const mode = canvas.getByRole('button', { name: /^Choose permission mode/ })
+
+    await chooseMode(canvasElement, /Plan/)
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Plan the release.')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await chooseMode(canvasElement, /Accept edits/)
+    await expect(mode).toHaveTextContent('Accept edits')
+
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Edit queued message: Plan the release.' }),
+    )
+    await expect(composer).toHaveTextContent('Plan the release.')
+    await expect(mode).toHaveTextContent('Plan')
+
+    await chooseMode(canvasElement, /Auto/)
+    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      'Plan the release. (opus medium plan)',
     )
   },
 }

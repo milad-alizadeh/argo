@@ -3,10 +3,10 @@ import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
 import type {
   ContentBlock,
   ToolCall,
-  ToolResult,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { commandSource } from './command-source'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
@@ -18,53 +18,6 @@ function readEntry(value: unknown): SessionEntry {
   return typeof value === 'string' && HEADLESS_ENTRYPOINTS.includes(value)
     ? 'headless'
     : 'interactive'
-}
-
-const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
-
-function readBlock(value: unknown): ContentBlock {
-  if (isRecord(value) && value.type === 'text' && typeof value.text === 'string') {
-    return INTERRUPTED.test(value.text)
-      ? { shape: 'marker', marker: 'interrupted' }
-      : { shape: 'prose', text: commandSource(value.text) }
-  }
-  if (isRecord(value) && value.type === 'thinking' && typeof value.thinking === 'string') {
-    return { shape: 'thought', text: value.thinking }
-  }
-  const label = isRecord(value) && typeof value.type === 'string' ? value.type : 'unfamiliar'
-  return { shape: 'source', label, source: JSON.stringify(value, null, 2) ?? String(value) }
-}
-
-function readBlocks(content: unknown): ContentBlock[] {
-  if (typeof content === 'string') return [{ shape: 'prose', text: commandSource(content) }]
-  if (!Array.isArray(content)) return []
-  return content.map(readBlock)
-}
-
-function readToolCalls(content: unknown): ToolCall[] {
-  if (!Array.isArray(content)) return []
-  return content.flatMap((block: unknown) =>
-    isRecord(block) &&
-    block.type === 'tool_use' &&
-    typeof block.id === 'string' &&
-    typeof block.name === 'string'
-      ? [{ id: block.id, name: block.name, input: isRecord(block.input) ? block.input : {} }]
-      : [],
-  )
-}
-
-function readToolResults(content: unknown): ToolResult[] {
-  if (!Array.isArray(content)) return []
-  return content.flatMap((block: unknown) =>
-    isRecord(block) && block.type === 'tool_result' && typeof block.tool_use_id === 'string'
-      ? [
-          {
-            callId: block.tool_use_id,
-            content: typeof block.content === 'string' ? block.content : null,
-          },
-        ]
-      : [],
-  )
 }
 
 function readUsage(value: unknown) {
@@ -86,14 +39,18 @@ function readUsage(value: unknown) {
 
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
+  const content =
+    role === 'user' && typeof message.content === 'string'
+      ? commandSource(message.content)
+      : message.content
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
   // names the Session, and plenty of real records carry no copy of it. Requiring one would drop a
   // whole history as unreadable over a field nothing reads.
   if (typeof record.uuid !== 'string') return null
   const parsed: TranscriptMessage = {
-    toolCalls: readToolCalls(message.content),
-    toolResults: readToolResults(message.content),
-    answeredCalls: readToolResults(message.content).map((result) => result.callId),
+    toolCalls: readToolCalls(content),
+    toolResults: readToolResults(content),
+    answeredCalls: readToolResults(content).map((result) => result.callId),
     kind: 'message',
     uuid: record.uuid,
     parentUuid: typeof record.parentUuid === 'string' ? record.parentUuid : null,
@@ -105,8 +62,13 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
+    // `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
+    model:
+      typeof message.model === 'string' && message.model !== '<synthetic>' ? message.model : null,
+    effort: typeof record.effort === 'string' ? record.effort : null,
+    mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
-    blocks: readBlocks(message.content),
+    blocks: readBlocks(content),
   }
   return parsed
 }

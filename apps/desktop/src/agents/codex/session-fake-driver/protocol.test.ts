@@ -7,6 +7,7 @@ import {
   readMessage,
   readStartedTurn,
   readThreadId,
+  readThreadStatus,
 } from '../drive/protocol.ts'
 
 test('parses a JSON-RPC result response', () => {
@@ -59,6 +60,32 @@ test('reads a completed-Turn notification, and ignores any other notification', 
   assert.equal(
     readCompletedTurn({ method: 'thread/status/changed', params: { threadId: 'thread-1' } }),
     undefined,
+  )
+})
+
+test('reads the thread status that says whether a Codex Session can accept an interrupt', () => {
+  assert.deepEqual(
+    readThreadStatus({
+      method: 'thread/status/changed',
+      params: {
+        threadId: 'thread-1',
+        status: { type: 'active', activeFlags: [] },
+      },
+    }),
+    { threadId: 'thread-1', status: 'running' },
+  )
+  assert.deepEqual(
+    readThreadStatus({
+      method: 'thread/status/changed',
+      params: { threadId: 'thread-1', status: { type: 'idle' } },
+    }),
+    { threadId: 'thread-1', status: 'idle' },
+  )
+  assert.throws(() =>
+    readThreadStatus({
+      method: 'thread/status/changed',
+      params: { threadId: 'thread-1', status: { type: 'active', activeFlags: [false] } },
+    }),
   )
 })
 

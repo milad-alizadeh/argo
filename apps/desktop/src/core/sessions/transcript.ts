@@ -6,12 +6,13 @@ export type ContentBlock =
   // Thought). The CLI writes most of them with the text withheld, so an empty one is ordinary.
   | { shape: 'thought'; text: string }
   | { shape: 'marker'; marker: FeedMarker }
+  | { shape: 'tool'; callId: string }
   // The honest fallback for content this Feed cannot draw richly yet: the block's own `type`
   // verbatim as the label, and its own JSON as the source. Nothing is summarised or dropped.
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
-export type ToolResult = { callId: string; content: string | null }
+export type ToolResult = { callId: string; content: string | null; failed: boolean }
 export type TranscriptUsage = {
   inputTokens: number
   outputTokens: number
@@ -31,6 +32,10 @@ export type TranscriptMessage = {
   timestamp: string | null
   entry: SessionEntry
   stopReason: string | null
+  // The CLI's own Model, Effort and Mode words, verbatim (CONTEXT.md L2 · Model and Effort).
+  model: string | null
+  effort: string | null
+  mode: string | null
   blocks: ContentBlock[]
   toolCalls: ToolCall[]
   toolResults?: ToolResult[]

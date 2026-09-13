@@ -15,8 +15,6 @@ export const DESTINATION_PATHS: Record<Destination, string> = {
 }
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
-export const COMPOSER_SEND = 'composer.send'
-
 // Moving focus down the Roster. These are chords on one element rather than on the window: they
 // fire only while a row holds focus, so a reader typing anywhere else keeps their arrow keys.
 export const ROSTER_MOVES = {
@@ -25,6 +23,9 @@ export const ROSTER_MOVES = {
   first: 'roster.first',
   last: 'roster.last',
 } as const
+
+// Fires only while the composer holds focus, so Enter stays a new line (#1999).
+export const SEND_MESSAGE_COMMAND = 'composer.send'
 
 // The channel a menu item's command travels on, declared here with the table it comes from.
 export const COMMAND_CHANNEL = 'argo:command'
@@ -52,7 +53,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { command: ROSTER_MOVES.previous, label: 'Previous Session', chord: 'ArrowUp', scope: 'element' },
   { command: ROSTER_MOVES.first, label: 'First Session', chord: 'Home', scope: 'element' },
   { command: ROSTER_MOVES.last, label: 'Last Session', chord: 'End', scope: 'element' },
-  { command: COMPOSER_SEND, label: 'Send message', chord: 'Shift+Enter', scope: 'element' },
+  { command: SEND_MESSAGE_COMMAND, label: 'Send message', chord: 'Shift+Enter', scope: 'element' },
 ]
 
 // The template is plain data so that the table's rule can be proved without Electron. `src/menu.ts`
@@ -65,7 +66,7 @@ export type MenuEntry = {
   submenu?: MenuEntry[]
 }
 
-const shortcut = (command: string): Shortcut => {
+export const shortcut = (command: string): Shortcut => {
   const found = SHORTCUTS.find((entry) => entry.command === command)
   if (!found) throw new Error(`No shortcut is declared for ${command}`)
   return found
@@ -100,6 +101,22 @@ export type PressedKeys = {
   ctrl: boolean
   shift: boolean
   alt: boolean
+}
+
+export function pressedKeys(event: {
+  key: string
+  metaKey: boolean
+  ctrlKey: boolean
+  shiftKey: boolean
+  altKey: boolean
+}): PressedKeys {
+  return {
+    key: event.key,
+    meta: event.metaKey,
+    ctrl: event.ctrlKey,
+    shift: event.shiftKey,
+    alt: event.altKey,
+  }
 }
 
 // The modifier has to be absent as exactly as it has to be present, so `CmdOrCtrl+1` refuses

@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-
-import { TicketDetail } from './TicketDetail'
-import { wayfinder } from './ticket-fixtures'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import { STATUSES } from './status-fixtures'
+import { TicketBar, TicketDetail } from './TicketDetail'
+import { engine, prototype, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
@@ -11,14 +11,24 @@ const meta: Meta<typeof TicketDetail> = {
   component: TicketDetail,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story) => (
+    // The bar stands in for the inspector's, which holds the Ticket's key.
+    (Story, { args }) => (
       <aside className="flex h-dvh w-(--size-ticket-inspector) flex-col bg-sidebar">
+        <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
+          <TicketBar provider={args.provider ?? 'github'} ticket={args.ticket ?? null} />
+        </header>
         <Story />
       </aside>
     ),
   ],
   // #609 is in the backlog and opens; the closed #388 and #12 are not, so they stay text.
-  args: { listed: new Set([609]), onSelect: fn(), scope: 'octocat/hello-world' },
+  args: {
+    listed: new Set(['#609']),
+    onSelect: fn(),
+    provider: 'github',
+    statuses: STATUSES.github,
+    onChangeStatus: fn(),
+  },
 }
 
 export default meta
@@ -33,7 +43,65 @@ export const Default: Story = {
     await expect(children).toHaveTextContent('ClosedTicket read path#388')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
     await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))
-    await expect(args.onSelect).toHaveBeenCalledWith(609)
+    await expect(args.onSelect).toHaveBeenCalledWith('#609')
+    await expect(
+      within(canvasElement).getByRole('link', { name: 'Open #607 in GitHub' }),
+    ).toHaveAttribute('href', 'https://github.com/octocat/hello-world/issues/607')
+    // GitHub keeps no priority, and names its status the Ticket's state.
+    await expect(within(article).queryByText('Status')).toBeNull()
+    await expect(within(article).queryByText('Priority')).toBeNull()
+    // A label GitHub colours is tinted with that colour; one without a colour stays plain.
+    const tint = (name: string) =>
+      within(article).getByText(name).style.getPropertyValue('--ticket-label')
+    await expect(tint('wayfinder')).toBe('#5319e7')
+    await expect(tint('prd')).toBe('')
+  },
+}
+
+// GitHub's state is open or a reason for closing, and the menu offers each one.
+export const ChangeState: Story = {
+  args: { ticket: wayfinder },
+  play: async ({ args, canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
+    await userEvent.click(within(article).getByRole('button', { name: 'State: Open' }))
+    // The menu draws in a portal outside the canvas.
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await expect(within(menu).getByRole('menuitemradio', { name: 'Open' })).toBeChecked()
+    await userEvent.click(
+      within(menu).getByRole('menuitemradio', { name: 'Closed as not planned' }),
+    )
+    await expect(args.onChangeStatus).toHaveBeenCalledWith(STATUSES.github[2])
+  },
+}
+
+// Linear's own workflow status and priority show as properties, and its key names the link.
+export const Linear: Story = {
+  args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
+    const properties = within(article).getByText('Status').closest('dl')
+    await expect(properties).toHaveTextContent('StatusIn Review')
+    await expect(properties).toHaveTextContent('PriorityHigh')
+    await expect(within(article).queryByText('State')).toBeNull()
+    await expect(within(article).getByRole('button', { name: 'Status: In Review' })).toBeVisible()
+    await expect(
+      within(canvasElement).getByRole('link', { name: 'Open ENG-12 in Linear' }),
+    ).toHaveAttribute('href', 'https://linear.app/analytical/issue/ENG-12')
+    await expect(within(article).getByRole('region', { name: 'Blocked by · 1' })).toHaveTextContent(
+      'ClosedStore the refresh tokenENG-9',
+    )
+  },
+}
+
+// #609 has no body and GitHub gives no dependency information for it.
+export const NoBody: Story = {
+  args: { ticket: prototype },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #609' })
+    await expect(within(article).getByText('No description.')).toBeInTheDocument()
+    await expect(
+      within(article).getByText('GitHub gives no dependency information for this Ticket.'),
+    ).toBeInTheDocument()
   },
 }
 
@@ -67,13 +135,9 @@ export const LongContent: Story = {
 const MARKDOWN_BODY = [
   '## Flow',
   'Read the [design notes](https://github.com/octocat/hello-world/wiki) first.',
-  '```mermaid',
-  'flowchart LR',
-  '  Backlog --> Ticket --> Session',
-  '```',
 ].join('\n')
 
-// A description draws as the feed draws Markdown: headings, links that open, and Mermaid diagrams.
+// A description reaches the feed's own Markdown renderer; FeedMarkdown's stories check its output.
 export const MarkdownBody: Story = {
   args: { ticket: { ...wayfinder, body: MARKDOWN_BODY } },
   play: async ({ canvasElement }) => {
@@ -83,8 +147,5 @@ export const MarkdownBody: Story = {
       'href',
       'https://github.com/octocat/hello-world/wiki',
     )
-    const diagram = within(article).getByRole('figure', { name: 'Mermaid diagram' })
-    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
-    await expect(diagram).toHaveTextContent('Session')
   },
 }

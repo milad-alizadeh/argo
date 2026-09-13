@@ -1,8 +1,9 @@
-import type { Preview } from '@storybook/react'
+import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
 import { AppQueryProvider } from '../src/renderer/app-query-provider'
+import { sessionRosterRow } from '../src/renderer/modules/sessions/session-fixtures'
 import '../src/renderer/styles/globals.css'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookProjectBridge } from './storybook-projects'
@@ -11,28 +12,14 @@ import { ticketsHost } from './tickets-host'
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
-const host = window as unknown as { argo?: Record<string, unknown> }
-const storybookSession = {
+const host = window
+const storybookSession = sessionRosterRow({
   id: 'storybook-session',
-  retiredIds: [],
-  cli: 'claude',
   posture: 'external',
   title: { text: 'Storybook Session', source: 'first-prompt' },
   status: 'idle',
-  entry: 'interactive',
   cwd: '/storybook/argo',
-  branch: 'main',
-  updatedAt: null,
-  unreadableLines: 0,
-  originUnread: false,
-  turnStartedAt: null,
-  activity: null,
-  plan: null,
-  delegations: [],
-  shell: [],
-  pullRequest: null,
-  archived: false,
-}
+})
 host.argo = {
   ...host.argo,
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),

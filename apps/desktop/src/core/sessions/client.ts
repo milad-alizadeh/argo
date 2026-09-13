@@ -5,6 +5,7 @@ import {
   type ClaudeSessionPermissionReply,
   type ClaudeSessionSendReply,
   type ClaudeSessionStartReply,
+  type ClaudeTurnSetup,
   type CodexSessionInterruptReply,
   type CodexSessionSendReply,
   type CodexSessionStartReply,
@@ -23,8 +24,16 @@ import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
   interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
-  sendClaudeSession(request: { sessionId: string; prompt: string }): Promise<ClaudeSessionSendReply>
-  startClaudeSession(request: { cwd: string; prompt: string }): Promise<ClaudeSessionStartReply>
+  sendClaudeSession(request: {
+    sessionId: string
+    prompt: string
+    setup: ClaudeTurnSetup
+  }): Promise<ClaudeSessionSendReply>
+  startClaudeSession(request: {
+    cwd: string
+    prompt: string
+    setup: ClaudeTurnSetup
+  }): Promise<ClaudeSessionStartReply>
   readClaudePermission(request: { sessionId: string }): Promise<ClaudeSessionPermissionReply>
   decideClaudePermission(request: {
     sessionId: string
