@@ -10,7 +10,7 @@ function ModeStory() {
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <ModeMenu choices={CLAUDE_TURN_SETUP} value={setup} onChange={setSetup} />
-      <output className="ml-4 text-sm" data-testid="chosen-mode">
+      <output hidden data-testid="chosen-mode">
         {setup.mode}
       </output>
     </div>

@@ -17,7 +17,7 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
         harness={started ? { cli } : { cli, onChange: setCli }}
         setup={choices ? { choices, value: setup, onChange: setSetup } : null}
       />
-      <output className="ml-4 text-sm" data-testid="chosen-setup">
+      <output hidden data-testid="chosen-setup">
         {`${cli} ${setup.model} ${setup.effort}`}
       </output>
     </div>
