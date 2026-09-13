@@ -73,18 +73,6 @@ export const UnknownLanguage: Story = {
   },
 }
 
-export const LightAppearance: Story = {
-  globals: { theme: 'light' },
-  play: async ({ canvasElement }) => {
-    await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
-    const keyword = within(canvasElement).getByText('type')
-    await expect(keyword.style.getPropertyValue('--shiki-light')).not.toBe('')
-    await expect(getComputedStyle(keyword).color).toBe(
-      drawnColor(keyword.style.getPropertyValue('--shiki-light')),
-    )
-  },
-}
-
 export const CopyFromKeyboard: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()

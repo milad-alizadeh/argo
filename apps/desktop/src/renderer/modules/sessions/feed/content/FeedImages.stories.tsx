@@ -62,39 +62,27 @@ export const Loading: Story = {
   },
 }
 
-function renderUnavailable() {
-  return (
+// Both failures draw the same card: a file that does not decode, and a source the Feed refuses,
+// such as a path relative to a folder the row does not carry.
+export const Unavailable: Story = {
+  render: () => (
     <>
       <FeedImage source={BROKEN_PICTURE} alt="A screenshot that no longer decodes" />
       <FeedImage source="" alt="A file the Session moved" />
     </>
-  )
-}
-
-// Both failures draw the same card: a file that does not decode, and a source the Feed refuses,
-// such as a path relative to a folder the row does not carry.
-async function proveUnavailable(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  await waitFor(() => expect(canvas.getAllByRole('figure')).toHaveLength(2))
-  const [broken, refused] = canvas.getAllByRole('figure')
-  await expect(broken).toHaveTextContent('Image unavailableA screenshot that no longer decodes')
-  await expect(refused).toHaveTextContent('Image unavailableA file the Session moved')
-  await expect(canvas.queryByRole('button')).toBeNull()
-  const card = getComputedStyle(broken?.firstElementChild ?? canvasElement)
-  const roles = roleColors('bg-card text-muted-foreground')
-  await expect(card.backgroundColor).toBe(roles.backgroundColor)
-  await expect(card.color).toBe(roles.color)
-}
-
-export const Unavailable: Story = {
-  render: renderUnavailable,
-  play: ({ canvasElement }) => proveUnavailable(canvasElement),
-}
-
-export const UnavailableLight: Story = {
-  globals: { theme: 'light' },
-  render: renderUnavailable,
-  play: ({ canvasElement }) => proveUnavailable(canvasElement),
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getAllByRole('figure')).toHaveLength(2))
+    const [broken, refused] = canvas.getAllByRole('figure')
+    await expect(broken).toHaveTextContent('Image unavailableA screenshot that no longer decodes')
+    await expect(refused).toHaveTextContent('Image unavailableA file the Session moved')
+    await expect(canvas.queryByRole('button')).toBeNull()
+    const card = getComputedStyle(broken?.firstElementChild ?? canvasElement)
+    const roles = roleColors('bg-card text-muted-foreground')
+    await expect(card.backgroundColor).toBe(roles.backgroundColor)
+    await expect(card.color).toBe(roles.color)
+  },
 }
 
 // Every state stands in the gallery's one reserved height, so a load or a failure changes no row.

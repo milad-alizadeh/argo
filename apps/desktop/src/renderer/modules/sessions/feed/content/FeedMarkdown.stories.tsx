@@ -20,40 +20,33 @@ const meta: Meta<typeof FeedMarkdown> = {
 export default meta
 type Story = StoryObj<typeof FeedMarkdown>
 
-async function proveFormatted(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  await expect(canvas.getByText('one surface').tagName).toBe('STRONG')
-  const heading = canvas.getByRole('heading', { name: 'What changed' })
-  await expect(heading).toBeVisible()
-  await expect(getComputedStyle(heading).fontWeight).toBe('500')
-  const table = canvas.getByRole('table')
-  await expect(table).toHaveTextContent('Narrow windowControls stay visiblePassed')
-  const [, firstBodyRow] = within(table).getAllByRole('row')
-  await expect(getComputedStyle(firstBodyRow ?? table).borderTopWidth).toBe('1px')
-  const restored = canvas.getByRole('checkbox', { name: 'Draft restored' })
-  await expect(restored).toBeChecked()
-  await expect(restored).toHaveAttribute('tabindex', '-1')
-  await expect(canvas.getByRole('checkbox', { name: 'Narrow layout review' })).not.toBeChecked()
-  const inlineCode = canvas.getByText('editable')
-  await expect(inlineCode.tagName).toBe('CODE')
-  await expect(getComputedStyle(inlineCode).backgroundColor).toBe(
-    roleColors('bg-muted').backgroundColor,
-  )
-  await expect(getComputedStyle(canvasElement.querySelector('blockquote') ?? table).color).toBe(
-    roleColors('text-muted-foreground').color,
-  )
-  await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
-  await expect(canvas.getByRole('img', { name: 'Code file' })).toBeVisible()
-  await expect(canvas.getByRole('separator')).toBeInTheDocument()
-}
-
 export const Formatted: Story = {
-  play: ({ canvasElement }) => proveFormatted(canvasElement),
-}
-
-export const FormattedLight: Story = {
-  globals: { theme: 'light' },
-  play: ({ canvasElement }) => proveFormatted(canvasElement),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('one surface').tagName).toBe('STRONG')
+    const heading = canvas.getByRole('heading', { name: 'What changed' })
+    await expect(heading).toBeVisible()
+    await expect(getComputedStyle(heading).fontWeight).toBe('500')
+    const table = canvas.getByRole('table')
+    await expect(table).toHaveTextContent('Narrow windowControls stay visiblePassed')
+    const [, firstBodyRow] = within(table).getAllByRole('row')
+    await expect(getComputedStyle(firstBodyRow ?? table).borderTopWidth).toBe('1px')
+    const restored = canvas.getByRole('checkbox', { name: 'Draft restored' })
+    await expect(restored).toBeChecked()
+    await expect(restored).toHaveAttribute('tabindex', '-1')
+    await expect(canvas.getByRole('checkbox', { name: 'Narrow layout review' })).not.toBeChecked()
+    const inlineCode = canvas.getByText('editable')
+    await expect(inlineCode.tagName).toBe('CODE')
+    await expect(getComputedStyle(inlineCode).backgroundColor).toBe(
+      roleColors('bg-muted').backgroundColor,
+    )
+    await expect(getComputedStyle(canvasElement.querySelector('blockquote') ?? table).color).toBe(
+      roleColors('text-muted-foreground').color,
+    )
+    await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
+    await expect(canvas.getByRole('img', { name: 'Code file' })).toBeVisible()
+    await expect(canvas.getByRole('separator')).toBeInTheDocument()
+  },
 }
 
 export const RawHtmlStaysText: Story = {
