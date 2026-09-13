@@ -1,16 +1,10 @@
-// The renderer's one Query cache. A query settles a contract reply: its data is the success, and
-// its error is the channel's own error, code and table text intact.
-import { QueryClient } from '@tanstack/react-query'
+// Account and Ticket reads on the one Query cache (`session-query-provider.tsx`). A query settles a
+// contract reply: its data is the success, and its error is the channel's own error, code and table text intact.
 import type { AccountError } from '@/core/accounts/contract'
 import type { TicketError } from '@/core/tickets/contract'
 
+// Each query names it as its error type: the Session queries on the same cache throw their own.
 export type ContractFailure = AccountError | TicketError
-
-declare module '@tanstack/react-query' {
-  interface Register {
-    defaultError: ContractFailure
-  }
-}
 
 export const QUERY_KEYS = { accounts: ['accounts'], tickets: ['tickets'] } as const
 
@@ -25,7 +19,3 @@ export async function settle<Success extends { type: string }>(
   if (isFailure(reply)) throw reply
   return reply
 }
-
-// A GitHub refusal is drawn at once rather than after three backed-off retries.
-export const createQueryClient = (): QueryClient =>
-  new QueryClient({ defaultOptions: { queries: { retry: false } } })

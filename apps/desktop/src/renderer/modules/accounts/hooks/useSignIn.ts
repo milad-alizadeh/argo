@@ -20,15 +20,15 @@ export type SignIn = {
 
 export function useSignIn(): SignIn {
   const client = useQueryClient()
-  const wait = useMutation({
+  const wait = useMutation<AccountConnected, ContractFailure>({
     mutationFn: () => settle(window.argo.awaitAccount(accountAction('account.await'))),
     onSuccess: (reply) => storeListing(client, reply),
   })
-  const connect = useMutation({
+  const connect = useMutation<AccountChallenge, ContractFailure>({
     mutationFn: () => settle(window.argo.connectAccount(accountAction('account.connect'))),
     onSuccess: () => wait.mutate(),
   })
-  const verify = useMutation({
+  const verify = useMutation<AccountChallenge, ContractFailure>({
     mutationFn: () => settle(window.argo.verifyAccount(accountAction('account.verify'))),
   })
   // A reset observer ignores the abandoned wait's late `sign-in-cancelled` reply.

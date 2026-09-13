@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import type { BindingSummary, TicketBoundReply } from '@/core/tickets/contract'
+import type { BindingSummary, Ticket, TicketBound, TicketBoundReply } from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
 import { bindRequest, projectRequest } from '../lib/requests'
 
@@ -24,7 +24,7 @@ function onRefused(client: QueryClient, projectId: string, failure: ContractFail
 }
 
 export function useBinding(projectId: string | null) {
-  return useQuery({
+  return useQuery<BindingSummary | null, ContractFailure>({
     queryKey: bindingKey(projectId),
     queryFn: projectId
       ? async () =>
@@ -37,7 +37,7 @@ export function useBinding(projectId: string | null) {
 export function useTicketList(projectId: string | null, binding: BindingSummary | null) {
   const client = useQueryClient()
   const ready = projectId !== null && binding?.state === 'ready'
-  return useQuery({
+  return useQuery<Ticket[], ContractFailure>({
     queryKey: listKey(projectId),
     queryFn: ready
       ? async () => {
@@ -57,7 +57,7 @@ function useBindingAction<Input extends { projectId: string }>(
   act: (input: Input) => Promise<TicketBoundReply>,
 ) {
   const client = useQueryClient()
-  return useMutation({
+  return useMutation<TicketBound, ContractFailure, Input>({
     mutationFn: (input: Input) => settle(act(input)),
     onSuccess: (reply, { projectId }) => {
       client.setQueryData(bindingKey(projectId), reply.binding)

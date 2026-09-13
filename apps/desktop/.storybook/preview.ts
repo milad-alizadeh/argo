@@ -2,8 +2,10 @@ import type { Preview } from '@storybook/react'
 import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
+import { SessionQueryProvider } from '../src/renderer/session-query-provider'
 import '../src/renderer/styles/globals.css'
-import { CockpitProviders } from '../src/renderer/modules/cockpit/components/CockpitProviders'
+import { ProjectsProvider } from '../src/renderer/modules/projects/state/ProjectsContext'
+import { ticketsHost } from './tickets-host'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
@@ -68,6 +70,14 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
+  readClaudePermission: (request: { requestId: string; sessionId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.claude.permission.read',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      permission: null,
+    }),
   listProjects: () => Promise.resolve(storybookProjects),
   openProject: () =>
     Promise.resolve({
@@ -77,23 +87,7 @@ host.argo = {
       project: { id: 'storybook-project', name: 'argo' },
     }),
   registerProject: () => Promise.resolve(storybookProjects),
-  // No Account and no Binding: the Tickets screen draws its first-run screen.
-  listAccounts: (request: { requestId: string }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'account.listed',
-      requestId: request.requestId,
-      accounts: [],
-      notice: false,
-    }),
-  readBinding: (request: { requestId: string; projectId: string }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'ticket.bound',
-      requestId: request.requestId,
-      projectId: request.projectId,
-      binding: null,
-    }),
+  ...ticketsHost,
   zoomFactor: () => 1,
 }
 
@@ -108,7 +102,11 @@ const preview: Preview = {
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
       // A story mounts its own Query cache and Project reading, so no reply leaks between stories.
-      return createElement(CockpitProviders, null, Story())
+      return createElement(
+        SessionQueryProvider,
+        null,
+        createElement(ProjectsProvider, null, Story()),
+      )
     },
   ],
   globalTypes: {

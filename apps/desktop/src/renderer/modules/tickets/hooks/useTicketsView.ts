@@ -44,7 +44,7 @@ type Bind = ReturnType<typeof useBind>
 
 function unboundView(
   project: ProjectSummary,
-  accounts: UseQueryResult<AccountListing>,
+  accounts: UseQueryResult<AccountListing, ContractFailure>,
   bind: Bind,
 ): TicketsView {
   if (accounts.isPending) return loading('Reading GitHub Accounts')
@@ -64,7 +64,7 @@ function unboundView(
 type Bound = {
   projectId: string
   binding: BindingSummary
-  list: UseQueryResult<Ticket[]>
+  list: UseQueryResult<Ticket[], ContractFailure>
   onUnbind: () => void
 }
 
