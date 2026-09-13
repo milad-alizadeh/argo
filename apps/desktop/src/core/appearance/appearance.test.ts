@@ -30,22 +30,23 @@ test('a window that cannot read its appearance still draws a dark one', async ()
 test('choosing an appearance sends it and answers with what the main process resolved', async () => {
   const sent = []
   const resolved = { appearance: 'light', dark: false }
-  const surface = client((appearance) => {
+  const surface = client((_operation, appearance) => {
     sent.push(appearance)
     return Promise.resolve(resolved)
   })
   assert.deepEqual(await surface.setAppearance('light'), resolved)
-  assert.deepEqual(sent, ['light'])
+  assert.equal(sent[0].type, 'appearance.set')
+  assert.equal(sent[0].appearance, 'light')
 })
 
 test('an appearance the contract does not name is never sent', async () => {
   const sent = []
-  const surface = client((appearance) => {
+  const surface = client((_operation, appearance) => {
     sent.push(appearance)
     return Promise.resolve({ appearance: 'system', dark: true })
   })
   await surface.setAppearance('sepia')
-  assert.deepEqual(sent, [null])
+  assert.equal(sent[0].type, 'appearance.get')
 })
 
 test('a changed appearance reaches the listener only when it is one', () => {

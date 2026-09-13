@@ -19,12 +19,7 @@ export function useClaudePermission(sessionId: string | null) {
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return null
-      const reply = await window.argo.readClaudePermission({
-        version: 1,
-        type: 'session.claude.permission',
-        requestId: crypto.randomUUID(),
-        sessionId,
-      })
+      const reply = await window.argo.readClaudePermission({ sessionId })
       switch (reply.type) {
         case 'session.claude.permission.read':
           return reply.permission
@@ -66,9 +61,6 @@ function usePermissionDecision() {
       permission: ClaudePermission
     }) => {
       const reply = await window.argo.decideClaudePermission({
-        version: 1,
-        type: 'session.claude.permission.decide',
-        requestId: crypto.randomUUID(),
         sessionId: permission.sessionId,
         permissionId: permission.id,
         decision,

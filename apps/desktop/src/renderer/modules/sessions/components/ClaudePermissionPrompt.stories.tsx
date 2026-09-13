@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 
 const meta = {
+  title: 'Sessions/Permission Prompt',
   component: ClaudePermissionPrompt,
   args: {
     permission: {

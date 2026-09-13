@@ -59,27 +59,3 @@ export const projectCancelledSchema = z.strictObject({
 export type ProjectCancelled = z.infer<typeof projectCancelledSchema>
 
 export type ProjectListReply = ProjectListed | ProjectCancelled | ProjectError
-
-export function isProjectListRequest(value: unknown): value is ProjectListRequest {
-  return projectListRequestSchema.safeParse(value).success
-}
-
-export function isProjectRegisterRequest(value: unknown): value is ProjectRegisterRequest {
-  return projectRegisterRequestSchema.safeParse(value).success
-}
-
-export function isProjectRelocateRequest(value: unknown): value is ProjectRelocateRequest {
-  return projectRelocateRequestSchema.safeParse(value).success
-}
-
-export function isProjectSummary(value: unknown): value is ProjectSummary {
-  return projectSummarySchema.safeParse(value).success
-}
-
-export function isProjectListed(value: unknown): value is ProjectListed {
-  return projectListedSchema.safeParse(value).success
-}
-
-export function isProjectCancelled(value: unknown): value is ProjectCancelled {
-  return projectCancelledSchema.safeParse(value).success
-}

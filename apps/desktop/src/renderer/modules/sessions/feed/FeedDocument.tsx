@@ -8,6 +8,7 @@ import {
 } from '../../../components/ui/empty'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
+import { FeedMarkdown } from './content/FeedMarkdown'
 import { useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = { active: boolean; feed: SessionFeed }
@@ -25,11 +26,17 @@ function FeedRow({ row, height }: { row: SessionFeedRow; height?: number }) {
   )
 }
 
+function PlainText({ text }: { text: string }) {
+  return <p className="whitespace-pre-wrap break-words">{text}</p>
+}
+
 function feedRowContent(row: SessionFeedRow) {
   switch (row.shape) {
     case 'prose':
+      if (row.role === 'assistant') return <FeedMarkdown text={row.text} />
+      return <PlainText text={row.text} />
     case 'thought':
-      return <p className="whitespace-pre-wrap break-words">{row.text}</p>
+      return <PlainText text={row.text} />
     case 'source':
       return <p>{row.label}</p>
     case 'marker':

@@ -1,8 +1,8 @@
 import {
   type ClaudeSessionInterruptReply,
   type ClaudeSessionSendReply,
-  isClaudeSessionInterruptRequest,
-  isClaudeSessionSendRequest,
+  claudeSessionInterruptRequestSchema,
+  claudeSessionSendRequestSchema,
   sessionError,
 } from '@/core/sessions/contract'
 
@@ -20,30 +20,34 @@ export function driveClaudeSession(
   value: unknown,
   driver: ClaudeSessionDrive,
 ): ClaudeSessionSendReply | ClaudeSessionInterruptReply {
-  if (isClaudeSessionSendRequest(value)) {
+  const send = claudeSessionSendRequestSchema.safeParse(value)
+  if (send.success) {
+    const request = send.data
     try {
-      driver.send(value.sessionId, value.prompt)
+      driver.send(request.sessionId, request.prompt)
       return {
         version: 1,
         type: 'session.claude.accepted',
-        requestId: value.requestId,
-        sessionId: value.sessionId,
+        requestId: request.requestId,
+        sessionId: request.sessionId,
       }
     } catch {
-      return sessionError('not-drivable', value.requestId)
+      return sessionError('not-drivable', request.requestId)
     }
   }
-  if (isClaudeSessionInterruptRequest(value)) {
+  const interrupt = claudeSessionInterruptRequestSchema.safeParse(value)
+  if (interrupt.success) {
+    const request = interrupt.data
     try {
-      driver.interrupt(value.sessionId)
+      driver.interrupt(request.sessionId)
       return {
         version: 1,
         type: 'session.claude.accepted',
-        requestId: value.requestId,
-        sessionId: value.sessionId,
+        requestId: request.requestId,
+        sessionId: request.sessionId,
       }
     } catch {
-      return sessionError('not-drivable', value.requestId)
+      return sessionError('not-drivable', request.requestId)
     }
   }
   return sessionError('invalid-request', requestIdOf(value))
