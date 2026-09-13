@@ -4,13 +4,21 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { TicketsSidebarContent } from '../components/TicketsSidebar'
-import { backlog, longBacklog, standalone, ticketsView } from '../components/ticket-fixtures'
+import {
+  backlog,
+  engine,
+  longBacklog,
+  standalone,
+  ticketsView,
+} from '../components/ticket-fixtures'
 import { TicketsScreen } from './TicketsScreenView'
 
 const connection = {
   accountId: 'github:583231',
+  provider: 'github',
   login: 'octocat',
   scope: 'octocat/hello-world',
+  label: 'octocat/hello-world',
   state: 'ready',
 } as const
 
@@ -126,6 +134,19 @@ export const MoreTicketsUnavailable: Story = {
     await expect(shown.getByText('Argo cannot reach GitHub.')).toBeInTheDocument()
     await userEvent.click(shown.getByText('Try again'))
     await expect(retryLoadMore).toHaveBeenCalled()
+  },
+}
+
+// A Linear row carries its team key and workflow status; the Detail adds its priority.
+export const LinearBacklog: Story = {
+  args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const row = canvas.getByRole('button', { name: /^ENG-12/ })
+    await expect(row).toHaveTextContent('In Review')
+    await userEvent.click(row)
+    const detail = canvas.getByRole('article', { name: 'Ticket ENG-12' })
+    await expect(detail).toHaveTextContent('PriorityHigh')
   },
 }
 

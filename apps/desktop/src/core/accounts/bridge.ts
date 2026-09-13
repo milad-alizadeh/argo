@@ -1,4 +1,4 @@
-// The Account channel's main-process end. Every GitHub call and every credential stays behind it:
+// The Account channel's main-process end. Every provider call and every credential stays behind it:
 // the renderer names an action and receives secret-free records (#1763).
 import type { BrowserWindow } from 'electron'
 import { requestIdentifier } from '../../boundary'
@@ -10,6 +10,7 @@ import {
   type AccountError,
   accountError,
   isAccountAction,
+  isAccountConnectRequest,
   isAccountDisconnectRequest,
 } from './contract'
 import { disconnect, dismissNotice, listed } from './listing'
@@ -34,7 +35,10 @@ const bare = (type: string, answer: (context: Context, requestId: string) => Pro
 
 const HANDLERS = {
   'account.list': bare('account.list', ({ access }, requestId) => listed(access, requestId)),
-  'account.connect': bare('account.connect', ({ signIn }, id) => signIn.connect(id)),
+  'account.connect': (request: unknown, { signIn }: Context) =>
+    isAccountConnectRequest(request)
+      ? signIn.connect(request.requestId, request.provider)
+      : accountError('invalid-request', requestIdentifier(request)),
   'account.verify': bare('account.verify', ({ signIn }, id) => signIn.verify(id)),
   'account.await': bare('account.await', ({ signIn }, id) => signIn.wait(id)),
   'account.cancel': bare('account.cancel', ({ signIn }, id) => signIn.cancel(id)),

@@ -1,24 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
-import { accountError } from '@/core/accounts/contract'
-import { octocat } from '../../tickets/components/ticket-fixtures'
+import { type AccountSummary, accountError } from '@/core/accounts/contract'
+import { ada, octocat } from '../../tickets/components/ticket-fixtures'
 import { AccountsPanel, type AccountsPanelProps } from './AccountsDialog'
-import type { SignInPanelProps } from './SignInPanel'
 
-const idle: SignInPanelProps = {
+const idle: AccountsPanelProps['signIn'] = {
   phase: 'idle',
+  provider: null,
   challenge: null,
   connected: null,
   error: null,
   start: fn(),
-  openGitHub: fn(),
+  openProvider: fn(),
   cancel: fn(),
 }
 
+const PROVIDERS = ['github', 'linear'] as const
+const listing = (accounts: AccountSummary[]) => ({
+  accounts,
+  notice: false,
+  providers: [...PROVIDERS],
+})
+
 const connected = {
   ...octocat,
-  connections: [{ projectId: 'argo', projectName: 'argo', scope: 'octocat/hello-world' }],
+  connections: [{ projectId: 'argo', projectName: 'argo', label: 'octocat/hello-world' }],
 }
 const revoked = { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
@@ -34,7 +41,7 @@ const meta: Meta<typeof AccountsPanel> = {
     ),
   ],
   args: {
-    listing: { accounts: [connected, revoked], notice: false },
+    listing: listing([connected, revoked]),
     listError: null,
     signIn: idle,
     disconnecting: null,
@@ -65,7 +72,34 @@ export const Accounts: Story = {
     await expect(revokedRow).toHaveTextContent('Access revoked')
     await expect(revokedRow).toHaveTextContent('No Project reads Tickets through this Account.')
     await userEvent.click(within(revokedRow).getByRole('button', { name: 'Reconnect' }))
-    await expect(args.signIn.start).toHaveBeenCalled()
+    await expect(args.signIn.start).toHaveBeenCalledWith('github')
+    // One button per provider this build can sign in to.
+    await expect(canvas.getByRole('button', { name: 'Connect a Linear Account' })).toBeEnabled()
+  },
+}
+
+// A Linear Account names its workspace, and an expired sign-in reconnects through Linear.
+export const LinearExpired: Story = {
+  args: {
+    listing: listing([
+      {
+        ...ada,
+        state: 'expired',
+        connections: [{ projectId: 'argo', projectName: 'argo', label: 'Engine' }],
+      },
+    ]),
+  },
+  play: async ({ args, canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', {
+      name: 'Linear Account ada@analytical.dev',
+    })
+    await expect(row).toHaveTextContent('Analytical')
+    await expect(row).toHaveTextContent('Sign-in expired')
+    await expect(
+      within(row).getByRole('list', { name: 'Teams for ada@analytical.dev' }),
+    ).toHaveTextContent('argo · Engine')
+    await userEvent.click(within(row).getByRole('button', { name: 'Reconnect' }))
+    await expect(args.signIn.start).toHaveBeenCalledWith('linear')
   },
 }
 
@@ -73,11 +107,13 @@ export const EnterCode: Story = {
   args: {
     signIn: {
       ...idle,
-      phase: 'code',
+      phase: 'waiting',
+      provider: 'github',
       challenge: {
         version: 1,
         type: 'account.challenge',
         requestId: 'request-1',
+        provider: 'github',
         userCode: 'WDJB-MJHT',
         verificationUri: 'https://github.com/login/device',
         expiresAt: 0,
@@ -89,9 +125,34 @@ export const EnterCode: Story = {
     await expect(canvas.getByText('Waiting for GitHub…')).toHaveAttribute('role', 'status')
     await expect(canvas.getByText('WDJB-MJHT')).toHaveAccessibleName('GitHub code')
     await userEvent.click(canvas.getByRole('button', { name: 'Copy code and open GitHub' }))
-    await expect(args.signIn.openGitHub).toHaveBeenCalled()
+    await expect(args.signIn.openProvider).toHaveBeenCalled()
     await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }))
     await expect(args.signIn.cancel).toHaveBeenCalled()
+  },
+}
+
+// Linear asks only for consent in the browser, so there is no code to copy.
+export const AllowInLinear: Story = {
+  args: {
+    signIn: {
+      ...idle,
+      phase: 'waiting',
+      provider: 'linear',
+      challenge: {
+        version: 1,
+        type: 'account.challenge',
+        requestId: 'request-1',
+        provider: 'linear',
+        expiresAt: 0,
+      },
+    },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Waiting for Linear…')).toHaveAttribute('role', 'status')
+    await expect(canvas.queryByRole('status', { name: 'GitHub code' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Linear again' }))
+    await expect(args.signIn.openProvider).toHaveBeenCalled()
   },
 }
 
@@ -113,23 +174,21 @@ export const SignInFailed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      canvas.getByText('The GitHub code expired before it was entered. Start again.'),
+      canvas.getByText('The sign-in expired before it was finished. Start again.'),
     ).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Connect a GitHub Account' })).toBeEnabled()
   },
 }
 
 export const NoAccounts: Story = {
-  args: { listing: { accounts: [], notice: false } },
+  args: { listing: listing([]) },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText('No GitHub Account is connected.'),
-    ).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('No Account is connected.')).toBeInTheDocument()
   },
 }
 
 export const UnreadableSignIn: Story = {
-  args: { listing: { accounts: [{ ...connected, state: 'unreadable' }], notice: false } },
+  args: { listing: listing([{ ...connected, state: 'unreadable' }]) },
   play: async ({ args, canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
     await expect(row).toHaveTextContent('Sign-in unreadable')

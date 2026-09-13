@@ -4,6 +4,7 @@ import type { ConnectionSummary } from '@/core/tickets/contract'
 
 const STATE_MARKS: Record<ConnectionSummary['state'], { mark: string; text: string }> = {
   ready: { mark: 'bg-active', text: 'Connected' },
+  'account-expired': { mark: 'bg-danger', text: 'Sign-in expired' },
   'account-revoked': { mark: 'bg-danger', text: 'Access revoked' },
   'account-unreadable': { mark: 'bg-danger', text: 'Sign-in unreadable' },
   'account-missing': { mark: 'bg-transparent shadow-state-outline', text: 'Disconnected' },

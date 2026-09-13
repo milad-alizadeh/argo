@@ -197,7 +197,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --size-ticket-number: 40px;
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
+  --size-ticket-key: 40px;
+  --size-ticket-key-long: 64px;
   --size-ticket-age: 32px;
   --size-ticket-property: 56px;
   --size-ticket-inspector: 560px;

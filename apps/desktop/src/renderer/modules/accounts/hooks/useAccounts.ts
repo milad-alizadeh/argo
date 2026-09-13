@@ -4,9 +4,13 @@ import type { AccountListed, AccountListReply } from '@/core/accounts/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
 import { accountAction, disconnectRequest } from '../lib/requests'
 
-export type AccountListing = Pick<AccountListed, 'accounts' | 'notice'>
+export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 
-const listing = ({ accounts, notice }: AccountListing): AccountListing => ({ accounts, notice })
+const listing = ({ accounts, notice, providers }: AccountListing): AccountListing => ({
+  accounts,
+  notice,
+  providers,
+})
 
 // A Connection's summary names its Account's state, so a new listing is a new reading of Connections too.
 export function storeListing(client: QueryClient, next: AccountListing): void {

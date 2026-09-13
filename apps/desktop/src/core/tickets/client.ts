@@ -20,10 +20,10 @@ import {
 
 export type TicketClient = {
   readConnection(request: TicketConnectionRequest): Promise<TicketConnectedReply>
-  connectRepository(request: TicketConnectRequest): Promise<TicketConnectedReply>
-  disconnectRepository(request: TicketDisconnectRequest): Promise<TicketConnectedReply>
+  connectSource(request: TicketConnectRequest): Promise<TicketConnectedReply>
+  disconnectSource(request: TicketDisconnectRequest): Promise<TicketConnectedReply>
   listTickets(request: TicketListRequest): Promise<TicketListReply>
-  discoverRepositories(request: TicketDiscoverRequest): Promise<TicketDiscoverReply>
+  discoverSources(request: TicketDiscoverRequest): Promise<TicketDiscoverReply>
 }
 
 export function createTicketClient(invoke: (request: unknown) => Promise<unknown>): TicketClient {
@@ -41,9 +41,9 @@ export function createTicketClient(invoke: (request: unknown) => Promise<unknown
   }
   return {
     readConnection: (request) => forProject(request, isTicketConnectedReply),
-    connectRepository: (request) => forProject(request, isTicketConnectedReply),
-    disconnectRepository: (request) => forProject(request, isTicketConnectedReply),
+    connectSource: (request) => forProject(request, isTicketConnectedReply),
+    disconnectSource: (request) => forProject(request, isTicketConnectedReply),
     listTickets: (request) => forProject(request, isTicketListReply),
-    discoverRepositories: (request) => forProject(request, isTicketDiscoverReply),
+    discoverSources: (request) => forProject(request, isTicketDiscoverReply),
   }
 }

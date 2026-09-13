@@ -1,6 +1,7 @@
 // Every request to GitHub, and the one place a status code becomes a failure the cockpit can name.
 // GitHub throttles with the same 403 it refuses a token with, so the headers are read here, where
 // they still exist.
+import { formBody, readJson, send } from '../request'
 
 export type GitHubFailure =
   | 'unauthorized'
@@ -10,35 +11,11 @@ export type GitHubFailure =
   | 'unreachable'
 export type GitHubRead<T> = { ok: true; value: T } | { ok: false; failure: GitHubFailure }
 
-const TIMEOUT_MILLISECONDS = 15_000
 // GitHub's own ceiling for `per_page`, and a backstop so a runaway listing cannot walk forever.
 const PAGE_SIZE = 100
 const PAGE_LIMIT = 20
 
 export const failed = (failure: GitHubFailure) => ({ ok: false, failure }) as const
-
-async function send(url: string, init: RequestInit): Promise<Response | null> {
-  try {
-    return await fetch(url, {
-      ...init,
-      // GitHub's OAuth endpoints answer form-encoded without this, and its API refuses a request
-      // with no User-Agent.
-      headers: { Accept: 'application/json', 'User-Agent': 'Argo', ...init.headers },
-      signal: AbortSignal.timeout(TIMEOUT_MILLISECONDS),
-      redirect: 'error',
-    })
-  } catch {
-    return null
-  }
-}
-
-async function json(response: Response): Promise<unknown> {
-  try {
-    return await response.json()
-  } catch {
-    return undefined
-  }
-}
 
 // The OAuth endpoints answer a pending grant, a refusal and a success all with a JSON body, so
 // the body and not the status is the answer. Only a body that is not JSON is a transport failure.
@@ -46,13 +23,9 @@ export async function postForm(
   url: string,
   form: Record<string, string>,
 ): Promise<GitHubRead<unknown>> {
-  const response = await send(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(form).toString(),
-  })
+  const response = await send(url, formBody(form))
   if (!response || response.status >= 500) return failed('unreachable')
-  const body = await json(response)
+  const body = await readJson(response)
   return body === undefined ? failed('unreachable') : { ok: true, value: body }
 }
 
@@ -91,7 +64,7 @@ export async function getPage(url: string, token: string): Promise<GitHubRead<Pa
   const refusal = REFUSALS[response.status]
   if (refusal) return failed(refusal)
   if (!response.ok) return failed('unreachable')
-  const body = await json(response)
+  const body = await readJson(response)
   if (body === undefined) return failed('unreachable')
   return { ok: true, value: { body, next: nextPage(response, new URL(url).origin) } }
 }

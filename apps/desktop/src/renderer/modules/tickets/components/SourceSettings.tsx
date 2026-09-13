@@ -15,9 +15,10 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import type { ContractFailure } from '../../../lib/query-client'
+import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { ConnectionStatusMark } from './ConnectionStatusMark'
 
-export type RepositorySettingsProps = {
+export type SourceSettingsProps = {
   // Undefined while the Connection is read; null when the Project has none.
   connection: ConnectionSummary | null | undefined
   error: ContractFailure | null
@@ -28,12 +29,7 @@ export type RepositorySettingsProps = {
 
 const mediaTile = 'size-8 rounded-md bg-muted text-muted-foreground'
 
-function Repository({
-  connection,
-  disconnecting,
-  onDisconnect,
-  onConnect,
-}: RepositorySettingsProps) {
+function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSettingsProps) {
   if (connection === undefined) {
     return (
       <Item role="status" variant="outline">
@@ -41,7 +37,9 @@ function Repository({
           <Spinner aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemDescription className="type-meta">Reading the connected repository…</ItemDescription>
+          <ItemDescription className="type-meta">
+            Reading the connected Ticket source…
+          </ItemDescription>
         </ItemContent>
       </Item>
     )
@@ -53,12 +51,14 @@ function Repository({
           <BookMarked aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle className="type-label">No repository connected</ItemTitle>
-          <ItemDescription className="type-meta">Connect a GitHub repository.</ItemDescription>
+          <ItemTitle className="type-label">No Ticket source connected</ItemTitle>
+          <ItemDescription className="type-meta">
+            Connect a GitHub repository or a Linear team.
+          </ItemDescription>
         </ItemContent>
         <ItemActions>
           <Button
-            aria-label="Connect a repository"
+            aria-label="Connect a Ticket source"
             className="type-label"
             onClick={onConnect}
             size="sm"
@@ -69,24 +69,23 @@ function Repository({
       </Item>
     )
   }
+  const { name, scope } = PROVIDER_PRESENTATION[connection.provider]
   return (
     <Item variant="outline">
       <ItemMedia className={mediaTile} variant="icon">
         <BookMarked aria-hidden="true" />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="type-label max-w-full truncate font-mono">
-          {connection.scope}
-        </ItemTitle>
+        <ItemTitle className="type-label max-w-full truncate">{connection.label}</ItemTitle>
         <ItemDescription className="type-meta flex items-center gap-(--spacing-shell-icon)">
           <ConnectionStatusMark state={connection.state}>
-            Read through {connection.login ?? 'a disconnected Account'}
+            Read through {name} · {connection.login ?? 'a disconnected Account'}
           </ConnectionStatusMark>
         </ItemDescription>
       </ItemContent>
       <ItemActions>
         <Button
-          aria-label="Disconnect repository"
+          aria-label={`Disconnect ${scope.one}`}
           className="type-label"
           disabled={disconnecting}
           onClick={onDisconnect}
@@ -100,20 +99,20 @@ function Repository({
   )
 }
 
-// The one GitHub repository a Project reads its Tickets from (CONTEXT.md · Connection).
-export function RepositorySettings(props: RepositorySettingsProps) {
+// The one GitHub repository or Linear team a Project reads its Tickets from (CONTEXT.md · Connection).
+export function SourceSettings(props: SourceSettingsProps) {
   const section = useRef<HTMLElement>(null)
   // Disconnecting removes the control that did it.
   useFocusRescue(section, props.connection === null)
   return (
-    <section aria-label="Repository" className="grid gap-(--spacing-shell-item)" ref={section}>
+    <section aria-label="Ticket source" className="grid gap-(--spacing-shell-item)" ref={section}>
       <div className="grid gap-(--spacing-shell-tight)">
         <h3 className="type-label">Tickets</h3>
         <p className="type-meta text-muted-foreground">
-          Argo reads a Project's Tickets from one GitHub repository.
+          Argo reads a Project's Tickets from one GitHub repository or Linear team.
         </p>
       </div>
-      <Repository {...props} />
+      <Source {...props} />
       {props.error ? (
         <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
           <TriangleAlert aria-hidden="true" />

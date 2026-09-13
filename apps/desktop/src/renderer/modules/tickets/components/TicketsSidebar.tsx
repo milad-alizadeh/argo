@@ -4,6 +4,7 @@ import type { ConnectionSummary } from '@/core/tickets/contract'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import { SignInNotice, type SignInNoticeProps } from '../../accounts/components/SignInNotice'
 import { useAccounts, useDismissNotice } from '../../accounts/hooks/useAccounts'
+import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
 import { useConnection, useTicketList } from '../hooks/useTickets'
@@ -32,10 +33,10 @@ function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
       >
         {connection ? (
           <ConnectionStatusMark state={connection.state}>
-            GitHub · {connection.login ?? 'no Account'}
+            {PROVIDER_PRESENTATION[connection.provider].name} · {connection.login ?? 'no Account'}
           </ConnectionStatusMark>
         ) : (
-          <span className="min-w-0 flex-1 truncate">GitHub Accounts</span>
+          <span className="min-w-0 flex-1 truncate">Accounts</span>
         )}
       </button>
     </footer>
@@ -57,7 +58,7 @@ export function TicketsSidebarContent({
       className="flex h-full min-h-0 flex-col bg-sidebar"
       ref={sidebar}
     >
-      <TicketsSidebarHeader scope={connection?.scope ?? null} />
+      <TicketsSidebarHeader connection={connection} />
       <nav
         aria-label="Ticket views"
         className="min-h-0 flex-1 overflow-y-auto p-(--spacing-shell-item)"

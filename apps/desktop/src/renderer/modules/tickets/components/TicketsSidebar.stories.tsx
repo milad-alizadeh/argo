@@ -6,8 +6,10 @@ import { TicketsSidebarContent, type TicketsSidebarContentProps } from './Ticket
 
 const connection = {
   accountId: 'github:583231',
+  provider: 'github',
   login: 'octocat',
   scope: 'octocat/hello-world',
+  label: 'octocat/hello-world',
   state: 'ready',
 } satisfies TicketsSidebarContentProps['connection']
 
@@ -64,7 +66,29 @@ export const NotConnected: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'New Ticket' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Find a Ticket' })).toBeDisabled()
-    await expect(canvas.getByRole('button', { name: 'GitHub Accounts' })).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Accounts' })).toBeInTheDocument()
+  },
+}
+
+// Linear has no new-issue page Argo can link to, so the sidebar offers none.
+export const Linear: Story = {
+  args: {
+    connection: {
+      accountId: 'linear:user-ada',
+      provider: 'linear',
+      login: 'ada@analytical.dev',
+      scope: 'team-engine',
+      label: 'Engine',
+      state: 'ready',
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: 'New Ticket' })).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'Find a Ticket' })).toBeEnabled()
+    await expect(
+      canvas.getByRole('button', { name: 'Linear · ada@analytical.dev Connected' }),
+    ).toBeInTheDocument()
   },
 }
 
@@ -72,11 +96,11 @@ export const NotConnected: Story = {
 export const SignInNotice: Story = {
   args: { connection: null, openCount: null, notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ args, canvasElement }) => {
-    const notice = within(canvasElement).getByRole('region', { name: 'GitHub sign-in notice' })
+    const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
     await expect(notice).toHaveTextContent(
       'Accounts from the earlier Argo app are not carried over.',
     )
-    await userEvent.click(within(notice).getByRole('button', { name: 'Connect GitHub' }))
+    await userEvent.click(within(notice).getByRole('button', { name: 'Connect an Account' }))
     await expect(args.notice?.onConnect).toHaveBeenCalled()
   },
 }
