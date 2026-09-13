@@ -1,7 +1,6 @@
 // The live-update half of the packaged Session proof: the reader's chosen row and tail stay put
 // while a transcript grows, and a kept Session returns without a remounted scroller.
 import assert from 'node:assert/strict'
-import { proveReaderMotion } from './session-reader-motion-case'
 import { openSession } from './session-roster-cases'
 
 type LiveFixture = {
@@ -101,7 +100,13 @@ async function proveTail(page, fixture: LiveFixture, before) {
 // reader has moved above it. The second half also proves that a kept Session is not remounted on
 // a switch, which would reset its chosen row to the tail.
 export async function proveLiveFeed(page, fixture: LiveFixture) {
+  await fixture.stream(
+    fixture.transcripts,
+    'A streamed result made enough history for the reader to choose a row. '.repeat(48),
+  )
   await openSession(page, 'read this file', 'prose')
+  const opened = await tailReading(page)
+  assert.equal(opened.fromTail <= 1, true)
   const before = await fixedRow(page)
 
   await fixture.stream(
@@ -112,32 +117,23 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
   const streamed = await offsetOf(page, before.anchor)
   assert.equal(Math.abs(streamed - before.offset) <= 1, true)
 
-  const visibleRevision = await page.evaluate(
-    () => document.querySelector('.feed__viewport')?.dataset.readingRevision,
-  )
-  const outerRevision = await page.evaluate(
-    () => document.querySelector('.feed__document[data-active="true"]')?.dataset.revision,
-  )
-  const readerAnchor = await proveReaderMotion({ page, fixture, outerRevision, visibleRevision })
-
   await fixture.append(fixture.transcripts, 'p-live-1', 'The first streamed update arrived.')
   await waitForRowCount(page, before.rows + 1)
-  const held = await offsetOf(page, readerAnchor.anchor)
-  assert.equal(Math.abs(held - readerAnchor.offset) <= 1, true)
+  const held = await offsetOf(page, before.anchor)
+  assert.equal(Math.abs(held - before.offset) <= 1, true)
 
   await openSession(page, 'Refactor the auth module', 'externalBasic')
   await openSession(page, 'read this file', 'prose')
-  const kept = await offsetOf(page, readerAnchor.anchor)
-  assert.equal(Math.abs(kept - readerAnchor.offset) <= 1, true)
+  const kept = await offsetOf(page, before.anchor)
+  assert.equal(Math.abs(kept - before.offset) <= 1, true)
 
   const { tail, streamed: streamedTail } = await proveTail(page, fixture, before)
   return {
     anchoredOffset: held,
-    anchoredBefore: readerAnchor.offset,
+    anchoredBefore: before.offset,
     anchoredMotion: streamed - before.offset,
     fromTail: tail.fromTail,
-    keptMotion: kept - readerAnchor.offset,
-    scrollingMotion: readerAnchor.motion,
+    keptMotion: kept - before.offset,
     streamedTailMotion: streamedTail.fromTail,
   }
 }

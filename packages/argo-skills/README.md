@@ -31,23 +31,22 @@ installs its own skills with the same command, so an edit to one of Argo's skill
 ## Install, in a project
 
 ```bash
-npx skills@latest add milad-alizadeh/argo
+npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes
 ```
 
-**Run it interactively and answer both questions.** It asks which agents to install for, and then
-"Installation method". The second question is asked only when the chosen agents span more than one
-skills directory, and answering it is what makes the CLI write
-`.claude/skills/<name> -> ../../.agents/skills/<name>` itself. So pick claude-code **and** a
-universal agent such as codex; passing `--yes` suppresses the question, and the symlinks it would
-have built are then never built, so `.claude/skills/` stays empty.
+The command asks no questions, so a person or an agent can run it. The skills go into
+`.agents/skills/`, which Codex reads, and the CLI writes
+`.claude/skills/<name> -> ../../.agents/skills/<name>` for Claude Code.
 
-That question is the whole reason a bespoke installer existed here. It no longer does, so the
-answer is a human's or an agent's, every time.
+Name the agents with `--agent`. Without it, `--yes` installs for every agent that the CLI detects
+on the machine: Claude Code, Codex, Cursor, Warp and Zed on the test machine. This was tested
+with `skills` 1.5.26 on 2026-09-13. In that test, `--yes` built the `.claude/skills/` symlink
+with and without `--agent`.
 
 Install a subset with `--skill`:
 
 ```bash
-npx skills@latest add milad-alizadeh/argo --skill interface-review ship
+npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes --skill interface-review ship
 ```
 
 Entries the target project locked itself are kept, so a subset install into a non-empty project
@@ -59,8 +58,8 @@ yields the union, not just the subset.
 npx skills update --project --yes
 ```
 
-`--yes` is safe here and it is not on the add path: update reads the installed agent set off disk
-rather than asking, so Claude Code survives the refresh. It fetches each source's latest rather
+Update reads the installed agent set off disk rather than asking, so Claude Code survives the
+refresh. It fetches each source's latest rather
 than a pinned revision, because Argo's lock entries carry no `ref`.
 
 ## Everything the install does not do
@@ -93,9 +92,9 @@ unchanged.
 It is **not a version pin.** Entries carry no `ref`, so a restore installs whatever each source's
 default branch holds today; `computedHash` is content identity, not a lock.
 
-Nothing verifies the manifest without installing from it. There is no dry run, and the install is
-interactive, so an edit here is proved by running it in a checkout and reading what appeared under
-`.claude/skills`, never by a diff, since neither skills directory is tracked.
+Nothing verifies the manifest without installing from it. There is no dry run, so an edit here is proved
+by running the install in a checkout and reading what appeared under `.claude/skills`, never by a
+diff, since neither skills directory is tracked.
 
 ### Add a bundled skill
 
