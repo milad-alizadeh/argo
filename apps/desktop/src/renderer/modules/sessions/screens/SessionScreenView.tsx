@@ -70,7 +70,14 @@ export function SessionShell({
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} />
             </section>
-            <section aria-label="Session composer" className="shrink-0 border-t border-border/60">
+            <section
+              aria-label="Session composer"
+              className="relative isolate shrink-0 bg-background"
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+              />
               {composer}
             </section>
           </section>

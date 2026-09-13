@@ -39,9 +39,6 @@
   --spacing-shell-inset: 16px;
   --spacing-shell-section: 24px;
   --spacing-shell-region: 32px;
-  /* One surface shadow for the composer assembly, one for a control that floats on it (#1258). */
-  --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
-  --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
   --duration-control: 150ms;
   --duration-layout: 300ms;
   --duration-attention: 400ms;

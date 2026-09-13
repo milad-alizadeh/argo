@@ -62,6 +62,7 @@
   --text-session-heading: var(--text-sm, 0.875rem);
   --text-prose: var(--text-sm, 0.875rem);
   --text-label: var(--text-xs, 0.75rem);
+  --text-composer-control: var(--text-control);
   --text-session-title: var(--text-xl, 1.25rem);
   --text-session-body: var(--text-sm, 0.875rem);
   --text-session-meta: var(--text-xs, 0.75rem);
@@ -82,6 +83,10 @@
     2 *
     var(--spacing-composer-attachment-gutter)
   );
+  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --size-composer-plan-state: calc(var(--size-composer-field) * 2);
+  --size-session-composer-fade: calc(var(--spacing-shell-region) * 2);
+  --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
   --size-traffic-light: 12px;
   --inset-traffic-light-control: 18px;
   --color-traffic-light-close: #ff5f57;
@@ -102,6 +107,7 @@
   --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
   --text-prose--line-height: var(--leading-6, 1.5rem);
   --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-composer-control--line-height: var(--text-control--line-height);
   --text-meta--line-height: var(--text-xs--line-height, 1rem);
   --text-code--line-height: var(--leading-5, 1.25rem);
   --text-title-weight: 500;
@@ -109,6 +115,7 @@
   --text-body-weight: 400;
   --text-prose-weight: 400;
   --text-label-weight: 500;
+  --text-composer-control-weight: 400;
   --text-meta-weight: 400;
   --text-code-weight: 400;
   --text-title-tracking: normal;
@@ -116,6 +123,7 @@
   --text-body-tracking: normal;
   --text-prose-tracking: normal;
   --text-label-tracking: normal;
+  --text-composer-control-tracking: normal;
   --text-meta-tracking: normal;
   --text-code-tracking: normal;
 }
@@ -150,8 +158,6 @@
   --spacing-shell-inset: 16px;
   --spacing-shell-section: 24px;
   --spacing-shell-region: 32px;
-  --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
-  --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
   --duration-control: 150ms;
   --duration-layout: 300ms;
   --duration-attention: 400ms;
