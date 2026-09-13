@@ -5,6 +5,11 @@ import { expect, userEvent, within } from 'storybook/test'
 import { Button } from '../../../components/ui/button'
 import { SessionComposer } from './SessionComposer'
 
+const plan = {
+  state: 'available' as const,
+  entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
+}
+
 function ComposerStory() {
   const [sessionId, setSessionId] = useState('session-one')
   const [sent, setSent] = useState<string | null>(null)
@@ -101,6 +106,18 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
+
+export const WithPlan: Story = {
+  render: () => (
+    <div className="mx-auto max-w-4xl p-8">
+      <SessionComposer onSend={async () => true} plan={plan} sessionId="planned-session" />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const composer = within(canvasElement).getByLabelText('Message')
+    await expect(composer.parentElement?.parentElement).toHaveClass('min-h-40')
   },
 }
 
