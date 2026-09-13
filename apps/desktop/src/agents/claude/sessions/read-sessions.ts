@@ -14,9 +14,18 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
+  orphans?: () => ReadonlySet<string>
 }): SessionReader {
   return createTranscriptSessionReader({
-    discoverSessions: () => discoverSessions(roots.transcripts, roots.archive),
+    discoverSessions: async () => {
+      const discovered = await discoverSessions(roots.transcripts, roots.archive)
+      // ADR-0026: a Session an Argo held and no running window holds now reads orphaned.
+      const orphans = roots.orphans?.() ?? new Set()
+      const graded = discovered.rows.map(
+        (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
+      )
+      return { ...discovered, rows: graded }
+    },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,
     managedSessions: roots.managedSessions,

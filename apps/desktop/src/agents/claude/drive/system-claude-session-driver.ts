@@ -5,7 +5,9 @@ import * as path from 'node:path'
 import * as pty from 'node-pty'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
+import { createOwnershipLedger, isProcessAlive } from './ownership-ledger'
 import { createClaudePermissionGate } from './permission-gate'
 
 function loginShellPath(): string {
@@ -37,12 +39,24 @@ function claudeExecutable(): string | null {
   )
 }
 
-export function createSystemClaudeSessionDriver(permissionRoot: string) {
-  const gate = createClaudePermissionGate(permissionRoot)
+export function createSystemClaudeSessionDriver(paths: {
+  permissions: string
+  ledger: string
+  transcripts: string
+  // A proof names its fake `claude` here; a person's launch finds the real one on the login PATH.
+  executable?: string
+}) {
+  const gate = createClaudePermissionGate(paths.permissions)
   const driver = createClaudeSessionDriver({
-    findExecutable: claudeExecutable,
+    findExecutable: () => paths.executable ?? claudeExecutable(),
     mintSessionId: randomUUID,
     now: () => new Date(),
+    ledger: createOwnershipLedger({
+      path: paths.ledger,
+      owner: { pid: process.pid, registry: randomUUID() },
+      isAlive: isProcessAlive,
+    }),
+    resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),
     schedule: (callback, delayMs) => {
       setTimeout(callback, delayMs)
     },
@@ -69,5 +83,9 @@ export function createSystemClaudeSessionDriver(permissionRoot: string) {
         ),
     pendingPermission: gate.pending,
     decidePermission: gate.decide,
+    close() {
+      driver.close()
+      gate.close()
+    },
   }
 }
