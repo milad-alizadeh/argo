@@ -8,6 +8,11 @@ import {
   claudeSessionPermissionReplySchema,
   claudeSessionSendReplySchema,
   claudeSessionStartReplySchema,
+  type CodexSessionInterruptReply,
+  type CodexSessionSendReply,
+  type CodexSessionStartReply,
+  codexSessionSendReplySchema,
+  codexSessionStartReplySchema,
   type SessionFeedReply,
   type SessionListReply,
   sessionError,
@@ -26,6 +31,9 @@ export type SessionClient = {
     permissionId: string
     decision: 'allow' | 'deny'
   }): Promise<ClaudeSessionPermissionDecisionReply>
+  interruptCodexSession(request: { sessionId: string }): Promise<CodexSessionInterruptReply>
+  sendCodexSession(request: { sessionId: string; prompt: string }): Promise<CodexSessionSendReply>
+  startCodexSession(request: { cwd: string; prompt: string }): Promise<CodexSessionStartReply>
   listSessions(): Promise<SessionListReply>
   readSessionFeed(request: {
     sessionId: string
@@ -35,7 +43,7 @@ export type SessionClient = {
 
 type Invoke = (operation: keyof typeof SESSION_OPERATIONS, request: unknown) => Promise<unknown>
 type ReplySchema<Reply> = {
-  safeParse(value: unknown, options?: { jitless?: boolean }): { success: boolean; data?: Reply }
+  safeParse(value: unknown): { success: boolean; data?: Reply }
 }
 
 // A reply that is not the shape asked for, or answers a different request, is refused rather
@@ -51,7 +59,7 @@ async function ask<Reply>(
   } catch {
     return sessionError('connection-lost', requestId)
   }
-  const parsed = schema.safeParse(reply, { jitless: true })
+  const parsed = schema.safeParse(reply)
   if (!parsed.success) return sessionError('invalid-response', requestId)
   return parsed.data as Reply
 }
@@ -75,6 +83,9 @@ export function createSessionClient(invoke: Invoke): SessionClient {
       'decideClaudePermission',
       claudeSessionSendReplySchema,
     ),
+    interruptCodexSession: clientRequest(invoke, 'interruptCodex', codexSessionSendReplySchema),
+    sendCodexSession: clientRequest(invoke, 'sendCodex', codexSessionSendReplySchema),
+    startCodexSession: clientRequest(invoke, 'startCodex', codexSessionStartReplySchema),
     listSessions: () => clientRequest(invoke, 'list', sessionListReplySchema)(undefined),
     async readSessionFeed(request) {
       const requestId = randomUUID()

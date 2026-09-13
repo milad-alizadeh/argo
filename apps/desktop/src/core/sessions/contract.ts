@@ -100,6 +100,48 @@ export type ClaudeSessionPermissionDecisionRequest = z.infer<
   typeof claudeSessionPermissionDecisionRequestSchema
 >
 
+export const codexSessionStartRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.codex.start'),
+  requestId: identifierSchema,
+  cwd: z.string().min(1),
+  prompt: z.string().refine((value) => value.trim().length > 0),
+})
+export type CodexSessionStartRequest = z.infer<typeof codexSessionStartRequestSchema>
+
+export const codexSessionStartedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.codex.started'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type CodexSessionStarted = z.infer<typeof codexSessionStartedSchema>
+
+export const codexSessionSendRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.codex.send'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  prompt: z.string().refine((value) => value.trim().length > 0),
+})
+export type CodexSessionSendRequest = z.infer<typeof codexSessionSendRequestSchema>
+
+export const codexSessionInterruptRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.codex.interrupt'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type CodexSessionInterruptRequest = z.infer<typeof codexSessionInterruptRequestSchema>
+
+export const codexSessionAcceptedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.codex.accepted'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type CodexSessionAccepted = z.infer<typeof codexSessionAcceptedSchema>
+
 export const sessionsListedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.listed'),
@@ -160,6 +202,11 @@ export const claudeSessionPermissionReplySchema = z.union([
   claudeSessionPermissionReadSchema,
   sessionErrorSchema,
 ])
+export const codexSessionStartReplySchema = z.union([
+  codexSessionStartedSchema,
+  sessionErrorSchema,
+])
+export const codexSessionSendReplySchema = z.union([codexSessionAcceptedSchema, sessionErrorSchema])
 
 export type SessionListReply = z.infer<typeof sessionListReplySchema>
 export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
@@ -168,6 +215,9 @@ export type ClaudeSessionSendReply = z.infer<typeof claudeSessionSendReplySchema
 export type ClaudeSessionInterruptReply = z.infer<typeof claudeSessionSendReplySchema>
 export type ClaudeSessionPermissionReply = z.infer<typeof claudeSessionPermissionReplySchema>
 export type ClaudeSessionPermissionDecisionReply = z.infer<typeof claudeSessionSendReplySchema>
+export type CodexSessionStartReply = z.infer<typeof codexSessionStartReplySchema>
+export type CodexSessionSendReply = z.infer<typeof codexSessionSendReplySchema>
+export type CodexSessionInterruptReply = z.infer<typeof codexSessionSendReplySchema>
 
 // This table is the Session IPC contract. Adding an operation means adding its four wire facts
 // here and one handler; clients and bridges select this entry rather than maintaining a second

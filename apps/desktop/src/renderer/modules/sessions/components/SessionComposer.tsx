@@ -5,15 +5,76 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { ArrowUp } from 'lucide-react'
-import { type RefObject, useCallback, useRef, useState } from 'react'
+import { type KeyboardEvent, type RefObject, useCallback, useRef, useState } from 'react'
 
 import { Button } from '../../../components/ui/button'
+import type { SessionCli } from '../hooks/useSessionComposer'
 
 export type SessionComposerProps = {
   isRunning?: boolean
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string) => Promise<boolean>
+  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
+}
+
+const CLI_OPTIONS = ['claude', 'codex'] as const
+
+// Shown only for a brand-new Session, before one exists to observe a CLI from: enough to prove
+// the Codex path without building the full harness/model/effort picker (#1844, #1885).
+function ComposerCliToggle({
+  cli,
+  onChangeCli,
+}: {
+  cli: SessionCli
+  onChangeCli: (cli: SessionCli) => void
+}) {
+  // WAI-ARIA APG radiogroup: only the checked option is tabbable, and Left/Right/Home/End move
+  // both selection and focus among the options.
+  const moveSelection = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>) => {
+      const index = CLI_OPTIONS.indexOf(cli)
+      const next =
+        event.key === 'ArrowRight'
+          ? CLI_OPTIONS[(index + 1) % CLI_OPTIONS.length]
+          : event.key === 'ArrowLeft'
+            ? CLI_OPTIONS[(index - 1 + CLI_OPTIONS.length) % CLI_OPTIONS.length]
+            : event.key === 'Home'
+              ? CLI_OPTIONS[0]
+              : event.key === 'End'
+                ? CLI_OPTIONS[CLI_OPTIONS.length - 1]
+                : undefined
+      if (next === undefined) return
+      event.preventDefault()
+      const group = event.currentTarget.parentElement
+      onChangeCli(next)
+      requestAnimationFrame(() => {
+        group?.querySelector<HTMLButtonElement>(`[data-cli-option="${next}"]`)?.focus()
+      })
+    },
+    [cli, onChangeCli],
+  )
+
+  return (
+    <div className="flex items-center gap-1 pt-2" role="radiogroup" aria-label="Choose CLI">
+      {CLI_OPTIONS.map((option) => (
+        <Button
+          key={option}
+          data-cli-option={option}
+          type="button"
+          role="radio"
+          aria-checked={cli === option}
+          tabIndex={cli === option ? 0 : -1}
+          variant={cli === option ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => onChangeCli(option)}
+          onKeyDown={moveSelection}
+        >
+          {option === 'claude' ? 'Claude Code' : 'Codex'}
+        </Button>
+      ))}
+    </div>
+  )
 }
 
 function editorState(text: string) {
@@ -91,6 +152,7 @@ export function SessionComposer({
   onInterrupt,
   sessionId,
   onSend,
+  cliPicker,
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
@@ -128,6 +190,9 @@ export function SessionComposer({
         void send()
       }}
     >
+      {cliPicker ? (
+        <ComposerCliToggle cli={cliPicker.cli} onChangeCli={cliPicker.onChangeCli} />
+      ) : null}
       <div className="relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10">
         <div className="min-w-0 flex-1">
           <ComposerEditor

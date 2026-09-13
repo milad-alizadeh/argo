@@ -25,6 +25,21 @@ type TranscriptSessionSource = {
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
 }
 
+// A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
+// discovery sweep alone can miss it, or hold a stale posture for one it has already found.
+export function mergeManagedRoster(
+  discovered: Discovery,
+  managed: SessionRosterRow[],
+): Discovery {
+  const managedById = new Map(managed.map((session) => [session.id, session]))
+  const observed = discovered.rows.map((session) => {
+    const held = managedById.get(session.id)
+    return held === undefined ? session : { ...session, posture: held.posture }
+  })
+  const unobserved = managed.filter((session) => !discovered.rows.some(({ id }) => id === session.id))
+  return { ...discovered, rows: [...observed, ...unobserved] }
+}
+
 function versionFailure(value: unknown) {
   return isRecord(value) && typeof value.version === 'number' && value.version !== 1
 }

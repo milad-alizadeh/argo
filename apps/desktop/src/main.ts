@@ -4,6 +4,7 @@ import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { windowBackground } from './core/appearance/appearance'
 import {
@@ -104,6 +105,7 @@ function createWindow(): BrowserWindow {
   const claudeSessionDriver = createSystemClaudeSessionDriver(
     path.join(userData, 'claude-permission-plugins'),
   )
+  const codexSessionDriver = createSystemCodexSessionDriver()
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: combineSessionReaders([
@@ -112,15 +114,22 @@ function createWindow(): BrowserWindow {
         archive: claudeArchiveRoot(),
         managedSessions: claudeSessionDriver.roster,
       }),
-      createCodexSessionReader(codexTranscriptsRoot()),
+      createCodexSessionReader(codexTranscriptsRoot(), {
+        managedSessions: codexSessionDriver.roster,
+      }),
     ]),
     driver: claudeSessionDriver,
     starter: claudeSessionDriver,
+    codexDriver: codexSessionDriver,
+    codexStarter: codexSessionDriver,
     rendererURL,
   })
   attachAppearanceBridge(window, { userData, rendererURL })
   installMenu(window)
-  app.once('before-quit', () => claudeSessionDriver.close())
+  app.once('before-quit', () => {
+    claudeSessionDriver.close()
+    codexSessionDriver.close()
+  })
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)

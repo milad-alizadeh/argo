@@ -5,9 +5,13 @@ import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
 import { invalidateSessionRoster } from '../session-queries'
 import { useClaudeSessionMutations } from './useClaudeSessionMutations'
+import { useCodexSessionMutations } from './useCodexSessionMutations'
 import type { useSessions } from './useSessions'
 
-type ClaudeComposerOptions = {
+export type SessionCli = 'claude' | 'codex'
+
+type SessionComposerOptions = {
+  cli: SessionCli
   cockpit: Cockpit
   navigate: NavigateFunction
   roster: ReturnType<typeof useSessions>['roster']
@@ -15,7 +19,7 @@ type ClaudeComposerOptions = {
 }
 
 function managedSessionIsRunning(
-  roster: ClaudeComposerOptions['roster'],
+  roster: SessionComposerOptions['roster'],
   sessionId: string | null,
 ): boolean {
   return (
@@ -26,18 +30,26 @@ function managedSessionIsRunning(
   )
 }
 
-export function useClaudeComposer({
+// A CLI's own hook owns its IPC calls (ADR-0021); this is the one seam that picks between them,
+// so the composer it hands back never has to know which CLI it is driving.
+function useMutationsFor(cli: SessionCli) {
+  const mutationsByCli = { claude: useClaudeSessionMutations(), codex: useCodexSessionMutations() }
+  return mutationsByCli[cli]
+}
+
+export function useSessionComposer({
+  cli,
   cockpit,
   navigate,
   roster,
   selectedSessionId,
-}: ClaudeComposerOptions): {
+}: SessionComposerOptions): {
   failure: string | null
   props: SessionComposerProps
 } {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
-  const { interrupt, send, start } = useClaudeSessionMutations()
+  const { interrupt, send, start } = useMutationsFor(cli)
   const onInterrupt = useCallback(async () => {
     if (selectedSessionId === null) return false
     try {
@@ -53,7 +65,7 @@ export function useClaudeComposer({
       if (selectedSessionId !== null)
         return sendMessage({ send, prompt, sessionId: selectedSessionId, setFailure })
       if (cockpit.project === null) {
-        setFailure('Select a Project before starting a Claude Session.')
+        setFailure('Select a Project before starting a Session.')
         return false
       }
       try {
@@ -63,7 +75,7 @@ export function useClaudeComposer({
         navigate(`/sessions/${reply.sessionId}`)
         return true
       } catch (error) {
-        setFailure(messageFrom(error, 'Argo could not start Claude Code.'))
+        setFailure(messageFrom(error, 'Argo could not start this Session.'))
         return false
       }
     },
@@ -86,7 +98,7 @@ async function sendMessage({
   sessionId,
   setFailure,
 }: {
-  send: ReturnType<typeof useClaudeSessionMutations>['send']
+  send: ReturnType<typeof useMutationsFor>['send']
   prompt: string
   sessionId: string
   setFailure: (message: string) => void
