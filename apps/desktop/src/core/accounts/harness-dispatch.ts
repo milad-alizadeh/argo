@@ -54,6 +54,12 @@ export async function dispatchTicket(
         query: typeof fields.query === 'string' ? fields.query : '',
         cursor: typeof fields.cursor === 'string' ? fields.cursor : null,
       })
+    case 'ticket.update':
+      return tickets.updateStatus({
+        projectId,
+        key: String(fields.key),
+        statusId: String(fields.statusId),
+      })
     default:
       throw new Error(`unknown ticket operation ${type}`)
   }

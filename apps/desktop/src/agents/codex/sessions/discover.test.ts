@@ -9,7 +9,7 @@ import { createCodexSessionReader } from './read-sessions'
 const listing = { version: 1 as const, type: 'session.list' as const, requestId: 'list-1' }
 
 function listSessions(value: unknown, root: string) {
-  return createCodexSessionReader(root).listSessions(value)
+  return createCodexSessionReader(root).listSessions(value as never)
 }
 
 function listed(reply: Awaited<ReturnType<typeof listSessions>>) {
