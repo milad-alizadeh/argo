@@ -1,8 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
-import { rereadSessions, type useSessions } from './useSessions'
+import { invalidateSessionRoster } from '../session-queries'
+import { useClaudeSessionMutations } from './useClaudeSessionMutations'
+import type { useSessions } from './useSessions'
 
 type ClaudeComposerOptions = {
   cockpit: Cockpit
@@ -33,53 +36,38 @@ export function useClaudeComposer({
   props: SessionComposerProps
 } {
   const [failure, setFailure] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const { interrupt, send, start } = useClaudeSessionMutations()
   const onInterrupt = useCallback(async () => {
     if (selectedSessionId === null) return false
-    const reply = await window.argo.interruptClaudeSession({
-      version: 1,
-      type: 'session.claude.interrupt',
-      requestId: crypto.randomUUID(),
-      sessionId: selectedSessionId,
-    })
-    if (reply.type !== 'session.error') return true
-    setFailure(reply.message)
-    return false
-  }, [selectedSessionId])
+    try {
+      await interrupt.mutateAsync(selectedSessionId)
+      return true
+    } catch (error) {
+      setFailure(messageFrom(error, 'Argo could not interrupt this Session.'))
+      return false
+    }
+  }, [interrupt, selectedSessionId])
   const onSend = useCallback(
     async (prompt: string) => {
-      if (selectedSessionId !== null) {
-        const reply = await window.argo.sendClaudeSession({
-          version: 1,
-          type: 'session.claude.send',
-          requestId: crypto.randomUUID(),
-          sessionId: selectedSessionId,
-          prompt,
-        })
-        if (reply.type !== 'session.error') return true
-        setFailure(reply.message)
-        return false
-      }
+      if (selectedSessionId !== null)
+        return sendMessage({ send, prompt, sessionId: selectedSessionId, setFailure })
       if (cockpit.project === null) {
         setFailure('Select a Project before starting a Claude Session.')
         return false
       }
-      const reply = await window.argo.startClaudeSession({
-        version: 1,
-        type: 'session.claude.start',
-        requestId: crypto.randomUUID(),
-        cwd: cockpit.project.path,
-        prompt,
-      })
-      if (reply.type === 'session.error') {
-        setFailure(reply.message)
+      try {
+        const reply = await start.mutateAsync({ cwd: cockpit.project.path, prompt })
+        setFailure(null)
+        await invalidateSessionRoster(queryClient)
+        navigate(`/sessions/${reply.sessionId}`)
+        return true
+      } catch (error) {
+        setFailure(messageFrom(error, 'Argo could not start Claude Code.'))
         return false
       }
-      setFailure(null)
-      rereadSessions()
-      navigate(`/sessions/${reply.sessionId}`)
-      return true
     },
-    [cockpit.project, navigate, selectedSessionId],
+    [cockpit.project, navigate, queryClient, selectedSessionId, send, start],
   )
   return {
     failure,
@@ -90,4 +78,28 @@ export function useClaudeComposer({
       sessionId: selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`,
     },
   }
+}
+
+async function sendMessage({
+  send,
+  prompt,
+  sessionId,
+  setFailure,
+}: {
+  send: ReturnType<typeof useClaudeSessionMutations>['send']
+  prompt: string
+  sessionId: string
+  setFailure: (message: string) => void
+}) {
+  try {
+    await send.mutateAsync({ prompt, sessionId })
+    return true
+  } catch (error) {
+    setFailure(messageFrom(error, 'Argo could not send this message.'))
+    return false
+  }
+}
+
+function messageFrom(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
 }
