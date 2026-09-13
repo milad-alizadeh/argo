@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionSetup } from '@/core/sessions/models'
+import { useComposerStore } from '../state/useComposerStore'
 import { SessionScreenView } from './SessionScreenView'
 
 type Bridge = Record<string, unknown>
@@ -80,6 +81,9 @@ const meta: Meta<typeof SessionScreenView> = {
   title: 'Sessions/Screen/Turn setup',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
+  beforeEach: () => {
+    useComposerStore.setState(useComposerStore.getInitialState())
+  },
   decorators: [
     (Story, { parameters }) => (
       <div className="h-dvh w-full">
@@ -150,19 +154,25 @@ export const AcceptedChoiceStays: Story = {
   },
 }
 
-export const CodexDrawsNoSetup: Story = {
+export const NewSessionChoosesTheHarness: Story = {
   beforeEach: accepted.beforeEach,
   parameters: { route: '/sessions/new' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('button', { name: /^Choose run setup/ })).toBeVisible()
+    // The Model and Effort a new composer opens on are whichever the harness last used.
+    const trigger = await canvas.findByRole('button', { name: /^Choose run setup: Claude Code,/ })
     await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
 
-    await userEvent.click(canvas.getByRole('radio', { name: 'Codex' }))
-    await expect(canvas.queryByRole('button', { name: /^Choose run setup/ })).toBeNull()
+    await userEvent.click(trigger)
+    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
+    await userEvent.keyboard('{Escape}')
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
     await expect(canvas.queryByRole('button', { name: /^Choose permission mode/ })).toBeNull()
 
-    await userEvent.click(canvas.getByRole('radio', { name: 'Claude Code' }))
-    await expect(canvas.getByRole('button', { name: /^Choose run setup/ })).toBeVisible()
+    await userEvent.click(trigger)
+    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Claude Code' }))
+    await userEvent.keyboard('{Escape}')
+    await expect(trigger).toHaveAccessibleName(/^Choose run setup: Claude Code,/)
+    await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
   },
 }

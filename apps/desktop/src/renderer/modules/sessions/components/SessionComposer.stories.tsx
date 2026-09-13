@@ -3,7 +3,8 @@ import { useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
-import type { SessionCli } from '../hooks/useSessionComposer'
+import type { SessionCli } from '../harness/harnesses'
+import { useComposerStore } from '../state/useComposerStore'
 import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import { SessionComposer } from './SessionComposer'
 
@@ -37,6 +38,20 @@ function ComposerStory() {
       <output className="mt-4 block text-sm" data-testid="sent-message">
         {sent}
       </output>
+    </div>
+  )
+}
+
+// Closing the composer stands in for leaving the Session page and coming back to it.
+function ClosableComposerStory() {
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <Button onClick={() => setOpen(!open)} type="button" variant="outline">
+        {open ? 'Leave the Session' : 'Return to the Session'}
+      </Button>
+      {open ? <SessionComposer onSend={async () => true} sessionId="closable-session" /> : null}
     </div>
   )
 }
@@ -134,7 +149,7 @@ function NewSessionCliStory() {
   return (
     <div className="mx-auto max-w-4xl p-8">
       <SessionComposer
-        cliPicker={{ cli, onChangeCli: setCli }}
+        harness={{ cli, onChange: setCli }}
         onSend={async (text) => {
           setStarted(`${cli}: ${text}`)
           return true
@@ -175,6 +190,7 @@ function SetupComposerStory({
           return true
         }}
         sessionId={sessionId}
+        harness={{ cli: 'claude' }}
         setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
       />
       <output data-testid="sent-messages">{sent.join(' · ')}</output>
@@ -193,6 +209,10 @@ async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
+  // Drafts outlive a story like they outlive a page, so each story starts from none.
+  beforeEach: () => {
+    useComposerStore.setState(useComposerStore.getInitialState())
+  },
 }
 
 export default meta
@@ -210,6 +230,21 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
+
+export const DraftOutlivesItsComposer: Story = {
+  render: () => <ClosableComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Half a thought.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Half a thought.')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
   },
 }
 
@@ -243,28 +278,13 @@ export const NewSessionChoosesCli: Story = {
   render: () => <NewSessionCliStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const claudeOption = canvas.getByRole('radio', { name: 'Claude Code' })
-    const codexOption = canvas.getByRole('radio', { name: 'Codex' })
+    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code')
 
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.click(codexOption)
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-
-    // Arrow-key navigation per the WAI-ARIA radiogroup pattern: focus moves back to Claude Code,
-    // and moving selection also moves the roving tabIndex.
-    await expect(codexOption).toHaveFocus()
-    await userEvent.keyboard('{ArrowLeft}')
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveFocus()
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.keyboard('{End}')
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-    await expect(codexOption).toHaveFocus()
+    await userEvent.click(trigger)
+    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
+    await userEvent.keyboard('{Escape}')
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')

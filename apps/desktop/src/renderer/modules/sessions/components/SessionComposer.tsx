@@ -1,8 +1,9 @@
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
-import { type RefObject, useCallback, useRef, useState } from 'react'
+import { type RefObject, useCallback, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
-import type { SessionCli } from '../hooks/useSessionComposer'
+import type { HarnessControl } from '../harness/harnesses'
+import { useComposerStore } from '../state/useComposerStore'
 import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
@@ -15,7 +16,7 @@ export type SessionComposerProps = {
   sessionId: string
   onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
   plan?: SessionPlan | null
-  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
+  harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
 }
 
@@ -53,11 +54,11 @@ export function SessionComposer({
   sessionId,
   onSend,
   plan = null,
-  cliPicker,
+  harness = null,
   setup = null,
 }: SessionComposerProps) {
-  const [drafts, setDrafts] = useState(() => new Map<string, string>())
-  const draft = drafts.get(sessionId) ?? ''
+  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
+  const setDraft = useComposerStore(({ setDraft }) => setDraft)
   const editorRef = useRef<LexicalEditor>(null)
   const sendPendingTurn = useCallback(
     (text: string, turnSetup: TurnSetup | undefined) => onSend(text, turnSetupOf(setup, turnSetup)),
@@ -69,15 +70,15 @@ export function SessionComposer({
     sessionId,
   })
   const changeDraft = useCallback(
-    (text: string) => setDrafts((current) => new Map(current).set(sessionId, text)),
-    [sessionId],
+    (text: string) => setDraft(sessionId, text),
+    [sessionId, setDraft],
   )
   const clearDraft = useCallback(
     (editor = editorRef.current) => {
       editor?.update(() => $getRoot().clear().append($createParagraphNode()))
-      setDrafts((current) => new Map(current).set(sessionId, ''))
+      setDraft(sessionId, '')
     },
-    [sessionId],
+    [sessionId, setDraft],
   )
   const send = useCallback(async () => {
     if (!draft.trim()) return
@@ -91,7 +92,7 @@ export function SessionComposer({
   }, [addPendingTurn, clearDraft, draft, isRunning, onSend, setup?.value])
   return (
     <ComposerForm
-      cliPicker={cliPicker}
+      harness={harness}
       draft={draft}
       editorRef={editorRef}
       isRunning={isRunning}

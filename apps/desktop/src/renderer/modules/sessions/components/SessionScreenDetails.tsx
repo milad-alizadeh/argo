@@ -1,6 +1,6 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
-import type { SessionCli } from '../hooks/useSessionComposer'
+import type { HarnessControl } from '../harness/harnesses'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { SessionComposer } from './SessionComposer'
 
@@ -11,14 +11,14 @@ type SessionScreenDetailsProps = {
   >
   permission: ReturnType<typeof import('../hooks/useClaudePermission').useClaudePermission>
   session: SessionRosterRow | null
-  cliPicker: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
+  harness: HarnessControl
 }
 
 export function SessionComposerArea({
   composer,
   permission,
   session,
-  cliPicker,
+  harness,
 }: SessionScreenDetailsProps) {
   return (
     <>
@@ -27,7 +27,7 @@ export function SessionComposerArea({
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} plan={session?.plan ?? null} cliPicker={cliPicker} />
+      <SessionComposer {...composer.props} plan={session?.plan ?? null} harness={harness} />
     </>
   )
 }

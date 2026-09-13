@@ -4,15 +4,13 @@ import type { NavigateFunction } from 'react-router'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
+import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
-import type { TurnSetup, TurnSetupChoices } from '../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { useClaudeSessionMutations } from './useClaudeSessionMutations'
 import { useCodexSessionMutations } from './useCodexSessionMutations'
 import type { useSessions } from './useSessions'
-
-export type SessionCli = 'claude' | 'codex'
 
 const NO_ROWS: SessionRosterRow[] = []
 
@@ -43,12 +41,6 @@ function useMutationsFor(cli: SessionCli) {
   return mutationsByCli[cli]
 }
 
-// What each CLI lets a person set for its next Turn; Codex declares nothing yet, so draws nothing.
-const turnSetupByCli: Record<SessionCli, TurnSetupChoices | null> = {
-  claude: CLAUDE_TURN_SETUP,
-  codex: null,
-}
-
 export function useSessionComposer({
   cli,
   cockpit,
@@ -57,7 +49,7 @@ export function useSessionComposer({
   selectedSessionId,
 }: SessionComposerOptions): {
   failure: string | null
-  props: Omit<SessionComposerProps, 'plan'>
+  props: Omit<SessionComposerProps, 'plan' | 'harness'>
 } {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
@@ -65,7 +57,7 @@ export function useSessionComposer({
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
   const { control, watchTurn } = useTurnSetup({
     cli,
-    choices: turnSetupByCli[cli],
+    choices: HARNESSES[cli].setup,
     composerKey,
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: setFailure,

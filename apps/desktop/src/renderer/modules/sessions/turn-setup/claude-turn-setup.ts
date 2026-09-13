@@ -8,7 +8,7 @@ type ClaudeEffort = ClaudeTurnSetup['effort']
 
 // An alias names a family, and the transcript names the model id it resolved to.
 const MODELS: Record<ClaudeModel, Omit<SetupChoice, 'value' | 'reads'>> = {
-  fable: { label: 'Fable 5.1' },
+  fable: { label: 'Fable 5.1', detail: 'Deepest reasoning for long, open-ended work' },
   opus: { label: 'Opus 5', detail: 'Most capable for architecture and hard problems' },
   sonnet: { label: 'Sonnet 5', detail: 'Balanced for daily coding and review' },
   haiku: { label: 'Haiku 4.5', detail: 'Fast for small changes and quick answers' },

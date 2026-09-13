@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react'
-import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
+import type { HarnessControl, SessionCli } from '../harness/harnesses'
 import { useClaudePermission } from '../hooks/useClaudePermission'
-import type { SessionCli } from '../hooks/useSessionComposer'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessions } from '../hooks/useSessions'
+import { useComposerStore } from '../state/useComposerStore'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -32,9 +32,14 @@ export function SessionScreenView() {
   const newSession = sessionId === 'new'
   const selectedSessionId = newSession ? null : (sessionId ?? null)
   const { feed, feedError, roster } = useSessions(selectedSessionId)
-  const [newSessionCli, setNewSessionCli] = useState<SessionCli>('claude')
+  const lastHarness = useComposerStore(({ harness }) => harness)
+  const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
-  const cli: SessionCli = selectedSessionId === null ? newSessionCli : sessionCliOf(session)
+  const harness: HarnessControl =
+    selectedSessionId === null
+      ? { cli: lastHarness, onChange: chooseHarness }
+      : { cli: sessionCliOf(session) }
+  const cli = harness.cli
   const composer = useSessionComposer({ cli, cockpit, navigate, roster, selectedSessionId })
   const permission = useClaudePermission(selectedSessionId)
 
@@ -48,11 +53,7 @@ export function SessionScreenView() {
           composer={composer}
           permission={permission}
           session={session}
-          cliPicker={
-            selectedSessionId === null
-              ? { cli: newSessionCli, onChangeCli: setNewSessionCli }
-              : null
-          }
+          harness={harness}
         />
       }
       inspector={<SessionFacts session={session} />}

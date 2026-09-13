@@ -8,8 +8,7 @@ import { ArrowUp } from 'lucide-react'
 import type { RefObject } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
-import type { SessionCli } from '../hooks/useSessionComposer'
-import { ComposerCliToggle } from './ComposerCliToggle'
+import type { HarnessControl } from '../harness/harnesses'
 import { ModeMenu } from './ModeMenu'
 import { PendingTurns } from './PendingTurns'
 import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
@@ -85,7 +84,6 @@ function ComposerEditor({
 }
 
 export function ComposerForm({
-  cliPicker,
   draft,
   editorRef,
   isRunning,
@@ -98,9 +96,9 @@ export function ComposerForm({
   pendingTurns,
   plan,
   sessionId,
+  harness,
   setup,
 }: {
-  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   isRunning: boolean
@@ -113,6 +111,7 @@ export function ComposerForm({
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
   plan: SessionPlan | null
   sessionId: string
+  harness: HarnessControl | null
   setup: TurnSetupControlProps | null
 }) {
   return (
@@ -123,9 +122,6 @@ export function ComposerForm({
         onSend()
       }}
     >
-      {cliPicker ? (
-        <ComposerCliToggle cli={cliPicker.cli} onChangeCli={cliPicker.onChangeCli} />
-      ) : null}
       <PendingTurns
         turns={pendingTurns}
         onEdit={onEdit}
@@ -148,7 +144,7 @@ export function ComposerForm({
           />
         </div>
         <div className="flex items-center gap-1 p-2 @[36rem]:gap-2">
-          {setup ? <RunSetupMenu {...setup} /> : null}
+          {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
           <div className="ml-auto flex items-center gap-1">
             {setup ? <ModeMenu {...setup} /> : null}
             {isRunning ? (
