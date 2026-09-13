@@ -14,9 +14,7 @@ import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 async function serveUntrustedPage() {
-  const server = createServer((_request, response) => {
-    response.end('<h1>Untrusted page</h1>')
-  })
+  const server = createServer((_request, response) => response.end('<h1>Untrusted page</h1>'))
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
   assert(address && typeof address !== 'string')
@@ -101,10 +99,11 @@ async function prove(application, fixture) {
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
   const untrustedPage = await serveUntrustedPage()
   try {
-    await application.evaluate(
-      async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
-      untrustedPage.url,
-    )
+    await application.evaluate(async ({ BrowserWindow }, url) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents
+      contents.removeAllListeners('will-navigate')
+      await contents.loadURL(url)
+    }, untrustedPage.url)
     await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
     assert.equal((await invoke(request)).code, 'access-denied')
   } finally {
