@@ -1,22 +1,25 @@
-import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+import { z } from 'zod'
+import { identifierSchema } from '../../boundary'
 
 // One channel carries every Project action. The action is a field of the message, never a channel
 // the renderer picks, so the bridge has one entry point to validate.
 export const PROJECT_CHANNEL = 'argo:project'
 
-export type ProjectOpenRequest = {
-  version: 1
-  type: 'project.open'
-  requestId: string
-  projectId: string
-}
+export const projectOpenRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.open'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectOpenRequest = z.infer<typeof projectOpenRequestSchema>
 
-export type ProjectOpened = {
-  version: 1
-  type: 'project.opened'
-  requestId: string
-  project: { id: string; name: string }
-}
+export const projectOpenedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.opened'),
+  requestId: identifierSchema,
+  project: z.strictObject({ id: identifierSchema, name: z.string().min(1) }),
+})
+export type ProjectOpened = z.infer<typeof projectOpenedSchema>
 
 export const PROJECT_ERRORS = {
   'missing-project': 'This Project is not registered.',
@@ -36,13 +39,16 @@ export const PROJECT_ERRORS = {
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS
-export type ProjectError = {
-  version: 1
-  type: 'project.error'
-  requestId: string | null
-  code: ProjectErrorCode
-  message: string
-}
+export const projectErrorSchema = z
+  .strictObject({
+    version: z.literal(1),
+    type: z.literal('project.error'),
+    requestId: identifierSchema.nullable(),
+    code: z.enum(Object.keys(PROJECT_ERRORS) as [ProjectErrorCode, ...ProjectErrorCode[]]),
+    message: z.string(),
+  })
+  .refine(({ code, message }) => message === PROJECT_ERRORS[code])
+export type ProjectError = z.infer<typeof projectErrorSchema>
 export type ProjectOpenReply = ProjectOpened | ProjectError
 
 export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
@@ -53,48 +59,29 @@ export function projectError(code: ProjectErrorCode, requestId: string | null): 
 // identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
 // path or a channel past the guard.
 export function isAction(value: unknown, type: string, identifiers: string[] = []): boolean {
+  const parsed = z
+    .object({ version: z.literal(1), type: z.literal(type), requestId: identifierSchema })
+    .catchall(identifierSchema)
+    .safeParse(value)
   return (
-    isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', ...identifiers]) &&
-    value.version === 1 &&
-    value.type === type &&
-    isIdentifier(value.requestId) &&
-    identifiers.every((key) => isIdentifier(value[key]))
+    parsed.success &&
+    Object.keys(parsed.data).length === identifiers.length + 3 &&
+    identifiers.every((identifier) => identifier in parsed.data)
   )
 }
 
 export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
-  return isAction(value, 'project.open', ['projectId'])
+  return projectOpenRequestSchema.safeParse(value).success
 }
 
 export function isProjectOpened(value: unknown): value is ProjectOpened {
-  return (
-    isRecord(value) &&
-    value.version === 1 &&
-    value.type === 'project.opened' &&
-    hasKeys(value, ['version', 'type', 'requestId', 'project']) &&
-    isIdentifier(value.requestId) &&
-    isRecord(value.project) &&
-    hasKeys(value.project, ['id', 'name']) &&
-    isIdentifier(value.project.id) &&
-    typeof value.project.name === 'string' &&
-    value.project.name.length > 0
-  )
+  return projectOpenedSchema.safeParse(value).success
 }
 
 // The error text has to be one of the table's own strings, so a reply cannot carry a message the
 // main process assembled from an exception.
 export function isProjectErrorMessage(value: unknown): value is ProjectError {
-  return (
-    isRecord(value) &&
-    value.version === 1 &&
-    value.type === 'project.error' &&
-    hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
-    (value.requestId === null || isIdentifier(value.requestId)) &&
-    Object.entries(PROJECT_ERRORS).some(
-      ([code, message]) => value.code === code && value.message === message,
-    )
-  )
+  return projectErrorSchema.safeParse(value).success
 }
 
 export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {

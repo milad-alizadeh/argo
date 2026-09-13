@@ -1,8 +1,9 @@
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
+import { Alert, AlertDescription } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import {
   ResizableHandle,
@@ -10,12 +11,19 @@ import {
   ResizablePanelGroup,
 } from '../../../components/ui/resizable'
 import { readCssSize } from '../../../lib/read-css-size'
+import { useProjects } from '../../projects/hooks/useProjects'
+import { SessionComposer } from '../components/SessionComposer'
+import { ClaudePermissionPrompt } from '../components/ClaudePermissionPrompt'
 import { BasicFeed } from '../feed/BasicFeed'
+import { useClaudeComposer } from '../hooks/useClaudeComposer'
+import { useClaudePermission } from '../hooks/useClaudePermission'
 import { useSessions } from '../hooks/useSessions'
 
 type SessionInspectorState = 'open' | 'collapsed' | 'expanded'
 
 type SessionShellProps = {
+  composer: ReactNode
+  inspector: ReactNode
   inspectorState: SessionInspectorState
   onToggleInspector: () => void
   onToggleInspectorExpanded: () => void
@@ -29,7 +37,14 @@ type SessionShellProps = {
 
 export function SessionScreenView() {
   const { sessionId } = useParams()
-  const { feed, feedError } = useSessions(sessionId ?? null)
+  const navigate = useNavigate()
+  const [cockpit] = useProjects()
+  const newSession = sessionId === 'new'
+  const selectedSessionId = newSession ? null : (sessionId ?? null)
+  const { feed, feedError, roster } = useSessions(selectedSessionId)
+  const composer = useClaudeComposer({ cockpit, navigate, roster, selectedSessionId })
+  const permission = useClaudePermission(selectedSessionId)
+  const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const inspectorPanelRef = usePanelRef()
   const workspacePanelRef = usePanelRef()
   const [inspectorState, setInspectorState] = useState<SessionInspectorState>('open')
@@ -70,12 +85,52 @@ export function SessionScreenView() {
       onToggleInspectorExpanded={toggleInspectorExpanded}
       feed={feed}
       feedError={feedError}
-      selectedSessionId={sessionId ?? null}
+      selectedSessionId={selectedSessionId}
+      composer={
+        <>
+          {composer.failure ? (
+            <Alert className="mx-auto mt-3 max-w-4xl" variant="destructive">
+              <AlertDescription>{composer.failure}</AlertDescription>
+            </Alert>
+          ) : null}
+          {permission.failure ? (
+            <Alert className="mx-auto mt-3 max-w-4xl" variant="destructive">
+              <AlertDescription>{permission.failure}</AlertDescription>
+            </Alert>
+          ) : null}
+          {permission.permission ? (
+            <ClaudePermissionPrompt
+              permission={permission.permission}
+              onDecide={permission.decide}
+            />
+          ) : null}
+          <SessionComposer {...composer.props} />
+        </>
+      }
+      inspector={
+        session === null ? null : (
+          <section aria-label="Session facts" className="p-4 text-meta text-muted-foreground">
+            <h2 className="font-medium text-foreground">Session facts</h2>
+            {session.contextTokens === null || session.contextTokens === undefined ? (
+              <p className="mt-2">Context is not available yet.</p>
+            ) : (
+              <p className="mt-2">Context: {session.contextTokens.toLocaleString()} tokens</p>
+            )}
+            {session.spentTokens === null || session.spentTokens === undefined ? (
+              <p>Usage is not available yet.</p>
+            ) : (
+              <p>Usage: {session.spentTokens.toLocaleString()} tokens</p>
+            )}
+          </section>
+        )
+      }
     />
   )
 }
 
 export function SessionShell({
+  composer,
+  inspector,
   inspectorState,
   inspectorPanelRef,
   workspacePanelRef,
@@ -116,7 +171,9 @@ export function SessionShell({
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} />
             </section>
-            <section aria-label="Session composer" className="shrink-0 border-t border-border/60" />
+            <section aria-label="Session composer" className="shrink-0 border-t border-border/60">
+              {composer}
+            </section>
           </section>
         </ResizablePanel>
         <ResizableHandle className={inspectorCollapsed ? 'bg-transparent' : 'bg-border/60'} />
@@ -131,6 +188,7 @@ export function SessionShell({
         >
           <aside aria-label="Session inspector" className="flex h-full min-h-0 flex-col bg-sidebar">
             <header className="h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar" />
+            {inspector}
           </aside>
         </ResizablePanel>
       </ResizablePanelGroup>

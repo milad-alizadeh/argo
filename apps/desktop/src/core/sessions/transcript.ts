@@ -11,6 +11,12 @@ export type ContentBlock =
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
+export type TranscriptUsage = {
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheCreationTokens: number
+}
 
 export type TranscriptMessage = {
   kind: 'message'
@@ -27,6 +33,7 @@ export type TranscriptMessage = {
   blocks: ContentBlock[]
   toolCalls: ToolCall[]
   answeredCalls: string[]
+  usage: TranscriptUsage | null
 }
 
 export type TranscriptRecord =

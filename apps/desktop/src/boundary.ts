@@ -7,12 +7,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function isIdentifier(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length > 0 &&
-    value.length <= 256 &&
-    !/[\s\p{Cc}]/u.test(value)
-  )
+  return identifierSchema.safeParse(value).success
 }
 
 export function requestIdentifier(value: unknown): string | null {
@@ -22,3 +17,10 @@ export function requestIdentifier(value: unknown): string | null {
 export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
   return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
 }
+import { z } from 'zod'
+
+export const identifierSchema = z
+  .string()
+  .min(1)
+  .max(256)
+  .refine((value) => !/[\s\p{Cc}]/u.test(value))

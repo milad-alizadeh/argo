@@ -10,6 +10,8 @@
 Layers: **L1 Organisation · L2 Session · Honesty tier · L3 Runtime tree · L4 Delivery detail ·
 Atlas · Ports · Experience · Relationships.**
 
+Runtime boundary schemas use Zod, and their TypeScript types are inferred from the schema.
+
 ## Sections
 
 Each section below is its own file. Read the one you need rather than the whole model. The

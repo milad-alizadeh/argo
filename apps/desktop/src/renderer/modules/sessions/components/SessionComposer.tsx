@@ -9,7 +9,9 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Button } from '../../../components/ui/button'
 
-type SessionComposerProps = {
+export type SessionComposerProps = {
+  isRunning?: boolean
+  onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string) => Promise<boolean>
 }
@@ -95,7 +97,12 @@ function DraftSync({ draft }: { draft: string }) {
   return null
 }
 
-export function SessionComposer({ sessionId, onSend }: SessionComposerProps) {
+export function SessionComposer({
+  isRunning = false,
+  onInterrupt,
+  sessionId,
+  onSend,
+}: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
 
@@ -107,11 +114,14 @@ export function SessionComposer({ sessionId, onSend }: SessionComposerProps) {
   )
 
   const send = useCallback(async () => {
-    const text = draft.trim()
-    if (!text) return
-    if (!(await onSend(text))) return
+    if (!draft.trim()) return
+    if (!(await onSend(draft))) return
     setDrafts((current) => new Map(current).set(sessionId, ''))
   }, [draft, onSend, sessionId])
+
+  const interrupt = useCallback(async () => {
+    if (onInterrupt) await onInterrupt()
+  }, [onInterrupt])
 
   return (
     <form
@@ -131,9 +141,15 @@ export function SessionComposer({ sessionId, onSend }: SessionComposerProps) {
           />
         </div>
         <div className="flex items-end p-2">
-          <Button aria-label="Send message" disabled={!draft.trim()} size="icon-sm" type="submit">
-            <ArrowUp />
-          </Button>
+          {isRunning ? (
+            <Button aria-label="Interrupt" onClick={() => void interrupt()} size="sm" type="button">
+              Interrupt
+            </Button>
+          ) : (
+            <Button aria-label="Send message" disabled={!draft.trim()} size="icon-sm" type="submit">
+              <ArrowUp />
+            </Button>
+          )}
         </div>
       </div>
     </form>

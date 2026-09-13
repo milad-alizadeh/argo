@@ -3,13 +3,20 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isIdentifier, isRecord } from '../../boundary'
+import { z } from 'zod'
+import { identifierSchema, isRecord } from '../../boundary'
 import type { ProjectListed, ProjectSummary } from './messages'
 
 // A registration is `{id, path}` and whatever else the file already held. Another portable client
 // may own fields this workflow never reads, and a write must not delete them
 // (docs/portable-integration-contracts.md).
-export type Registration = { id: string; path: string; [key: string]: unknown }
+export const registrationSchema = z
+  .object({
+    id: identifierSchema,
+    path: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
+  })
+  .passthrough()
+export type Registration = z.infer<typeof registrationSchema>
 export type Registry = {
   projects: Registration[]
   selectedId: string | null
@@ -24,25 +31,15 @@ export type RegistryRead =
 
 export const EMPTY_REGISTRY: Registry = { projects: [], selectedId: null, other: {} }
 
+const registryDocumentSchema = z
+  .object({ version: z.literal(1), projects: z.array(registrationSchema) })
+  .passthrough()
+  .refine(({ projects }) => new Set(projects.map(({ id }) => id)).size === projects.length)
+
 function parseRegistrations(value: unknown): Registration[] {
-  if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.projects)) {
-    throw new Error('Invalid Project registry')
-  }
-  const identifiers = new Set<string>()
-  return value.projects.map((project: unknown) => {
-    if (
-      !isRecord(project) ||
-      !isIdentifier(project.id) ||
-      identifiers.has(project.id) ||
-      typeof project.path !== 'string' ||
-      !path.isAbsolute(project.path) ||
-      project.path.includes('\0')
-    ) {
-      throw new Error('Invalid Project registry')
-    }
-    identifiers.add(project.id)
-    return { ...project, id: project.id, path: project.path }
-  })
+  const parsed = registryDocumentSchema.safeParse(value)
+  if (!parsed.success) throw new Error('Invalid Project registry')
+  return parsed.data.projects
 }
 
 const OWNED = ['version', 'projects', 'selectedId']
@@ -51,9 +48,12 @@ function parseRegistry(value: unknown): Registry {
   const projects = parseRegistrations(value)
   const document = isRecord(value) ? value : {}
   const stored = document.selectedId
+  const parsedSelectedId = identifierSchema.safeParse(stored)
   // A selection naming a Project that is no longer registered is a stale pointer, not corruption.
   const selectedId =
-    isIdentifier(stored) && projects.some((project) => project.id === stored) ? stored : null
+    parsedSelectedId.success && projects.some((project) => project.id === parsedSelectedId.data)
+      ? parsedSelectedId.data
+      : null
   const other = Object.fromEntries(Object.entries(document).filter(([key]) => !OWNED.includes(key)))
   return { projects, selectedId, other }
 }

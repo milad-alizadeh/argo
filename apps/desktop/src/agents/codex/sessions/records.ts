@@ -35,6 +35,7 @@ function message(
     blocks: textBlocks(item.content),
     toolCalls: [],
     answeredCalls: [],
+    usage: null,
   }
 }
 

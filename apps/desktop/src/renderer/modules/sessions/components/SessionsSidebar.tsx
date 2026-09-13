@@ -38,18 +38,12 @@ function RosterLoading() {
   )
 }
 
-function SessionsSidebarHeader() {
+function SessionsSidebarHeader({ onNew }: { onNew: () => void }) {
   return (
     <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-4">
       <h2 className="flex-1 text-sm font-medium">Sessions</h2>
       <div className="flex items-center gap-1">
-        <Button
-          aria-label="New Session"
-          className="disabled:opacity-100"
-          disabled
-          size="icon-sm"
-          variant="ghost"
-        >
+        <Button aria-label="New Session" onClick={onNew} size="icon-sm" variant="ghost">
           <Plus />
         </Button>
         <Button
@@ -67,6 +61,7 @@ function SessionsSidebarHeader() {
 }
 
 export type SessionsSidebarContentProps = {
+  onNew?: () => void
   roster: SessionsListed | null
   rosterError: SessionError | null
   selectedSessionId: SessionId | null
@@ -78,6 +73,7 @@ export function SessionsSidebarContent({
   rosterError,
   selectedSessionId,
   onSelect,
+  onNew = () => {},
 }: SessionsSidebarContentProps) {
   const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)
   const sessions = roster?.sessions ?? []
@@ -127,7 +123,7 @@ export function SessionsSidebarContent({
       className="flex h-full min-h-0 flex-col bg-sidebar"
       data-state={state}
     >
-      <SessionsSidebarHeader />
+      <SessionsSidebarHeader onNew={onNew} />
       {rosterError ? (
         <Alert
           className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
@@ -175,6 +171,7 @@ export function SessionsSidebar() {
 
   return (
     <SessionsSidebarContent
+      onNew={() => navigate('/sessions/new')}
       onSelect={(selectedSessionId) => {
         window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
         navigate(`/sessions/${selectedSessionId}`)

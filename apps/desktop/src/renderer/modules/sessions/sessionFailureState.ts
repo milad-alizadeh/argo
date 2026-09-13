@@ -12,6 +12,7 @@ export function sessionFailureState(failure: SessionError) {
     case 'invalid-request':
     case 'invalid-response':
     case 'launch-failed':
+    case 'not-drivable':
     case 'unsupported-version':
       return 'error'
   }
