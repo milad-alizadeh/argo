@@ -34,23 +34,32 @@ A screenshot is evidence. It belongs in the tracker, not only in the session.
   the Storybook story, or the render command. If the change is a fix, describe the before as well
   as the after.
 
-**Two routes, and an agent has one of them.** `gh issue` and `gh pr` cannot attach a file, so the
-image reaches GitHub one of two ways:
+**An agent attaches the image itself**, through github.com in Chrome, where the user is signed in.
+`gh` and the REST API cannot attach a file; the page's upload is the only route, and GitHub hosts
+the file on its own CDN, outside the repository.
 
-- **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
-  and outside the repository. This is the route for a bug report's screenshot and for a design
-  ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
-- **An agent records the route.** For a component, name the Storybook story. A PR gets its preview
-  links from CI (#1953); elsewhere, write the local Storybook command. For a screen, write the
-  render command and the state names so that a reader can draw it.
+1. Put the file inside the worktree, untracked. `file_upload` refuses the scratchpad and
+   `/var/folders` temp dirs.
+2. Open the issue or PR. In the "Add a comment" box, capture GitHub's file input without the native
+   picker: with `javascript_tool`, wrap `HTMLInputElement.prototype.click` so a `type=file` input
+   is kept rather than clicked, click the "Paste, drop, or click to add files" button, and restore
+   the original `click`.
+3. `find` the input (the tree shows it as a `type="file"` button) and pass the path to
+   `file_upload`.
+4. After a few seconds the box holds `<img … src="https://github.com/user-attachments/assets/<id>" />`.
+   Copy that tag, empty the box through the native `value` setter plus an `input` event, and put
+   the tag in the body with `gh issue edit --body-file`. Delete the local file.
 
-An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
+Beside an image, a component's PR still names its Storybook story (CI writes the preview links,
+#1953) and a screen's PR its render command and state names, so a reader can draw the current one.
+
+An agent's local captures are **disposable**: a temp dir, judged, deleted. A PNG in a git object
 has no version, so a later reader cannot tell whether it shows the code beside it or the code it
 replaced. That is why nothing writes `refs/pr-screenshots/*` or `refs/evidence/*` any more (#1910)
 and why no workflow uploads a capture. The `refs/evidence/*` commits that already exist stay:
 they back images in closed issue bodies, and deleting one 404s a picture in the tracker.
 
-You cannot read a pasted image as a file. Ask the user to save it and give you the path.
+A pasted image is not a file on disk. Ask the user to save it and give you the path.
 
 ## Writing a body
 
