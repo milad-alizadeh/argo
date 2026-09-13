@@ -162,6 +162,23 @@ function ReviewScreen() {
   )
 }
 
+function expectTranscriptRowsDoNotOverlap(canvasElement: HTMLElement) {
+  const sessionHistory = within(canvasElement).getByLabelText('Session history')
+  const promptRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-request"]')
+  const responseRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-response"]')
+  if (promptRow === null || responseRow === null)
+    throw new Error('The review transcript is absent.')
+  expect(responseRow.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    promptRow.getBoundingClientRect().bottom,
+  )
+}
+
+function expectSessionsSidebarIsOpen(canvasElement: HTMLElement) {
+  expect(
+    within(canvasElement).getByLabelText('Sessions sidebar').getBoundingClientRect().width,
+  ).toBeGreaterThan(0)
+}
+
 const meta: Meta<typeof SessionScreenView> = {
   title: 'Sessions/Screen',
   component: SessionScreenView,
@@ -184,7 +201,6 @@ export const Open: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const sessionsSidebar = canvas.getByLabelText('Sessions sidebar')
 
     await expect(
       canvas.getByRole('button', { name: /Finish Session composer review/ }),
@@ -195,6 +211,7 @@ export const Open: Story = {
         'composer-review',
       ),
     )
+    expectTranscriptRowsDoNotOverlap(canvasElement)
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     await waitFor(() =>
@@ -215,7 +232,7 @@ export const Open: Story = {
     const inspectorControl = canvas.getByRole('button', { name: 'Collapse Session inspector' })
     const inspectorControlLeft = inspectorControl.getBoundingClientRect().left
     await userEvent.click(inspectorControl)
-    await expect(sessionsSidebar.getBoundingClientRect().width).toBeGreaterThan(0)
+    expectSessionsSidebarIsOpen(canvasElement)
 
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument(),

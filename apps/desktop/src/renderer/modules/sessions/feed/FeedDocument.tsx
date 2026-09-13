@@ -26,12 +26,14 @@ function FeedRow({
   height?: number
   onOpenEvidence: FeedDocumentProps['onOpenEvidence']
 }) {
+  const style = height === undefined || height === 0 ? undefined : { height: `${height}px` }
+
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
       data-role={'role' in row ? row.role : undefined}
-      style={height === undefined ? undefined : { height: `${height}px` }}
+      style={style}
     >
       {row.shape === 'tool' ? (
         <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>
