@@ -95,10 +95,226 @@
    root without it is light. Text inks read the shadcn foregrounds, so a row title and a pane
    title are one ink. The state, Plan and PR hues are the design's exact values in both
    appearances; only the Plan track, a white wash that vanishes on white, is restated. */
+@theme inline {
+  --font-heading: var(--font-sans);
+  --text-title: 20px;
+  --text-title--line-height: 24px;
+  --text-heading: 14px;
+  --text-heading--line-height: 20px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-control: 12px;
+  --text-control--line-height: 16px;
+  --size-chrome-bar: 52px;
+  --size-navigation-rail: 88px;
+  --size-cockpit-sidebar-default: 336px;
+  --size-cockpit-sidebar-max: 460px;
+  --size-cockpit-content-min: 360px;
+  --size-navigation-item: 36px;
+  --size-navigation-control: 28px;
+  --size-icon-control: 16px;
+  --size-control: 32px;
+  --size-session-inspector: 248px;
+  --size-session-inspector-min: 248px;
+  --size-session-workspace-min: 360px;
+  --spacing-shell-tight: 4px;
+  --spacing-shell-icon: 6px;
+  --spacing-shell-item: 8px;
+  --spacing-shell-gutter: 12px;
+  --spacing-shell-inset: 16px;
+  --spacing-shell-section: 24px;
+  --spacing-shell-region: 32px;
+  --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
+  --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
+  --duration-control: 150ms;
+  --duration-layout: 300ms;
+  --duration-attention: 400ms;
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-xs: calc(var(--radius) * 0.3);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --text-session-heading: var(--text-sm, 0.875rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-label: var(--text-xs, 0.75rem);
+  --text-session-title: var(--text-xl, 1.25rem);
+  --text-session-body: var(--text-sm, 0.875rem);
+  --text-session-meta: var(--text-xs, 0.75rem);
+  --text-session-code: var(--text-xs, 0.75rem);
+  --duration-standard: var(--duration-layout);
+  --transition-duration-standard: var(--duration-standard);
+  --size-bottom-status: 106px;
+  --size-icon-meta: 14px;
+  --size-icon-metadata: var(--size-icon-meta);
+  --size-icon-inline: 14px;
+  --size-feed-attachment-preview: 80px;
+  --size-feed-gallery: 160px;
+  --size-feed-image-frame: 208px;
+  --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
+  --size-composer-attachment: var(--size-attachment-card);
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
+}
+
+@theme {
+  --color-language-typescript: var(--color-sky-600);
+  --color-language-typescript-ink: var(--color-white);
+  --color-language-go: var(--color-cyan-600);
+  --color-language-ruby: var(--color-red-600);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --size-ticket-number: 40px;
+  --size-ticket-age: 32px;
+  --size-ticket-property: 56px;
+  --size-ticket-inspector: 560px;
+  --size-ticket-inspector-min: 440px;
+  --text-ticket-title: var(--text-base, 1rem);
+  --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
+  --size-ticket-workspace-min: 320px;
+  --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-label-weight: 500;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-label-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  --color-language-go: var(--color-cyan-400);
+  --color-language-ruby: var(--color-red-400);
+}
+
 :root:not(.dark) {
   --color-ink: var(--foreground);
   --color-quiet: oklch(0.44 0 0);
   --color-faint: var(--muted-foreground);
   --color-off: oklch(0.72 0 0);
   --color-plan-track: rgb(0 0 0 / 0.1);
+}
+
+.ticket-title {
+  --text-session-title: var(--text-ticket-title);
+  --text-session-title--line-height: var(--text-ticket-title--line-height);
 }
