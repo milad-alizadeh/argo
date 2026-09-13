@@ -11,6 +11,7 @@ import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketListReply,
+  type TicketUpdateReply,
   ticketError,
 } from './contract'
 import { type Call, readAs } from './read-as'
@@ -126,4 +127,21 @@ export async function discoverSources(call: Call, accountId: string): Promise<Ti
   const read = await readAs(call, accountId, (source, reader) => source.discover(reader))
   if (!read.ok) return read.error
   return { version: 1, type: 'ticket.discovered', requestId, projectId, scopes: read.value }
+}
+
+export async function updateStatus(
+  call: Call,
+  change: { key: string; statusId: string },
+): Promise<TicketUpdateReply> {
+  const { requestId, projectId } = call
+  const found = await findConnection(call)
+  if (!found.ok) return found.error
+  if (!found.connection) return ticketError('not-connected', requestId)
+  const { accountId, scope } = found.connection
+  const written = await readAs(call, accountId, (source, reader) =>
+    source.update(reader, { scope, ...change }),
+  )
+  if (!written.ok) return written.error
+  const { key } = change
+  return { version: 1, type: 'ticket.updated', requestId, projectId, key, status: written.value }
 }

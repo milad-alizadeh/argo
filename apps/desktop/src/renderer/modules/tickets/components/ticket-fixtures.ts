@@ -5,6 +5,7 @@ import type { AccountSummary, Provider } from '@/core/accounts/contract'
 import type { ConnectionState, ConnectionSummary, Ticket } from '@/core/tickets/contract'
 import type { TicketsView } from '../hooks/useTicketsView'
 import type { Backlog } from '../lib/backlog'
+import { STATUSES } from './status-fixtures'
 
 const link = (key: string, title: string, state: 'open' | 'closed' = 'open') => ({
   key,
@@ -22,8 +23,7 @@ export const wayfinder: Ticket = {
   title: 'Wayfinder: the Tickets room, end to end',
   body: 'The Tickets room, end to end.\n\nThe backlog in the deck and the Ticket beside it.',
   state: 'open',
-  status: null,
-  stateReason: null,
+  status: { id: 'open', name: 'Open', category: 'unstarted' },
   priority: null,
   createdAt: '2026-06-01T09:00:00Z',
   labels: [
@@ -55,10 +55,11 @@ export const standalone: Ticket = {
   ...issue(273),
   title: 'The Next-up planner',
   createdAt: '2026-01-15T09:00:00Z',
+  // The colours milad-alizadeh/argo gives these labels on GitHub.
   labels: [
-    { name: 'planning', color: null },
-    { name: 'wayfinder', color: null },
-    { name: 'needs-triage', color: null },
+    { name: 'enhancement', color: 'a2eeef' },
+    { name: 'wayfinder', color: '5319e7' },
+    { name: 'needs-triage', color: 'fbca04' },
   ],
   blockedBy: [],
 }
@@ -69,7 +70,7 @@ export const engine: Ticket = {
   key: 'ENG-12',
   url: 'https://linear.app/analytical/issue/ENG-12',
   title: 'Renew the Linear grant before it lapses',
-  status: { name: 'In Review', category: 'started' },
+  status: { id: 'eng-in-review', name: 'In Review', category: 'started' },
   priority: { level: 2, label: 'High' },
   labels: [{ name: 'Engine', color: '5e6ad2' }],
   children: [link('ENG-14', 'Show the expired sign-in')],
@@ -130,6 +131,8 @@ export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({
   searching: false,
   onLoadMore: fn(),
   onRetryLoadMore: fn(),
+  statuses: STATUSES[overrides.provider ?? 'github'],
+  onChangeStatus: fn(),
   ...overrides,
 })
 

@@ -3,6 +3,7 @@ import type {
   TicketConnectRequest,
   TicketDiscoverRequest,
   TicketListRequest,
+  TicketUpdateRequest,
 } from '@/core/tickets/contract'
 import { nextRequestId } from '../../../lib/requests'
 
@@ -28,3 +29,8 @@ export const discoverRequest = (projectId: string, accountId: string): TicketDis
   ...projectRequest('ticket.discover', projectId),
   accountId,
 })
+
+export const updateRequest = (
+  projectId: string,
+  change: { key: string; statusId: string },
+): TicketUpdateRequest => ({ ...projectRequest('ticket.update', projectId), ...change })
