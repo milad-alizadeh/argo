@@ -1,6 +1,7 @@
 // The Claude source the shared Session reader drives (#2025). Everything this slice touches is
 // read-only: it observes transcripts and writes nothing back to them.
 import type { SessionReader } from '@/core/sessions/bridge'
+import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
@@ -29,7 +30,7 @@ export function claudeSessionSource(roots: {
       const graded = discovered.rows.map(
         (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
       )
-      return { ...discovered, rows: graded }
+      return mergeManagedRoster({ ...discovered, rows: graded }, roots.managedSessions?.() ?? [])
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,

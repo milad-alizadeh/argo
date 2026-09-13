@@ -7,7 +7,7 @@ import type { SessionReader } from './bridge'
 import { sessionError, sessionFeedRequestSchema, sessionListRequestSchema } from './contract'
 import type { HeldFeed } from './feed-cache'
 import type { Discovered } from './merge-discovery'
-import { combineDiscoveries, mergeManagedRoster } from './merge-discovery'
+import { combineDiscoveries } from './merge-discovery'
 import { readFeedWithOverlay } from './read-owned-feed'
 import type { SessionSource } from './session-source'
 
@@ -27,8 +27,7 @@ function readFailure(error: unknown) {
 
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
-    const discovery = await source.discoverSessions()
-    return mergeManagedRoster(discovery, source.managedSessions?.() ?? [])
+    return await source.discoverSessions()
   } catch (error) {
     return { error: sessionError(readFailure(error), requestId) }
   }

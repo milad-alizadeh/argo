@@ -1,5 +1,6 @@
 import type { SessionReader } from '@/core/sessions/bridge'
 import { projectFeed } from '@/core/sessions/feed'
+import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
@@ -36,7 +37,8 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   const liveMessages = options?.liveMessages
   return {
     cli: 'codex',
-    discoverSessions: () => discoverSessions(root),
+    discoverSessions: async () =>
+      mergeManagedRoster(await discoverSessions(root), options?.roster?.() ?? []),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
