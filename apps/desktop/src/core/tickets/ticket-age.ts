@@ -1,20 +1,33 @@
-// How long a Ticket has been open, in the one-unit shorthand a list column can hold.
-const UNITS = [
-  { seconds: 365 * 86_400, short: 'y', long: 'year' },
-  { seconds: 30 * 86_400, short: 'mo', long: 'month' },
-  { seconds: 7 * 86_400, short: 'w', long: 'week' },
-  { seconds: 86_400, short: 'd', long: 'day' },
-  { seconds: 3_600, short: 'h', long: 'hour' },
-  { seconds: 60, short: 'm', long: 'minute' },
-] as const
+import { type FormatDistanceToken, formatDistanceStrict, type Locale, min } from 'date-fns'
+import { enUS } from 'date-fns/locale'
+
+// The one-letter unit a list column can hold; the strict distance names only these units.
+const COMPACT_UNITS: Partial<Record<FormatDistanceToken, string>> = {
+  xMinutes: 'm',
+  xHours: 'h',
+  xDays: 'd',
+  xMonths: 'mo',
+  xYears: 'y',
+}
+
+const compact: Locale = {
+  ...enUS,
+  formatDistance: (token, count) => {
+    const unit = COMPACT_UNITS[token]
+    return unit ? `${count}${unit}` : 'now'
+  },
+}
 
 export type TicketAge = { short: string; long: string }
 
+// How long a Ticket has been open; a clock behind GitHub's reads a Ticket from the future as just opened.
 export function ticketAge(createdAt: string, now: number): TicketAge {
-  const elapsed = Math.max(0, (now - Date.parse(createdAt)) / 1000)
-  const unit = UNITS.find((candidate) => elapsed >= candidate.seconds)
-  if (!unit) return { short: 'now', long: 'Opened just now' }
-  const amount = Math.floor(elapsed / unit.seconds)
-  const plural = amount === 1 ? '' : 's'
-  return { short: `${amount}${unit.short}`, long: `Opened ${amount} ${unit.long}${plural} ago` }
+  const opened = min([createdAt, now])
+  const options = { roundingMethod: 'floor' } as const
+  const short = formatDistanceStrict(opened, now, { ...options, locale: compact })
+  if (short === 'now') return { short, long: 'Opened just now' }
+  return {
+    short,
+    long: `Opened ${formatDistanceStrict(opened, now, { ...options, addSuffix: true })}`,
+  }
 }
