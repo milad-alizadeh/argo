@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -38,6 +39,36 @@ test('removes its socket folder when the app closes the gate', async () => {
   gate.close()
 
   expect(existsSync(sockets)).toBe(false)
+  await rm(base, { recursive: true, force: true })
+})
+
+// #2004: Claude writes the request to the hook's stdin, and `sh` gives a background job /dev/null.
+test('holds the request Claude writes to the shipped hook and answers the hook with Allow', async () => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-permission-'))
+  const gate = createClaudePermissionGate(base)
+  const sessionId = randomUUID()
+  const opened = gate.open(sessionId)
+  const hook = spawn('/bin/sh', [path.join(opened.pluginRoot, 'permission-hook.sh')])
+  let output = ''
+  hook.stdout.setEncoding('utf8')
+  hook.stdout.on('data', (chunk: string) => {
+    output += chunk
+  })
+  const exited = new Promise((resolve) => hook.once('exit', resolve))
+  hook.stdin.end('{"tool_name":"Bash","tool_input":{"command":"bun test"}}\n')
+
+  let permission = gate.pending(sessionId)
+  for (let wait = 0; permission === null && hook.exitCode === null && wait < 100; wait += 1) {
+    await Bun.sleep(50)
+    permission = gate.pending(sessionId)
+  }
+  expect(permission).toMatchObject({ sessionId, toolName: 'Bash', input: { command: 'bun test' } })
+  gate.decide(sessionId, permission?.id ?? '', 'allow')
+  await exited
+
+  expect(output).toContain('"permissionDecision":"allow"')
+  opened.close()
+  gate.close()
   await rm(base, { recursive: true, force: true })
 })
 
