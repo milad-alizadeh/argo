@@ -10,7 +10,7 @@
     "make": "electron-forge make",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
-    "test:storybook": "vitest run --project=storybook",
+    "test:storybook": "vitest run --project=storybook-dark --project=storybook-light",
     "design:render": "node scripts/render-desktop-state.mjs",
     "build": "bun run test:packaged-pty --arch arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.fake-drivers.json",

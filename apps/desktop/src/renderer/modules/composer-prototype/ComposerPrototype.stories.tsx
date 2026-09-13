@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { ComposerPrototype } from './ComposerPrototype'
 
@@ -13,4 +13,5 @@ const meta: Meta<typeof ComposerPrototype> = {
 export default meta
 type Story = StoryObj<typeof ComposerPrototype>
 
+// Frozen reference for the approved Session components (docs/design-stack.md); no play on purpose.
 export const SourceOfTruth: Story = {}

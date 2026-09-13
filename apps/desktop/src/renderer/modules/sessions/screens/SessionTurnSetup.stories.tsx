@@ -1,13 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionSetup } from '@/core/sessions/models'
+import { sessionRosterRow } from '../session-fixtures'
 import { useComposerStore } from '../state/useComposerStore'
 import { SessionScreenView } from './SessionScreenView'
-
-type Bridge = Record<string, unknown>
-const host = window as unknown as { argo: Bridge }
 
 const SESSION_ID = 'managed-turn-setup'
 const OPENING_TURN = '2026-09-13T10:00:00.000Z'
@@ -15,33 +13,20 @@ const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A managed Claude Session whose next Turn runs on whatever `reply` says the CLI used.
 function managedSession(reply: SessionSetup, sent: unknown[]) {
-  const row = {
+  const row = sessionRosterRow({
     id: SESSION_ID,
-    retiredIds: [],
-    cli: 'claude',
     posture: 'managed',
     title: { text: 'Turn setup Session', source: 'first-prompt' },
     status: 'idle',
-    entry: 'interactive',
     cwd: '/storybook/argo',
-    branch: 'main',
-    updatedAt: null,
-    unreadableLines: 0,
-    originUnread: false,
     turnStartedAt: OPENING_TURN,
-    activity: null,
-    plan: null,
-    setup: { model: 'claude-opus-5', effort: 'medium', mode: 'default' } as SessionSetup,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
-  }
+    setup: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
+  })
   return {
     listSessions: () =>
       Promise.resolve({
-        version: 1,
-        type: 'session.listed',
+        version: 1 as const,
+        type: 'session.listed' as const,
         requestId: 'turn-setup-sessions',
         sessions: [row],
         filesFound: 1,
@@ -52,13 +37,13 @@ function managedSession(reply: SessionSetup, sent: unknown[]) {
       sent.push(request)
       Object.assign(row, { turnStartedAt: NEXT_TURN, setup: reply })
       return Promise.resolve({
-        version: 1,
-        type: 'session.claude.accepted',
+        version: 1 as const,
+        type: 'session.claude.accepted' as const,
         requestId: 'turn-setup-send',
         sessionId: request.sessionId,
       })
     },
-  } satisfies Bridge
+  }
 }
 
 // Each run starts from the opening Turn, so a replay in the Storybook UI proves the same thing.
@@ -68,17 +53,17 @@ function withBridge(reply: SessionSetup) {
     sent,
     beforeEach: () => {
       sent.length = 0
-      const previous = host.argo
-      host.argo = { ...previous, ...managedSession(reply, sent) }
+      const previous = window.argo
+      window.argo = { ...previous, ...managedSession(reply, sent) }
       return () => {
-        host.argo = previous
+        window.argo = previous
       }
     },
   }
 }
 
 const meta: Meta<typeof SessionScreenView> = {
-  title: 'Sessions/Screen/Turn setup',
+  title: 'Sessions/Screen/Turn Setup',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
@@ -161,9 +146,8 @@ export const AcceptedChoiceStays: Story = {
     const trigger = await sendWithMaxEffort(canvasElement)
     await waitFor(() => expect(accepted.sent).toHaveLength(1))
     // Two roster polls land the reply the send produced.
-    await new Promise((resolve) => setTimeout(resolve, 1200))
+    await waitFor(() => expect(trigger).toHaveTextContent('Claude Code·Opus 5·Max'))
     await expect(within(canvasElement).queryByRole('alert')).toBeNull()
-    await expect(trigger).toHaveTextContent('Claude Code·Opus 5·Max')
   },
 }
 
