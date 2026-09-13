@@ -41,7 +41,7 @@ deny() { printf '%s\\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","pe
 hold=$(mktemp -d) || { deny; exit 1; }
 trap 'kill "$writer" "$dialler" 2>/dev/null; rm -rf "$hold"' EXIT
 mkfifo "$hold/request" || { deny; exit 1; }
-# sh gives a background job /dev/null for stdin, so the request is read before the fork.
+# sh gives a background job /dev/null as stdin, so the request is read before the fork (#2004).
 request=$(tr '\\n' ' ')
 {
   printf '%s\\n' "$request"

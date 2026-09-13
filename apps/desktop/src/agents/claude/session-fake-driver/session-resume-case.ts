@@ -43,7 +43,12 @@ async function sendFromComposer(page, text) {
 
 export async function provePackagedResume(page, { project, restart, transcripts }) {
   const started = await page.evaluate(
-    (cwd) => window.argo.startClaudeSession({ cwd, prompt: 'Open the resume proof.' }),
+    (cwd) =>
+      window.argo.startClaudeSession({
+        cwd,
+        prompt: 'Open the resume proof.',
+        setup: { model: 'opus', effort: 'medium', mode: 'manual' },
+      }),
     project,
   )
   assert.equal(started.type, 'session.claude.started')

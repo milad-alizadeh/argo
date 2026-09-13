@@ -1,14 +1,17 @@
-import type { SessionRosterRow } from '@/core/sessions/models'
+import type { SessionRosterRow } from './models'
 
-// The Roster row for a Session whose `claude` Argo is running right now.
-export function managedRow(id: string, session: { cwd: string; prompt: string }): SessionRosterRow {
+// The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
+export function managedRow(
+  id: string,
+  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & { prompt: string },
+): SessionRosterRow {
   return {
     id,
     retiredIds: [],
-    cli: 'claude',
+    cli: session.cli,
     posture: 'managed',
     title: { text: session.prompt, source: 'first-prompt' },
-    status: 'running',
+    status: session.status,
     entry: 'interactive',
     cwd: session.cwd,
     branch: null,
@@ -24,5 +27,6 @@ export function managedRow(id: string, session: { cwd: string; prompt: string })
     archived: false,
     contextTokens: null,
     spentTokens: null,
+    setup: session.setup,
   }
 }

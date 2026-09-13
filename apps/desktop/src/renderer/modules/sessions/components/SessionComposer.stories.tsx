@@ -3,7 +3,9 @@ import { useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
-import type { SessionCli } from '../hooks/useSessionComposer'
+import type { SessionCli } from '../harness/harnesses'
+import { useComposerStore } from '../state/useComposerStore'
+import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import { SessionComposer } from './SessionComposer'
 
 const plan = {
@@ -72,6 +74,20 @@ function ComposerStory({ className = 'mx-auto max-w-4xl p-8' }: { className?: st
   )
 }
 
+// Closing the composer stands in for leaving the Session page and coming back to it.
+function ClosableComposerStory() {
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <Button onClick={() => setOpen(!open)} type="button" variant="outline">
+        {open ? 'Leave the Session' : 'Return to the Session'}
+      </Button>
+      {open ? <SessionComposer onSend={async () => true} sessionId="closable-session" /> : null}
+    </div>
+  )
+}
+
 function ManagedComposerStory() {
   const [running, setRunning] = useState(true)
 
@@ -130,6 +146,25 @@ function FailedQueuedComposerStory() {
   )
 }
 
+// The send never settles, so the composer is read before a successful send clears it (#1999).
+function UnsettledSendStory() {
+  const [sent, setSent] = useState<string[]>([])
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <SessionComposer
+        onSend={(text) => {
+          setSent((current) => [...current, text])
+          return new Promise<boolean>(() => {})
+        }}
+        plan={null}
+        sessionId="unsettled-session"
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </div>
+  )
+}
+
 // The send stays pending until the reader finishes it, so a Session switch can land mid-send.
 function PendingSendStory() {
   const [sessionId, setSessionId] = useState('session-one')
@@ -165,7 +200,7 @@ function NewSessionCliStory() {
   return (
     <div className="mx-auto max-w-4xl p-8">
       <SessionComposer
-        cliPicker={{ cli, onChangeCli: setCli }}
+        harness={{ cli, onChange: setCli }}
         onSend={async (text) => {
           setStarted(`${cli}: ${text}`)
           return true
@@ -180,9 +215,55 @@ function NewSessionCliStory() {
   )
 }
 
+function SetupComposerStory({
+  running = false,
+  sessionId,
+}: {
+  running?: boolean
+  sessionId: string
+}) {
+  const [isRunning, setRunning] = useState(running)
+  const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
+  const [sent, setSent] = useState<string[]>([])
+
+  return (
+    <div className="mx-auto max-w-4xl p-8 pt-96">
+      <Button onClick={() => setRunning(false)} type="button" variant="outline">
+        Finish turn
+      </Button>
+      <SessionComposer
+        isRunning={isRunning}
+        onSend={async (text, turnSetup) => {
+          setSent((current) => [
+            ...current,
+            `${text} (${turnSetup?.model} ${turnSetup?.effort} ${turnSetup?.mode})`,
+          ])
+          return true
+        }}
+        sessionId={sessionId}
+        harness={{ cli: 'claude' }}
+        setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </div>
+  )
+}
+
+async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
+  await userEvent.click(
+    within(canvasElement).getByRole('button', { name: /^Choose permission mode/ }),
+  )
+  await userEvent.click(await within(document.body).findByRole('menuitemradio', { name: mode }))
+  await waitFor(() => expect(within(document.body).queryByRole('menu')).toBeNull())
+}
+
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
+  // Drafts outlive a story like they outlive a page, so each story starts from none.
+  beforeEach: () => {
+    useComposerStore.setState(useComposerStore.getInitialState())
+  },
 }
 
 export default meta
@@ -200,6 +281,52 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
+
+export const DraftOutlivesItsComposer: Story = {
+  render: () => <ClosableComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Half a thought.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Half a thought.')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
+  },
+}
+
+export const EnterSendsWithoutANewLine: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.keyboard('Send this once.')
+    await userEvent.keyboard('{Enter}')
+
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(composer.innerText).toBe('Send this once.')
+  },
+}
+
+export const ShiftEnterAddsALine: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.keyboard('First line')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await userEvent.keyboard('Second line')
+
+    await expect(composer.innerText).toBe('First line\nSecond line')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
   },
 }
 
@@ -329,28 +456,13 @@ export const NewSessionChoosesCli: Story = {
   render: () => <NewSessionCliStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const claudeOption = canvas.getByRole('radio', { name: 'Claude Code' })
-    const codexOption = canvas.getByRole('radio', { name: 'Codex' })
+    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code')
 
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.click(codexOption)
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-
-    // Arrow-key navigation per the WAI-ARIA radiogroup pattern: focus moves back to Claude Code,
-    // and moving selection also moves the roving tabIndex.
-    await expect(codexOption).toHaveFocus()
-    await userEvent.keyboard('{ArrowLeft}')
-    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
-    await expect(claudeOption).toHaveFocus()
-    await expect(claudeOption).toHaveAttribute('tabindex', '0')
-    await expect(codexOption).toHaveAttribute('tabindex', '-1')
-
-    await userEvent.keyboard('{End}')
-    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
-    await expect(codexOption).toHaveFocus()
+    await userEvent.click(trigger)
+    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
+    await userEvent.keyboard('{Escape}')
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')
@@ -438,6 +550,60 @@ export const FailedQueuedTurn: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Keep this pending when Claude rejects it.',
+    )
+  },
+}
+
+export const SendsTheChosenSetup: Story = {
+  render: () => <SetupComposerStory sessionId="setup-session" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const placeholder = canvas.getAllByText('Direct the next move…')[0]?.getBoundingClientRect()
+    const controls = canvas
+      .getByRole('button', { name: /^Choose run setup/ })
+      .getBoundingClientRect()
+    await expect(placeholder?.bottom).toBeLessThanOrEqual(controls.top)
+    await userEvent.click(canvas.getByRole('button', { name: /^Choose run setup/ }))
+    await userEvent.click(await within(document.body).findByRole('radio', { name: /Sonnet 5/ }))
+    await userEvent.keyboard('{Escape}')
+    await chooseMode(canvasElement, /Plan/)
+    await expect(canvas.getByRole('button', { name: /^Choose run setup/ })).toHaveTextContent(
+      'Claude Code·Sonnet 5·Medium',
+    )
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Plan the migration.')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      'Plan the migration. (sonnet medium plan)',
+    )
+  },
+}
+
+export const QueuedTurnKeepsItsSetup: Story = {
+  render: () => <SetupComposerStory running sessionId="queued-setup-session" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    const mode = canvas.getByRole('button', { name: /^Choose permission mode/ })
+
+    await chooseMode(canvasElement, /Plan/)
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Plan the release.')
+    await userEvent.keyboard('{Enter}')
+    await chooseMode(canvasElement, /Accept edits/)
+    await expect(mode).toHaveTextContent('Accept edits')
+
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Edit queued message: Plan the release.' }),
+    )
+    await expect(composer).toHaveTextContent('Plan the release.')
+    await expect(mode).toHaveTextContent('Plan')
+
+    await chooseMode(canvasElement, /Auto/)
+    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      'Plan the release. (opus medium plan)',
     )
   },
 }

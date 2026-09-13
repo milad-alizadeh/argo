@@ -104,6 +104,11 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
+    // `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
+    model:
+      typeof message.model === 'string' && message.model !== '<synthetic>' ? message.model : null,
+    effort: typeof record.effort === 'string' ? record.effort : null,
+    mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
     blocks: readBlocks(message.content),
   }
