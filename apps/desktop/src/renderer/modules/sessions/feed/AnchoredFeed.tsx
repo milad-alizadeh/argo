@@ -1,14 +1,21 @@
 import { Component, createRef, type ReactNode } from 'react'
 import type { SessionFeedRow } from '../types'
+import type { Reveal } from './reveal'
 import { MessageScroller } from './scroller'
 import type { Settled } from './useSettledFeed'
 
 type Anchor = { element: HTMLElement; offset: number; atTail: boolean }
-type FeedRowComponent = (props: { row: SessionFeedRow; height?: number }) => ReactNode
+type FeedRowComponent = (props: {
+  row: SessionFeedRow
+  height?: number
+  reveal?: Reveal
+}) => ReactNode
 type AnchoredFeedProps = {
   FeedRow: FeedRowComponent
   rows: readonly SessionFeedRow[]
   settled: Settled
+  // Asked of the document actually drawn, which can trail `settled` while the reader scrolls.
+  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
 }
 type AnchoredFeedState = Pick<AnchoredFeedProps, 'rows' | 'settled'>
 
@@ -81,8 +88,9 @@ export class AnchoredFeed extends Component<AnchoredFeedProps, AnchoredFeedState
   }
 
   render() {
-    const { FeedRow } = this.props
+    const { FeedRow, revealsFor } = this.props
     const { rows, settled } = this.state
+    const reveals = revealsFor(settled)
     return (
       <MessageScroller.Provider autoScroll defaultScrollPosition="end">
         <MessageScroller.Root className="feed__scroller">
@@ -101,7 +109,11 @@ export class AnchoredFeed extends Component<AnchoredFeedProps, AnchoredFeedState
             >
               {rows.map((row) => (
                 <MessageScroller.Item key={row.id} messageId={row.id}>
-                  <FeedRow height={settled.heights.get(row.id)} row={row} />
+                  <FeedRow
+                    height={settled.heights.get(row.id)}
+                    reveal={reveals.get(row.id)}
+                    row={row}
+                  />
                 </MessageScroller.Item>
               ))}
             </MessageScroller.Content>

@@ -83,9 +83,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         managedSessions: claudeSessionDriver.roster,
         orphans: claudeSessionDriver.orphans,
       }),
-      createCodexSessionReader(codexTranscriptsRoot(home), {
-        managedSessions: codexSessionDriver.roster,
-      }),
+      createCodexSessionReader(codexTranscriptsRoot(home), codexSessionDriver),
     ]),
     driver: claudeSessionDriver,
     starter: claudeSessionDriver,
