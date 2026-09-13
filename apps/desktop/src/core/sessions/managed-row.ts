@@ -41,11 +41,15 @@ export function managedRow(
 export function mergeManagedRoster(
   discovered: TranscriptDiscovery,
   managed: SessionRosterRow[],
+  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
+    ...observed,
+    posture: held.posture,
+  }),
 ): TranscriptDiscovery {
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
-    return held === undefined ? session : { ...session, posture: held.posture }
+    return held === undefined ? session : reconcile(session, held)
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),
