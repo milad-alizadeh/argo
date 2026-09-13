@@ -21,7 +21,7 @@ Everything here is a fact about this repository. Process belongs to the skill th
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
   Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
-  Code comments cite it as `CONTEXT.md L1 · Binding`. Change a term only after
+  Code comments cite it as `CONTEXT.md L1 · Connection`. Change a term only after
   `docs/domain/rationale.md`. A concept the model does not name is a signal: either the name is
   invented and wants reconsidering, or the gap is real and wants recording.
 - **Decisions** — `docs/adr/`. Nothing loads these. Read the ones covering an area before

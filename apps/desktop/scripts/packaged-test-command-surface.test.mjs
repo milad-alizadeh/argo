@@ -11,6 +11,7 @@ test('names every packaged test command as a test', () => {
   expect(scripts['test:packaged-pty']).toContain('scripts/prove-packaged-pty.mjs')
   expect(scripts['test:packaged-project']).toContain('prove-project-contract.mjs')
   expect(scripts['test:packaged-session']).toContain('prove-session-feed.mjs')
+  expect(scripts['test:packaged-tickets']).toContain('prove-tickets.mjs')
   for (const oldName of ['assert:packaged', 'prove:pty', 'prove:project-contract', 'prove:session'])
     expect(scripts[oldName], `${oldName} remains public`).toBeUndefined()
 })

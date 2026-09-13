@@ -36,14 +36,22 @@ export const sessionDelegationSchema = z.strictObject({
 })
 export type SessionDelegation = z.infer<typeof sessionDelegationSchema>
 
-// CONTEXT.md L3 · Plan: the counts of the newest snapshot the agent wrote. The entries themselves
-// are not carried, because nothing draws them.
 const countSchema = z.number().int().nonnegative()
-export const sessionPlanSchema = z.strictObject({
-  total: countSchema,
-  completed: countSchema,
-  inProgress: countSchema,
+export const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const
+export const planEntryStatusSchema = z.enum(PLAN_ENTRY_STATUSES)
+export type PlanEntryStatus = z.infer<typeof planEntryStatusSchema>
+
+// CONTEXT.md L3 · Plan: newest snapshot verbatim, plus its display position; malformed is never partial.
+export const sessionPlanEntrySchema = z.strictObject({
+  content: z.string().trim().min(1),
+  position: countSchema,
+  status: planEntryStatusSchema,
 })
+export type SessionPlanEntry = z.infer<typeof sessionPlanEntrySchema>
+export const sessionPlanSchema = z.discriminatedUnion('state', [
+  z.strictObject({ state: z.literal('available'), entries: z.array(sessionPlanEntrySchema) }),
+  z.strictObject({ state: z.literal('malformed') }),
+])
 export type SessionPlan = z.infer<typeof sessionPlanSchema>
 
 // The newest Tool Call inside the open Turn: the tool's own name, and the one thing it acted on,

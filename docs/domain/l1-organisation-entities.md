@@ -1,8 +1,8 @@
 ## L1 · Organisation entities
 
 - **Project** — the scope of one cockpit window: a **registered git repo, keyed to a stable
-  id** (path is a mutable attribute), carrying an **optional** Ticket **Binding** and an
-  **optional** Code host Binding. One git root = one Project (a monorepo is one Project).
+  id** (path is a mutable attribute), carrying an **optional** Ticket **Connection** and an
+  **optional** Code host Connection. One git root = one Project (a monorepo is one Project).
   Registration is the act that creates it — an unregistered repo on disk is not a Project. One
   active Project per window; the known set lives in a per-machine file registry. The **only
   entity in the L1 triangle that Argo owns rather than observes** (Account is owned too, but
@@ -15,15 +15,15 @@
   same identity added twice is one Account, because the id and not the name is the key. Owned
   state, per-machine, never committed; the known set lives in a per-machine registry beside the
   Project one, holding no token itself. Revocation and expiry are **Account-level** — their
-  blast radius is every Binding naming that Account, not every Binding on that provider.
+  blast radius is every Connection naming that Account, not every Connection on that provider.
 
-- **Binding** — a Project's use of **one Account through one port**, plus the **provider-side
+- **Connection** — a Project's use of **one Account through one port**, plus the **provider-side
   scope** that Account reads through (GitHub: an `owner/repo`; Linear: a team). The unit that
   makes provider choice *per-Project*: one Project on Linear for Tickets while another is on
   GitHub Issues, each naming its own Account. **Per-port, not per-Project** — one GitHub
-  Account normally fills both Bindings in one act, and nothing in the model stops the two from
-  naming different Accounts. A Binding is **validated against its Account at bind time**: an
-  Account that cannot see the scope is a bind-time refusal, never a run of reads that 404 and
+  Account normally fills both Connections in one act, and nothing in the model stops the two from
+  naming different Accounts. A Connection is **validated against its Account at connect time**: an
+  Account that cannot see the scope is a connect-time refusal, never a run of reads that 404 and
   read as "the ticket does not exist." Health is keyed here, not on the Project (#260).
 
 - **Ticket** — intent. One unit of work owned by a Ticket provider; **Argo stores only the link**

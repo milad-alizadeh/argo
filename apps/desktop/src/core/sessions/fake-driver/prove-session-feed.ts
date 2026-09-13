@@ -28,6 +28,8 @@ import {
 } from './session-feed-fixture'
 import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
+import { proveSessionPlan } from './session-plan-cases'
+import { updatePlan } from './session-plan-fixture'
 import {
   provePackagedRosterRestart,
   provePackagedRosterSelection,
@@ -94,6 +96,9 @@ try {
       transcripts: fixture.claudeTranscripts,
       append: appendProse,
     }),
+  )
+  await ran(['session-plan'], () =>
+    proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {

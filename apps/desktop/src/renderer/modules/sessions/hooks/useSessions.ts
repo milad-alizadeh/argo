@@ -17,6 +17,7 @@ export function useSessions(selectedSessionId: SessionId | null) {
   const roster = useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
     staleTime: Infinity,
+    refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       const reply = await window.argo.listSessions()

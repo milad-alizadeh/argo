@@ -15,7 +15,7 @@ Runtime boundary schemas use Zod, and their TypeScript types are inferred from t
 ## Sections
 
 Each section below is its own file. Read the one you need rather than the whole model. The
-section names have not changed, so a citation like `CONTEXT.md L1 · Binding` still resolves:
+section names have not changed, so a citation like `CONTEXT.md L1 · Connection` still resolves:
 find the section in this list, then open its file.
 
 - **Storage & ownership** — [`docs/domain/storage-and-ownership.md`](docs/domain/storage-and-ownership.md)

@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import './zod-jitless'
+import { createAccountClient } from './core/accounts/client'
+import { ACCOUNT_CHANNEL } from './core/accounts/contract'
 import {
   APPEARANCE_CHANGED_CHANNEL,
   APPEARANCE_OPERATIONS,
@@ -10,12 +12,16 @@ import { createProjectClient } from './core/projects/client'
 import { PROJECT_OPERATIONS } from './core/projects/operations'
 import { createSessionClient } from './core/sessions/client'
 import { SESSION_OPERATIONS } from './core/sessions/operations'
+import { createTicketClient } from './core/tickets/client'
+import { TICKET_CHANNEL } from './core/tickets/contract'
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
   ...createProjectClient((operation, request) =>
     ipcRenderer.invoke(PROJECT_OPERATIONS[operation].channel, request),
   ),
+  ...createAccountClient((request) => ipcRenderer.invoke(ACCOUNT_CHANNEL, request)),
+  ...createTicketClient((request) => ipcRenderer.invoke(TICKET_CHANNEL, request)),
   ...createSessionClient((operation, request) =>
     ipcRenderer.invoke(SESSION_OPERATIONS[operation].channel, request),
   ),

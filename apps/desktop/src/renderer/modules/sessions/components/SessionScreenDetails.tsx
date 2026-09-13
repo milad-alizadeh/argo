@@ -17,6 +17,7 @@ type SessionScreenDetailsProps = {
 export function SessionComposerArea({
   composer,
   permission,
+  session,
   cliPicker,
 }: SessionScreenDetailsProps) {
   return (
@@ -26,7 +27,7 @@ export function SessionComposerArea({
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} cliPicker={cliPicker} />
+      <SessionComposer {...composer.props} plan={session?.plan ?? null} cliPicker={cliPicker} />
     </>
   )
 }
