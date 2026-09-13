@@ -16,8 +16,8 @@ function nextCliOption(key: string, index: number): (typeof CLI_OPTIONS)[number]
     : CLI_OPTIONS[(index + step + CLI_OPTIONS.length) % CLI_OPTIONS.length]
 }
 
-// Shown only for a brand-new Session, before one exists to observe a CLI from: enough to prove
-// the Codex path without building the full harness/model/effort picker (#1844, #1885).
+// Shown only for a brand-new Session, before one exists to observe a CLI from; the harness tabs
+// of the full picker are #1885, and Model, Effort and Mode sit in the composer's own bar.
 export function ComposerCliToggle({
   cli,
   onChangeCli,

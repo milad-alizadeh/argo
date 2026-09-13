@@ -26,6 +26,7 @@ const session = {
   shell: [],
   pullRequest: null,
   archived: false,
+  setup: { model: null, effort: null, mode: null },
 } satisfies SessionsListed['sessions'][number]
 
 const listed = {

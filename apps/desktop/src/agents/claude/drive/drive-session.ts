@@ -7,20 +7,19 @@ import {
   sessionError,
 } from '@/core/sessions/contract'
 
-type ClaudeSessionDrive = {
-  interrupt: (sessionId: string) => void
-  send: (sessionId: string, prompt: string) => void
-}
+import type { ClaudeSessionDriver } from './claude-session-driver'
 
-export function driveClaudeSession(
+type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
+
+export async function driveClaudeSession(
   value: unknown,
   driver: ClaudeSessionDrive,
-): ClaudeSessionSendReply | ClaudeSessionInterruptReply {
+): Promise<ClaudeSessionSendReply | ClaudeSessionInterruptReply> {
   const send = claudeSessionSendRequestSchema.safeParse(value)
   if (send.success) {
     const request = send.data
     try {
-      driver.send(request.sessionId, request.prompt)
+      await driver.send(request.sessionId, { prompt: request.prompt, setup: request.setup })
       return {
         version: 1,
         type: 'session.claude.accepted',

@@ -5,7 +5,7 @@ import * as path from 'node:path'
 import * as pty from 'node-pty'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { createClaudeSessionDriver, SUBMIT_DELAY_MS } from './claude-session-driver'
+import { createClaudeSessionDriver } from './claude-session-driver'
 import { createClaudePermissionGate } from './permission-gate'
 
 function loginShellPath(): string {
@@ -42,8 +42,8 @@ export function createSystemClaudeSessionDriver(permissionRoot: string) {
   const driver = createClaudeSessionDriver({
     findExecutable: claudeExecutable,
     mintSessionId: randomUUID,
-    schedule: (callback) => {
-      setTimeout(callback, SUBMIT_DELAY_MS)
+    schedule: (callback, milliseconds) => {
+      setTimeout(callback, milliseconds)
     },
     spawn: (command, commandArguments, options) =>
       pty.spawn(command, commandArguments, {

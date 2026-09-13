@@ -89,6 +89,11 @@ function readUsage(value: unknown) {
   }
 }
 
+// `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
+function readModel(value: unknown) {
+  return typeof value === 'string' && value !== '<synthetic>' ? value : null
+}
+
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
@@ -109,6 +114,9 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
+    model: readModel(message.model),
+    effort: typeof record.effort === 'string' ? record.effort : null,
+    mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
     blocks: readBlocks(message.content),
   }

@@ -24,6 +24,8 @@ export const FIXTURES = [
   // Archived in the desktop app's store below, so the Roster has to keep it out of the list and
   // in the Archived section at its foot.
   'plannedWork',
+  // Names a Model, Effort and Mode the composer has to state.
+  'setupAnswered',
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 

@@ -1,3 +1,4 @@
+import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
@@ -40,32 +41,6 @@ function launchEnvironment(): NodeJS.ProcessEnv {
   delete environment.OPENAI_API_KEY
   delete environment.CODEX_API_KEY
   return environment
-}
-
-function rosterRow(id: string, session: ManagedSession): SessionRosterRow {
-  return {
-    id,
-    retiredIds: [],
-    cli: 'codex',
-    posture: 'managed',
-    title: { text: session.prompt, source: 'first-prompt' },
-    status: session.failed ? 'unknown' : 'running',
-    entry: 'interactive',
-    cwd: session.cwd,
-    branch: null,
-    updatedAt: null,
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
-    contextTokens: null,
-    spentTokens: null,
-  }
 }
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
@@ -153,7 +128,15 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
-    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRow(id, {
+          ...session,
+          cli: 'codex',
+          status: session.failed ? 'unknown' : 'running',
+          setup: { model: null, effort: null, mode: null },
+        }),
+      ),
     close() {
       for (const session of sessions.values()) session.channel.close()
       sessions.clear()

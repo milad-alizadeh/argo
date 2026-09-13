@@ -10,7 +10,9 @@ import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
 import type { SessionCli } from '../hooks/useSessionComposer'
 import { ComposerCliToggle } from './ComposerCliToggle'
+import { ModeMenu } from './ModeMenu'
 import { PendingTurns } from './PendingTurns'
+import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
@@ -58,7 +60,7 @@ function ComposerEditor({
             placeholder={
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute px-4 py-3 text-sm text-muted-foreground"
+                className="pointer-events-none absolute top-0 left-0 px-4 py-3 text-sm text-muted-foreground"
               >
                 Direct the next move…
               </span>
@@ -68,7 +70,7 @@ function ComposerEditor({
         placeholder={
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute px-4 py-3 text-sm text-muted-foreground"
+            className="pointer-events-none absolute top-0 left-0 px-4 py-3 text-sm text-muted-foreground"
           >
             Direct the next move…
           </span>
@@ -96,6 +98,7 @@ export function ComposerForm({
   pendingTurns,
   plan,
   sessionId,
+  setup,
 }: {
   cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
   draft: string
@@ -110,6 +113,7 @@ export function ComposerForm({
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
   plan: SessionPlan | null
   sessionId: string
+  setup: TurnSetupControlProps | null
 }) {
   return (
     <form
@@ -129,12 +133,12 @@ export function ComposerForm({
         onReorder={onReorder}
       />
       <div
-        className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
+        className={`@container relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
       >
         <div className="absolute top-4 right-4 z-20">
           <SessionPlanPopover plan={plan} />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1">
           <ComposerEditor
             key={sessionId}
             draft={draft}
@@ -143,21 +147,30 @@ export function ComposerForm({
             onSend={onSend}
           />
         </div>
-        <div className="flex items-end p-2">
-          {isRunning ? (
-            <Button
-              aria-label="Interrupt"
-              onClick={() => void onInterrupt?.()}
-              size="sm"
-              type="button"
-            >
-              Interrupt
-            </Button>
-          ) : (
-            <Button aria-label="Send message" disabled={!draft.trim()} size="icon-sm" type="submit">
-              <ArrowUp />
-            </Button>
-          )}
+        <div className="flex items-center gap-1 p-2 @[36rem]:gap-2">
+          {setup ? <RunSetupMenu {...setup} /> : null}
+          <div className="ml-auto flex items-center gap-1">
+            {setup ? <ModeMenu {...setup} /> : null}
+            {isRunning ? (
+              <Button
+                aria-label="Interrupt"
+                onClick={() => void onInterrupt?.()}
+                size="sm"
+                type="button"
+              >
+                Interrupt
+              </Button>
+            ) : (
+              <Button
+                aria-label="Send message"
+                disabled={!draft.trim()}
+                size="icon-sm"
+                type="submit"
+              >
+                <ArrowUp />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </form>

@@ -81,6 +81,14 @@ export const sessionShellCommandSchema = z.strictObject({
 })
 export type SessionShellCommand = z.infer<typeof sessionShellCommandSchema>
 
+// The newest Turn's Model, Effort and Mode, verbatim; null where no record states it yet.
+export const sessionSetupSchema = z.strictObject({
+  model: z.string().nullable(),
+  effort: z.string().nullable(),
+  mode: z.string().nullable(),
+})
+export type SessionSetup = z.infer<typeof sessionSetupSchema>
+
 export const sessionRosterRowSchema = z.strictObject({
   id: identifierSchema,
   retiredIds: z.array(identifierSchema),
@@ -107,6 +115,7 @@ export const sessionRosterRowSchema = z.strictObject({
   archived: z.boolean(),
   contextTokens: countSchema.nullable().optional(),
   spentTokens: countSchema.nullable().optional(),
+  setup: sessionSetupSchema,
 })
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
 

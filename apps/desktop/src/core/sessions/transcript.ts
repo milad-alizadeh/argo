@@ -30,6 +30,10 @@ export type TranscriptMessage = {
   timestamp: string | null
   entry: SessionEntry
   stopReason: string | null
+  // The CLI's own Model, Effort and Mode words, verbatim (CONTEXT.md L2 · Model and Effort).
+  model: string | null
+  effort: string | null
+  mode: string | null
   blocks: ContentBlock[]
   toolCalls: ToolCall[]
   answeredCalls: string[]
