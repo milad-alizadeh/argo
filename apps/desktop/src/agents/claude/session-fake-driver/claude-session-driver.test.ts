@@ -6,6 +6,7 @@ import {
   ledgerFile,
   OPENING,
   PASTED,
+  STARTED_AT,
   settle,
   startedSession,
 } from './claude-driver-launch.ts'
@@ -58,6 +59,16 @@ test('starts a named interactive Claude Session at the chosen setup and sends th
         setup: { model: 'sonnet', effort: 'max', mode: 'plan' },
       },
     ],
+  )
+})
+
+test('lists a new managed Session at the time it started', async (context) => {
+  const { driver } = launch(await ledgerFile(context))
+  driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.', setup: OPENING })
+
+  assert.deepEqual(
+    driver.roster().map(({ updatedAt }) => updatedAt),
+    [STARTED_AT.toISOString()],
   )
 })
 

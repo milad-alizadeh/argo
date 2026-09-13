@@ -2,12 +2,8 @@ import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { ClaudeTurnRequest } from './deliver-turn'
-import {
-  ClaudeSessionDriverError,
-  channelActions,
-  type DriverOptions,
-  type ManagedSession,
-} from './drive-channel'
+import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -55,6 +51,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     close() {
       channel.close()
       for (const [sessionId, session] of sessions) {
+        session.ended = true
         session.process.kill?.()
         session.close()
         options.ledger.release(sessionId)
