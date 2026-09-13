@@ -19,6 +19,8 @@ export type TicketListProps = {
   backlog: Backlog
   selectedKey: string | null
   onSelect: (key: string) => void
+  // The moment a Ticket's age is measured against, so a caller controls whether it moves.
+  now: number
 }
 
 function tally({ tickets, query, total, hasMore, searching, provider }: Backlog): string {
@@ -95,8 +97,7 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
   )
 }
 
-export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) {
-  const now = Date.now()
+export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListProps) {
   return (
     <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
