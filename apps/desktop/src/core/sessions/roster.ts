@@ -13,6 +13,7 @@ import {
   readActivity,
   readDelegations,
   readPlan,
+  readSetup,
   readShellCommands,
   readTurnStartedAt,
 } from './signals'
@@ -124,5 +125,6 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     // this projection runs. Every other caller — Codex included — reads false.
     archived: false,
     ...readUsage(messages),
+    setup: readSetup(messages),
   }
 }

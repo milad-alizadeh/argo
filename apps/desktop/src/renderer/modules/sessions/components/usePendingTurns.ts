@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
-export type PendingTurn = { id: string; text: string }
+import { type TurnSetup, turnSetupSchema } from '../turn-setup/turn-setup'
+
+// A stored Turn can lack a setup, and then it sends with the composer's current one.
+export type PendingTurn = { id: string; text: string; setup?: TurnSetup }
 
 const QUEUE_STORAGE_KEY = 'argo.session-composer-queues'
-const pendingTurnSchema = z.strictObject({ id: z.string().uuid(), text: z.string().min(1) })
+const pendingTurnSchema = z.strictObject({
+  id: z.string().uuid(),
+  text: z.string().min(1),
+  setup: turnSetupSchema.optional(),
+})
 const queuesSchema = z.record(z.string(), z.array(pendingTurnSchema))
 
 function restoredQueues(): Map<string, PendingTurn[]> {
@@ -28,7 +35,7 @@ export function usePendingTurns({
   sessionId,
 }: {
   isRunning: boolean
-  onSend: (text: string) => Promise<boolean>
+  onSend: (text: string, setup: TurnSetup | undefined) => Promise<boolean>
   sessionId: string
 }) {
   const [queues, setQueues] = useState(restoredQueues)
@@ -51,7 +58,8 @@ export function usePendingTurns({
   )
 
   const addPendingTurn = useCallback(
-    (text: string) => updateQueue((turns) => [...turns, { id: crypto.randomUUID(), text }]),
+    (text: string, setup: TurnSetup | undefined) =>
+      updateQueue((turns) => [...turns, { id: crypto.randomUUID(), text, setup }]),
     [updateQueue],
   )
 
@@ -82,7 +90,7 @@ export function usePendingTurns({
     wasRunning.current = isRunning
     const nextTurn = pendingTurns[0]
     if (!becameIdle || !nextTurn) return
-    void onSend(nextTurn.text).then((sent) => {
+    void onSend(nextTurn.text, nextTurn.setup).then((sent) => {
       if (sent) removePendingTurn(nextTurn.id)
     })
   }, [isRunning, onSend, pendingTurns, removePendingTurn])

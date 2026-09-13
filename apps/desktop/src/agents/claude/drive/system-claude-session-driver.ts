@@ -57,8 +57,8 @@ export function createSystemClaudeSessionDriver(paths: {
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),
-    schedule: (callback, delayMs) => {
-      setTimeout(callback, delayMs)
+    schedule: (callback, milliseconds) => {
+      setTimeout(callback, milliseconds)
     },
     spawn: (command, commandArguments, options) =>
       pty.spawn(command, commandArguments, {

@@ -2,16 +2,24 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
+import { FIRST_FRAME_TIMEOUT_MS } from '../drive/first-frame.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
-import { FIRST_FRAME_TIMEOUT_MS, SUBMIT_DELAY_MS } from '../drive/turn-queue.ts'
-import { ledgerFile, ownedBeforeRestart, PASTED, STARTED_AT } from './claude-driver-launch.ts'
+import {
+  ledgerFile,
+  OPENING,
+  ownedBeforeRestart,
+  PASTED,
+  STARTED_AT,
+  settle,
+} from './claude-driver-launch.ts'
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
+const turn = (prompt: string) => ({ prompt, setup: OPENING })
 
 // A `claude` that draws only when told to, on a clock that moves only when told to.
 function fakeClaude(file: string) {
   const writes: string[] = []
-  const timers: { callback: () => void; delay: number }[] = []
+  let timers: { callback: () => void; delay: number }[] = []
   let emit: (data: string) => void = () => {}
   let exit: () => unknown = () => {}
   const driver = createClaudeSessionDriver({
@@ -37,45 +45,59 @@ function fakeClaude(file: string) {
       },
     }),
   })
-  const runTimers = (delay: number) => {
-    const due = timers.filter((timer) => timer.delay === delay)
-    timers.splice(0, timers.length, ...timers.filter((timer) => timer.delay !== delay))
-    for (const timer of due) timer.callback()
+  const fire = (due: (delay: number) => boolean) => {
+    const firing = timers.filter((timer) => due(timer.delay))
+    timers = timers.filter((timer) => !due(timer.delay))
+    for (const timer of firing) timer.callback()
+    return firing.length
   }
-  return { driver, writes, emit: (data: string) => emit(data), exit: () => exit(), runTimers }
+  // Lets every pause inside a Turn run out, but never the wait for the first frame.
+  const typeOut = async (): Promise<void> => {
+    await settle()
+    if (fire((delay) => delay !== FIRST_FRAME_TIMEOUT_MS) > 0) await typeOut()
+  }
+  return {
+    driver,
+    writes,
+    typeOut,
+    emit: (data: string) => emit(data),
+    exit: () => exit(),
+    timeOut: () => fire((delay) => delay === FIRST_FRAME_TIMEOUT_MS),
+  }
 }
 
 test('holds the opening Turn until Claude draws its first frame', async (context) => {
   const claude = fakeClaude(await ledgerFile(context))
-  claude.driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' })
+  claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the failing test.') })
 
   claude.emit('\u001b[?2004h\u001b[?1004h')
+  await claude.typeOut()
   assert.deepEqual(claude.writes, [])
 
   claude.emit(FIRST_FRAME)
-  claude.runTimers(SUBMIT_DELAY_MS)
+  await claude.typeOut()
   assert.deepEqual(claude.writes, PASTED('Inspect the failing test.'))
 })
 
 test('recognises a first frame split across two output chunks', async (context) => {
   const claude = fakeClaude(await ledgerFile(context))
-  claude.driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' })
+  claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the failing test.') })
 
   claude.emit('\u001b[?2026h> \u001b[?20')
   claude.emit('26l')
-  claude.runTimers(SUBMIT_DELAY_MS)
+  await claude.typeOut()
 
   assert.deepEqual(claude.writes, PASTED('Inspect the failing test.'))
 })
 
 test('sends a follow-up held before the first frame after the opening Turn', async (context) => {
   const claude = fakeClaude(await ledgerFile(context))
-  const sessionId = claude.driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
-  await claude.driver.send(sessionId, 'Then fix it.')
+  const sessionId = claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the test.') })
+  const followUp = claude.driver.send(sessionId, turn('Then fix it.'))
 
   claude.emit(FIRST_FRAME)
-  claude.runTimers(SUBMIT_DELAY_MS)
-  claude.runTimers(SUBMIT_DELAY_MS)
+  await claude.typeOut()
+  await followUp
 
   assert.deepEqual(claude.writes, [...PASTED('Inspect the test.'), ...PASTED('Then fix it.')])
 })
@@ -84,24 +106,38 @@ test('holds the Turn that resumes a Session until Claude draws its first frame',
   const file = await ledgerFile(context)
   ownedBeforeRestart(file, 'resumed-session')
   const claude = fakeClaude(file)
-  await claude.driver.send('resumed-session', 'Carry on.')
+  const resumed = claude.driver.send('resumed-session', turn('Carry on.'))
+  await claude.typeOut()
   assert.deepEqual(claude.writes, [])
 
   claude.emit(FIRST_FRAME)
-  claude.runTimers(SUBMIT_DELAY_MS)
+  await claude.typeOut()
+  await resumed
   assert.deepEqual(claude.writes, PASTED('Carry on.'))
 })
 
 test('sends the opening Turn when Claude draws no frame within the time limit', async (context) => {
   const claude = fakeClaude(await ledgerFile(context))
-  claude.driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' })
+  claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the failing test.') })
 
-  claude.runTimers(FIRST_FRAME_TIMEOUT_MS)
-  claude.runTimers(SUBMIT_DELAY_MS)
+  claude.timeOut()
+  await claude.typeOut()
   claude.emit(FIRST_FRAME)
-  claude.runTimers(SUBMIT_DELAY_MS)
+  await claude.typeOut()
 
   assert.deepEqual(claude.writes, PASTED('Inspect the failing test.'))
+})
+
+test('stops typing a Turn when Claude exits between the paste and Return', async (context) => {
+  const claude = fakeClaude(await ledgerFile(context))
+  claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the failing test.') })
+
+  claude.emit(FIRST_FRAME)
+  await settle()
+  claude.exit()
+  await claude.typeOut()
+
+  assert.deepEqual(claude.writes, PASTED('Inspect the failing test.').slice(0, 1))
 })
 
 for (const [ending, end] of [
@@ -110,11 +146,11 @@ for (const [ending, end] of [
 ] as const) {
   test(`writes nothing to a Claude Session that ${ending} before its opening Turn is sent`, async (context) => {
     const claude = fakeClaude(await ledgerFile(context))
-    claude.driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' })
+    claude.driver.start({ cwd: '/projects/argo', ...turn('Inspect the failing test.') })
 
     end(claude)
-    claude.runTimers(FIRST_FRAME_TIMEOUT_MS)
-    claude.runTimers(SUBMIT_DELAY_MS)
+    claude.timeOut()
+    await claude.typeOut()
 
     assert.deepEqual(claude.writes, [])
   })

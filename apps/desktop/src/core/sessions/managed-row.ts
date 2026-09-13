@@ -1,14 +1,15 @@
 import type { SessionRosterRow } from './models'
 
-type ManagedSessionFacts = Pick<SessionRosterRow, 'id' | 'cli' | 'cwd' | 'status'> & {
-  prompt: string
-  startedAt: string
-}
-
-// A Session Argo started, listed from what its driver holds before the CLI writes a transcript.
-export function managedRosterRow(session: ManagedSessionFacts): SessionRosterRow {
+// The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
+export function managedRow(
+  id: string,
+  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & {
+    prompt: string
+    startedAt: string
+  },
+): SessionRosterRow {
   return {
-    id: session.id,
+    id,
     retiredIds: [],
     cli: session.cli,
     posture: 'managed',
@@ -17,6 +18,7 @@ export function managedRosterRow(session: ManagedSessionFacts): SessionRosterRow
     entry: 'interactive',
     cwd: session.cwd,
     branch: null,
+    // The start time sorts a new Session to the top of the Roster until its transcript has one (#2002).
     updatedAt: session.startedAt,
     unreadableLines: 0,
     originUnread: false,
@@ -29,5 +31,6 @@ export function managedRosterRow(session: ManagedSessionFacts): SessionRosterRow
     archived: false,
     contextTokens: null,
     spentTokens: null,
+    setup: session.setup,
   }
 }

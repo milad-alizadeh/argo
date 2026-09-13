@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
+import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
 import { driveClaudeSession } from '../drive/drive-session.ts'
+import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
 const sendRequest = {
@@ -11,24 +12,55 @@ const sendRequest = {
   requestId: 'send-1',
   sessionId,
   prompt: 'Continue with the focused tests.',
-}
+  setup: { model: 'haiku', effort: 'low', mode: 'plan' },
+} as const
 
-test('sends a subsequent Turn to the selected managed Claude Session', async () => {
-  const sent: Array<[string, string]> = []
+test('sends a subsequent Turn at its chosen setup to the selected managed Claude Session', async () => {
+  const sent: [string, ClaudeTurnRequest][] = []
   const reply = await driveClaudeSession(sendRequest, {
     interrupt: () => {},
-    send: async (receivedSessionId, prompt) => {
-      sent.push([receivedSessionId, prompt])
+    send: async (receivedSessionId, turn) => {
+      sent.push([receivedSessionId, turn])
     },
   })
 
-  assert.deepEqual(sent, [[sessionId, 'Continue with the focused tests.']])
+  assert.deepEqual(sent, [
+    [
+      sessionId,
+      {
+        prompt: 'Continue with the focused tests.',
+        setup: { model: 'haiku', effort: 'low', mode: 'plan' },
+      },
+    ],
+  ])
   assert.deepEqual(reply, {
     version: 1,
     type: 'session.claude.accepted',
     requestId: 'send-1',
     sessionId,
   })
+})
+
+test('does not accept a Turn Claude could not be given', async () => {
+  const reply = await driveClaudeSession(sendRequest, {
+    interrupt: () => {},
+    send: async () => {
+      throw new Error('Claude Session is no longer running.')
+    },
+  })
+
+  assert.equal(reply.type, 'session.error')
+  assert.equal(reply.code, 'not-drivable')
+})
+
+test('refuses a Turn whose setup names a Mode Claude does not offer', async () => {
+  const reply = await driveClaudeSession(
+    { ...sendRequest, setup: { ...sendRequest.setup, mode: 'yolo' } },
+    { interrupt: () => {}, send: async () => {} },
+  )
+
+  assert.equal(reply.type, 'session.error')
+  assert.equal(reply.code, 'invalid-request')
 })
 
 test('interrupts only the selected managed Claude Session', async () => {

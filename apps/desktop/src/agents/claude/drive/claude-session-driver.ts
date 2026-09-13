@@ -1,16 +1,13 @@
 import type { ClaudePermission } from '@/core/sessions/contract'
-import { managedRosterRow } from '@/core/sessions/managed-roster-row'
+import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import {
-  ClaudeSessionDriverError,
-  channelActions,
-  type DriverOptions,
-  type ManagedSession,
-} from './drive-channel'
+import type { ClaudeTurnRequest } from './deliver-turn'
+import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
 
 export type ClaudeSessionDriver = {
-  start: (request: { cwd: string; prompt: string }) => string
-  send: (sessionId: string, text: string) => Promise<void>
+  start: (request: { cwd: string } & ClaudeTurnRequest) => string
+  send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
   roster: () => SessionRosterRow[]
   orphans: () => ReadonlySet<string>
@@ -32,11 +29,12 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
         ...request,
         sessionFlags: ['--session-id', sessionId],
       })
-      channel.write(session, request.prompt)
+      // The Session is reported running now; a failed opening Turn shows as its process ending.
+      channel.write(session, request).catch(() => {})
       return sessionId
     },
-    async send(sessionId, text) {
-      channel.write(await channel.channelFor(sessionId, text), text)
+    async send(sessionId, turn) {
+      await channel.write(await channel.channelFor(sessionId, turn), turn)
     },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
@@ -45,7 +43,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     },
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
-        managedRosterRow({ id, cli: 'claude', status: 'running', ...session }),
+        managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
       ),
     orphans: options.ledger.orphans,
     pendingPermission: () => null,
@@ -53,7 +51,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     close() {
       channel.close()
       for (const [sessionId, session] of sessions) {
-        session.turns.stop()
+        session.ended = true
         session.process.kill?.()
         session.close()
         options.ledger.release(sessionId)

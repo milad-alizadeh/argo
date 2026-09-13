@@ -54,7 +54,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     const sessionId = startReply.type === 'session.codex.started' ? startReply.sessionId : ''
 
     const transcripts = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-vertical-slice-'))
-    const reader = createCodexSessionReader(transcripts, { managedSessions: driver.roster })
+    const reader = createCodexSessionReader(transcripts, { roster: driver.roster })
     const listing = (await reader.listSessions({
       version: 1,
       type: 'session.list',

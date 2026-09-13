@@ -6,12 +6,10 @@ import {
   claudeSessionSendRequestSchema,
   sessionError,
 } from '@/core/sessions/contract'
-import { ClaudeSessionDriverError } from './drive-channel'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './driver-error'
 
-type ClaudeSessionDrive = {
-  interrupt: (sessionId: string) => void
-  send: (sessionId: string, prompt: string) => Promise<void>
-}
+type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
 
 export async function driveClaudeSession(
   value: unknown,
@@ -20,7 +18,9 @@ export async function driveClaudeSession(
   const send = claudeSessionSendRequestSchema.safeParse(value)
   if (send.success) {
     const request = send.data
-    return accept(request, () => driver.send(request.sessionId, request.prompt))
+    return accept(request, () =>
+      driver.send(request.sessionId, { prompt: request.prompt, setup: request.setup }),
+    )
   }
   const interrupt = claudeSessionInterruptRequestSchema.safeParse(value)
   if (interrupt.success) {
