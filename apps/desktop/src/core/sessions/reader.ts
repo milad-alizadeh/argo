@@ -41,8 +41,12 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
   const owners = new Map<string, SessionSource>()
   const lastDiscoveredCli = new Map<string, string>()
 
+  function isManaged(source: SessionSource, sessionId: string): boolean {
+    return source.managedSessions?.().some(({ id }) => id === sessionId) ?? false
+  }
+
   function managedOwner(sessionId: string): SessionSource | undefined {
-    return sources.find((source) => source.managedSessions?.().some(({ id }) => id === sessionId))
+    return sources.find((source) => isManaged(source, sessionId))
   }
 
   async function probeOwner(sessionId: string): Promise<SessionSource | undefined> {
@@ -53,20 +57,20 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
     return undefined
   }
 
+  // A managed report and the most recent discovery are cheap lookups, so they are read fresh on
+  // every call rather than through `owners`: a Session's owner can genuinely change between one
+  // `listSessions` and the next (a driver picks it up, or a later sweep names a different `cli`
+  // for the same id), and a permanent cache would keep routing a Feed to a stale one. `owners`
+  // exists only to remember the outcome of `probeOwner`'s expensive chain read, for a Session
+  // neither fact knows yet — an Argo-started Session before the first Roster list.
   async function ownerFor(sessionId: string): Promise<SessionSource | undefined> {
-    const known = owners.get(sessionId)
-    if (known !== undefined) return known
     const managed = managedOwner(sessionId)
-    if (managed !== undefined) {
-      owners.set(sessionId, managed)
-      return managed
-    }
+    if (managed !== undefined) return managed
     const cli = lastDiscoveredCli.get(sessionId)
     const bySource = cli === undefined ? undefined : sources.find((source) => source.cli === cli)
-    if (bySource !== undefined) {
-      owners.set(sessionId, bySource)
-      return bySource
-    }
+    if (bySource !== undefined) return bySource
+    const known = owners.get(sessionId)
+    if (known !== undefined) return known
     const probed = await probeOwner(sessionId)
     if (probed !== undefined) owners.set(sessionId, probed)
     return probed
@@ -83,7 +87,11 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
       const reply = combineDiscoveries(discovered, parsed.data.requestId)
       if (reply.type === 'session.listed') {
         lastDiscoveredCli.clear()
-        for (const session of reply.sessions) lastDiscoveredCli.set(session.id, session.cli)
+        // `reply.sessions` is sorted newest first, so the first row seen for an id is the most
+        // recent discovery of it — keep that one rather than letting a later, staler row win.
+        for (const session of reply.sessions) {
+          if (!lastDiscoveredCli.has(session.id)) lastDiscoveredCli.set(session.id, session.cli)
+        }
       }
       return reply
     },
@@ -94,8 +102,7 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
       try {
         const owner = await ownerFor(parsed.data.sessionId)
         if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-        const managed =
-          owner.managedSessions?.().some(({ id }) => id === parsed.data.sessionId) ?? false
+        const managed = isManaged(owner, parsed.data.sessionId)
         return await readFeedWithOverlay({ source: owner, feeds, managed }, parsed.data)
       } catch (error) {
         return sessionError(readFailure(error), parsed.data.requestId)

@@ -59,6 +59,38 @@ test('reads a Feed from the adapter the Roster names as owner, not the first one
   )
 })
 
+test('reads a Feed from the CLI the most recent listing named as owner, with no managed row at all', async (context) => {
+  const claudeRoot = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  // Same fixture shape as the managed-row test above, but routed purely off discovery: no
+  // driver reports either session id as managed, so `ownerFor` must fall back to
+  // `lastDiscoveredCli` rather than the managed-report branch.
+  await writeClaudeTranscript({
+    root: claudeRoot,
+    sessionId: 'dup',
+    text: 'From Claude.',
+    updatedAt: '2026-09-13T10:00:00.000Z',
+  })
+  await writeCodexTranscript({
+    root: codexRoot,
+    sessionId: 'dup',
+    text: 'From Codex.',
+    updatedAt: '2026-09-13T10:00:05.000Z',
+  })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: claudeRoot }),
+    codexSessionSource(codexRoot),
+  ])
+
+  await listed(reader)
+  const reply = await fed(reader, feedRequest('dup'))
+  assert.equal(reply.type, 'session.feed.read')
+  assert.ok(
+    reply.type === 'session.feed.read' &&
+      reply.rows.some((row) => 'text' in row && row.text === 'From Codex.'),
+  )
+})
+
 test('lists Sessions from both CLIs, newest first', async (context) => {
   const claudeRoot = await tempRoot(context)
   const codexRoot = await tempRoot(context)
