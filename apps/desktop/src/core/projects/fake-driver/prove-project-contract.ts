@@ -38,6 +38,7 @@ const SURFACE = [
   'decideClaudePermission',
   'disconnectAccount',
   'disconnectRepository',
+  'discoverRepositories',
   'dismissAccountNotice',
   'getAppearance',
   'interruptClaudeSession',

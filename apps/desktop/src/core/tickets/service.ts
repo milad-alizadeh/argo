@@ -3,7 +3,11 @@
 // (ADR-0018).
 import type { GitHubFailure } from '../../providers/github/http'
 import { readTicketPage } from '../../providers/github/issues'
-import { checkRepository, isRepositoryScope } from '../../providers/github/repository'
+import {
+  checkRepository,
+  isRepositoryScope,
+  listRepositories,
+} from '../../providers/github/repository'
 import {
   type AccountAccess,
   accountState,
@@ -17,6 +21,7 @@ import { readConnections, type TicketConnection, writeConnections } from './conn
 import {
   type ConnectionSummary,
   type TicketConnectedReply,
+  type TicketDiscoverReply,
   type TicketErrorCode,
   type TicketListReply,
   ticketError,
@@ -149,4 +154,16 @@ export async function listTickets(
   const page = await readTicketPage(call.access.endpoints, token.token, { scope, ...request })
   if (!page.ok) return refused(call, { ...connection, token: token.token }, page.failure)
   return { version: 1, type: 'ticket.listed', requestId, projectId, scope, ...page.value }
+}
+
+export async function discoverRepositories(
+  call: Call,
+  accountId: string,
+): Promise<TicketDiscoverReply> {
+  const { requestId, projectId } = call
+  const token = await tokenFor(call.access, accountId)
+  if (!token.ok) return ticketError(TOKEN_ERRORS[token.reason], requestId)
+  const read = await listRepositories(call.access.endpoints, token.token)
+  if (!read.ok) return refused(call, { accountId, token: token.token }, read.failure)
+  return { version: 1, type: 'ticket.discovered', requestId, projectId, scopes: read.value }
 }

@@ -52,6 +52,8 @@ const connectRepositoryRequest = message('ticket.connect', {
   scope: identifier,
 })
 const disconnectRepositoryRequest = message('ticket.disconnect', project)
+// The repositories an Account could connect this Project to.
+const discoverRequest = message('ticket.discover', { ...project, accountId: identifier })
 // GitHub refuses a search query over 256 characters, and the scope qualifiers take their share.
 export const TICKET_QUERY_LIMIT = 200
 // An empty query reads the open backlog in GitHub's order; any other searches it on GitHub.
@@ -64,6 +66,7 @@ const connected = message('ticket.connected', {
   ...project,
   connection: connectionSummary.nullable(),
 })
+const discovered = message('ticket.discovered', { ...project, scopes: z.array(identifier) })
 // `total` is known only for a search: GitHub counts a backlog listing nowhere without paging it all.
 const listed = message('ticket.listed', {
   ...project,
@@ -83,6 +86,8 @@ export type TicketConnectionRequest = z.infer<typeof connectionRequest>
 export type TicketConnectRequest = z.infer<typeof connectRepositoryRequest>
 export type TicketDisconnectRequest = z.infer<typeof disconnectRepositoryRequest>
 export type TicketListRequest = z.infer<typeof listRequest>
+export type TicketDiscoverRequest = z.infer<typeof discoverRequest>
+export type TicketDiscovered = z.infer<typeof discovered>
 export type TicketConnected = z.infer<typeof connected>
 export type TicketListed = z.infer<typeof listed>
 
@@ -111,6 +116,7 @@ export type TicketErrorCode = keyof typeof TICKET_ERRORS
 export type TicketError = ContractError<'ticket.error', TicketErrorCode>
 export type TicketConnectedReply = TicketConnected | TicketError
 export type TicketListReply = TicketListed | TicketError
+export type TicketDiscoverReply = TicketDiscovered | TicketError
 
 export const ticketError = errorFactory('ticket.error', TICKET_ERRORS)
 const ticketErrorSchema = errorSchema('ticket.error', TICKET_ERRORS)
@@ -119,5 +125,7 @@ export const isTicketConnectionRequest = guard(connectionRequest)
 export const isTicketConnectRequest = guard(connectRepositoryRequest)
 export const isTicketDisconnectRequest = guard(disconnectRepositoryRequest)
 export const isTicketListRequest = guard(listRequest)
+export const isTicketDiscoverRequest = guard(discoverRequest)
 export const isTicketConnectedReply = guard(z.union([connected, ticketErrorSchema]))
 export const isTicketListReply = guard(z.union([listed, ticketErrorSchema]))
+export const isTicketDiscoverReply = guard(z.union([discovered, ticketErrorSchema]))
