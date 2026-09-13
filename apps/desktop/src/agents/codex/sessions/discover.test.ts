@@ -4,13 +4,29 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
-import { listSessions } from './read-sessions'
+import { createCodexSessionReader } from './read-sessions'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 
+function listSessions(value: unknown, root: string) {
+  return createCodexSessionReader(root).listSessions(value)
+}
+
 function listed(reply: Awaited<ReturnType<typeof listSessions>>) {
-  if (reply.type !== 'session.listed') throw new Error(`Expected sessions, received ${reply.type}.`)
-  return reply
+  if (
+    typeof reply !== 'object' ||
+    reply === null ||
+    !('type' in reply) ||
+    reply.type !== 'session.listed'
+  ) {
+    throw new Error(`Expected sessions, received ${JSON.stringify(reply)}.`)
+  }
+  return reply as {
+    type: 'session.listed'
+    filesFound: number
+    filesRead: number
+    sessions: { id: string }[]
+  }
 }
 
 test('does not list transcripts without messages, but counts and re-reads them', async (context) => {

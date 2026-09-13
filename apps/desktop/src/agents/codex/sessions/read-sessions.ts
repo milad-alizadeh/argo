@@ -1,9 +1,7 @@
 import type { SessionReader } from '@/core/sessions/bridge'
-import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
 import { projectFeed } from '@/core/sessions/feed'
-import { type FeedOverlay, withFeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
-import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
+import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import { discoverSessions, readSessionFiles } from './discover'
 
@@ -34,22 +32,19 @@ function draftOverlay(live: LiveMessage[]): FeedOverlay | null {
   }
 }
 
-export function createCodexSessionReader(root: string, options?: ReaderOptions): SessionReader {
-  const reader = createTranscriptSessionReader({
+export function codexSessionSource(root: string, options?: ReaderOptions): SessionSource {
+  const liveMessages = options?.liveMessages
+  return {
+    cli: 'codex',
     discoverSessions: () => discoverSessions(root),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
-  })
-  const liveMessages = options?.liveMessages
-  if (liveMessages === undefined) return reader
-  return withFeedOverlay(reader, (sessionId) => draftOverlay(liveMessages(sessionId)))
+    overlayFor:
+      liveMessages === undefined ? undefined : (sessionId) => draftOverlay(liveMessages(sessionId)),
+  }
 }
 
-export function listSessions(value: unknown, root: string): Promise<SessionListReply> {
-  return createCodexSessionReader(root).listSessions(value) as Promise<SessionListReply>
-}
-
-export function readFeed(value: unknown, root: string): Promise<SessionFeedReply> {
-  return createCodexSessionReader(root).readSessionFeed(value) as Promise<SessionFeedReply>
+export function createCodexSessionReader(root: string, options?: ReaderOptions): SessionReader {
+  return createSessionReader([codexSessionSource(root, options)])
 }
