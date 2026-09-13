@@ -41,7 +41,7 @@ export const NotConnected: Story = {
   args: { binding: null },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('No repository is connected.')).toBeVisible()
+    await expect(canvas.getByText('No repository connected')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Connect a repository' }))
     await expect(args.onConnect).toHaveBeenCalled()
   },

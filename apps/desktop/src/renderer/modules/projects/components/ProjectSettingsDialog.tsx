@@ -25,8 +25,13 @@ export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSe
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{project.name} settings</DialogTitle>
-          <DialogDescription>Where this Project reads its Tickets from.</DialogDescription>
+          <DialogTitle>Project settings</DialogTitle>
+          <DialogDescription className="grid">
+            <span className="type-body font-medium text-foreground">{project.name}</span>
+            <span className="truncate font-mono type-meta" title={project.path}>
+              {project.path}
+            </span>
+          </DialogDescription>
         </DialogHeader>
         <RepositorySettings
           binding={binding.isPending ? undefined : (binding.data ?? null)}
