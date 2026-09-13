@@ -74,4 +74,3 @@ The following recommendations are inference from the mechanisms and limits above
 - Record selected decisions and their reasons. Make moodboards and extra sheets conditional, unless the user requests those deliverables.
 
 A future evaluation can compare a compact brief, optional references, and mandatory boards under the same tasks and time budget. Blind human judgments can measure task fit, structural variety, and visual quality alongside completion time. Until such evidence exists, a fixed inventory remains a workflow preference.
-

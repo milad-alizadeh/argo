@@ -1,7 +1,7 @@
 # Distinct visual directions, not palette swaps
 
-Date: 2026-09-12  
-For: [Argo issue #1960](https://github.com/milad-alizadeh/argo/issues/1960)  
+Date: 2026-09-12
+For: [Argo issue #1960](https://github.com/milad-alizadeh/argo/issues/1960)
 Status: Research synthesis from primary and first-party sources
 
 ## Finding
