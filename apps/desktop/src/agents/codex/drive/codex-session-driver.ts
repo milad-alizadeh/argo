@@ -1,8 +1,8 @@
+import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
 import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
-import { rosterRow } from './roster-row'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
@@ -137,7 +137,15 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
-    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRow(id, {
+          ...session,
+          cli: 'codex',
+          status: session.failed ? 'unknown' : 'running',
+          setup: { model: null, effort: null, mode: null },
+        }),
+      ),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     close() {
       for (const session of sessions.values()) session.channel.close()

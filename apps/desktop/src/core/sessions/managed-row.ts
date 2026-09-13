@@ -1,17 +1,17 @@
-import type { SessionRosterRow } from '@/core/sessions/models'
+import type { SessionRosterRow } from './models'
 
-// A managed Codex Session as the Roster shows it before its rollout says more.
-export function rosterRow(
+// The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
+export function managedRow(
   id: string,
-  session: { cwd: string; prompt: string; failed: boolean },
+  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & { prompt: string },
 ): SessionRosterRow {
   return {
     id,
     retiredIds: [],
-    cli: 'codex',
+    cli: session.cli,
     posture: 'managed',
     title: { text: session.prompt, source: 'first-prompt' },
-    status: session.failed ? 'unknown' : 'running',
+    status: session.status,
     entry: 'interactive',
     cwd: session.cwd,
     branch: null,
@@ -27,5 +27,6 @@ export function rosterRow(
     archived: false,
     contextTokens: null,
     spentTokens: null,
+    setup: session.setup,
   }
 }

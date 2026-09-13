@@ -41,6 +41,7 @@ import {
 } from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
 import { proveToolCalls } from './session-tool-calls-case'
+import { proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
@@ -109,6 +110,8 @@ try {
   await ran(['session-plan'], () =>
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
+  await ran(['session-turn-setup'], () => proveTurnSetup(page))
+  await ran(['session-turn-setup'], () => proveTurnSetup(page))
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {
       remove: () => removeProse(fixture.claudeTranscripts),

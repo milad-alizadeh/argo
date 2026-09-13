@@ -28,6 +28,7 @@ const storybookSession = {
   turnStartedAt: null,
   activity: null,
   plan: null,
+  setup: { model: null, effort: null, mode: null },
   delegations: [],
   shell: [],
   pullRequest: null,

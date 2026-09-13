@@ -1,12 +1,31 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 
+export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku'] as const
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+export const CLAUDE_MODES = [
+  'manual',
+  'acceptEdits',
+  'plan',
+  'auto',
+  'dontAsk',
+  'bypassPermissions',
+] as const
+
+export const claudeTurnSetupSchema = z.strictObject({
+  model: z.enum(CLAUDE_MODELS),
+  effort: z.enum(CLAUDE_EFFORTS),
+  mode: z.enum(CLAUDE_MODES),
+})
+export type ClaudeTurnSetup = z.infer<typeof claudeTurnSetupSchema>
+
 export const claudeSessionStartRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.claude.start'),
   requestId: identifierSchema,
   cwd: z.string().min(1),
   prompt: z.string().refine((value) => value.trim().length > 0),
+  setup: claudeTurnSetupSchema,
 })
 export type ClaudeSessionStartRequest = z.infer<typeof claudeSessionStartRequestSchema>
 
@@ -24,6 +43,7 @@ export const claudeSessionSendRequestSchema = z.strictObject({
   requestId: identifierSchema,
   sessionId: identifierSchema,
   prompt: z.string().refine((value) => value.trim().length > 0),
+  setup: claudeTurnSetupSchema,
 })
 export type ClaudeSessionSendRequest = z.infer<typeof claudeSessionSendRequestSchema>
 

@@ -3,7 +3,9 @@ import { test } from 'node:test'
 
 import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
-import { launch, ledgerFile, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
+import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
+
+const turn = (prompt: string) => ({ prompt, setup: OPENING })
 
 // ADR-0026 as amended by #1842: the next Turn is what resumes a Session Argo held before.
 test('the next Turn to an orphaned Session resumes its chain in a new drive channel', async (context) => {
@@ -14,16 +16,28 @@ test('the next Turn to an orphaned Session resumes its chain in a new drive chan
       sessionId === 'chain-root' ? { cwd: '/projects/argo', tipId: 'chain-tip' } : null,
   })
 
-  await driver.send('chain-root', 'Carry on with the fix.')
+  await driver.send('chain-root', turn('Carry on with the fix.'))
 
-  assert.deepEqual(spawned, [
-    {
-      command: '/usr/local/bin/claude',
-      commandArguments: ['--resume', 'chain-tip', '--permission-mode', 'manual'],
-      cwd: '/projects/argo',
-      writes: PASTED('Carry on with the fix.'),
-    },
-  ])
+  assert.deepEqual(
+    spawned.map(({ environment: _environment, ...process }) => process),
+    [
+      {
+        command: '/usr/local/bin/claude',
+        commandArguments: [
+          '--resume',
+          'chain-tip',
+          '--model',
+          'opus',
+          '--effort',
+          'high',
+          '--permission-mode',
+          'manual',
+        ],
+        cwd: '/projects/argo',
+        writes: PASTED('Carry on with the fix.'),
+      },
+    ],
+  )
   assert.deepEqual(
     driver.roster().map(({ id, posture }) => ({ id, posture })),
     [{ id: 'chain-root', posture: 'managed' }],
@@ -35,7 +49,10 @@ test('two Turns sent during one resume open one channel and arrive in order', as
   ownedBeforeRestart(file, 'chain-root')
   const { driver, spawned } = launch(file)
 
-  await Promise.all([driver.send('chain-root', 'First.'), driver.send('chain-root', 'Second.')])
+  await Promise.all([
+    driver.send('chain-root', turn('First.')),
+    driver.send('chain-root', turn('Second.')),
+  ])
 
   assert.equal(spawned.length, 1)
   assert.deepEqual(spawned[0]?.writes, [...PASTED('First.'), ...PASTED('Second.')])
@@ -45,11 +62,11 @@ test('a resumed Session whose process exits resumes again on the next Turn', asy
   const file = await ledgerFile(context)
   ownedBeforeRestart(file, 'chain-root')
   const { driver, spawned, exit } = launch(file)
-  await driver.send('chain-root', 'First.')
+  await driver.send('chain-root', turn('First.'))
 
   exit(0)
   assert.deepEqual(driver.roster(), [])
-  await driver.send('chain-root', 'Second.')
+  await driver.send('chain-root', turn('Second.'))
 
   assert.equal(spawned.length, 2)
   assert.deepEqual(spawned[1]?.writes, PASTED('Second.'))
@@ -66,7 +83,7 @@ test('a window that closes while a resume reads its transcript starts no Claude 
       }),
   })
 
-  const sent = driver.send('chain-root', 'Carry on.')
+  const sent = driver.send('chain-root', turn('Carry on.'))
   driver.close()
   found({ cwd: '/projects/argo', tipId: 'chain-tip' })
 
@@ -124,7 +141,7 @@ for (const refusal of refusals) {
     const { driver, spawned } = launch(file, refusal.options)
 
     await assert.rejects(
-      driver.send('chain-root', 'Carry on.'),
+      driver.send('chain-root', turn('Carry on.')),
       (error: unknown) => error instanceof ClaudeSessionDriverError && error.code === refusal.code,
     )
     assert.deepEqual(spawned, [])

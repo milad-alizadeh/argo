@@ -93,7 +93,8 @@ test('starts a managed Claude Session through the named Session action', async (
   const request = {
     cwd: '/projects/argo',
     prompt: 'Inspect the failing test.',
-  }
+    setup: { model: 'opus', effort: 'max', mode: 'plan' },
+  } as const
   const reply = {
     version: 1,
     type: 'session.claude.started',
@@ -104,6 +105,7 @@ test('starts a managed Claude Session through the named Session action', async (
     const parsed = claudeSessionStartRequestSchema.parse(received)
     assert.equal(parsed.cwd, request.cwd)
     assert.equal(parsed.prompt, request.prompt)
+    assert.deepEqual(parsed.setup, request.setup)
     return { ...reply, requestId: parsed.requestId }
   })
 
