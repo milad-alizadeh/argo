@@ -40,6 +40,11 @@ export function createCodexSessionReader(root: string, options?: ReaderOptions):
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
+    reconcileManagedSession: (observed, managed) => ({
+      ...observed,
+      posture: managed.posture,
+      status: managed.status,
+    }),
   })
   const liveMessages = options?.liveMessages
   if (liveMessages === undefined) return reader

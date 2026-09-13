@@ -24,15 +24,26 @@ type TranscriptSessionSource = {
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
   managedSessions?: () => SessionRosterRow[]
+  reconcileManagedSession?: (
+    observed: SessionRosterRow,
+    managed: SessionRosterRow,
+  ) => SessionRosterRow
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
 // discovery sweep alone can miss it, or hold a stale posture for one it has already found.
-function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]): Discovery {
+function mergeManagedRoster(
+  discovered: Discovery,
+  managed: SessionRosterRow[],
+  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
+    ...observed,
+    posture: held.posture,
+  }),
+): Discovery {
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
-    return held === undefined ? session : { ...session, posture: held.posture }
+    return held === undefined ? session : reconcile(session, held)
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),
@@ -109,6 +120,7 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
         const discovery = mergeManagedRoster(
           await source.discoverSessions(),
           source.managedSessions?.() ?? [],
+          source.reconcileManagedSession,
         )
         return {
           version: 1,
