@@ -46,36 +46,25 @@ const meta: Meta<typeof AccountsPanel> = {
 export default meta
 type Story = StoryObj<typeof AccountsPanel>
 
-export const Disconnect: Story = {
+export const Accounts: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const row = canvas.getByRole('listitem', { name: 'GitHub Account octocat' })
-    const bindings = within(row).getByRole('list', { name: 'Bindings for octocat' })
+    const bindings = within(row).getByRole('list', { name: 'Repositories for octocat' })
     await expect(bindings).toHaveTextContent('argo · octocat/hello-world')
-    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
-    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect' }))
-    await expect(args.onDisconnect).toHaveBeenCalledWith('github:583231')
-  },
-}
-
-export const KeepAccount: Story = {
-  play: async ({ args, canvasElement }) => {
-    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
     // Asking lands on the harmless answer, and answering puts focus back on the row.
     await expect(within(row).getByRole('button', { name: 'Keep' })).toHaveFocus()
     await userEvent.click(within(row).getByRole('button', { name: 'Keep' }))
     await expect(within(row).getByRole('button', { name: 'Disconnect…' })).toHaveFocus()
     await expect(args.onDisconnect).not.toHaveBeenCalled()
-  },
-}
-
-export const RevokedAccount: Story = {
-  play: async ({ args, canvasElement }) => {
-    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account hubot' })
-    await expect(row).toHaveTextContent('Access revoked')
-    await expect(row).toHaveTextContent('No Project is bound to this Account.')
-    await userEvent.click(within(row).getByRole('button', { name: 'Reconnect' }))
+    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
+    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect' }))
+    await expect(args.onDisconnect).toHaveBeenCalledWith('github:583231')
+    const revokedRow = canvas.getByRole('listitem', { name: 'GitHub Account hubot' })
+    await expect(revokedRow).toHaveTextContent('Access revoked')
+    await expect(revokedRow).toHaveTextContent('No Project reads Tickets through this Account.')
+    await userEvent.click(within(revokedRow).getByRole('button', { name: 'Reconnect' }))
     await expect(args.signIn.start).toHaveBeenCalled()
   },
 }

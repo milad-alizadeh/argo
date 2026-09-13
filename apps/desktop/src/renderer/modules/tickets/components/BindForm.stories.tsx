@@ -24,7 +24,7 @@ type Story = StoryObj<typeof BindForm>
 export const Bind: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const submit = canvas.getByRole('button', { name: 'Bind repository' })
+    const submit = canvas.getByRole('button', { name: 'Connect repository' })
     await expect(submit).toBeDisabled()
     // A revoked Account cannot validate a repository, so it is not offered.
     await expect(canvas.getByRole('combobox', { name: 'GitHub Account' })).toHaveTextContent(

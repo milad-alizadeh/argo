@@ -3,6 +3,29 @@ import type { Ticket } from '@/core/tickets/contract'
 
 export type BacklogRow = { ticket: Ticket; depth: number; parent: number | null }
 
+// The Tickets read so far for one query, and how to read the next page of them.
+export type Backlog = {
+  // The repository the Tickets are read from, `owner/name`.
+  scope: string
+  tickets: readonly Ticket[]
+  query: string
+  // GitHub counts a search's matches; an unfiltered backlog is counted only once read to its end.
+  total: number | null
+  hasMore: boolean
+  loadingMore: boolean
+  // A new query is reading while the last one's answer stays on screen.
+  searching: boolean
+  onLoadMore: () => void
+}
+
+// A Ticket opened while paging shifts the listing, so a Ticket can arrive on two pages.
+export function uniqueTickets(pages: readonly { tickets: readonly Ticket[] }[]): Ticket[] {
+  const seen = new Set<number>()
+  return pages.flatMap((page) =>
+    page.tickets.filter((ticket) => !seen.has(ticket.number) && seen.add(ticket.number)),
+  )
+}
+
 export function backlogRows(tickets: readonly Ticket[]): BacklogRow[] {
   const byNumber = new Map(tickets.map((ticket) => [ticket.number, ticket]))
   const nested = new Set(tickets.flatMap((ticket) => ticket.children.map((child) => child.number)))

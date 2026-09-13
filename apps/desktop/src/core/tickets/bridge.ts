@@ -34,7 +34,9 @@ const HANDLERS = {
     bind(call, { accountId, scope }),
   ),
   'ticket.unbind': handler(isTicketUnbindRequest, unbind),
-  'ticket.list': handler(isTicketListRequest, listTickets),
+  'ticket.list': handler(isTicketListRequest, (call, { query, page }) =>
+    listTickets(call, { query, page }),
+  ),
 }
 
 export const routeTicketRequest = createRouter<AccountAccess, unknown>(HANDLERS, ticketError)

@@ -2,7 +2,7 @@
 // when it is made, the one moment a wrong Account and a missing repository can be told apart
 // (ADR-0018).
 import type { GitHubFailure } from '../../providers/github/http'
-import { readOpenTickets } from '../../providers/github/issues'
+import { readTicketPage } from '../../providers/github/issues'
 import { checkRepository, isRepositoryScope } from '../../providers/github/repository'
 import {
   type AccountAccess,
@@ -126,7 +126,10 @@ export async function unbind(call: Call): Promise<TicketBoundReply> {
   return saveBinding(call, null)
 }
 
-export async function listTickets(call: Call): Promise<TicketListReply> {
+export async function listTickets(
+  call: Call,
+  request: { query: string; page: number },
+): Promise<TicketListReply> {
   const { requestId, projectId } = call
   const read = await readBindings(call.access.paths.bindings)
   if (!read.ok) return ticketError(STORAGE_ERRORS[read.reason], requestId)
@@ -134,8 +137,8 @@ export async function listTickets(call: Call): Promise<TicketListReply> {
   if (!binding) return ticketError('not-bound', requestId)
   const token = await tokenFor(call.access, binding.accountId)
   if (!token.ok) return ticketError(TOKEN_ERRORS[token.reason], requestId)
-  const tickets = await readOpenTickets(call.access.endpoints, token.token, binding.scope)
-  if (!tickets.ok) return refused(call, { ...binding, token: token.token }, tickets.failure)
-  const scope = binding.scope
-  return { version: 1, type: 'ticket.listed', requestId, projectId, scope, tickets: tickets.value }
+  const { scope } = binding
+  const page = await readTicketPage(call.access.endpoints, token.token, { scope, ...request })
+  if (!page.ok) return refused(call, { ...binding, token: token.token }, page.failure)
+  return { version: 1, type: 'ticket.listed', requestId, projectId, scope, ...page.value }
 }

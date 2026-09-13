@@ -1,5 +1,4 @@
 import { FolderGit2 } from 'lucide-react'
-import { useRef } from 'react'
 
 import {
   Empty,
@@ -9,13 +8,10 @@ import {
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
-import { useFocusRescue } from '../../../lib/focus-rescue'
 import { AccountsDialog } from '../../accounts/components/AccountsDialog'
-import { SignInNotice } from '../../accounts/components/SignInNotice'
 import { BindForm } from '../components/BindForm'
-import { BindingProblem } from '../components/BindingProblem'
 import { TicketDeck } from '../components/TicketDeck'
-import { TicketFailure } from '../components/TicketFailure'
+import { TicketProblem } from '../components/TicketProblem'
 import { type TicketsScreenProps, type TicketsView, useTicketsView } from '../hooks/useTicketsView'
 
 // The skeleton takes the backlog's own geometry, so the rows do not jump when they arrive.
@@ -60,12 +56,10 @@ function Body({ view }: { view: TicketsView }) {
       return <NoProject />
     case 'loading':
       return <Loading label={view.label} />
-    case 'failure':
-      return <TicketFailure {...view} />
+    case 'problem':
+      return <TicketProblem {...view} />
     case 'unbound':
       return <BindForm key={view.projectId} {...view} />
-    case 'binding-problem':
-      return <BindingProblem {...view} />
     case 'tickets':
       // A new Project starts with nothing selected, as the bind form starts empty.
       return <TicketDeck key={view.projectId} {...view} />
@@ -83,16 +77,10 @@ export function TicketsScreenView() {
   )
 }
 
-export function TicketsScreen({ view, notice }: TicketsScreenProps) {
-  const screen = useRef<HTMLElement>(null)
-  // Dismissing the notice removes the control that dismissed it.
-  useFocusRescue(screen, notice === null)
+export function TicketsScreen({ view }: TicketsScreenProps) {
   return (
-    <main aria-label="Tickets" className="flex h-full min-h-0 flex-col bg-background" ref={screen}>
-      <div className="min-h-0 flex-1">
-        <Body view={view} />
-      </div>
-      {notice ? <SignInNotice {...notice} /> : null}
+    <main aria-label="Tickets" className="h-full min-h-0 bg-background">
+      <Body view={view} />
     </main>
   )
 }

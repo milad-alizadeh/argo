@@ -77,10 +77,10 @@ export function BindForm({
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
       <Card className="w-full max-w-md">
-        <form aria-label="Bind a repository" className="contents" onSubmit={submit}>
+        <form aria-label="Connect a repository" className="contents" onSubmit={submit}>
           <CardHeader>
             <CardTitle>
-              <h2 className="type-heading">Bind {projectName} to a repository</h2>
+              <h2 className="type-heading">Connect {projectName} to a repository</h2>
             </CardTitle>
             <CardDescription>
               Argo reads this repository's open GitHub Issues as the Project's Tickets.
@@ -121,7 +121,7 @@ export function BindForm({
           </CardContent>
           <CardFooter className="justify-end">
             <Button disabled={pending || scope.trim() === ''} type="submit">
-              {pending ? 'Checking the repository…' : 'Bind repository'}
+              {pending ? 'Checking the repository…' : 'Connect repository'}
             </Button>
           </CardFooter>
         </form>

@@ -1,17 +1,32 @@
 // A Project's Binding and the open Tickets read through it, cached per Project.
 import {
+  type InfiniteData,
+  keepPreviousData,
   type QueryClient,
+  type QueryKey,
   skipToken,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import type { BindingSummary, Ticket, TicketBound, TicketBoundReply } from '@/core/tickets/contract'
+import type {
+  BindingSummary,
+  TicketBound,
+  TicketBoundReply,
+  TicketListed,
+} from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import { bindRequest, projectRequest } from '../lib/requests'
+import { bindRequest, listRequest, projectRequest } from '../lib/requests'
 
 const bindingKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'binding']
-const listKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'list']
+// The prefix without a query names every listing of the Project, searches included.
+const listKey = (projectId: string | null, query?: string) =>
+  query === undefined
+    ? [...QUERY_KEYS.tickets, projectId, 'list']
+    : [...QUERY_KEYS.tickets, projectId, 'list', query]
+
+export type TicketPages = InfiniteData<TicketListed, number>
 
 // A refused or unreadable grant is an Account fact, so the Account listing and this Binding's
 // summary are both stale.
@@ -34,21 +49,29 @@ export function useBinding(projectId: string | null) {
   })
 }
 
-export function useTicketList(projectId: string | null, binding: BindingSummary | null) {
+// One page per request, the next asked for as the list scrolls; a new query keeps the last
+// answer on screen until its own arrives.
+export function useTicketList(
+  projectId: string | null,
+  binding: BindingSummary | null,
+  query = '',
+) {
   const client = useQueryClient()
   const ready = projectId !== null && binding?.state === 'ready'
-  return useQuery<Ticket[], ContractFailure>({
-    queryKey: listKey(projectId),
+  return useInfiniteQuery<TicketListed, ContractFailure, TicketPages, QueryKey, number>({
+    queryKey: listKey(projectId, query),
     queryFn: ready
-      ? async () => {
-          const pending = window.argo.listTickets(projectRequest('ticket.list', projectId))
-          const reply = await settle(pending).catch((failure: ContractFailure) => {
-            onRefused(client, projectId, failure)
-            throw failure
-          })
-          return reply.tickets
-        }
+      ? ({ pageParam }) =>
+          settle(window.argo.listTickets(listRequest(projectId, query, pageParam))).catch(
+            (failure: ContractFailure) => {
+              onRefused(client, projectId, failure)
+              throw failure
+            },
+          )
       : skipToken,
+    initialPageParam: 1,
+    getNextPageParam: (last) => last.nextPage ?? undefined,
+    placeholderData: keepPreviousData,
   })
 }
 

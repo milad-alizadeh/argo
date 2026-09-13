@@ -28,10 +28,17 @@ export type AccountRowProps = {
 // What a revoked grant or a disconnect affects is named at Account scope, one line per Binding.
 function Bindings({ account }: { account: AccountSummary }) {
   if (account.bindings.length === 0) {
-    return <p className="type-meta text-muted-foreground">No Project is bound to this Account.</p>
+    return (
+      <p className="type-meta text-muted-foreground">
+        No Project reads Tickets through this Account.
+      </p>
+    )
   }
   return (
-    <ul aria-label={`Bindings for ${account.login}`} className="grid gap-(--spacing-shell-tight)">
+    <ul
+      aria-label={`Repositories for ${account.login}`}
+      className="grid gap-(--spacing-shell-tight)"
+    >
       {account.bindings.map((binding) => (
         <li className="type-meta text-muted-foreground" key={binding.projectId}>
           {binding.projectName} · <span className="font-mono">{binding.scope}</span>
@@ -44,7 +51,7 @@ function Bindings({ account }: { account: AccountSummary }) {
 function disconnectQuestion({ login, bindings }: AccountSummary): string {
   if (bindings.length === 0) return `Disconnect ${login}?`
   const subject =
-    bindings.length === 1 ? 'Its Binding stops' : `Its ${bindings.length} Bindings stop`
+    bindings.length === 1 ? 'Its repository stops' : `Its ${bindings.length} repositories stop`
   return `Disconnect ${login}? ${subject} reading Tickets until you connect it again.`
 }
 

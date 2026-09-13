@@ -43,16 +43,16 @@ export async function proveConnect(run: Run) {
 }
 
 export async function proveBind(run: Run) {
-  const form = run.page.getByRole('form', { name: 'Bind a repository' })
+  const form = run.page.getByRole('form', { name: 'Connect a repository' })
   await form.getByRole('combobox', { name: 'GitHub Account' }).selectOption({ label: 'octocat' })
   const scope = form.getByRole('textbox', { name: 'Repository' })
   // GitHub, not the form, decides what the Account can read, and a refusal binds nothing.
   await scope.fill('octocat/secret')
-  await press(form, 'Bind repository')
+  await press(form, 'Connect repository')
   await form.getByText('This GitHub Account cannot see that repository.').waitFor()
   assert.equal(await storeText(run.fixture, 'bindings.json'), '')
   await scope.fill('octocat/hello-world')
-  await press(form, 'Bind repository')
+  await press(form, 'Connect repository')
   await backlog(run.page).waitFor()
   assert.equal(
     (await storeText(run.fixture, 'bindings.json')).includes('octocat/hello-world'),
@@ -96,7 +96,7 @@ export async function proveRevoked(run: Run) {
   const octocat = accountRow(run.page, 'octocat')
   await octocat.getByText('Access revoked').waitFor()
   await octocat
-    .getByRole('list', { name: 'Bindings for octocat' })
+    .getByRole('list', { name: 'Repositories for octocat' })
     .getByText(/hello-world/)
     .waitFor()
   // Revocation is the Account's own: the other identity stays connected.
@@ -115,7 +115,7 @@ export async function proveDisconnect(run: Run) {
   await octocat.waitFor({ state: 'detached' })
   assert.equal((await storeText(run.fixture, 'grants.json')).includes('github:583231'), false)
   await press(accountsDialog(run.page), 'Close')
-  await room(run).getByText('The GitHub Account for this Binding is disconnected').waitFor()
-  await press(room(run), 'Unbind')
-  await room(run).getByRole('heading', { name: 'Bind argo to a repository' }).waitFor()
+  await room(run).getByText('The GitHub Account for this repository is disconnected').waitFor()
+  await press(room(run), 'Disconnect repository')
+  await room(run).getByRole('heading', { name: 'Connect argo to a repository' }).waitFor()
 }

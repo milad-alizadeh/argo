@@ -30,14 +30,10 @@ const says =
 
 export const Connected: Story = { args: { state: 'ready' }, play: says('Connected') }
 
+// An unreadable sign-in draws this same dot; only its hidden words differ.
 export const AccessRevoked: Story = {
   args: { state: 'account-revoked' },
   play: says('Access revoked'),
-}
-
-export const SignInUnreadable: Story = {
-  args: { state: 'account-unreadable' },
-  play: says('Sign-in unreadable'),
 }
 
 export const Disconnected: Story = {

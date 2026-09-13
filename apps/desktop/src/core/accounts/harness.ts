@@ -13,6 +13,8 @@ import type { Cipher } from './grants'
 
 export const PROJECT_ID = 'project-1'
 export const OCTOCAT = { id: 583231, login: 'octocat' }
+// The first page of the open backlog, unsearched.
+export const LIST = { query: '', page: 1 }
 
 // Reversible and never the plaintext, so a test can look for the token in every byte written.
 export function testCipher(): Cipher & { enabled: boolean } {
@@ -72,7 +74,7 @@ export async function harness(context: TestContext) {
     access: () => main.access,
     account: async (type: string, fields?: Record<string, string>) =>
       record(await routeAccountRequest(request(type, fields), main.accounts)),
-    ticket: async (type: string, fields?: Record<string, string>) =>
+    ticket: async (type: string, fields?: Record<string, unknown>) =>
       record(
         await routeTicketRequest(request(type, { projectId: PROJECT_ID, ...fields }), main.access),
       ),

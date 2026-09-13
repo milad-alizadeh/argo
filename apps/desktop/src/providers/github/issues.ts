@@ -3,7 +3,7 @@
 import { isRecord } from '../../boundary'
 import type { Ticket, TicketLabel, TicketLink } from '../../core/tickets/contract'
 import type { GitHubEndpoints } from './endpoints'
-import { type GitHubRead, getAll } from './http'
+import { failed, type GitHubRead, getAll, getPage } from './http'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
 // requests in flight, bounded because GitHub's secondary limits refuse a wide fan-out.
@@ -34,8 +34,9 @@ function count(summary: unknown, key: string): number {
 // GitHub serves pull requests from `/issues` too, and a Delivery is not a Ticket (CONTEXT.md L1).
 function issue(value: unknown): Issue | null {
   if (!isRecord(value) || Object.hasOwn(value, 'pull_request')) return null
-  const { number, title, body, state } = value
+  const { number, title, body, state, created_at: createdAt } = value
   if (!isNumber(number) || typeof title !== 'string') return null
+  if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) return null
   if (state !== 'open' && state !== 'closed') return null
   const prose = typeof body === 'string' ? body.trim() : ''
   const labels = Array.isArray(value.labels) ? value.labels.map(label) : []
@@ -46,6 +47,7 @@ function issue(value: unknown): Issue | null {
       body: prose === '' ? null : prose,
       state,
       stateReason: typeof value.state_reason === 'string' ? value.state_reason : null,
+      createdAt,
       labels: labels.filter((entry) => entry !== null),
       type: isRecord(value.type) && typeof value.type.name === 'string' ? value.type.name : null,
     },
@@ -101,14 +103,55 @@ async function inBatches(reader: Reader, issues: Issue[]): Promise<GitHubRead<Ti
   return { ok: true, value: tickets }
 }
 
-export async function readOpenTickets(
+// One screenful: small enough that its edge reads land before a person scrolls to the next.
+export const TICKET_PAGE_SIZE = 25
+
+export type TicketPage = { tickets: Ticket[]; nextPage: number | null; total: number | null }
+
+// The search stays inside this repository's open issues whatever qualifier a person types.
+const SCOPING_QUALIFIER = /^-?(repo|org|user|owner|is|state|in):/i
+
+export function searchQuery(scope: string, query: string): string {
+  const terms = query.split(/\s+/).filter((term) => term !== '' && !SCOPING_QUALIFIER.test(term))
+  return [...terms, `repo:${scope}`, 'is:issue', 'is:open'].join(' ')
+}
+
+type Listing = { items: unknown[]; total: number | null }
+
+// A search wraps its items with a count; a backlog listing is the bare array.
+function listing(body: unknown): Listing | null {
+  if (Array.isArray(body)) return { items: body, total: null }
+  if (!isRecord(body) || !Array.isArray(body.items)) return null
+  return {
+    items: body.items,
+    total: typeof body.total_count === 'number' ? body.total_count : null,
+  }
+}
+
+export type TicketPageRequest = { scope: string; query: string; page: number }
+
+function pageURL(endpoints: GitHubEndpoints, { scope, query, page }: TicketPageRequest): string {
+  const paging = `per_page=${TICKET_PAGE_SIZE}&page=${page}`
+  if (query.trim() === '') return `${endpoints.api}/repos/${scope}/issues?state=open&${paging}`
+  const search = new URLSearchParams({ q: searchQuery(scope, query) })
+  return `${endpoints.api}/search/issues?${search}&${paging}`
+}
+
+export async function readTicketPage(
   endpoints: GitHubEndpoints,
   token: string,
-  scope: string,
-): Promise<GitHubRead<Ticket[]>> {
-  const reader = { base: `${endpoints.api}/repos/${scope}`, token }
-  const listing = await getAll(`${reader.base}/issues?state=open`, token)
-  if (!listing.ok) return listing
-  const issues = listing.value.map(issue).filter((entry) => entry !== null)
-  return inBatches(reader, issues)
+  request: TicketPageRequest,
+): Promise<GitHubRead<TicketPage>> {
+  const read = await getPage(pageURL(endpoints, request), token)
+  if (!read.ok) return read
+  const served = listing(read.value.body)
+  if (!served) return failed('unreachable')
+  const issues = served.items.map(issue).filter((entry) => entry !== null)
+  const tickets = await inBatches(
+    { base: `${endpoints.api}/repos/${request.scope}`, token },
+    issues,
+  )
+  if (!tickets.ok) return tickets
+  const nextPage = read.value.next ? request.page + 1 : null
+  return { ok: true, value: { tickets: tickets.value, nextPage, total: served.total } }
 }

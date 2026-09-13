@@ -26,6 +26,7 @@ const ticket = z.strictObject({
   body: z.string().nullable(),
   state: ticketState,
   stateReason: z.string().nullable(),
+  createdAt: z.iso.datetime(),
   labels: z.array(z.strictObject({ name: z.string(), color: z.string().nullable() })),
   type: z.string().nullable(),
   children: z.array(ticketLink),
@@ -47,9 +48,23 @@ const project = { projectId: identifier }
 const bindingRequest = message('ticket.binding', project)
 const bindRequest = message('ticket.bind', { ...project, accountId: identifier, scope: identifier })
 const unbindRequest = message('ticket.unbind', project)
-const listRequest = message('ticket.list', project)
+// GitHub refuses a search query over 256 characters, and the scope qualifiers take their share.
+export const TICKET_QUERY_LIMIT = 200
+// An empty query reads the open backlog in GitHub's order; any other searches it on GitHub.
+const listRequest = message('ticket.list', {
+  ...project,
+  query: z.string().max(TICKET_QUERY_LIMIT),
+  page: z.int().positive(),
+})
 const bound = message('ticket.bound', { ...project, binding: bindingSummary.nullable() })
-const listed = message('ticket.listed', { ...project, scope: identifier, tickets: z.array(ticket) })
+// `total` is known only for a search: GitHub counts a backlog listing nowhere without paging it all.
+const listed = message('ticket.listed', {
+  ...project,
+  scope: identifier,
+  tickets: z.array(ticket),
+  nextPage: z.int().positive().nullable(),
+  total: z.int().nonnegative().nullable(),
+})
 
 export type TicketState = z.infer<typeof ticketState>
 export type TicketLink = z.infer<typeof ticketLink>
@@ -80,9 +95,9 @@ export const TICKET_ERRORS = {
   'rate-limited': 'GitHub is limiting requests. Try again in a few minutes.',
   'github-unreachable': 'Argo cannot reach GitHub.',
   'grant-unreadable': 'Argo cannot read the stored GitHub sign-in. Reconnect the Account.',
-  'storage-invalid': 'The Binding store cannot be read in this format.',
-  'storage-unavailable': 'Argo cannot access the Binding store.',
-  'storage-not-written': 'Argo could not save the Binding.',
+  'storage-invalid': 'The store of connected repositories cannot be read in this format.',
+  'storage-unavailable': 'Argo cannot access the store of connected repositories.',
+  'storage-not-written': 'Argo could not save the connected repository.',
 } as const
 
 export type TicketErrorCode = keyof typeof TICKET_ERRORS

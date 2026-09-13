@@ -1,7 +1,18 @@
 :root {
   /* Holds a five-character Ticket number at the meta size, so every title starts on one line. */
   --size-ticket-number: 40px;
-  --size-ticket-inspector: 480px;
-  --size-ticket-inspector-min: 400px;
+  --size-ticket-age: 32px;
+  --size-ticket-property: 56px;
+  --size-ticket-inspector: 560px;
+  --size-ticket-inspector-min: 440px;
+  /* Between the Session heading and title, so a long Ticket title reads as the pane's subject without crowding it. */
+  --text-ticket-title: var(--text-base, 1rem);
+  --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
   --size-ticket-workspace-min: 320px;
+}
+
+/* Keeps the title role and resizes it to the Ticket title. */
+.ticket-title {
+  --text-session-title: var(--text-ticket-title);
+  --text-session-title--line-height: var(--text-ticket-title--line-height);
 }

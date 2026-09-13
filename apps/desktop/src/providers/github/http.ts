@@ -82,9 +82,9 @@ function nextPage(response: Response, origin: string): string | null {
   }
 }
 
-type Page = { body: unknown; next: string | null }
+export type Page = { body: unknown; next: string | null }
 
-async function getPage(url: string, token: string): Promise<GitHubRead<Page>> {
+export async function getPage(url: string, token: string): Promise<GitHubRead<Page>> {
   const response = await send(url, { headers: { Authorization: `Bearer ${token}` } })
   if (!response) return failed('unreachable')
   if (throttled(response)) return failed('rate-limited')

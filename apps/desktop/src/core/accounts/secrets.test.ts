@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { isAccountChallengeReply, isAccountConnectReply, isAccountListReply } from './contract'
-import { connect, harness, OCTOCAT } from './harness'
+import { connect, harness, LIST, OCTOCAT } from './harness'
 
 // Every token the fake GitHub hands out starts with this.
 const TOKEN = 'token-octocat-'
@@ -20,9 +20,9 @@ test('no reply on the Account or Ticket channel carries a token, and each one pa
   await connect(cockpit)
   await cockpit.ticket('ticket.bind', { accountId: 'github:583231', scope: 'octo/hello' })
   await cockpit.ticket('ticket.binding')
-  await cockpit.ticket('ticket.list')
+  await cockpit.ticket('ticket.list', LIST)
   cockpit.github.revoke('octocat')
-  await cockpit.ticket('ticket.list')
+  await cockpit.ticket('ticket.list', LIST)
   await cockpit.account('account.list')
   await cockpit.account('account.disconnect', { accountId: 'github:583231' })
   assert.ok(cockpit.replies.length >= 9)
@@ -61,7 +61,7 @@ test('a grant the cipher can no longer open reads as needing a reconnect', async
   await connect(cockpit)
   await cockpit.ticket('ticket.bind', { accountId: 'github:583231', scope: 'octo/hello' })
   cockpit.cipher.enabled = false
-  assert.equal((await cockpit.ticket('ticket.list')).code, 'grant-unreadable')
+  assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'grant-unreadable')
   const accounts = (await cockpit.account('account.list')).accounts as { state: string }[]
   assert.equal(accounts[0]?.state, 'unreadable')
   const binding = (await cockpit.ticket('ticket.binding')).binding as { state: string }

@@ -73,6 +73,7 @@ function issueJson(repository: FakeRepository, issue: FakeIssue) {
     body: issue.body ?? null,
     state: issue.state ?? 'open',
     state_reason: null,
+    created_at: issue.createdAt ?? '2026-01-01T00:00:00Z',
     labels: issue.labels ?? [],
     type: issue.type ? { name: issue.type } : null,
     sub_issues_summary: { total: issue.children?.length ?? 0 },
@@ -83,8 +84,11 @@ function issueJson(repository: FakeRepository, issue: FakeIssue) {
   }
 }
 
+type Wrap = (slice: unknown[]) => unknown
+const bare: Wrap = (slice) => slice
+
 // GitHub's own paging: `per_page` and `page`, with the next page named in a Link header.
-function page({ response, url }: Exchange, items: unknown[]) {
+function page({ response, url }: Exchange, items: unknown[], wrap: Wrap = bare) {
   const size = Number(url.searchParams.get('per_page') ?? 30)
   const number = Number(url.searchParams.get('page') ?? 1)
   if (number * size < items.length) {
@@ -92,7 +96,30 @@ function page({ response, url }: Exchange, items: unknown[]) {
     next.searchParams.set('page', String(number + 1))
     response.setHeader('Link', `<${next.href}>; rel="next"`)
   }
-  send(response, 200, items.slice((number - 1) * size, number * size))
+  send(response, 200, wrap(items.slice((number - 1) * size, number * size)))
+}
+
+const isOpen = (issue: FakeIssue) => (issue.state ?? 'open') === 'open'
+
+// The qualifiers the cockpit sends, and every other term matched against title and body.
+function search(exchange: Exchange, user: FakeUser) {
+  const terms = (exchange.url.searchParams.get('q') ?? '').split(' ')
+  const scope = terms.find((term) => term.startsWith('repo:'))?.slice('repo:'.length) ?? ''
+  const repository = exchange.state.repositories.get(scope.toLowerCase())
+  if (!repository?.visibleTo.includes(user.id)) {
+    return send(exchange.response, 422, { message: 'Validation Failed' })
+  }
+  const words = terms.filter((term) => !term.includes(':')).map((term) => term.toLowerCase())
+  const matches = repository.issues.filter((issue) => {
+    const text = `${issue.title} ${issue.body ?? ''}`.toLowerCase()
+    return !issue.pullRequest && isOpen(issue) && words.every((word) => text.includes(word))
+  })
+  const items = matches.map((issue) => issueJson(repository, issue))
+  page(exchange, items, (slice) => ({
+    total_count: items.length,
+    incomplete_results: false,
+    items: slice,
+  }))
 }
 
 const REPOSITORY_PATH =
@@ -111,8 +138,7 @@ function repositoryRead(exchange: Exchange, user: FakeUser) {
     return send(response, 200, { full_name: repository.fullName, has_issues: hasIssues })
   }
   if (!match[2]) {
-    const open = repository.issues.filter((issue) => (issue.state ?? 'open') === 'open')
-    return page(exchange, open.map(all))
+    return page(exchange, repository.issues.filter(isOpen).map(all))
   }
   const parent = repository.issues.find((issue) => issue.number === Number(match[2]))
   const numbers = (match[3] === 'sub_issues' ? parent?.children : parent?.blockedBy) ?? []
@@ -129,6 +155,7 @@ function apiRead(exchange: Exchange) {
   const user = state.tokens.get(request.headers.authorization?.replace(/^Bearer /, '') ?? '')
   if (!user) return send(response, 401, { message: 'Bad credentials' })
   if (url.pathname === '/user') return send(response, 200, { id: user.id, login: user.login })
+  if (url.pathname === '/search/issues') return search(exchange, user)
   repositoryRead(exchange, user)
 }
 

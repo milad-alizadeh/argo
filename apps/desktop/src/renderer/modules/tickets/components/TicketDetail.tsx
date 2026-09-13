@@ -12,20 +12,22 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Separator } from '../../../components/ui/separator'
 import { closedChildren } from '../lib/backlog'
+import { ticketURL } from '../lib/github-links'
 
 const STATES = {
   open: { label: 'Open', Icon: CircleDot, tone: 'text-active' },
   closed: { label: 'Closed', Icon: CircleCheck, tone: 'text-muted-foreground' },
 } as const
 
-// The icon repeats the word beside it, so a state is never its colour alone.
+const stateIcon = 'size-(--size-icon-meta) shrink-0'
+
+// The icon's shape tells open from closed, so a state is never its colour alone.
 function State({ state }: { state: Ticket['state'] }) {
   const { label, Icon, tone } = STATES[state]
   return (
     <span className="flex shrink-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-      <Icon aria-hidden="true" className={`size-(--size-icon-meta) ${tone}`} />
+      <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
       {label}
     </span>
   )
@@ -35,7 +37,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section
       aria-label={title}
-      className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-item)"
+      className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-tight)"
     >
       <h3 className="type-label text-muted-foreground">{title}</h3>
       {children}
@@ -43,52 +45,88 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Links({ links }: { links: readonly TicketLink[] }) {
+// Opens a linked Ticket beside its row; only a Ticket the backlog has read can be opened.
+type Navigation = { listed: ReadonlySet<number>; onSelect: (ticketNumber: number) => void }
+
+const linkRow =
+  'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
+
+// A linked Ticket's state is its icon, with the word kept for a screen reader, so the title keeps the width.
+function LinkContent({ link }: { link: TicketLink }) {
+  const { label, Icon, tone } = STATES[link.state]
   return (
-    <ul className="grid grid-cols-[minmax(0,1fr)] divide-y divide-border/60 rounded-lg border border-border/60">
+    <>
+      <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
+      <span className="sr-only">{label}</span>
+      <span className="min-w-0 flex-1 truncate type-body">{link.title}</span>
+      <span className="shrink-0 font-mono type-meta text-faint">#{link.number}</span>
+    </>
+  )
+}
+
+function Links({ links, listed, onSelect }: { links: readonly TicketLink[] } & Navigation) {
+  return (
+    <ul className="-mx-(--spacing-shell-item) grid grid-cols-[minmax(0,1fr)]">
       {links.map((link) => (
-        <li
-          className="flex items-center gap-(--spacing-shell-item) px-(--spacing-shell-gutter) py-(--spacing-shell-item)"
-          key={link.number}
-        >
-          <span className="w-(--size-ticket-number) shrink-0 font-mono type-meta text-faint">
-            #{link.number}
-          </span>
-          <span className="min-w-0 flex-1 truncate type-body">{link.title}</span>
-          <State state={link.state} />
+        <li key={link.number}>
+          {listed.has(link.number) ? (
+            <button
+              className={`${linkRow} hover:bg-muted`}
+              onClick={() => onSelect(link.number)}
+              type="button"
+            >
+              <LinkContent link={link} />
+            </button>
+          ) : (
+            <div className={linkRow}>
+              <LinkContent link={link} />
+            </div>
+          )}
         </li>
       ))}
     </ul>
   )
 }
 
-function Facts({ ticket }: { ticket: Ticket }) {
-  if (ticket.type === null && ticket.labels.length === 0) return null
+function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <dl className="flex flex-wrap items-center gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-item) type-meta">
+    <>
+      <dt className="text-muted-foreground">{name}</dt>
+      <dd className="flex min-w-0 flex-wrap items-baseline gap-(--spacing-shell-tight)">
+        {children}
+      </dd>
+    </>
+  )
+}
+
+function Properties({ ticket }: { ticket: Ticket }) {
+  return (
+    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-baseline gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
+      <Property name="State">
+        <State state={ticket.state} />
+      </Property>
       {ticket.type ? (
-        <div className="flex items-center gap-(--spacing-shell-item)">
-          <dt className="text-muted-foreground">Type</dt>
-          <dd>
-            <Badge variant="secondary">{ticket.type}</Badge>
-          </dd>
-        </div>
+        <Property name="Type">
+          <Badge variant="secondary">{ticket.type}</Badge>
+        </Property>
       ) : null}
       {ticket.labels.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-(--spacing-shell-tight)">
-          <dt className="mr-(--spacing-shell-tight) text-muted-foreground">Labels</dt>
+        <Property name="Labels">
           {ticket.labels.map((label) => (
-            <dd key={label.name}>
-              <Badge variant="outline">{label.name}</Badge>
-            </dd>
+            <Badge key={label.name} variant="outline">
+              {label.name}
+            </Badge>
           ))}
-        </div>
+        </Property>
       ) : null}
     </dl>
   )
 }
 
-function Dependencies({ blockedBy }: { blockedBy: Ticket['blockedBy'] }) {
+function Dependencies({
+  blockedBy,
+  ...navigation
+}: { blockedBy: Ticket['blockedBy'] } & Navigation) {
   if (blockedBy === null) {
     return (
       <Section title="Blocked by">
@@ -101,7 +139,7 @@ function Dependencies({ blockedBy }: { blockedBy: Ticket['blockedBy'] }) {
   if (blockedBy.length === 0) return null
   return (
     <Section title={`Blocked by · ${blockedBy.length}`}>
-      <Links links={blockedBy} />
+      <Links links={blockedBy} {...navigation} />
     </Section>
   )
 }
@@ -120,33 +158,39 @@ function NothingSelected() {
   )
 }
 
-export function TicketDetail({ ticket }: { ticket: Ticket | null }) {
+export type TicketDetailProps = { ticket: Ticket | null; scope: string } & Navigation
+
+export function TicketDetail({ ticket, scope, ...navigation }: TicketDetailProps) {
   if (ticket === null) return <NothingSelected />
   const { children } = ticket
   const body = ticket.body?.trim()
   return (
     <article aria-label={`Ticket #${ticket.number}`} className="min-h-0 flex-1 overflow-y-auto">
-      <div className="grid max-w-3xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) p-(--spacing-shell-section)">
-        <header className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-gutter)">
-          <div className="flex items-center gap-(--spacing-shell-gutter)">
-            <span className="font-mono type-meta text-faint">#{ticket.number}</span>
-            <State state={ticket.state} />
-          </div>
-          <h2 className="type-title wrap-anywhere">{ticket.title}</h2>
-          <Facts ticket={ticket} />
+      <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)">
+        <header className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-item)">
+          <a
+            aria-label={`Open #${ticket.number} on GitHub`}
+            className="justify-self-start font-mono type-meta text-faint hover:text-foreground hover:underline"
+            href={ticketURL(scope, ticket.number)}
+            rel="noreferrer"
+            target="_blank"
+          >
+            #{ticket.number}
+          </a>
+          <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
         </header>
-        <Separator />
+        <Properties ticket={ticket} />
         <p
-          className={`type-prose whitespace-pre-wrap wrap-anywhere ${body ? '' : 'text-muted-foreground'}`}
+          className={`type-body whitespace-pre-wrap wrap-anywhere ${body ? '' : 'text-muted-foreground'}`}
         >
           {body ? ticket.body : 'No description.'}
         </p>
         {children.length > 0 ? (
           <Section title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}>
-            <Links links={children} />
+            <Links links={children} {...navigation} />
           </Section>
         ) : null}
-        <Dependencies blockedBy={ticket.blockedBy} />
+        <Dependencies blockedBy={ticket.blockedBy} {...navigation} />
       </div>
     </article>
   )

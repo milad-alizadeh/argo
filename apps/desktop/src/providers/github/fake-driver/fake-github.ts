@@ -12,6 +12,7 @@ export type FakeIssue = {
   title: string
   body?: string | null
   state?: 'open' | 'closed'
+  createdAt?: string
   labels?: { name: string; color: string }[]
   type?: string
   children?: number[]
