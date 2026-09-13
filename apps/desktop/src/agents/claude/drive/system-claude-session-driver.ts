@@ -7,6 +7,8 @@ import * as pty from 'node-pty'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
+import { openCompanionPlugin } from './companion-plugin'
+import { createMessageDisplay } from './message-display'
 import { createOwnershipLedger, isProcessAlive } from './ownership-ledger'
 import { createClaudePermissionGate } from './permission-gate'
 
@@ -46,10 +48,12 @@ export function createSystemClaudeSessionDriver(paths: {
   // A proof names its fake `claude` here; a person's launch finds the real one on the login PATH.
   executable?: string
 }) {
-  const gate = createClaudePermissionGate(paths.permissions)
+  const gate = createClaudePermissionGate()
+  const display = createMessageDisplay()
   const driver = createClaudeSessionDriver({
     findExecutable: () => paths.executable ?? claudeExecutable(),
     mintSessionId: randomUUID,
+    now: () => new Date(),
     ledger: createOwnershipLedger({
       path: paths.ledger,
       owner: { pid: process.pid, registry: randomUUID() },
@@ -67,8 +71,11 @@ export function createSystemClaudeSessionDriver(paths: {
         name: 'xterm-256color',
         rows: 24,
       }),
-    prepare: (sessionId) => {
-      const plugin = gate.open(sessionId)
+    prepare: (sessionId, record) => {
+      const plugin = openCompanionPlugin(paths.permissions, sessionId, [
+        gate.open(sessionId),
+        display.open(sessionId, record),
+      ])
       return { commandArguments: ['--plugin-dir', plugin.pluginRoot], close: plugin.close }
     },
   })
@@ -85,6 +92,7 @@ export function createSystemClaudeSessionDriver(paths: {
     close() {
       driver.close()
       gate.close()
+      display.close()
     },
   }
 }

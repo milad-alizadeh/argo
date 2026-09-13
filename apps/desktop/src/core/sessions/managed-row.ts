@@ -3,7 +3,10 @@ import type { SessionRosterRow } from './models'
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
 export function managedRow(
   id: string,
-  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & { prompt: string },
+  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & {
+    prompt: string
+    startedAt: string
+  },
 ): SessionRosterRow {
   return {
     id,
@@ -15,7 +18,8 @@ export function managedRow(
     entry: 'interactive',
     cwd: session.cwd,
     branch: null,
-    updatedAt: null,
+    // The start time sorts a new Session to the top of the Roster until its transcript has one (#2002).
+    updatedAt: session.startedAt,
     unreadableLines: 0,
     originUnread: false,
     turnStartedAt: null,

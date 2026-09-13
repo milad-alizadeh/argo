@@ -51,6 +51,7 @@ function spawnCodex(
 export function createSystemCodexSessionDriver() {
   return createCodexSessionDriver({
     findExecutable: codexExecutable,
+    now: () => new Date(),
     openChannel: (executable, options) => {
       const child = spawnCodex(executable, options)
       child.stderr.on('data', () => {})

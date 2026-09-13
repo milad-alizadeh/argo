@@ -36,7 +36,13 @@ const meta: Meta<typeof BasicFeed> = {
       </div>
     ),
   ],
-  args: { feed, failure: null, selectedSessionId: 'prose' },
+  args: {
+    activeEvidenceId: null,
+    feed,
+    failure: null,
+    onOpenEvidence: () => {},
+    selectedSessionId: 'prose',
+  },
 }
 
 export default meta
@@ -117,6 +123,10 @@ export const FormattedProse: Story = {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
     const [prompt, answer] = drawnRows(canvasElement)
     await expect(prompt).toHaveTextContent('Show me the **composer** check.')
+    await expect(prompt?.querySelector('[data-slot="bubble"]')).toHaveAttribute(
+      'data-variant',
+      'muted',
+    )
     await waitFor(() =>
       expect(answer?.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
@@ -133,6 +143,52 @@ export const FormattedProse: Story = {
       )
       await expect(row.scrollHeight).toBe(row.clientHeight)
     }
+  },
+}
+
+const toolFeed = {
+  ...feed,
+  chainId: 'tools',
+  revision: 'tools-one',
+  sessionId: 'tools',
+  rows: [
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:one:two',
+      label: 'Ran 1 command · Edited 1 file',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'one',
+          kind: 'command' as const,
+          label: 'Ran bun test composer',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
+        },
+        {
+          shape: 'tool' as const,
+          id: 'two',
+          kind: 'edited' as const,
+          label: 'Edited Composer.tsx',
+          detail: '+2 −1',
+          status: 'failed' as const,
+          evidence: { kind: 'diff' as const, title: 'Composer.tsx', source: '-old\n+new' },
+        },
+      ],
+    },
+  ],
+} satisfies SessionFeed
+
+export const GroupedToolCalls: Story = {
+  args: { feed: toolFeed, selectedSessionId: 'tools' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    await userEvent.click(group)
+    const call = await canvas.findByRole('button', { name: /Ran bun test composer/ })
+    await expect(group).toHaveClass('type-body')
+    await expect(call).toHaveClass('type-body')
   },
 }
 
@@ -165,6 +221,7 @@ function StreamingFeed() {
       </button>
       <div className="min-h-0 flex-1">
         <BasicFeed
+          activeEvidenceId={null}
           feed={current}
           failure={null}
           selectedSessionId="streaming"

@@ -6,7 +6,7 @@ import {
 } from '@/core/sessions/contract'
 
 import type { ClaudeSessionDriver } from './claude-session-driver'
-import { ClaudeSessionDriverError } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
 
 export type ClaudeSessionStarter = Pick<ClaudeSessionDriver, 'start'>
 
