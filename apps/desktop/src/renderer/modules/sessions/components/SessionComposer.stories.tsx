@@ -72,6 +72,7 @@ export const PlainText: Story = {
     )
     await expect(composer.textContent).toBe('')
 
+    await userEvent.click(composer)
     await userEvent.type(composer, 'Keep this draft.')
     await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Session one' }))

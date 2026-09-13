@@ -12,6 +12,9 @@ import {
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
+const untrustedPage = `data:text/html,${encodeURIComponent(
+  '<meta http-equiv="Content-Security-Policy" content="script-src \'unsafe-eval\'"><h1>Untrusted page</h1>',
+)}`
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -89,9 +92,10 @@ async function prove(application, fixture) {
     await chmod(fixture.projectPath, 0o700)
   }
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  await application.evaluate(async ({ BrowserWindow }) => {
-    await BrowserWindow.getAllWindows()[0].loadURL('data:text/html,<h1>Untrusted page</h1>')
-  })
+  await application.evaluate(
+    async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
+    untrustedPage,
+  )
   await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
   assert.equal((await invoke(request)).code, 'access-denied')
 }
