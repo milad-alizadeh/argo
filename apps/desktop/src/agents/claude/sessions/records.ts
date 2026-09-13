@@ -8,6 +8,7 @@ import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
 import type {
   ContentBlock,
   ToolCall,
+  ToolResult,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
@@ -72,6 +73,15 @@ function readAnsweredCalls(content: unknown) {
   )
 }
 
+function readToolResults(content: unknown): ToolResult[] {
+  if (!Array.isArray(content)) return []
+  return content.flatMap((block: unknown) =>
+    isRecord(block) && block.type === 'tool_result' && typeof block.tool_use_id === 'string'
+      ? [{ callId: block.tool_use_id, content: typeof block.content === 'string' ? block.content : null }]
+      : [],
+  )
+}
+
 function readUsage(value: unknown) {
   if (!isRecord(value)) return null
   const terms = [
@@ -97,6 +107,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   if (typeof record.uuid !== 'string') return null
   const parsed: TranscriptMessage = {
     toolCalls: readToolCalls(message.content),
+    toolResults: readToolResults(message.content),
     answeredCalls: readAnsweredCalls(message.content),
     kind: 'message',
     uuid: record.uuid,
