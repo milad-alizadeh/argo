@@ -2,33 +2,16 @@
 import { fn } from 'storybook/test'
 
 import type { AccountSummary, Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketStatus } from '@/core/tickets/contract'
+import type { ConnectionState, ConnectionSummary, Ticket } from '@/core/tickets/contract'
 import type { TicketsView } from '../hooks/useTicketsView'
 import type { Backlog } from '../lib/backlog'
+import { STATUSES } from './status-fixtures'
 
 const link = (key: string, title: string, state: 'open' | 'closed' = 'open') => ({
   key,
   title,
   state,
 })
-
-// The statuses each provider offers: GitHub's open and reasons for closing, a Linear team's workflow.
-export const STATUSES: Record<Provider, TicketStatus[]> = {
-  github: [
-    { id: 'open', name: 'Open', category: 'unstarted' },
-    { id: 'completed', name: 'Closed as completed', category: 'completed' },
-    { id: 'not_planned', name: 'Closed as not planned', category: 'canceled' },
-    { id: 'duplicate', name: 'Closed as duplicate', category: 'canceled' },
-  ],
-  linear: [
-    { id: 'eng-backlog', name: 'Backlog', category: 'backlog' },
-    { id: 'eng-todo', name: 'Todo', category: 'unstarted' },
-    { id: 'eng-in-progress', name: 'In Progress', category: 'started' },
-    { id: 'eng-in-review', name: 'In Review', category: 'started' },
-    { id: 'eng-done', name: 'Done', category: 'completed' },
-    { id: 'eng-canceled', name: 'Canceled', category: 'canceled' },
-  ],
-}
 
 const issue = (number: number) => ({
   key: `#${number}`,
@@ -110,6 +93,31 @@ export const ada: AccountSummary = {
   workspace: 'Analytical',
   state: 'connected',
   connections: [],
+}
+
+const CONNECTION_BY_PROVIDER: Record<Provider, Omit<ConnectionSummary, 'state'>> = {
+  github: {
+    accountId: octocat.id,
+    provider: 'github',
+    login: octocat.login,
+    scope: 'octocat/hello-world',
+    label: 'octocat/hello-world',
+  },
+  linear: {
+    accountId: ada.id,
+    provider: 'linear',
+    login: ada.login,
+    scope: 'team-engine',
+    label: 'Engine',
+  },
+}
+
+// A GitHub repository or Linear team Connection, for whichever Account it reads through.
+export function connection<State extends ConnectionState = 'ready'>(
+  provider: Provider,
+  state?: State,
+): ConnectionSummary & { state: State } {
+  return { ...CONNECTION_BY_PROVIDER[provider], state: (state ?? 'ready') as State }
 }
 
 export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({

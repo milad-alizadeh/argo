@@ -1,33 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, within } from 'storybook/test'
-
+import { sessionRosterRow } from '../session-fixtures'
 import type { SessionError, SessionsListed } from '../types'
-
 import { SessionsSidebarContent, type SessionsSidebarContentProps } from './SessionsSidebar'
 
-const session = {
+const session = sessionRosterRow({
   id: 'prose',
-  retiredIds: [],
-  cli: 'claude',
   posture: 'external',
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
-  entry: 'interactive',
   cwd: '/workspace/argo',
-  branch: 'main',
-  updatedAt: null,
-  unreadableLines: 0,
-  originUnread: false,
-  turnStartedAt: null,
-  activity: null,
-  plan: null,
-  delegations: [],
-  shell: [],
-  pullRequest: null,
-  archived: false,
-  setup: { model: null, effort: null, mode: null },
-} satisfies SessionsListed['sessions'][number]
+}) satisfies SessionsListed['sessions'][number]
 
 const listed = {
   version: 1,
