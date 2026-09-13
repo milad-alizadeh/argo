@@ -1,7 +1,7 @@
 // A Linear team's workflow states, and moving one of its issues to another. Linear owns the states;
 // the cockpit reads them with every page and keeps none.
 import { isRecord } from '../../boundary'
-import type { TicketStatus } from '../../core/tickets/contract'
+import type { StatusChange, TicketStatus } from '../../core/tickets/ticket'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'
 
@@ -23,9 +23,13 @@ const CATEGORIES: readonly TicketStatus['category'][] = [
   'canceled',
 ]
 
+// A state's type as the one vocabulary a view styles by, or null for a type Linear adds later.
+export const categoryOf = (value: unknown): TicketStatus['category'] | null =>
+  (isRecord(value) && CATEGORIES.find((candidate) => candidate === value.type)) || null
+
 export function statusOf(value: unknown): TicketStatus | null {
   if (!isRecord(value) || typeof value.id !== 'string' || value.id === '') return null
-  const category = CATEGORIES.find((candidate) => candidate === value.type)
+  const category = categoryOf(value)
   if (typeof value.name !== 'string' || value.name === '' || !category) return null
   return { id: value.id, name: value.name, category }
 }
@@ -55,7 +59,6 @@ const MOVE = `mutation Move($id: String!, $state: String!) {
   issueUpdate(id: $id, input: { stateId: $state }) { success issue { state { id name type } } }
 }`
 
-export type IssueStatusChange = { scope: string; key: string; statusId: string }
 type Refusal = 'ticket-not-found' | 'status-unknown'
 
 // The issue is found and checked to be in the Connection's team, and the state to be one of that
@@ -63,7 +66,7 @@ type Refusal = 'ticket-not-found' | 'status-unknown'
 export async function updateIssueStatus(
   endpoints: LinearEndpoints,
   token: string,
-  { scope, key, statusId }: IssueStatusChange,
+  { scope, key, statusId }: StatusChange,
 ): Promise<LinearRead<TicketStatus> | { ok: false; failure: Refusal }> {
   const caller = { endpoints, token }
   const target = await query(caller, TARGET, { key })

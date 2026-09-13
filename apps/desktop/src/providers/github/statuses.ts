@@ -1,7 +1,7 @@
 // GitHub's closure read as a workflow: an issue is open, or closed for one of GitHub's reasons.
 // Each status's id is the `state_reason` it is closed with, or `open`.
 import { isRecord } from '../../boundary'
-import type { TicketStatus } from '../../core/tickets/contract'
+import type { StatusChange, TicketStatus } from '../../core/tickets/ticket'
 import type { GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, patch } from './http'
 
@@ -27,12 +27,10 @@ export function githubStatus(state: 'open' | 'closed', reason: unknown): TicketS
 
 const ISSUE_KEY = /^#([1-9]\d{0,9})$/
 
-export type IssueStatusChange = { scope: string; key: string; statusId: string }
-
 export async function updateIssueStatus(
   endpoints: GitHubEndpoints,
   token: string,
-  { scope, key, statusId }: IssueStatusChange,
+  { scope, key, statusId }: StatusChange,
 ): Promise<GitHubRead<TicketStatus> | { ok: false; failure: 'status-unknown' }> {
   const number = ISSUE_KEY.exec(key)?.[1]
   const target = GITHUB_STATUSES.find((status) => status.id === statusId)

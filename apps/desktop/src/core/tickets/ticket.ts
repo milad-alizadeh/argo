@@ -51,6 +51,14 @@ export const ticket = z.strictObject({
   blockedBy: z.array(ticketLink).nullable(),
 })
 
+// A Ticket whose status falls in one of these categories is closed, on every provider.
+const CLOSED_CATEGORIES: ReadonlySet<TicketStatus['category']> = new Set(['completed', 'canceled'])
+export const closureOf = (category: TicketStatus['category']): TicketState =>
+  CLOSED_CATEGORIES.has(category) ? 'closed' : 'open'
+
+// Moving one Ticket of a Connection's scope to one of the statuses its listing offered.
+export type StatusChange = { scope: string; key: string; statusId: string }
+
 export type TicketState = z.infer<typeof ticketState>
 export type TicketLink = z.infer<typeof ticketLink>
 export type TicketStatus = z.infer<typeof ticketStatus>

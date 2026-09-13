@@ -3,6 +3,7 @@
 import { isRecord } from '../../boundary'
 import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
 import {
+  closureOf,
   labelColor,
   PRIORITY_LEVELS,
   type Ticket,
@@ -14,7 +15,7 @@ import {
 } from '../../core/tickets/ticket'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'
-import { statusOf, TEAM_STATES, teamStatuses } from './statuses'
+import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from './statuses'
 
 // Linear serves children and relations as connections of their own; a Ticket with more than this
 // many draws the first ones.
@@ -45,11 +46,9 @@ const SEARCH = `query Search($team: ID!, $teamId: String!, $term: String!, $firs
   ${TEAM_STATES}
 }`
 
-const CLOSED_TYPES = new Set(['completed', 'canceled'])
-
 const stateOf = (value: unknown): TicketState | null => {
-  if (!isRecord(value) || typeof value.type !== 'string') return null
-  return CLOSED_TYPES.has(value.type) ? 'closed' : 'open'
+  const category = categoryOf(value)
+  return category ? closureOf(category) : null
 }
 
 const nodes = (connection: unknown): unknown[] =>

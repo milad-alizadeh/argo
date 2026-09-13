@@ -96,7 +96,8 @@ type TicketRowProps = {
 // keyboard cursor outlines the whole row. The key column is one width, so every title
 // starts on one line and a child indents from it.
 export function TicketRow(props: TicketRowProps) {
-  const { row, presentation, statuses, selected, now } = props
+  const { row, presentation, statuses, selected, folded, now, onSelect, onToggle, onChangeStatus } =
+    props
   const { ticket, depth, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
@@ -110,7 +111,7 @@ export function TicketRow(props: TicketRowProps) {
       <StatusMenu
         named={false}
         noun={presentation.statusNoun}
-        onChange={props.onChangeStatus}
+        onChange={onChangeStatus}
         status={ticket.status}
         statuses={statuses}
       />
@@ -118,12 +119,12 @@ export function TicketRow(props: TicketRowProps) {
         className="flex shrink-0 self-stretch"
         style={{ paddingInlineStart: `calc(${depth} * var(--spacing-shell-inset))` }}
       >
-        <Fold folded={props.folded} onToggle={props.onToggle} row={row} />
+        <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
       <button
         aria-current={selected ? 'true' : undefined}
         className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
-        onClick={props.onSelect}
+        onClick={onSelect}
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>

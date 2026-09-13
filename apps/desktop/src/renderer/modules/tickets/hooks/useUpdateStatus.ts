@@ -1,7 +1,8 @@
 // Moving a Ticket to another status. The row moves at once; a refusal puts it back and says why.
 // A Ticket moved to a closed status stays on screen until the backlog is next read.
 import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { TicketStatus, TicketUpdated } from '@/core/tickets/contract'
+import type { TicketUpdated } from '@/core/tickets/contract'
+import { closureOf, type TicketStatus } from '@/core/tickets/ticket'
 import { useToastManager } from '../../../components/ui/toast'
 import { type ContractFailure, settle } from '../../../lib/query-client'
 import { updateRequest } from '../lib/requests'
@@ -9,11 +10,9 @@ import { listKey, onRefused, type TicketPages } from './useTickets'
 
 export type StatusChange = { projectId: string; key: string; status: TicketStatus }
 
-const CLOSED: ReadonlySet<TicketStatus['category']> = new Set(['completed', 'canceled'])
-
 // Every listing of the Project holds the Ticket, searches included.
 function move(client: QueryClient, { projectId, key, status }: StatusChange) {
-  const state = CLOSED.has(status.category) ? 'closed' : 'open'
+  const state = closureOf(status.category)
   client.setQueriesData<TicketPages>({ queryKey: listKey(projectId) }, (data) =>
     data
       ? {

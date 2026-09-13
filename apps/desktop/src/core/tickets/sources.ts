@@ -6,6 +6,7 @@ import { githubTickets } from '../../providers/github/ticket-source'
 import { linearTickets } from '../../providers/linear/ticket-source'
 import type { Provider } from '../accounts/contract'
 import type { Ticket, TicketErrorCode, TicketScope, TicketStatus } from './contract'
+import type { StatusChange } from './ticket'
 
 // `refused` is the provider refusing the token itself: the one failure an Account renewal can fix.
 export type SourceFailure = TicketErrorCode | 'refused'
@@ -19,7 +20,6 @@ export type TicketPage = {
   nextCursor: string | null
   total: number | null
 }
-export type StatusChange = { scope: string; key: string; statusId: string }
 
 export type TicketSource = {
   check(reader: Reader, scope: string): Promise<SourceRead<TicketScope>>
