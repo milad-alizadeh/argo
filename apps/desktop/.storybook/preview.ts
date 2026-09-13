@@ -1,6 +1,8 @@
 import type { Preview } from '@storybook/react'
+import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
+import { SessionQueryProvider } from '../src/renderer/session-query-provider'
 import '../src/renderer/styles/globals.css'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
@@ -56,6 +58,14 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
+  readClaudePermission: (request: { requestId: string; sessionId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.claude.permission.read',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      permission: null,
+    }),
   listProjects: () =>
     Promise.resolve({
       version: 1,
@@ -98,7 +108,7 @@ const preview: Preview = {
       }
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-      return Story()
+      return createElement(SessionQueryProvider, null, Story())
     },
   ],
   globalTypes: {
