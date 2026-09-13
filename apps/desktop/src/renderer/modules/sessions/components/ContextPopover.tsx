@@ -122,6 +122,7 @@ export function ContextPopover({
   usedTokens: number
 }) {
   const value = `${Math.round(usedTokens / 1000)}k / 200k · ${percentage}%`
+  const zone = contextZone(percentage)
   return (
     <Popover>
       <PopoverTrigger
@@ -140,7 +141,7 @@ export function ContextPopover({
       >
         {compact ? (
           <>
-            <svg viewBox="0 0 20 20" className="-rotate-90 text-red-600" aria-hidden="true">
+            <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
               <circle
                 cx="10"
                 cy="10"
