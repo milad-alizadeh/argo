@@ -91,22 +91,16 @@ export const Empty: Story = {
   },
 }
 
-export const Unavailable: Story = {
+export const HiddenWhenUnavailable: Story = {
   args: { plan: null },
   play: async ({ canvasElement }) => {
-    const trigger = await opensPlan(canvasElement)
-    await expect(
-      (await shownPlanContent(trigger)).getByText('This Session has not reported a Plan.'),
-    ).toBeVisible()
+    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
   },
 }
 
-export const Malformed: Story = {
+export const HiddenWhenMalformed: Story = {
   args: { plan: { state: 'malformed' } },
   play: async ({ canvasElement }) => {
-    const trigger = await opensPlan(canvasElement)
-    await expect(
-      (await shownPlanContent(trigger)).getByText('Argo cannot read the latest Plan.'),
-    ).toBeVisible()
+    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
   },
 }

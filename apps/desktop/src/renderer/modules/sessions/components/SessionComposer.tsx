@@ -133,7 +133,7 @@ export function SessionComposer({
       }}
     >
       <div
-        className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan === null ? '' : ' min-h-40'}`}
+        className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
       >
         <div className="absolute top-4 right-4 z-20">
           <SessionPlanPopover plan={plan} />

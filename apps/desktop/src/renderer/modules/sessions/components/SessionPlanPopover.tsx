@@ -35,16 +35,14 @@ function currentStep(plan: Extract<SessionPlan, { state: 'available' }>) {
   return plan.entries.filter((entry) => entry.status === 'completed').length
 }
 
-function planProgress(plan: SessionPlan | null) {
-  if (plan?.state !== 'available' || plan.entries.length === 0) return 0
+function planProgress(plan: Extract<SessionPlan, { state: 'available' }>) {
+  if (plan.entries.length === 0) return 0
   return (
     (plan.entries.filter((entry) => entry.status !== 'pending').length / plan.entries.length) * 100
   )
 }
 
-function PlanTriggerLabel({ plan }: { plan: SessionPlan | null }) {
-  if (plan === null) return <>Plan unavailable</>
-  if (plan.state === 'malformed') return <>Plan unavailable</>
+function PlanTriggerLabel({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
   if (plan.entries.length === 0) return <>Plan empty</>
   return (
     <>
@@ -89,23 +87,7 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
   )
 }
 
-function PlanContent({ plan }: { plan: SessionPlan | null }) {
-  if (plan === null) {
-    return (
-      <PopoverHeader>
-        <PopoverTitle>Plan unavailable</PopoverTitle>
-        <p className="text-meta text-muted-foreground">This Session has not reported a Plan.</p>
-      </PopoverHeader>
-    )
-  }
-  if (plan.state === 'malformed') {
-    return (
-      <PopoverHeader>
-        <PopoverTitle>Plan unavailable</PopoverTitle>
-        <p className="text-meta text-muted-foreground">Argo cannot read the latest Plan.</p>
-      </PopoverHeader>
-    )
-  }
+function PlanContent({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
   if (plan.entries.length === 0) {
     return (
       <PopoverHeader>
@@ -117,11 +99,8 @@ function PlanContent({ plan }: { plan: SessionPlan | null }) {
   return <AvailablePlan plan={plan} />
 }
 
-function planState(plan: SessionPlan | null) {
-  return plan === null ? 'unavailable' : plan.state
-}
-
 export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
+  if (plan?.state !== 'available') return null
   const progress = planProgress(plan)
   return (
     <Popover>
@@ -164,7 +143,7 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
         align="start"
         side="top"
         className="w-80 gap-3 p-3"
-        data-plan-state={planState(plan)}
+        data-plan-state={plan.state}
       >
         <PlanContent plan={plan} />
       </PopoverContent>
