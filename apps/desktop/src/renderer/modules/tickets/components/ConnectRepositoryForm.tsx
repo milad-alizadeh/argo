@@ -2,7 +2,7 @@ import { Plug } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import type { AccountSummary } from '@/core/accounts/contract'
 
-import { Button } from '../../../components/ui/button'
+import { Button } from '../../../components/Button'
 import {
   Card,
   CardContent,

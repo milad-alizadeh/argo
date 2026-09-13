@@ -1,8 +1,8 @@
 import { ExternalLink, Plug, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 import type { AccountConnected } from '@/core/accounts/contract'
+import { Button } from '../../../components/Button'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
-import { Button } from '../../../components/ui/button'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import type { SignIn } from '../hooks/useSignIn'
 

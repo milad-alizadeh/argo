@@ -64,7 +64,7 @@ import {
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/renderer/components/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,

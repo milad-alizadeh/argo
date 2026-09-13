@@ -10,7 +10,7 @@ import {
   Workflow,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/renderer/components/Button'
 import { FEED_EVIDENCE, type FeedEvidenceAction, MERMAID_SOURCE } from './evidence'
 import { FEED_CARD_RADIUS_CLASS } from '../../sessions/feed/content/feedSurface'
 

@@ -1,8 +1,8 @@
 import { useId, useRef, useState } from 'react'
 
 import type { AccountSummary } from '@/core/accounts/contract'
+import { Button } from '../../../components/Button'
 import { Badge } from '../../../components/ui/badge'
-import { Button } from '../../../components/ui/button'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 
 const STATE_BADGES = {

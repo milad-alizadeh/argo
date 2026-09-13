@@ -1,7 +1,7 @@
 import { Check, ChevronDown, FileWarning, ShieldQuestion, ShieldX } from 'lucide-react'
 import { useState } from 'react'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/renderer/components/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,

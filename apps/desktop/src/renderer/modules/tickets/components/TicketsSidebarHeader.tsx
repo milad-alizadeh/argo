@@ -1,6 +1,6 @@
 import { Plus, Search, X } from 'lucide-react'
 import { TICKET_QUERY_LIMIT } from '@/core/tickets/contract'
-import { Button } from '../../../components/ui/button'
+import { Button } from '../../../components/Button'
 import {
   InputGroup,
   InputGroupAddon,
