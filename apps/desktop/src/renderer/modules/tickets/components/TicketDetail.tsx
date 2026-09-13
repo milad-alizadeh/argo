@@ -1,9 +1,10 @@
-import { CircleCheck, CircleDot, Ticket as TicketMark } from 'lucide-react'
+import { CircleCheck, CircleDot, ExternalLink, Ticket as TicketMark } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
+import { buttonVariants } from '../../../components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -171,22 +172,34 @@ function NothingSelected() {
   )
 }
 
-// A provider without a page for the Ticket shows its key as plain text.
-function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
-  const keyText = 'justify-self-start font-mono type-meta text-faint'
-  if (ticket.url === null) return <span className={keyText}>{ticket.key}</span>
+const keyText = 'font-mono type-meta'
+
+// The inspector bar names the Ticket by its key, which opens it on the provider's own page. A
+// provider without a page for the Ticket shows its key as plain text.
+export function TicketBar({ ticket, provider }: { ticket: Ticket | null; provider: Provider }) {
+  if (ticket === null) return null
+  if (ticket.url === null) {
+    return <span className={`${keyText} px-2 text-muted-foreground`}>{ticket.key}</span>
+  }
+  // An anchor drawn as a button: Base UI's Button would give it the button role.
   return (
     <a
-      aria-label={`Open ${ticket.key} on ${PROVIDER_PRESENTATION[provider].name}`}
-      className={`${keyText} hover:text-foreground hover:underline`}
+      aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
+      // Pulls the key onto the title's line past the xs button's 1px border.
+      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} -ml-px text-muted-foreground`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
     >
       {ticket.key}
+      <ExternalLink aria-hidden="true" data-icon="inline-end" />
     </a>
   )
 }
+
+// Keeps a readable measure while the rule under the header runs the inspector's full width.
+const measure =
+  'grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)'
 
 export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation & Editing
 
@@ -197,17 +210,18 @@ export function TicketDetail(props: TicketDetailProps) {
   const body = ticket.body?.trim()
   return (
     <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
-      <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)">
-        <header className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-item)">
-          <TicketKey provider={provider} ticket={ticket} />
+      <header className="border-b border-border/60">
+        <div className={measure}>
           <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
-        </header>
-        <Properties
-          onChangeStatus={onChangeStatus}
-          provider={provider}
-          statuses={statuses}
-          ticket={ticket}
-        />
+          <Properties
+            onChangeStatus={onChangeStatus}
+            provider={provider}
+            statuses={statuses}
+            ticket={ticket}
+          />
+        </div>
+      </header>
+      <div className={measure}>
         {body ? (
           <FeedMarkdown text={body} />
         ) : (

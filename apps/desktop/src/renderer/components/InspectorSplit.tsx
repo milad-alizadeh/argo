@@ -16,6 +16,8 @@ export type InspectorSplitProps = {
   noun: string
   workspace: ReactNode
   inspector: ReactNode
+  // What the inspector's top bar holds on the left, beside the toggles.
+  bar?: ReactNode
   sizes: InspectorSizes
   // A change of this value opens a collapsed inspector, as choosing something to inspect does.
   reveal?: unknown
@@ -104,7 +106,8 @@ function InspectorToggles({ noun, state, onToggle, onToggleExpanded }: TogglesPr
 }
 
 // A workspace beside a resizable inspector that collapses to nothing or expands over the workspace.
-export function InspectorSplit({ noun, workspace, inspector, sizes, reveal }: InspectorSplitProps) {
+export function InspectorSplit(props: InspectorSplitProps) {
+  const { noun, workspace, inspector, bar, sizes, reveal } = props
   const panels = useInspectorPanels(sizes, reveal)
   const id = noun.toLowerCase()
   return (
@@ -139,7 +142,9 @@ export function InspectorSplit({ noun, workspace, inspector, sizes, reveal }: In
             aria-label={`${noun} inspector`}
             className="flex h-full min-h-0 flex-col bg-sidebar"
           >
-            <header className="h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar" />
+            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
+              {bar}
+            </header>
             {inspector}
           </aside>
         </ResizablePanel>

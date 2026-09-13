@@ -68,6 +68,11 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await userEvent.click(rows[0] as HTMLElement)
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
   const detail = canvas.getByRole('article', { name: 'Ticket #607' })
+  // The inspector's bar names the Ticket, and its key opens the Ticket on GitHub.
+  await expect(canvas.getByRole('link', { name: 'Open #607 in GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/octocat/hello-world/issues/607',
+  )
   await expect(detail).toHaveTextContent('Wayfinder: the Tickets room, end to end')
   await expect(detail).toHaveTextContent('PRD')
   await expect(within(detail).getByText('wayfinder')).toBeInTheDocument()
