@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { TicketDetail } from './TicketDetail'
 import { wayfinder } from './ticket-fixtures'
@@ -58,5 +58,33 @@ export const LongContent: Story = {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     await expect(article.scrollWidth).toBeLessThanOrEqual(article.clientWidth)
     await expect(within(article).getAllByText('Open')[0]).toBeVisible()
+    await expect(
+      within(article).getByRole('link', { name: /^https:\/\/github\.com/ }),
+    ).toHaveAttribute('target', '_blank')
+  },
+}
+
+const MARKDOWN_BODY = [
+  '## Flow',
+  'Read the [design notes](https://github.com/octocat/hello-world/wiki) first.',
+  '```mermaid',
+  'flowchart LR',
+  '  Backlog --> Ticket --> Session',
+  '```',
+].join('\n')
+
+// A description draws as the feed draws Markdown: headings, links that open, and Mermaid diagrams.
+export const MarkdownBody: Story = {
+  args: { ticket: { ...wayfinder, body: MARKDOWN_BODY } },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
+    await expect(within(article).getByRole('heading', { name: 'Flow' })).toBeVisible()
+    await expect(within(article).getByRole('link', { name: 'design notes' })).toHaveAttribute(
+      'href',
+      'https://github.com/octocat/hello-world/wiki',
+    )
+    const diagram = within(article).getByRole('figure', { name: 'Mermaid diagram' })
+    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
+    await expect(diagram).toHaveTextContent('Session')
   },
 }

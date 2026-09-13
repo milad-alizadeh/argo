@@ -12,6 +12,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
+import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
 import { ticketURL } from '../lib/github-links'
 
@@ -180,11 +181,11 @@ export function TicketDetail({ ticket, scope, ...navigation }: TicketDetailProps
           <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
         </header>
         <Properties ticket={ticket} />
-        <p
-          className={`type-body whitespace-pre-wrap wrap-anywhere ${body ? '' : 'text-muted-foreground'}`}
-        >
-          {body ? ticket.body : 'No description.'}
-        </p>
+        {body ? (
+          <FeedMarkdown text={body} />
+        ) : (
+          <p className="type-body text-muted-foreground">No description.</p>
+        )}
         {children.length > 0 ? (
           <Section title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}>
             <Links links={children} {...navigation} />
