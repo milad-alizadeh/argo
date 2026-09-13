@@ -42,6 +42,83 @@ function launchEnvironment(): NodeJS.ProcessEnv {
   return environment
 }
 
+function rosterRow(id: string, session: ManagedSession): SessionRosterRow {
+  return {
+    id,
+    retiredIds: [],
+    cli: 'codex',
+    posture: 'managed',
+    title: { text: session.prompt, source: 'first-prompt' },
+    status: session.failed ? 'unknown' : 'running',
+    entry: 'interactive',
+    cwd: session.cwd,
+    branch: null,
+    updatedAt: null,
+    unreadableLines: 0,
+    originUnread: false,
+    turnStartedAt: null,
+    activity: null,
+    plan: null,
+    delegations: [],
+    shell: [],
+    pullRequest: null,
+    archived: false,
+    contextTokens: null,
+    spentTokens: null,
+  }
+}
+
+type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
+type SessionRegistry = { sessions: Map<string, ManagedSession>; turn: Turn }
+
+async function beginManagedSession(
+  options: DriverOptions,
+  registry: SessionRegistry,
+  { cwd, prompt }: { cwd: string; prompt: string },
+): Promise<string> {
+  const { sessions, turn } = registry
+  const executable = options.findExecutable()
+  if (!executable) throw new CodexSessionDriverError('codex-cli-unavailable')
+  let channel: CodexChannel
+  try {
+    channel = options.openChannel(executable, { cwd, env: launchEnvironment() })
+  } catch {
+    throw new CodexSessionDriverError('codex-launch-failed')
+  }
+  let threadId: string | null = null
+  try {
+    await channel.request(
+      'initialize',
+      {
+        clientInfo: { name: 'argo', title: 'Argo', version: '1' },
+        capabilities: { experimentalApi: false, requestAttestation: false },
+      },
+      (value) => value,
+    )
+    channel.notify('initialized')
+    const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
+    threadId = startedThreadId
+    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false })
+    channel.onExit(() => {
+      const session = sessions.get(startedThreadId)
+      if (session) session.failed = true
+    })
+    channel.onNotification((message) => {
+      const completed = readCompletedTurn(message)
+      if (completed?.threadId !== startedThreadId) return
+      const session = sessions.get(startedThreadId)
+      if (session && completed.turn.status === 'failed') session.failed = true
+    })
+    await turn(channel, startedThreadId, prompt)
+    return startedThreadId
+  } catch (error) {
+    channel.close()
+    if (threadId !== null) sessions.delete(threadId)
+    if (error instanceof CodexSessionDriverError) throw error
+    throw new CodexSessionDriverError('codex-launch-failed')
+  }
+}
+
 export function createCodexSessionDriver(options: DriverOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
 
@@ -62,48 +139,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   }
 
   return {
-    async start({ cwd, prompt }) {
-      const executable = options.findExecutable()
-      if (!executable) throw new CodexSessionDriverError('codex-cli-unavailable')
-      let channel: CodexChannel
-      try {
-        channel = options.openChannel(executable, { cwd, env: launchEnvironment() })
-      } catch {
-        throw new CodexSessionDriverError('codex-launch-failed')
-      }
-      let threadId: string | null = null
-      try {
-        await channel.request(
-          'initialize',
-          {
-            clientInfo: { name: 'argo', title: 'Argo', version: '1' },
-            capabilities: { experimentalApi: false, requestAttestation: false },
-          },
-          (value) => value,
-        )
-        channel.notify('initialized')
-        const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
-        threadId = startedThreadId
-        sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false })
-        channel.onExit(() => {
-          const session = sessions.get(startedThreadId)
-          if (session) session.failed = true
-        })
-        channel.onNotification((message) => {
-          const completed = readCompletedTurn(message)
-          if (completed?.threadId !== startedThreadId) return
-          const session = sessions.get(startedThreadId)
-          if (session && completed.turn.status === 'failed') session.failed = true
-        })
-        await turn(channel, startedThreadId, prompt)
-        return startedThreadId
-      } catch (error) {
-        channel.close()
-        if (threadId !== null) sessions.delete(threadId)
-        if (error instanceof CodexSessionDriverError) throw error
-        throw new CodexSessionDriverError('codex-launch-failed')
-      }
-    },
+    start: (request) => beginManagedSession(options, { sessions, turn }, request),
     async send(sessionId, text) {
       const session = runningSession(sessionId)
       await turn(session.channel, sessionId, text)
@@ -117,31 +153,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
-    roster(): SessionRosterRow[] {
-      return [...sessions.entries()].map(([id, session]) => ({
-        id,
-        retiredIds: [],
-        cli: 'codex',
-        posture: 'managed',
-        title: { text: session.prompt, source: 'first-prompt' },
-        status: session.failed ? 'unknown' : 'running',
-        entry: 'interactive',
-        cwd: session.cwd,
-        branch: null,
-        updatedAt: null,
-        unreadableLines: 0,
-        originUnread: false,
-        turnStartedAt: null,
-        activity: null,
-        plan: null,
-        delegations: [],
-        shell: [],
-        pullRequest: null,
-        archived: false,
-        contextTokens: null,
-        spentTokens: null,
-      }))
-    },
+    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
     close() {
       for (const session of sessions.values()) session.channel.close()
       sessions.clear()

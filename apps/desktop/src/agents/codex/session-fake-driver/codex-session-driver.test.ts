@@ -2,10 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { CodexChannel } from '../drive/codex-channel.ts'
-import {
-  CodexSessionDriverError,
-  createCodexSessionDriver,
-} from '../drive/codex-session-driver.ts'
+import { CodexSessionDriverError, createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import type { RequestParams } from '../drive/protocol.ts'
 
 function fakeChannel(): CodexChannel & {

@@ -11,10 +11,7 @@ import {
 } from '../../agents/claude/drive/start-session'
 import type { CodexSessionDriver } from '../../agents/codex/drive/codex-session-driver'
 import { driveCodexSession } from '../../agents/codex/drive/drive-session'
-import {
-  type CodexSessionStarter,
-  startCodexSession,
-} from '../../agents/codex/drive/start-session'
+import { type CodexSessionStarter, startCodexSession } from '../../agents/codex/drive/start-session'
 import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { sessionError } from './contract'

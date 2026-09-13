@@ -40,7 +40,11 @@ test('rejects a request when its matching JSON-RPC error arrives', async () => {
   const fake = fakeProcess()
   const channel = openCodexChannel(fake.process)
 
-  const pending = channel.request('turn/interrupt', { threadId: 't', turnId: 'u' }, (value) => value)
+  const pending = channel.request(
+    'turn/interrupt',
+    { threadId: 't', turnId: 'u' },
+    (value) => value,
+  )
   const sent = JSON.parse(fake.writes[0] as string)
   fake.emitLine(JSON.stringify({ id: sent.id, error: { code: -32000, message: 'boom' } }))
 

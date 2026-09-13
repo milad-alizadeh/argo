@@ -13,7 +13,11 @@ function send(message: Record<string, unknown>) {
 
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
-  const message = JSON.parse(line) as { id?: unknown; method?: string; params?: Record<string, unknown> }
+  const message = JSON.parse(line) as {
+    id?: unknown
+    method?: string
+    params?: Record<string, unknown>
+  }
   if (message.method === undefined) return
   switch (message.method) {
     case 'initialize':
@@ -46,6 +50,9 @@ lines.on('line', (line) => {
       send({ id: message.id, result: {} })
       return
     default:
-      send({ id: message.id, error: { code: -32601, message: `Fixture does not answer ${message.method}` } })
+      send({
+        id: message.id,
+        error: { code: -32601, message: `Fixture does not answer ${message.method}` },
+      })
   }
 })

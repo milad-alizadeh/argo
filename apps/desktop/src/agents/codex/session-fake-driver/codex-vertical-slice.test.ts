@@ -6,8 +6,8 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
@@ -121,7 +121,13 @@ test('a Codex transport failure surfaces an honest, visible Session state', asyn
 test('driving a Session Codex never launched reports a drivable failure, not a stall', async () => {
   const driver = driverBackedByFixture()
   const reply = await driveCodexSession(
-    { version: 1, type: 'session.codex.send', requestId: 'send-2', sessionId: 'never-started', prompt: 'x' },
+    {
+      version: 1,
+      type: 'session.codex.send',
+      requestId: 'send-2',
+      sessionId: 'never-started',
+      prompt: 'x',
+    },
     driver,
   )
   assert.equal(reply.type, 'session.error')
@@ -129,9 +135,12 @@ test('driving a Session Codex never launched reports a drivable failure, not a s
 })
 
 test('Codex being unavailable on the machine reports an honest start failure', async () => {
-  const driver = createCodexSessionDriver({ findExecutable: () => null, openChannel: () => {
-    throw new Error('unreachable')
-  } })
+  const driver = createCodexSessionDriver({
+    findExecutable: () => null,
+    openChannel: () => {
+      throw new Error('unreachable')
+    },
+  })
   const reply = await startCodexSession(
     {
       version: 1,

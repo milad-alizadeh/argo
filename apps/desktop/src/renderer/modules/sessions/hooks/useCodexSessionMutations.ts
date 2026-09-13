@@ -39,24 +39,26 @@ export function useCodexSessionMutations() {
       }
     },
   })
-  const start = useMutation<CodexSessionStarted, SessionContractError, { cwd: string; prompt: string }>(
-    {
-      mutationFn: async ({ cwd, prompt }: { cwd: string; prompt: string }) => {
-        const reply = await window.argo.startCodexSession({
-          cwd,
-          prompt,
-        })
-        switch (reply.type) {
-          case 'session.codex.started':
-            return reply
-          case 'session.error':
-            return throwSessionContractError(reply)
-          default:
-            return throwUnexpectedSessionReply(reply)
-        }
-      },
+  const start = useMutation<
+    CodexSessionStarted,
+    SessionContractError,
+    { cwd: string; prompt: string }
+  >({
+    mutationFn: async ({ cwd, prompt }: { cwd: string; prompt: string }) => {
+      const reply = await window.argo.startCodexSession({
+        cwd,
+        prompt,
+      })
+      switch (reply.type) {
+        case 'session.codex.started':
+          return reply
+        case 'session.error':
+          return throwSessionContractError(reply)
+        default:
+          return throwUnexpectedSessionReply(reply)
+      }
     },
-  )
+  })
 
   return { interrupt, send, start }
 }

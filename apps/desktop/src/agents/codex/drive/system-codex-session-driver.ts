@@ -1,5 +1,4 @@
-import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
-import { execFileSync } from 'node:child_process'
+import { type ChildProcessWithoutNullStreams, execFileSync, spawn } from 'node:child_process'
 import { accessSync, constants } from 'node:fs'
 import * as path from 'node:path'
 

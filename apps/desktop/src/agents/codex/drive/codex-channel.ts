@@ -21,54 +21,70 @@ export type CodexChannel = {
   close: () => void
 }
 
+type PendingRequests = Map<
+  RequestID,
+  { resolve: (value: unknown) => void; reject: (error: unknown) => void }
+>
+
+type ChannelState = {
+  pending: PendingRequests
+  notificationListeners: Array<(message: WireMessage) => void>
+  exitListeners: Array<() => void>
+}
+
+function refuse(process: CodexProcess, id: RequestID, method: string) {
+  process.write(
+    `${JSON.stringify({
+      id,
+      error: { code: -32601, message: `Argo does not answer ${method} yet.` },
+    })}\n`,
+  )
+}
+
+function handleLine(process: CodexProcess, state: ChannelState, line: string) {
+  let message: WireMessage
+  try {
+    message = readMessage(line)
+  } catch {
+    return
+  }
+  if ('method' in message) {
+    if (message.id !== undefined) refuse(process, message.id, message.method)
+    for (const listener of state.notificationListeners) listener(message)
+    return
+  }
+  const waiting = state.pending.get(message.id)
+  if (waiting === undefined) return
+  state.pending.delete(message.id)
+  if ('error' in message) waiting.reject(new Error(message.error.message))
+  else waiting.resolve(message.result)
+}
+
+function wireInbound(process: CodexProcess, state: ChannelState) {
+  const lines = createInterface({ input: process.stdout })
+  lines.on('line', (line) => handleLine(process, state, line))
+  process.onExit(() => {
+    for (const waiting of state.pending.values()) waiting.reject(new Error('Codex exited'))
+    state.pending.clear()
+    for (const listener of state.exitListeners) listener()
+  })
+  return lines
+}
+
 // ADR-0024: the cockpit owns one `codex app-server` process per managed Session and speaks
 // newline-delimited JSON-RPC over its stdio pipes. A server->client request this adapter has no
 // answer for is refused rather than left open, because an unanswered approval holds the Turn for
 // ever (openai/codex#11816) and #1839's slice does not build the approval UI yet (#1841 does).
 export function openCodexChannel(process: CodexProcess): CodexChannel {
   let sequence = 0
-  const pending = new Map<RequestID, { resolve: (value: unknown) => void; reject: (error: unknown) => void }>()
-  const notificationListeners: Array<(message: WireMessage) => void> = []
-  const exitListeners: Array<() => void> = []
+  const state: ChannelState = { pending: new Map(), notificationListeners: [], exitListeners: [] }
+  const { pending, notificationListeners, exitListeners } = state
 
   const send = (message: { id?: RequestID; method: string; params?: unknown }) => {
     process.write(`${JSON.stringify(message)}\n`)
   }
 
-  const lines = createInterface({ input: process.stdout })
-  lines.on('line', (line) => {
-    let message: WireMessage
-    try {
-      message = readMessage(line)
-    } catch {
-      return
-    }
-    if ('method' in message) {
-      if (message.id !== undefined) refuse(message.id, message.method)
-      for (const listener of notificationListeners) listener(message)
-      return
-    }
-    const waiting = pending.get(message.id)
-    if (waiting === undefined) return
-    pending.delete(message.id)
-    if ('error' in message) waiting.reject(new Error(message.error.message))
-    else waiting.resolve(message.result)
-  })
-
-  function refuse(id: RequestID, method: string) {
-    process.write(
-      `${JSON.stringify({
-        id,
-        error: { code: -32601, message: `Argo does not answer ${method} yet.` },
-      })}\n`,
-    )
-  }
-
-  process.onExit(() => {
-    for (const waiting of pending.values()) waiting.reject(new Error('Codex exited'))
-    pending.clear()
-    for (const listener of exitListeners) listener()
-  })
+  const lines = wireInbound(process, state)
 
   return {
     notify(method) {
