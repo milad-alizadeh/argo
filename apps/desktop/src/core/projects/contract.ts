@@ -1,10 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 
-// One channel carries every Project action. The action is a field of the message, never a channel
-// the renderer picks, so the bridge has one entry point to validate.
-export const PROJECT_CHANNEL = 'argo:project'
-
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('project.open'),
@@ -58,32 +54,3 @@ export function projectError(code: ProjectErrorCode, requestId: string | null): 
 // Every action shares one shape: version 1, a named type, a request ID, and zero or more further
 // identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
 // path or a channel past the guard.
-export function isAction(value: unknown, type: string, identifiers: string[] = []): boolean {
-  const parsed = z
-    .object({ version: z.literal(1), type: z.literal(type), requestId: identifierSchema })
-    .catchall(identifierSchema)
-    .safeParse(value)
-  return (
-    parsed.success &&
-    Object.keys(parsed.data).length === identifiers.length + 3 &&
-    identifiers.every((identifier) => identifier in parsed.data)
-  )
-}
-
-export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
-  return projectOpenRequestSchema.safeParse(value).success
-}
-
-export function isProjectOpened(value: unknown): value is ProjectOpened {
-  return projectOpenedSchema.safeParse(value).success
-}
-
-// The error text has to be one of the table's own strings, so a reply cannot carry a message the
-// main process assembled from an exception.
-export function isProjectErrorMessage(value: unknown): value is ProjectError {
-  return projectErrorSchema.safeParse(value).success
-}
-
-export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {
-  return isProjectOpened(value) || isProjectErrorMessage(value)
-}

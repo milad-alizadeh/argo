@@ -36,9 +36,6 @@ export function useClaudeComposer({
   const onInterrupt = useCallback(async () => {
     if (selectedSessionId === null) return false
     const reply = await window.argo.interruptClaudeSession({
-      version: 1,
-      type: 'session.claude.interrupt',
-      requestId: crypto.randomUUID(),
       sessionId: selectedSessionId,
     })
     if (reply.type !== 'session.error') return true
@@ -49,9 +46,6 @@ export function useClaudeComposer({
     async (prompt: string) => {
       if (selectedSessionId !== null) {
         const reply = await window.argo.sendClaudeSession({
-          version: 1,
-          type: 'session.claude.send',
-          requestId: crypto.randomUUID(),
           sessionId: selectedSessionId,
           prompt,
         })
@@ -64,9 +58,6 @@ export function useClaudeComposer({
         return false
       }
       const reply = await window.argo.startClaudeSession({
-        version: 1,
-        type: 'session.claude.start',
-        requestId: crypto.randomUUID(),
         cwd: cockpit.project.path,
         prompt,
       })

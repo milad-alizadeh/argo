@@ -2,19 +2,10 @@
 // Named operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import type { SessionFeedRow, SessionRosterRow } from './models'
-import type { SessionError } from './session-error'
+import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { sessionErrorSchema } from './session-error'
 
-export * from './contract-validation'
 export * from './session-error'
-
-export const SESSION_LIST_CHANNEL = 'argo:session:list'
-export const SESSION_FEED_CHANNEL = 'argo:session:feed'
-export const SESSION_CLAUDE_START_CHANNEL = 'argo:session:claude:start'
-export const SESSION_CLAUDE_SEND_CHANNEL = 'argo:session:claude:send'
-export const SESSION_CLAUDE_INTERRUPT_CHANNEL = 'argo:session:claude:interrupt'
-export const SESSION_CLAUDE_PERMISSION_CHANNEL = 'argo:session:claude:permission'
-export const SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL = 'argo:session:claude:permission:decide'
 
 export const sessionListRequestSchema = z.strictObject({
   version: z.literal(1),
@@ -109,49 +100,75 @@ export type ClaudeSessionPermissionDecisionRequest = z.infer<
   typeof claudeSessionPermissionDecisionRequestSchema
 >
 
-export type SessionsListed = {
-  version: 1
-  type: 'session.listed'
-  requestId: string
-  sessions: SessionRosterRow[]
+export const sessionsListedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.listed'),
+  requestId: identifierSchema,
+  sessions: z.array(sessionRosterRowSchema),
   // What the pass reached, stated rather than implied. A Roster that read 200 of 1,055 files
   // says so; one that silently showed 200 rows would read as the whole machine.
-  filesFound: number
-  filesRead: number
-  filesUnreadable: number
-}
+  filesFound: z.number(),
+  filesRead: z.number(),
+  filesUnreadable: z.number(),
+})
+export type SessionsListed = z.infer<typeof sessionsListedSchema>
 
-export type SessionFeedRead = {
-  version: 1
-  type: 'session.feed.read'
-  requestId: string
+export const sessionFeedReadSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.read'),
+  requestId: identifierSchema,
   // The id that was ASKED for, echoed so the caller can prove the reply is its own.
-  sessionId: string
+  sessionId: identifierSchema,
   // The Session that answered. A retired id follows the chain that took it, so this is not always
   // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
   // is here so a caller can tell that the two differ, and it is what the proofs assert against.
-  chainId: string
+  chainId: identifierSchema,
   // A main-process token for the exact projected document this reply carries. A different
   // revision must be measured before its rows enter the viewport, even when ids stay the same.
-  revision: string
-  rows: SessionFeedRow[]
-}
+  revision: z.string(),
+  rows: z.array(sessionFeedRowSchema),
+})
+export type SessionFeedRead = z.infer<typeof sessionFeedReadSchema>
 
 // The selected chain's file stamps did not move, so the main process returns this compact reply
 // instead of copying an unchanged whole document over IPC on every observation pass.
-export type SessionFeedUnchanged = {
-  version: 1
-  type: 'session.feed.unchanged'
-  requestId: string
-  sessionId: string
-  chainId: string
-  revision: string
-}
+export const sessionFeedUnchangedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.unchanged'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  chainId: identifierSchema,
+  revision: z.string(),
+})
+export type SessionFeedUnchanged = z.infer<typeof sessionFeedUnchangedSchema>
 
-export type SessionListReply = SessionsListed | SessionError
-export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
-export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
-export type ClaudeSessionSendReply = ClaudeSessionAccepted | SessionError
-export type ClaudeSessionInterruptReply = ClaudeSessionAccepted | SessionError
-export type ClaudeSessionPermissionReply = ClaudeSessionPermissionRead | SessionError
-export type ClaudeSessionPermissionDecisionReply = ClaudeSessionAccepted | SessionError
+export const sessionListReplySchema = z.union([sessionsListedSchema, sessionErrorSchema])
+export const sessionFeedReplySchema = z.union([
+  sessionFeedReadSchema,
+  sessionFeedUnchangedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionStartReplySchema = z.union([
+  claudeSessionStartedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionSendReplySchema = z.union([
+  claudeSessionAcceptedSchema,
+  sessionErrorSchema,
+])
+export const claudeSessionPermissionReplySchema = z.union([
+  claudeSessionPermissionReadSchema,
+  sessionErrorSchema,
+])
+
+export type SessionListReply = z.infer<typeof sessionListReplySchema>
+export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
+export type ClaudeSessionStartReply = z.infer<typeof claudeSessionStartReplySchema>
+export type ClaudeSessionSendReply = z.infer<typeof claudeSessionSendReplySchema>
+export type ClaudeSessionInterruptReply = z.infer<typeof claudeSessionSendReplySchema>
+export type ClaudeSessionPermissionReply = z.infer<typeof claudeSessionPermissionReplySchema>
+export type ClaudeSessionPermissionDecisionReply = z.infer<typeof claudeSessionSendReplySchema>
+
+// This table is the Session IPC contract. Adding an operation means adding its four wire facts
+// here and one handler; clients and bridges select this entry rather than maintaining a second
+// channel or operation list.

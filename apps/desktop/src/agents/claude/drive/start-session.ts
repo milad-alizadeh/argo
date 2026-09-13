@@ -1,7 +1,7 @@
 import { requestIdentifier } from '@/boundary'
 import {
   type ClaudeSessionStartReply,
-  isClaudeSessionStartRequest,
+  claudeSessionStartRequestSchema,
   sessionError,
 } from '@/core/sessions/contract'
 
@@ -16,16 +16,18 @@ export function startClaudeSession(
   starter: ClaudeSessionStarter,
 ): ClaudeSessionStartReply {
   const requestId = requestIdentifier(value)
-  if (!isClaudeSessionStartRequest(value)) return sessionError('invalid-request', requestId)
+  const parsed = claudeSessionStartRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', requestId)
+  const request = parsed.data
   try {
     return {
       version: 1,
       type: 'session.claude.started',
-      requestId: value.requestId,
-      sessionId: starter.start({ cwd: value.cwd, prompt: value.prompt }),
+      requestId: request.requestId,
+      sessionId: starter.start({ cwd: request.cwd, prompt: request.prompt }),
     }
   } catch (error) {
     const code = error instanceof ClaudeSessionDriverError ? error.code : 'launch-failed'
-    return sessionError(code, value.requestId)
+    return sessionError(code, request.requestId)
   }
 }

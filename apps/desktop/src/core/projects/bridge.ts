@@ -2,9 +2,10 @@ import path from 'node:path'
 import { type BrowserWindow, dialog } from 'electron'
 import { isRecord, requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
-import { PROJECT_CHANNEL, projectError } from './contract'
+import { projectError } from './contract'
 import { listProjects } from './list-projects'
 import { openProject } from './open-project'
+import { PROJECT_OPERATIONS } from './operations'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
@@ -21,23 +22,24 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 // A lookup keyed by the action, so an unknown one falls off the end as `invalid-request` rather
 // than reaching a handler.
-const ACTIONS = {
-  'project.open': (request: unknown, store: ProjectStore) =>
-    openProject(request, store.registryPath),
-  'project.list': (request: unknown, store: ProjectStore) =>
-    listProjects(request, store.registryPath),
-  'project.register': registerProject,
-  'project.relocate': relocateProject,
+const HANDLERS = {
+  open: (request: unknown, store: ProjectStore) => openProject(request, store.registryPath),
+  list: (request: unknown, store: ProjectStore) => listProjects(request, store.registryPath),
+  register: registerProject,
+  relocate: relocateProject,
 } as const
 
 function route(request: unknown, store: ProjectStore) {
   const action = isRecord(request) ? request.type : undefined
-  if (typeof action !== 'string' || !Object.hasOwn(ACTIONS, action)) {
+  const operation = (
+    Object.keys(PROJECT_OPERATIONS) as Array<keyof typeof PROJECT_OPERATIONS>
+  ).find((key) => PROJECT_OPERATIONS[key].name === action)
+  if (operation === undefined) {
     // A `project.open` carrying an unsupported version still reaches its own handler, which is
     // where `unsupported-version` is decided.
     return projectError('invalid-request', requestIdentifier(request))
   }
-  return ACTIONS[action as keyof typeof ACTIONS](request, store)
+  return HANDLERS[operation](request, store)
 }
 
 export function attachProjectBridge(
@@ -48,7 +50,7 @@ export function attachProjectBridge(
     registryPath: path.join(storage.userData, 'portable-v1', 'projects.json'),
     chooseFolder: () => chooseFolder(window),
   }
-  window.webContents.ipc.handle(PROJECT_CHANNEL, (event, request: unknown) => {
+  window.webContents.ipc.handle(PROJECT_OPERATIONS.open.channel, (event, request: unknown) => {
     if (!isTrustedRendererFrame(event, window, storage.rendererURL)) {
       return projectError('access-denied', requestIdentifier(request))
     }
