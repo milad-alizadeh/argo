@@ -1,0 +1,21 @@
+name: Electron download cache
+description: Restore the Electron zips @electron/get downloads, and save them on a miss (#1966).
+
+# Not for release.yml: a release downloads its inputs fresh.
+
+runs:
+  using: composite
+  steps:
+    # Resolved from apps/desktop, because bun's linker decides whether the root or the app holds it.
+    - id: electron
+      shell: bash
+      working-directory: apps/desktop
+      run: |
+        version=$(node -p "require('electron/package.json').version")
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    # @electron/get's default root is env-paths' cache directory for "electron".
+    - uses: actions/cache@v5
+      with:
+        path: ${{ runner.os == 'macOS' && '~/Library/Caches/electron' || '~/.cache/electron' }}
+        key: ${{ runner.os }}-electron-${{ steps.electron.outputs.version }}

@@ -94,6 +94,22 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      # Keyed on the CLI that installs, so a Playwright bump fetches its own browser revision (#1966).
+      - id: playwright
+        name: Read the Playwright version
+        if: ${{ !cancelled() }}
+        run: |
+          version=$(bunx playwright --version)
+          echo "version=${version#Version }" >> "$GITHUB_OUTPUT"
+
+      # The browsers only: `install` skips a present one but still runs apt for the fonts.
+      - name: Playwright browser cache
+        if: ${{ !cancelled() }}
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
       - name: Install Chromium for Storybook interaction tests
         if: ${{ !cancelled() }}
         run: bunx playwright install --with-deps chromium
@@ -127,6 +143,9 @@ jobs:
       # This job's `name:` is `main`'s required status check, matched literally, and renaming it
       # strands every open pull request on a check that never reports (#1733). So the name still
       # says what it said before this step arrived.
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/electron-cache
+
       - id: package
         name: Package for darwin
         if: ${{ !cancelled() }}
@@ -198,6 +217,10 @@ jobs:
       # gate on an older Node would never see the thing the override is there for.
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/setup
+
+      # Scoped to this pull request, because this job never runs on `main` to write one for all.
+      - if: steps.touched.outputs.desktop == 'true'
+        uses: ./.github/actions/electron-cache
 
       # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all and
       # Forge dies on a missing one. `trustedDependencies` does not help: there is no script to
