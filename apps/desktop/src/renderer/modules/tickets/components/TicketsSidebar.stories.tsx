@@ -1,17 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { useTicketSearch } from '../state/useTicketSearch'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './TicketsSidebar'
-
-const connection = {
-  accountId: 'github:583231',
-  provider: 'github',
-  login: 'octocat',
-  scope: 'octocat/hello-world',
-  label: 'octocat/hello-world',
-  state: 'ready',
-} satisfies TicketsSidebarContentProps['connection']
+import { connection } from './ticket-fixtures'
 
 const meta: Meta<typeof TicketsSidebarContent> = {
   title: 'Tickets/Sidebar',
@@ -27,7 +19,7 @@ const meta: Meta<typeof TicketsSidebarContent> = {
   // The search store outlives a story, so each starts with the field closed.
   beforeEach: () => useTicketSearch.setState({ open: false, query: '' }),
   args: {
-    connection,
+    connection: connection('github'),
     notice: null,
     openCount: '25+',
     onManageAccounts: fn(),
@@ -72,16 +64,7 @@ export const NotConnected: Story = {
 
 // Linear has no new-issue page Argo can link to, so the sidebar offers none.
 export const Linear: Story = {
-  args: {
-    connection: {
-      accountId: 'linear:user-ada',
-      provider: 'linear',
-      login: 'ada@analytical.dev',
-      scope: 'team-engine',
-      label: 'Engine',
-      state: 'ready',
-    },
-  },
+  args: { connection: connection('linear') },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('button', { name: 'New Ticket' })).toBeNull()
@@ -97,9 +80,7 @@ export const SignInNotice: Story = {
   args: { connection: null, openCount: null, notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ args, canvasElement }) => {
     const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
-    await expect(notice).toHaveTextContent(
-      'Accounts from the earlier Argo app are not carried over.',
-    )
+    await expect(notice).toHaveTextContent('Sign-ins from the earlier Argo app do not carry over.')
     await userEvent.click(within(notice).getByRole('button', { name: 'Connect an Account' }))
     await expect(args.notice?.onConnect).toHaveBeenCalled()
   },

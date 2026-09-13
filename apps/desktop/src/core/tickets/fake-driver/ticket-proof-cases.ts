@@ -8,6 +8,9 @@ import {
   accountsDialog,
   backlog,
   backlogKeys,
+  choose,
+  chooseAccount,
+  connectForm,
   openRoom,
   press,
   type Run,
@@ -44,8 +47,9 @@ export async function proveConnect(run: Run) {
 }
 
 export async function proveConnectRepository(run: Run) {
-  const form = run.page.getByRole('form', { name: 'Connect a Ticket source' })
-  await form.getByRole('combobox', { name: 'Account' }).selectOption({ label: 'GitHub · octocat' })
+  const form = connectForm(run.page)
+  await chooseAccount(run.page, 'GitHub · octocat')
+  await form.getByRole('combobox', { name: 'Account' }).getByText('GitHub · octocat').waitFor()
   const scope = form.getByRole('combobox', { name: 'Repository' })
   // GitHub, not the form, decides what the Account can read, so a hidden repository is never offered.
   await scope.fill('octocat/secret')
@@ -107,6 +111,22 @@ export async function proveRevoked(run: Run) {
   assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
   await press(accountsDialog(run.page), 'Close')
   assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+}
+
+// Closing #273 as not planned from its Detail reaches GitHub: the next read leaves it out.
+export async function proveChangeState(run: Run) {
+  await backlog(run.page).getByRole('button', { name: /^#273/ }).dispatchEvent('click')
+  const detail = run.page.getByRole('article', { name: 'Ticket #273' })
+  await choose(run.page, detail.getByRole('button', { name: 'State: Open' }), {
+    role: 'menuitemradio',
+    name: 'Closed as not planned',
+  })
+  await backlog(run.page).getByRole('button', { name: 'State: Closed as not planned' }).waitFor()
+  await openRoom(run.page, 'atlas')
+  await openRoom(run.page, 'tickets')
+  // The room draws its cached rows first and the read replaces them.
+  await backlog(run.page).getByRole('button', { name: /^#273/ }).waitFor({ state: 'detached' })
+  assert.deepEqual(await backlogKeys(run.page), ['#607', '#609'])
 }
 
 export async function proveDisconnect(run: Run) {

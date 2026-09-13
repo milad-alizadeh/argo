@@ -1,16 +1,15 @@
 // The Tickets screen's one reading of state: the selected Project, its Connection, the Accounts and
 // the Tickets, resolved into the single view the screen draws.
-import type { UseInfiniteQueryResult, UseQueryResult } from '@tanstack/react-query'
+import type { UseQueryResult } from '@tanstack/react-query'
 import type { Provider } from '@/core/accounts/contract'
 import type { ProjectSummary } from '@/core/projects/messages'
-import type { ConnectionSummary } from '@/core/tickets/contract'
+import type { ConnectionSummary, TicketStatus } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
 import { type AccountListing, useAccounts } from '../../accounts/hooks/useAccounts'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
 import type { ConnectSourceFormProps } from '../components/ConnectSourceForm'
 import type { TicketDeckProps } from '../components/TicketDeck'
-import { type Backlog, uniqueTickets } from '../lib/backlog'
 import {
   connectionProblem,
   failureProblem,
@@ -18,8 +17,10 @@ import {
   type TicketProblemProps,
 } from '../lib/problems'
 import { useSettledQuery } from '../state/useTicketSearch'
+import { listedBacklog, type TicketListing } from './listedBacklog'
 import { type ConnectForm, useConnectForm } from './useConnectForm'
-import { type TicketPages, useConnection, useDisconnectSource, useTicketList } from './useTickets'
+import { useConnection, useDisconnectSource, useTicketList } from './useTickets'
+import { useUpdateStatus } from './useUpdateStatus'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =
@@ -69,44 +70,20 @@ function unconnectedView(
   }
 }
 
-type TicketListing = UseInfiniteQueryResult<TicketPages, ContractFailure>
-
 type Connected = {
   projectId: string
   connection: ConnectionSummary
   list: TicketListing
   query: string
   onDisconnectSource: () => void
-}
-
-function backlog(
-  pages: TicketPages,
-  list: TicketListing,
-  query: string,
-): Omit<Backlog, 'provider'> {
-  return {
-    tickets: uniqueTickets(pages.pages),
-    query,
-    total: pages.pages[0]?.total ?? null,
-    hasMore: list.hasNextPage,
-    loadingMore: list.isFetchingNextPage,
-    loadMoreError: list.isFetchNextPageError ? list.error.message : null,
-    searching: list.isPlaceholderData,
-    onLoadMore: () => {
-      if (!list.isFetching) void list.fetchNextPage()
-    },
-    onRetryLoadMore: () => {
-      if (!list.isFetching) void list.fetchNextPage()
-    },
-  }
+  onChangeStatus: (key: string, status: TicketStatus) => void
 }
 
 function connectedView({
   projectId,
   connection,
-  list,
-  query,
   onDisconnectSource,
+  ...listing
 }: Connected): TicketsView {
   if (isConnectionProblem(connection)) {
     return {
@@ -114,6 +91,7 @@ function connectedView({
       ...connectionProblem(connection, { onReconnect: openAccountsDialog, onDisconnectSource }),
     }
   }
+  const { list } = listing
   if (list.isPending) return loading('Reading Tickets')
   if (list.error && !list.isFetchNextPageError) {
     return failure('Unable to read Tickets', list.error, {
@@ -124,7 +102,7 @@ function connectedView({
   return {
     kind: 'tickets',
     projectId,
-    backlog: { ...backlog(list.data, list, query), provider: connection.provider },
+    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },
   }
 }
 
@@ -137,6 +115,7 @@ export function useTicketsView(): TicketsScreenProps {
   const list = useTicketList(projectId, connection.data ?? null, query)
   const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
   const disconnectSource = useDisconnectSource()
+  const updateStatus = useUpdateStatus()
 
   function view(): TicketsView {
     if (!project) return { kind: 'no-project' }
@@ -148,13 +127,14 @@ export function useTicketsView(): TicketsScreenProps {
       })
     }
     if (connection.data === null) return unconnectedView(project, accounts, form)
-    const onDisconnectSource = () => disconnectSource.mutate({ projectId: project.id })
+    const projectId = project.id
     return connectedView({
-      projectId: project.id,
+      projectId,
       connection: connection.data,
       list,
       query,
-      onDisconnectSource,
+      onDisconnectSource: () => disconnectSource.mutate({ projectId }),
+      onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
     })
   }
 

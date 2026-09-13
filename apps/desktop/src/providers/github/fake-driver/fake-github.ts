@@ -13,6 +13,7 @@ export type FakeIssue = {
   title: string
   body?: string | null
   state?: 'open' | 'closed'
+  stateReason?: 'completed' | 'not_planned' | 'duplicate' | null
   createdAt?: string
   labels?: { name: string; color: string }[]
   type?: string
@@ -26,6 +27,8 @@ export type FakeRepository = {
   hasIssues?: boolean
   // GitHub ids of the users who can see the repository.
   visibleTo: number[]
+  // GitHub ids of the users who can change its issues; everyone who can see it when absent.
+  writers?: number[]
   issues: FakeIssue[]
   // A repository whose owner has no dependency facts serves no dependency summary at all.
   servesDependencies?: boolean

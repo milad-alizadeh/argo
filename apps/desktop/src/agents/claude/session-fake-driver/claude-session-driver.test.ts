@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
 import { test } from 'node:test'
 
 import {
@@ -12,7 +13,7 @@ import {
 } from './claude-driver-launch.ts'
 
 test('starts a named interactive Claude Session at the chosen setup and sends the opening Turn', async (context) => {
-  const { driver, spawned } = launch(await ledgerFile(context))
+  const { driver, spawned, pluginRoot } = launch(await ledgerFile(context))
 
   const sessionId = driver.start({
     cwd: '/projects/argo',
@@ -42,6 +43,8 @@ test('starts a named interactive Claude Session at the chosen setup and sends th
           'max',
           '--permission-mode',
           'plan',
+          '--plugin-dir',
+          path.join(pluginRoot, sessionId),
         ],
         cwd: '/projects/argo',
         terminal: 'xterm-256color',

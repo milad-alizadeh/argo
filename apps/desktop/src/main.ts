@@ -25,6 +25,7 @@ import { attachSessionBridge } from './core/sessions/bridge'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
+import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
 import { providerEndpoints } from './providers/endpoints'
 
 // Forge's Vite plugin injects these for each configured renderer.
@@ -97,6 +98,7 @@ function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: WINDOW_MINIMUM_WIDTH,
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
     // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
     // the frame keeps the native controls and gives up the native title bar.

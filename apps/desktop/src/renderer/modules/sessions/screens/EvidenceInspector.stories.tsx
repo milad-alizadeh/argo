@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 
 const meta: Meta<typeof SessionEvidenceInspector> = {
-  title: 'Sessions/Evidence Inspector',
+  title: 'Sessions/Screen/Evidence Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
 }

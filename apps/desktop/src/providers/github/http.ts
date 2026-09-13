@@ -37,10 +37,18 @@ function throttled(response: Response): boolean {
   )
 }
 
+// GitHub answers 410 for an issue deleted or in a repository whose Issues were turned off.
 const REFUSALS: Record<number, GitHubFailure> = {
   401: 'unauthorized',
   403: 'forbidden',
   404: 'not-found',
+  410: 'not-found',
+}
+
+function refusal(response: Response | null): GitHubFailure | null {
+  if (!response) return 'unreachable'
+  if (throttled(response)) return 'rate-limited'
+  return REFUSALS[response.status] ?? (response.ok ? null : 'unreachable')
 }
 
 function nextPage(response: Response, origin: string): string | null {
@@ -59,14 +67,28 @@ export type Page = { body: unknown; next: string | null }
 
 export async function getPage(url: string, token: string): Promise<GitHubRead<Page>> {
   const response = await send(url, { headers: { Authorization: `Bearer ${token}` } })
-  if (!response) return failed('unreachable')
-  if (throttled(response)) return failed('rate-limited')
-  const refusal = REFUSALS[response.status]
-  if (refusal) return failed(refusal)
-  if (!response.ok) return failed('unreachable')
+  const refused = refusal(response)
+  if (refused || !response) return failed(refused ?? 'unreachable')
   const body = await readJson(response)
   if (body === undefined) return failed('unreachable')
   return { ok: true, value: { body, next: nextPage(response, new URL(url).origin) } }
+}
+
+// One change to a resource, answered with the resource as it now stands.
+export async function patch(
+  url: string,
+  token: string,
+  change: Record<string, unknown>,
+): Promise<GitHubRead<unknown>> {
+  const response = await send(url, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(change),
+  })
+  const refused = refusal(response)
+  if (refused || !response) return failed(refused ?? 'unreachable')
+  const body = await readJson(response)
+  return body === undefined ? failed('unreachable') : { ok: true, value: body }
 }
 
 export async function get(url: string, token: string): Promise<GitHubRead<unknown>> {

@@ -16,7 +16,7 @@ export type FakeLinearState = {
   origin: string
   signIn: FakeLinearSignIn
   codes: Map<string, FakeCode>
-  access: Map<string, { user: FakeLinearUser; expiresAt: number }>
+  access: Map<string, FakeConsent & { expiresAt: number }>
   refresh: Map<string, FakeConsent>
   teams: Map<string, FakeLinearTeam>
   outage: FakeLinearOutage

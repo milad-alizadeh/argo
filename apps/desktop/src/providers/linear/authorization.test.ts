@@ -15,11 +15,11 @@ test('a consented sign-in yields a renewable grant for the Linear user it belong
   const url = new URL(start.authorization.url)
   assert.equal(url.origin, fake.origin)
   assert.equal(url.searchParams.get('code_challenge_method'), 'S256')
-  assert.equal(url.searchParams.get('scope'), 'read')
+  assert.equal(url.searchParams.get('scope'), 'read,write')
   assert.match(await browse(start.authorization.url), /Linear is connected to Argo/)
   const outcome = await start.authorization.outcome
   assert.ok(outcome.kind === 'granted')
-  assert.deepEqual(outcome.grant.scopes, ['read'])
+  assert.deepEqual(outcome.grant.scopes, ['read', 'write'])
   assert.ok((outcome.grant.renewal?.expiresAt ?? 0) > Date.now() + 86_000_000)
   const identity = await readViewer(endpoints, outcome.grant.accessToken)
   assert.deepEqual(identity, {
