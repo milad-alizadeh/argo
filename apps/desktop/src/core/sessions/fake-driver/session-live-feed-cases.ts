@@ -12,9 +12,11 @@ type LiveFixture = {
 const LIVE_REVISION_TIMEOUT_MS = 5_000
 
 async function fixedRow(page) {
+  const viewport = page.locator('.feed__document[data-active="true"] .feed__viewport')
+  await viewport.focus()
+  await page.keyboard.press('Home')
   return page.evaluate(() => {
     const viewport = document.querySelector('.feed__viewport')
-    viewport.scrollTop = viewport.scrollHeight / 2
     const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
       (candidate) =>
         candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,

@@ -111,7 +111,6 @@ try {
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
   await ran(['session-turn-setup'], () => proveTurnSetup(page))
-  await ran(['session-turn-setup'], () => proveTurnSetup(page))
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {
       remove: () => removeProse(fixture.claudeTranscripts),

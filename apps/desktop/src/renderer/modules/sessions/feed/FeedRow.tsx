@@ -1,6 +1,4 @@
 import { useRef } from 'react'
-import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
-import { Message, MessageContent } from '@/renderer/components/ui/message'
 import type { SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
@@ -78,16 +76,14 @@ function PlainText({ text }: { text: string }) {
 
 function FeedPrompt({ text }: { text: string }) {
   return (
-    <Message align="end" className="type-body">
-      <MessageContent>
-        <span className="sr-only">You</span>
-        <Bubble variant="muted" className="max-w-full sm:max-w-4/5">
-          <BubbleContent className="type-prose">
-            <PlainText text={text} />
-          </BubbleContent>
-        </Bubble>
-      </MessageContent>
-    </Message>
+    <p
+      className="max-w-full rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
+      data-slot="bubble"
+      data-variant="muted"
+    >
+      <span className="sr-only">You</span>
+      {text}
+    </p>
   )
 }
 
