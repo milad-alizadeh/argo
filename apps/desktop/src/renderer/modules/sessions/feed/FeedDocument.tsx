@@ -7,6 +7,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
+import { Spinner } from '../../../components/ui/spinner'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { FeedRow } from './FeedRow'
@@ -17,6 +18,7 @@ type FeedDocumentProps = {
   active: boolean
   activeEvidenceId: string | null
   feed: SessionFeed
+  isRunning: boolean
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
@@ -40,6 +42,7 @@ export function FeedDocument({
   active,
   activeEvidenceId,
   feed,
+  isRunning,
   onOpenEvidence,
 }: FeedDocumentProps) {
   const { onOpenToolGroup, openToolGroups } = useToolGroups()
@@ -73,7 +76,7 @@ export function FeedDocument({
     ),
     [],
   )
-  const content = feedContent(settled, DrawnRow, revealsFor)
+  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
 
   return (
     <div
@@ -103,12 +106,19 @@ export function FeedDocument({
   )
 }
 
-function feedContent(
-  settled: ReturnType<typeof useSettledFeed>['settled'],
-  DrawnRow: (props: DrawnRowProps) => ReactNode,
-  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>,
-) {
-  if (settled === null) return null
+function feedContent({
+  settled,
+  isRunning,
+  DrawnRow,
+  revealsFor,
+}: {
+  settled: ReturnType<typeof useSettledFeed>['settled']
+  isRunning: boolean
+  DrawnRow: (props: DrawnRowProps) => ReactNode
+  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+}) {
+  if (settled === null) return isRunning ? <RunningFeed /> : null
+  if (settled.rows.length === 0 && isRunning) return <RunningFeed />
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">
@@ -128,5 +138,13 @@ function feedContent(
       FeedRow={DrawnRow}
       revealsFor={revealsFor}
     />
+  )
+}
+
+function RunningFeed() {
+  return (
+    <section className="grid h-full place-items-center" data-state="running">
+      <Spinner className="size-6" />
+    </section>
   )
 }

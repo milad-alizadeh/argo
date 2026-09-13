@@ -10,7 +10,10 @@ import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { type PendingTurn, usePendingTurns } from './usePendingTurns'
 
+export const COMPOSER_FOCUS_STATE = 'focus-composer'
+
 export type SessionComposerProps = {
+  focusOnMount?: boolean
   isRunning?: boolean
   onInterrupt?: () => Promise<boolean>
   sessionId: string
@@ -48,27 +51,9 @@ function restorePendingTurn(
   window.requestAnimationFrame(() => editorRef.current?.focus())
 }
 
-export function SessionComposer({
-  isRunning = false,
-  onInterrupt,
-  sessionId,
-  onSend,
-  plan = null,
-  harness = null,
-  setup = null,
-}: SessionComposerProps) {
+function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor | null>) {
   const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
   const setDraft = useComposerStore(({ setDraft }) => setDraft)
-  const editorRef = useRef<LexicalEditor>(null)
-  const sendPendingTurn = useCallback(
-    (text: string, turnSetup: TurnSetup | undefined) => onSend(text, turnSetupOf(setup, turnSetup)),
-    [onSend, setup],
-  )
-  const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn } = usePendingTurns({
-    isRunning,
-    onSend: sendPendingTurn,
-    sessionId,
-  })
   const changeDraft = useCallback(
     (text: string) => setDraft(sessionId, text),
     [sessionId, setDraft],
@@ -78,8 +63,32 @@ export function SessionComposer({
       editor?.update(() => $getRoot().clear().append($createParagraphNode()))
       setDraft(sessionId, '')
     },
-    [sessionId, setDraft],
+    [editorRef, sessionId, setDraft],
   )
+  return { changeDraft, clearDraft, draft }
+}
+
+export function SessionComposer({
+  focusOnMount = false,
+  isRunning = false,
+  onInterrupt,
+  sessionId,
+  onSend,
+  plan = null,
+  harness = null,
+  setup = null,
+}: SessionComposerProps) {
+  const editorRef = useRef<LexicalEditor>(null)
+  const { changeDraft, clearDraft, draft } = useComposerDraft(sessionId, editorRef)
+  const sendPendingTurn = useCallback(
+    (text: string, turnSetup: TurnSetup | undefined) => onSend(text, turnSetupOf(setup, turnSetup)),
+    [onSend, setup],
+  )
+  const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn } = usePendingTurns({
+    isRunning,
+    onSend: sendPendingTurn,
+    sessionId,
+  })
   const send = useCallback(async () => {
     if (!draft.trim()) return
     if (isRunning) {
@@ -95,6 +104,7 @@ export function SessionComposer({
       harness={harness}
       draft={draft}
       editorRef={editorRef}
+      focusOnMount={focusOnMount}
       isRunning={isRunning}
       onChange={changeDraft}
       onEdit={(turn) => {

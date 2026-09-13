@@ -76,14 +76,28 @@ function SendOnEnterPlugin({ onSend }: { onSend: () => void }) {
   return null
 }
 
+function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    if (!enabled) return
+    const frame = window.requestAnimationFrame(() => editor.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [editor, enabled])
+
+  return null
+}
+
 export function ComposerEditor({
   draft,
   editorRef,
+  focusOnMount,
   onChange,
   onSend,
 }: {
   draft: string
   editorRef: RefObject<LexicalEditor | null>
+  focusOnMount: boolean
   onChange: (text: string) => void
   onSend: () => void
 }) {
@@ -120,6 +134,7 @@ export function ComposerEditor({
       <HorizontalRulePlugin />
       <MarkdownPastePlugin />
       <EditorRefPlugin editorRef={editorRef} />
+      <FocusOnMountPlugin enabled={focusOnMount} />
       <SendOnEnterPlugin onSend={onSend} />
     </LexicalComposer>
   )
