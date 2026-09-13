@@ -1,6 +1,6 @@
 import { Ban, ListTree } from 'lucide-react'
 
-import './ticket-tokens.css'
+import './ticket-title.css'
 
 import type { Ticket } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'

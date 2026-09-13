@@ -11,6 +11,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
+      cn: path.resolve(import.meta.dirname, 'src/renderer/lib/utils.ts'),
     },
   },
 })

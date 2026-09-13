@@ -1,0 +1,4 @@
+.ticket-title {
+  --text-session-title: var(--text-ticket-title);
+  --text-session-title--line-height: var(--text-ticket-title--line-height);
+}

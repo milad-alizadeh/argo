@@ -1,7 +1,7 @@
 import { CircleCheck, CircleDot, Ticket as TicketMark } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import './ticket-tokens.css'
+import './ticket-title.css'
 
 import type { Ticket, TicketLink } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'

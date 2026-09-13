@@ -50,79 +50,8 @@
   --shadow-state-outline: inset 0 0 0 1px var(--color-off);
 }
 
-:root:not(.dark) {
-  --color-ink: var(--foreground);
-  --color-quiet: oklch(0.44 0 0);
-  --color-faint: var(--muted-foreground);
-  --color-off: oklch(0.72 0 0);
-  --color-plan-track: rgb(0 0 0 / 0.1);
-}
-
-:root {
-  --text-session-heading: var(--text-sm, 0.875rem);
-  --text-prose: var(--text-sm, 0.875rem);
-  --text-label: var(--text-xs, 0.75rem);
-  --text-session-title: var(--text-xl, 1.25rem);
-  --text-session-body: var(--text-sm, 0.875rem);
-  --text-session-meta: var(--text-xs, 0.75rem);
-  --text-session-code: var(--text-xs, 0.75rem);
-  --duration-standard: var(--duration-layout);
-  --transition-duration-standard: var(--duration-standard);
-  --size-bottom-status: 106px;
-  --size-icon-meta: 14px;
-  --size-icon-metadata: var(--size-icon-meta);
-  --size-icon-inline: 14px;
-  --size-feed-attachment-preview: 80px;
-  --size-feed-gallery: 160px;
-  --size-feed-image-frame: 208px;
-  --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
-  --size-composer-attachment: var(--size-attachment-card);
-  --size-composer-reference-strip: calc(
-    var(--size-composer-attachment) +
-    2 *
-    var(--spacing-composer-attachment-gutter)
-  );
-  --size-traffic-light: 12px;
-  --inset-traffic-light-control: 18px;
-  --color-traffic-light-close: #ff5f57;
-  --color-traffic-light-minimize: #febc2e;
-  --color-traffic-light-zoom: #28c840;
-}
-
-:root {
-  --color-language-typescript: var(--color-sky-600);
-  --color-language-typescript-ink: var(--color-white);
-  --color-language-go: var(--color-cyan-600);
-  --color-language-ruby: var(--color-red-600);
-}
-
-:root {
-  --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
-  --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
-  --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
-  --text-prose--line-height: var(--leading-6, 1.5rem);
-  --text-label--line-height: var(--text-xs--line-height, 1rem);
-  --text-meta--line-height: var(--text-xs--line-height, 1rem);
-  --text-code--line-height: var(--leading-5, 1.25rem);
-  --text-title-weight: 500;
-  --text-heading-weight: 500;
-  --text-body-weight: 400;
-  --text-prose-weight: 400;
-  --text-label-weight: 500;
-  --text-meta-weight: 400;
-  --text-code-weight: 400;
-  --text-title-tracking: normal;
-  --text-heading-tracking: normal;
-  --text-body-tracking: normal;
-  --text-prose-tracking: normal;
-  --text-label-tracking: normal;
-  --text-meta-tracking: normal;
-  --text-code-tracking: normal;
-}
-
 :root {
   --font-heading: var(--font-sans);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --text-title: 20px;
   --text-title--line-height: 24px;
   --text-heading: 14px;
@@ -195,6 +124,41 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --text-session-heading: var(--text-sm, 0.875rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-label: var(--text-xs, 0.75rem);
+  --text-session-title: var(--text-xl, 1.25rem);
+  --text-session-body: var(--text-sm, 0.875rem);
+  --text-session-meta: var(--text-xs, 0.75rem);
+  --text-session-code: var(--text-xs, 0.75rem);
+  --duration-standard: var(--duration-layout);
+  --transition-duration-standard: var(--duration-standard);
+  --size-bottom-status: 106px;
+  --size-icon-meta: 14px;
+  --size-icon-metadata: var(--size-icon-meta);
+  --size-icon-inline: 14px;
+  --size-feed-attachment-preview: 80px;
+  --size-feed-gallery: 160px;
+  --size-feed-image-frame: 208px;
+  --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
+  --size-composer-attachment: var(--size-attachment-card);
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
+}
+
+:root {
+  --color-language-typescript: var(--color-sky-600);
+  --color-language-typescript-ink: var(--color-white);
+  --color-language-go: var(--color-cyan-600);
+  --color-language-ruby: var(--color-red-600);
 }
 
 :root {
@@ -230,6 +194,35 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --size-ticket-number: 40px;
+  --size-ticket-age: 32px;
+  --size-ticket-property: 56px;
+  --size-ticket-inspector: 560px;
+  --size-ticket-inspector-min: 440px;
+  --text-ticket-title: var(--text-base, 1rem);
+  --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
+  --size-ticket-workspace-min: 320px;
+  --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-label-weight: 500;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-label-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
 }
 
 .dark {
@@ -264,5 +257,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --color-language-go: var(--color-cyan-400);
+  --color-language-ruby: var(--color-red-400);
+}
+
+:root:not(.dark) {
+  --color-ink: var(--foreground);
+  --color-quiet: oklch(0.44 0 0);
+  --color-faint: var(--muted-foreground);
+  --color-off: oklch(0.72 0 0);
+  --color-plan-track: rgb(0 0 0 / 0.1);
 }
 

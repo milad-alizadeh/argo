@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const repositoryRoot = path.resolve(import.meta.dirname, '..')
-const contractPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/styles/globals.css')
+const contractPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/tokens.css')
 const mirrorPath = path.join(repositoryRoot, 'docs/design/tokens.css')
 
 export function readContract(filePath, ancestors = new Set()) {
