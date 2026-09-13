@@ -1,18 +1,25 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
+import type { SessionCli } from '../hooks/useSessionComposer'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { SessionComposer } from './SessionComposer'
 
 type SessionScreenDetailsProps = {
   composer: Pick<
-    ReturnType<typeof import('../hooks/useClaudeComposer').useClaudeComposer>,
+    ReturnType<typeof import('../hooks/useSessionComposer').useSessionComposer>,
     'failure' | 'props'
   >
   permission: ReturnType<typeof import('../hooks/useClaudePermission').useClaudePermission>
   session: SessionRosterRow | null
+  cliPicker: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
 }
 
-export function SessionComposerArea({ composer, permission, session }: SessionScreenDetailsProps) {
+export function SessionComposerArea({
+  composer,
+  permission,
+  session,
+  cliPicker,
+}: SessionScreenDetailsProps) {
   return (
     <>
       {composer.failure ? <Failure message={composer.failure} /> : null}
@@ -20,7 +27,7 @@ export function SessionComposerArea({ composer, permission, session }: SessionSc
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} plan={session?.plan ?? null} />
+      <SessionComposer {...composer.props} plan={session?.plan ?? null} cliPicker={cliPicker} />
     </>
   )
 }
