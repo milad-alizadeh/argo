@@ -1,6 +1,7 @@
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
 import { useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
+import { useParams } from 'react-router'
 
 import { Button } from '../../../components/ui/button'
 import {
@@ -8,59 +9,98 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '../../../components/ui/resizable'
-import { sizeFromToken } from '../../../components/ui/size-from-token'
+import { readCssSize } from '../../../lib/read-css-size'
+import { BasicFeed } from '../feed/BasicFeed'
+import { useSessions } from '../hooks/useSessions'
+
+type SessionInspectorState = 'open' | 'collapsed' | 'expanded'
+
+type SessionShellProps = {
+  inspectorState: SessionInspectorState
+  onToggleInspector: () => void
+  onToggleInspectorExpanded: () => void
+  inspectorPanelRef: ReturnType<typeof usePanelRef>
+  workspacePanelRef: ReturnType<typeof usePanelRef>
+  onLayoutChanged: () => void
+  feed: ReturnType<typeof useSessions>['feed']
+  feedError: ReturnType<typeof useSessions>['feedError']
+  selectedSessionId: string | null
+}
 
 export function SessionScreenView() {
+  const { sessionId } = useParams()
+  const { feed, feedError } = useSessions(sessionId ?? null)
   const inspectorPanelRef = usePanelRef()
   const workspacePanelRef = usePanelRef()
-  const inspectorDefaultWidth = sizeFromToken('--size-session-inspector')
-  const inspectorMinWidth = sizeFromToken('--size-session-inspector-min')
-  const workspaceMinWidth = sizeFromToken('--size-session-workspace-min')
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
-  const [inspectorExpanded, setInspectorExpanded] = useState(false)
+  const [inspectorState, setInspectorState] = useState<SessionInspectorState>('open')
 
-  const synchronizeInspectorCollapsed = () =>
-    setInspectorCollapsed(inspectorPanelRef.current?.isCollapsed() ?? false)
+  const synchronizeInspectorCollapsed = () => {
+    if (inspectorPanelRef.current?.isCollapsed()) {
+      setInspectorState('collapsed')
+      return
+    }
+    setInspectorState((state) => (state === 'expanded' ? state : 'open'))
+  }
 
   const toggleInspector = () => {
-    if (inspectorCollapsed) {
+    if (inspectorState === 'collapsed') {
       inspectorPanelRef.current?.expand()
-      inspectorPanelRef.current?.resize(inspectorDefaultWidth)
-    } else inspectorPanelRef.current?.collapse()
-    synchronizeInspectorCollapsed()
+      inspectorPanelRef.current?.resize(readCssSize('--size-session-inspector'))
+      setInspectorState('open')
+    } else {
+      if (inspectorState === 'expanded') workspacePanelRef.current?.expand()
+      inspectorPanelRef.current?.collapse()
+      setInspectorState('collapsed')
+    }
   }
 
   const toggleInspectorExpanded = () => {
-    workspacePanelRef.current?.[inspectorExpanded ? 'expand' : 'collapse']()
-    setInspectorExpanded(!inspectorExpanded)
+    const expanded = inspectorState === 'expanded'
+    workspacePanelRef.current?.[expanded ? 'expand' : 'collapse']()
+    setInspectorState(expanded ? 'open' : 'expanded')
   }
 
   return (
-    <main className="relative h-full min-h-0 overflow-hidden bg-background">
-      <div className="absolute top-0 right-3 z-10 flex h-(--size-chrome-bar) items-center gap-1">
-        {inspectorCollapsed ? null : (
-          <Button
-            aria-label={inspectorExpanded ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-            variant="ghost"
-            size="icon-sm"
-            onClick={toggleInspectorExpanded}
-          >
-            {inspectorExpanded ? <Minimize2 /> : <Expand />}
-          </Button>
-        )}
-        <Button
-          aria-label={inspectorCollapsed ? 'Open Session inspector' : 'Collapse Session inspector'}
-          variant="secondary"
-          size="icon-sm"
-          onClick={toggleInspector}
-        >
-          <PanelRight />
-        </Button>
-      </div>
+    <SessionShell
+      inspectorState={inspectorState}
+      inspectorPanelRef={inspectorPanelRef}
+      workspacePanelRef={workspacePanelRef}
+      onLayoutChanged={synchronizeInspectorCollapsed}
+      onToggleInspector={toggleInspector}
+      onToggleInspectorExpanded={toggleInspectorExpanded}
+      feed={feed}
+      feedError={feedError}
+      selectedSessionId={sessionId ?? null}
+    />
+  )
+}
+
+export function SessionShell({
+  inspectorState,
+  inspectorPanelRef,
+  workspacePanelRef,
+  onLayoutChanged,
+  onToggleInspector,
+  onToggleInspectorExpanded,
+  feed,
+  feedError,
+  selectedSessionId,
+}: SessionShellProps) {
+  const inspectorCollapsed = inspectorState === 'collapsed'
+  const inspectorExpanded = inspectorState === 'expanded'
+  const inspectorDefaultWidth = readCssSize('--size-session-inspector')
+  const inspectorMinWidth = readCssSize('--size-session-inspector-min')
+  const workspaceMinWidth = readCssSize('--size-session-workspace-min')
+
+  return (
+    <main
+      data-component="SessionShell"
+      className="relative h-full min-h-0 overflow-hidden bg-background"
+    >
       <ResizablePanelGroup
         orientation="horizontal"
         className="h-full"
-        onLayoutChanged={synchronizeInspectorCollapsed}
+        onLayoutChanged={onLayoutChanged}
       >
         <ResizablePanel
           id="session-workspace"
@@ -69,13 +109,15 @@ export function SessionScreenView() {
           collapsedSize={0}
           minSize={workspaceMinWidth}
         >
-          <div className="flex h-full min-h-0 flex-col">
-            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-3">
+          <section aria-label="Session workspace" className="flex h-full min-h-0 flex-col">
+            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
-            <section aria-label="Session feed" className="min-h-0 flex-1" />
+            <section aria-label="Session feed" className="min-h-0 flex-1">
+              <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} />
+            </section>
             <section aria-label="Session composer" className="shrink-0 border-t border-border/60" />
-          </div>
+          </section>
         </ResizablePanel>
         <ResizableHandle className={inspectorCollapsed ? 'bg-transparent' : 'bg-border/60'} />
         <ResizablePanel
@@ -88,10 +130,41 @@ export function SessionScreenView() {
           panelRef={inspectorPanelRef}
         >
           <aside aria-label="Session inspector" className="flex h-full min-h-0 flex-col bg-sidebar">
-            <header className="h-(--size-chrome-bar) border-b border-border/60 bg-sidebar" />
+            <header className="h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar" />
           </aside>
         </ResizablePanel>
       </ResizablePanelGroup>
+      <div className="absolute top-0 right-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center gap-(--spacing-shell-tight)">
+        {inspectorCollapsed ? (
+          <Button
+            aria-label="Open Session inspector"
+            variant="secondary"
+            size="icon-sm"
+            onClick={onToggleInspector}
+          >
+            <PanelRight />
+          </Button>
+        ) : (
+          <>
+            <Button
+              aria-label={inspectorExpanded ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+              variant="ghost"
+              size="icon-sm"
+              onClick={onToggleInspectorExpanded}
+            >
+              {inspectorExpanded ? <Minimize2 /> : <Expand />}
+            </Button>
+            <Button
+              aria-label="Collapse Session inspector"
+              variant="secondary"
+              size="icon-sm"
+              onClick={onToggleInspector}
+            >
+              <PanelRight />
+            </Button>
+          </>
+        )}
+      </div>
     </main>
   )
 }

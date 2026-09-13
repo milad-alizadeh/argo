@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
 
+import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/core/commands/shortcuts'
+
 import { AtlasSidebar } from '../../atlas/components/AtlasSidebar'
 import { AtlasPage } from '../../atlas/pages/AtlasPage'
 import { SessionsSidebar } from '../../sessions/components/SessionsSidebar'
@@ -9,6 +11,8 @@ import { SessionScreenView } from '../../sessions/screens/SessionScreenView'
 import { TicketsSidebar } from '../../tickets/components/TicketsSidebar'
 import { TicketsPage } from '../../tickets/pages/TicketsPage'
 import { CockpitShell } from '../components/CockpitShell'
+import { ProjectSwitcher } from '../components/ProjectSwitcher'
+import { useCommands } from '../hooks/useCommands'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode
@@ -25,6 +29,10 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 }
 
 function CockpitRouteLayout() {
+  useCommands((command) => {
+    const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
+    if (destination) window.location.hash = DESTINATION_PATHS[destination]
+  })
   const sidebar = useMatches().reduce<ReactNode | null>(
     (currentSidebar, match) =>
       isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
@@ -32,7 +40,7 @@ function CockpitRouteLayout() {
   )
 
   return (
-    <CockpitShell sidebar={sidebar}>
+    <CockpitShell header={<ProjectSwitcher />} sidebar={sidebar}>
       <Outlet />
     </CockpitShell>
   )
@@ -48,7 +56,7 @@ export const cockpitRouter = createHashRouter([
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
         element: <SessionsPage />,
         children: [
-          { index: true, element: null },
+          { index: true, element: <SessionScreenView /> },
           { path: ':sessionId', element: <SessionScreenView /> },
         ],
       },

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { expect, within } from 'storybook/test'
 
 import { CockpitNavigationRail } from './CockpitNavigationRail'
 
@@ -20,4 +21,11 @@ const meta: Meta<typeof CockpitNavigationRail> = {
 export default meta
 type Story = StoryObj<typeof CockpitNavigationRail>
 
-export const Sessions: Story = {}
+export const Sessions: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const sessions = canvas.getByRole('button', { name: 'Sessions' })
+
+    await expect(sessions.querySelector('svg.lucide-messages-square')).not.toBeNull()
+  },
+}

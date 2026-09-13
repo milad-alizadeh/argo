@@ -19,8 +19,10 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
-import { prepare } from './session-feed-fixture'
-import { proveContract } from './session-roster-cases'
+import { appendProse, prepare, streamProse } from './session-feed-fixture'
+import { proveLiveFeed } from './session-live-feed-cases'
+import { provePackagedRosterSelection } from './session-roster-interaction-cases'
+import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
@@ -59,8 +61,15 @@ try {
     cases.push(...names)
     return reading
   }
-  await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
-  // @todo(#1961): Restore the packaged Roster and Feed proof when the new UI is wired to real Session projections.
+  await ran(['session-shell'], () => proveSessionShell(page))
+  await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
+  await ran(['session-feed-reader-anchor'], () =>
+    proveLiveFeed(page, {
+      transcripts: fixture.claudeTranscripts,
+      append: appendProse,
+      stream: streamProse,
+    }),
+  )
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({

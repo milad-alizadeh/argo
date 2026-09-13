@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { SessionFeed, SessionId, SessionsListed } from '../types'
+import type { SessionError, SessionFeed, SessionId, SessionsListed } from '../types'
 
 let nextRequest = 0
 const FEED_REFRESH_MS = 500
@@ -14,7 +14,7 @@ function requestId(name: string): string {
 // reader asking for another one, and it is the only thing that moves the Roster on.
 function useRoster() {
   const [roster, setRoster] = useState<SessionsListed | null>(null)
-  const [rosterError, setRosterError] = useState<string | null>(null)
+  const [rosterError, setRosterError] = useState<SessionError | null>(null)
   const [passes, setPasses] = useState(0)
 
   useEffect(() => {
@@ -29,8 +29,10 @@ function useRoster() {
       .listSessions({ version: 1, type: 'session.list', requestId: requestId(`list-${passes}`) })
       .then((reply) => {
         if (!live) return
-        if (reply.type === 'session.error') setRosterError(reply.message)
-        else setRoster(reply)
+        if (reply.type === 'session.error') {
+          setRoster(null)
+          setRosterError(reply)
+        } else setRoster(reply)
       })
     return () => {
       live = false
@@ -45,7 +47,7 @@ function useRoster() {
 // previous Session's rows can tell that the two do not go together.
 function useFeed(sessionId: SessionId | null) {
   const [feed, setFeed] = useState<SessionFeed | null>(null)
-  const [feedError, setFeedError] = useState<string | null>(null)
+  const [feedError, setFeedError] = useState<SessionError | null>(null)
   const revisions = useRef(new Map<SessionId, string>())
 
   useEffect(() => {
@@ -66,8 +68,13 @@ function useFeed(sessionId: SessionId | null) {
           revision: revisions.current.get(sessionId) ?? null,
         })
         if (!live) return
-        if (reply.type === 'session.error') setFeedError(reply.message)
-        else if (reply.type === 'session.feed.read') {
+        if (reply.type === 'session.error') {
+          setFeed(null)
+          setFeedError(reply)
+          return
+        }
+        setFeedError(null)
+        if (reply.type === 'session.feed.read') {
           revisions.current.set(reply.sessionId, reply.revision)
           setFeed(reply)
         }
