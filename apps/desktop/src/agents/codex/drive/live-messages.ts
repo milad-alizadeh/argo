@@ -15,21 +15,24 @@ function readMessageText(message: WireMessage) {
   }
 }
 
-// The agent messages of one thread's newest Turn, by item id, in the order Codex began them.
+// The agent messages of one thread's latest Turns, by item id, in the order Codex began them.
 export function createLiveMessages(threadId: string) {
-  const messages = new Map<string, string>()
+  const messages = new Map<string, { turnId: string; text: string }>()
   return {
     // True when the notification was an agent message's text, whichever thread it named.
     record(message: WireMessage): boolean {
       const text = readMessageText(message)
       if (text === undefined) return false
       if (text.threadId !== threadId) return true
-      const held = text.whole ? '' : (messages.get(text.itemId) ?? '')
-      messages.set(text.itemId, held + text.text)
+      const held = text.whole ? '' : (messages.get(text.itemId)?.text ?? '')
+      messages.set(text.itemId, { turnId: text.turnId, text: held + text.text })
       return true
     },
-    list: (): LiveMessage[] => [...messages].map(([id, text]) => ({ id, text })),
-    clear: () => messages.clear(),
+    list: (): LiveMessage[] => [...messages].map(([id, { text }]) => ({ id, text })),
+    // A person can write again before the rollout holds the last reply, so that Turn stays.
+    keepOnly(turnId: string | null) {
+      for (const [id, message] of messages) if (message.turnId !== turnId) messages.delete(id)
+    },
   }
 }
 

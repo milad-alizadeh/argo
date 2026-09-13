@@ -11,6 +11,7 @@ function fakeChannel(): CodexChannel & {
 } {
   const calls: Array<{ method: string; params: unknown }> = []
   const notifications: Array<(message: never) => void> = []
+  let turns = 0
   return {
     calls,
     notifications,
@@ -22,7 +23,10 @@ function fakeChannel(): CodexChannel & {
     ) {
       calls.push({ method, params })
       if (method === 'thread/start') return decode({ thread: { id: 'thread-1' } })
-      if (method === 'turn/start') return decode({ turn: { id: 'turn-1', status: 'inProgress' } })
+      if (method === 'turn/start') {
+        turns += 1
+        return decode({ turn: { id: `turn-${turns}`, status: 'inProgress' } })
+      }
       if (method === 'turn/interrupt') return decode({})
       return decode({})
     },
@@ -123,7 +127,7 @@ test('marks a Session unknown once its Turn is reported failed', async () => {
   )
 })
 
-test('forgets the streamed messages of a Turn once the next Turn starts', async () => {
+test('keeps the streamed messages of the last Turn through a quick reply, and forgets older ones', async () => {
   const channel = fakeChannel()
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
@@ -134,8 +138,10 @@ test('forgets the streamed messages of a Turn once the next Turn starts', async 
     method: 'item/agentMessage/delta',
     params: { threadId: sessionId, turnId: 'turn-1', itemId: 'msg-1', delta: 'Ducks' },
   } as never)
-  assert.deepEqual(driver.liveMessages(sessionId), [{ id: 'msg-1', text: 'Ducks' }])
 
   await driver.send(sessionId, 'And geese?')
+  assert.deepEqual(driver.liveMessages(sessionId), [{ id: 'msg-1', text: 'Ducks' }])
+
+  await driver.send(sessionId, 'And swans?')
   assert.deepEqual(driver.liveMessages(sessionId), [])
 })

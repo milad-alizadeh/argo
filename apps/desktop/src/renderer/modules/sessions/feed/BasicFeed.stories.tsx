@@ -206,3 +206,32 @@ export const StreamingReply: Story = {
     await expect(getComputedStyle(reply).maskImage).toBe('none')
   },
 }
+
+// The play function cannot set the system's motion preference, so it answers the query itself.
+function preferReducedMotion(): () => void {
+  const system = window.matchMedia
+  window.matchMedia = (query) =>
+    query === '(prefers-reduced-motion: reduce)'
+      ? ({ matches: true, media: query } as MediaQueryList)
+      : system.call(window, query)
+  return () => {
+    window.matchMedia = system
+  }
+}
+
+export const StreamingReplyReducedMotion: Story = {
+  render: () => <StreamingFeed />,
+  play: async ({ canvasElement }) => {
+    const restore = preferReducedMotion()
+    try {
+      await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+      await userEvent.click(within(canvasElement).getByRole('button', { name: 'Receive reply' }))
+      await waitFor(() => expect(drawnRow(canvasElement, 'streaming-second')).toBeDefined())
+      const reply = drawnRow(canvasElement, 'streaming-second') as HTMLElement
+      await expect(reply.getAnimations()).toHaveLength(0)
+      await expect(getComputedStyle(reply).maskImage).toBe('none')
+    } finally {
+      restore()
+    }
+  },
+}

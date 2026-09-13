@@ -108,13 +108,14 @@ export function readCompletedTurn(message: WireMessage) {
   }
 }
 
-export type AgentMessageText = { threadId: string; itemId: string; text: string }
+export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
 
 // A piece of the agent message a Turn is still writing, in order, under the item's id.
 export function readAgentMessageDelta(message: WireMessage): AgentMessageText | undefined {
   if (!('method' in message) || message.method !== 'item/agentMessage/delta') return undefined
   return {
     threadId: string(message.params.threadId, 'Delta thread ID'),
+    turnId: string(message.params.turnId, 'Delta Turn ID'),
     itemId: string(message.params.itemId, 'Delta item ID'),
     text: string(message.params.delta, 'Delta text'),
   }
@@ -127,6 +128,7 @@ export function readCompletedAgentMessage(message: WireMessage): AgentMessageTex
   if (item.type !== 'agentMessage') return undefined
   return {
     threadId: string(message.params.threadId, 'Completed item thread ID'),
+    turnId: string(message.params.turnId, 'Completed item Turn ID'),
     itemId: string(item.id, 'Completed item ID'),
     text: string(item.text, 'Completed agent message text'),
   }

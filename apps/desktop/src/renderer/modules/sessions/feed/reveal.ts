@@ -14,11 +14,10 @@ const REVEAL_MASK = `linear-gradient(to bottom, #000 calc(100% - ${REVEAL_EDGE_P
 
 export type Reveal = { fromPx: number; toPx: number; durationMs: number }
 
-// What this deck last drew: the geometry it was drawn at, and each row's text and height.
-export type Shown = {
-  geometry: string
-  rows: Map<string, { text: string; height: number }>
-}
+// What this deck last drew: the geometry it was drawn at, and each row's text, height and the
+// reveal still playing on it, with the time that reveal ends.
+type ShownRow = { text: string; height: number; playing?: { reveal: Reveal; endsAt: number } }
+export type Shown = { geometry: string; rows: Map<string, ShownRow> }
 
 function geometryOf(settled: Settled) {
   const { width, font, zoom } = settled.reading
@@ -38,21 +37,31 @@ function reveal(fromPx: number, toPx: number): Reveal {
   }
 }
 
+// A reveal still playing when an unrelated row arrives is handed on unchanged, so it plays to its
+// end; new text is uncovered from the height the row was already shown at.
+function playing(before: ShownRow | undefined, current: ShownRow, now: number) {
+  if (before?.text === current.text) {
+    return before.playing !== undefined && before.playing.endsAt > now ? before.playing : undefined
+  }
+  const fromPx = before === undefined ? 0 : Math.min(before.height, current.height)
+  if (current.height <= fromPx) return undefined
+  const next = reveal(fromPx, current.height)
+  return { reveal: next, endsAt: now + next.durationMs }
+}
+
 // The first document a deck draws is history and shows at once, and so is any document drawn at
 // a new width, font or zoom, where every height changed without any text arriving.
-export function nextReveals(previous: Shown | null, settled: Settled) {
+export function nextReveals(previous: Shown | null, settled: Settled, now: number) {
   const geometry = geometryOf(settled)
   const shown: Shown = { geometry, rows: new Map() }
   const reveals = new Map<string, Reveal>()
   for (const row of settled.rows) {
     if (!revealsText(row)) continue
-    const height = settled.heights.get(row.id) ?? 0
-    shown.rows.set(row.id, { text: row.text, height })
+    const current: ShownRow = { text: row.text, height: settled.heights.get(row.id) ?? 0 }
+    shown.rows.set(row.id, current)
     if (previous === null || previous.geometry !== geometry) continue
-    const before = previous.rows.get(row.id)
-    if (before?.text === row.text) continue
-    const fromPx = before === undefined ? 0 : Math.min(before.height, height)
-    if (height > fromPx) reveals.set(row.id, reveal(fromPx, height))
+    current.playing = playing(previous.rows.get(row.id), current, now)
+    if (current.playing !== undefined) reveals.set(row.id, current.playing.reveal)
   }
   return { shown, reveals }
 }
@@ -65,7 +74,7 @@ export function useReveals() {
   return useCallback((settled: Settled) => {
     const held = computed.current.get(settled)
     if (held !== undefined) return held
-    const next = nextReveals(shown.current, settled)
+    const next = nextReveals(shown.current, settled, performance.now())
     shown.current = next.shown
     computed.current.set(settled, next.reveals)
     return next.reveals

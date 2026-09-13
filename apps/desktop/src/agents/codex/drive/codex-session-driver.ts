@@ -111,8 +111,8 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   }
 
   async function turn(channel: CodexChannel, threadId: string, prompt: string) {
-    // The previous Turn's messages are in the rollout by the time the person writes again.
-    sessions.get(threadId)?.messages.clear()
+    const previous = sessions.get(threadId)
+    previous?.messages.keepOnly(previous.turnId)
     const started = await channel.request(
       'turn/start',
       { threadId, input: [{ type: 'text', text: prompt, text_elements: [] }] },
