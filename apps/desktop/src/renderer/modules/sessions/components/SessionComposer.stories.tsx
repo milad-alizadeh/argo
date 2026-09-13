@@ -33,6 +33,24 @@ function ComposerStory() {
   )
 }
 
+function ManagedComposerStory() {
+  const [running, setRunning] = useState(true)
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <SessionComposer
+        isRunning={running}
+        onInterrupt={async () => {
+          setRunning(false)
+          return true
+        }}
+        onSend={async () => false}
+        sessionId="managed-session"
+      />
+    </div>
+  )
+}
+
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
@@ -53,10 +71,19 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
 
-    await userEvent.type(composer, 'Keep this draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Session one' }))
-    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Keep this draft.')
+export const ManagedTurn: Story = {
+  render: () => <ManagedComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Keep this draft while the Turn stops.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Interrupt' }))
+    await expect(composer).toHaveTextContent('Keep this draft while the Turn stops.')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
   },
 }

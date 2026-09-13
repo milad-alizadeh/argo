@@ -72,6 +72,23 @@ function readAnsweredCalls(content: unknown) {
   )
 }
 
+function readUsage(value: unknown) {
+  if (!isRecord(value)) return null
+  const terms = [
+    value.input_tokens,
+    value.output_tokens,
+    value.cache_read_input_tokens,
+    value.cache_creation_input_tokens,
+  ]
+  if (!terms.every(Number.isInteger)) return null
+  return {
+    inputTokens: value.input_tokens as number,
+    outputTokens: value.output_tokens as number,
+    cacheReadTokens: value.cache_read_input_tokens as number,
+    cacheCreationTokens: value.cache_creation_input_tokens as number,
+  }
+}
+
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
@@ -92,6 +109,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
+    usage: readUsage(message.usage),
     blocks: readBlocks(message.content),
   }
   return parsed

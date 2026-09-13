@@ -4,12 +4,17 @@ export const APPEARANCE_CHANNEL = 'argo:appearance'
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
 export const APPEARANCES = ['system', 'light', 'dark'] as const
-export type Appearance = (typeof APPEARANCES)[number]
+export const appearanceSchema = z.enum(APPEARANCES)
+export type Appearance = z.infer<typeof appearanceSchema>
 
 // `dark` is the resolved answer: what the window actually draws once System has asked the
 // operating system. The renderer needs both, because the control shows the choice and the page
 // shows the resolution.
-export type AppearanceState = { appearance: Appearance; dark: boolean }
+export const appearanceStateSchema = z.strictObject({
+  appearance: appearanceSchema,
+  dark: z.boolean(),
+})
+export type AppearanceState = z.infer<typeof appearanceStateSchema>
 
 export const DEFAULT_APPEARANCE: Appearance = 'system'
 
@@ -24,16 +29,11 @@ export function windowBackground(dark: boolean): string {
 }
 
 export function isAppearance(value: unknown): value is Appearance {
-  return APPEARANCES.includes(value as Appearance)
+  return appearanceSchema.safeParse(value).success
 }
 
 export function isAppearanceState(value: unknown): value is AppearanceState {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    isAppearance((value as AppearanceState).appearance) &&
-    typeof (value as AppearanceState).dark === 'boolean'
-  )
+  return appearanceStateSchema.safeParse(value).success
 }
 
 export type AppearanceClient = {
@@ -71,3 +71,5 @@ export function createAppearanceClient(
     },
   }
 }
+
+import { z } from 'zod'
