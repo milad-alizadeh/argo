@@ -7,7 +7,8 @@ disable-model-invocation: true
 # Visual exploration
 
 A moodboard shows a visual language through images, type, color, material, space, and small product fragments.
-This skill ends with an explicitly approved direction. The foundation begins in a separate user-invoked run.
+This skill ends with an explicitly approved direction and a faithful interactive preview of that direction.
+The production foundation begins in a separate user-invoked run.
 Create four directions by default, unless the person requests another number.
 
 Act as a senior product designer and art director responsible for both visual identity and precise interface craft.
@@ -54,7 +55,9 @@ Use supplied emotional qualities and preferences. Where taste is unknown, explor
 Identify whether the product primarily supports work, reading, persuasion, or an immersive experience.
 Use that purpose to weight the evidence, while keeping aesthetic preferences open.
 For software, select a shared set of tasks and states before choosing visual directions.
-Keep that set and its sample content constant across boards, rather than anchoring exploration to one screen.
+Keep the tasks, sample content, and state facts constant across boards, rather than anchoring exploration to one screen.
+Share what the student needs to do, not a prescribed set of widgets or their arrangement.
+Let each direction express those tasks through its own hierarchy, grouping, proportions, and visual representations while keeping actions understandable.
 
 Build an internal shortlist of seven reference worlds across at least three distinct design traditions or fields.
 For each candidate, name its concrete references, useful visual qualities, translation into the product, and one risk.
@@ -62,9 +65,30 @@ Look beyond both the category default and its predictable opposite.
 Select four candidates for audience relevance, expressive range, and their ability to support the whole task set.
 Ground the selected candidates in supplied or inspected references. Separate observed qualities from your proposed interpretation.
 Translate references into typography, hierarchy, geometry, and surface behavior rather than applying their subject matter as decoration.
+Identify a specific observed detail that takes each direction beyond a familiar aesthetic label, and develop it across the product fragments.
+An evocative name, themed props, or a different accent color does not establish that distinction.
 Define a distinct visual thesis, typographic voice, composition strategy, and graphic or surface language for each selected direction.
 Give all four directions equal development and presentation weight. Keep any recommendation provisional.
-Give each direction a separate, large, readable board whose composition expresses its thesis.
+Give each direction one separate, large, readable image board whose composition expresses its thesis.
+Treat each board as an art-directed visual world, not a tiled specification sheet.
+Compose typography, palette, imagery, graphic marks, interface fragments, and short annotations into one coherent image.
+Use the board to make the direction felt before its exact interface rules are known.
+For software, make current digital interface design the dominant evidence on every board.
+Show one reconstructable anchor screen or substantial application view, supported by smaller states and visual-system evidence.
+Translate references into digital hierarchy, typography, interaction, and surface treatment.
+Use literal paper, desks, physical folders, control panels, or other skeuomorphic scenes only when the person asks for that metaphor.
+Read references/independent-review.md before planning the directions; its diversity requirements and pre-presentation review gate apply to the whole set.
+Design four distinct approaches to the same brief, not one layout with four themes.
+Give each direction its own spatial composition, typographic hierarchy and rhythm, iconography, imagery, graphic language, surfaces, and treatment of depth and effects.
+Keep product purpose and sample tasks fixed, but allow the whole visual and interaction presentation to change rather than reskinning the same interface.
+Quiet viewer chrome does not require flat specimens: use gradients, layering, lighting, texture, transparency, or motion where they express the direction without obscuring content.
+Use purposeful photography, illustration, or abstract artwork when it contributes character or meaning; choose and show its subject, crop, treatment, and product role rather than adding filler pictures.
+Show these choices in the product fragments as well as the graphic studies; a description of an effect or image is not a specimen.
+Changing palette, font family, radii, or light/dark mode alone does not create another direction.
+Keep shared tasks and sample facts comparable while changing how information is grouped, emphasised, and revealed.
+Use inspected references to develop a specific visual idea for each direction rather than filling familiar aesthetic categories or recycling earlier tests.
+Make at least one distinctive, useful design move visible in each direction; explain it through the specimens, not a slogan or claim of creativity.
+Before presenting finished directions, obtain the independent rendered-file review defined in references/independent-review.md and resolve its presentation blockers.
 Every pair must differ in typography, spatial hierarchy, and graphic or surface language, even with names and accent colors hidden.
 Carry each direction's defining idea through its interface specimens, controls, icons, and states.
 Within each direction, use consistent type roles, spacing relationships, control geometry, and semantic state colors across fragments.
@@ -103,12 +127,12 @@ Each board must show a complete visual world:
 - Brief annotations explaining the character and tradeoffs.
 
 Discover the available image-generation tool before choosing a rendering route.
-When image generation is available, generate the complete boards before building any HTML presentation.
+When image generation is available, generate all four complete boards before building HTML.
 Give the image model the same designer role, product context, evidence priorities, and interface craft requirements.
-Describe the composition, developed fragments, custom visual details, and type relationships that make each direction distinctive.
-Generate each board separately so that each can have its own visual language and remain readable.
-Use HTML or vector composition to present generated boards or correct specific text and layout defects while preserving their visual richness.
-An HTML-only sheet of boxes, swatches, and utility text is not a substitute for the generated exploration.
+Generate each board separately so it has room for its own visual language and readable specimens.
+Keep required visible text short and provide it verbatim, while accepting that the boards explore character rather than production typography.
+Use HTML or vector composition only to present the boards or correct a specific defect without flattening their visual richness.
+An HTML-only sheet of boxes, swatches, and utility text is not a substitute for this image-first exploration.
 If image generation is unavailable, explain that limit and agree on an asset-led alternative before producing boards.
 Versions of one UI card, palette strips, or miniature screens do not satisfy this output.
 Keep generated imagery and text explicitly exploratory, and distinguish them from sourced references.
@@ -148,10 +172,18 @@ Make sure that images and fonts load, text is legible, and each claimed differen
 Inspect every UI specimen at readable size, including its labels, controls, and annotations.
 Make sure that text follows shared alignment lines, related labels share baselines, and repeated elements use consistent spacing.
 Inspect line breaks, padding, icon alignment, contrast, and hierarchy. Correct clipping, collisions, distorted text, and arbitrary offsets.
+For generated moodboards, treat an incidental lettering defect as a disclosed limitation when the intended label and visual decision remain clear.
+Correct generated text only when it changes the task, state, action, or ability to judge the direction; exact interface copy belongs in the HTML preview.
 Critique beauty and originality as well as correctness: identify the strongest visual idea and how the whole board sustains it.
 Refine awkward proportions, weak type relationships, and generic elements until each direction feels coherent and distinctive.
 Judge the visual details themselves, rather than accepting a direction's name or rationale as evidence of originality.
 Replace oversized empty panels with developed, focused fragments. Keep decorative elements clear of text and controls.
+Compare the boards' underlying arrangements and representations, not only their colors and textures.
+If they repeat the same visual formula, revise the weakest direction's composition without changing the shared task or adding features to manufacture difference.
+Check visible state facts against the sample content: totals match marked items, progress matches completion, and control symbols match their labels and current state.
+Read text at presentation size, including small captions, and correct collisions, broken baselines, and ambiguous controls.
+Record concrete visual evidence for the weakest part of each board and the least distinct pair before deciding whether to revise or present.
+Base the final critique on those observations; disclose unresolved defects and limits instead of treating completed inspection as proof of quality.
 Compare the full set for creative range. Rework directions that read as one template with different styling.
 For software boards, make sure that several substantial fragments reveal the same design language across different tasks and states.
 Recompose any board dominated by a complete screen before presenting it.
@@ -173,15 +205,27 @@ Record each retained quality and its source. Preserve the earlier board for comp
 Create a visible revision that shows how the accepted feedback changes the language.
 Request explicit approval after the revision passes the presentation gate. Silence is not approval.
 
-Done when the person explicitly approves the visible revision.
+Done when the person explicitly approves the visible revision as the source direction for the preview.
 
-## 4. Record the approved direction
+## 4. Build the faithful preview
+
+Read [rich preview](references/rich-preview.md) in full after direction approval.
+Load the available `frontend-design` skill before planning or coding the preview.
+Build the connected HTML mini prototype directly from the approved board and its reconstructable interface specimens.
+Treat this stage as translation, not reinterpretation: preserve the approved composition, proportions, typography, colour relationships, imagery, shape, depth, and graphic details.
+Render each HTML scene and compare it with the approved board at the intended viewport.
+Correct visible differences until the HTML reads as the same designed world rather than a generic implementation of its description.
+Show the working preview and the reference comparison, then ask for explicit approval.
+
+Done when the connected preview works, every scene passed the presentation gate, and the person approves its fidelity.
+
+## 5. Record the approved direction
 
 Write `docs/visual-direction.md`, or update the project's existing visual-direction record.
 Record the product context, fixed constraints, approved artifact, selected and rejected qualities, and their visual evidence.
 Include reference provenance, exploratory type and imagery rules, unresolved decisions, approver, and approval date.
-Keep exact production fonts, tokens, assets, and components pending for the foundation run.
-Keep screen composition and implementation downstream of direction approval. The board demonstrates a language, not a frozen screen specification.
-Keep the approved board accessible alongside the record.
+Record the approved board, HTML preview, viewing command, comparison renders, and known fidelity gaps.
+Keep exact production tokens and components pending for the foundation run.
+Keep the approved board and preview accessible alongside the record.
 
 Done when another agent can build the foundation without repeating the interview.

@@ -6,6 +6,9 @@ Preserve their visual richness and the qualities retained through the interview.
 ## Direction and source evidence
 
 Hold the product, audience, platform, content, and shared task set constant across directions.
+Keep state facts consistent, but let grouping, proportions, representations, and board composition vary with each visual thesis.
+Comparable task coverage does not require identical widgets, device mockups, or sample positions.
+Keep differences in features separate from differences in visual direction; do not add unique analytics or workflows to make one board seem richer.
 Write one direction packet per moodboard before composition, each with a distinct visual thesis and hierarchy strategy.
 Describe how typography, imagery, color, material, shape, space, and product fragments express that thesis together.
 Carry forward the selected reference worlds and their observed qualities from the first exploration.
@@ -63,8 +66,10 @@ Keep product fragments small enough that the board remains a moodboard rather th
 Give them enough space for close inspection of text alignment, hierarchy, padding, and control geometry.
 If imagery has no functional role, state that boundary and use the space for additional interface evidence.
 Choose specific imagery and typography that contribute to the thesis, rather than filling a standard board template.
-Preserve the generated boards' visual richness when arranging the review artifact or correcting individual specimens.
+Preserve the references' expressive qualities through deliberate typography, colour, imagery, geometry, and composition in the review artifact.
 Treat sample coverage as a minimum, not evidence of beauty or completeness.
+Prioritize a coherent, exploratory composition over a tiled specification sheet or a finished screen surrounded by swatches.
+Use reference-derived details to shape the interface itself; decorative props alone cannot carry a product direction.
 Add motion, sound, illustration systems, or data visualization when they carry product meaning.
 End each direction with what it optimizes, gives up, risks, and conflicts with.
 
