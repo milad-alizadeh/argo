@@ -54,6 +54,4 @@ export function attachProjectBridge(
     }
     return route(request, store)
   })
-  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  window.webContents.on('will-navigate', (event) => event.preventDefault())
 }
