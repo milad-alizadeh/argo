@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { readCssSize } from '../lib/read-css-size'
-import { Button } from './ui/button'
+import { Button } from './Button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable'
 
 type InspectorState = 'open' | 'collapsed' | 'expanded'
