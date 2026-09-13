@@ -88,15 +88,14 @@ try {
     }),
   )
   await ran(['session-roster-restart'], () =>
-    provePackagedRosterRestart(
-      page,
-      async () => {
+    provePackagedRosterRestart(page, {
+      remove: () => removeProse(fixture.claudeTranscripts),
+      restart: async () => {
         page = await restart()
         return page
       },
-      () => growCodexTranscript(fixture.codexTranscripts),
-      () => removeProse(fixture.claudeTranscripts),
-    ),
+      updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
+    }),
   )
   await assertShippedFusesIntact()
   console.log(

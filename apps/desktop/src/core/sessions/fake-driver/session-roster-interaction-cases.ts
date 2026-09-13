@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict'
 
 async function readRosterFacts(page) {
-  return page.locator('nav[aria-label="Sessions"] button').evaluateAll((rows) =>
-    rows.map((row) => ({ id: row.getAttribute('data-session-id'), text: row.textContent })),
-  )
+  return page
+    .locator('nav[aria-label="Sessions"] button')
+    .evaluateAll((rows) =>
+      rows.map((row) => ({ id: row.getAttribute('data-session-id'), text: row.textContent })),
+    )
+}
+
+async function proveRetiredSelection(page, restart) {
+  await page.evaluate(() => window.localStorage.setItem('argo.selected-session-id', 'resumeChild'))
+  const retired = await restart()
+  await retired.waitForFunction(() => window.location.hash === '#/sessions/resumeParent')
+  await retired.waitForSelector('.feed__viewport[data-session="resumeParent"] [data-feed-row]')
 }
 
 export async function provePackagedRosterSelection(page) {
@@ -28,7 +37,7 @@ export async function provePackagedRosterSelection(page) {
   assert.equal(await selected.getAttribute('aria-current'), 'page')
 }
 
-export async function provePackagedRosterRestart(page, restart, updateRoster, remove) {
+export async function provePackagedRosterRestart(page, { remove, restart, updateRoster }) {
   await page.evaluate(() => {
     window.location.hash = '#/sessions'
   })
@@ -81,8 +90,5 @@ export async function provePackagedRosterRestart(page, restart, updateRoster, re
   )
   assert.equal(await missing.locator('.feed__viewport').count(), 0)
 
-  await missing.evaluate(() => window.localStorage.setItem('argo.selected-session-id', 'resumeChild'))
-  const retired = await restart()
-  await retired.waitForFunction(() => window.location.hash === '#/sessions/resumeParent')
-  await retired.waitForSelector('.feed__viewport[data-session="resumeParent"] [data-feed-row]')
+  await proveRetiredSelection(missing, restart)
 }
