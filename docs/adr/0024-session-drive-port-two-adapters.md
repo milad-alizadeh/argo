@@ -94,6 +94,13 @@ beyond configuration: an unregistered hook fails **open**, silently, because the
 that produced nothing as no opinion. The gate is therefore covered by a live-CLI test rather than
 by a fixture that could only ever prove Argo talks to itself.
 
+**The same plugin also carries a `MessageDisplay` hook (#2001).** Claude Code runs it for each
+batch of reply text and holds that batch until the hook returns. The hook sends the batch to a
+second Unix socket for the Session, does not wait for an answer, and prints no `displayContent`, so
+the terminal text does not change. If Argo is not listening, `nc` fails at once and the hook exits
+0. The Feed shows the text as a draft row, and the transcript row takes its place when the block
+lands. `bun run test:live-claude-display` covers this against the installed claude (2.1.270).
+
 *`codex`* — with `approvalPolicy` at `untrusted` or `on-request`, the app-server raises an
 approval as a **server→client JSON-RPC request**: `item/commandExecution/requestApproval` for a
 command, `item/fileChange/requestApproval` for a patch. Argo renders the dialog and answers by

@@ -4,11 +4,13 @@ import type { SessionRosterRow } from '@/core/sessions/models'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
+import type { LiveMessage } from './live-messages'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
+  liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
   orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
@@ -39,8 +41,10 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      session.messages.retire()
       session.process.write(INTERRUPT)
     },
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
         managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),

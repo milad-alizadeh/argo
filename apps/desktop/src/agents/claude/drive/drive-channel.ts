@@ -2,6 +2,7 @@ import { launchArguments } from './claude-setup'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'
 import { firstFrame } from './first-frame'
+import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 
 type ClaudeProcess = {
@@ -20,13 +21,18 @@ export type DriverOptions = {
   now: () => Date
   schedule: (callback: () => void, milliseconds: number) => void
   spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
-  prepare?: (sessionId: string) => { commandArguments: string[]; close: () => void }
+  // `record` takes each batch the Session's MessageDisplay hook delivers.
+  prepare?: (
+    sessionId: string,
+    record: (batch: unknown) => void,
+  ) => { commandArguments: string[]; close: () => void }
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
   cwd: string
+  messages: LiveMessages
   process: ClaudeProcess
   prompt: string
   queue: Promise<void>
@@ -53,7 +59,8 @@ function openChannel(
 ): ManagedSession {
   const executable = options.findExecutable()
   if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
-  const prepared = options.prepare?.(seed.sessionId)
+  const messages = createLiveMessages()
+  const prepared = options.prepare?.(seed.sessionId, messages.record)
   let process: ClaudeProcess
   try {
     process = options.spawn(
@@ -71,6 +78,7 @@ function openChannel(
     close: prepared?.close ?? (() => {}),
     cwd: seed.cwd,
     ended: false,
+    messages,
     process,
     prompt: seed.prompt,
     queue: frame.ready,
@@ -138,6 +146,7 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
     write(session: ManagedSession, turn: ClaudeTurnRequest) {
       const delivery = session.queue.then(() => {
         if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+        session.messages.retire()
         return deliverTurn(session, turn, waitWhileLive(session))
       })
       session.queue = delivery.catch(() => {})

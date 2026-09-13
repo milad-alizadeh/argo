@@ -43,6 +43,8 @@ export function launch(
 ) {
   const spawned: Spawned[] = []
   const exits: Array<() => unknown> = []
+  // What each Session's MessageDisplay hook would deliver, keyed by Session.
+  const displays = new Map<string, (batch: unknown) => void>()
   const ledger = createOwnershipLedger({
     path: file,
     owner: { pid: process.pid, registry: options.registry ?? 'window-a' },
@@ -63,9 +65,14 @@ export function launch(
       spawned.push(record)
       return { ...terminal(record.writes), onExit: (listener) => exits.push(listener) }
     },
+    prepare: (sessionId, record) => {
+      displays.set(sessionId, record)
+      return { commandArguments: [], close: () => {} }
+    },
   })
   const state: Launch = { spawned, exit: (index) => exits[index]?.() }
-  return { driver, ledger, ...state }
+  const display = (sessionId: string, batch: unknown) => displays.get(sessionId)?.(batch)
+  return { driver, ledger, display, ...state }
 }
 
 // A Session a previous launch started and released when it quit.
