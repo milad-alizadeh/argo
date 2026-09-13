@@ -1,7 +1,12 @@
 // The two main-process actions behind the Session contract. Everything they touch is read-only:
 // this slice observes transcripts and writes nothing back to them.
 import type { SessionReader } from '@/core/sessions/bridge'
-import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
+import type {
+  SessionFeedReply,
+  SessionFeedRequest,
+  SessionListReply,
+  SessionListRequest,
+} from '@/core/sessions/contract'
 import { withFeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
@@ -45,17 +50,15 @@ export function createClaudeSessionReader(roots: {
 }
 
 export function listSessions(
-  value: unknown,
+  request: SessionListRequest,
   root: string,
   archiveRoot?: string,
 ): Promise<SessionListReply> {
   return createClaudeSessionReader({ transcripts: root, archive: archiveRoot }).listSessions(
-    value,
-  ) as Promise<SessionListReply>
+    request,
+  )
 }
 
-export function readFeed(value: unknown, root: string): Promise<SessionFeedReply> {
-  return createClaudeSessionReader({ transcripts: root }).readSessionFeed(
-    value,
-  ) as Promise<SessionFeedReply>
+export function readFeed(request: SessionFeedRequest, root: string): Promise<SessionFeedReply> {
+  return createClaudeSessionReader({ transcripts: root }).readSessionFeed(request)
 }

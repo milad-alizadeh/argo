@@ -7,12 +7,9 @@ import {
   type ContractError,
   errorFactory,
   errorSchema,
-  guard,
   identifier,
   message,
 } from '../contract/messages'
-
-export const TICKET_CHANNEL = 'argo:ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25
@@ -75,35 +72,38 @@ const connectionSummary = z.strictObject({
 
 const project = { projectId: identifier }
 
-const connectionRequest = message('ticket.connection', project)
-const connectSourceRequest = message('ticket.connect', {
+export const ticketConnectionRequestSchema = message('ticket.connection', project)
+export const ticketConnectRequestSchema = message('ticket.connect', {
   ...project,
   accountId: identifier,
   scope: identifier,
 })
-const disconnectSourceRequest = message('ticket.disconnect', project)
+export const ticketDisconnectRequestSchema = message('ticket.disconnect', project)
 // The repositories or teams an Account could connect this Project to.
-const discoverRequest = message('ticket.discover', { ...project, accountId: identifier })
+export const ticketDiscoverRequestSchema = message('ticket.discover', {
+  ...project,
+  accountId: identifier,
+})
 // GitHub refuses a search query over 256 characters, and the scope qualifiers take their share.
 export const TICKET_QUERY_LIMIT = 200
 // The provider's own opaque place in a listing: a GitHub page number, a Linear end cursor.
 const cursor = z.string().min(1).max(512)
 // An empty query reads the open backlog in the provider's order; any other searches it there.
-const listRequest = message('ticket.list', {
+export const ticketListRequestSchema = message('ticket.list', {
   ...project,
   query: z.string().max(TICKET_QUERY_LIMIT),
   cursor: cursor.nullable(),
 })
-const connected = message('ticket.connected', {
+export const ticketConnectedSchema = message('ticket.connected', {
   ...project,
   connection: connectionSummary.nullable(),
 })
-const discovered = message('ticket.discovered', {
+export const ticketDiscoveredSchema = message('ticket.discovered', {
   ...project,
   scopes: z.array(z.strictObject({ scope: identifier, label: z.string() })),
 })
 // `total` is known only for a search: neither provider counts a backlog without paging it all.
-const listed = message('ticket.listed', {
+export const ticketListedSchema = message('ticket.listed', {
   ...project,
   scope: identifier,
   tickets: z.array(ticket),
@@ -119,15 +119,15 @@ export type TicketLabel = Ticket['labels'][number]
 export type Ticket = z.infer<typeof ticket>
 export type ConnectionSummary = z.infer<typeof connectionSummary>
 export type ConnectionState = ConnectionSummary['state']
-export type TicketConnectionRequest = z.infer<typeof connectionRequest>
-export type TicketConnectRequest = z.infer<typeof connectSourceRequest>
-export type TicketDisconnectRequest = z.infer<typeof disconnectSourceRequest>
-export type TicketListRequest = z.infer<typeof listRequest>
-export type TicketDiscoverRequest = z.infer<typeof discoverRequest>
-export type TicketDiscovered = z.infer<typeof discovered>
+export type TicketConnectionRequest = z.infer<typeof ticketConnectionRequestSchema>
+export type TicketConnectRequest = z.infer<typeof ticketConnectRequestSchema>
+export type TicketDisconnectRequest = z.infer<typeof ticketDisconnectRequestSchema>
+export type TicketListRequest = z.infer<typeof ticketListRequestSchema>
+export type TicketDiscoverRequest = z.infer<typeof ticketDiscoverRequestSchema>
+export type TicketDiscovered = z.infer<typeof ticketDiscoveredSchema>
 export type TicketScope = TicketDiscovered['scopes'][number]
-export type TicketConnected = z.infer<typeof connected>
-export type TicketListed = z.infer<typeof listed>
+export type TicketConnected = z.infer<typeof ticketConnectedSchema>
+export type TicketListed = z.infer<typeof ticketListedSchema>
 
 export const TICKET_ERRORS = {
   'access-denied': 'Argo cannot read Tickets for this window.',
@@ -162,13 +162,4 @@ export type TicketListReply = TicketListed | TicketError
 export type TicketDiscoverReply = TicketDiscovered | TicketError
 
 export const ticketError = errorFactory('ticket.error', TICKET_ERRORS)
-const ticketErrorSchema = errorSchema('ticket.error', TICKET_ERRORS)
-
-export const isTicketConnectionRequest = guard(connectionRequest)
-export const isTicketConnectRequest = guard(connectSourceRequest)
-export const isTicketDisconnectRequest = guard(disconnectSourceRequest)
-export const isTicketListRequest = guard(listRequest)
-export const isTicketDiscoverRequest = guard(discoverRequest)
-export const isTicketConnectedReply = guard(z.union([connected, ticketErrorSchema]))
-export const isTicketListReply = guard(z.union([listed, ticketErrorSchema]))
-export const isTicketDiscoverReply = guard(z.union([discovered, ticketErrorSchema]))
+export const ticketErrorSchema = errorSchema('ticket.error', TICKET_ERRORS)

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionClient } from '@/core/sessions/client.ts'
 import { claudeSessionStartRequestSchema } from '@/core/sessions/contract.ts'
+import { SESSION_OPERATIONS } from '@/core/sessions/operations.ts'
 
 const feed = {
   sessionId: 'session-a',
@@ -26,7 +27,7 @@ const read = {
 }
 
 function clientReturning(reply) {
-  return createSessionClient(async (_operation, request) => ({
+  return createSessionClient(async (_channel, request) => ({
     ...reply,
     requestId: request.requestId,
   }))
@@ -100,8 +101,8 @@ test('starts a managed Claude Session through the named Session action', async (
     type: 'session.claude.started',
     sessionId: 'managed-1',
   }
-  const client = createSessionClient(async (operation, received) => {
-    assert.equal(operation, 'startClaude')
+  const client = createSessionClient(async (channel, received) => {
+    assert.equal(channel, SESSION_OPERATIONS.startClaude.channel)
     const parsed = claudeSessionStartRequestSchema.parse(received)
     assert.equal(parsed.cwd, request.cwd)
     assert.equal(parsed.prompt, request.prompt)

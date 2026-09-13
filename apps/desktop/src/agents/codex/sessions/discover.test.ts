@@ -6,7 +6,7 @@ import process from 'node:process'
 import { test } from 'node:test'
 import { listSessions } from './read-sessions'
 
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
+const listing = { version: 1 as const, type: 'session.list' as const, requestId: 'list-1' }
 
 function listed(reply: Awaited<ReturnType<typeof listSessions>>) {
   if (reply.type !== 'session.listed') throw new Error(`Expected sessions, received ${reply.type}.`)

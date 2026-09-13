@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto'
-import { isRecord } from '@/boundary'
 import type { SessionReader } from './bridge'
-import type { SessionFeedReply } from './contract'
+import type { SessionFeedReply, SessionFeedRequest } from './contract'
 import type { SessionFeedRow } from './models'
 
 // What a driver shows over one Session's recorded Feed while a Turn streams: the rows to draw, and
@@ -15,20 +14,19 @@ export type FeedOverlay = (rows: readonly SessionFeedRow[]) => {
 // the revision covers both; a renderer that holds that revision is told so.
 async function readOverlaidFeed(
   reader: SessionReader,
-  value: unknown,
+  request: SessionFeedRequest,
   overlayFor: (sessionId: string) => FeedOverlay | null,
-): Promise<unknown> {
-  const sessionId = isRecord(value) && typeof value.sessionId === 'string' ? value.sessionId : null
-  const overlay = sessionId === null ? null : overlayFor(sessionId)
-  if (overlay === null || !isRecord(value)) return reader.readSessionFeed(value)
-  const reply = (await reader.readSessionFeed({ ...value, revision: null })) as SessionFeedReply
+): Promise<SessionFeedReply> {
+  const overlay = overlayFor(request.sessionId)
+  if (overlay === null) return reader.readSessionFeed(request)
+  const reply = await reader.readSessionFeed({ ...request, revision: null })
   if (reply.type !== 'session.feed.read') return reply
   const shown = overlay(reply.rows)
   const revision = createHash('sha256')
     .update(JSON.stringify({ revision: reply.revision, changes: shown.changes }))
     .digest('hex')
   const read = { ...reply, revision, rows: shown.rows }
-  if (read.revision !== value.revision) return read
+  if (read.revision !== request.revision) return read
   const { rows: _rows, ...unchanged } = read
   return { ...unchanged, type: 'session.feed.unchanged' }
 }
@@ -39,6 +37,6 @@ export function withFeedOverlay(
 ): SessionReader {
   return {
     listSessions: reader.listSessions,
-    readSessionFeed: (value) => readOverlaidFeed(reader, value, overlayFor),
+    readSessionFeed: (request) => readOverlaidFeed(reader, request, overlayFor),
   }
 }

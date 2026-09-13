@@ -1,5 +1,9 @@
 // The appearance contract, shared by the bundled main process and renderer. System, Light and
 // Dark, with System the default and System following the operating system (#1820).
+import { z } from 'zod'
+import { createDomainClient } from '../contract/domain'
+import { type ContractError, errorFactory, errorSchema, message } from '../contract/messages'
+
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
 export const APPEARANCES = ['system', 'light', 'dark'] as const
@@ -8,36 +12,45 @@ export type Appearance = z.infer<typeof appearanceSchema>
 
 // `dark` is the resolved answer: what the window actually draws once System has asked the
 // operating system. The renderer needs both, because the control shows the choice and the page
-// shows the resolution.
+// shows the resolution. This is also the push channel's shape, which carries no request id.
 export const appearanceStateSchema = z.strictObject({
   appearance: appearanceSchema,
   dark: z.boolean(),
 })
 export type AppearanceState = z.infer<typeof appearanceStateSchema>
 
-// Appearance has two request shapes on its one private channel. The renderer selects a named
-// client operation; only the preload table resolves that operation to IPC.
+export const appearanceReplySchema = message('appearance.state', {
+  appearance: appearanceSchema,
+  dark: z.boolean(),
+})
+export type AppearanceReply = z.infer<typeof appearanceReplySchema>
+
+export const APPEARANCE_ERRORS = {
+  'access-denied': 'Argo cannot change the appearance from here.',
+  'unsupported-version': 'This Appearance contract version is not supported.',
+  'invalid-request': 'The Appearance request is invalid.',
+  'invalid-response': 'Argo received an invalid Appearance response.',
+  'connection-lost': 'The connection to Argo was lost.',
+} as const
+export type AppearanceErrorCode = keyof typeof APPEARANCE_ERRORS
+export type AppearanceError = ContractError<'appearance.error', AppearanceErrorCode>
+export const appearanceError = errorFactory('appearance.error', APPEARANCE_ERRORS)
+const appearanceErrorSchema = errorSchema('appearance.error', APPEARANCE_ERRORS)
+
+// Appearance has two operations on their own channels: `get` reads the current state, `set`
+// changes it. Both reply with the same state shape, or the domain's own error.
 export const APPEARANCE_OPERATIONS = {
   get: {
     name: 'appearance.get',
     channel: 'argo:appearance:get',
-    request: z.strictObject({
-      version: z.literal(1),
-      type: z.literal('appearance.get'),
-      requestId: z.string().min(1),
-    }),
-    reply: appearanceStateSchema,
+    request: message('appearance.get', {}),
+    reply: appearanceReplySchema.or(appearanceErrorSchema),
   },
   set: {
     name: 'appearance.set',
     channel: 'argo:appearance:set',
-    request: z.strictObject({
-      version: z.literal(1),
-      type: z.literal('appearance.set'),
-      requestId: z.string().min(1),
-      appearance: appearanceSchema,
-    }),
-    reply: appearanceStateSchema,
+    request: message('appearance.set', { appearance: appearanceSchema }),
+    reply: appearanceReplySchema.or(appearanceErrorSchema),
   },
 } as const
 
@@ -67,38 +80,28 @@ export type AppearanceClient = {
   onAppearanceChanged(listener: (state: AppearanceState) => void): () => void
 }
 
-// A window that cannot read its own appearance still has to draw. Dark is the fallback because it
-// is what an unresolved System draws on the reference machine, so a failed read never flashes a
-// light window over a dark desktop.
+// A window that cannot read its own appearance, or whose change was refused, still has to draw.
+// Dark is the fallback because it is what an unresolved System draws on the reference machine, so
+// a failed read never flashes a light window over a dark desktop.
 const FALLBACK: AppearanceState = { appearance: DEFAULT_APPEARANCE, dark: true }
 
+function stateOf(reply: AppearanceReply | AppearanceError): AppearanceState {
+  return reply.type === 'appearance.error'
+    ? FALLBACK
+    : { appearance: reply.appearance, dark: reply.dark }
+}
+
 export function createAppearanceClient(
-  invoke: (operation: keyof typeof APPEARANCE_OPERATIONS, request: unknown) => Promise<unknown>,
+  invoke: (channel: string, request: unknown) => Promise<unknown>,
   subscribe: (listener: (state: unknown) => void) => () => void,
 ): AppearanceClient {
-  async function ask(
-    operation: keyof typeof APPEARANCE_OPERATIONS,
-    appearance: Appearance | null,
-  ): Promise<AppearanceState> {
-    try {
-      const request =
-        appearance === null
-          ? { version: 1, type: APPEARANCE_OPERATIONS.get.name, requestId: crypto.randomUUID() }
-          : {
-              version: 1,
-              type: APPEARANCE_OPERATIONS.set.name,
-              requestId: crypto.randomUUID(),
-              appearance,
-            }
-      const state = await invoke(operation, request)
-      return isAppearanceState(state) ? state : FALLBACK
-    } catch {
-      return FALLBACK
-    }
-  }
+  const client = createDomainClient(APPEARANCE_OPERATIONS, invoke, appearanceError)
   return {
-    getAppearance: () => ask('get', null),
-    setAppearance: (appearance) => ask('set', isAppearance(appearance) ? appearance : null),
+    getAppearance: async () => stateOf(await client.get()),
+    // An appearance the contract does not name is never sent as a change: the renderer reads the
+    // current state back instead of asking the main process to reject its own request.
+    setAppearance: async (appearance) =>
+      stateOf(await (isAppearance(appearance) ? client.set({ appearance }) : client.get())),
     // The disposer is what keeps a remounted component from leaving a listener behind: React runs a
     // mount effect twice in development, and a subscription with no undo is then permanent.
     onAppearanceChanged(listener) {
@@ -108,5 +111,3 @@ export function createAppearanceClient(
     },
   }
 }
-
-import { z } from 'zod'

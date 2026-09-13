@@ -1,5 +1,10 @@
 import type { SessionReader } from '@/core/sessions/bridge'
-import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
+import type {
+  SessionFeedReply,
+  SessionFeedRequest,
+  SessionListReply,
+  SessionListRequest,
+} from '@/core/sessions/contract'
 import { projectFeed } from '@/core/sessions/feed'
 import { type FeedOverlay, withFeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
@@ -46,10 +51,10 @@ export function createCodexSessionReader(root: string, options?: ReaderOptions):
   return withFeedOverlay(reader, (sessionId) => draftOverlay(liveMessages(sessionId)))
 }
 
-export function listSessions(value: unknown, root: string): Promise<SessionListReply> {
-  return createCodexSessionReader(root).listSessions(value) as Promise<SessionListReply>
+export function listSessions(request: SessionListRequest, root: string): Promise<SessionListReply> {
+  return createCodexSessionReader(root).listSessions(request)
 }
 
-export function readFeed(value: unknown, root: string): Promise<SessionFeedReply> {
-  return createCodexSessionReader(root).readSessionFeed(value) as Promise<SessionFeedReply>
+export function readFeed(request: SessionFeedRequest, root: string): Promise<SessionFeedReply> {
+  return createCodexSessionReader(root).readSessionFeed(request)
 }

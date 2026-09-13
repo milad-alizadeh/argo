@@ -60,25 +60,6 @@ test('reports denied access without exposing the filesystem error', async (conte
   }
 })
 
-test('rejects malformed or unsupported actions before reading storage', async () => {
-  const cases = [
-    [null, 'invalid-request', null],
-    [{ ...request, requestId: '' }, 'invalid-request', null],
-    [{ ...request, requestId: 'open-\u0080' }, 'invalid-request', null],
-    [{ ...request, projectId: 'project-\u0085' }, 'invalid-request', 'open-1'],
-    [{ ...request, version: 2 }, 'unsupported-version', 'open-1'],
-    [{ ...request, type: 'process.spawn' }, 'invalid-request', 'open-1'],
-    [{ ...request, path: '/private' }, 'invalid-request', 'open-1'],
-    [{ ...request, projectId: 42 }, 'invalid-request', 'open-1'],
-  ]
-  for (const [value, code, requestId] of cases) {
-    const reply = await openProject(value, '/does-not-exist/projects.json')
-    assert.equal(reply.type, 'project.error')
-    assert.equal(reply.code, code)
-    assert.equal(reply.requestId, requestId)
-  }
-})
-
 test('distinguishes an unavailable registered folder from a missing Project', async (context) => {
   const { registryPath, projectPath } = await fixture(context)
   await rm(projectPath, { recursive: true })

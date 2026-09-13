@@ -3,12 +3,7 @@ import { createHash } from 'node:crypto'
 import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
-import {
-  type SessionFeedRequest,
-  sessionError,
-  sessionFeedRequestSchema,
-  sessionListRequestSchema,
-} from './contract'
+import { type SessionFeedRequest, sessionError } from './contract'
 import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
 import type { SessionFeedRow, SessionRosterRow } from './models'
 
@@ -38,10 +33,6 @@ function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]):
     (session) => !discovered.rows.some(({ id }) => id === session.id),
   )
   return { ...discovered, rows: [...observed, ...unobserved] }
-}
-
-function versionFailure(value: unknown) {
-  return isRecord(value) && typeof value.version === 'number' && value.version !== 1
 }
 
 function readFailure(error: unknown) {
@@ -101,10 +92,7 @@ async function readFeed({ source, feeds, value }: FeedReadOptions) {
 export function createTranscriptSessionReader(source: TranscriptSessionSource): SessionReader {
   const feeds = new Map<string, HeldFeed>()
   return {
-    async listSessions(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionListRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
+    async listSessions(request) {
       try {
         const discovery = mergeManagedRoster(
           await source.discoverSessions(),
@@ -113,24 +101,21 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
         return {
           version: 1,
           type: 'session.listed',
-          requestId: parsed.data.requestId,
+          requestId: request.requestId,
           sessions: discovery.rows,
           filesFound: discovery.filesFound,
           filesRead: discovery.filesRead,
           filesUnreadable: discovery.filesUnreadable,
         }
       } catch (error) {
-        return sessionError(readFailure(error), parsed.data.requestId)
+        return sessionError(readFailure(error), request.requestId)
       }
     },
-    async readSessionFeed(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionFeedRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
+    async readSessionFeed(request) {
       try {
-        return await readFeed({ source, feeds, value: parsed.data })
+        return await readFeed({ source, feeds, value: request })
       } catch (error) {
-        return sessionError(readFailure(error), parsed.data.requestId)
+        return sessionError(readFailure(error), request.requestId)
       }
     },
   }

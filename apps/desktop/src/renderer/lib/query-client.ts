@@ -11,7 +11,7 @@ export const QUERY_KEYS = { accounts: ['accounts'], tickets: ['tickets'] } as co
 const isFailure = (reply: { type: string }): reply is ContractFailure =>
   reply.type === 'account.error' || reply.type === 'ticket.error'
 
-// The clients never reject (`createSender`), so a thrown value is always a contract error.
+// The clients never reject (`createDomainClient`), so a thrown value is always a contract error.
 export async function settle<Success extends { type: string }>(
   pending: Promise<Success | ContractFailure>,
 ): Promise<Success> {

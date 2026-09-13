@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { markRevoked } from './access'
 import { connect, harness, OCTOCAT } from './harness'
+import { ACCOUNT_OPERATIONS } from './operations'
 import { tokenFor } from './tokens'
 
 const WORK = { id: 9001, login: 'octocat-at-work' }
@@ -119,12 +120,27 @@ test('an unreachable GitHub is a named failure', async (context) => {
   assert.equal((await cockpit.account('account.connect', GITHUB)).code, 'github-unreachable')
 })
 
-test('an unknown action, a stray field and another version are refused by name', async (context) => {
+test('a stray field, a missing field and another version are refused by name', async (context) => {
   const cockpit = await harness(context)
-  assert.equal((await cockpit.account('account.steal')).code, 'invalid-request')
-  assert.equal((await cockpit.account('account.list', { token: 'x' })).code, 'invalid-request')
-  const disconnect = await cockpit.account('account.disconnect')
-  assert.equal(disconnect.code, 'invalid-request')
+  const strayField = (await cockpit.rawAccount(ACCOUNT_OPERATIONS.list.channel, {
+    version: 1,
+    type: 'account.list',
+    requestId: 'r1',
+    token: 'x',
+  })) as { code: string }
+  assert.equal(strayField.code, 'invalid-request')
+  const missingField = (await cockpit.rawAccount(ACCOUNT_OPERATIONS.disconnect.channel, {
+    version: 1,
+    type: 'account.disconnect',
+    requestId: 'r2',
+  })) as { code: string }
+  assert.equal(missingField.code, 'invalid-request')
+  const otherVersion = (await cockpit.rawAccount(ACCOUNT_OPERATIONS.list.channel, {
+    version: 2,
+    type: 'account.list',
+    requestId: 'r3',
+  })) as { code: string }
+  assert.equal(otherVersion.code, 'unsupported-version')
 })
 
 test('a refusal of a grant renewed since leaves the Account connected', async (context) => {
