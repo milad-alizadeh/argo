@@ -1,6 +1,7 @@
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
 import { useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
+import { useParams } from 'react-router'
 
 import { Button } from '../../../components/ui/button'
 import {
@@ -9,6 +10,8 @@ import {
   ResizablePanelGroup,
 } from '../../../components/ui/resizable'
 import { readCssSize } from '../../../lib/read-css-size'
+import { BasicFeed } from '../feed/BasicFeed'
+import { useSessions } from '../hooks/useSessions'
 
 type SessionInspectorState = 'open' | 'collapsed' | 'expanded'
 
@@ -19,9 +22,14 @@ type SessionShellProps = {
   inspectorPanelRef: ReturnType<typeof usePanelRef>
   workspacePanelRef: ReturnType<typeof usePanelRef>
   onLayoutChanged: () => void
+  feed: ReturnType<typeof useSessions>['feed']
+  feedError: ReturnType<typeof useSessions>['feedError']
+  selectedSessionId: string | null
 }
 
 export function SessionScreenView() {
+  const { sessionId } = useParams()
+  const { feed, feedError } = useSessions(sessionId ?? null)
   const inspectorPanelRef = usePanelRef()
   const workspacePanelRef = usePanelRef()
   const [inspectorState, setInspectorState] = useState<SessionInspectorState>('open')
@@ -60,6 +68,9 @@ export function SessionScreenView() {
       onLayoutChanged={synchronizeInspectorCollapsed}
       onToggleInspector={toggleInspector}
       onToggleInspectorExpanded={toggleInspectorExpanded}
+      feed={feed}
+      feedError={feedError}
+      selectedSessionId={sessionId ?? null}
     />
   )
 }
@@ -71,6 +82,9 @@ export function SessionShell({
   onLayoutChanged,
   onToggleInspector,
   onToggleInspectorExpanded,
+  feed,
+  feedError,
+  selectedSessionId,
 }: SessionShellProps) {
   const inspectorCollapsed = inspectorState === 'collapsed'
   const inspectorExpanded = inspectorState === 'expanded'
@@ -99,7 +113,9 @@ export function SessionShell({
             <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
-            <section aria-label="Session feed" className="min-h-0 flex-1" />
+            <section aria-label="Session feed" className="min-h-0 flex-1">
+              <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} />
+            </section>
             <section aria-label="Session composer" className="shrink-0 border-t border-border/60" />
           </section>
         </ResizablePanel>

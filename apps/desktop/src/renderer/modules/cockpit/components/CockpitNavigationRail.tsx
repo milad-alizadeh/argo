@@ -1,10 +1,10 @@
-import { Bot, Map as MapIcon, Settings, Ticket } from 'lucide-react'
+import { type LucideIcon, Map as MapIcon, MessagesSquare, Settings, Ticket } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/core/commands/shortcuts'
 
-const navigationIcons: Record<Destination, typeof Bot> = {
-  Sessions: Bot,
+const navigationIcons: Record<Destination, LucideIcon> = {
+  Sessions: MessagesSquare,
   Tickets: Ticket,
   Atlas: MapIcon,
 }

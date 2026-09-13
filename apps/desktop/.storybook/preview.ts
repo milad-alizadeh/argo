@@ -7,12 +7,55 @@ import '../src/renderer/styles/globals.css'
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
 const host = window as unknown as { argo?: Record<string, unknown> }
+const storybookSession = {
+  id: 'storybook-session',
+  retiredIds: [],
+  cli: 'claude',
+  posture: 'external',
+  title: { text: 'Storybook Session', source: 'first-prompt' },
+  status: 'idle',
+  entry: 'interactive',
+  cwd: '/storybook/argo',
+  branch: 'main',
+  updatedAt: null,
+  unreadableLines: 0,
+  originUnread: false,
+  turnStartedAt: null,
+  activity: null,
+  plan: null,
+  delegations: [],
+  shell: [],
+  pullRequest: null,
+  archived: false,
+}
 host.argo = {
   ...host.argo,
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
   onCommand: () => () => {},
+  listSessions: (request: { requestId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.listed',
+      requestId: request.requestId,
+      sessions: [storybookSession],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+    }),
+  readSessionFeed: (request: { requestId: string; sessionId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.feed.read',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      chainId: request.sessionId,
+      revision: 'storybook-feed',
+      rows: [
+        { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
+      ],
+    }),
   listProjects: () =>
     Promise.resolve({
       version: 1,
