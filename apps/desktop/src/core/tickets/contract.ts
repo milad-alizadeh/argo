@@ -11,49 +11,21 @@ import {
   identifier,
   message,
 } from '../contract/messages'
+import { statusId, ticket, ticketKey, ticketStatus } from './ticket'
+
+export type {
+  Ticket,
+  TicketLabel,
+  TicketLink,
+  TicketPriority,
+  TicketState,
+  TicketStatus,
+} from './ticket'
 
 export const TICKET_CHANNEL = 'argo:ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25
-
-const ticketState = z.enum(['open', 'closed'])
-// The provider's own handle: `#607` on GitHub, `ENG-12` on Linear. Unique within a Connection.
-const ticketKey = z.string().min(1).max(64)
-const ticketLink = z.strictObject({ key: ticketKey, title: z.string(), state: ticketState })
-
-// A provider's own workflow state, its name drawn verbatim. `category` is Linear's state type, the
-// one vocabulary a view can style by.
-const ticketStatus = z.strictObject({
-  name: z.string().min(1),
-  category: z.enum(['triage', 'backlog', 'unstarted', 'started', 'completed', 'canceled']),
-})
-// 1 is the most urgent. A provider with no priority, or a Ticket without one, has null.
-export const PRIORITY_LEVELS = [1, 2, 3, 4] as const
-const ticketPriority = z.strictObject({
-  level: z.literal(PRIORITY_LEVELS),
-  label: z.string().min(1),
-})
-
-const ticket = z.strictObject({
-  key: ticketKey,
-  // The provider's page for this Ticket, checked in main to be on the provider's own host.
-  url: z.url({ protocol: /^https?$/ }).nullable(),
-  title: z.string(),
-  body: z.string().nullable(),
-  // `state` is the open/closed closure every provider has; `status` is richer where the provider
-  // keeps a workflow, as Linear does. GitHub has none.
-  state: ticketState,
-  status: ticketStatus.nullable(),
-  stateReason: z.string().nullable(),
-  priority: ticketPriority.nullable(),
-  createdAt: z.iso.datetime({ offset: true }),
-  labels: z.array(z.strictObject({ name: z.string(), color: z.string().nullable() })),
-  type: z.string().nullable(),
-  children: z.array(ticketLink),
-  // Null where the provider serves no dependency facts at all, which is not a Ticket nothing blocks.
-  blockedBy: z.array(ticketLink).nullable(),
-})
 
 // The Account a Connection names may since have been disconnected, left to expire, revoked or left
 // unreadable, and the Connection says so rather than disappearing: reconnecting the same identity
@@ -94,6 +66,8 @@ const listRequest = message('ticket.list', {
   query: z.string().max(TICKET_QUERY_LIMIT),
   cursor: cursor.nullable(),
 })
+// Moves one Ticket to one of the statuses its listing offered.
+const updateRequest = message('ticket.update', { ...project, key: ticketKey, statusId })
 const connected = message('ticket.connected', {
   ...project,
   connection: connectionSummary.nullable(),
@@ -107,22 +81,21 @@ const listed = message('ticket.listed', {
   ...project,
   scope: identifier,
   tickets: z.array(ticket),
+  // Every status a Ticket here can move to, in the provider's order.
+  statuses: z.array(ticketStatus),
   nextCursor: cursor.nullable(),
   total: z.int().nonnegative().nullable(),
 })
+const updated = message('ticket.updated', { ...project, key: ticketKey, status: ticketStatus })
 
-export type TicketState = z.infer<typeof ticketState>
-export type TicketLink = z.infer<typeof ticketLink>
-export type TicketStatus = z.infer<typeof ticketStatus>
-export type TicketPriority = z.infer<typeof ticketPriority>
-export type TicketLabel = Ticket['labels'][number]
-export type Ticket = z.infer<typeof ticket>
 export type ConnectionSummary = z.infer<typeof connectionSummary>
 export type ConnectionState = ConnectionSummary['state']
 export type TicketConnectionRequest = z.infer<typeof connectionRequest>
 export type TicketConnectRequest = z.infer<typeof connectSourceRequest>
 export type TicketDisconnectRequest = z.infer<typeof disconnectSourceRequest>
 export type TicketListRequest = z.infer<typeof listRequest>
+export type TicketUpdateRequest = z.infer<typeof updateRequest>
+export type TicketUpdated = z.infer<typeof updated>
 export type TicketDiscoverRequest = z.infer<typeof discoverRequest>
 export type TicketDiscovered = z.infer<typeof discovered>
 export type TicketScope = TicketDiscovered['scopes'][number]
@@ -145,6 +118,9 @@ export const TICKET_ERRORS = {
   'repository-not-visible': 'This GitHub Account cannot see that repository.',
   'issues-disabled': 'That repository has GitHub Issues turned off.',
   'team-not-visible': 'This Linear Account cannot see that team.',
+  'ticket-not-found': 'That Ticket is no longer in this repository or team.',
+  'ticket-not-writable': 'This Account is not allowed to change that Ticket.',
+  'status-unknown': 'That status is not one this Ticket can move to.',
   'rate-limited': 'GitHub is limiting requests. Try again in a few minutes.',
   'github-unreachable': 'Argo cannot reach GitHub.',
   'linear-rate-limited': 'Linear is limiting requests. Try again in a few minutes.',
@@ -160,6 +136,7 @@ export type TicketError = ContractError<'ticket.error', TicketErrorCode>
 export type TicketConnectedReply = TicketConnected | TicketError
 export type TicketListReply = TicketListed | TicketError
 export type TicketDiscoverReply = TicketDiscovered | TicketError
+export type TicketUpdateReply = TicketUpdated | TicketError
 
 export const ticketError = errorFactory('ticket.error', TICKET_ERRORS)
 const ticketErrorSchema = errorSchema('ticket.error', TICKET_ERRORS)
@@ -169,6 +146,8 @@ export const isTicketConnectRequest = guard(connectSourceRequest)
 export const isTicketDisconnectRequest = guard(disconnectSourceRequest)
 export const isTicketListRequest = guard(listRequest)
 export const isTicketDiscoverRequest = guard(discoverRequest)
+export const isTicketUpdateRequest = guard(updateRequest)
 export const isTicketConnectedReply = guard(z.union([connected, ticketErrorSchema]))
 export const isTicketListReply = guard(z.union([listed, ticketErrorSchema]))
 export const isTicketDiscoverReply = guard(z.union([discovered, ticketErrorSchema]))
+export const isTicketUpdateReply = guard(z.union([updated, ticketErrorSchema]))

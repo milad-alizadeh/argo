@@ -23,8 +23,10 @@ export function TicketDeck({ backlog }: TicketDeckProps) {
       inspector={
         <TicketDetail
           listed={listed}
+          onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
           onSelect={setSelectedKey}
           provider={backlog.provider}
+          statuses={backlog.statuses}
           ticket={selected}
         />
       }

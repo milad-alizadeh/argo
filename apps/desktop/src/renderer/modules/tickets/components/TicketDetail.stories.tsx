@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { TicketDetail } from './TicketDetail'
-import { engine, wayfinder } from './ticket-fixtures'
+import { engine, STATUSES, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
@@ -18,7 +18,13 @@ const meta: Meta<typeof TicketDetail> = {
     ),
   ],
   // #609 is in the backlog and opens; the closed #388 and #12 are not, so they stay text.
-  args: { listed: new Set(['#609']), onSelect: fn(), provider: 'github' },
+  args: {
+    listed: new Set(['#609']),
+    onSelect: fn(),
+    provider: 'github',
+    statuses: STATUSES.github,
+    onChangeStatus: fn(),
+  },
 }
 
 export default meta
@@ -37,21 +43,43 @@ export const Default: Story = {
     await expect(
       within(article).getByRole('link', { name: 'Open #607 on GitHub' }),
     ).toHaveAttribute('href', 'https://github.com/octocat/hello-world/issues/607')
-    // GitHub keeps no workflow status or priority, so the Detail shows open or closed alone.
+    // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
+    // A label GitHub colours is tinted with that colour; one without a colour stays plain.
+    const tint = (name: string) =>
+      within(article).getByText(name).style.getPropertyValue('--ticket-label')
+    await expect(tint('wayfinder')).toBe('#5319e7')
+    await expect(tint('prd')).toBe('')
+  },
+}
+
+// GitHub's state is open or a reason for closing, and the menu offers each one.
+export const ChangeState: Story = {
+  args: { ticket: wayfinder },
+  play: async ({ args, canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
+    await userEvent.click(within(article).getByRole('button', { name: 'State: Open' }))
+    // The menu draws in a portal outside the canvas.
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await expect(within(menu).getByRole('menuitemradio', { name: 'Open' })).toBeChecked()
+    await userEvent.click(
+      within(menu).getByRole('menuitemradio', { name: 'Closed as not planned' }),
+    )
+    await expect(args.onChangeStatus).toHaveBeenCalledWith(STATUSES.github[2])
   },
 }
 
 // Linear's own workflow status and priority show as properties, and its key names the link.
 export const Linear: Story = {
-  args: { ticket: engine, provider: 'linear', listed: new Set() },
+  args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
     const properties = within(article).getByText('Status').closest('dl')
     await expect(properties).toHaveTextContent('StatusIn Review')
     await expect(properties).toHaveTextContent('PriorityHigh')
     await expect(within(article).queryByText('State')).toBeNull()
+    await expect(within(article).getByRole('button', { name: 'Status: In Review' })).toBeVisible()
     await expect(
       within(article).getByRole('link', { name: 'Open ENG-12 on Linear' }),
     ).toHaveAttribute('href', 'https://linear.app/analytical/issue/ENG-12')

@@ -2,7 +2,7 @@ import { CircleCheck, CircleDot, Ticket as TicketMark } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketLink } from '@/core/tickets/contract'
+import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
 import {
   Empty,
@@ -15,7 +15,9 @@ import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
-import { PriorityMark, StatusMark } from './TicketStatus'
+import { StatusMenu } from './StatusMenu'
+import { TicketLabel } from './TicketLabel'
+import { PriorityMark } from './TicketStatus'
 
 const STATES = {
   open: { label: 'Open', Icon: CircleDot, tone: 'text-active' },
@@ -23,17 +25,6 @@ const STATES = {
 } as const
 
 const stateIcon = 'size-(--size-icon-meta) shrink-0'
-
-// The icon's shape tells open from closed, so a state is never its colour alone.
-function State({ state }: { state: Ticket['state'] }) {
-  const { label, Icon, tone } = STATES[state]
-  return (
-    <span className="flex shrink-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-      <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
-      {label}
-    </span>
-  )
-}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -101,18 +92,27 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
   )
 }
 
-function Properties({ ticket }: { ticket: Ticket }) {
+// What the Detail offers to change, and the change.
+type Editing = {
+  statuses: readonly TicketStatus[]
+  onChangeStatus: (status: TicketStatus) => void
+}
+
+type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
+
+function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesProps) {
+  const noun = SOURCE_PRESENTATION[provider].statusNoun
   return (
-    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-baseline gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
-      {ticket.status ? (
-        <Property name="Status">
-          <StatusMark named status={ticket.status} />
-        </Property>
-      ) : (
-        <Property name="State">
-          <State state={ticket.state} />
-        </Property>
-      )}
+    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
+      <Property name={noun}>
+        <StatusMenu
+          named
+          noun={noun}
+          onChange={onChangeStatus}
+          status={ticket.status}
+          statuses={statuses}
+        />
+      </Property>
       {ticket.priority ? (
         <Property name="Priority">
           <PriorityMark priority={ticket.priority} />
@@ -126,9 +126,7 @@ function Properties({ ticket }: { ticket: Ticket }) {
       {ticket.labels.length > 0 ? (
         <Property name="Labels">
           {ticket.labels.map((label) => (
-            <Badge key={label.name} variant="outline">
-              {label.name}
-            </Badge>
+            <TicketLabel key={label.name} label={label} />
           ))}
         </Property>
       ) : null}
@@ -187,9 +185,10 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   )
 }
 
-export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation
+export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation & Editing
 
-export function TicketDetail({ ticket, provider, ...navigation }: TicketDetailProps) {
+export function TicketDetail(props: TicketDetailProps) {
+  const { ticket, provider, statuses, onChangeStatus, ...navigation } = props
   if (ticket === null) return <NothingSelected />
   const { children } = ticket
   const body = ticket.body?.trim()
@@ -200,7 +199,12 @@ export function TicketDetail({ ticket, provider, ...navigation }: TicketDetailPr
           <TicketKey provider={provider} ticket={ticket} />
           <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
         </header>
-        <Properties ticket={ticket} />
+        <Properties
+          onChangeStatus={onChangeStatus}
+          provider={provider}
+          statuses={statuses}
+          ticket={ticket}
+        />
         {body ? (
           <FeedMarkdown text={body} />
         ) : (

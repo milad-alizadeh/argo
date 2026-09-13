@@ -1,4 +1,4 @@
-// A provider's workflow state and priority, drawn where the provider keeps them (Linear today).
+// A Ticket's status and priority, drawn where the provider keeps them. Only Linear keeps a priority.
 // The icon's shape carries the category, so a status is never its colour alone.
 import {
   Circle,
@@ -36,12 +36,16 @@ const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
   4: { Icon: SignalLow, tone: 'text-muted-foreground' },
 }
 
+export function StatusIcon({ status }: { status: TicketStatus }) {
+  const { Icon, tone } = CATEGORY_MARKS[status.category]
+  return <Icon aria-hidden="true" className={`${markIcon} ${tone}`} />
+}
+
 // In a row the name is for a screen reader; in the Detail it is written beside the icon.
 export function StatusMark({ status, named }: { status: TicketStatus; named: boolean }) {
-  const { Icon, tone } = CATEGORY_MARKS[status.category]
   return (
     <span className="flex shrink-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-      <Icon aria-hidden="true" className={`${markIcon} ${tone}`} />
+      <StatusIcon status={status} />
       <span className={named ? undefined : 'sr-only'}>{status.name}</span>
     </span>
   )

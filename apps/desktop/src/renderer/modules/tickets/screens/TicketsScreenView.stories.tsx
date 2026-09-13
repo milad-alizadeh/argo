@@ -8,6 +8,7 @@ import {
   backlog,
   engine,
   longBacklog,
+  STATUSES,
   standalone,
   ticketsView,
 } from '../components/ticket-fixtures'
@@ -27,14 +28,14 @@ const meta: Meta<typeof TicketsScreen> = {
   component: TicketsScreen,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story) => (
+    (Story, { parameters }) => (
       <div className="h-dvh w-full">
         <MemoryRouter>
           <CockpitShell
             sidebar={
               <TicketsSidebarContent
                 connection={connection}
-                notice={null}
+                notice={parameters.notice ?? null}
                 onManageAccounts={fn()}
                 openCount="3"
               />
@@ -61,6 +62,8 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await expect(rows[0]).toHaveTextContent('Blocked by 1 open Ticket')
   await expect(rows[0]).toHaveTextContent('1 of 2 children closed')
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
+  // Each row's state is an icon that opens a menu, named for a screen reader.
+  await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
   await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
   await userEvent.click(rows[0] as HTMLElement)
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
@@ -137,16 +140,54 @@ export const MoreTicketsUnavailable: Story = {
   },
 }
 
+// A parent's chevron folds its children away and brings them back.
+export const FoldedParent: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const fold = canvas.getByRole('button', { name: 'Collapse #607' })
+    await expect(fold).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(fold)
+    await expect(canvas.queryByRole('button', { name: /^#609/ })).toBeNull()
+    const unfold = canvas.getByRole('button', { name: 'Expand #607' })
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false')
+    // A Ticket with no listed child has nothing to fold.
+    await expect(canvas.queryByRole('button', { name: /^(Collapse|Expand) #273$/ })).toBeNull()
+    await userEvent.click(unfold)
+    await expect(canvas.getByRole('button', { name: /^#609/ })).toHaveAccessibleName(
+      /child of #607$/,
+    )
+  },
+}
+
 // A Linear row carries its team key and workflow status; the Detail adds its priority.
 export const LinearBacklog: Story = {
   args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    // Moving a Ticket from its row leaves the Ticket selected where it was.
+    await userEvent.click(canvas.getByRole('button', { name: 'Status: In Review' }))
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Done' }))
+    const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
+    await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
+    await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
     const row = canvas.getByRole('button', { name: /^ENG-12/ })
-    await expect(row).toHaveTextContent('In Review')
     await userEvent.click(row)
     const detail = canvas.getByRole('article', { name: 'Ticket ENG-12' })
     await expect(detail).toHaveTextContent('PriorityHigh')
+  },
+}
+
+// The one-time notice sits in the sidebar at its narrowest, and nothing in it spills out.
+export const SignInNotice: Story = {
+  parameters: { notice: { onConnect: fn(), onDismiss: fn() } },
+  play: async ({ canvasElement }) => {
+    const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
+    const edge = notice.getBoundingClientRect().right
+    for (const button of within(notice).getAllByRole('button')) {
+      await expect(button.getBoundingClientRect().right).toBeLessThanOrEqual(edge)
+    }
+    await expect(notice.scrollWidth).toBeLessThanOrEqual(notice.clientWidth)
   },
 }
 

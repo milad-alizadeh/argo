@@ -30,8 +30,7 @@ test('a Ticket carries Linear’s own fields, children and blockers', async (con
     title: 'Bind the mill',
     body: 'The mill turns the cards.',
     state: 'open',
-    status: { name: 'In Progress', category: 'started' },
-    stateReason: null,
+    status: { id: 'team-engine-in-progress', name: 'In Progress', category: 'started' },
     priority: { level: 2, label: 'High' },
     createdAt: '2026-09-02T10:00:00.000Z',
     labels: [{ name: 'Engine', color: '5e6ad2' }],
@@ -40,6 +39,22 @@ test('a Ticket carries Linear’s own fields, children and blockers', async (con
     blockedBy: [{ key: 'ENG-3', title: 'Cast the gears', state: 'closed' }],
   })
   assert.equal(page.value.tickets[1]?.priority, null)
+})
+
+test('a page offers the team’s statuses in the order Linear’s board draws them', async (context) => {
+  const { endpoints, accessToken } = await signedIn(context, [TEAM])
+  const page = await readTicketPage(endpoints, accessToken, BACKLOG)
+  assert.ok(page.ok)
+  assert.deepEqual(
+    page.value.statuses.map(({ name, category }) => [name, category]),
+    [
+      ['Backlog', 'backlog'],
+      ['Todo', 'unstarted'],
+      ['In Progress', 'started'],
+      ['Done', 'completed'],
+      ['Canceled', 'canceled'],
+    ],
+  )
 })
 
 test('a search reads matching open Tickets and counts them', async (context) => {
