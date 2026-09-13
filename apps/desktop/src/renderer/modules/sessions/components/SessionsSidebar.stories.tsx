@@ -97,11 +97,8 @@ export const Discovered: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
-    await expect(canvasElement.querySelector('svg.lucide-plus')).not.toBeNull()
-    await expect(canvasElement.querySelector('svg.lucide-search')).not.toBeNull()
-    await expect(
-      canvas.getByText('New Session and search are not available yet.'),
-    ).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'New Session' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Find a Session' })).toBeDisabled()
     const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await userEvent.click(row)
     await expect(args.onSelect).toHaveBeenCalledWith('prose')

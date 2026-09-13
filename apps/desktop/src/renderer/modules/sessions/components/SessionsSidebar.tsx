@@ -3,6 +3,7 @@ import { type KeyboardEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { useSessions } from '../hooks/useSessions'
@@ -33,6 +34,34 @@ function RosterLoading() {
         </div>
       ))}
     </div>
+  )
+}
+
+function SessionsSidebarHeader() {
+  return (
+    <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-4">
+      <h2 className="flex-1 text-sm font-medium">Sessions</h2>
+      <div className="flex items-center gap-1">
+        <Button
+          aria-label="New Session"
+          className="disabled:opacity-100"
+          disabled
+          size="icon-sm"
+          variant="ghost"
+        >
+          <Plus />
+        </Button>
+        <Button
+          aria-label="Find a Session"
+          className="disabled:opacity-100"
+          disabled
+          size="icon-sm"
+          variant="ghost"
+        >
+          <Search />
+        </Button>
+      </div>
+    </header>
   )
 }
 
@@ -106,14 +135,7 @@ export function SessionsSidebarContent({
       className="flex h-full min-h-0 flex-col bg-sidebar"
       data-state={state}
     >
-      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-4">
-        <h2 className="flex-1 text-sm font-medium">Sessions</h2>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Plus aria-hidden="true" className="size-4" />
-          <Search aria-hidden="true" className="size-4" />
-          <span className="sr-only">New Session and search are not available yet.</span>
-        </div>
-      </header>
+      <SessionsSidebarHeader />
       {rosterError ? (
         <Alert
           className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
