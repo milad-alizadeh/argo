@@ -3,12 +3,8 @@
 import assert from 'node:assert/strict'
 import { CLAUDE_FEED_REQUEST, CODEX_FEED_REQUEST } from './session-proof-requests'
 
-// The listing request itself, shared with the authority case: the same call has to be refused
-// from a page that navigated away, and two spellings of it would prove two different things.
-export const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-
 export async function proveContract(page) {
-  const list = await page.evaluate((value) => window.argo.listSessions(value), listing)
+  const list = await page.evaluate(() => window.argo.listSessions())
   assert.equal(list.type, 'session.listed')
   assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 10, read: 10 })
   // Seven Sessions from ten files: the damaged transcript is read but has no Message record.
