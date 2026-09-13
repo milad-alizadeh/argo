@@ -10,7 +10,7 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionFeed, SessionId } from '../types'
+import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
 import { readKeptSessionLimit } from './kept-documents'
 
@@ -53,10 +53,12 @@ export function BasicFeed({
   feed,
   failure,
   selectedSessionId,
+  onOpenEvidence,
 }: {
   feed: SessionFeed | null
   failure: SessionError | null
   selectedSessionId: SessionId | null
+  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }) {
   const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
   const [documents, setDocuments] = useState<Map<SessionId, SessionFeed>>(new Map())
@@ -106,6 +108,7 @@ export function BasicFeed({
           active={failure === null && id === selectedSessionId}
           feed={document}
           key={id}
+          onOpenEvidence={onOpenEvidence}
         />
       ))}
       {failure !== null || current === null ? (

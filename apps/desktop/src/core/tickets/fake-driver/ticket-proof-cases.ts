@@ -45,13 +45,14 @@ export async function proveConnect(run: Run) {
 export async function proveConnectRepository(run: Run) {
   const form = run.page.getByRole('form', { name: 'Connect a repository' })
   await form.getByRole('combobox', { name: 'GitHub Account' }).selectOption({ label: 'octocat' })
-  const scope = form.getByRole('textbox', { name: 'Repository' })
-  // GitHub, not the form, decides what the Account can read, and a refusal connects nothing.
+  const scope = form.getByRole('combobox', { name: 'Repository' })
+  // GitHub, not the form, decides what the Account can read, so a hidden repository is never offered.
   await scope.fill('octocat/secret')
-  await press(form, 'Connect repository')
-  await form.getByText('This GitHub Account cannot see that repository.').waitFor()
+  await run.page.getByText('No repository matches.').waitFor()
+  await scope.fill('hello')
+  await run.page.getByRole('option', { name: 'octocat/hello-world' }).dispatchEvent('click')
+  assert.equal(await scope.inputValue(), 'octocat/hello-world')
   assert.equal(await storeText(run.fixture, 'connections.json'), '')
-  await scope.fill('octocat/hello-world')
   await press(form, 'Connect repository')
   await backlog(run.page).waitFor()
   assert.equal(

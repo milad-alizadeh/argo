@@ -9,11 +9,18 @@ import {
   isTicketConnectionRequest,
   isTicketConnectRequest,
   isTicketDisconnectRequest,
+  isTicketDiscoverRequest,
   isTicketListRequest,
   TICKET_CHANNEL,
   ticketError,
 } from './contract'
-import { connectRepository, disconnectRepository, listTickets, readConnection } from './service'
+import {
+  connectRepository,
+  disconnectRepository,
+  discoverRepositories,
+  listTickets,
+  readConnection,
+} from './service'
 
 type Call = { access: AccountAccess; requestId: string; projectId: string }
 
@@ -34,6 +41,9 @@ const HANDLERS = {
     connectRepository(call, { accountId, scope }),
   ),
   'ticket.disconnect': handler(isTicketDisconnectRequest, disconnectRepository),
+  'ticket.discover': handler(isTicketDiscoverRequest, (call, { accountId }) =>
+    discoverRepositories(call, accountId),
+  ),
   'ticket.list': handler(isTicketListRequest, (call, { query, page }) =>
     listTickets(call, { query, page }),
   ),

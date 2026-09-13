@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useRef, useState } from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
 import type { SessionCli } from '../hooks/useSessionComposer'
@@ -54,6 +54,45 @@ function ManagedComposerStory() {
         onSend={async () => false}
         plan={null}
         sessionId="managed-session"
+      />
+    </div>
+  )
+}
+
+function QueuedComposerStory() {
+  const [running, setRunning] = useState(true)
+  const [sent, setSent] = useState<string[]>([])
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <Button onClick={() => setRunning(false)} type="button" variant="outline">
+        Finish turn
+      </Button>
+      <SessionComposer
+        isRunning={running}
+        onSend={async (text) => {
+          setSent((current) => [...current, text])
+          return true
+        }}
+        sessionId="queued-session"
+      />
+      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+    </div>
+  )
+}
+
+function FailedQueuedComposerStory() {
+  const [running, setRunning] = useState(true)
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <Button onClick={() => setRunning(false)} type="button" variant="outline">
+        Finish turn
+      </Button>
+      <SessionComposer
+        isRunning={running}
+        onSend={async () => false}
+        sessionId="failed-queued-session"
       />
     </div>
   )
@@ -207,5 +246,70 @@ export const SendFinishesInAnotherSession: Story = {
     await userEvent.type(canvas.getByLabelText('Message'), 'Drafted in session two.')
     await userEvent.click(canvas.getByRole('button', { name: 'Finish send' }))
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Drafted in session two.')
+  },
+}
+
+export const QueuedTurn: Story = {
+  render: () => <QueuedComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Run the focused checks after this Turn.')
+    await userEvent.keyboard('{Enter}')
+
+    await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
+      'Run the focused checks after this Turn.',
+    )
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent('')
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Then prepare the release notes.')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getAllByRole('listitem')[1]).toHaveClass(
+      'session-page__queued-message--enter',
+    )
+    await userEvent.click(
+      canvas.getByRole('button', {
+        name: 'Remove queued message: Run the focused checks after this Turn.',
+      }),
+    )
+    await expect(canvas.getAllByRole('listitem')[0]).toHaveClass(
+      'session-page__queued-message--exit',
+    )
+    await waitFor(() =>
+      expect(
+        canvas.getByRole('button', {
+          name: 'Steer queued message: Then prepare the release notes.',
+        }),
+      ).toHaveFocus(),
+    )
+    await userEvent.click(
+      canvas.getByRole('button', {
+        name: 'Edit queued message: Then prepare the release notes.',
+      }),
+    )
+    await expect(composer).toHaveTextContent('Then prepare the release notes.')
+    await expect(composer).toHaveFocus()
+    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      'Then prepare the release notes.',
+    )
+  },
+}
+
+export const FailedQueuedTurn: Story = {
+  render: () => <FailedQueuedComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Keep this pending when Claude rejects it.')
+    await userEvent.keyboard('{Enter}')
+    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
+    await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
+      'Keep this pending when Claude rejects it.',
+    )
   },
 }

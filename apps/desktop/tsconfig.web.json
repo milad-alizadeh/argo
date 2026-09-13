@@ -12,7 +12,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "cn": ["./src/renderer/lib/utils.ts"]
+    }
   },
-  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx"]
+  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx"],
+  "exclude": ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"]
 }
