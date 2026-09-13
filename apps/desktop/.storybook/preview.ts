@@ -34,21 +34,21 @@ host.argo = {
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
   onCommand: () => () => {},
-  listSessions: (request: { requestId: string }) =>
+  listSessions: () =>
     Promise.resolve({
       version: 1,
       type: 'session.listed',
-      requestId: request.requestId,
+      requestId: 'storybook-sessions',
       sessions: [storybookSession],
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
     }),
-  readSessionFeed: (request: { requestId: string; sessionId: string }) =>
+  readSessionFeed: (request: { sessionId: string }) =>
     Promise.resolve({
       version: 1,
       type: 'session.feed.read',
-      requestId: request.requestId,
+      requestId: 'storybook-feed',
       sessionId: request.sessionId,
       chainId: request.sessionId,
       revision: 'storybook-feed',
