@@ -3,9 +3,7 @@ import assert from 'node:assert/strict'
 async function readRosterFacts(page) {
   return page
     .locator('nav[aria-label="Sessions"] button')
-    .evaluateAll((rows) =>
-      rows.map((row) => ({ id: row.getAttribute('data-session-id'), text: row.textContent })),
-    )
+    .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-session-id')))
 }
 
 async function proveRetiredSelection(page, restart) {
@@ -63,7 +61,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   const updated = await restart()
   await updated.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  assert.equal((await readRosterFacts(updated))[0]?.text?.includes('Run Codex check'), true)
+  assert.equal((await readRosterFacts(updated))[0], 'rollout-codexParent')
 
   await updated.locator('summary').click()
   await updated.locator('nav[aria-label="Archived"] button').click()
