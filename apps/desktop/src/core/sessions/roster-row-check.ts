@@ -31,6 +31,10 @@ function isCount(value: unknown): boolean {
   return Number.isInteger(value) && (value as number) >= 0
 }
 
+function isNullableCount(value: unknown): boolean {
+  return value === null || isCount(value)
+}
+
 function isActivity(value: unknown): boolean {
   if (value === null) return true
   return (
@@ -91,14 +95,25 @@ function hasSignals(value: Record<string, unknown>): boolean {
     value.delegations.every(isDelegation) &&
     Array.isArray(value.shell) &&
     value.shell.every(isShellCommand) &&
-    isPullRequest(value.pullRequest)
+    isPullRequest(value.pullRequest) &&
+    isNullableCount(value.contextTokens) &&
+    isNullableCount(value.spentTokens)
   )
 }
 
 export function isRosterRow(value: unknown): boolean {
   if (!isRecord(value)) return false
   const keys = ['id', 'retiredIds', 'cli', 'posture', 'title', 'status', 'entry', 'cwd', 'branch']
-  const signals = ['turnStartedAt', 'activity', 'plan', 'delegations', 'shell', 'pullRequest']
+  const signals = [
+    'turnStartedAt',
+    'activity',
+    'plan',
+    'delegations',
+    'shell',
+    'pullRequest',
+    'contextTokens',
+    'spentTokens',
+  ]
   return (
     hasKeys(value, [
       ...keys,
