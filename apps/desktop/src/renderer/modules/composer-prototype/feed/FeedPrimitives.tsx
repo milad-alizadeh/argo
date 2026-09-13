@@ -1,18 +1,9 @@
 import type { ReactNode } from 'react'
-import type { BundledLanguage } from 'shiki'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '@/components/ai-elements/code-block'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import { Message, MessageContent, MessageHeader } from '@/renderer/components/ui/message'
-import { CodeLanguageIcon, codeLanguageLabel, detectCodeLanguage } from './CodeLanguageIcon'
-import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
+
+export { FeedCode } from '../../sessions/feed/content/FeedCode'
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (
@@ -52,31 +43,5 @@ export function FeedPrompt({
         </Bubble>
       </MessageContent>
     </Message>
-  )
-}
-
-export function FeedCode({ source, language }: { source: string; language?: string }) {
-  const detectedLanguage = detectCodeLanguage(source, language)
-  const languageLabel = codeLanguageLabel(detectedLanguage)
-  const highlightedLanguage: BundledLanguage =
-    detectedLanguage === 'unknown' ? 'hcl' : detectedLanguage
-  return (
-    <CodeBlock
-      code={source}
-      language={highlightedLanguage}
-      className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
-    >
-      <CodeBlockHeader className="bg-muted type-meta">
-        <CodeBlockTitle>
-          <span role="img" aria-label={`${languageLabel} file`}>
-            <CodeLanguageIcon language={detectedLanguage} />
-          </span>
-          <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
-        </CodeBlockTitle>
-        <CodeBlockActions>
-          <CodeBlockCopyButton aria-label="Copy code" className="size-7" />
-        </CodeBlockActions>
-      </CodeBlockHeader>
-    </CodeBlock>
   )
 }

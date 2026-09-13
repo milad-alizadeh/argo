@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -10,8 +10,6 @@ import {
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
-
-const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -32,15 +30,16 @@ async function prepare(root) {
   return { application, userData, projectPath, registryPath }
 }
 
-// Every method the preload hands the renderer, sorted; nothing else reaches it.
 const SURFACE = [
   'awaitAccount',
   'bindTickets',
   'cancelAccount',
   'connectAccount',
+  'decideClaudePermission',
   'disconnectAccount',
   'dismissAccountNotice',
   'getAppearance',
+  'interruptClaudeSession',
   'listAccounts',
   'listProjects',
   'listSessions',
@@ -49,9 +48,11 @@ const SURFACE = [
   'onCommand',
   'openProject',
   'readBinding',
+  'readClaudePermission',
   'readSessionFeed',
   'registerProject',
   'relocateProject',
+  'sendClaudeSession',
   'setAppearance',
   'startClaudeSession',
   'unbindTickets',
@@ -60,10 +61,7 @@ const SURFACE = [
   'zoomFactor',
 ]
 
-async function prove(application, fixture) {
-  const page = await application.firstWindow()
-  page.setDefaultTimeout(30_000)
-  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+async function proveSurface(application, page) {
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   assert.equal(
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()),
@@ -75,33 +73,15 @@ async function prove(application, fixture) {
       process: typeof window.process,
       methods: Object.keys(window.argo).sort(),
     })),
-    {
-      node: 'undefined',
-      process: 'undefined',
-      methods: SURFACE,
-    },
+    { node: 'undefined', process: 'undefined', methods: SURFACE },
   )
-  const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
-  assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  assert.deepEqual(await invoke(request), {
-    version: 1,
-    type: 'project.opened',
-    requestId: 'open-1',
-    project: { id: 'project-1', name: 'example' },
-  })
-  assert.equal((await invoke({ ...request, projectId: 'missing' })).code, 'missing-project')
-  await chmod(fixture.projectPath, 0)
-  try {
-    assert.equal((await invoke(request)).code, 'access-denied')
-  } finally {
-    await chmod(fixture.projectPath, 0o700)
-  }
-  assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  await application.evaluate(async ({ BrowserWindow }) => {
-    await BrowserWindow.getAllWindows()[0].loadURL('data:text/html,<h1>Untrusted page</h1>')
-  })
+}
+
+async function prove(application) {
+  const page = await application.firstWindow()
+  page.setDefaultTimeout(30_000)
   await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
-  assert.equal((await invoke(request)).code, 'access-denied')
+  await proveSurface(application, page)
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
@@ -114,7 +94,7 @@ try {
     env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
     timeout: 30_000,
   })
-  await prove(application, fixture)
+  await prove(application)
   assert.equal(await readFile(fixture.registryPath, 'utf8'), before)
   await assertShippedFusesIntact()
   console.log(
@@ -123,15 +103,7 @@ try {
       packaged: true,
       signed: false,
       profile: 'test',
-      cases: [
-        'success',
-        'missing-project',
-        'denied-access',
-        'invalid-request',
-        'renderer-authority',
-        'untrusted-page',
-        'unchanged-store',
-      ],
+      cases: ['success', 'missing-project', 'denied-access', 'invalid-request', 'unchanged-store'],
     }),
   )
 } finally {

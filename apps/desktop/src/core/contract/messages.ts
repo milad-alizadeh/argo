@@ -1,14 +1,14 @@
 // The message shape every versioned channel shares: version 1, a named type, a request ID, the
 // channel's own fields, and errors whose text comes only from the channel's own table.
 import { z } from 'zod'
-import { isIdentifier, isRecord, requestIdentifier } from '../../boundary'
+import { identifierSchema, isRecord, requestIdentifier } from '../../boundary'
 
 // The renderer's CSP refuses eval, and zod's `new Function` probe is reported as a violation even
 // though zod swallows the throw.
 z.config({ jitless: true })
 
-// What counts as an identifier stays boundary.ts's one rule; the schema only carries it.
-export const identifier = z.string().refine(isIdentifier)
+// What counts as an identifier stays boundary.ts's one rule.
+export const identifier = identifierSchema
 
 // Extra fields are refused rather than ignored, so a message cannot smuggle a path or a channel
 // past the guard.

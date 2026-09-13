@@ -16,6 +16,8 @@
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-feed-attachment-preview: 80px;
+  --size-feed-gallery: 160px;
+  --size-feed-image-frame: 208px;
   --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
   --size-composer-attachment: var(--size-attachment-card);
   --size-composer-reference-strip: calc(
@@ -28,6 +30,20 @@
   --color-traffic-light-close: #ff5f57;
   --color-traffic-light-minimize: #febc2e;
   --color-traffic-light-zoom: #28c840;
+}
+
+/* The prototype's language marks in a code block's header. Not inline, so the dark block below
+   can lift the two inks that sink on a dark ground. */
+@theme {
+  --color-language-typescript: var(--color-sky-600);
+  --color-language-typescript-ink: var(--color-white);
+  --color-language-go: var(--color-cyan-600);
+  --color-language-ruby: var(--color-red-600);
+}
+
+:root.dark {
+  --color-language-go: var(--color-cyan-400);
+  --color-language-ruby: var(--color-red-400);
 }
 
 :root {

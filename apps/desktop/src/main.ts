@@ -2,6 +2,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { createAccountAccess } from './core/accounts/access'
@@ -16,6 +17,7 @@ import {
 import { installMenu } from './core/commands/menu'
 import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
+import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
 import {
@@ -118,15 +120,22 @@ function createWindow(): BrowserWindow {
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
+  attachWindowNavigation(window)
+  const claudeSessionDriver = createSystemClaudeSessionDriver(
+    path.join(userData, 'claude-permission-plugins'),
+  )
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: combineSessionReaders([
       createClaudeSessionReader({
         transcripts: claudeTranscriptsRoot(),
         archive: claudeArchiveRoot(),
+        managedSessions: claudeSessionDriver.roster,
       }),
       createCodexSessionReader(codexTranscriptsRoot()),
     ]),
+    driver: claudeSessionDriver,
+    starter: claudeSessionDriver,
     rendererURL,
   })
   attachAppearanceBridge(window, { userData, rendererURL })
@@ -139,6 +148,7 @@ function createWindow(): BrowserWindow {
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, { access, rendererURL })
   installMenu(window)
+  app.once('before-quit', () => claudeSessionDriver.close())
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)

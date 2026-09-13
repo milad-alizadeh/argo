@@ -11,6 +11,10 @@ import { createProjectClient } from './core/projects/client'
 import { PROJECT_CHANNEL } from './core/projects/contract'
 import { createSessionClient } from './core/sessions/client'
 import {
+  SESSION_CLAUDE_INTERRUPT_CHANNEL,
+  SESSION_CLAUDE_PERMISSION_CHANNEL,
+  SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
+  SESSION_CLAUDE_SEND_CHANNEL,
   SESSION_CLAUDE_START_CHANNEL,
   SESSION_FEED_CHANNEL,
   SESSION_LIST_CHANNEL,
@@ -22,6 +26,10 @@ const SESSION_CHANNELS = {
   list: SESSION_LIST_CHANNEL,
   feed: SESSION_FEED_CHANNEL,
   startClaude: SESSION_CLAUDE_START_CHANNEL,
+  sendClaude: SESSION_CLAUDE_SEND_CHANNEL,
+  interruptClaude: SESSION_CLAUDE_INTERRUPT_CHANNEL,
+  readClaudePermission: SESSION_CLAUDE_PERMISSION_CHANNEL,
+  decideClaudePermission: SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
 }
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.

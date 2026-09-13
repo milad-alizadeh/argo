@@ -5,7 +5,7 @@ import { FeedDiagram } from './FeedDiagram'
 import { FeedEvidenceLink } from './FeedEvidenceLink'
 import { FeedImages } from './FeedImages'
 import { FeedCode, FeedTurn } from './FeedPrimitives'
-import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
+import { FEED_CARD_RADIUS_CLASS } from '../../sessions/feed/content/feedSurface'
 
 export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
   return (

@@ -2,44 +2,84 @@
 // #1825 settled. Version 1 gains actions and never changes a message it already defines, so a
 // `project.open` exchange is byte-identical to the one the accepted proof asserts.
 import { z } from 'zod'
-import { guard, identifier, message } from '../contract/messages'
-import { type ProjectError, projectErrorSchema } from './contract'
+import { identifierSchema } from '../../boundary'
+import type { ProjectError } from './contract'
 
 // A Project as the cockpit draws it: the stable ID, the folder name, and the path, which is a
 // mutable attribute of the identity rather than the identity itself (CONTEXT.md · Project).
-const projectSummary = z.strictObject({
-  id: identifier,
+export const projectSummarySchema = z.strictObject({
+  id: identifierSchema,
   name: z.string().min(1),
   path: z.string().min(1),
 })
+export type ProjectSummary = z.infer<typeof projectSummarySchema>
 
-const listRequest = message('project.list', {})
-const registerRequest = message('project.register', {})
-const relocateRequest = message('project.relocate', { projectId: identifier })
+export const projectListRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.list'),
+  requestId: identifierSchema,
+})
+export type ProjectListRequest = z.infer<typeof projectListRequestSchema>
+export const projectRegisterRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.register'),
+  requestId: identifierSchema,
+})
+export type ProjectRegisterRequest = z.infer<typeof projectRegisterRequestSchema>
+export const projectRelocateRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.relocate'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectRelocateRequest = z.infer<typeof projectRelocateRequestSchema>
 
 // Every action that can change the known set answers with the whole set, so the renderer never
-// assembles its own picture of storage out of a sequence of replies. A selection that names no
-// listed Project is malformed: storage already dropped that on the way out (./registry.ts).
-const listed = message('project.listed', {
-  projects: z.array(projectSummary),
-  selectedId: identifier.nullable(),
-}).refine(
-  (reply) =>
-    reply.selectedId === null || reply.projects.some((project) => project.id === reply.selectedId),
-)
+// assembles its own picture of storage out of a sequence of replies.
+export const projectListedSchema = z
+  .strictObject({
+    version: z.literal(1),
+    type: z.literal('project.listed'),
+    requestId: identifierSchema,
+    projects: z.array(projectSummarySchema),
+    selectedId: identifierSchema.nullable(),
+  })
+  .refine(
+    ({ projects, selectedId }) =>
+      selectedId === null || projects.some(({ id }) => id === selectedId),
+  )
+export type ProjectListed = z.infer<typeof projectListedSchema>
 
 // The person dismissed the folder chooser. Nothing was read and nothing was written.
-const cancelled = message('project.cancelled', {})
+export const projectCancelledSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.cancelled'),
+  requestId: identifierSchema,
+})
+export type ProjectCancelled = z.infer<typeof projectCancelledSchema>
 
-export type ProjectSummary = z.infer<typeof projectSummary>
-export type ProjectListRequest = z.infer<typeof listRequest>
-export type ProjectRegisterRequest = z.infer<typeof registerRequest>
-export type ProjectRelocateRequest = z.infer<typeof relocateRequest>
-export type ProjectListed = z.infer<typeof listed>
-export type ProjectCancelled = z.infer<typeof cancelled>
 export type ProjectListReply = ProjectListed | ProjectCancelled | ProjectError
 
-export const isProjectListRequest = guard(listRequest)
-export const isProjectRegisterRequest = guard(registerRequest)
-export const isProjectRelocateRequest = guard(relocateRequest)
-export const isProjectListReply = guard(z.union([listed, cancelled, projectErrorSchema]))
+export function isProjectListRequest(value: unknown): value is ProjectListRequest {
+  return projectListRequestSchema.safeParse(value).success
+}
+
+export function isProjectRegisterRequest(value: unknown): value is ProjectRegisterRequest {
+  return projectRegisterRequestSchema.safeParse(value).success
+}
+
+export function isProjectRelocateRequest(value: unknown): value is ProjectRelocateRequest {
+  return projectRelocateRequestSchema.safeParse(value).success
+}
+
+export function isProjectSummary(value: unknown): value is ProjectSummary {
+  return projectSummarySchema.safeParse(value).success
+}
+
+export function isProjectListed(value: unknown): value is ProjectListed {
+  return projectListedSchema.safeParse(value).success
+}
+
+export function isProjectCancelled(value: unknown): value is ProjectCancelled {
+  return projectCancelledSchema.safeParse(value).success
+}

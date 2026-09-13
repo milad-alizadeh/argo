@@ -4,6 +4,11 @@ import type { SessionError, SessionFeed, SessionId, SessionsListed } from '../ty
 
 let nextRequest = 0
 const FEED_REFRESH_MS = 500
+const REREAD_EVENT = 'argo:sessions-reread'
+
+export function rereadSessions() {
+  window.dispatchEvent(new Event(REREAD_EVENT))
+}
 function requestId(name: string): string {
   nextRequest += 1
   return `${name}-${nextRequest}`
@@ -38,6 +43,12 @@ function useRoster() {
       live = false
     }
   }, [passes])
+
+  useEffect(() => {
+    const rereadFromSessionAction = () => setPasses((pass) => pass + 1)
+    window.addEventListener(REREAD_EVENT, rereadFromSessionAction)
+    return () => window.removeEventListener(REREAD_EVENT, rereadFromSessionAction)
+  }, [])
 
   const reread = useCallback(() => setPasses((pass) => pass + 1), [])
   return { roster, rosterError, reread }

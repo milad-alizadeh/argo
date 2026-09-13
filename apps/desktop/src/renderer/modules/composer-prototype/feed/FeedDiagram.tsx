@@ -12,7 +12,7 @@ import {
 import { useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction, MERMAID_SOURCE } from './evidence'
-import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
+import { FEED_CARD_RADIUS_CLASS } from '../../sessions/feed/content/feedSurface'
 
 export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
   return (

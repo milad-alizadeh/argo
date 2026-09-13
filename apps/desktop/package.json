@@ -35,7 +35,8 @@
     "node-addon-api": "7.1.1",
     "node-pty": "1.2.0-beta.15",
     "react-day-picker": "^10.0.1",
-    "recharts": "^3.8.0"
+    "recharts": "^3.8.0",
+    "zod": "^4.6.4"
   },
   "devDependencies": {
     "@base-ui/react": "^1.8.0",
@@ -79,7 +80,6 @@
     "typescript": "5.9.3",
     "vite": "7.2.6",
     "vitest": "^4.0.0",
-    "zod": "4.6.4",
     "zustand": "^5.0.11"
   },
   "overrides": {

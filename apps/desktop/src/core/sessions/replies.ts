@@ -1,55 +1,134 @@
 // Parsing a reply back into a known shape at the renderer's edge. The main process built these
 // values, but the renderer's own boundary is the bridge, so it reads them the same way it reads
 // anything from outside: once, into a shape, before anything draws them.
-import { z } from 'zod'
-import { guard, identifier, message } from '../contract/messages'
+import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
-  type ClaudeSessionStarted,
-  type SessionFeedRead,
-  type SessionFeedUnchanged,
+  type ClaudeSessionInterruptReply,
+  type ClaudeSessionPermissionDecisionReply,
+  type ClaudeSessionPermissionReply,
+  type ClaudeSessionSendReply,
+  type ClaudeSessionStartReply,
+  isClaudeSessionAccepted,
+  isClaudeSessionPermissionRead,
+  isClaudeSessionStarted,
+  isSessionError,
+  type SessionFeedReply,
+  type SessionListReply,
   type SessionsListed,
-  sessionErrorSchema,
 } from './contract'
-import { FEED_MARKERS, type SessionFeedRow } from './models'
-import { rosterRow } from './roster-row-check'
+import { FEED_MARKERS } from './models'
+import { isRosterRow } from './roster-row-check'
 
-const role = z.enum(['user', 'assistant'])
+function isFeedRow(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.id !== 'string') return false
+  const role = value.role === 'user' || value.role === 'assistant'
+  switch (value.shape) {
+    case 'prose':
+      return (
+        hasKeys(value, ['shape', 'id', 'role', 'text']) && role && typeof value.text === 'string'
+      )
+    case 'source':
+      return (
+        hasKeys(value, ['shape', 'id', 'role', 'label', 'source']) &&
+        role &&
+        typeof value.label === 'string' &&
+        typeof value.source === 'string'
+      )
+    case 'marker':
+      return (
+        hasKeys(value, ['shape', 'id', 'marker']) &&
+        (FEED_MARKERS as readonly unknown[]).includes(value.marker)
+      )
+    case 'thought':
+      return hasKeys(value, ['shape', 'id', 'text']) && typeof value.text === 'string'
+    case 'unreadable':
+      return hasKeys(value, ['shape', 'id'])
+    default:
+      return false
+  }
+}
 
-const feedRow: z.ZodType<SessionFeedRow> = z.discriminatedUnion('shape', [
-  z.strictObject({ shape: z.literal('prose'), id: z.string(), role, text: z.string() }),
-  z.strictObject({
-    shape: z.literal('source'),
-    id: z.string(),
-    role,
-    label: z.string(),
-    source: z.string(),
-  }),
-  z.strictObject({ shape: z.literal('marker'), id: z.string(), marker: z.enum(FEED_MARKERS) }),
-  z.strictObject({ shape: z.literal('thought'), id: z.string(), text: z.string() }),
-  z.strictObject({ shape: z.literal('unreadable'), id: z.string() }),
-])
+function isListed(value: Record<string, unknown>): value is SessionsListed {
+  return (
+    hasKeys(value, [
+      'version',
+      'type',
+      'requestId',
+      'sessions',
+      'filesFound',
+      'filesRead',
+      'filesUnreadable',
+    ]) &&
+    isIdentifier(value.requestId) &&
+    Array.isArray(value.sessions) &&
+    value.sessions.every(isRosterRow) &&
+    [value.filesFound, value.filesRead, value.filesUnreadable].every(
+      (count) => typeof count === 'number',
+    )
+  )
+}
 
-const listed: z.ZodType<SessionsListed> = message('session.listed', {
-  sessions: z.array(rosterRow),
-  filesFound: z.number(),
-  filesRead: z.number(),
-  filesUnreadable: z.number(),
-})
+export function isSessionListReply(value: unknown): value is SessionListReply {
+  if (!isRecord(value) || value.version !== 1) return false
+  if (value.type === 'session.listed') return isListed(value)
+  return value.type === 'session.error' && isSessionError(value)
+}
 
-const feedIdentity = { sessionId: identifier, chainId: identifier, revision: z.string() }
-const feedRead: z.ZodType<SessionFeedRead> = message('session.feed.read', {
-  ...feedIdentity,
-  rows: z.array(feedRow),
-})
-const feedUnchanged: z.ZodType<SessionFeedUnchanged> = message(
-  'session.feed.unchanged',
-  feedIdentity,
-)
+export function isSessionFeedReply(value: unknown): value is SessionFeedReply {
+  if (!isRecord(value) || value.version !== 1) return false
+  if (value.type === 'session.feed.read') {
+    return (
+      hasKeys(value, [
+        'version',
+        'type',
+        'requestId',
+        'sessionId',
+        'chainId',
+        'revision',
+        'rows',
+      ]) &&
+      isIdentifier(value.requestId) &&
+      isIdentifier(value.sessionId) &&
+      isIdentifier(value.chainId) &&
+      typeof value.revision === 'string' &&
+      Array.isArray(value.rows) &&
+      value.rows.every(isFeedRow)
+    )
+  }
+  if (value.type === 'session.feed.unchanged') {
+    return (
+      hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'chainId', 'revision']) &&
+      isIdentifier(value.requestId) &&
+      isIdentifier(value.sessionId) &&
+      isIdentifier(value.chainId) &&
+      typeof value.revision === 'string'
+    )
+  }
+  return value.type === 'session.error' && isSessionError(value)
+}
 
-const started: z.ZodType<ClaudeSessionStarted> = message('session.claude.started', {
-  sessionId: identifier,
-})
+export function isClaudeSessionStartReply(value: unknown): value is ClaudeSessionStartReply {
+  return isClaudeSessionStarted(value) || (isRecord(value) && isSessionError(value))
+}
 
-export const isSessionListReply = guard(z.union([listed, sessionErrorSchema]))
-export const isSessionFeedReply = guard(z.union([feedRead, feedUnchanged, sessionErrorSchema]))
-export const isClaudeSessionStartReply = guard(z.union([started, sessionErrorSchema]))
+export function isClaudeSessionSendReply(value: unknown): value is ClaudeSessionSendReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionInterruptReply(
+  value: unknown,
+): value is ClaudeSessionInterruptReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionPermissionReply(
+  value: unknown,
+): value is ClaudeSessionPermissionReply {
+  return isClaudeSessionPermissionRead(value) || (isRecord(value) && isSessionError(value))
+}
+
+export function isClaudeSessionPermissionDecisionReply(
+  value: unknown,
+): value is ClaudeSessionPermissionDecisionReply {
+  return isClaudeSessionAccepted(value) || (isRecord(value) && isSessionError(value))
+}

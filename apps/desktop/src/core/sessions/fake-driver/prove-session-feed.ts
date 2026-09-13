@@ -26,6 +26,7 @@ import {
   removeProse,
   streamProse,
 } from './session-feed-fixture'
+import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
 import {
   provePackagedRosterRestart,
@@ -87,6 +88,13 @@ try {
       stream: streamProse,
     }),
   )
+  const formatted = await ran(['session-feed-formatted'], () =>
+    proveFormattedFeed(page, {
+      root,
+      transcripts: fixture.claudeTranscripts,
+      append: appendProse,
+    }),
+  )
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {
       remove: () => removeProse(fixture.claudeTranscripts),
@@ -103,6 +111,7 @@ try {
       ok: true,
       packaged: true,
       cases,
+      formatted,
     }),
   )
 } finally {

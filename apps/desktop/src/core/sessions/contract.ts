@@ -1,42 +1,113 @@
 // The two operations the renderer holds for observed Sessions, and the shapes both sides parse.
 // Named operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
-import {
-  type ContractError,
-  errorFactory,
-  errorSchema,
-  guard,
-  identifier,
-  message,
-} from '../contract/messages'
+import { identifierSchema } from '../../boundary'
 import type { SessionFeedRow, SessionRosterRow } from './models'
+import type { SessionError } from './session-error'
+
+export * from './contract-validation'
+export * from './session-error'
 
 export const SESSION_LIST_CHANNEL = 'argo:session:list'
 export const SESSION_FEED_CHANNEL = 'argo:session:feed'
 export const SESSION_CLAUDE_START_CHANNEL = 'argo:session:claude:start'
+export const SESSION_CLAUDE_SEND_CHANNEL = 'argo:session:claude:send'
+export const SESSION_CLAUDE_INTERRUPT_CHANNEL = 'argo:session:claude:interrupt'
+export const SESSION_CLAUDE_PERMISSION_CHANNEL = 'argo:session:claude:permission'
+export const SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL = 'argo:session:claude:permission:decide'
 
-const listRequest = message('session.list', {})
-// `revision` is the document the renderer already holds, if any. This keeps an unchanged reply
-// from leaving a reloaded or evicted deck without rows to draw.
-const feedRequest = message('session.feed', {
-  sessionId: identifier,
+export const sessionListRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.list'),
+  requestId: identifierSchema,
+})
+export type SessionListRequest = z.infer<typeof sessionListRequestSchema>
+export const sessionFeedRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
+  // a reloaded or evicted deck without rows to draw.
   revision: z.string().nullable(),
 })
-const claudeStartRequest = message('session.claude.start', {
+export type SessionFeedRequest = z.infer<typeof sessionFeedRequestSchema>
+
+export const claudeSessionStartRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.start'),
+  requestId: identifierSchema,
   cwd: z.string().min(1),
-  prompt: z.string().refine((prompt) => prompt.trim().length > 0),
+  prompt: z.string().refine((value) => value.trim().length > 0),
 })
+export type ClaudeSessionStartRequest = z.infer<typeof claudeSessionStartRequestSchema>
 
-export type SessionListRequest = z.infer<typeof listRequest>
-export type SessionFeedRequest = z.infer<typeof feedRequest>
-export type ClaudeSessionStartRequest = z.infer<typeof claudeStartRequest>
+export const claudeSessionStartedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.started'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type ClaudeSessionStarted = z.infer<typeof claudeSessionStartedSchema>
 
-export type ClaudeSessionStarted = {
-  version: 1
-  type: 'session.claude.started'
-  requestId: string
-  sessionId: string
-}
+export const claudeSessionSendRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.send'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  prompt: z.string().refine((value) => value.trim().length > 0),
+})
+export type ClaudeSessionSendRequest = z.infer<typeof claudeSessionSendRequestSchema>
+
+export const claudeSessionInterruptRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.interrupt'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type ClaudeSessionInterruptRequest = z.infer<typeof claudeSessionInterruptRequestSchema>
+
+export const claudeSessionAcceptedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.accepted'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type ClaudeSessionAccepted = z.infer<typeof claudeSessionAcceptedSchema>
+
+export const claudePermissionSchema = z.strictObject({
+  id: identifierSchema,
+  sessionId: identifierSchema,
+  toolName: z.string().min(1),
+  input: z.record(z.string(), z.unknown()),
+})
+export type ClaudePermission = z.infer<typeof claudePermissionSchema>
+export const claudeSessionPermissionRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.permission'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type ClaudeSessionPermissionRequest = z.infer<typeof claudeSessionPermissionRequestSchema>
+export const claudeSessionPermissionReadSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.permission.read'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  permission: claudePermissionSchema.nullable(),
+})
+export type ClaudeSessionPermissionRead = z.infer<typeof claudeSessionPermissionReadSchema>
+export const claudeSessionPermissionDecisionRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.permission.decide'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  permissionId: identifierSchema,
+  decision: z.enum(['allow', 'deny']),
+})
+export type ClaudeSessionPermissionDecisionRequest = z.infer<
+  typeof claudeSessionPermissionDecisionRequestSchema
+>
 
 export type SessionsListed = {
   version: 1
@@ -77,29 +148,10 @@ export type SessionFeedUnchanged = {
   revision: string
 }
 
-export const SESSION_ERRORS = {
-  'missing-session': 'Argo cannot find this Session.',
-  'invalid-request': 'The Session request is invalid.',
-  'unsupported-version': 'This Session contract version is not supported.',
-  'transcripts-unavailable': 'Argo cannot read the Claude transcript folder.',
-  'access-denied': 'Argo cannot access these Sessions.',
-  'internal-error': 'Argo could not read these Sessions.',
-  'invalid-response': 'Argo received an invalid Session response.',
-  'connection-lost': 'The connection to Argo was lost.',
-  'cli-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',
-  'launch-failed': 'Argo could not start Claude Code.',
-} as const
-
-export type SessionErrorCode = keyof typeof SESSION_ERRORS
-export type SessionError = ContractError<'session.error', SessionErrorCode>
-
 export type SessionListReply = SessionsListed | SessionError
 export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
 export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
-
-export const sessionError = errorFactory('session.error', SESSION_ERRORS)
-export const sessionErrorSchema = errorSchema('session.error', SESSION_ERRORS)
-
-export const isSessionListRequest = guard(listRequest)
-export const isSessionFeedRequest = guard(feedRequest)
-export const isClaudeSessionStartRequest = guard(claudeStartRequest)
+export type ClaudeSessionSendReply = ClaudeSessionAccepted | SessionError
+export type ClaudeSessionInterruptReply = ClaudeSessionAccepted | SessionError
+export type ClaudeSessionPermissionReply = ClaudeSessionPermissionRead | SessionError
+export type ClaudeSessionPermissionDecisionReply = ClaudeSessionAccepted | SessionError

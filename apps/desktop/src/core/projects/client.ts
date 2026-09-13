@@ -1,6 +1,7 @@
 import { requestIdentifier } from '../../boundary'
 import { createSender } from '../contract/messages'
 import {
+  isProjectErrorMessage,
   isProjectOpenReply,
   type ProjectError,
   type ProjectOpenReply,
@@ -8,7 +9,8 @@ import {
   projectError,
 } from './contract'
 import {
-  isProjectListReply,
+  isProjectCancelled,
+  isProjectListed,
   type ProjectListReply,
   type ProjectListRequest,
   type ProjectRegisterRequest,
@@ -20,6 +22,10 @@ export type ProjectClient = {
   listProjects(request: ProjectListRequest): Promise<ProjectListReply>
   registerProject(request: ProjectRegisterRequest): Promise<ProjectListReply>
   relocateProject(request: ProjectRelocateRequest): Promise<ProjectListReply>
+}
+
+function isProjectListReply(value: unknown): value is ProjectListReply {
+  return isProjectListed(value) || isProjectCancelled(value) || isProjectErrorMessage(value)
 }
 
 export function createProjectClient(invoke: (request: unknown) => Promise<unknown>): ProjectClient {
