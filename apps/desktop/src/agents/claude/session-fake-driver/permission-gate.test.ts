@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
@@ -25,6 +25,19 @@ test('keeps the permission socket path inside the macOS limit under a long root'
   expect(Buffer.byteLength(hookSocket(opened.pluginRoot))).toBeLessThan(104)
 
   opened.close()
+  await rm(base, { recursive: true, force: true })
+})
+
+test('removes its socket folder when the app closes the gate', async () => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-permission-'))
+  const gate = createClaudePermissionGate(base)
+  const opened = gate.open(randomUUID())
+  const sockets = path.dirname(hookSocket(opened.pluginRoot))
+
+  opened.close()
+  gate.close()
+
+  expect(existsSync(sockets)).toBe(false)
   await rm(base, { recursive: true, force: true })
 })
 

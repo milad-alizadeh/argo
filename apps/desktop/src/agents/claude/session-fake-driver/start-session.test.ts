@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { ClaudeSessionDriverError } from '../drive/claude-session-driver.ts'
+import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
 import { startClaudeSession } from '../drive/start-session.ts'
 
 const request = {
