@@ -36,6 +36,8 @@
   --color-pr-merged: #a371f7;
   --color-pr-closed: #f85149;
   --color-pr-draft: #8b949e;
+  /* A Ticket's completed status, in Linear's hue for it. */
+  --color-ticket-done: #5e6ad2;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
   --text-code: 12px;

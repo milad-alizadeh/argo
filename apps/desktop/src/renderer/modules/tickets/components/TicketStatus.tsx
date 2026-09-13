@@ -1,31 +1,27 @@
 // A Ticket's status and priority, drawn where the provider keeps them. Only Linear keeps a priority.
 // The icon's shape carries the category, so a status is never its colour alone.
-import {
-  Circle,
-  CircleAlert,
-  CircleCheck,
-  CircleDashed,
-  CircleX,
-  Contrast,
-  type LucideIcon,
-  OctagonAlert,
-  SignalHigh,
-  SignalLow,
-  SignalMedium,
-} from 'lucide-react'
+import { type LucideIcon, OctagonAlert, SignalHigh, SignalLow, SignalMedium } from 'lucide-react'
 import type { TicketPriority, TicketStatus } from '@/core/tickets/contract'
+import { StatusGlyph } from './StatusGlyph'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 
 type Mark = { Icon: LucideIcon; tone: string }
 
-const CATEGORY_MARKS: Record<TicketStatus['category'], Mark> = {
-  triage: { Icon: CircleAlert, tone: 'text-warn' },
-  backlog: { Icon: CircleDashed, tone: 'text-faint' },
-  unstarted: { Icon: Circle, tone: 'text-idle' },
-  started: { Icon: Contrast, tone: 'text-active' },
-  completed: { Icon: CircleCheck, tone: 'text-plan' },
-  canceled: { Icon: CircleX, tone: 'text-faint' },
+const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
+  triage: 'text-warn',
+  backlog: 'text-faint',
+  unstarted: 'text-idle',
+  started: 'text-warn',
+  completed: 'text-ticket-done',
+  canceled: 'text-faint',
+}
+
+// The nth started status fills 1/2, 3/4, 7/8 of its pie, so a later stage reads as further on.
+function startedShare(status: TicketStatus, statuses: readonly TicketStatus[]) {
+  const started = statuses.filter((candidate) => candidate.category === 'started')
+  const stage = Math.max(started.map(({ id }) => id).indexOf(status.id), 0)
+  return 1 - 0.5 ** (stage + 1)
 }
 
 // Level 1 is the most urgent.
@@ -36,9 +32,21 @@ const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
   4: { Icon: SignalLow, tone: 'text-muted-foreground' },
 }
 
-export function StatusIcon({ status }: { status: TicketStatus }) {
-  const { Icon, tone } = CATEGORY_MARKS[status.category]
-  return <Icon aria-hidden="true" className={`${markIcon} ${tone}`} />
+// `statuses` is the provider's list, which places a started status among its fellows.
+export function StatusIcon({
+  status,
+  statuses = [],
+}: {
+  status: TicketStatus
+  statuses?: readonly TicketStatus[]
+}) {
+  return (
+    <StatusGlyph
+      category={status.category}
+      className={`${markIcon} ${CATEGORY_TONES[status.category]}`}
+      share={startedShare(status, statuses)}
+    />
+  )
 }
 
 // In a row the name is for a screen reader; in the Detail it is written beside the icon.
