@@ -4,6 +4,7 @@ import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { createAccountAccess } from './core/accounts/access'
@@ -22,8 +23,7 @@ import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
 import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from './core/sessions/proof-protocol'
 import { attachTicketBridge } from './core/tickets/bridge'
@@ -67,13 +67,6 @@ function githubEndpoints(): GitHubEndpoints {
   return endpoints
 }
 
-function claudeTranscriptsRoot(): string {
-  return (
-    process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] ??
-    path.join(app.getPath('home'), '.claude', 'projects')
-  )
-}
-
 function codexTranscriptsRoot(): string {
   return (
     process.env[SESSION_CODEX_TRANSCRIPTS_ENV] ??
@@ -81,34 +74,23 @@ function codexTranscriptsRoot(): string {
   )
 }
 
-// The Claude desktop app's own store, read for its archive flag alone (`sessions/archive.ts`). It
-// sits under the app's support folder, and a machine without that app has no folder there: the
-// reading degrades to no archived Sessions rather than to a failure.
-function claudeArchiveRoot(): string {
-  return (
-    process.env[SESSION_CLAUDE_ARCHIVE_ENV] ??
-    path.join(
-      app.getPath('home'),
-      'Library',
-      'Application Support',
-      'Claude',
-      'claude-code-sessions',
-    )
-  )
-}
-
 function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
-  const claudeSessionDriver = createSystemClaudeSessionDriver(
-    path.join(userData, 'claude-permission-plugins'),
-  )
+  const home = app.getPath('home')
+  const claudeSessionDriver = createSystemClaudeSessionDriver({
+    permissions: path.join(userData, 'claude-permission-plugins'),
+    ledger: path.join(userData, 'claude-session-ownership.json'),
+    transcripts: claudeTranscriptsRoot(home),
+    executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
+  })
   const codexSessionDriver = createSystemCodexSessionDriver()
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: combineSessionReaders([
       createClaudeSessionReader({
-        transcripts: claudeTranscriptsRoot(),
-        archive: claudeArchiveRoot(),
+        transcripts: claudeTranscriptsRoot(home),
+        archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
+        ownedBefore: claudeSessionDriver.ownedBefore,
       }),
       createCodexSessionReader(codexTranscriptsRoot(), {
         managedSessions: codexSessionDriver.roster,

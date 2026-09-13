@@ -10,6 +10,9 @@ import type { useSessions } from './useSessions'
 
 export type SessionCli = 'claude' | 'codex'
 
+// A failure belongs to the Session it happened on, so selecting another Session does not show it.
+type Failure = { sessionId: string | null; message: string }
+
 type SessionComposerOptions = {
   cli: SessionCli
   cockpit: Cockpit
@@ -47,7 +50,7 @@ export function useSessionComposer({
   failure: string | null
   props: Omit<SessionComposerProps, 'plan'>
 } {
-  const [failure, setFailure] = useState<string | null>(null)
+  const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { interrupt, send, start } = useMutationsFor(cli)
   const onInterrupt = useCallback(async () => {
@@ -56,16 +59,23 @@ export function useSessionComposer({
       await interrupt.mutateAsync(selectedSessionId)
       return true
     } catch (error) {
-      setFailure(messageFrom(error, 'Argo could not interrupt this Session.'))
+      setFailure({
+        sessionId: selectedSessionId,
+        message: messageFrom(error, 'Argo could not interrupt this Session.'),
+      })
       return false
     }
   }, [interrupt, selectedSessionId])
   const onSend = useCallback(
     async (prompt: string) => {
-      if (selectedSessionId !== null)
-        return sendMessage({ send, prompt, sessionId: selectedSessionId, setFailure })
+      if (selectedSessionId !== null) {
+        const sent = await sendMessage({ send, prompt, sessionId: selectedSessionId, setFailure })
+        // A Send can resume the Session (ADR-0026), so its posture may have changed.
+        if (sent) await invalidateSessionRoster(queryClient)
+        return sent
+      }
       if (cockpit.project === null) {
-        setFailure('Select a Project before starting a Session.')
+        setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
         return false
       }
       try {
@@ -75,14 +85,17 @@ export function useSessionComposer({
         navigate(`/sessions/${reply.sessionId}`)
         return true
       } catch (error) {
-        setFailure(messageFrom(error, 'Argo could not start this Session.'))
+        setFailure({
+          sessionId: null,
+          message: messageFrom(error, 'Argo could not start this Session.'),
+        })
         return false
       }
     },
     [cockpit.project, navigate, queryClient, selectedSessionId, send, start],
   )
   return {
-    failure,
+    failure: failure?.sessionId === selectedSessionId ? failure.message : null,
     props: {
       isRunning: managedSessionIsRunning(roster, selectedSessionId),
       onInterrupt,
@@ -101,13 +114,14 @@ async function sendMessage({
   send: ReturnType<typeof useMutationsFor>['send']
   prompt: string
   sessionId: string
-  setFailure: (message: string) => void
+  setFailure: (failure: Failure | null) => void
 }) {
   try {
     await send.mutateAsync({ prompt, sessionId })
+    setFailure(null)
     return true
   } catch (error) {
-    setFailure(messageFrom(error, 'Argo could not send this message.'))
+    setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
     return false
   }
 }

@@ -1,6 +1,6 @@
 # 0026 · A resume-chain can be resumed; orphaned is not the end of a Session
 
-Status: accepted · 2026-08-11
+Status: accepted · 2026-08-11 · amended 2026-09-13 by #1842 (the trigger is the next Turn)
 
 Supersedes one clause of `docs/domain/l2-session.md`: *"the PTY/steering channel dies with the
 owning process and cannot be re-adopted, so a `managed` session whose owner is gone demotes to
@@ -50,11 +50,17 @@ second would happily resume what the first is steering.
 continue; the per-CLI argv builder that emits `--permission-mode` also emits `--resume`. A New
 Session, a handoff and a resume are one path with three seeds.
 
-**Selection is the trigger, and it is lazy.** Picking a Session Argo cannot steer resumes it — no
-button and no prompt, because the click is the intent: the user selected the row in order to use
-it. Launch resumes nothing on its own, and a selection the roster made for itself resumes nothing,
-so N Sessions never become N agent processes. A Session already live spawns nothing, and two clicks
-inside one `claude` startup spawn one agent.
+**The next Turn is the trigger, and it is lazy** (amended by #1842). Selecting an orphaned Session
+opens its recorded Feed and its composer, and starts no process. The first Turn the user sends
+resumes the chain and then delivers that Turn. There is no button and no prompt, because the Send
+is the intent. Launch resumes nothing on its own, and selection resumes nothing, so browsing N
+Sessions never starts N agent processes. A Session already live spawns nothing, and two Turns sent
+inside one `claude` startup share one agent.
+
+**A Turn that cannot resume keeps its draft and says why.** The composer stays, and the existing
+red alert above it names the reason: Argo never started this Session, another Argo window drives
+it, its transcript is gone, Claude Code is missing, or Claude Code failed to start. No new layout
+is drawn for these states.
 
 Because the Session id is known **before** the spawn, a resume's claim is bound to that id directly
 rather than matched back by folder and start time. That is strictly better than a cold spawn's
@@ -80,10 +86,8 @@ flag) adopts nothing at all.
 
 ## Consequences
 
-- **A resume replays the chain's context, so it costs tokens and time.** Selection is where that is
-  spent. A narrower trigger — draw the composer on selection, spawn on the first turn sent — keeps
-  the same user gesture and was considered; selection is the specified trigger and stands. If
-  browsing the roster turns out to be expensive in practice, that is the change to make.
+- **A resume replays the chain's context, so it costs tokens and time.** The first Turn sent is
+  where that is spent, so a selection made only to read the Feed costs nothing.
 - **`external` Sessions are still not resumable.** One Argo never started belongs to whoever did,
   and taking it over is a separate decision.
 - **Codex is out.** One CLI is what the app can honestly launch (ADR-0024).
@@ -100,5 +104,5 @@ flag) adopts nothing at all.
   it: a transcript that has been deleted leaves its window behind. Left as is because the entry is
   a few dozen bytes and there is no honest signal that a Session is gone for good; if the file
   ever matters, prune on the transcript's absence rather than on age.
-- **A resume that fails to launch leaves the Session `orphaned` and says why.** It must never draw
-  a composer that cannot send, which is #546's rule applied unchanged.
+- **A resume that fails to launch leaves the Session `orphaned` and says why.** The Turn that
+  asked for it keeps its draft, and the red alert above the composer names the reason (#1842).

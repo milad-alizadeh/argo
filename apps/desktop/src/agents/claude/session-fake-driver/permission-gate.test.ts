@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -10,12 +10,14 @@ test('holds a managed Claude permission until the selected Session answers it', 
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-permission-'))
   const gate = createClaudePermissionGate(root)
   const opened = gate.open('session-one')
+  const hook = await readFile(path.join(opened.pluginRoot, 'permission-hook.sh'), 'utf8')
+  const socketPath = /nc -U "([^"]+)"/.exec(hook)?.[1] ?? ''
   let held: () => void = () => {}
   const heldByGate = new Promise<void>((resolve) => {
     held = resolve
   })
   const reply = new Promise<string>((resolve, reject) => {
-    const socket = net.createConnection(path.join(root, 'session-one.permission.sock'))
+    const socket = net.createConnection(socketPath)
     socket.setEncoding('utf8')
     socket.once('connect', () =>
       socket.write('{"tool_name":"Bash","tool_input":{"command":"bun test"}}\n'),
