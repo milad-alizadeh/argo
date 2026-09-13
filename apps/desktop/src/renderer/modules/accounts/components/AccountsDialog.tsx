@@ -60,7 +60,10 @@ export function AccountsPanel({
         <p className="type-body text-muted-foreground">No GitHub Account is connected.</p>
       ) : null}
       {accounts.length > 0 ? (
-        <ul aria-label="GitHub Accounts" className="grid gap-(--spacing-shell-item)">
+        <ul
+          aria-label="GitHub Accounts"
+          className="grid divide-y divide-border/60 rounded-lg border border-border/60"
+        >
           {accounts.map((account) => (
             <AccountRow
               account={account}

@@ -2,13 +2,7 @@ import type { BindingSummary } from '@/core/tickets/contract'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/state/ProjectsContext'
 import { useBinding, useTicketList } from '../hooks/useTickets'
-
-const STATE_MARKS: Record<BindingSummary['state'], { mark: string; text: string }> = {
-  ready: { mark: 'bg-active', text: 'Connected' },
-  'account-revoked': { mark: 'bg-danger', text: 'Access revoked' },
-  'account-unreadable': { mark: 'bg-danger', text: 'Sign-in unreadable' },
-  'account-missing': { mark: 'bg-transparent shadow-state-outline', text: 'Disconnected' },
-}
+import { BindingStatusMark } from './BindingStatusMark'
 
 export type TicketsSidebarContentProps = {
   binding: BindingSummary | null
@@ -18,7 +12,6 @@ export type TicketsSidebarContentProps = {
 
 // The foot names the Account this Project reads through; with no Binding it opens the Accounts.
 function AccountFoot({ binding, onManageAccounts }: Omit<TicketsSidebarContentProps, 'openCount'>) {
-  const state = binding ? STATE_MARKS[binding.state] : null
   return (
     <footer className="shrink-0 border-t border-border/60 p-(--spacing-shell-item)">
       <button
@@ -26,16 +19,13 @@ function AccountFoot({ binding, onManageAccounts }: Omit<TicketsSidebarContentPr
         onClick={onManageAccounts}
         type="button"
       >
-        {state ? (
-          <span
-            aria-hidden="true"
-            className={`size-(--size-state-dot) shrink-0 rounded-full ${state.mark}`}
-          />
-        ) : null}
-        <span className="min-w-0 flex-1 truncate">
-          {binding ? `GitHub · ${binding.login ?? 'no Account'}` : 'GitHub Accounts'}
-        </span>
-        {state ? <span className="sr-only">{state.text}</span> : null}
+        {binding ? (
+          <BindingStatusMark state={binding.state}>
+            GitHub · {binding.login ?? 'no Account'}
+          </BindingStatusMark>
+        ) : (
+          <span className="min-w-0 flex-1 truncate">GitHub Accounts</span>
+        )}
       </button>
     </footer>
   )

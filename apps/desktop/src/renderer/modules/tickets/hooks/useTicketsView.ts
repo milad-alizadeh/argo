@@ -1,9 +1,10 @@
-// The Tickets room's one reading of state: the selected Project, its Binding, the Accounts and
-// the Tickets, resolved into the single view the room draws.
+// The Tickets screen's one reading of state: the selected Project, its Binding, the Accounts and
+// the Tickets, resolved into the single view the screen draws.
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { ProjectSummary } from '@/core/projects/messages'
 import type { BindingSummary, Ticket } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
+import type { SignInNoticeProps } from '../../accounts/components/SignInNotice'
 import {
   type AccountListing,
   useAccounts,
@@ -11,9 +12,23 @@ import {
 } from '../../accounts/hooks/useAccounts'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/state/ProjectsContext'
+import type { BindFormProps } from '../components/BindForm'
+import type { BindingProblemProps } from '../components/BindingProblem'
 import { isBindingProblem } from '../components/BindingProblem'
-import type { TicketsRoomProps, TicketsView } from '../components/TicketsRoom'
+import type { TicketDeckProps } from '../components/TicketDeck'
+import type { TicketFailureProps } from '../components/TicketFailure'
 import { useBind, useBinding, useTicketList, useUnbind } from './useTickets'
+
+// Everything the Tickets screen can show, resolved here before anything draws.
+export type TicketsView =
+  | { kind: 'no-project' }
+  | { kind: 'loading'; label: string }
+  | ({ kind: 'failure' } & TicketFailureProps)
+  | ({ kind: 'unbound'; projectId: string } & BindFormProps)
+  | ({ kind: 'binding-problem' } & BindingProblemProps)
+  | ({ kind: 'tickets'; projectId: string } & TicketDeckProps)
+
+export type TicketsScreenProps = { view: TicketsView; notice: SignInNoticeProps | null }
 
 const loading = (label: string): TicketsView => ({ kind: 'loading', label })
 
@@ -63,7 +78,7 @@ function boundView({ projectId, binding, list, onUnbind }: Bound): TicketsView {
   return { kind: 'tickets', projectId, scope, tickets: list.data, onUnbind }
 }
 
-export function useTicketsView(): TicketsRoomProps {
+export function useTicketsView(): TicketsScreenProps {
   const project = useSelectedProject()
   const projectId = project?.id ?? null
   const accounts = useAccounts()

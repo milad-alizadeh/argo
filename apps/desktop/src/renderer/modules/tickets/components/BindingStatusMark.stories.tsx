@@ -1,0 +1,46 @@
+import type { Meta, StoryObj } from '@storybook/react'
+import { expect, within } from 'storybook/test'
+
+import { BindingStatusMark } from './BindingStatusMark'
+
+const meta: Meta<typeof BindingStatusMark> = {
+  title: 'Tickets/Binding Status Mark',
+  component: BindingStatusMark,
+  args: { children: 'GitHub · octocat' },
+  decorators: [
+    (Story) => (
+      <p className="flex w-(--size-cockpit-sidebar-default) items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
+        <Story />
+      </p>
+    ),
+  ],
+}
+
+export default meta
+type Story = StoryObj<typeof BindingStatusMark>
+
+const says =
+  (text: string): Story['play'] =>
+  async ({ canvasElement }) => {
+    const line = within(canvasElement).getByRole('paragraph')
+    await expect(within(line).getByText(text)).toHaveClass('sr-only')
+    // The state follows the label, so a button built on it is named "GitHub · octocat Connected".
+    await expect(line).toHaveTextContent(`GitHub · octocat${text}`)
+  }
+
+export const Connected: Story = { args: { state: 'ready' }, play: says('Connected') }
+
+export const AccessRevoked: Story = {
+  args: { state: 'account-revoked' },
+  play: says('Access revoked'),
+}
+
+export const SignInUnreadable: Story = {
+  args: { state: 'account-unreadable' },
+  play: says('Sign-in unreadable'),
+}
+
+export const Disconnected: Story = {
+  args: { state: 'account-missing' },
+  play: says('Disconnected'),
+}

@@ -1,12 +1,22 @@
+import { Plug } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
-
 import type { AccountSummary } from '@/core/accounts/contract'
+
 import { Button } from '../../../components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../../../components/ui/card'
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
+  EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Field, FieldError, FieldGroup, FieldLabel } from '../../../components/ui/field'
@@ -27,8 +37,11 @@ export type BindFormProps = {
 
 function NoAccount({ onConnect }: { onConnect: () => void }) {
   return (
-    <Empty className="border-0">
+    <Empty className="h-full">
       <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Plug aria-hidden="true" />
+        </EmptyMedia>
         <EmptyTitle>Connect GitHub to read Tickets</EmptyTitle>
         <EmptyDescription>
           A Project reads its Tickets through a connected GitHub Account.
@@ -62,55 +75,57 @@ export function BindForm({
     if (chosen) onBind({ accountId: chosen, scope: scope.trim() })
   }
   return (
-    <form
-      aria-label="Bind a repository"
-      className="grid w-full max-w-md gap-(--spacing-shell-inset)"
-      onSubmit={submit}
-    >
-      <div className="grid gap-(--spacing-shell-tight)">
-        <h2 className="type-heading">Bind {projectName} to a repository</h2>
-        <p className="type-meta text-muted-foreground">
-          Argo reads this repository's open GitHub Issues as the Project's Tickets.
-        </p>
-      </div>
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="bind-account">GitHub Account</FieldLabel>
-          <NativeSelect
-            className="w-full"
-            id="bind-account"
-            onChange={(event) => setAccountId(event.target.value)}
-            value={chosen}
-          >
-            {connected.map((account) => (
-              <NativeSelectOption key={account.id} value={account.id}>
-                {account.login}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field data-invalid={error ? true : undefined}>
-          <FieldLabel htmlFor="bind-scope">Repository</FieldLabel>
-          <Input
-            aria-describedby={error ? 'bind-scope-error' : undefined}
-            aria-invalid={error ? true : undefined}
-            autoComplete="off"
-            id="bind-scope"
-            onChange={(event) => setScope(event.target.value)}
-            placeholder="owner/name"
-            spellCheck={false}
-            value={scope}
-          />
-          {error ? <FieldError id="bind-scope-error">{error.message}</FieldError> : null}
-        </Field>
-      </FieldGroup>
-      <Button
-        className="justify-self-start"
-        disabled={pending || scope.trim() === ''}
-        type="submit"
-      >
-        {pending ? 'Checking the repository…' : 'Bind repository'}
-      </Button>
-    </form>
+    <div className="grid h-full place-items-center p-(--spacing-shell-region)">
+      <Card className="w-full max-w-md">
+        <form aria-label="Bind a repository" className="contents" onSubmit={submit}>
+          <CardHeader>
+            <CardTitle>
+              <h2 className="type-heading">Bind {projectName} to a repository</h2>
+            </CardTitle>
+            <CardDescription>
+              Argo reads this repository's open GitHub Issues as the Project's Tickets.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="bind-account">GitHub Account</FieldLabel>
+                <NativeSelect
+                  className="w-full"
+                  id="bind-account"
+                  onChange={(event) => setAccountId(event.target.value)}
+                  value={chosen}
+                >
+                  {connected.map((account) => (
+                    <NativeSelectOption key={account.id} value={account.id}>
+                      {account.login}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field data-invalid={error ? true : undefined}>
+                <FieldLabel htmlFor="bind-scope">Repository</FieldLabel>
+                <Input
+                  aria-describedby={error ? 'bind-scope-error' : undefined}
+                  aria-invalid={error ? true : undefined}
+                  autoComplete="off"
+                  id="bind-scope"
+                  onChange={(event) => setScope(event.target.value)}
+                  placeholder="owner/name"
+                  spellCheck={false}
+                  value={scope}
+                />
+                {error ? <FieldError id="bind-scope-error">{error.message}</FieldError> : null}
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter className="justify-end">
+            <Button disabled={pending || scope.trim() === ''} type="submit">
+              {pending ? 'Checking the repository…' : 'Bind repository'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 
 import type { AccountSummary } from '@/core/accounts/contract'
 import { Badge } from '../../../components/ui/badge'
@@ -48,10 +48,17 @@ function disconnectQuestion({ login, bindings }: AccountSummary): string {
   return `Disconnect ${login}? ${subject} reading Tickets until you connect it again.`
 }
 
+// Labelled by its question rather than a legend: a legend sits outside the grid's gap.
 function ConfirmDisconnect({ account, onDisconnect, onKeep, busy }: ConfirmProps) {
+  const question = useId()
   return (
-    <fieldset className="grid gap-(--spacing-shell-item)">
-      <legend className="type-body">{disconnectQuestion(account)}</legend>
+    <fieldset
+      aria-labelledby={question}
+      className="grid min-w-0 gap-(--spacing-shell-gutter) rounded-md bg-muted/60 p-(--spacing-shell-gutter)"
+    >
+      <p className="type-body" id={question}>
+        {disconnectQuestion(account)}
+      </p>
       <div className="flex gap-(--spacing-shell-item)">
         <Button disabled={busy} onClick={onDisconnect} size="sm" variant="destructive">
           Disconnect
@@ -82,14 +89,29 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
     <li
       aria-label={`GitHub Account ${account.login}`}
       ref={row}
-      className="grid gap-(--spacing-shell-item) rounded-lg border border-border/60 p-(--spacing-shell-gutter)"
+      className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
     >
-      <div className="flex items-center gap-(--spacing-shell-item)">
-        <span className="type-body flex-1 truncate font-medium">{account.login}</span>
+      <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
+        <span className="type-body min-w-0 truncate font-medium">{account.login}</span>
         <Badge variant={badge.variant}>{badge.label}</Badge>
+        <span className="flex-1" />
+        {confirming ? null : (
+          <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
+            Disconnect…
+          </Button>
+        )}
       </div>
-      {note ? <p className="type-meta text-destructive">{note}</p> : null}
       <Bindings account={account} />
+      {note ? (
+        <div className="grid justify-items-start gap-(--spacing-shell-item)">
+          <p className="type-meta text-destructive">{note}</p>
+          {confirming ? null : (
+            <Button onClick={onReconnect} size="sm" variant="outline">
+              Reconnect
+            </Button>
+          )}
+        </div>
+      ) : null}
       {confirming ? (
         <ConfirmDisconnect
           account={account}
@@ -97,18 +119,7 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
           onDisconnect={onDisconnect}
           onKeep={() => setConfirming(false)}
         />
-      ) : (
-        <div className="flex gap-(--spacing-shell-item)">
-          {note ? (
-            <Button onClick={onReconnect} size="sm">
-              Reconnect
-            </Button>
-          ) : null}
-          <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
-            Disconnect…
-          </Button>
-        </div>
-      )}
+      ) : null}
     </li>
   )
 }

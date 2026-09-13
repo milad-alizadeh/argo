@@ -7,7 +7,7 @@ import { wayfinder } from './ticket-fixtures'
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
 const meta: Meta<typeof TicketDetail> = {
-  title: 'Tickets/Ticket detail',
+  title: 'Tickets/Ticket Detail',
   component: TicketDetail,
   decorators: [
     (Story) => (

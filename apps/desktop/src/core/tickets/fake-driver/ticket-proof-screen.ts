@@ -1,4 +1,4 @@
-// Reading and operating the packaged Tickets room by role and name, as a person would find it.
+// Reading and operating the packaged Tickets screen by role and name, as a person would find it.
 // Every press is dispatched into the renderer: the proof window is never shown, so nothing is
 // there to hit-test, and no real keyboard or mouse is taken.
 import assert from 'node:assert/strict'

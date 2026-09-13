@@ -1,0 +1,7 @@
+:root {
+  /* Holds a five-character Ticket number at the meta size, so every title starts on one line. */
+  --size-ticket-number: 40px;
+  --size-ticket-inspector: 480px;
+  --size-ticket-inspector-min: 400px;
+  --size-ticket-workspace-min: 320px;
+}

@@ -77,7 +77,7 @@ host.argo = {
       project: { id: 'storybook-project', name: 'argo' },
     }),
   registerProject: () => Promise.resolve(storybookProjects),
-  // No Account and no Binding: the Tickets room draws its first-run screen.
+  // No Account and no Binding: the Tickets screen draws its first-run screen.
   listAccounts: (request: { requestId: string }) =>
     Promise.resolve({
       version: 1,

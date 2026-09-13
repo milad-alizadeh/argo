@@ -1,4 +1,9 @@
+import { Ban, ListTree } from 'lucide-react'
+
+import './ticket-tokens.css'
+
 import type { Ticket } from '@/core/tickets/contract'
+import { Item } from '../../../components/ui/item'
 import { backlogRows, closedChildren, count, openBlockers } from '../lib/backlog'
 
 export type TicketListProps = {
@@ -7,20 +12,24 @@ export type TicketListProps = {
   onSelect: (ticketNumber: number) => void
 }
 
+const markIcon = 'size-(--size-icon-meta) shrink-0'
+
 // The blocked mark and the children tally each carry their fact in text for a screen reader.
 function RowTail({ ticket }: { ticket: Ticket }) {
   const blockers = openBlockers(ticket)
   const children = ticket.children.length
+  if (blockers === 0 && children === 0) return null
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-(--spacing-shell-icon) font-mono type-meta text-faint">
+    <span className="ml-auto flex shrink-0 items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
       {blockers > 0 ? (
-        <span className="text-danger">
-          <span aria-hidden="true">⊘</span>
+        <span className="flex items-center gap-(--spacing-shell-tight) text-danger">
+          <Ban aria-hidden="true" className={markIcon} />
           <span className="sr-only">Blocked by {count(blockers, 'open Ticket')}</span>
         </span>
       ) : null}
       {children > 0 ? (
-        <span>
+        <span className="flex items-center gap-(--spacing-shell-tight) tabular-nums">
+          <ListTree aria-hidden="true" className={markIcon} />
           <span aria-hidden="true">
             {closedChildren(ticket)}/{children}
           </span>
@@ -33,32 +42,38 @@ function RowTail({ ticket }: { ticket: Ticket }) {
   )
 }
 
+// The number column is one width, so every title starts on one line and a child indents from it.
 export function TicketList({ tickets, selectedNumber, onSelect }: TicketListProps) {
   return (
-    <section aria-label="Backlog" className="flex min-h-0 flex-col">
-      <header className="shrink-0 px-(--spacing-shell-inset) py-(--spacing-shell-gutter)">
+    <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
+      <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
         <h2 className="type-heading">Backlog</h2>
-        <p className="type-meta text-muted-foreground">
+        <p className="ml-auto type-meta text-muted-foreground">
           All open · {count(tickets.length, 'Ticket')}
         </p>
       </header>
-      <ul className="min-h-0 flex-1 overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-gutter)">
+      <ul className="grid min-h-0 flex-1 content-start gap-px overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset)">
         {backlogRows(tickets).map(({ ticket, depth, parent }) => (
           <li key={ticket.number}>
-            <button
+            <Item
               aria-current={ticket.number === selectedNumber ? 'true' : undefined}
-              className="flex w-full items-center gap-(--spacing-shell-item) rounded-row py-(--spacing-shell-icon) pr-(--spacing-shell-item) text-left type-body hover:bg-muted aria-[current]:bg-muted"
+              className="flex-nowrap gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left hover:bg-muted aria-[current]:bg-muted"
               onClick={() => onSelect(ticket.number)}
-              style={{
-                paddingInlineStart: `calc(var(--spacing-shell-item) + ${depth} * var(--spacing-shell-inset))`,
-              }}
-              type="button"
+              render={<button type="button" />}
+              size="xs"
             >
-              <span className="shrink-0 font-mono type-meta text-faint">#{ticket.number}</span>
-              <span className="min-w-0 truncate">{ticket.title}</span>
+              <span className="w-(--size-ticket-number) shrink-0 font-mono type-meta text-faint">
+                #{ticket.number}
+              </span>
+              <span
+                className="min-w-0 truncate type-body"
+                style={{ paddingInlineStart: `calc(${depth} * var(--spacing-shell-inset))` }}
+              >
+                {ticket.title}
+              </span>
               {parent === null ? null : <span className="sr-only">, child of #{parent}</span>}
               <RowTail ticket={ticket} />
-            </button>
+            </Item>
           </li>
         ))}
       </ul>

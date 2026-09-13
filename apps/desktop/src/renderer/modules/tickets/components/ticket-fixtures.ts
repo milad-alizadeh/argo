@@ -3,7 +3,7 @@ import { fn } from 'storybook/test'
 
 import type { AccountSummary } from '@/core/accounts/contract'
 import type { Ticket } from '@/core/tickets/contract'
-import type { TicketsView } from './TicketsRoom'
+import type { TicketsView } from '../hooks/useTicketsView'
 
 const link = (number: number, title: string, state: 'open' | 'closed' = 'open') => ({
   number,

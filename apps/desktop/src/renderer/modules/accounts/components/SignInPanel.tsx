@@ -22,17 +22,19 @@ function ConnectedLine({ login, outcome }: SignedIn) {
 
 function CodeStep({ userCode, onOpenGitHub, onCancel }: CodeStepProps) {
   return (
-    <div className="grid gap-(--spacing-shell-item)">
+    <div className="grid gap-(--spacing-shell-gutter) rounded-lg bg-muted/60 p-(--spacing-shell-inset)">
       <p className="type-body text-muted-foreground">
         Enter this code on GitHub to connect an Account.
       </p>
-      <output aria-label="GitHub code" className="type-title font-mono tracking-widest">
-        {userCode}
-      </output>
-      <p className="type-meta text-muted-foreground" role="status">
-        Waiting for GitHub…
-      </p>
-      <div className="flex gap-(--spacing-shell-item)">
+      <div className="grid gap-(--spacing-shell-tight)">
+        <output aria-label="GitHub code" className="type-title font-mono tracking-widest">
+          {userCode}
+        </output>
+        <p className="type-meta text-muted-foreground" role="status">
+          Waiting for GitHub…
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-(--spacing-shell-item)">
         <Button onClick={onOpenGitHub}>
           <ExternalLink aria-hidden="true" />
           Copy code and open GitHub
@@ -62,7 +64,7 @@ export function SignInPanel({
   return (
     <section
       aria-label="Connect a GitHub Account"
-      className="grid gap-(--spacing-shell-item)"
+      className="grid gap-(--spacing-shell-gutter)"
       ref={panel}
     >
       {error ? (

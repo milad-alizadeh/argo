@@ -6,7 +6,7 @@ import { BindForm, type BindFormProps } from './BindForm'
 import { octocat } from './ticket-fixtures'
 
 const meta: Meta<typeof BindForm> = {
-  title: 'Tickets/Bind form',
+  title: 'Tickets/Bind Form',
   component: BindForm,
   args: {
     projectName: 'argo',

@@ -1,12 +1,9 @@
-import { AccountsDialog } from '../../accounts/components/AccountsDialog'
-import { TicketsRoom } from '../components/TicketsRoom'
-import { useTicketsView } from '../hooks/useTicketsView'
+import { TicketsScreenView } from '../screens/TicketsScreenView'
 
 export function TicketsPage() {
   return (
-    <>
-      <TicketsRoom {...useTicketsView()} />
-      <AccountsDialog />
-    </>
+    <div className="h-full min-h-0">
+      <TicketsScreenView />
+    </div>
   )
 }

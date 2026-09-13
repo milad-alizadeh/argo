@@ -23,8 +23,16 @@ const bound = {
 const revoked = { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
 const meta: Meta<typeof AccountsPanel> = {
-  title: 'Accounts/Accounts panel',
+  title: 'Accounts/Accounts Panel',
   component: AccountsPanel,
+  // The panel lives in a `sm:max-w-md` dialog, so the story draws it at that width.
+  decorators: [
+    (Story) => (
+      <div className="max-w-md">
+        <Story />
+      </div>
+    ),
+  ],
   args: {
     listing: { accounts: [bound, revoked], notice: false },
     listError: null,

@@ -13,6 +13,7 @@ const binding = {
 const meta: Meta<typeof TicketsSidebarContent> = {
   title: 'Tickets/Sidebar',
   component: TicketsSidebarContent,
+  parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
       <div className="h-dvh w-64">
@@ -34,16 +35,6 @@ export const Bound: Story = {
     const account = canvas.getByRole('button', { name: 'GitHub · octocat Connected' })
     await userEvent.click(account)
     await expect(args.onManageAccounts).toHaveBeenCalled()
-  },
-}
-
-export const AccessRevoked: Story = {
-  args: { binding: { ...binding, state: 'account-revoked' }, openCount: null },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: 'GitHub · octocat Access revoked' }),
-    ).toBeInTheDocument()
   },
 }
 

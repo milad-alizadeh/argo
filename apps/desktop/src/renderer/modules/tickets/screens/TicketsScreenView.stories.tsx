@@ -1,18 +1,36 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { MemoryRouter } from 'react-router'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
-import { TicketsRoom } from './TicketsRoom'
-import { ticketsView } from './ticket-fixtures'
+import { CockpitShell } from '../../cockpit/components/CockpitShell'
+import { TicketsSidebarContent } from '../components/TicketsSidebar'
+import { ticketsView } from '../components/ticket-fixtures'
+import { TicketsScreen } from './TicketsScreenView'
 
-const meta: Meta<typeof TicketsRoom> = {
-  title: 'Tickets/Room',
-  component: TicketsRoom,
+const binding = {
+  accountId: 'github:583231',
+  login: 'octocat',
+  scope: 'octocat/hello-world',
+  state: 'ready',
+} as const
+
+const meta: Meta<typeof TicketsScreen> = {
+  title: 'Tickets/Screen',
+  component: TicketsScreen,
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
       <div className="h-dvh w-full">
-        <Story />
+        <MemoryRouter>
+          <CockpitShell
+            sidebar={
+              <TicketsSidebarContent binding={binding} onManageAccounts={fn()} openCount={3} />
+            }
+          >
+            <Story />
+          </CockpitShell>
+        </MemoryRouter>
       </div>
     ),
   ],
@@ -20,7 +38,7 @@ const meta: Meta<typeof TicketsRoom> = {
 }
 
 export default meta
-type Story = StoryObj<typeof TicketsRoom>
+type Story = StoryObj<typeof TicketsScreen>
 
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
@@ -46,6 +64,26 @@ export const Backlog: Story = {
   },
 }
 
+export const TicketInspector: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Ticket inspector' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
+    )
+    // Choosing a Ticket opens the inspector it would otherwise land in unseen.
+    await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse Ticket inspector' })).toBeInTheDocument(),
+    )
+    await expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Expand Ticket sidebar' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Restore Ticket sidebar' })).toBeInTheDocument(),
+    )
+  },
+}
+
 export const NoDependencyFacts: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -60,7 +98,7 @@ export const NoDependencyFacts: Story = {
 export const Unbind: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('octocat/hello-world')).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'octocat/hello-world' })).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Unbind' }))
     await expect(ticketsView.kind === 'tickets' && ticketsView.onUnbind).toHaveBeenCalled()
   },

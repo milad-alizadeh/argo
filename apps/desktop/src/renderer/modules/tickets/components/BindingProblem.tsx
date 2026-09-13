@@ -33,7 +33,7 @@ export type BindingProblemProps = {
 
 export function BindingProblem({ binding, onReconnect, onUnbind }: BindingProblemProps) {
   return (
-    <Empty className="border-0">
+    <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Unplug aria-hidden="true" />
