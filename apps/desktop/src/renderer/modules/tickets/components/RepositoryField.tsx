@@ -82,6 +82,7 @@ export function RepositoryField(props: RepositoryFieldProps) {
           id="connect-scope"
           placeholder="Search owner/name"
           spellCheck={false}
+          triggerLabel="Show repositories"
         />
         <ComboboxContent>
           <ComboboxEmpty>No repository matches.</ComboboxEmpty>

@@ -73,12 +73,28 @@ export const NoMatch: Story = {
   },
 }
 
+// The list button is for the pointer: the arrow keys open the list from the field itself.
+export const KeyboardOrder: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Repository' }))
+    await userEvent.keyboard('{Escape}')
+    await userEvent.tab()
+    await expect(canvas.getByRole('button', { name: 'Connect repository' })).toHaveFocus()
+    await expect(canvas.getByRole('button', { name: 'Show repositories' })).toBeVisible()
+  },
+}
+
 export const SwitchAccount: Story = {
   args: { accounts: [octocat, hubot] },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect repository' }))
     await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'GitHub Account' }), 'hubot')
     await expect(args.onSelectAccount).toHaveBeenCalledWith('github:1')
+    const repository = canvas.getByRole('combobox', { name: 'Repository' })
+    await expect(repository).not.toHaveAttribute('aria-invalid')
+    await expect(canvas.queryByText('Choose a repository.')).toBeNull()
   },
 }
 

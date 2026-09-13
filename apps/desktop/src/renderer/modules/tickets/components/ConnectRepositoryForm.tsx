@@ -102,6 +102,7 @@ export function ConnectRepositoryForm({
                   id="connect-account"
                   onChange={(event) => {
                     setScope(null)
+                    setMissingScope(false)
                     onSelectAccount(event.target.value)
                   }}
                   value={chosen.id}
