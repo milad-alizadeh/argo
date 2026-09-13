@@ -6,6 +6,7 @@ import {
   isTicketConnectedReply,
   isTicketDiscoverReply,
   isTicketListReply,
+  isTicketUpdateReply,
   type TicketConnectedReply,
   type TicketConnectionRequest,
   type TicketConnectRequest,
@@ -15,6 +16,8 @@ import {
   type TicketError,
   type TicketListReply,
   type TicketListRequest,
+  type TicketUpdateReply,
+  type TicketUpdateRequest,
   ticketError,
 } from './contract'
 
@@ -24,12 +27,15 @@ export type TicketClient = {
   disconnectSource(request: TicketDisconnectRequest): Promise<TicketConnectedReply>
   listTickets(request: TicketListRequest): Promise<TicketListReply>
   discoverSources(request: TicketDiscoverRequest): Promise<TicketDiscoverReply>
+  updateStatus(request: TicketUpdateRequest): Promise<TicketUpdateReply>
 }
 
 export function createTicketClient(invoke: (request: unknown) => Promise<unknown>): TicketClient {
   const send = createSender<TicketError>(invoke, ticketError)
   // A reply about another Project is refused, not drawn on this one.
-  async function forProject<T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply>(
+  async function forProject<
+    T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply | TicketUpdateReply,
+  >(
     request: { projectId: string },
     accept: (value: unknown) => value is T,
   ): Promise<T | TicketError> {
@@ -45,5 +51,6 @@ export function createTicketClient(invoke: (request: unknown) => Promise<unknown
     disconnectSource: (request) => forProject(request, isTicketConnectedReply),
     listTickets: (request) => forProject(request, isTicketListReply),
     discoverSources: (request) => forProject(request, isTicketDiscoverReply),
+    updateStatus: (request) => forProject(request, isTicketUpdateReply),
   }
 }

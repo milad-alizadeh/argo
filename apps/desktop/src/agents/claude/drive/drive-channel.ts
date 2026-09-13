@@ -1,17 +1,11 @@
-import { launchArguments } from './claude-setup'
+import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'
-import { firstFrame } from './first-frame'
-import { createLiveMessages, type LiveMessages } from './live-messages'
+import type { LiveMessages } from './live-messages'
+import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
+import type { ClaudePermissionGate } from './permission-gate'
 
-type ClaudeProcess = {
-  write: (text: string) => void
-  kill?: () => void
-  onExit?: (listener: () => unknown) => unknown
-  onData?: (listener: (data: string) => void) => unknown
-}
-type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.
 export type ResumeTarget = { cwd: string; tipId: string }
@@ -20,12 +14,17 @@ export type DriverOptions = {
   mintSessionId: () => string
   now: () => Date
   schedule: (callback: () => void, milliseconds: number) => void
-  spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
-  // `record` takes each batch the Session's MessageDisplay hook delivers.
-  prepare?: (
-    sessionId: string,
-    record: (batch: unknown) => void,
-  ) => { commandArguments: string[]; close: () => void }
+  spawn: (
+    command: string,
+    commandArguments: string[],
+    options: { cwd: string; env: NodeJS.ProcessEnv },
+  ) => ClaudeProcess
+  gate: ClaudePermissionGate
+  // Where each Session's companion plugin directory is written, one subfolder per Session.
+  pluginRoot: string
+  // `record` takes each batch the Session's MessageDisplay hook delivers. Any companion parts
+  // beyond the Permission gate — today, only the MessageDisplay hook — join the same plugin.
+  extraParts?: (sessionId: string, record: (batch: unknown) => void) => CompanionPart[]
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
 }
@@ -39,67 +38,6 @@ export type ManagedSession = TurnTarget & {
   startedAt: string
   // Set when `claude` exits or the driver closes; a Turn queued or mid-pause then types nothing.
   ended: boolean
-}
-// One spawn path with two seeds: a fresh Session names its transcript, a resume names its tip.
-type Seed = { sessionId: string; cwd: string; sessionFlags: string[] } & ClaudeTurnRequest
-
-// The tail of what the TUI drew, enough to read its Mode footer.
-const SCREEN_LIMIT = 8000
-
-function launchEnvironment(): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { ...process.env, TERM: 'xterm-256color' }
-  delete environment.CLAUDE_CODE_CHILD_SESSION
-  return environment
-}
-
-function openChannel(
-  options: DriverOptions,
-  sessions: Map<string, ManagedSession>,
-  seed: Seed,
-): ManagedSession {
-  const executable = options.findExecutable()
-  if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
-  const messages = createLiveMessages()
-  const prepared = options.prepare?.(seed.sessionId, messages.record)
-  let process: ClaudeProcess
-  try {
-    process = options.spawn(
-      executable,
-      [...seed.sessionFlags, ...launchArguments(seed.setup), ...(prepared?.commandArguments ?? [])],
-      { cwd: seed.cwd, env: launchEnvironment() },
-    )
-  } catch {
-    prepared?.close()
-    throw new ClaudeSessionDriverError('launch-failed')
-  }
-  const frame = firstFrame(options.schedule)
-  const session: ManagedSession = {
-    applied: seed.setup,
-    close: prepared?.close ?? (() => {}),
-    cwd: seed.cwd,
-    ended: false,
-    messages,
-    process,
-    prompt: seed.prompt,
-    queue: frame.ready,
-    screen: '',
-    startedAt: options.now().toISOString(),
-  }
-  sessions.set(seed.sessionId, session)
-  process.onData?.((data) => {
-    session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
-    frame.see(session.screen)
-  })
-  options.ledger.bind(seed.sessionId)
-  process.onExit?.(() => {
-    session.ended = true
-    // A later channel for the same Session is not this one's to close.
-    if (sessions.get(seed.sessionId) !== session) return
-    session.close()
-    sessions.delete(seed.sessionId)
-    options.ledger.release(seed.sessionId)
-  })
-  return session
 }
 
 function refuseUnlessResumable(standing: OwnershipStanding) {

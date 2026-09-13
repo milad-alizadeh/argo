@@ -9,6 +9,9 @@ import {
   accountsDialog,
   backlog,
   backlogKeys,
+  choose,
+  chooseAccount,
+  connectForm,
   openRoom,
   press,
   type Run,
@@ -56,10 +59,8 @@ export async function proveLinearConnect(run: Run) {
   await ada(run).getByText(ADA.workspace).waitFor()
   await assertSealed(run)
   await press(accountsDialog(run.page), 'Close')
-  const form = run.page.getByRole('form', { name: 'Connect a Ticket source' })
-  await form
-    .getByRole('combobox', { name: 'Account' })
-    .selectOption({ label: `Linear · ${ADA.name}` })
+  const form = connectForm(run.page)
+  await chooseAccount(run.page, `Linear · ${ADA.name}`)
   const team = form.getByRole('combobox', { name: 'Team' })
   // Linear, not the form, decides which teams Ada can read, so a hidden team is never offered.
   await team.fill('Secret')
@@ -75,9 +76,10 @@ export async function proveLinearConnect(run: Run) {
 // ENG-2 sits under ENG-1, and the done ENG-3 is only a closed blocker.
 export async function proveLinearBacklog(run: Run) {
   assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
-  const row = backlog(run.page).getByRole('button', { name: /^ENG-1/ })
-  await row.getByText('In Progress').waitFor({ state: 'attached' })
-  await row.dispatchEvent('click')
+  await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
+  await backlog(run.page)
+    .getByRole('button', { name: /^ENG-1/ })
+    .dispatchEvent('click')
   const detail = run.page.getByRole('article', { name: 'Ticket ENG-1' })
   await detail.getByRole('heading', { name: 'Bind the mill' }).waitFor()
   await detail.getByText('The mill turns the cards.').waitFor()
@@ -90,11 +92,23 @@ export async function proveLinearBacklog(run: Run) {
   assert.equal(await run.page.getByRole('button', { name: 'New Ticket' }).count(), 0)
 }
 
+// Moving ENG-2 from its row reaches Linear, which the next launch reads back.
+export async function proveLinearStatus(run: Run) {
+  await choose(run.page, backlog(run.page).getByRole('button', { name: 'Status: Todo' }), {
+    role: 'menuitemradio',
+    name: 'In Progress',
+  })
+  await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).nth(1).waitFor()
+}
+
 // A fresh launch unseals the grant, and the short-lived token is renewed before the first read.
 export async function proveLinearRestart(run: Run) {
   const before = renewals(run)
   await openRoom(run.page, 'tickets')
   assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+  // ENG-2 kept the status it was moved to before the restart.
+  const moved = backlog(run.page).getByRole('button', { name: 'Status: In Progress' })
+  assert.equal(await moved.count(), 2)
   assert.ok(renewals(run) > before)
   await assertSealed(run)
 }

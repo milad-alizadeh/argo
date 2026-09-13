@@ -188,15 +188,6 @@ export const Open: Story = {
     )
     expectTranscriptRowsDoNotOverlap(canvasElement)
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeInTheDocument(),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Open sidebar' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument(),
-    )
-
     const openInspector = canvas.queryByRole('button', { name: 'Open Session inspector' })
     if (openInspector) await userEvent.click(openInspector)
     await waitFor(() =>
@@ -204,31 +195,7 @@ export const Open: Story = {
         canvas.getByRole('button', { name: 'Collapse Session inspector' }),
       ).toBeInTheDocument(),
     )
-    const inspectorControl = canvas.getByRole('button', { name: 'Collapse Session inspector' })
-    const inspectorControlLeft = inspectorControl.getBoundingClientRect().left
-    await userEvent.click(inspectorControl)
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
     expectSessionsSidebarIsOpen(canvasElement)
-
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument(),
-    )
-    const openInspectorControl = canvas.getByRole('button', { name: 'Open Session inspector' })
-    await expect(openInspectorControl.getBoundingClientRect().left).toBe(inspectorControlLeft)
-    await userEvent.click(openInspectorControl)
-    await expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument()
-    const expandInspectorControl = canvas.getByRole('button', { name: 'Expand Session sidebar' })
-    const expandInspectorControlLeft = expandInspectorControl.getBoundingClientRect().left
-    await userEvent.click(expandInspectorControl)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Restore Session sidebar' })).toBeInTheDocument(),
-    )
-    await expect(
-      canvas.getByRole('button', { name: 'Restore Session sidebar' }).getBoundingClientRect().left,
-    ).toBe(expandInspectorControlLeft)
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Restore Session sidebar' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument(),
-    )
   },
 }

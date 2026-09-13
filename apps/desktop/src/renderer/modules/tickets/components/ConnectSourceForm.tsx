@@ -21,7 +21,13 @@ import {
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Field, FieldGroup, FieldLabel } from '../../../components/ui/field'
-import { NativeSelect, NativeSelectOption } from '../../../components/ui/native-select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select'
 import type { ContractFailure } from '../../../lib/query-client'
 import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { SOURCE_PRESENTATION } from '../lib/sources'
@@ -84,6 +90,10 @@ export function ConnectSourceForm({
     if (scope !== null) onConnectSource({ accountId: chosen.id, scope: scope.scope })
   }
   const noun = PROVIDER_PRESENTATION[chosen.provider].scope.one
+  const choices = connected.map((account) => ({
+    value: account.id,
+    label: `${PROVIDER_PRESENTATION[account.provider].name} · ${account.login}`,
+  }))
   const problem = error?.message ?? (missingScope ? `Choose a ${noun}.` : null)
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
@@ -104,22 +114,27 @@ export function ConnectSourceForm({
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="connect-account">Account</FieldLabel>
-                <NativeSelect
-                  className="w-full"
-                  id="connect-account"
-                  onChange={(event) => {
+                <Select
+                  items={choices}
+                  onValueChange={(next) => {
+                    if (next === null) return
                     setScope(null)
                     setMissingScope(false)
-                    onSelectAccount(event.target.value)
+                    onSelectAccount(next)
                   }}
                   value={chosen.id}
                 >
-                  {connected.map((account) => (
-                    <NativeSelectOption key={account.id} value={account.id}>
-                      {PROVIDER_PRESENTATION[account.provider].name} · {account.login}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                  <SelectTrigger className="w-full" id="connect-account">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {choices.map((choice) => (
+                      <SelectItem key={choice.value} value={choice.value}>
+                        {choice.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <SourceField
                 login={chosen.login}

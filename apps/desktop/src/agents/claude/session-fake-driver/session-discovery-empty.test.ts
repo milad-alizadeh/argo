@@ -2,11 +2,15 @@ import assert from 'node:assert/strict'
 import { appendFile, copyFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { listSessions } from '../sessions/read-sessions.ts'
+import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { fixturePath } from './session-fixture-files'
 import { fixtureRoot } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
+
+function listSessions(value: unknown, root: string) {
+  return createClaudeSessionReader({ transcripts: root }).listSessions(value)
+}
 const firstMessage = `${JSON.stringify({
   type: 'assistant',
   uuid: 'e-a-2',

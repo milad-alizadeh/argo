@@ -1,5 +1,5 @@
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   Empty,
@@ -11,7 +11,7 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { useToastManager } from '../../../components/ui/toast'
 import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
-import { type Backlog, backlogRows, count } from '../lib/backlog'
+import { type Backlog, backlogRows, count, treeRails, unfoldedRows } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 import { TicketRow } from './TicketRow'
 
@@ -19,6 +19,8 @@ export type TicketListProps = {
   backlog: Backlog
   selectedKey: string | null
   onSelect: (key: string) => void
+  // The moment a Ticket's age is measured against, so a caller controls whether it moves.
+  now: number
 }
 
 function tally({ tickets, query, total, hasMore, searching, provider }: Backlog): string {
@@ -95,8 +97,22 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
   )
 }
 
-export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) {
-  const now = Date.now()
+// A folded parent hides the rows under it until it is unfolded; every parent starts unfolded.
+function useFolds() {
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
+  const toggle = (key: string) =>
+    setFolded((current) => {
+      const next = new Set(current)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+  return { folded, toggle }
+}
+
+export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListProps) {
+  const { folded, toggle } = useFolds()
+  const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
+  const rails = treeRails(rows)
   return (
     <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
@@ -114,14 +130,19 @@ export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) 
         aria-busy={backlog.searching}
         className="grid min-h-0 flex-1 content-start gap-px overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset) aria-busy:opacity-60"
       >
-        {backlogRows(backlog.tickets).map((row) => (
+        {rows.map((row, index) => (
           <li key={row.ticket.key}>
             <TicketRow
-              {...row}
-              keyColumn={SOURCE_PRESENTATION[backlog.provider].keyColumn}
+              rails={rails[index] ?? []}
+              folded={folded.has(row.ticket.key)}
               now={now}
+              onChangeStatus={(status) => backlog.onChangeStatus(row.ticket.key, status)}
               onSelect={() => onSelect(row.ticket.key)}
+              onToggle={() => toggle(row.ticket.key)}
+              presentation={SOURCE_PRESENTATION[backlog.provider]}
+              row={row}
               selected={row.ticket.key === selectedKey}
+              statuses={backlog.statuses}
             />
           </li>
         ))}
