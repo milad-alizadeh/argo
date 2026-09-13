@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { createServer } from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -12,9 +13,15 @@ import {
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
-const untrustedPage = `data:text/html,${encodeURIComponent(
-  '<meta http-equiv="Content-Security-Policy" content="script-src \'unsafe-eval\'"><h1>Untrusted page</h1>',
-)}`
+async function serveUntrustedPage() {
+  const server = createServer((_request, response) => {
+    response.end('<h1>Untrusted page</h1>')
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  assert(address && typeof address !== 'string')
+  return { server, url: `http://127.0.0.1:${address.port}` }
+}
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -92,12 +99,19 @@ async function prove(application, fixture) {
     await chmod(fixture.projectPath, 0o700)
   }
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  await application.evaluate(
-    async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
-    untrustedPage,
-  )
-  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
-  assert.equal((await invoke(request)).code, 'access-denied')
+  const untrustedPage = await serveUntrustedPage()
+  try {
+    await application.evaluate(
+      async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
+      untrustedPage.url,
+    )
+    await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+    assert.equal((await invoke(request)).code, 'access-denied')
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      untrustedPage.server.close((error) => (error ? reject(error) : resolve())),
+    )
+  }
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
