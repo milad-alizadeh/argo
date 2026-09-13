@@ -1,11 +1,11 @@
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
-import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
+import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { ArrowUp } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { type RefObject, useCallback, useRef, useState } from 'react'
 
 import { Button } from '../../../components/ui/button'
 
@@ -26,10 +26,12 @@ function editorState(text: string) {
 
 function ComposerEditor({
   draft,
+  editorRef,
   onChange,
   onSend,
 }: {
   draft: string
+  editorRef: RefObject<LexicalEditor | null>
   onChange: (text: string) => void
   onSend: () => void
 }) {
@@ -79,22 +81,9 @@ function ComposerEditor({
           state.read(() => onChange($getRoot().getTextContent()))
         }}
       />
-      <DraftSync draft={draft} />
+      <EditorRefPlugin editorRef={editorRef} />
     </LexicalComposer>
   )
-}
-
-function DraftSync({ draft }: { draft: string }) {
-  const [editor] = useLexicalComposerContext()
-  useEffect(() => {
-    editor.update(() => {
-      const root = $getRoot()
-      if (root.getTextContent() === draft) return
-      root.clear()
-      root.append($createParagraphNode().append($createTextNode(draft)))
-    })
-  }, [draft, editor])
-  return null
 }
 
 export function SessionComposer({
@@ -105,6 +94,9 @@ export function SessionComposer({
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
+  // The editor owns its text and reports it up. Writing the draft back on every change raced a
+  // keystroke typed before the re-render, dropping it and moving the caret to the start.
+  const editorRef = useRef<LexicalEditor>(null)
 
   const changeDraft = useCallback(
     (text: string) => {
@@ -115,7 +107,12 @@ export function SessionComposer({
 
   const send = useCallback(async () => {
     if (!draft.trim()) return
+    // Taken before the await: a Session switch mid-send remounts the editor under the ref.
+    const editor = editorRef.current
     if (!(await onSend(draft))) return
+    editor?.update(() => {
+      $getRoot().clear().append($createParagraphNode())
+    })
     setDrafts((current) => new Map(current).set(sessionId, ''))
   }, [draft, onSend, sessionId])
 
@@ -136,6 +133,7 @@ export function SessionComposer({
           <ComposerEditor
             key={sessionId}
             draft={draft}
+            editorRef={editorRef}
             onChange={changeDraft}
             onSend={() => void send()}
           />

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
@@ -51,6 +51,33 @@ function ManagedComposerStory() {
   )
 }
 
+// The send stays pending until the reader finishes it, so a Session switch can land mid-send.
+function PendingSendStory() {
+  const [sessionId, setSessionId] = useState('session-one')
+  const finish = useRef<(sent: boolean) => void>(() => {})
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <div className="mb-4 flex gap-2">
+        <Button onClick={() => setSessionId('session-two')} type="button" variant="outline">
+          Session two
+        </Button>
+        <Button onClick={() => finish.current(true)} type="button" variant="outline">
+          Finish send
+        </Button>
+      </div>
+      <SessionComposer
+        onSend={() =>
+          new Promise<boolean>((resolve) => {
+            finish.current = resolve
+          })
+        }
+        sessionId={sessionId}
+      />
+    </div>
+  )
+}
+
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
@@ -85,5 +112,21 @@ export const ManagedTurn: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Interrupt' }))
     await expect(composer).toHaveTextContent('Keep this draft while the Turn stops.')
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
+  },
+}
+
+export const SendFinishesInAnotherSession: Story = {
+  render: () => <PendingSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Sent from session one.')
+    await userEvent.keyboard('{Enter}')
+    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Drafted in session two.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Finish send' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Drafted in session two.')
   },
 }

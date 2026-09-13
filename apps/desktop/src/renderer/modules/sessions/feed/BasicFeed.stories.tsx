@@ -4,6 +4,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import type { SessionError, SessionFeed } from '../types'
 
 import { BasicFeed } from './BasicFeed'
+import { RICH_MARKDOWN } from './content/feedSamples'
 
 const feed = {
   version: 1,
@@ -87,5 +88,49 @@ export const Failure: Story = {
     await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
     await expect(canvas.getByRole('alert')).toHaveTextContent('Unable to load Session')
     await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
+  },
+}
+
+const richFeed = {
+  ...feed,
+  sessionId: 'rich',
+  chainId: 'rich',
+  revision: 'rich-one',
+  rows: [
+    { shape: 'prose', id: 'rich-prompt', role: 'user', text: 'Show me the **composer** check.' },
+    { shape: 'prose', id: 'rich-answer', role: 'assistant', text: RICH_MARKDOWN },
+  ],
+} satisfies SessionFeed
+
+function drawnRows(canvasElement: HTMLElement) {
+  return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')].filter(
+    (row) => row.closest('.feed__measured') === null,
+  )
+}
+
+// Each drawn row keeps the height its measured copy was given, after the highlighter and the
+// images have finished (ADR-0035). User prose stays the text it was typed as.
+export const FormattedProse: Story = {
+  args: { feed: richFeed, selectedSessionId: 'rich' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+    const [prompt, answer] = drawnRows(canvasElement)
+    await expect(prompt).toHaveTextContent('Show me the **composer** check.')
+    await waitFor(() =>
+      expect(answer?.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
+    )
+    await waitFor(() => expect(answer?.querySelector('button[data-state="loaded"]')).not.toBeNull())
+    await waitFor(() =>
+      expect(within(answer as HTMLElement).getByText('Image unavailable')).toBeVisible(),
+    )
+    for (const row of drawnRows(canvasElement)) {
+      const measured = canvasElement.querySelector(
+        `.feed__measured [data-feed-row="${row.dataset.feedRow}"]`,
+      )
+      await expect(Number.parseFloat(row.style.height)).toBe(
+        measured?.getBoundingClientRect().height,
+      )
+      await expect(row.scrollHeight).toBe(row.clientHeight)
+    }
   },
 }
