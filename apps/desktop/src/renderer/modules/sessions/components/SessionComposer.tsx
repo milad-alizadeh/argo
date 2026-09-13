@@ -8,7 +8,7 @@ import { ArrowUp } from 'lucide-react'
 import { type RefObject, useCallback, useRef, useState } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
-import { Button } from '../../../components/Button'
+import { Button } from '../../../components/ui/button'
 import { SessionPlanPopover } from './SessionPlanPopover'
 
 export type SessionComposerProps = {

@@ -2,8 +2,8 @@ import { BookMarked, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 
 import type { ConnectionSummary } from '@/core/tickets/contract'
-import { Button } from '../../../components/Button'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Button } from '../../../components/ui/button'
 import {
   Item,
   ItemActions,

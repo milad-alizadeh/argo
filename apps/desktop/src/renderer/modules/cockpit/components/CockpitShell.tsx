@@ -2,7 +2,7 @@ import { PanelLeftIcon } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
-import { Button } from '../../../components/Button'
+import { Button } from '../../../components/ui/button'
 import {
   ResizableHandle,
   ResizablePanel,

@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 
 import type { PlanEntryStatus, SessionPlan } from '@/core/sessions/models'
-import { Button } from '../../../components/Button'
+import { Button } from '../../../components/ui/button'
 import {
   Popover,
   PopoverContent,

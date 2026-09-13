@@ -2,7 +2,7 @@ import { Check, ChevronDown, FolderGit2, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 
 import { REGISTER_PROJECT_COMMAND } from '@/core/commands/shortcuts'
-import { Button } from '../../../components/Button'
+import { Button } from '../../../components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -1,6 +1,6 @@
 import { Download, ImageOff, X } from 'lucide-react'
 import { type ReactEventHandler, type ReactNode, useState } from 'react'
-import { Button } from '@/renderer/components/Button'
+import { Button } from '@/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,

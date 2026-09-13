@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react'
-import { Button } from '../../../components/Button'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { Button } from '../../../components/ui/button'
 
 export type SignInNoticeProps = { onConnect: () => void; onDismiss: () => void }
 
