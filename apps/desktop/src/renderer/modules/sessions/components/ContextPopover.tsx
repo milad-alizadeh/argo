@@ -160,7 +160,7 @@ export function ContextPopover({
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
-          <PopoverDescription>
+          <PopoverDescription className="type-prose">
             The working memory for the next response: instructions, tools, files, and conversation.
             As it fills, new information competes with older details.
           </PopoverDescription>
