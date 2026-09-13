@@ -16,6 +16,7 @@ export type RequestParams = {
   'thread/resume': ThreadConfiguration & { threadId: string }
   'turn/start': { threadId: string; input: Input[] }
   'turn/interrupt': { threadId: string; turnId: string }
+  'thread/name/set': { threadId: string; name: string }
 }
 export type WireMessage =
   | { method: string; params: Record<string, unknown>; id?: RequestID }
@@ -137,4 +138,16 @@ export function readCompletedAgentMessage(message: WireMessage): AgentMessageTex
 export function readInterrupt(value: unknown): void {
   const result = record(value, 'Interrupt result')
   assert.equal(Object.keys(result).length, 0, 'Interrupt response must be empty')
+}
+
+export function readRename(value: unknown): void {
+  record(value, 'Thread rename result')
+}
+
+export function readUpdatedThreadName(message: WireMessage) {
+  if (!('method' in message) || message.method !== 'thread/name/updated') return undefined
+  return {
+    threadId: string(message.params.threadId, 'Updated thread ID'),
+    title: string(message.params.threadName, 'Updated thread name'),
+  }
 }

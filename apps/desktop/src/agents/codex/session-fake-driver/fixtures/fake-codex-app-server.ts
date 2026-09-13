@@ -49,6 +49,15 @@ lines.on('line', (line) => {
     case 'turn/interrupt':
       send({ id: message.id, result: {} })
       return
+    case 'thread/name/set': {
+      const params = message.params ?? {}
+      send({ id: message.id, result: {} })
+      send({
+        method: 'thread/name/updated',
+        params: { threadId: params.threadId, threadName: params.name },
+      })
+      return
+    }
     default:
       send({
         id: message.id,

@@ -16,9 +16,11 @@ import {
   codexSessionStartReplySchema,
   type SessionFeedReply,
   type SessionListReply,
+  type SessionRenameReply,
   sessionError,
   sessionFeedReplySchema,
   sessionListReplySchema,
+  sessionRenameReplySchema,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
 
@@ -48,6 +50,7 @@ export type SessionClient = {
     sessionId: string
     revision: string | null
   }): Promise<SessionFeedReply>
+  renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
 }
 
 type Invoke = (operation: keyof typeof SESSION_OPERATIONS, request: unknown) => Promise<unknown>
@@ -96,6 +99,7 @@ export function createSessionClient(invoke: Invoke): SessionClient {
     sendCodexSession: clientRequest(invoke, 'sendCodex', codexSessionSendReplySchema),
     startCodexSession: clientRequest(invoke, 'startCodex', codexSessionStartReplySchema),
     listSessions: () => clientRequest(invoke, 'list', sessionListReplySchema)(undefined),
+    renameSession: clientRequest(invoke, 'rename', sessionRenameReplySchema),
     async readSessionFeed(request) {
       const requestId = randomUUID()
       const message = { ...request, version: 1, type: SESSION_OPERATIONS.feed.name, requestId }

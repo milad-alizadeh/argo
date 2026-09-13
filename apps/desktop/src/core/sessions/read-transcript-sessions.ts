@@ -32,7 +32,7 @@ function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]):
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
-    return held === undefined ? session : { ...session, posture: held.posture }
+    return held === undefined ? session : { ...session, posture: held.posture, title: held.title }
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),

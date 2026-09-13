@@ -61,3 +61,32 @@ test('reports a Codex Session that is no longer drivable', async () => {
   assert.equal(reply.code, 'codex-not-drivable')
   assert.equal(reply.requestId, 'send-2')
 })
+
+test('renames the selected managed Codex Session with its accepted native title', async () => {
+  const reply = await driveCodexSession(
+    {
+      version: 1,
+      type: 'session.rename',
+      requestId: 'rename-1',
+      sessionId,
+      name: 'Investigate the roster',
+    },
+    {
+      async interrupt() {},
+      async rename(receivedSessionId, name) {
+        assert.equal(receivedSessionId, sessionId)
+        assert.equal(name, 'Investigate the roster')
+        return 'Investigate the roster'
+      },
+      async send() {},
+    },
+  )
+
+  assert.deepEqual(reply, {
+    version: 1,
+    type: 'session.renamed',
+    requestId: 'rename-1',
+    sessionId,
+    title: 'Investigate the roster',
+  })
+})

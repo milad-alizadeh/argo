@@ -5,6 +5,7 @@ import {
   decideClaudePermission,
   readClaudePermission,
 } from '../../agents/claude/drive/permission-session'
+import { renameClaudeSession } from '../../agents/claude/drive/rename-session'
 import {
   type ClaudeSessionStarter,
   startClaudeSession,
@@ -46,6 +47,12 @@ export function attachSessionBridge(
   const handlers = {
     list: storage.reader.listSessions,
     feed: storage.reader.readSessionFeed,
+    async rename(request: unknown) {
+      const claude = await renameClaudeSession(request, storage.driver)
+      return claude.type === 'session.renamed'
+        ? claude
+        : driveCodexSession(request, storage.codexDriver)
+    },
     startClaude: (request: unknown) => startClaudeSession(request, storage.starter),
     sendClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
     interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),

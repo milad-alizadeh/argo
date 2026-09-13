@@ -1,3 +1,10 @@
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuTrigger,
+} from '@/renderer/components/ui/context-menu'
 import type { Session } from '../types'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
@@ -35,41 +42,55 @@ function sessionName(session: Session): string {
 export function SessionRosterItem({
   onFocus,
   onSelect,
+  onRename,
   selected,
   session,
   tabIndex,
 }: {
   onFocus: () => void
   onSelect: () => void
+  onRename: () => void
   selected: boolean
   session: Session
   tabIndex: number
 }) {
   return (
     <li>
-      <button
-        aria-current={selected ? 'page' : undefined}
-        className={`w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
-        data-session-id={session.id}
-        onClick={onSelect}
-        onFocus={onFocus}
-        tabIndex={tabIndex}
-        type="button"
-      >
-        <span className="flex items-start gap-tight">
-          <span
-            aria-hidden="true"
-            className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
-          />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium">{sessionName(session)}</span>
-            <span className="block truncate text-meta text-faint">{activitySummary(session)}</span>
-            <span className="block truncate font-mono text-meta text-faint">
-              {sessionMetadata(session).join(' · ')}
-            </span>
-          </span>
-        </span>
-      </button>
+      <ContextMenu>
+        <ContextMenuTrigger
+          render={
+            <button
+              aria-current={selected ? 'page' : undefined}
+              className={`w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
+              data-session-id={session.id}
+              onClick={onSelect}
+              onFocus={onFocus}
+              tabIndex={tabIndex}
+              type="button"
+            >
+              <span className="flex items-start gap-tight">
+                <span
+                  aria-hidden="true"
+                  className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{sessionName(session)}</span>
+                  <span className="block truncate text-meta text-faint">
+                    {activitySummary(session)}
+                  </span>
+                  <span className="block truncate font-mono text-meta text-faint">
+                    {sessionMetadata(session).join(' · ')}
+                  </span>
+                </span>
+              </span>
+            </button>
+          }
+        />
+        <ContextMenuContent aria-label={`${sessionName(session)} actions`}>
+          <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
+          <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </li>
   )
 }

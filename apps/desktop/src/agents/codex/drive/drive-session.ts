@@ -4,18 +4,37 @@ import {
   type CodexSessionSendReply,
   codexSessionInterruptRequestSchema,
   codexSessionSendRequestSchema,
+  type SessionRenameReply,
   sessionError,
+  sessionRenameRequestSchema,
 } from '@/core/sessions/contract'
 
 type CodexSessionDrive = {
   interrupt: (sessionId: string) => Promise<void>
+  rename: (sessionId: string, name: string) => Promise<string>
   send: (sessionId: string, prompt: string) => Promise<void>
 }
 
 export async function driveCodexSession(
   value: unknown,
   driver: CodexSessionDrive,
-): Promise<CodexSessionSendReply | CodexSessionInterruptReply> {
+): Promise<CodexSessionSendReply | CodexSessionInterruptReply | SessionRenameReply> {
+  const rename = sessionRenameRequestSchema.safeParse(value)
+  if (rename.success) {
+    const request = rename.data
+    try {
+      const title = await driver.rename(request.sessionId, request.name)
+      return {
+        version: 1,
+        type: 'session.renamed',
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+        title,
+      }
+    } catch {
+      return sessionError('codex-not-drivable', request.requestId)
+    }
+  }
   const send = codexSessionSendRequestSchema.safeParse(value)
   if (send.success) {
     const request = send.data

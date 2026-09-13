@@ -96,6 +96,22 @@ export const Discovered: Story = {
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       '/sessions/second-session',
     )
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
+    await userEvent.click(rename)
+    const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
+    const input = within(dialog).getByRole('textbox', { name: 'Name' })
+    await expect(input).toHaveValue('Read the Session transcript')
+    await userEvent.clear(input)
+    await userEvent.type(input, '  Keep the roster stable\n')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('button', { name: /Keep the roster stable/ })).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+      '/sessions/second-session',
+    )
+    await expect(
+      canvas.getAllByRole('button').filter((button) => button.dataset.sessionId),
+    ).toHaveLength(2)
   },
 }
 

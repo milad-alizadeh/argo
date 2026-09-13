@@ -63,14 +63,11 @@
   - **custom** — a person typed it at the CLI's prompt. The `custom-title` record `/rename` writes,
     and what Argo's own mirror leaves behind when it types there (#1494).
 
-  Told apart from the two names ARGO holds — a Session's first prompt, and the name a reader typed
-  in the rename dialog — because that is what decides which way a name travels. Claude wins where
-  Claude has a name; Argo types the name it holds where Claude has none, so no Session is left
-  reading as a machine slug on the phone. A name the reader typed in Argo is the one exception: it
-  is mirrored over a CLI title, because a person naming a Session is not a reading to be yielded.
+  The first prompt is an Argo-derived name. A name that a reader enters in Argo travels to the CLI.
+  It replaces a derived name because the reader chose it.
 
-  **`codex` holds none.** It has no `/rename` and no `customTitle`, so every `codex` Session keeps
-  the name Argo derives and nothing is typed at its prompt.
+  Claude records a custom title after `/rename`. Codex 0.147.0 accepts `thread/name/set` and sends
+  `thread/name/updated`. Both CLIs therefore provide a native custom title.
 
 - **Session status** — a DERIVED rollup on the Session, with one DIRECT value beside it:
   - **starting** — Argo started the process and it has not written to the PTY yet. **DIRECT and

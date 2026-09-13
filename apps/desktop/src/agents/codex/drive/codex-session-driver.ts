@@ -1,8 +1,16 @@
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
+import { CodexSessionDriverError, launchEnvironment } from './driver-error'
 import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
-import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
+import {
+  readCompletedTurn,
+  readInterrupt,
+  readRename,
+  readStartedTurn,
+  readThreadId,
+  readUpdatedThreadName,
+} from './protocol'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
@@ -18,6 +26,7 @@ type ManagedSession = {
   turnId: string | null
   failed: boolean
   messages: LiveMessages
+  title?: { text: string; source: 'custom' }
 }
 
 export type { LiveMessage }
@@ -26,29 +35,13 @@ export type CodexSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => Promise<string>
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
+  rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
   liveMessages: (sessionId: string) => LiveMessage[]
   close: () => void
 }
 
-export class CodexSessionDriverError extends Error {
-  constructor(readonly code: 'codex-cli-unavailable' | 'codex-launch-failed') {
-    super(
-      code === 'codex-cli-unavailable'
-        ? 'Codex is not available. Run codex doctor to repair it.'
-        : 'Argo could not start Codex.',
-    )
-  }
-}
-
-// The scrub ADR-0024 requires: an exported credential is the one way a spawned Session could be
-// billed outside the ChatGPT sign-in Argo owns.
-function launchEnvironment(): NodeJS.ProcessEnv {
-  const environment = { ...process.env }
-  delete environment.OPENAI_API_KEY
-  delete environment.CODEX_API_KEY
-  return environment
-}
+export { CodexSessionDriverError } from './driver-error'
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
 type SessionRegistry = { sessions: Map<string, ManagedSession>; turn: Turn }
@@ -89,6 +82,12 @@ async function beginManagedSession(
     })
     channel.onNotification((message) => {
       if (messages.record(message)) return
+      const renamed = readUpdatedThreadName(message)
+      if (renamed?.threadId === startedThreadId) {
+        const session = sessions.get(startedThreadId)
+        if (session) session.title = { text: renamed.title, source: 'custom' }
+        return
+      }
       const completed = readCompletedTurn(message)
       if (completed?.threadId !== startedThreadId) return
       const session = sessions.get(startedThreadId)
@@ -140,6 +139,12 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
+    async rename(sessionId, name) {
+      const session = runningSession(sessionId)
+      await session.channel.request('thread/name/set', { threadId: sessionId, name }, readRename)
+      session.title = { text: name, source: 'custom' }
+      return name
+    },
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
         managedRow(id, {
@@ -147,6 +152,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
           cli: 'codex',
           status: session.failed ? 'unknown' : 'running',
           setup: { model: null, effort: null, mode: null },
+          title: session.title,
         }),
       ),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
