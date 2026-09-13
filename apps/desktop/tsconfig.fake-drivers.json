@@ -19,6 +19,8 @@
   },
   "include": [
     "src/core/projects/fake-driver/**/*.ts",
+    "src/core/tickets/fake-driver/**/*.ts",
+    "src/providers/github/fake-driver/**/*.ts",
     "src/core/sessions/fake-driver/**/*.ts",
     "src/agents/claude/session-fake-driver/**/*.ts",
     "src/agents/codex/session-fake-driver/**/*.ts",

@@ -6,6 +6,7 @@ import { AppQueryProvider } from '../src/renderer/app-query-provider'
 import '../src/renderer/styles/globals.css'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookProjectBridge } from './storybook-projects'
+import { ticketsHost } from './tickets-host'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
@@ -69,6 +70,7 @@ host.argo = {
       permission: null,
     }),
   ...storybookProjectBridge,
+  ...ticketsHost,
   zoomFactor: () => 1,
 }
 
