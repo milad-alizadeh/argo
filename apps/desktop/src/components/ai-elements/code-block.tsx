@@ -8,13 +8,11 @@ import React, {
   useEffect,
   useState,
 } from 'react'
-import {
-  type BundledLanguage,
-  type BundledTheme,
-  createHighlighter,
-  type HighlighterGeneric,
-} from 'shiki'
+import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
+import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
+import githubDarkDefault from 'shiki/themes/github-dark-default.mjs'
+import githubLight from 'shiki/themes/github-light.mjs'
 import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 
@@ -23,17 +21,18 @@ const THEMES = { light: 'github-light', dark: 'github-dark-default' } as const
 type Token = { content: string; light?: string; dark?: string }
 
 // The JavaScript engine because the renderer's CSP refuses the WebAssembly the default one
-// compiles. Grammars load on first use, so the highlighter starts with none.
-let highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>> | null = null
+// compiles. Grammars load on first use, so the highlighter starts with none. The core build ships
+// only the two themes imported here, where the full `shiki` entry would bundle every theme.
+let highlighter: Promise<HighlighterCore> | null = null
 
 async function highlight(code: string, language: BundledLanguage): Promise<Token[][]> {
-  highlighter ??= createHighlighter({
+  highlighter ??= createHighlighterCore({
     engine: createJavaScriptRegexEngine(),
     langs: [],
-    themes: Object.values(THEMES),
+    themes: [githubLight, githubDarkDefault],
   })
-  const loaded: HighlighterGeneric<BundledLanguage, BundledTheme> = await highlighter
-  await loaded.loadLanguage(language)
+  const loaded = await highlighter
+  await loaded.loadLanguage(bundledLanguages[language])
   return loaded.codeToTokensWithThemes(code, { lang: language, themes: THEMES }).map((line) =>
     line.map((token) => ({
       content: token.content,

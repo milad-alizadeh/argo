@@ -1,4 +1,4 @@
-import { type BundledLanguage, bundledLanguages, bundledLanguagesInfo } from 'shiki'
+import { type BundledLanguage, bundledLanguages, bundledLanguagesInfo } from 'shiki/langs'
 
 // A fence language Argo can highlight. Anything else is `null`, which draws as plain code.
 export type CodeLanguage = { grammar: BundledLanguage; label: string }
