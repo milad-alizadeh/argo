@@ -97,31 +97,7 @@ function claudeArchiveRoot(): string {
   )
 }
 
-function createWindow(): BrowserWindow {
-  const userData = app.getPath('userData')
-  const window = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
-    // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
-    // the frame keeps the native controls and gives up the native title bar.
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
-    // The window paints before the renderer does. Without this it paints white, which is a flash
-    // of the wrong appearance on every launch into the dark one.
-    backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
-    webPreferences: {
-      // Forge's Vite plugin emits main and preload side by side in .vite/build.
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
-    },
-  })
-
-  const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
-  const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
-  attachWindowNavigation(window)
+function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
   const claudeSessionDriver = createSystemClaudeSessionDriver(
     path.join(userData, 'claude-permission-plugins'),
   )
@@ -153,11 +129,39 @@ function createWindow(): BrowserWindow {
   })
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, { access, rendererURL })
-  installMenu(window)
   app.once('before-quit', () => {
     claudeSessionDriver.close()
     codexSessionDriver.close()
   })
+}
+
+function createWindow(): BrowserWindow {
+  const userData = app.getPath('userData')
+  const window = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
+    // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
+    // the frame keeps the native controls and gives up the native title bar.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 18 },
+    // The window paints before the renderer does. Without this it paints white, which is a flash
+    // of the wrong appearance on every launch into the dark one.
+    backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
+    webPreferences: {
+      // Forge's Vite plugin emits main and preload side by side in .vite/build.
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  })
+
+  const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+  const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
+  attachWindowNavigation(window)
+  attachBridges(window, userData, rendererURL)
+  installMenu(window)
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
