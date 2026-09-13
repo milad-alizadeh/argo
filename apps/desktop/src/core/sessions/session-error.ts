@@ -14,6 +14,9 @@ export const SESSION_ERRORS = {
   'launch-failed': 'Argo could not start Claude Code.',
   'not-drivable': 'Argo no longer holds this Claude Session.',
   'stale-permission': 'This Claude permission is no longer waiting.',
+  'codex-cli-unavailable': 'Codex is not available. Run codex doctor to repair it.',
+  'codex-launch-failed': 'Argo could not start Codex.',
+  'codex-not-drivable': 'Argo no longer holds this Codex Session.',
 } as const
 
 export type SessionErrorCode = keyof typeof SESSION_ERRORS

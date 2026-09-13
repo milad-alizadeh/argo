@@ -3,7 +3,10 @@
 import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
+import {
+  createTranscriptSessionReader,
+  mergeManagedRoster,
+} from '@/core/sessions/read-transcript-sessions'
 import { discoverSessions, readSessionFiles } from './discover'
 import { projectFeed } from './feed'
 
@@ -18,16 +21,7 @@ export function createClaudeSessionReader(roots: {
   return createTranscriptSessionReader({
     discoverSessions: async () => {
       const discovered = await discoverSessions(roots.transcripts, roots.archive)
-      const managed = roots.managedSessions?.() ?? []
-      const managedById = new Map(managed.map((session) => [session.id, session]))
-      const observed = discovered.rows.map((session) => {
-        const held = managedById.get(session.id)
-        return held === undefined ? session : { ...session, posture: held.posture }
-      })
-      const unobserved = managed.filter(
-        (session) => !discovered.rows.some(({ id }) => id === session.id),
-      )
-      return { ...discovered, rows: [...observed, ...unobserved] }
+      return mergeManagedRoster(discovered, roots.managedSessions?.() ?? [])
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
-import { z } from 'zod'
+import './zod-jitless'
 import { createAccountClient } from './core/accounts/client'
 import { ACCOUNT_CHANNEL } from './core/accounts/contract'
 import {
@@ -14,9 +14,6 @@ import { createSessionClient } from './core/sessions/client'
 import { SESSION_OPERATIONS } from './core/sessions/operations'
 import { createTicketClient } from './core/tickets/client'
 import { TICKET_CHANNEL } from './core/tickets/contract'
-
-// Electron's isolated preload world blocks Zod's generated validator path.
-z.config({ jitless: true })
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {

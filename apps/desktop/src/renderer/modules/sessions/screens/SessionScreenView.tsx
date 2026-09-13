@@ -1,4 +1,5 @@
-import { type ReactNode, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
@@ -6,8 +7,9 @@ import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import type { SessionFeedRow } from '../types'
 import { BasicFeed } from '../feed/BasicFeed'
-import { useClaudeComposer } from '../hooks/useClaudeComposer'
 import { useClaudePermission } from '../hooks/useClaudePermission'
+import type { SessionCli } from '../hooks/useSessionComposer'
+import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessions } from '../hooks/useSessions'
 
 type SessionShellProps = {
@@ -32,10 +34,12 @@ export function SessionScreenView() {
   const newSession = sessionId === 'new'
   const selectedSessionId = newSession ? null : (sessionId ?? null)
   const { feed, feedError, roster } = useSessions(selectedSessionId)
-  const composer = useClaudeComposer({ cockpit, navigate, roster, selectedSessionId })
-  const permission = useClaudePermission(selectedSessionId)
+  const [newSessionCli, setNewSessionCli] = useState<SessionCli>('claude')
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
+  const cli: SessionCli = selectedSessionId === null ? newSessionCli : sessionCliOf(session)
+  const composer = useSessionComposer({ cli, cockpit, navigate, roster, selectedSessionId })
+  const permission = useClaudePermission(selectedSessionId)
   return (
     <SessionShell
       feed={feed}
@@ -43,11 +47,26 @@ export function SessionScreenView() {
       selectedSessionId={selectedSessionId}
       onOpenEvidence={setEvidence}
       composer={
-        <SessionComposerArea composer={composer} permission={permission} session={session} />
+        <SessionComposerArea
+          composer={composer}
+          permission={permission}
+          session={session}
+          cliPicker={
+            selectedSessionId === null
+              ? { cli: newSessionCli, onChangeCli: setNewSessionCli }
+              : null
+          }
+        />
       }
       inspector={evidence === null ? <SessionFacts session={session} /> : <EvidenceInspector evidence={evidence} />}
     />
   )
+}
+
+// The Roster stores an open `cli` string (ADR-0021: an adapter registers, shared code doesn't
+// enumerate); this is the one seam that narrows it back to the closed `SessionCli` union.
+function sessionCliOf(session: { cli: string } | null): SessionCli {
+  return session?.cli === 'codex' ? 'codex' : 'claude'
 }
 
 export function SessionShell({
