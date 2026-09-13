@@ -201,6 +201,8 @@ export const GroupedToolCalls: Story = {
     await userEvent.click(group)
     const command = await canvas.findByRole('button', { name: /Ran bun test composer/ })
     await userEvent.click(command)
-    await expect(canvas.getByLabelText('Opened evidence')).toHaveTextContent('bun test composer')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Opened evidence')).toHaveTextContent('bun test composer'),
+    )
   },
 }
