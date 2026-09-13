@@ -41,7 +41,7 @@ function Repository({
           <Spinner aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemDescription>Reading the connected repository…</ItemDescription>
+          <ItemDescription className="type-meta">Reading the connected repository…</ItemDescription>
         </ItemContent>
       </Item>
     )
@@ -53,11 +53,16 @@ function Repository({
           <BookMarked aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>No repository connected</ItemTitle>
-          <ItemDescription>Connect a GitHub repository.</ItemDescription>
+          <ItemTitle className="type-label">No repository connected</ItemTitle>
+          <ItemDescription className="type-meta">Connect a GitHub repository.</ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Button aria-label="Connect a repository" onClick={onConnect} size="sm">
+          <Button
+            aria-label="Connect a repository"
+            className="type-label"
+            onClick={onConnect}
+            size="sm"
+          >
             Connect
           </Button>
         </ItemActions>
@@ -70,8 +75,10 @@ function Repository({
         <BookMarked aria-hidden="true" />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="max-w-full truncate font-mono">{connection.scope}</ItemTitle>
-        <ItemDescription className="flex items-center gap-(--spacing-shell-icon)">
+        <ItemTitle className="type-label max-w-full truncate font-mono">
+          {connection.scope}
+        </ItemTitle>
+        <ItemDescription className="type-meta flex items-center gap-(--spacing-shell-icon)">
           <ConnectionStatusMark state={connection.state}>
             Read through {connection.login ?? 'a disconnected Account'}
           </ConnectionStatusMark>
@@ -80,6 +87,7 @@ function Repository({
       <ItemActions>
         <Button
           aria-label="Disconnect repository"
+          className="type-label"
           disabled={disconnecting}
           onClick={onDisconnect}
           size="sm"
