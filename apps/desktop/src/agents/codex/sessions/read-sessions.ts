@@ -2,10 +2,7 @@ import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
 import { projectFeed } from '@/core/sessions/feed'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import {
-  createTranscriptSessionReader,
-  mergeManagedRoster,
-} from '@/core/sessions/read-transcript-sessions'
+import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
 import { discoverSessions, readSessionFiles } from './discover'
 
 export function createCodexSessionReader(
@@ -13,12 +10,10 @@ export function createCodexSessionReader(
   options?: { managedSessions?: () => SessionRosterRow[] },
 ): SessionReader {
   return createTranscriptSessionReader({
-    discoverSessions: async () => {
-      const discovered = await discoverSessions(root)
-      return mergeManagedRoster(discovered, options?.managedSessions?.() ?? [])
-    },
+    discoverSessions: () => discoverSessions(root),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
+    managedSessions: options?.managedSessions,
   })
 }
 

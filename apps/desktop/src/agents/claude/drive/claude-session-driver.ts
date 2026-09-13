@@ -1,9 +1,9 @@
 import type { ClaudePermission } from '@/core/sessions/contract'
+import { managedRosterRow } from '@/core/sessions/managed-roster-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { claudeTurn } from './claude-turn'
+import { type ClaudeTerminal, createTurnQueue, type TurnQueue } from './turn-queue'
 
-type ClaudeProcess = {
-  write: (text: string) => void
+type ClaudeProcess = ClaudeTerminal & {
   kill?: () => void
   onExit?: (listener: () => unknown) => unknown
 }
@@ -11,11 +11,19 @@ type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
   findExecutable: () => string | null
   mintSessionId: () => string
-  schedule: (callback: () => void) => void
+  now: () => Date
+  schedule: (callback: () => void, delayMs: number) => void
   spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
   prepare?: (sessionId: string) => { commandArguments: string[]; close: () => void }
 }
-type ManagedSession = { close: () => void; cwd: string; process: ClaudeProcess; prompt: string }
+type ManagedSession = {
+  close: () => void
+  cwd: string
+  process: ClaudeProcess
+  prompt: string
+  startedAt: string
+  turns: TurnQueue
+}
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => string
@@ -27,7 +35,6 @@ export type ClaudeSessionDriver = {
   close: () => void
 }
 
-export const SUBMIT_DELAY_MS = 150
 const INTERRUPT = '\u001b'
 
 export class ClaudeSessionDriverError extends Error {
@@ -58,13 +65,11 @@ function driverActions(
   const send = (sessionId: string, text: string) => {
     const session = sessions.get(sessionId)
     if (!session) throw new Error('Claude Session is no longer running.')
-    const turn = claudeTurn(text)
-    session.process.write(turn.paste)
-    options.schedule(() => session.process.write(turn.submit))
+    session.turns.send(text)
   }
 
   return {
-    start: (request) => startSession({ options, sessions, send, request }),
+    start: (request) => startSession({ options, sessions, request }),
     send,
     interrupt(sessionId: string) {
       const session = sessions.get(sessionId)
@@ -72,29 +77,9 @@ function driverActions(
       session.process.write(INTERRUPT)
     },
     roster() {
-      return [...sessions.entries()].map(([id, session]) => ({
-        id,
-        retiredIds: [],
-        cli: 'claude',
-        posture: 'managed',
-        title: { text: session.prompt, source: 'first-prompt' },
-        status: 'running',
-        entry: 'interactive',
-        cwd: session.cwd,
-        branch: null,
-        updatedAt: null,
-        unreadableLines: 0,
-        originUnread: false,
-        turnStartedAt: null,
-        activity: null,
-        plan: null,
-        delegations: [],
-        shell: [],
-        pullRequest: null,
-        archived: false,
-        contextTokens: null,
-        spentTokens: null,
-      }))
+      return [...sessions.entries()].map(([id, session]) =>
+        managedRosterRow({ id, cli: 'claude', status: 'running', ...session }),
+      )
     },
     pendingPermission() {
       return null
@@ -104,6 +89,7 @@ function driverActions(
     },
     close() {
       for (const session of sessions.values()) {
+        session.turns.stop()
         session.process.kill?.()
         session.close()
       }
@@ -115,12 +101,10 @@ function driverActions(
 function startSession({
   options,
   sessions,
-  send,
   request: { cwd, prompt },
 }: {
   options: DriverOptions
   sessions: Map<string, ManagedSession>
-  send: (sessionId: string, text: string) => void
   request: { cwd: string; prompt: string }
 }) {
   const executable = options.findExecutable()
@@ -137,12 +121,21 @@ function startSession({
     prepared?.close()
     throw new ClaudeSessionDriverError('launch-failed')
   }
-  sessions.set(sessionId, { close: prepared?.close ?? (() => {}), cwd, process, prompt })
+  const turns = createTurnQueue(process, options.schedule)
+  sessions.set(sessionId, {
+    close: prepared?.close ?? (() => {}),
+    cwd,
+    process,
+    prompt,
+    startedAt: options.now().toISOString(),
+    turns,
+  })
   process.onExit?.(() => {
+    turns.stop()
     sessions.get(sessionId)?.close()
     sessions.delete(sessionId)
   })
-  send(sessionId, prompt)
+  turns.send(prompt)
   return sessionId
 }
 

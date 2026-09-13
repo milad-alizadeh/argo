@@ -1,3 +1,4 @@
+import { managedRosterRow } from '@/core/sessions/managed-roster-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from './protocol'
@@ -5,12 +6,14 @@ import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
   findExecutable: () => string | null
+  now: () => Date
   openChannel: (executable: string, options: SpawnOptions) => CodexChannel
 }
 type ManagedSession = {
   channel: CodexChannel
   cwd: string
   prompt: string
+  startedAt: string
   turnId: string | null
   failed: boolean
 }
@@ -40,32 +43,6 @@ function launchEnvironment(): NodeJS.ProcessEnv {
   delete environment.OPENAI_API_KEY
   delete environment.CODEX_API_KEY
   return environment
-}
-
-function rosterRow(id: string, session: ManagedSession): SessionRosterRow {
-  return {
-    id,
-    retiredIds: [],
-    cli: 'codex',
-    posture: 'managed',
-    title: { text: session.prompt, source: 'first-prompt' },
-    status: session.failed ? 'unknown' : 'running',
-    entry: 'interactive',
-    cwd: session.cwd,
-    branch: null,
-    updatedAt: null,
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
-    contextTokens: null,
-    spentTokens: null,
-  }
 }
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
@@ -98,7 +75,14 @@ async function beginManagedSession(
     channel.notify('initialized')
     const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
     threadId = startedThreadId
-    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false })
+    sessions.set(startedThreadId, {
+      channel,
+      cwd,
+      prompt,
+      startedAt: options.now().toISOString(),
+      turnId: null,
+      failed: false,
+    })
     channel.onExit(() => {
       const session = sessions.get(startedThreadId)
       if (session) session.failed = true
@@ -153,7 +137,15 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
-    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRosterRow({
+          id,
+          cli: 'codex',
+          status: session.failed ? 'unknown' : 'running',
+          ...session,
+        }),
+      ),
     close() {
       for (const session of sessions.values()) session.channel.close()
       sessions.clear()
