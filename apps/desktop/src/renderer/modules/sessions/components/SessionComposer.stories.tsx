@@ -216,9 +216,11 @@ function NewSessionCliStory() {
 }
 
 function SetupComposerStory({
+  className = 'mx-auto max-w-4xl p-8 pt-96',
   running = false,
   sessionId,
 }: {
+  className?: string
   running?: boolean
   sessionId: string
 }) {
@@ -227,7 +229,7 @@ function SetupComposerStory({
   const [sent, setSent] = useState<string[]>([])
 
   return (
-    <div className="mx-auto max-w-4xl p-8 pt-96">
+    <div className={className}>
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
@@ -449,6 +451,25 @@ export const Narrow: Story = {
       'Keep the composer usable at narrow widths.',
     )
     await expect(composerForm.scrollWidth).toBeLessThanOrEqual(composerForm.clientWidth)
+  },
+}
+
+export const NarrowShowsModelAndEffort: Story = {
+  render: () => (
+    <SetupComposerStory className="w-(--size-session-feed-min) pt-96" sessionId="setup-narrow" />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    const row = trigger.parentElement
+
+    if (!row) throw new Error('Composer control row is missing.')
+    await expect(within(trigger).getByText('Opus 5')).toBeVisible()
+    await expect(within(trigger).getByText('Medium')).toBeVisible()
+    await expect(within(trigger).getByText('Claude Code')).not.toBeVisible()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toBeVisible()
+    await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
   },
 }
 
