@@ -17,9 +17,12 @@ export type TurnSetupControlProps = {
 
 type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps | null }
 
+const WIDE_ONLY = 'hidden @[36rem]:inline'
+
 // Extracted from the composer prototype (602bcce2).
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
-  const facts = [HARNESSES[harness.cli].label, ...setupFacts(setup)]
+  const harnessLabel = HARNESSES[harness.cli].label
+  const facts = setupFacts(setup)
   const body = <SetupBody harness={harness} setup={setup} />
   return (
     <Popover>
@@ -27,17 +30,21 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         render={
           <InputGroupButton
             variant="ghost"
-            className="max-w-80 shrink-0 type-label font-medium text-foreground"
-            aria-label={`Choose run setup: ${facts.join(', ')}`}
+            className="max-w-80 min-w-0 type-label font-medium text-foreground"
+            aria-label={`Choose run setup: ${[harnessLabel, ...facts].join(', ')}`}
           />
         }
       >
         <HarnessLogo cli={harness.cli} />
-        <span className="hidden items-center gap-1.5 @[36rem]:inline-flex">
+        <span className="min-w-0 truncate">
+          {/* The logo names the harness, so its word waits for room; the Model and Effort never do. */}
+          <span className={WIDE_ONLY}>{harnessLabel}</span>
           {facts.map((fact, index) => (
             <Fragment key={fact}>
-              {index > 0 ? <span className="text-muted-foreground">·</span> : null}
-              {fact}
+              <span className={`mx-1.5 text-muted-foreground ${index === 0 ? WIDE_ONLY : ''}`}>
+                ·
+              </span>
+              <span>{fact}</span>
             </Fragment>
           ))}
         </span>

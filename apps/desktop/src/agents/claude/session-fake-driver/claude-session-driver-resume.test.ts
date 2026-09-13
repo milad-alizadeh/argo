@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
 import { test } from 'node:test'
 
-import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
+import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
 
@@ -11,7 +12,7 @@ const turn = (prompt: string) => ({ prompt, setup: OPENING })
 test('the next Turn to an orphaned Session resumes its chain in a new drive channel', async (context) => {
   const file = await ledgerFile(context)
   ownedBeforeRestart(file, 'chain-root')
-  const { driver, spawned } = launch(file, {
+  const { driver, spawned, pluginRoot } = launch(file, {
     resumeTarget: async (sessionId) =>
       sessionId === 'chain-root' ? { cwd: '/projects/argo', tipId: 'chain-tip' } : null,
   })
@@ -32,6 +33,8 @@ test('the next Turn to an orphaned Session resumes its chain in a new drive chan
           'high',
           '--permission-mode',
           'manual',
+          '--plugin-dir',
+          path.join(pluginRoot, 'chain-root'),
         ],
         cwd: '/projects/argo',
         writes: PASTED('Carry on with the fix.'),

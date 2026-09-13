@@ -3,10 +3,10 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
-import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
-import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
+import { codexSessionSource } from './agents/codex/sessions/read-sessions'
 import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
@@ -22,9 +22,10 @@ import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
-import { combineSessionReaders } from './core/sessions/combine-readers'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from './core/sessions/proof-protocol'
+import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
+import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
 import { providerEndpoints } from './providers/endpoints'
 
 // Forge's Vite plugin injects these for each configured renderer.
@@ -61,15 +62,16 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
   const codexSessionDriver = createSystemCodexSessionDriver()
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
-    reader: combineSessionReaders([
-      createClaudeSessionReader({
+    reader: createSessionReader([
+      claudeSessionSource({
         transcripts: claudeTranscriptsRoot(home),
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
         completeCompaction: claudeSessionDriver.completeCompaction,
         orphans: claudeSessionDriver.orphans,
+        liveMessages: claudeSessionDriver.liveMessages,
       }),
-      createCodexSessionReader(codexTranscriptsRoot(home), codexSessionDriver),
+      codexSessionSource(codexTranscriptsRoot(home), codexSessionDriver),
     ]),
     driver: claudeSessionDriver,
     starter: claudeSessionDriver,
@@ -97,6 +99,7 @@ function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: WINDOW_MINIMUM_WIDTH,
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
     // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
     // the frame keeps the native controls and gives up the native title bar.

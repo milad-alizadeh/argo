@@ -52,6 +52,8 @@ function compact() {
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
+// The end of a synchronized frame, which is what Argo waits for before it sends a Turn (#2002).
+process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {
   pending += chunk
   if (pending.includes('/compact\r')) {

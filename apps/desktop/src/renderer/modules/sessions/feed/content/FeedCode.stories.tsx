@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { drawnColor } from './appearanceProbe'
 import { FeedCode } from './FeedCode'
@@ -31,8 +31,10 @@ export const Highlighted: Story = {
     await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
     const keyword = canvas.getByText('type')
     const dark = drawnColor(keyword.style.getPropertyValue('--shiki-dark'))
-    await expect(dark).not.toBe(drawnColor(keyword.style.getPropertyValue('--shiki-light')))
-    await expect(getComputedStyle(keyword).color).toBe(dark)
+    const light = drawnColor(keyword.style.getPropertyValue('--shiki-light'))
+    await expect(dark).not.toBe(light)
+    const expected = document.documentElement.classList.contains('dark') ? dark : light
+    await expect(getComputedStyle(keyword).color).toBe(expected)
   },
 }
 

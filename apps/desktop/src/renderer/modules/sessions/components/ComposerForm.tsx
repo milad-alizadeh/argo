@@ -20,10 +20,11 @@ export const COMPOSER_COLUMN =
 export function ComposerForm({
   draft,
   editorRef,
+  focusOnMount,
   contextTokens,
-  isRunning,
   isCompacting,
   onCompact,
+  isRunning,
   onChange,
   onEdit,
   onInterrupt,
@@ -38,10 +39,11 @@ export function ComposerForm({
 }: {
   draft: string
   editorRef: RefObject<LexicalEditor | null>
+  focusOnMount: boolean
   contextTokens: number | null | undefined
-  isRunning: boolean
   isCompacting: boolean
   onCompact?: () => Promise<boolean>
+  isRunning: boolean
   onChange: (text: string) => void
   onEdit: (turn: (typeof pendingTurns)[number]) => void
   onInterrupt?: () => Promise<boolean>
@@ -56,12 +58,10 @@ export function ComposerForm({
 }) {
   const interruptRef = useRef<HTMLButtonElement>(null)
   const wasCompacting = useRef(isCompacting)
-
   useEffect(() => {
     if (isCompacting && !wasCompacting.current) interruptRef.current?.focus()
     wasCompacting.current = isCompacting
   }, [isCompacting])
-
   return (
     <form
       className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
@@ -87,11 +87,12 @@ export function ComposerForm({
             key={sessionId}
             draft={draft}
             editorRef={editorRef}
+            focusOnMount={focusOnMount}
             onChange={onChange}
             onSend={onSend}
           />
         </div>
-        <div className="flex items-center gap-1 pt-(--spacing-shell-item) pr-(--spacing-shell-item) pb-(--spacing-shell-gutter) pl-(--spacing-shell-item) @[36rem]:gap-2">
+        <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
           {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
           <div className="ml-auto flex items-center gap-1">
             {setup ? <ModeMenu {...setup} /> : null}

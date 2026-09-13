@@ -2,12 +2,9 @@ import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { ClaudeTurnRequest } from './deliver-turn'
-import {
-  ClaudeSessionDriverError,
-  channelActions,
-  type DriverOptions,
-  type ManagedSession,
-} from './drive-channel'
+import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
+import type { LiveMessage } from './live-messages'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -15,6 +12,7 @@ export type ClaudeSessionDriver = {
   completeCompaction: (sessionId: string, completedAt: string) => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
+  liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
   orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
@@ -23,22 +21,7 @@ export type ClaudeSessionDriver = {
 }
 
 const INTERRUPT = '\u001b'
-const COMPACT = '/compact'
-
-function clearCompaction(session: ManagedSession) {
-  session.compactionStartedAt = null
-  session.compactionPercentage = null
-  session.compactionTokens = null
-}
-
-function rosterRow(id: string, session: ManagedSession) {
-  return {
-    ...managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
-    compactionStartedAt: session.compactionStartedAt,
-    compactionPercentage: session.compactionPercentage,
-    compactionTokens: session.compactionTokens,
-  }
-}
+const COMPACT = '/compact\r'
 
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
   const sessions = new Map<string, ManagedSession>()
@@ -61,41 +44,56 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     async compact(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
-      session.compactionStartedAt = new Date().toISOString()
+      session.compactionStartedAt = options.now().toISOString()
       session.compactionPercentage = null
       session.compactionTokens = null
-      try {
-        session.process.write(COMPACT)
-        session.process.write('\r')
-      } catch (error) {
-        clearCompaction(session)
-        throw error
-      }
+      session.process.write(COMPACT)
     },
     completeCompaction(sessionId, completedAt) {
       const session = sessions.get(sessionId)
-      if (!session || session.compactionStartedAt === null) return
-      if (Date.parse(completedAt) < Date.parse(session.compactionStartedAt)) return
-      clearCompaction(session)
+      if (
+        !session ||
+        session.compactionStartedAt === null ||
+        completedAt < session.compactionStartedAt
+      )
+        return
+      session.compactionStartedAt = null
+      session.compactionPercentage = null
+      session.compactionTokens = null
     },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
-      clearCompaction(session)
+      session.messages.retire()
+      session.compactionStartedAt = null
+      session.compactionPercentage = null
+      session.compactionTokens = null
       session.process.write(INTERRUPT)
     },
-    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRow(id, {
+          ...session,
+          cli: 'claude',
+          status: options.gate.pending(id) === null ? 'running' : 'permission',
+          setup: session.applied,
+        }),
+      ),
     orphans: options.ledger.orphans,
-    pendingPermission: () => null,
-    decidePermission: () => false,
+    pendingPermission: (sessionId) => options.gate.pending(sessionId),
+    decidePermission: (sessionId, permissionId, decision) =>
+      options.gate.decide(sessionId, permissionId, decision),
     close() {
       channel.close()
       for (const [sessionId, session] of sessions) {
+        session.ended = true
         session.process.kill?.()
         session.close()
         options.ledger.release(sessionId)
       }
       sessions.clear()
+      options.gate.close()
     },
   }
 }

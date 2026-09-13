@@ -1,9 +1,10 @@
-import { CircleCheck, CircleDot, Ticket as TicketMark } from 'lucide-react'
+import { CircleCheck, CircleDot, ExternalLink, Ticket as TicketMark } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketLink } from '@/core/tickets/contract'
+import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
+import { buttonVariants } from '../../../components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -15,7 +16,9 @@ import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
-import { PriorityMark, StatusMark } from './TicketStatus'
+import { StatusMenu } from './StatusMenu'
+import { TicketLabel } from './TicketLabel'
+import { PriorityMark } from './TicketStatus'
 
 const STATES = {
   open: { label: 'Open', Icon: CircleDot, tone: 'text-active' },
@@ -23,17 +26,6 @@ const STATES = {
 } as const
 
 const stateIcon = 'size-(--size-icon-meta) shrink-0'
-
-// The icon's shape tells open from closed, so a state is never its colour alone.
-function State({ state }: { state: Ticket['state'] }) {
-  const { label, Icon, tone } = STATES[state]
-  return (
-    <span className="flex shrink-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-      <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
-      {label}
-    </span>
-  )
-}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -94,25 +86,35 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
     <>
       <dt className="text-muted-foreground">{name}</dt>
-      <dd className="flex min-w-0 flex-wrap items-baseline gap-(--spacing-shell-tight)">
+      {/* Every value row is as tall as the status trigger, so the rows keep one rhythm. */}
+      <dd className="flex min-h-6 min-w-0 flex-wrap items-center gap-(--spacing-shell-tight)">
         {children}
       </dd>
     </>
   )
 }
 
-function Properties({ ticket }: { ticket: Ticket }) {
+// What the Detail offers to change, and the change.
+type Editing = {
+  statuses: readonly TicketStatus[]
+  onChangeStatus: (status: TicketStatus) => void
+}
+
+type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
+
+function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesProps) {
+  const noun = SOURCE_PRESENTATION[provider].statusNoun
   return (
-    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-baseline gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
-      {ticket.status ? (
-        <Property name="Status">
-          <StatusMark named status={ticket.status} />
-        </Property>
-      ) : (
-        <Property name="State">
-          <State state={ticket.state} />
-        </Property>
-      )}
+    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
+      <Property name={noun}>
+        <StatusMenu
+          named
+          noun={noun}
+          onChange={onChangeStatus}
+          status={ticket.status}
+          statuses={statuses}
+        />
+      </Property>
       {ticket.priority ? (
         <Property name="Priority">
           <PriorityMark priority={ticket.priority} />
@@ -120,15 +122,15 @@ function Properties({ ticket }: { ticket: Ticket }) {
       ) : null}
       {ticket.type ? (
         <Property name="Type">
-          <Badge variant="secondary">{ticket.type}</Badge>
+          <Badge className="type-meta" variant="secondary">
+            {ticket.type}
+          </Badge>
         </Property>
       ) : null}
       {ticket.labels.length > 0 ? (
         <Property name="Labels">
           {ticket.labels.map((label) => (
-            <Badge key={label.name} variant="outline">
-              {label.name}
-            </Badge>
+            <TicketLabel key={label.name} label={label} />
           ))}
         </Property>
       ) : null}
@@ -170,37 +172,56 @@ function NothingSelected() {
   )
 }
 
-// A provider without a page for the Ticket shows its key as plain text.
-function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
-  const keyText = 'justify-self-start font-mono type-meta text-faint'
-  if (ticket.url === null) return <span className={keyText}>{ticket.key}</span>
+const keyText = 'font-mono type-meta'
+
+// The inspector bar names the Ticket by its key, which opens it on the provider's own page. A
+// provider without a page for the Ticket shows its key as plain text.
+export function TicketBar({ ticket, provider }: { ticket: Ticket | null; provider: Provider }) {
+  if (ticket === null) return null
+  if (ticket.url === null) {
+    return <span className={`${keyText} px-2 text-muted-foreground`}>{ticket.key}</span>
+  }
+  // An anchor drawn as a button: Base UI's Button would give it the button role.
   return (
     <a
-      aria-label={`Open ${ticket.key} on ${PROVIDER_PRESENTATION[provider].name}`}
-      className={`${keyText} hover:text-foreground hover:underline`}
+      aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
+      // Pulls the key onto the title's line past the xs button's 1px border.
+      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} -ml-px text-muted-foreground`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
     >
       {ticket.key}
+      <ExternalLink aria-hidden="true" data-icon="inline-end" />
     </a>
   )
 }
 
-export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation
+// Keeps a readable measure while the rule under the header runs the inspector's full width.
+const measure =
+  'grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)'
 
-export function TicketDetail({ ticket, provider, ...navigation }: TicketDetailProps) {
+export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation & Editing
+
+export function TicketDetail(props: TicketDetailProps) {
+  const { ticket, provider, statuses, onChangeStatus, ...navigation } = props
   if (ticket === null) return <NothingSelected />
   const { children } = ticket
   const body = ticket.body?.trim()
   return (
     <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
-      <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)">
-        <header className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-item)">
-          <TicketKey provider={provider} ticket={ticket} />
+      <header className="border-b border-border/60">
+        <div className={measure}>
           <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
-        </header>
-        <Properties ticket={ticket} />
+          <Properties
+            onChangeStatus={onChangeStatus}
+            provider={provider}
+            statuses={statuses}
+            ticket={ticket}
+          />
+        </div>
+      </header>
+      <div className={measure}>
         {body ? (
           <FeedMarkdown text={body} />
         ) : (

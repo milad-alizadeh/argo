@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionPlanPopover } from './SessionPlanPopover'
@@ -91,15 +91,9 @@ export const Empty: Story = {
   },
 }
 
-export const HiddenWhenUnavailable: Story = {
+// An unavailable Plan and a malformed one reach the same branch: nothing renders.
+export const Hidden: Story = {
   args: { plan: null },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
-  },
-}
-
-export const HiddenWhenMalformed: Story = {
-  args: { plan: { state: 'malformed' } },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
   },

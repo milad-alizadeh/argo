@@ -1,0 +1,83 @@
+import { launchArguments } from './claude-setup'
+import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
+import type { ClaudeTurnRequest } from './deliver-turn'
+import type { DriverOptions, ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
+import { firstFrame } from './first-frame'
+import { createLiveMessages } from './live-messages'
+
+export type ClaudeProcess = {
+  write: (text: string) => void
+  kill?: () => void
+  onExit?: (listener: () => unknown) => unknown
+  onData?: (listener: (data: string) => void) => unknown
+}
+export type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
+// One spawn path with two seeds: a fresh Session names its transcript, a resume names its tip.
+export type Seed = { sessionId: string; cwd: string; sessionFlags: string[] } & ClaudeTurnRequest
+
+// The tail of what the TUI drew, enough to read its Mode footer.
+const SCREEN_LIMIT = 8000
+
+function launchEnvironment(): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv = { ...process.env, TERM: 'xterm-256color' }
+  delete environment.CLAUDE_CODE_CHILD_SESSION
+  return environment
+}
+
+export function openChannel(
+  options: DriverOptions,
+  sessions: Map<string, ManagedSession>,
+  seed: Seed,
+): ManagedSession {
+  const executable = options.findExecutable()
+  if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
+  const messages = createLiveMessages()
+  const parts: CompanionPart[] = [
+    options.gate.open(seed.sessionId),
+    ...(options.extraParts?.(seed.sessionId, messages.record) ?? []),
+  ]
+  const plugin = openCompanionPlugin(options.pluginRoot, seed.sessionId, parts)
+  let process: ClaudeProcess
+  try {
+    process = options.spawn(
+      executable,
+      [...seed.sessionFlags, ...launchArguments(seed.setup), '--plugin-dir', plugin.pluginRoot],
+      { cwd: seed.cwd, env: launchEnvironment() },
+    )
+  } catch {
+    plugin.close()
+    throw new ClaudeSessionDriverError('launch-failed')
+  }
+  const frame = firstFrame(options.schedule)
+  const session: ManagedSession = {
+    applied: seed.setup,
+    close: plugin.close,
+    compactionStartedAt: null,
+    compactionPercentage: null,
+    compactionTokens: null,
+    cwd: seed.cwd,
+    ended: false,
+    messages,
+    process,
+    prompt: seed.prompt,
+    queue: frame.ready,
+    screen: '',
+    startedAt: options.now().toISOString(),
+  }
+  sessions.set(seed.sessionId, session)
+  process.onData?.((data) => {
+    session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
+    frame.see(session.screen)
+  })
+  options.ledger.bind(seed.sessionId)
+  process.onExit?.(() => {
+    session.ended = true
+    // A later channel for the same Session is not this one's to close.
+    if (sessions.get(seed.sessionId) !== session) return
+    session.close()
+    sessions.delete(seed.sessionId)
+    options.ledger.release(seed.sessionId)
+  })
+  return session
+}

@@ -10,8 +10,11 @@ import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { type PendingTurn, usePendingTurns } from './usePendingTurns'
 
+export const COMPOSER_FOCUS_STATE = 'focus-composer'
+
 export type SessionComposerProps = {
   contextTokens?: number | null
+  focusOnMount?: boolean
   isCompacting?: boolean
   isRunning?: boolean
   onCompact?: () => Promise<boolean>
@@ -51,23 +54,26 @@ function restorePendingTurn(
   window.requestAnimationFrame(() => editorRef.current?.focus())
 }
 
-function restoreTurn({
-  turn,
-  editorRef,
-  onChange,
-  setup,
-}: {
-  turn: PendingTurn
-  editorRef: RefObject<LexicalEditor | null>
-  onChange: (text: string) => void
-  setup: TurnSetupControlProps | null
-}) {
-  restorePendingTurn(turn, editorRef, onChange)
-  restoreSetup(turn, setup)
+function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor | null>) {
+  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
+  const setDraft = useComposerStore(({ setDraft }) => setDraft)
+  const changeDraft = useCallback(
+    (text: string) => setDraft(sessionId, text),
+    [sessionId, setDraft],
+  )
+  const clearDraft = useCallback(
+    (editor = editorRef.current) => {
+      editor?.update(() => $getRoot().clear().append($createParagraphNode()))
+      setDraft(sessionId, '')
+    },
+    [editorRef, sessionId, setDraft],
+  )
+  return { changeDraft, clearDraft, draft }
 }
 
 export function SessionComposer({
   contextTokens,
+  focusOnMount = false,
   isCompacting = false,
   isRunning = false,
   onCompact,
@@ -78,9 +84,8 @@ export function SessionComposer({
   harness = null,
   setup = null,
 }: SessionComposerProps) {
-  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
-  const setDraft = useComposerStore(({ setDraft }) => setDraft)
   const editorRef = useRef<LexicalEditor>(null)
+  const { changeDraft, clearDraft, draft } = useComposerDraft(sessionId, editorRef)
   const sendPendingTurn = useCallback(
     (text: string, turnSetup: TurnSetup | undefined) => onSend(text, turnSetupOf(setup, turnSetup)),
     [onSend, setup],
@@ -90,17 +95,6 @@ export function SessionComposer({
     onSend: sendPendingTurn,
     sessionId,
   })
-  const changeDraft = useCallback(
-    (text: string) => setDraft(sessionId, text),
-    [sessionId, setDraft],
-  )
-  const clearDraft = useCallback(
-    (editor = editorRef.current) => {
-      editor?.update(() => $getRoot().clear().append($createParagraphNode()))
-      setDraft(sessionId, '')
-    },
-    [sessionId, setDraft],
-  )
   const send = useCallback(async () => {
     if (!draft.trim()) return
     if (isRunning) {
@@ -113,15 +107,19 @@ export function SessionComposer({
   }, [addPendingTurn, clearDraft, draft, isRunning, onSend, setup?.value])
   return (
     <ComposerForm
-      contextTokens={contextTokens}
       harness={harness}
       draft={draft}
       editorRef={editorRef}
+      focusOnMount={focusOnMount}
+      contextTokens={contextTokens}
       isCompacting={isCompacting}
       isRunning={isRunning}
       onChange={changeDraft}
       onCompact={onCompact}
-      onEdit={(turn) => restoreTurn({ turn, editorRef, onChange: changeDraft, setup })}
+      onEdit={(turn) => {
+        restorePendingTurn(turn, editorRef, changeDraft)
+        restoreSetup(turn, setup)
+      }}
       onInterrupt={onInterrupt}
       onRemove={removePendingTurn}
       onReorder={reorderPendingTurn}

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
@@ -91,10 +91,12 @@ export const SwitchAccount: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connect repository' }))
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Account' }),
-      'GitHub · hubot',
-    )
+    const account = canvas.getByRole('combobox', { name: 'Account' })
+    await expect(account).toHaveTextContent('GitHub · octocat')
+    await userEvent.click(account)
+    // The list draws in a portal outside the canvas.
+    const choices = await within(canvasElement.ownerDocument.body).findByRole('listbox')
+    await userEvent.click(within(choices).getByRole('option', { name: 'GitHub · hubot' }))
     await expect(args.onSelectAccount).toHaveBeenCalledWith('github:1')
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
     await expect(repository).not.toHaveAttribute('aria-invalid')

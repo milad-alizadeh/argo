@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
 import { test } from 'node:test'
 
 import {
@@ -6,12 +7,13 @@ import {
   ledgerFile,
   OPENING,
   PASTED,
+  STARTED_AT,
   settle,
   startedSession,
 } from './claude-driver-launch.ts'
 
 test('starts a named interactive Claude Session at the chosen setup and sends the opening Turn', async (context) => {
-  const { driver, spawned } = launch(await ledgerFile(context))
+  const { driver, spawned, pluginRoot } = launch(await ledgerFile(context))
 
   const sessionId = driver.start({
     cwd: '/projects/argo',
@@ -41,6 +43,8 @@ test('starts a named interactive Claude Session at the chosen setup and sends th
           'max',
           '--permission-mode',
           'plan',
+          '--plugin-dir',
+          path.join(pluginRoot, sessionId),
         ],
         cwd: '/projects/argo',
         terminal: 'xterm-256color',
@@ -58,6 +62,36 @@ test('starts a named interactive Claude Session at the chosen setup and sends th
         setup: { model: 'sonnet', effort: 'max', mode: 'plan' },
       },
     ],
+  )
+})
+
+test('holds the text a Turn streams until Argo sends the next Turn or interrupts', async (context) => {
+  const { driver, display, sessionId } = await startedSession(context)
+  const batch = (turn: string, delta: string) =>
+    display(sessionId, { turn_id: turn, message_id: `${turn}-message`, index: 0, delta })
+
+  batch('turn-1', 'Ducks glide.')
+  const streamed = driver.liveMessages(sessionId)
+  await driver.send(sessionId, { prompt: 'Now geese.', setup: OPENING })
+  const afterSend = driver.liveMessages(sessionId)
+  batch('turn-1', 'Late ducks.')
+  batch('turn-2', 'Geese honk.')
+  const next = driver.liveMessages(sessionId)
+  driver.interrupt(sessionId)
+
+  assert.deepEqual(streamed, [{ id: 'turn-1-message', text: 'Ducks glide.' }])
+  assert.deepEqual(afterSend, [])
+  assert.deepEqual(next, [{ id: 'turn-2-message', text: 'Geese honk.' }])
+  assert.deepEqual(driver.liveMessages(sessionId), [])
+})
+
+test('lists a new managed Session at the time it started', async (context) => {
+  const { driver } = launch(await ledgerFile(context))
+  driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.', setup: OPENING })
+
+  assert.deepEqual(
+    driver.roster().map(({ updatedAt }) => updatedAt),
+    [STARTED_AT.toISOString()],
   )
 })
 

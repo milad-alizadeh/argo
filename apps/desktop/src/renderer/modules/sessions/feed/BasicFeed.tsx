@@ -51,19 +51,23 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
 
 export function BasicFeed({
   feed,
-  failure,
-  selectedSessionId,
+  activeEvidenceId,
   compactionStartedAt = null,
   compactionPercentage = null,
   compactionTokens = null,
+  failure,
+  isRunning,
+  selectedSessionId,
   onOpenEvidence,
 }: {
   feed: SessionFeed | null
-  failure: SessionError | null
-  selectedSessionId: SessionId | null
+  activeEvidenceId: string | null
   compactionStartedAt?: string | null
   compactionPercentage?: number | null
   compactionTokens?: string | null
+  failure: SessionError | null
+  isRunning: boolean
+  selectedSessionId: SessionId | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }) {
   const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
@@ -112,12 +116,14 @@ export function BasicFeed({
       {ordered.map(([id, document]) => (
         <FeedDocument
           active={failure === null && id === selectedSessionId}
+          activeEvidenceId={activeEvidenceId}
           compactionStartedAt={id === selectedSessionId ? compactionStartedAt : null}
           compactionPercentage={id === selectedSessionId ? compactionPercentage : null}
           compactionTokens={id === selectedSessionId ? compactionTokens : null}
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}
+          isRunning={isRunning && id === selectedSessionId}
         />
       ))}
       {failure !== null || current === null ? (

@@ -11,6 +11,7 @@ import {
   isTicketDisconnectRequest,
   isTicketDiscoverRequest,
   isTicketListRequest,
+  isTicketUpdateRequest,
   TICKET_CHANNEL,
   ticketError,
 } from './contract'
@@ -21,6 +22,7 @@ import {
   discoverSources,
   listTickets,
   readConnection,
+  updateStatus,
 } from './service'
 
 // Each handler validates its own request and hands the service a call it can trust.
@@ -45,6 +47,9 @@ const HANDLERS = {
   ),
   'ticket.list': handler(isTicketListRequest, (call, { query, cursor }) =>
     listTickets(call, { query, cursor }),
+  ),
+  'ticket.update': handler(isTicketUpdateRequest, (call, { key, statusId }) =>
+    updateStatus(call, { key, statusId }),
   ),
 }
 
