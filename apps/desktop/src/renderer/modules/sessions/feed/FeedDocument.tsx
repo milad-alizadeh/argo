@@ -11,9 +11,21 @@ import { AnchoredFeed } from './AnchoredFeed'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { useSettledFeed } from './useSettledFeed'
 
-type FeedDocumentProps = { active: boolean; feed: SessionFeed; onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void }
+type FeedDocumentProps = {
+  active: boolean
+  feed: SessionFeed
+  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+}
 
-function FeedRow({ row, height, onOpenEvidence }: { row: SessionFeedRow; height?: number; onOpenEvidence: FeedDocumentProps['onOpenEvidence'] }) {
+function FeedRow({
+  row,
+  height,
+  onOpenEvidence,
+}: {
+  row: SessionFeedRow
+  height?: number
+  onOpenEvidence: FeedDocumentProps['onOpenEvidence']
+}) {
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
@@ -21,7 +33,13 @@ function FeedRow({ row, height, onOpenEvidence }: { row: SessionFeedRow; height?
       data-role={'role' in row ? row.role : undefined}
       style={height === undefined ? undefined : { height: `${height}px` }}
     >
-      {row.shape === 'tool' ? <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>{row.label}</button> : feedRowContent(row)}
+      {row.shape === 'tool' ? (
+        <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>
+          {row.label}
+        </button>
+      ) : (
+        feedRowContent(row)
+      )}
     </article>
   )
 }
@@ -78,7 +96,10 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
   )
 }
 
-function feedContent(settled: ReturnType<typeof useSettledFeed>['settled'], onOpenEvidence: FeedDocumentProps['onOpenEvidence']) {
+function feedContent(
+  settled: ReturnType<typeof useSettledFeed>['settled'],
+  onOpenEvidence: FeedDocumentProps['onOpenEvidence'],
+) {
   if (settled === null) return null
   if (settled.rows.length === 0)
     return (
@@ -92,5 +113,11 @@ function feedContent(settled: ReturnType<typeof useSettledFeed>['settled'], onOp
         </EmptyHeader>
       </Empty>
     )
-  return <AnchoredFeed rows={settled.rows} settled={settled} FeedRow={(props) => <FeedRow {...props} onOpenEvidence={onOpenEvidence} />} />
+  return (
+    <AnchoredFeed
+      rows={settled.rows}
+      settled={settled}
+      FeedRow={(props) => <FeedRow {...props} onOpenEvidence={onOpenEvidence} />}
+    />
+  )
 }

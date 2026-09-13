@@ -77,7 +77,12 @@ function readToolResults(content: unknown): ToolResult[] {
   if (!Array.isArray(content)) return []
   return content.flatMap((block: unknown) =>
     isRecord(block) && block.type === 'tool_result' && typeof block.tool_use_id === 'string'
-      ? [{ callId: block.tool_use_id, content: typeof block.content === 'string' ? block.content : null }]
+      ? [
+          {
+            callId: block.tool_use_id,
+            content: typeof block.content === 'string' ? block.content : null,
+          },
+        ]
       : [],
   )
 }

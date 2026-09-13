@@ -5,12 +5,13 @@ import { useNavigate, useParams } from 'react-router'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
-import type { SessionFeedRow } from '../types'
+import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import { BasicFeed } from '../feed/BasicFeed'
 import { useClaudePermission } from '../hooks/useClaudePermission'
 import type { SessionCli } from '../hooks/useSessionComposer'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessions } from '../hooks/useSessions'
+import type { SessionFeedRow } from '../types'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -58,7 +59,13 @@ export function SessionScreenView() {
           }
         />
       }
-      inspector={evidence === null ? <SessionFacts session={session} /> : <EvidenceInspector evidence={evidence} />}
+      inspector={
+        evidence === null ? (
+          <SessionFacts session={session} />
+        ) : (
+          <SessionEvidenceInspector evidence={evidence} />
+        )
+      }
     />
   )
 }
@@ -92,7 +99,12 @@ export function SessionShell({
               <span className="flex-1" />
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1">
-              <BasicFeed feed={feed} failure={feedError} selectedSessionId={selectedSessionId} onOpenEvidence={onOpenEvidence} />
+              <BasicFeed
+                feed={feed}
+                failure={feedError}
+                selectedSessionId={selectedSessionId}
+                onOpenEvidence={onOpenEvidence}
+              />
             </section>
             <section aria-label="Session composer" className="shrink-0 border-t border-border/60">
               {composer}
@@ -102,9 +114,4 @@ export function SessionShell({
       />
     </main>
   )
-}
-
-function EvidenceInspector({ evidence }: { evidence: Extract<SessionFeedRow, { shape: 'tool' }> }) {
-  if (evidence.evidence === null) return <section className="p-4 text-meta text-muted-foreground">Recorded evidence is unavailable.</section>
-  return <section className="flex min-h-0 flex-1 flex-col" aria-label="Command and file inspector"><header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3 type-meta">{evidence.evidence.title}</header><pre className="min-h-0 overflow-auto p-4 type-code whitespace-pre-wrap">{evidence.evidence.source}</pre></section>
 }

@@ -10,8 +10,7 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionFeed, SessionId } from '../types'
-import type { SessionFeedRow } from '../types'
+import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
 import { readKeptSessionLimit } from './kept-documents'
 
