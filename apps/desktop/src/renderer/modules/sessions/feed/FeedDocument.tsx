@@ -11,17 +11,37 @@ import { AnchoredFeed } from './AnchoredFeed'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { useSettledFeed } from './useSettledFeed'
 
-type FeedDocumentProps = { active: boolean; feed: SessionFeed }
+type FeedDocumentProps = {
+  active: boolean
+  feed: SessionFeed
+  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+}
 
-function FeedRow({ row, height }: { row: SessionFeedRow; height?: number }) {
+function FeedRow({
+  row,
+  height,
+  onOpenEvidence,
+}: {
+  row: SessionFeedRow
+  height?: number
+  onOpenEvidence: FeedDocumentProps['onOpenEvidence']
+}) {
+  const style = height === undefined || height === 0 ? undefined : { height: `${height}px` }
+
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
       data-role={'role' in row ? row.role : undefined}
-      style={height === undefined ? undefined : { height: `${height}px` }}
+      style={style}
     >
-      {feedRowContent(row)}
+      {row.shape === 'tool' ? (
+        <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>
+          {row.label}
+        </button>
+      ) : (
+        feedRowContent(row)
+      )}
     </article>
   )
 }
@@ -48,14 +68,14 @@ function feedRowContent(row: SessionFeedRow) {
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
-export function FeedDocument({ active, feed }: FeedDocumentProps) {
+export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps) {
   const { column, measured, settled } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
     revision: feed.revision,
     rows: feed.rows,
   })
-  const content = feedContent(settled)
+  const content = feedContent(settled, onOpenEvidence)
 
   return (
     <div
@@ -69,7 +89,7 @@ export function FeedDocument({ active, feed }: FeedDocumentProps) {
       <div className="feed__column" ref={column}>
         <div aria-hidden="true" className="feed__measured" ref={measured}>
           {feed.rows.map((row) => (
-            <FeedRow key={row.id} row={row} />
+            <FeedRow key={row.id} row={row} onOpenEvidence={onOpenEvidence} />
           ))}
         </div>
         {content}
@@ -78,7 +98,10 @@ export function FeedDocument({ active, feed }: FeedDocumentProps) {
   )
 }
 
-function feedContent(settled: ReturnType<typeof useSettledFeed>['settled']) {
+function feedContent(
+  settled: ReturnType<typeof useSettledFeed>['settled'],
+  onOpenEvidence: FeedDocumentProps['onOpenEvidence'],
+) {
   if (settled === null) return null
   if (settled.rows.length === 0)
     return (
@@ -92,5 +115,11 @@ function feedContent(settled: ReturnType<typeof useSettledFeed>['settled']) {
         </EmptyHeader>
       </Empty>
     )
-  return <AnchoredFeed rows={settled.rows} settled={settled} FeedRow={FeedRow} />
+  return (
+    <AnchoredFeed
+      rows={settled.rows}
+      settled={settled}
+      FeedRow={(props) => <FeedRow {...props} onOpenEvidence={onOpenEvidence} />}
+    />
+  )
 }

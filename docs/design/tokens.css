@@ -38,9 +38,11 @@
   --size-session-column: 896px;
   --size-queue-row: 44px;
   --size-composer-field: 80px;
+  --size-composer-plan-state: calc(var(--size-composer-field) * 2);
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
+  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
   --size-state-dot: 6px;
   --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
   --size-subagent-dot: 4px;
@@ -127,6 +129,7 @@
   --text-session-heading: var(--text-sm, 0.875rem);
   --text-prose: var(--text-sm, 0.875rem);
   --text-label: var(--text-xs, 0.75rem);
+  --text-composer-control: var(--text-control);
   --text-session-title: var(--text-xl, 1.25rem);
   --text-session-body: var(--text-sm, 0.875rem);
   --text-session-meta: var(--text-xs, 0.75rem);
@@ -204,6 +207,8 @@
   --text-ticket-title: var(--text-base, 1rem);
   --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
   --size-ticket-workspace-min: 320px;
+  --size-session-composer-fade: calc(var(--spacing-shell-region) * 2);
+  --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
   --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
   --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
   --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
