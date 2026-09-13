@@ -1,3 +1,5 @@
+import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
+import { Message, MessageContent } from '@/renderer/components/ui/message'
 import type { SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
@@ -66,11 +68,26 @@ function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
+function FeedPrompt({ text }: { text: string }) {
+  return (
+    <Message align="end" className="type-body">
+      <MessageContent>
+        <span className="sr-only">You</span>
+        <Bubble variant="muted" className="max-w-full sm:max-w-4/5">
+          <BubbleContent className="type-prose">
+            <PlainText text={text} />
+          </BubbleContent>
+        </Bubble>
+      </MessageContent>
+    </Message>
+  )
+}
+
 function feedRowContent(row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' }>) {
   switch (row.shape) {
     case 'prose':
       if (row.role === 'assistant') return <FeedMarkdown text={row.text} />
-      return <PlainText text={row.text} />
+      return <FeedPrompt text={row.text} />
     case 'thought':
       return <PlainText text={row.text} />
     case 'source':

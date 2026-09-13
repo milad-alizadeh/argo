@@ -122,6 +122,11 @@ export const FormattedProse: Story = {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
     const [prompt, answer] = drawnRows(canvasElement)
     await expect(prompt).toHaveTextContent('Show me the **composer** check.')
+    await expect(prompt?.querySelector('[data-slot="bubble"]')).toHaveAttribute(
+      'data-variant',
+      'muted',
+    )
+    await expect(prompt?.querySelector('[data-slot="bubble-content"]')).toHaveClass('type-prose')
     await waitFor(() =>
       expect(answer?.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
