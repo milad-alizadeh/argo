@@ -2,6 +2,7 @@ import { Ban, ChevronRight } from 'lucide-react'
 
 import type { Ticket, TicketStatus } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'
+import { TreeRails, TreeStem, TreeTwig } from '../../../components/TreeLines'
 import { type BacklogRow, closedChildren, count, openBlockers } from '../lib/backlog'
 import type { SourcePresentation } from '../lib/sources'
 import { ChildProgress } from './ChildProgress'
@@ -61,7 +62,13 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
 // A parent's chevron folds the rows drawn under it. A row with none keeps the chevron's width, so
 // every title at one depth starts on one line.
 function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' | 'onToggle'>) {
-  if (!row.nested) return <span aria-hidden="true" className="w-(--size-icon-control) shrink-0" />
+  if (!row.nested) {
+    return (
+      <span aria-hidden="true" className="relative w-(--size-icon-control) shrink-0 self-stretch">
+        {row.depth > 0 ? <TreeTwig /> : null}
+      </span>
+    )
+  }
   const { key } = row.ticket
   return (
     <button
@@ -75,12 +82,15 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
         aria-hidden="true"
         className={`${markIcon} transition-transform ${folded ? '' : 'rotate-90'}`}
       />
+      {folded ? null : <TreeStem />}
     </button>
   )
 }
 
 type TicketRowProps = {
   row: BacklogRow
+  // The tree lines this row draws, one per ancestor column.
+  rails: readonly boolean[]
   presentation: Pick<SourcePresentation, 'keyColumn' | 'statusNoun'>
   statuses: readonly TicketStatus[]
   selected: boolean
@@ -96,9 +106,9 @@ type TicketRowProps = {
 // keyboard cursor outlines the whole row. The key column is one width, so every title
 // starts on one line and a child indents from it.
 export function TicketRow(props: TicketRowProps) {
-  const { row, presentation, statuses, selected, folded, now, onSelect, onToggle, onChangeStatus } =
-    props
-  const { ticket, depth, parent } = row
+  const { row, rails, presentation, statuses, selected, folded, now } = props
+  const { onSelect, onToggle, onChangeStatus } = props
+  const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex items-center gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
@@ -115,10 +125,8 @@ export function TicketRow(props: TicketRowProps) {
         status={ticket.status}
         statuses={statuses}
       />
-      <span
-        className="flex shrink-0 self-stretch"
-        style={{ paddingInlineStart: `calc(${depth} * var(--spacing-shell-inset))` }}
-      >
+      <span className="flex shrink-0 self-stretch">
+        <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
       <button

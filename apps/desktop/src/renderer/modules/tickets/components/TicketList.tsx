@@ -11,7 +11,7 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { useToastManager } from '../../../components/ui/toast'
 import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
-import { type Backlog, backlogRows, count, unfoldedRows } from '../lib/backlog'
+import { type Backlog, backlogRows, count, treeRails, unfoldedRows } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 import { TicketRow } from './TicketRow'
 
@@ -111,6 +111,7 @@ export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) 
   const now = Date.now()
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
+  const rails = treeRails(rows)
   return (
     <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
@@ -128,9 +129,10 @@ export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) 
         aria-busy={backlog.searching}
         className="grid min-h-0 flex-1 content-start gap-px overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset) aria-busy:opacity-60"
       >
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <li key={row.ticket.key}>
             <TicketRow
+              rails={rails[index] ?? []}
               folded={folded.has(row.ticket.key)}
               now={now}
               onChangeStatus={(status) => backlog.onChangeStatus(row.ticket.key, status)}

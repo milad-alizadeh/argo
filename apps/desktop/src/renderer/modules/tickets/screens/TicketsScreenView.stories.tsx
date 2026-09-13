@@ -159,6 +159,46 @@ export const FoldedParent: Story = {
   },
 }
 
+const branch = (number: number, title: string, children: number[] = []) => ({
+  ...standalone,
+  key: `#${number}`,
+  url: `https://github.com/octocat/hello-world/issues/${number}`,
+  title,
+  labels: [],
+  children: children.map((child) => ({
+    key: `#${child}`,
+    title: `#${child}`,
+    state: 'open' as const,
+  })),
+})
+
+// Tree lines join each child to its parent: a branch runs on past a child with a later sibling.
+export const TicketTree: Story = {
+  args: {
+    view: ticketsView({
+      tickets: [
+        branch(700, 'Wayfinder: the planner', [701, 702]),
+        branch(701, 'Read the plan', [703]),
+        branch(703, 'Parse the plan file'),
+        branch(702, 'Draw the plan'),
+        standalone,
+      ],
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const rows = within(canvasElement).getAllByRole('button', { name: /^#\d+/ })
+    await expect(rows.map((row) => row.textContent?.slice(0, 4))).toEqual([
+      '#700',
+      '#701',
+      '#703',
+      '#702',
+      '#273',
+    ])
+    await expect(rows[2]).toHaveAccessibleName(/child of #701$/)
+    await expect(rows[3]).toHaveAccessibleName(/child of #700$/)
+  },
+}
+
 // A Linear row carries its team key and workflow status; the Detail adds its priority.
 export const LinearBacklog: Story = {
   args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },

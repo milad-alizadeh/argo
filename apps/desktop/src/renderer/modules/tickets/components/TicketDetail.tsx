@@ -85,7 +85,8 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
     <>
       <dt className="text-muted-foreground">{name}</dt>
-      <dd className="flex min-w-0 flex-wrap items-baseline gap-(--spacing-shell-tight)">
+      {/* Every value row is as tall as the status trigger, so the rows keep one rhythm. */}
+      <dd className="flex min-h-6 min-w-0 flex-wrap items-center gap-(--spacing-shell-tight)">
         {children}
       </dd>
     </>
@@ -120,7 +121,9 @@ function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesPr
       ) : null}
       {ticket.type ? (
         <Property name="Type">
-          <Badge variant="secondary">{ticket.type}</Badge>
+          <Badge className="type-meta" variant="secondary">
+            {ticket.type}
+          </Badge>
         </Property>
       ) : null}
       {ticket.labels.length > 0 ? (

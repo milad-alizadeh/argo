@@ -69,6 +69,19 @@ export function unfoldedRows(
   })
 }
 
+// For each drawn row, whether the branch in each ancestor column runs on below it. Read from the
+// bottom up: a row cuts every column at or deeper than its own depth and opens its parent's.
+export function treeRails(rows: readonly BacklogRow[]): boolean[][] {
+  const runsOn: boolean[] = []
+  const rails = [...rows].reverse().map(({ depth }) => {
+    const row = Array.from({ length: depth }, (_, column) => runsOn[column] ?? false)
+    runsOn.splice(depth)
+    if (depth > 0) runsOn[depth - 1] = true
+    return row
+  })
+  return rails.reverse()
+}
+
 // A Ticket is blocked while any Ticket blocking it is still open.
 export const openBlockers = (ticket: Ticket): number =>
   ticket.blockedBy?.filter((link) => link.state === 'open').length ?? 0

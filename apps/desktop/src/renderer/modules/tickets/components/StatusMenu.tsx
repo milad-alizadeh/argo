@@ -19,6 +19,9 @@ export type StatusMenuProps = {
   onChange: (status: TicketStatus) => void
 }
 
+// Pulls the named trigger's icon onto the value column: the xs button's px-2 plus its 1px border.
+const NAMED_INSET = '-ml-[calc(--spacing(2)+1px)]'
+
 // A Ticket's status as a menu of every status its provider offers.
 export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMenuProps) {
   if (statuses.length === 0) return <StatusMark named={named} status={status} />
@@ -32,7 +35,7 @@ export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMe
         aria-label={`${noun}: ${status.name}`}
         render={
           <Button
-            className="relative z-10 shrink-0 type-meta text-muted-foreground"
+            className={`relative z-10 shrink-0 type-meta text-muted-foreground ${named ? NAMED_INSET : ''}`}
             size={named ? 'xs' : 'icon-xs'}
             variant="ghost"
           />
