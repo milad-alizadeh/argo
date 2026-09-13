@@ -32,10 +32,27 @@ async function prepare(root) {
   return { application, userData, projectPath, registryPath }
 }
 
-async function prove(application, fixture) {
-  const page = await application.firstWindow()
-  page.setDefaultTimeout(30_000)
-  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+const SURFACE = [
+  'decideClaudePermission',
+  'getAppearance',
+  'interruptClaudeSession',
+  'listProjects',
+  'listSessions',
+  'onAppearanceChanged',
+  'onCommand',
+  'openProject',
+  'readClaudePermission',
+  'readSessionFeed',
+  'registerProject',
+  'relocateProject',
+  'sendClaudeSession',
+  'setAppearance',
+  'startClaudeSession',
+  'versions',
+  'zoomFactor',
+]
+
+async function proveSurface(application, page) {
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   assert.equal(
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()),
@@ -47,26 +64,15 @@ async function prove(application, fixture) {
       process: typeof window.process,
       methods: Object.keys(window.argo).sort(),
     })),
-    {
-      node: 'undefined',
-      process: 'undefined',
-      methods: [
-        'getAppearance',
-        'listProjects',
-        'listSessions',
-        'onAppearanceChanged',
-        'onCommand',
-        'openProject',
-        'readSessionFeed',
-        'registerProject',
-        'relocateProject',
-        'setAppearance',
-        'startClaudeSession',
-        'versions',
-        'zoomFactor',
-      ],
-    },
+    { node: 'undefined', process: 'undefined', methods: SURFACE },
   )
+}
+
+async function prove(application, fixture) {
+  const page = await application.firstWindow()
+  page.setDefaultTimeout(30_000)
+  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+  await proveSurface(application, page)
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
   assert.deepEqual(await invoke(request), {
