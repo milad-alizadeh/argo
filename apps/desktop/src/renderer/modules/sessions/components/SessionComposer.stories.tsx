@@ -271,15 +271,7 @@ export const QueuedTurn: Story = {
     )
     await userEvent.click(
       canvas.getByRole('button', {
-        name: 'Move queued message up: Then prepare the release notes.',
-      }),
-    )
-    await expect(canvas.getAllByRole('listitem')[0]).toHaveTextContent(
-      'Then prepare the release notes.',
-    )
-    await userEvent.click(
-      canvas.getByRole('button', {
-        name: 'Remove queued message: Then prepare the release notes.',
+        name: 'Remove queued message: Run the focused checks after this Turn.',
       }),
     )
     await expect(canvas.getAllByRole('listitem')[0]).toHaveClass(
@@ -288,20 +280,20 @@ export const QueuedTurn: Story = {
     await waitFor(() =>
       expect(
         canvas.getByRole('button', {
-          name: 'Steer queued message: Run the focused checks after this Turn.',
+          name: 'Steer queued message: Then prepare the release notes.',
         }),
       ).toHaveFocus(),
     )
     await userEvent.click(
       canvas.getByRole('button', {
-        name: 'Edit queued message: Run the focused checks after this Turn.',
+        name: 'Edit queued message: Then prepare the release notes.',
       }),
     )
-    await expect(composer).toHaveTextContent('Run the focused checks after this Turn.')
+    await expect(composer).toHaveTextContent('Then prepare the release notes.')
     await expect(composer).toHaveFocus()
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
-      'Run the focused checks after this Turn.',
+      'Then prepare the release notes.',
     )
   },
 }

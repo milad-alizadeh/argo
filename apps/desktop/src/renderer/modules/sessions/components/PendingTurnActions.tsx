@@ -4,46 +4,16 @@ import { Button } from '../../../components/ui/button'
 import type { PendingTurn } from './usePendingTurns'
 
 export function PendingTurnActions({
-  index,
   onEdit,
   onRemove,
-  onReorder,
   turn,
-  turns,
 }: {
-  index: number
   onEdit: (turn: PendingTurn) => void
   onRemove: (id: string) => void
-  onReorder: (sourceId: string, targetId: string) => void
   turn: PendingTurn
-  turns: PendingTurn[]
 }) {
   return (
     <>
-      {index > 0 ? (
-        <Button
-          aria-label={`Move queued message up: ${turn.text}`}
-          className="sr-only focus:not-sr-only"
-          onClick={() => onReorder(turn.id, turns[index - 1]?.id ?? turn.id)}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
-          Move up
-        </Button>
-      ) : null}
-      {index < turns.length - 1 ? (
-        <Button
-          aria-label={`Move queued message down: ${turn.text}`}
-          className="sr-only focus:not-sr-only"
-          onClick={() => onReorder(turn.id, turns[index + 1]?.id ?? turn.id)}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
-          Move down
-        </Button>
-      ) : null}
       <Button
         aria-label={`Steer queued message: ${turn.text}`}
         onClick={() => {

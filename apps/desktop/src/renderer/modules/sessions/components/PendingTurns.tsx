@@ -79,7 +79,7 @@ export function PendingTurns({
   return (
     <section aria-label="Pending Turns" className="session-page__composer-queue">
       <ul ref={listRef}>
-        {turns.map((turn, index) => (
+        {turns.map((turn) => (
           <li
             key={turn.id}
             draggable
@@ -97,15 +97,8 @@ export function PendingTurns({
             <GripVertical aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
             <Route aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate type-body">{turn.text}</span>
-            <span className="sr-only">Queued turn. Use the move controls to reorder it.</span>
-            <PendingTurnActions
-              index={index}
-              onEdit={onEdit}
-              onRemove={removeTurn}
-              onReorder={onReorder}
-              turn={turn}
-              turns={turns}
-            />
+            <span className="sr-only">Queued turn. Drag it to reorder.</span>
+            <PendingTurnActions onEdit={onEdit} onRemove={removeTurn} turn={turn} />
           </li>
         ))}
       </ul>
