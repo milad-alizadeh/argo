@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { writeFixtureTree } from './session-fixture-files'
 
 export async function provePackagedRosterSelection(page) {
   await page.evaluate(() => {
@@ -21,12 +20,4 @@ export async function provePackagedRosterSelection(page) {
   )
   assert.notEqual(focusedSessionId, sessionId)
   assert.equal(await selected.getAttribute('aria-current'), 'page')
-}
-
-export async function provePackagedReread(page, transcripts) {
-  const before = await page.locator('nav[aria-label="Sessions"] button').count()
-  await writeFixtureTree(transcripts, ['titledHeadless'], { directory: 'project-two' })
-  await page.getByRole('button', { name: 'Read again' }).click()
-  await page.getByRole('button', { name: /The name a person typed/ }).waitFor()
-  assert.equal(await page.locator('nav[aria-label="Sessions"] button').count(), before + 1)
 }

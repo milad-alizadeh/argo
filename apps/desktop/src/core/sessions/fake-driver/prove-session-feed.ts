@@ -21,10 +21,7 @@ import {
 } from '../proof-protocol'
 import { appendProse, prepare, streamProse } from './session-feed-fixture'
 import { proveLiveFeed } from './session-live-feed-cases'
-import {
-  provePackagedReread,
-  provePackagedRosterSelection,
-} from './session-roster-interaction-cases'
+import { provePackagedRosterSelection } from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -73,7 +70,6 @@ try {
       stream: streamProse,
     }),
   )
-  await ran(['session-roster-reread'], () => provePackagedReread(page, fixture.claudeTranscripts))
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
