@@ -194,6 +194,8 @@ export const GroupedToolCalls: Story = {
     const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
     await expect(canvas.queryByRole('button', { name: /Ran bun test composer/ })).toBeNull()
     await userEvent.click(group)
-    await canvas.findByRole('button', { name: /Ran bun test composer/ })
+    const call = await canvas.findByRole('button', { name: /Ran bun test composer/ })
+    await expect(group).toHaveClass('type-body')
+    await expect(call).toHaveClass('type-body')
   },
 }

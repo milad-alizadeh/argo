@@ -1,6 +1,5 @@
 import {
   CircleCheck,
-  CircleX,
   FilePenLine,
   LoaderCircle,
   Search,
@@ -27,7 +26,7 @@ const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: string }>>
 function StatusIcon({ status }: { status: ToolRow['status'] }) {
   switch (status) {
     case 'failed':
-      return <StatusMark icon={CircleX} label="Failed" className="text-destructive" />
+      return null
     case 'running':
       return <StatusMark icon={LoaderCircle} label="In progress" className="animate-spin" />
     case 'succeeded':
@@ -62,23 +61,26 @@ export function FeedToolLine({
   onOpen: (row: ToolRow) => void
 }) {
   const Icon = TOOL_ICONS[call.kind]
+  const failed = call.status === 'failed'
   return (
     <button
       type="button"
       aria-current={activeEvidenceId === call.id ? 'location' : undefined}
-      className={`flex w-full items-center gap-2 text-left text-muted-foreground transition-colors hover:text-foreground ${activeEvidenceId === call.id ? 'text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${failed ? 'text-destructive hover:text-destructive' : 'text-muted-foreground hover:text-foreground'} ${activeEvidenceId === call.id ? 'text-foreground' : ''}`}
       data-feed-evidence-id={call.id}
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
       <Icon
         aria-hidden="true"
-        className="!size-(--size-icon-inline) shrink-0 text-muted-foreground"
+        className={`!size-(--size-icon-inline) shrink-0 ${failed ? 'text-destructive' : 'text-muted-foreground'}`}
       />
       <span className="min-w-0 flex-1 truncate">{call.label}</span>
       {call.detail === null ? null : (
-        <span className="shrink-0 text-muted-foreground">{call.detail}</span>
+        <span className={`shrink-0 ${failed ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {call.detail}
+        </span>
       )}
-      <StatusIcon status={call.status} />
+      {failed ? null : <StatusIcon status={call.status} />}
     </button>
   )
 }

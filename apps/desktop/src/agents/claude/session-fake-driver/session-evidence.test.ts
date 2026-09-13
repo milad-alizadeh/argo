@@ -21,7 +21,7 @@ function assertToolRows(reply) {
   assert.deepEqual(
     group.calls.map(({ label, detail, status }) => ({ label, detail, status })),
     [
-      { label: 'Ran bun test', detail: '1 passed', status: 'succeeded' },
+      { label: 'Ran bun test', detail: null, status: 'succeeded' },
       { label: 'Read app.ts', detail: null, status: 'failed' },
       { label: 'Edited app.ts', detail: '+1 −1', status: 'running' },
     ],

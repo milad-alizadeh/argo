@@ -30,7 +30,7 @@ function toolPresentation(call: ToolCall) {
   )
 }
 
-function toolDetail(call: ToolCall, result: ToolResult | undefined): string | null {
+function toolDetail(call: ToolCall): string | null {
   if (
     call.name === 'Edit' &&
     typeof call.input.old_string === 'string' &&
@@ -38,8 +38,7 @@ function toolDetail(call: ToolCall, result: ToolResult | undefined): string | nu
   ) {
     return `+${call.input.new_string.split('\n').length} −${call.input.old_string.split('\n').length}`
   }
-  const passed = result?.content?.match(/\b(\d+) pass(?:ed)?\b/i)?.[1]
-  return passed === undefined ? null : `${passed} passed`
+  return null
 }
 
 function evidence(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
@@ -66,7 +65,7 @@ function toolRow(call: ToolCall, results: Map<string, ToolResult>): ToolRow {
     shape: 'tool',
     id: call.id,
     ...toolPresentation(call),
-    detail: toolDetail(call, result),
+    detail: toolDetail(call),
     status: toolStatus(result),
     evidence: evidence(call, result),
   }
