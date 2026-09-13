@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import {
+  readCompletedTurn,
+  readInterrupt,
+  readMessage,
+  readStartedTurn,
+  readThreadId,
+} from '../drive/protocol.ts'
+
+test('parses a JSON-RPC result response', () => {
+  const message = readMessage('{"id":1,"result":{"thread":{"id":"thread-1"}}}')
+  assert.deepEqual(message, { id: 1, result: { thread: { id: 'thread-1' } } })
+})
+
+test('parses a JSON-RPC error response', () => {
+  const message = readMessage('{"id":2,"error":{"code":-32601,"message":"unsupported"}}')
+  assert.deepEqual(message, { id: 2, error: { code: -32601, message: 'unsupported' } })
+})
+
+test('parses a server notification with no ID', () => {
+  const message = readMessage(
+    '{"method":"turn/completed","params":{"threadId":"thread-1","turn":{"id":"turn-1","status":"completed"}}}',
+  )
+  assert.deepEqual(message, {
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
+    id: undefined,
+  })
+})
+
+test('rejects a response naming both a result and an error', () => {
+  assert.throws(() => readMessage('{"id":1,"result":{},"error":{"code":1,"message":"x"}}'))
+})
+
+test('reads the thread ID out of a thread/start result', () => {
+  assert.equal(readThreadId({ thread: { id: 'thread-1' } }), 'thread-1')
+})
+
+test('reads a started Turn', () => {
+  assert.deepEqual(readStartedTurn({ turn: { id: 'turn-1', status: 'inProgress', error: null } }), {
+    id: 'turn-1',
+    status: 'inProgress',
+    error: null,
+  })
+})
+
+test('reads a completed-Turn notification, and ignores any other notification', () => {
+  const completed = readCompletedTurn({
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'failed', error: 'boom' } },
+  })
+  assert.deepEqual(completed, {
+    threadId: 'thread-1',
+    turn: { id: 'turn-1', status: 'failed', error: 'boom' },
+  })
+
+  assert.equal(
+    readCompletedTurn({ method: 'thread/status/changed', params: { threadId: 'thread-1' } }),
+    undefined,
+  )
+})
+
+test('reads an empty interrupt result and rejects a populated one', () => {
+  assert.doesNotThrow(() => readInterrupt({}))
+  assert.throws(() => readInterrupt({ turnId: 'turn-1' }))
+})

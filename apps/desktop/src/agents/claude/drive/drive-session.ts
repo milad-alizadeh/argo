@@ -1,3 +1,4 @@
+import { requestIdentifier } from '@/boundary'
 import {
   type ClaudeSessionInterruptReply,
   type ClaudeSessionSendReply,
@@ -9,11 +10,6 @@ import {
 type ClaudeSessionDrive = {
   interrupt: (sessionId: string) => void
   send: (sessionId: string, prompt: string) => void
-}
-
-function requestIdOf(value: unknown): string | null {
-  if (typeof value !== 'object' || value === null || !('requestId' in value)) return null
-  return typeof value.requestId === 'string' ? value.requestId : null
 }
 
 export function driveClaudeSession(
@@ -50,5 +46,5 @@ export function driveClaudeSession(
       return sessionError('not-drivable', request.requestId)
     }
   }
-  return sessionError('invalid-request', requestIdOf(value))
+  return sessionError('invalid-request', requestIdentifier(value))
 }

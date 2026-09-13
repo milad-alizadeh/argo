@@ -9,6 +9,8 @@ import { type RefObject, useCallback, useRef, useState } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
+import type { SessionCli } from '../hooks/useSessionComposer'
+import { ComposerCliToggle } from './ComposerCliToggle'
 import { SessionPlanPopover } from './SessionPlanPopover'
 
 export type SessionComposerProps = {
@@ -17,6 +19,7 @@ export type SessionComposerProps = {
   plan: SessionPlan | null
   sessionId: string
   onSend: (text: string) => Promise<boolean>
+  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
 }
 
 function editorState(text: string) {
@@ -95,6 +98,7 @@ export function SessionComposer({
   plan,
   sessionId,
   onSend,
+  cliPicker,
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
@@ -132,6 +136,9 @@ export function SessionComposer({
         void send()
       }}
     >
+      {cliPicker ? (
+        <ComposerCliToggle cli={cliPicker.cli} onChangeCli={cliPicker.onChangeCli} />
+      ) : null}
       <div
         className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
       >
