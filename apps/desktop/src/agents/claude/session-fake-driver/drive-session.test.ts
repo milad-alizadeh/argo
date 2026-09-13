@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
-import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
 import { driveClaudeSession } from '../drive/drive-session.ts'
+import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
 const sendRequest = {

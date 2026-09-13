@@ -23,11 +23,12 @@ type TranscriptSessionSource = {
   discoverSessions: () => Promise<Discovery>
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
+  managedSessions?: () => SessionRosterRow[]
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
 // discovery sweep alone can miss it, or hold a stale posture for one it has already found.
-export function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]): Discovery {
+function mergeManagedRoster(discovered: Discovery, managed: SessionRosterRow[]): Discovery {
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
@@ -61,6 +62,19 @@ function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
 }
 
+// A managed Session reads as an empty Feed until its CLI writes the first transcript line.
+function unwrittenFeed(source: TranscriptSessionSource, value: SessionFeedRequest) {
+  const managed = source.managedSessions?.().some(({ id }) => id === value.sessionId) ?? false
+  if (!managed) return sessionError('missing-session', value.requestId)
+  return feedReply(value, {
+    chainId: value.sessionId,
+    paths: [],
+    rows: [],
+    revision: feedRevision(value.sessionId, ''),
+    stamps: '',
+  })
+}
+
 async function readFeed({ source, feeds, value }: FeedReadOptions) {
   const held = feeds.get(value.sessionId)
   const cached = await cachedReply(value, held)
@@ -69,7 +83,7 @@ async function readFeed({ source, feeds, value }: FeedReadOptions) {
     return cached
   }
   const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
-  if (stable === null) return sessionError('missing-session', value.requestId)
+  if (stable === null) return unwrittenFeed(source, value)
   const { chain, stamps } = stable
   const rows = source.projectFeed(chain)
   const revision = feedRevision(chain.id, stamps)
@@ -92,7 +106,10 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
       const parsed = sessionListRequestSchema.safeParse(value)
       if (!parsed.success) return sessionError('invalid-request', null)
       try {
-        const discovery = await source.discoverSessions()
+        const discovery = mergeManagedRoster(
+          await source.discoverSessions(),
+          source.managedSessions?.() ?? [],
+        )
         return {
           version: 1,
           type: 'session.listed',
