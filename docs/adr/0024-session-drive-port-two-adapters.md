@@ -1,6 +1,6 @@
 # 0024 · The session-drive port; one adapter per CLI
 
-Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26
+Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26 · permission socket placement amended (#1842) · 2026-09-13
 
 ## Context
 
@@ -69,6 +69,13 @@ receives `tool_name` + `tool_input`, blocks, and calls back to Argo over a local
 cockpit raises the Permission; the user's answer returns as
 `hookSpecificOutput.permissionDecision`. `--permission-mode` sets the standing baseline; the hook
 is the per-action layer on top.
+
+**The socket lives in a short temp folder, not under `userData`.** macOS limits a Unix socket
+path to 103 bytes, and a path under `userData` runs past that (124 bytes on a typical home
+folder), where a failed listen would crash the main process (#1842). Each gate makes one folder
+in the system temp folder, names each socket with a short random id, and deletes the folder when
+the app quits. A gate that cannot listen leaves the hook nothing to dial, so the hook denies every
+gated tool.
 
 > The hook must return **`allow` or `deny`, never `ask`.** `ask` falls through to the TUI's own
 > dialog — which is hidden, so the session would stall against a prompt with no reader.

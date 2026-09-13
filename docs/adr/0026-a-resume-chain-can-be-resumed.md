@@ -99,8 +99,15 @@ flag) adopts nothing at all.
   this file existed.
 - **An open window whose owner is still running is another window's Session, and a resume is
   refused.** An open window whose owner is gone is the ordinary orphan — that Argo was killed
-  before it could close it — and resumes normally. Only that ordinary orphan reads `orphaned` in
-  the Roster, because a Session another window drives still has a live process.
+  before it could close it — and resumes normally.
+- **A Session another running window drives reads `external` in this window's Roster.** This is
+  the expected grading, not a gap. `orphaned` promises that the next Turn resumes the Session,
+  and here it cannot, because that Session still has a live process. A Turn sent to it keeps its
+  draft, and the red alert says that another Argo window is driving it (#1842).
+- **The ledger file is the truth, and a window's memory only fills in a write that failed.** A
+  window that lets a Session go reads the file again before it grades or resumes that Session,
+  because another window may have resumed it since. A write changes only its own entry, so it
+  never overwrites a claim another window made.
 - **The ledger only grows.** One small entry per Session Argo has ever owned, and nothing prunes
   it: a transcript that has been deleted leaves its window behind. Left as is because the entry is
   a few dozen bytes and there is no honest signal that a Session is gone for good; if the file
