@@ -51,11 +51,13 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
 
 export function BasicFeed({
   feed,
+  activeEvidenceId,
   failure,
   selectedSessionId,
   onOpenEvidence,
 }: {
   feed: SessionFeed | null
+  activeEvidenceId: string | null
   failure: SessionError | null
   selectedSessionId: SessionId | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
@@ -106,6 +108,7 @@ export function BasicFeed({
       {ordered.map(([id, document]) => (
         <FeedDocument
           active={failure === null && id === selectedSessionId}
+          activeEvidenceId={activeEvidenceId}
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}

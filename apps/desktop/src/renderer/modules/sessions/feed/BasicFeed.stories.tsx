@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, waitFor, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed } from '../types'
 
@@ -35,7 +36,13 @@ const meta: Meta<typeof BasicFeed> = {
       </div>
     ),
   ],
-  args: { feed, failure: null, selectedSessionId: 'prose' },
+  args: {
+    activeEvidenceId: null,
+    feed,
+    failure: null,
+    onOpenEvidence: () => {},
+    selectedSessionId: 'prose',
+  },
 }
 
 export default meta
@@ -132,5 +139,68 @@ export const FormattedProse: Story = {
       )
       await expect(row.scrollHeight).toBe(row.clientHeight)
     }
+  },
+}
+
+const toolFeed = {
+  ...feed,
+  chainId: 'tools',
+  revision: 'tools-one',
+  sessionId: 'tools',
+  rows: [
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:one:two',
+      label: 'Ran 1 command · Edited 1 file',
+      calls: [
+        {
+          id: 'one',
+          kind: 'command' as const,
+          label: 'Ran bun test composer',
+          detail: '3 passed',
+          status: 'succeeded' as const,
+          evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
+        },
+        {
+          id: 'two',
+          kind: 'edited' as const,
+          label: 'Edited Composer.tsx',
+          detail: '+2 −1',
+          status: 'failed' as const,
+          evidence: { kind: 'diff' as const, title: 'Composer.tsx', source: '-old\n+new' },
+        },
+      ],
+    },
+  ],
+} satisfies SessionFeed
+
+function FeedWithEvidence() {
+  const [evidence, setEvidence] = useState<string | null>(null)
+  return (
+    <>
+      <BasicFeed
+        failure={null}
+        activeEvidenceId={null}
+        feed={toolFeed}
+        onOpenEvidence={(row) =>
+          setEvidence(row.evidence?.title ?? 'Recorded evidence is unavailable.')
+        }
+        selectedSessionId="tools"
+      />
+      <output aria-label="Opened evidence">{evidence}</output>
+    </>
+  )
+}
+
+export const GroupedToolCalls: Story = {
+  render: () => <FeedWithEvidence />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    await expect(canvas.queryByRole('button', { name: /Ran bun test composer/ })).toBeNull()
+    await userEvent.click(group)
+    const command = await canvas.findByRole('button', { name: /Ran bun test composer/ })
+    await userEvent.click(command)
+    await expect(canvas.getByLabelText('Opened evidence')).toHaveTextContent('bun test composer')
   },
 }

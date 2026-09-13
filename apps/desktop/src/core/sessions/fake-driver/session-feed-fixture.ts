@@ -18,6 +18,7 @@ export const FIXTURES = [
   'unparseableBody',
   'askPending',
   'prose',
+  'toolCalls',
   // Resumes a leaf that is in no file here, which is what a chain looks like when the Roster's
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',

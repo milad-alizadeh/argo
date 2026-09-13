@@ -11,7 +11,10 @@ type Story = StoryObj<typeof SessionEvidenceInspector>
 const command = {
   shape: 'tool' as const,
   id: 'command',
+  kind: 'command' as const,
   label: 'bun test',
+  detail: '13 passed',
+  status: 'succeeded' as const,
   evidence: { kind: 'output' as const, title: 'bun test', source: '13 pass\n0 fail' },
 }
 export const CommandOutput: Story = {

@@ -1,6 +1,7 @@
 import type { SessionChain } from './chains'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
-import type { ToolCall, TranscriptRecord } from './transcript'
+import { groupToolRuns, type ToolResult, toolRows } from './tool-feed'
+import type { TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
 
@@ -11,38 +12,10 @@ export function feedProjection(rows: readonly SessionFeedRow[]): string {
   return JSON.stringify(rows)
 }
 
-function evidenceKind(call: ToolCall): 'output' | 'document' | 'diff' {
-  if (call.name === 'Bash') return 'output'
-  if (call.name === 'Read') return 'document'
-  return 'diff'
-}
-
-function toolRow(
-  call: ToolCall,
-  results: Map<string, string | null>,
-): Extract<SessionFeedRow, { shape: 'tool' }> {
-  const recorded = results.get(call.id) ?? null
-  const path = typeof call.input.file_path === 'string' ? call.input.file_path : call.name
-  const kind = evidenceKind(call)
-  const source =
-    kind === 'diff' &&
-    typeof call.input.old_string === 'string' &&
-    typeof call.input.new_string === 'string'
-      ? `-${call.input.old_string}\n+${call.input.new_string}`
-      : recorded
-  return {
-    shape: 'tool',
-    id: call.id,
-    label:
-      call.name === 'Bash' ? String(call.input.command ?? 'Ran command') : `${call.name} ${path}`,
-    evidence: source === null ? null : { kind, title: path, source },
-  }
-}
-
 function rowsOfRecord(
   record: TranscriptRecord,
   position: string,
-  results: Map<string, string | null>,
+  results: Map<string, ToolResult>,
 ): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
@@ -50,15 +23,19 @@ function rowsOfRecord(
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
-  const prose: SessionFeedRow[] = record.blocks.map((block, index) => {
+  const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
+  return record.blocks.flatMap((block, index): SessionFeedRow[] => {
     const id = `${record.uuid}:${index}`
-    if (block.shape === 'prose') return { shape: 'prose', id, role: record.role, text: block.text }
-    if (block.shape === 'thought') return { shape: 'thought', id, text: block.text }
-    if (block.shape === 'marker') return { shape: 'marker', id, marker: block.marker }
-    return { shape: 'source', id, role: record.role, label: block.label, source: block.source }
+    if (block.shape === 'prose')
+      return [{ shape: 'prose', id, role: record.role, text: block.text }]
+    if (block.shape === 'thought') return [{ shape: 'thought', id, text: block.text }]
+    if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
+    if (block.shape === 'tool') {
+      const call = calls.get(block.callId)
+      return call === undefined ? [] : toolRows([call], results)
+    }
+    return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   })
-  const tools = record.toolCalls.map((call) => toolRow(call, results))
-  return [...prose, ...tools]
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -79,12 +56,16 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
           record.kind === 'message' ? (record.toolResults ?? []) : [],
         ),
       )
-      .map((result) => [result.callId, result.content] as const),
+      .map(
+        (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
+      ),
   )
-  return withoutRepeatedBreaks(
-    chain.files.flatMap((file, fileIndex) =>
-      file.records.flatMap((record, recordIndex) =>
-        rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+  return groupToolRuns(
+    withoutRepeatedBreaks(
+      chain.files.flatMap((file, fileIndex) =>
+        file.records.flatMap((record, recordIndex) =>
+          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+        ),
       ),
     ),
   )
