@@ -43,10 +43,6 @@ const overlaid = createClaudeSessionReader({ transcripts, liveMessages: driver.l
 const recorded = createClaudeSessionReader({ transcripts })
 try {
   const sessionId = driver.start({ cwd: process.cwd(), prompt: PROMPT, setup: SETUP })
-  // claude 2.1.270 drops the Enter that `start` sends while its TUI is still drawing, leaving the
-  // prompt in the input box; an empty Turn once it has settled submits it.
-  await new Promise((resolve) => setTimeout(resolve, 10_000))
-  await driver.send(sessionId, { prompt: '', setup: SETUP })
   const drafts: string[] = []
   const deadline = Date.now() + 120_000
   while (Date.now() < deadline) {

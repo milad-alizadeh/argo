@@ -7,12 +7,14 @@ import { readCompletedTurn, readInterrupt, readStartedTurn, readThreadId } from 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
   findExecutable: () => string | null
+  now: () => Date
   openChannel: (executable: string, options: SpawnOptions) => CodexChannel
 }
 type ManagedSession = {
   channel: CodexChannel
   cwd: string
   prompt: string
+  startedAt: string
   turnId: string | null
   failed: boolean
   messages: LiveMessages
@@ -78,8 +80,9 @@ async function beginManagedSession(
     channel.notify('initialized')
     const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
     threadId = startedThreadId
+    const started = { channel, cwd, prompt, startedAt: options.now().toISOString() }
     const messages = createLiveMessages(startedThreadId)
-    sessions.set(startedThreadId, { channel, cwd, prompt, turnId: null, failed: false, messages })
+    sessions.set(startedThreadId, { ...started, turnId: null, failed: false, messages })
     channel.onExit(() => {
       const session = sessions.get(startedThreadId)
       if (session) session.failed = true

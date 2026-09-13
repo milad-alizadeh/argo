@@ -6,6 +6,7 @@ import {
   ledgerFile,
   OPENING,
   PASTED,
+  STARTED_AT,
   settle,
   startedSession,
 } from './claude-driver-launch.ts'
@@ -79,6 +80,16 @@ test('holds the text a Turn streams until Argo sends the next Turn or interrupts
   assert.deepEqual(afterSend, [])
   assert.deepEqual(next, [{ id: 'turn-2-message', text: 'Geese honk.' }])
   assert.deepEqual(driver.liveMessages(sessionId), [])
+})
+
+test('lists a new managed Session at the time it started', async (context) => {
+  const { driver } = launch(await ledgerFile(context))
+  driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.', setup: OPENING })
+
+  assert.deepEqual(
+    driver.roster().map(({ updatedAt }) => updatedAt),
+    [STARTED_AT.toISOString()],
+  )
 })
 
 test('types a setup command only for what the next Turn changes, then the prompt', async (context) => {

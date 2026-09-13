@@ -20,6 +20,7 @@ const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', imp
 function driverBackedByFixture() {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
+    now: () => new Date(),
     openChannel: (executable, options) => {
       const child = spawn(executable, [fixture], { cwd: options.cwd, env: options.env })
       child.stderr.on('data', () => {})
@@ -64,17 +65,17 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     assert.ok(row, 'the managed Codex Session must appear in the shared Roster')
     assert.equal(row?.status, 'running')
 
-    // Codex has not written a transcript for this thread yet, so the Feed has nothing to read.
-    // The shared reader must report that honestly (a typed error), never stall or throw.
+    // Codex has not written a transcript for this thread yet, so the Feed is empty rather than
+    // missing: the Session screen must not read a Session it just started as lost (#2002).
     const feedReply = (await reader.readSessionFeed({
       version: 1,
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
       revision: null,
-    })) as { type: string; code?: string }
-    assert.equal(feedReply.type, 'session.error')
-    assert.equal(feedReply.code, 'missing-session')
+    })) as { type: string; rows?: unknown[] }
+    assert.equal(feedReply.type, 'session.feed.read')
+    assert.deepEqual(feedReply.rows, [])
 
     const sendReply = await driveCodexSession(
       {
@@ -137,6 +138,7 @@ test('driving a Session Codex never launched reports a drivable failure, not a s
 test('Codex being unavailable on the machine reports an honest start failure', async () => {
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
+    now: () => new Date(),
     openChannel: () => {
       throw new Error('unreachable')
     },

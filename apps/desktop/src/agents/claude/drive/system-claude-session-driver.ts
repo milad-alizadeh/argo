@@ -53,6 +53,7 @@ export function createSystemClaudeSessionDriver(paths: {
   const driver = createClaudeSessionDriver({
     findExecutable: () => paths.executable ?? claudeExecutable(),
     mintSessionId: randomUUID,
+    now: () => new Date(),
     ledger: createOwnershipLedger({
       path: paths.ledger,
       owner: { pid: process.pid, registry: randomUUID() },

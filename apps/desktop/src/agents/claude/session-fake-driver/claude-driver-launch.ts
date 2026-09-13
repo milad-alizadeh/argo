@@ -9,6 +9,8 @@ import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import type { ResumeTarget } from '../drive/drive-channel.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 
+export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
+
 type Spawned = {
   command: string
   commandArguments: string[]
@@ -51,6 +53,7 @@ export function launch(
   const driver = createClaudeSessionDriver({
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
     mintSessionId: () => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c',
+    now: () => STARTED_AT,
     schedule: (callback) => callback(),
     ledger,
     resumeTarget:

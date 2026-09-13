@@ -3,10 +3,7 @@ import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contrac
 import { projectFeed } from '@/core/sessions/feed'
 import { type FeedOverlay, withFeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
-import {
-  createTranscriptSessionReader,
-  mergeManagedRoster,
-} from '@/core/sessions/read-transcript-sessions'
+import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import { discoverSessions, readSessionFiles } from './discover'
 
@@ -39,12 +36,10 @@ function draftOverlay(live: LiveMessage[]): FeedOverlay | null {
 
 export function createCodexSessionReader(root: string, options?: ReaderOptions): SessionReader {
   const reader = createTranscriptSessionReader({
-    discoverSessions: async () => {
-      const discovered = await discoverSessions(root)
-      return mergeManagedRoster(discovered, options?.roster?.() ?? [])
-    },
+    discoverSessions: () => discoverSessions(root),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
+    managedSessions: options?.roster,
   })
   const liveMessages = options?.liveMessages
   if (liveMessages === undefined) return reader

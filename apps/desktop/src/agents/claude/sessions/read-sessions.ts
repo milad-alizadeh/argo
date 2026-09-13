@@ -4,10 +4,7 @@ import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
 import { withFeedOverlay } from '@/core/sessions/live-feed'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import {
-  createTranscriptSessionReader,
-  mergeManagedRoster,
-} from '@/core/sessions/read-transcript-sessions'
+import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
 import type { LiveMessage } from '../drive/live-messages'
 import { discoverSessions, readSessionFiles } from './discover'
 import { projectFeed } from './feed'
@@ -31,10 +28,11 @@ export function createClaudeSessionReader(roots: {
       const graded = discovered.rows.map(
         (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
       )
-      return mergeManagedRoster({ ...discovered, rows: graded }, roots.managedSessions?.() ?? [])
+      return { ...discovered, rows: graded }
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,
+    managedSessions: roots.managedSessions,
   })
   const liveMessages = roots.liveMessages
   if (liveMessages === undefined) return reader
