@@ -1,9 +1,8 @@
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 import { useNavigate, useParams } from 'react-router'
 
-import { Alert, AlertDescription } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import {
   ResizableHandle,
@@ -12,8 +11,7 @@ import {
 } from '../../../components/ui/resizable'
 import { readCssSize } from '../../../lib/read-css-size'
 import { useProjects } from '../../projects/hooks/useProjects'
-import { SessionComposer } from '../components/SessionComposer'
-import { ClaudePermissionPrompt } from '../components/ClaudePermissionPrompt'
+import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
 import { useClaudeComposer } from '../hooks/useClaudeComposer'
 import { useClaudePermission } from '../hooks/useClaudePermission'
@@ -87,43 +85,9 @@ export function SessionScreenView() {
       feedError={feedError}
       selectedSessionId={selectedSessionId}
       composer={
-        <>
-          {composer.failure ? (
-            <Alert className="mx-auto mt-3 max-w-4xl" variant="destructive">
-              <AlertDescription>{composer.failure}</AlertDescription>
-            </Alert>
-          ) : null}
-          {permission.failure ? (
-            <Alert className="mx-auto mt-3 max-w-4xl" variant="destructive">
-              <AlertDescription>{permission.failure}</AlertDescription>
-            </Alert>
-          ) : null}
-          {permission.permission ? (
-            <ClaudePermissionPrompt
-              permission={permission.permission}
-              onDecide={permission.decide}
-            />
-          ) : null}
-          <SessionComposer {...composer.props} />
-        </>
+        <SessionComposerArea composer={composer} permission={permission} session={session} />
       }
-      inspector={
-        session === null ? null : (
-          <section aria-label="Session facts" className="p-4 text-meta text-muted-foreground">
-            <h2 className="font-medium text-foreground">Session facts</h2>
-            {session.contextTokens === null || session.contextTokens === undefined ? (
-              <p className="mt-2">Context is not available yet.</p>
-            ) : (
-              <p className="mt-2">Context: {session.contextTokens.toLocaleString()} tokens</p>
-            )}
-            {session.spentTokens === null || session.spentTokens === undefined ? (
-              <p>Usage is not available yet.</p>
-            ) : (
-              <p>Usage: {session.spentTokens.toLocaleString()} tokens</p>
-            )}
-          </section>
-        )
-      }
+      inspector={<SessionFacts session={session} />}
     />
   )
 }

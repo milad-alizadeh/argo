@@ -12,27 +12,10 @@ export function useClaudePermission(sessionId: string | null) {
     let live = true
     let timer: number | null = null
     const read = async () => {
-      let reply: Awaited<ReturnType<typeof window.argo.readClaudePermission>>
-      try {
-        reply = await window.argo.readClaudePermission({
-          version: 1,
-          type: 'session.claude.permission',
-          requestId: crypto.randomUUID(),
-          sessionId,
-        })
-      } catch {
-        if (live) setFailure('Argo could not read this Claude permission.')
-        if (live) timer = window.setTimeout(read, 500)
-        return
-      }
-      if (live) {
-        if (reply.type === 'session.error') setFailure(reply.message)
-        else {
-          setFailure(null)
-          setPermission(reply.permission)
-        }
-      }
-      if (live) timer = window.setTimeout(read, 500)
+      const reply = await readPermission(sessionId)
+      if (!live) return
+      applyPermissionReply(reply, setFailure, setPermission)
+      timer = window.setTimeout(read, 500)
     }
     void read()
     return () => {
@@ -59,4 +42,34 @@ export function useClaudePermission(sessionId: string | null) {
     return true
   }
   return { decide, failure, permission }
+}
+
+async function readPermission(sessionId: string) {
+  try {
+    return await window.argo.readClaudePermission({
+      version: 1,
+      type: 'session.claude.permission',
+      requestId: crypto.randomUUID(),
+      sessionId,
+    })
+  } catch {
+    return null
+  }
+}
+
+function applyPermissionReply(
+  reply: Awaited<ReturnType<typeof window.argo.readClaudePermission>> | null,
+  setFailure: (value: string | null) => void,
+  setPermission: (value: ClaudePermission | null) => void,
+) {
+  if (reply === null) {
+    setFailure('Argo could not read this Claude permission.')
+    return
+  }
+  if (reply.type === 'session.error') {
+    setFailure(reply.message)
+    return
+  }
+  setFailure(null)
+  setPermission(reply.permission)
 }

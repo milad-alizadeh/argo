@@ -1,9 +1,9 @@
+import { requestIdentifier } from '@/boundary'
 import {
   type ClaudeSessionStartReply,
   isClaudeSessionStartRequest,
   sessionError,
 } from '@/core/sessions/contract'
-import { requestIdentifier } from '@/boundary'
 
 import { ClaudeSessionDriverError } from './claude-session-driver'
 

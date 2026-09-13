@@ -1,8 +1,8 @@
+import { expect, test } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
-import { expect, test } from 'bun:test'
 
 import { createClaudePermissionGate } from '../drive/permission-gate'
 

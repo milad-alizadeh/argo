@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Button } from '../../../components/ui/button'
 import type { ClaudePermission } from '@/core/sessions/contract'
+import { Button } from '../../../components/ui/button'
 
 export function ClaudePermissionPrompt({
   permission,

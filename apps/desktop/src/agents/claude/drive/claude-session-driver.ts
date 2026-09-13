@@ -1,6 +1,6 @@
-import { claudeTurn } from './claude-turn'
-import type { SessionRosterRow } from '@/core/sessions/models'
 import type { ClaudePermission } from '@/core/sessions/contract'
+import type { SessionRosterRow } from '@/core/sessions/models'
+import { claudeTurn } from './claude-turn'
 
 type ClaudeProcess = {
   write: (text: string) => void
@@ -15,6 +15,7 @@ type DriverOptions = {
   spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
   prepare?: (sessionId: string) => { commandArguments: string[]; close: () => void }
 }
+type ManagedSession = { close: () => void; cwd: string; process: ClaudeProcess; prompt: string }
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => string
@@ -26,7 +27,7 @@ export type ClaudeSessionDriver = {
   close: () => void
 }
 
-const SUBMIT_DELAY_MS = 150
+export const SUBMIT_DELAY_MS = 150
 const INTERRUPT = '\u001b'
 
 export class ClaudeSessionDriverError extends Error {
@@ -46,11 +47,14 @@ function launchEnvironment(): NodeJS.ProcessEnv {
 }
 
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
-  const sessions = new Map<
-    string,
-    { close: () => void; cwd: string; process: ClaudeProcess; prompt: string }
-  >()
+  const sessions = new Map<string, ManagedSession>()
+  return driverActions(options, sessions)
+}
 
+function driverActions(
+  options: DriverOptions,
+  sessions: Map<string, ManagedSession>,
+): ClaudeSessionDriver {
   const send = (sessionId: string, text: string) => {
     const session = sessions.get(sessionId)
     if (!session) throw new Error('Claude Session is no longer running.')
@@ -60,41 +64,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
   }
 
   return {
-    start({ cwd, prompt }: { cwd: string; prompt: string }) {
-      const executable = options.findExecutable()
-      if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
-      const sessionId = options.mintSessionId()
-      const prepared = options.prepare?.(sessionId)
-      let session: ClaudeProcess
-      try {
-        session = options.spawn(
-          executable,
-          [
-            '--session-id',
-            sessionId,
-            '--permission-mode',
-            'manual',
-            ...(prepared?.commandArguments ?? []),
-          ],
-          { cwd, env: launchEnvironment() },
-        )
-      } catch {
-        prepared?.close()
-        throw new ClaudeSessionDriverError('launch-failed')
-      }
-      sessions.set(sessionId, {
-        close: prepared?.close ?? (() => {}),
-        cwd,
-        process: session,
-        prompt,
-      })
-      session.onExit?.(() => {
-        sessions.get(sessionId)?.close()
-        sessions.delete(sessionId)
-      })
-      send(sessionId, prompt)
-      return sessionId
-    },
+    start: (request) => startSession({ options, sessions, send, request }),
     send,
     interrupt(sessionId: string) {
       const session = sessions.get(sessionId)
@@ -142,4 +112,49 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
   }
 }
 
-export { SUBMIT_DELAY_MS }
+function startSession({
+  options,
+  sessions,
+  send,
+  request: { cwd, prompt },
+}: {
+  options: DriverOptions
+  sessions: Map<string, ManagedSession>
+  send: (sessionId: string, text: string) => void
+  request: { cwd: string; prompt: string }
+}) {
+  const executable = options.findExecutable()
+  if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
+  const sessionId = options.mintSessionId()
+  const prepared = options.prepare?.(sessionId)
+  let process: ClaudeProcess
+  try {
+    process = options.spawn(executable, claudeCommand(sessionId, prepared), {
+      cwd,
+      env: launchEnvironment(),
+    })
+  } catch {
+    prepared?.close()
+    throw new ClaudeSessionDriverError('launch-failed')
+  }
+  sessions.set(sessionId, { close: prepared?.close ?? (() => {}), cwd, process, prompt })
+  process.onExit?.(() => {
+    sessions.get(sessionId)?.close()
+    sessions.delete(sessionId)
+  })
+  send(sessionId, prompt)
+  return sessionId
+}
+
+function claudeCommand(
+  sessionId: string,
+  prepared: ReturnType<NonNullable<DriverOptions['prepare']>> | undefined,
+) {
+  return [
+    '--session-id',
+    sessionId,
+    '--permission-mode',
+    'manual',
+    ...(prepared?.commandArguments ?? []),
+  ]
+}

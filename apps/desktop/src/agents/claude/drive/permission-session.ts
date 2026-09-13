@@ -1,10 +1,10 @@
 import { requestIdentifier } from '@/boundary'
 import {
+  type ClaudeSessionPermissionDecisionReply,
+  type ClaudeSessionPermissionReply,
   isClaudeSessionPermissionDecisionRequest,
   isClaudeSessionPermissionRequest,
   sessionError,
-  type ClaudeSessionPermissionDecisionReply,
-  type ClaudeSessionPermissionReply,
 } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 

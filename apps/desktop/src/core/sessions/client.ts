@@ -77,56 +77,20 @@ function answersRequest(reply: { requestId: string | null }, requestId: string |
 
 export function createSessionClient(invoke: Invoke): SessionClient {
   return {
-    async interruptClaudeSession(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(
-        () => invoke('interruptClaude', request),
-        isClaudeSessionInterruptReply,
-        requestId,
-      )
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
-    async sendClaudeSession(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(
-        () => invoke('sendClaude', request),
-        isClaudeSessionSendReply,
-        requestId,
-      )
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
-    async startClaudeSession(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(
-        () => invoke('startClaude', request),
-        isClaudeSessionStartReply,
-        requestId,
-      )
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
-    async readClaudePermission(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(
-        () => invoke('readClaudePermission', request),
-        isClaudeSessionPermissionReply,
-        requestId,
-      )
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
-    async decideClaudePermission(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(
-        () => invoke('decideClaudePermission', request),
-        isClaudeSessionPermissionDecisionReply,
-        requestId,
-      )
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
-    async listSessions(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(() => invoke('list', request), isSessionListReply, requestId)
-      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
-    },
+    interruptClaudeSession: clientRequest(invoke, 'interruptClaude', isClaudeSessionInterruptReply),
+    sendClaudeSession: clientRequest(invoke, 'sendClaude', isClaudeSessionSendReply),
+    startClaudeSession: clientRequest(invoke, 'startClaude', isClaudeSessionStartReply),
+    readClaudePermission: clientRequest(
+      invoke,
+      'readClaudePermission',
+      isClaudeSessionPermissionReply,
+    ),
+    decideClaudePermission: clientRequest(
+      invoke,
+      'decideClaudePermission',
+      isClaudeSessionPermissionDecisionReply,
+    ),
+    listSessions: clientRequest(invoke, 'list', isSessionListReply),
     async readSessionFeed(request) {
       const requestId = requestIdentifier(request)
       const reply = await ask(() => invoke('feed', request), isSessionFeedReply, requestId)
@@ -138,5 +102,17 @@ export function createSessionClient(invoke: Invoke): SessionClient {
       }
       return reply
     },
+  }
+}
+
+function clientRequest<Request, Reply extends { requestId: string | null }>(
+  invoke: Invoke,
+  channel: Parameters<Invoke>[0],
+  check: (value: unknown) => value is Reply,
+) {
+  return async (request: Request) => {
+    const requestId = requestIdentifier(request)
+    const reply = await ask(() => invoke(channel, request), check, requestId)
+    return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
   }
 }

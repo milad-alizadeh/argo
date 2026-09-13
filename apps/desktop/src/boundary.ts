@@ -17,6 +17,7 @@ export function requestIdentifier(value: unknown): string | null {
 export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
   return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
 }
+
 import { z } from 'zod'
 
 export const identifierSchema = z

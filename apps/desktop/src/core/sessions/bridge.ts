@@ -1,22 +1,22 @@
 import type { BrowserWindow } from 'electron'
-import { requestIdentifier } from '../../boundary'
-import {
-  startClaudeSession,
-  type ClaudeSessionStarter,
-} from '../../agents/claude/drive/start-session'
+import type { ClaudeSessionDriver } from '../../agents/claude/drive/claude-session-driver'
 import { driveClaudeSession } from '../../agents/claude/drive/drive-session'
 import {
   decideClaudePermission,
   readClaudePermission,
 } from '../../agents/claude/drive/permission-session'
-import type { ClaudeSessionDriver } from '../../agents/claude/drive/claude-session-driver'
+import {
+  type ClaudeSessionStarter,
+  startClaudeSession,
+} from '../../agents/claude/drive/start-session'
+import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import {
-  SESSION_CLAUDE_START_CHANNEL,
   SESSION_CLAUDE_INTERRUPT_CHANNEL,
   SESSION_CLAUDE_PERMISSION_CHANNEL,
   SESSION_CLAUDE_PERMISSION_DECIDE_CHANNEL,
   SESSION_CLAUDE_SEND_CHANNEL,
+  SESSION_CLAUDE_START_CHANNEL,
   SESSION_FEED_CHANNEL,
   SESSION_LIST_CHANNEL,
   sessionError,
