@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -10,25 +9,11 @@ import {
   assertShippedFusesIntact,
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
+import { projectErrorSchema } from '../contract'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
+import { serveUntrustedPage } from './serve-untrusted-page'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
-async function serveUntrustedPage(message: unknown) {
-  const server = createServer((_request, response) => {
-    response.end(`<output id="reply" hidden></output><script>
-      window.argo.openProject(${JSON.stringify(message)}).then((reply) => {
-        const output = document.getElementById('reply')
-        output.textContent = JSON.stringify(reply)
-        output.hidden = false
-      })
-    </script>`)
-  })
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  const address = server.address()
-  assert(address && typeof address !== 'string')
-  return { server, url: `http://127.0.0.1:${address.port}` }
-}
-
 async function prepare(root) {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
@@ -112,9 +97,7 @@ async function prove(application, fixture) {
       contents.removeAllListeners('will-navigate')
       await contents.loadURL(url)
     }, untrustedPage.url)
-    const reply = page.locator('#reply')
-    await reply.waitFor({ state: 'visible' })
-    assert.equal(JSON.parse((await reply.textContent()) ?? '').code, 'access-denied')
+    assert.equal(projectErrorSchema.parse(await untrustedPage.received).code, 'access-denied')
   } finally {
     await new Promise<void>((resolve, reject) =>
       untrustedPage.server.close((error) => (error ? reject(error) : resolve())),
