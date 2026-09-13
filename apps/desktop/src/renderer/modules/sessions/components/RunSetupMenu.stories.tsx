@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
@@ -25,7 +25,7 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
 }
 
 const meta: Meta<typeof RunSetupStory> = {
-  title: 'Sessions/Run setup menu',
+  title: 'Sessions/Composer/Run Setup Menu',
   component: RunSetupStory,
 }
 
@@ -103,7 +103,7 @@ export const ChoosesByKeyboard: Story = {
 }
 
 export const NewSessionChoosesHarness: Story = {
-  render: () => <RunSetupStory started={false} />,
+  args: { started: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })

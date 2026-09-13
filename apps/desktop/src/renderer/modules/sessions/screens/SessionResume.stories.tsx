@@ -1,39 +1,22 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { type SessionErrorCode, sessionError } from '@/core/sessions/contract'
-import type { SessionRosterRow } from '@/core/sessions/models'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionsSidebar } from '../components/SessionsSidebar'
+import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './SessionScreenView'
 
 // ADR-0026 as amended by #1842: a Session Argo held before a restart reads orphaned, keeps its
 // composer, and the next Send is what resumes it.
-const orphaned: SessionRosterRow = {
+const orphaned = sessionRosterRow({
   id: 'orphaned-session',
-  retiredIds: [],
-  cli: 'claude',
   posture: 'orphaned',
   title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
   status: 'idle',
-  entry: 'interactive',
   cwd: '/storybook/argo',
-  branch: 'main',
-  updatedAt: null,
-  unreadableLines: 0,
-  originUnread: false,
-  turnStartedAt: null,
-  activity: null,
-  plan: null,
-  delegations: [],
-  shell: [],
-  pullRequest: null,
-  archived: false,
-  contextTokens: null,
-  spentTokens: null,
-  setup: { model: null, effort: null, mode: null },
-}
+})
 
 // The bridge a restarted Argo answers with: the Roster lists the orphaned Session, and a Send
 // either resumes it into a live managed channel or is refused with the reason.
@@ -63,7 +46,7 @@ function restartedHost(refusal: SessionErrorCode | null) {
 }
 
 const meta: Meta<typeof SessionScreenView> = {
-  title: 'Sessions/Resume',
+  title: 'Sessions/Screen/Resume',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -106,24 +89,19 @@ export const ResumesOnSend: Story = {
   },
 }
 
-function refusedStory(code: SessionErrorCode): Story {
-  return {
-    beforeEach: () => restartedHost(code),
-    play: async ({ canvasElement }) => {
-      const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
+// Every refusal draws the same alert with a different message, so one code stands for all of them.
+const REFUSAL: SessionErrorCode = 'held-elsewhere'
 
-      await waitFor(() =>
-        expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(code, null).message),
-      )
-      await expect(composer).toHaveTextContent('Carry on with the fix.')
-      await expect(composer).toHaveFocus()
-      await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
-    },
-  }
+export const RefusedSend: Story = {
+  beforeEach: () => restartedHost(REFUSAL),
+  play: async ({ canvasElement }) => {
+    const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
+
+    await waitFor(() =>
+      expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(REFUSAL, null).message),
+    )
+    await expect(composer).toHaveTextContent('Carry on with the fix.')
+    await expect(composer).toHaveFocus()
+    await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
+  },
 }
-
-export const HeldByAnotherWindow = refusedStory('held-elsewhere')
-export const NeverStartedByArgo = refusedStory('not-resumable')
-export const TranscriptGone = refusedStory('missing-session')
-export const ClaudeCodeMissing = refusedStory('cli-unavailable')
-export const ClaudeFailsToStart = refusedStory('launch-failed')

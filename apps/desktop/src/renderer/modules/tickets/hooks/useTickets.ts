@@ -21,7 +21,7 @@ import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-cli
 
 const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.
-const listKey = (projectId: string | null, query?: string) =>
+export const listKey = (projectId: string | null, query?: string) =>
   query === undefined
     ? [...QUERY_KEYS.tickets, projectId, 'list']
     : [...QUERY_KEYS.tickets, projectId, 'list', query]
@@ -32,7 +32,7 @@ export type TicketPages = InfiniteData<TicketListed, string | null>
 // summary are both stale.
 const ACCOUNT_FAILURES = new Set(['account-expired', 'account-revoked', 'grant-unreadable'])
 
-function onRefused(client: QueryClient, projectId: string, failure: ContractFailure): void {
+export function onRefused(client: QueryClient, projectId: string, failure: ContractFailure): void {
   if (!ACCOUNT_FAILURES.has(failure.code)) return
   void client.invalidateQueries({ queryKey: QUERY_KEYS.accounts })
   void client.invalidateQueries({ queryKey: connectionKey(projectId) })

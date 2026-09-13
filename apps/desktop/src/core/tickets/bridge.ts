@@ -10,6 +10,7 @@ import {
   discoverSources,
   listTickets,
   readConnection,
+  updateStatus,
 } from './service'
 
 function callFor(access: AccountAccess, request: { requestId: string; projectId: string }): Call {
@@ -36,6 +37,8 @@ export function attachTicketBridge(
       discover: (request, access) => discoverSources(callFor(access, request), request.accountId),
       list: (request, access) =>
         listTickets(callFor(access, request), { query: request.query, cursor: request.cursor }),
+      update: (request, access) =>
+        updateStatus(callFor(access, request), { key: request.key, statusId: request.statusId }),
     },
     error: ticketError,
   })

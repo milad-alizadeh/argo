@@ -13,6 +13,26 @@ export type Run = { application: ElectronApplication; page: Page; fixture: Ticke
 export const press = (scope: Page | Locator, name: string) =>
   scope.getByRole('button', { name, exact: true }).dispatchEvent('click')
 
+// Base UI opens a select or a menu from the keyboard; a select's option ignores a dispatched click
+// and takes Enter.
+export async function choose(
+  page: Page,
+  trigger: Locator,
+  choice: { role: 'option' | 'menuitemradio'; name: string },
+) {
+  await trigger.press('ArrowDown')
+  await page.getByRole(choice.role, { name: choice.name, exact: true }).press('Enter')
+}
+
+export const connectForm = (page: Page) =>
+  page.getByRole('form', { name: 'Connect a Ticket source' })
+
+export const chooseAccount = (page: Page, name: string) =>
+  choose(page, connectForm(page).getByRole('combobox', { name: 'Account' }), {
+    role: 'option',
+    name,
+  })
+
 export const accountsDialog = (page: Page) => page.getByRole('dialog', { name: 'Accounts' })
 
 export const accountRow = (page: Page, login: string, provider = 'GitHub') =>

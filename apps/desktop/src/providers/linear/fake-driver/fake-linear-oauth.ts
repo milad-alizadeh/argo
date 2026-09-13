@@ -52,7 +52,7 @@ function issue(state: FakeLinearState, consent: FakeConsent, response: Parameter
   const accessToken = `linear-access-${state.serial}`
   const refreshToken = `linear-refresh-${state.serial}`
   state.access.set(accessToken, {
-    user: consent.user,
+    ...consent,
     expiresAt: Date.now() + state.lifetime * 1000,
   })
   state.refresh.set(refreshToken, { user: consent.user, scope: consent.scope })

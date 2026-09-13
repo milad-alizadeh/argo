@@ -1,18 +1,21 @@
 // The Ticket port filled by Linear issues: one team's open Tickets with their children and blockers
 // (CONTEXT.md L1 · Ticket). Linear owns every field; nothing here is kept after the read.
 import { isRecord } from '../../boundary'
+import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
 import {
+  closureOf,
+  labelColor,
   PRIORITY_LEVELS,
-  TICKET_PAGE_SIZE,
   type Ticket,
   type TicketLabel,
   type TicketLink,
   type TicketPriority,
   type TicketState,
   type TicketStatus,
-} from '../../core/tickets/contract'
+} from '../../core/tickets/ticket'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'
+import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from './statuses'
 
 // Linear serves children and relations as connections of their own; a Ticket with more than this
 // many draws the first ones.
@@ -20,7 +23,7 @@ const EDGE_LIMIT = 50
 
 const LINK = 'identifier title state { type }'
 const FIELDS = `id identifier title description url createdAt priority priorityLabel
-  state { name type }
+  state { id name type }
   labels(first: ${EDGE_LIMIT}) { nodes { name color } }
   children(first: ${EDGE_LIMIT}) { nodes { ${LINK} } }
   inverseRelations(first: ${EDGE_LIMIT}) { nodes { type issue { ${LINK} } } }`
@@ -29,23 +32,23 @@ const FIELDS = `id identifier title description url createdAt priority priorityL
 const OPEN_FILTER =
   '{ team: { id: { eq: $team } }, state: { type: { nin: ["completed", "canceled"] } } }'
 
-const BACKLOG = `query Backlog($team: ID!, $first: Int!, $after: String) {
+const BACKLOG = `query Backlog($team: ID!, $teamId: String!, $first: Int!, $after: String) {
   issues(first: $first, after: $after, filter: ${OPEN_FILTER}) {
     pageInfo { hasNextPage endCursor } nodes { ${FIELDS} }
   }
+  ${TEAM_STATES}
 }`
 
-const SEARCH = `query Search($team: ID!, $term: String!, $first: Int!, $after: String) {
+const SEARCH = `query Search($team: ID!, $teamId: String!, $term: String!, $first: Int!, $after: String) {
   searchIssues(term: $term, first: $first, after: $after, filter: ${OPEN_FILTER}) {
     totalCount pageInfo { hasNextPage endCursor } nodes { ${FIELDS} }
   }
+  ${TEAM_STATES}
 }`
 
-const CLOSED_TYPES = new Set(['completed', 'canceled'])
-
 const stateOf = (value: unknown): TicketState | null => {
-  if (!isRecord(value) || typeof value.type !== 'string') return null
-  return CLOSED_TYPES.has(value.type) ? 'closed' : 'open'
+  const category = categoryOf(value)
+  return category ? closureOf(category) : null
 }
 
 const nodes = (connection: unknown): unknown[] =>
@@ -58,24 +61,6 @@ function link(value: unknown): TicketLink | null {
   return { key: value.identifier, title: value.title, state }
 }
 
-const CATEGORIES: readonly TicketStatus['category'][] = [
-  'triage',
-  'backlog',
-  'unstarted',
-  'started',
-  'completed',
-  'canceled',
-]
-
-const hex = (value: unknown) =>
-  typeof value === 'string' && /^#?[0-9a-fA-F]{6}$/.test(value) ? value.replace(/^#/, '') : null
-
-function status(value: Record<string, unknown>): TicketStatus | null {
-  const category = CATEGORIES.find((candidate) => candidate === value.type)
-  if (typeof value.name !== 'string' || value.name === '' || !category) return null
-  return { name: value.name, category }
-}
-
 // Linear's priority 0 is "No priority", which is no priority rather than a lowest one.
 function priorityOf(value: unknown, label: unknown): TicketPriority | null {
   const level = PRIORITY_LEVELS.find((candidate) => candidate === value)
@@ -84,7 +69,7 @@ function priorityOf(value: unknown, label: unknown): TicketPriority | null {
 
 function label(value: unknown): TicketLabel | null {
   if (!isRecord(value) || typeof value.name !== 'string') return null
-  return { name: value.name, color: hex(value.color) }
+  return { name: value.name, color: labelColor(value.color) }
 }
 
 // A relation of type `blocks` on the inverse side names the issue that blocks this one.
@@ -103,7 +88,8 @@ function pageURL(endpoints: LinearEndpoints, value: unknown): string | null {
 
 function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
   const own = link(value)
-  if (!own || !isRecord(value) || !isRecord(value.state)) return null
+  const status = isRecord(value) ? statusOf(value.state) : null
+  if (!(own && status) || !isRecord(value)) return null
   const { createdAt, description, priority, priorityLabel } = value
   if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) return null
   const prose = typeof description === 'string' ? description.trim() : ''
@@ -111,8 +97,7 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
     ...own,
     url: pageURL(endpoints, value.url),
     body: prose === '' ? null : prose,
-    status: status(value.state),
-    stateReason: null,
+    status,
     priority: priorityOf(priority, priorityLabel),
     createdAt,
     labels: nodes(value.labels)
@@ -127,7 +112,12 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
 }
 
 export type TicketPageRequest = { scope: string; query: string; cursor: string | null }
-export type TicketPage = { tickets: Ticket[]; nextCursor: string | null; total: number | null }
+export type TicketPage = {
+  tickets: Ticket[]
+  statuses: TicketStatus[]
+  nextCursor: string | null
+  total: number | null
+}
 
 export async function readTicketPage(
   endpoints: LinearEndpoints,
@@ -135,7 +125,8 @@ export async function readTicketPage(
   request: TicketPageRequest,
 ): Promise<LinearRead<TicketPage>> {
   const term = request.query.trim()
-  const variables = { team: request.scope, first: TICKET_PAGE_SIZE, after: request.cursor }
+  const { scope } = request
+  const variables = { team: scope, teamId: scope, first: TICKET_PAGE_SIZE, after: request.cursor }
   const caller = { endpoints, token }
   const reply = term
     ? await query(caller, SEARCH, { ...variables, term })
@@ -153,6 +144,7 @@ export async function readTicketPage(
       tickets: connection.nodes
         .map((node) => ticket(endpoints, node))
         .filter((entry) => entry !== null),
+      statuses: teamStatuses(reply.value.team),
       nextCursor,
       total: typeof total === 'number' && Number.isInteger(total) && total >= 0 ? total : null,
     },

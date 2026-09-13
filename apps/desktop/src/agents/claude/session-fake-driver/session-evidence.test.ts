@@ -2,8 +2,12 @@ import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { readFeed } from '../sessions/read-sessions.ts'
+import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
+
+function readFeed(value: unknown, root: string) {
+  return createClaudeSessionReader({ transcripts: root }).readSessionFeed(value)
+}
 
 function assertToolRows(reply) {
   assert.equal(reply.type, 'session.feed.read')

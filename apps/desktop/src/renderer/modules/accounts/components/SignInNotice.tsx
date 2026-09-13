@@ -16,11 +16,8 @@ export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
       <Info aria-hidden="true" />
       <AlertTitle>Connect your Accounts again</AlertTitle>
       <AlertDescription className="grid gap-(--spacing-shell-item)">
-        <p>
-          This version of Argo keeps its own GitHub and Linear sign-ins. Accounts from the earlier
-          Argo app are not carried over.
-        </p>
-        <div className="flex gap-(--spacing-shell-item)">
+        <p>Sign-ins from the earlier Argo app do not carry over.</p>
+        <div className="flex flex-wrap gap-(--spacing-shell-item)">
           <Button onClick={onConnect} size="sm">
             Connect an Account
           </Button>

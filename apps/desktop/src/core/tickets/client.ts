@@ -4,6 +4,7 @@ import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketListReply,
+  type TicketUpdateReply,
   ticketError,
 } from './contract'
 import { TICKET_OPERATIONS } from './operations'
@@ -22,6 +23,11 @@ export type TicketClient = {
     cursor: string | null
   }): Promise<TicketListReply>
   discoverSources(request: { projectId: string; accountId: string }): Promise<TicketDiscoverReply>
+  updateStatus(request: {
+    projectId: string
+    key: string
+    statusId: string
+  }): Promise<TicketUpdateReply>
 }
 
 export function createTicketClient(
@@ -29,10 +35,9 @@ export function createTicketClient(
 ): TicketClient {
   const client = createDomainClient(TICKET_OPERATIONS, invoke, ticketError)
 
-  async function forProject<T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply>(
-    request: { projectId: string },
-    reply: Promise<T>,
-  ): Promise<T> {
+  async function forProject<
+    T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply | TicketUpdateReply,
+  >(request: { projectId: string }, reply: Promise<T>): Promise<T> {
     const resolved = await reply
     if (resolved.type !== 'ticket.error' && resolved.projectId !== request.projectId) {
       return ticketError('invalid-response', requestIdentifier(resolved)) as T
@@ -46,5 +51,6 @@ export function createTicketClient(
     disconnectSource: (request) => forProject(request, client.disconnect(request)),
     listTickets: (request) => forProject(request, client.list(request)),
     discoverSources: (request) => forProject(request, client.discover(request)),
+    updateStatus: (request) => forProject(request, client.update(request)),
   }
 }
