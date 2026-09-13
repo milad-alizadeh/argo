@@ -64,7 +64,9 @@ export const ChoosesModelAndEffort: Story = {
     await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
     fireEvent.change(effort, { target: { value: '3' } })
     await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
-    await expect(page().getByText('Extra high', { selector: 'span' })).toHaveClass('font-semibold')
+    const effortScale = effort.parentElement
+    if (!effortScale) throw new Error('Effort scale is missing.')
+    await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
     await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('claude sonnet xhigh')
     await expect(page().queryByRole('tablist', { name: 'Harness' })).toBeNull()
 

@@ -11,16 +11,20 @@ export function CollapsibleText({
   contentVariant = 'line',
   defaultOpen = false,
   icon: Icon,
+  onOpenChange,
+  open,
   title,
 }: {
   content: ReactNode
   contentVariant?: 'line' | 'plain'
   defaultOpen?: boolean
   icon: LucideIcon
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
   title: ReactNode
 }) {
   return (
-    <Collapsible defaultOpen={defaultOpen} className="mb-0">
+    <Collapsible defaultOpen={defaultOpen} className="mb-0" onOpenChange={onOpenChange} open={open}>
       <CollapsibleTrigger className="group flex w-full items-center gap-2 py-1 type-body text-muted-foreground transition-colors hover:text-foreground">
         <Icon className="!size-(--size-icon-inline) shrink-0" />
         <span className="min-w-0 truncate">{title}</span>

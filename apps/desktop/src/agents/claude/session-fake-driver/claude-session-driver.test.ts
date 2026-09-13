@@ -62,6 +62,26 @@ test('starts a named interactive Claude Session at the chosen setup and sends th
   )
 })
 
+test('holds the text a Turn streams until Argo sends the next Turn or interrupts', async (context) => {
+  const { driver, display, sessionId } = await startedSession(context)
+  const batch = (turn: string, delta: string) =>
+    display(sessionId, { turn_id: turn, message_id: `${turn}-message`, index: 0, delta })
+
+  batch('turn-1', 'Ducks glide.')
+  const streamed = driver.liveMessages(sessionId)
+  await driver.send(sessionId, { prompt: 'Now geese.', setup: OPENING })
+  const afterSend = driver.liveMessages(sessionId)
+  batch('turn-1', 'Late ducks.')
+  batch('turn-2', 'Geese honk.')
+  const next = driver.liveMessages(sessionId)
+  driver.interrupt(sessionId)
+
+  assert.deepEqual(streamed, [{ id: 'turn-1-message', text: 'Ducks glide.' }])
+  assert.deepEqual(afterSend, [])
+  assert.deepEqual(next, [{ id: 'turn-2-message', text: 'Geese honk.' }])
+  assert.deepEqual(driver.liveMessages(sessionId), [])
+})
+
 test('lists a new managed Session at the time it started', async (context) => {
   const { driver } = launch(await ledgerFile(context))
   driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.', setup: OPENING })

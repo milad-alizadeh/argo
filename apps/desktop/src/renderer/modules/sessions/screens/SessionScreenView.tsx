@@ -19,6 +19,7 @@ type SessionShellProps = {
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
   selectedSessionId: string | null
+  activeEvidenceId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 
@@ -51,6 +52,7 @@ export function SessionScreenView() {
       feed={feed}
       feedError={feedError}
       selectedSessionId={selectedSessionId}
+      activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
       composer={
         <SessionComposerArea
@@ -83,6 +85,7 @@ export function SessionShell({
   feed,
   feedError,
   selectedSessionId,
+  activeEvidenceId,
   onOpenEvidence,
 }: SessionShellProps) {
   return (
@@ -101,6 +104,7 @@ export function SessionShell({
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed
+                activeEvidenceId={activeEvidenceId}
                 feed={feed}
                 failure={feedError}
                 selectedSessionId={selectedSessionId}

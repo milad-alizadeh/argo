@@ -148,6 +148,7 @@ function ReviewScreen() {
       }
     >
       <SessionShell
+        activeEvidenceId={null}
         composer={
           <SessionComposer
             onSend={async () => true}

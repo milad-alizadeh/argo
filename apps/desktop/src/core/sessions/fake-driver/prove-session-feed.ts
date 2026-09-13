@@ -40,6 +40,7 @@ import {
   provePackagedRosterSelection,
 } from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
+import { proveToolCalls } from './session-tool-calls-case'
 import { proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -91,6 +92,7 @@ try {
   }
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
+  await ran(['session-tool-calls'], () => proveToolCalls(page))
   await ran(['session-feed-reader-anchor'], () =>
     proveLiveFeed(page, {
       transcripts: fixture.claudeTranscripts,
