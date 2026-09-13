@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { ClaudeSessionDriverError } from '../drive/drive-channel.ts'
+import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
 

@@ -9,6 +9,8 @@ import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import type { ResumeTarget } from '../drive/drive-channel.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 
+export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
+
 type Spawned = {
   command: string
   commandArguments: string[]
@@ -41,6 +43,8 @@ export function launch(
 ) {
   const spawned: Spawned[] = []
   const exits: Array<() => unknown> = []
+  // What each Session's MessageDisplay hook would deliver, keyed by Session.
+  const displays = new Map<string, (batch: unknown) => void>()
   const ledger = createOwnershipLedger({
     path: file,
     owner: { pid: process.pid, registry: options.registry ?? 'window-a' },
@@ -49,6 +53,7 @@ export function launch(
   const driver = createClaudeSessionDriver({
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
     mintSessionId: () => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c',
+    now: () => STARTED_AT,
     schedule: (callback) => callback(),
     ledger,
     resumeTarget:
@@ -60,9 +65,14 @@ export function launch(
       spawned.push(record)
       return { ...terminal(record.writes), onExit: (listener) => exits.push(listener) }
     },
+    prepare: (sessionId, record) => {
+      displays.set(sessionId, record)
+      return { commandArguments: [], close: () => {} }
+    },
   })
   const state: Launch = { spawned, exit: (index) => exits[index]?.() }
-  return { driver, ledger, ...state }
+  const display = (sessionId: string, batch: unknown) => displays.get(sessionId)?.(batch)
+  return { driver, ledger, display, ...state }
 }
 
 // A Session a previous launch started and released when it quit.

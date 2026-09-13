@@ -1,6 +1,8 @@
-import { SESSION_ERRORS } from '@/core/sessions/session-error'
 import { launchArguments } from './claude-setup'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
+import { ClaudeSessionDriverError } from './driver-error'
+import { firstFrame } from './first-frame'
+import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 
 type ClaudeProcess = {
@@ -16,38 +18,33 @@ export type ResumeTarget = { cwd: string; tipId: string }
 export type DriverOptions = {
   findExecutable: () => string | null
   mintSessionId: () => string
+  now: () => Date
   schedule: (callback: () => void, milliseconds: number) => void
   spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
-  prepare?: (sessionId: string) => { commandArguments: string[]; close: () => void }
+  // `record` takes each batch the Session's MessageDisplay hook delivers.
+  prepare?: (
+    sessionId: string,
+    record: (batch: unknown) => void,
+  ) => { commandArguments: string[]; close: () => void }
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
   cwd: string
+  messages: LiveMessages
   process: ClaudeProcess
   prompt: string
   queue: Promise<void>
+  startedAt: string
+  // Set when `claude` exits or the driver closes; a Turn queued or mid-pause then types nothing.
+  ended: boolean
 }
 // One spawn path with two seeds: a fresh Session names its transcript, a resume names its tip.
 type Seed = { sessionId: string; cwd: string; sessionFlags: string[] } & ClaudeTurnRequest
 
 // The tail of what the TUI drew, enough to read its Mode footer.
 const SCREEN_LIMIT = 8000
-
-type DriverErrorCode =
-  | 'cli-unavailable'
-  | 'launch-failed'
-  | 'not-drivable'
-  | 'not-resumable'
-  | 'held-elsewhere'
-  | 'missing-session'
-
-export class ClaudeSessionDriverError extends Error {
-  constructor(readonly code: DriverErrorCode) {
-    super(SESSION_ERRORS[code])
-  }
-}
 
 function launchEnvironment(): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = { ...process.env, TERM: 'xterm-256color' }
@@ -62,7 +59,8 @@ function openChannel(
 ): ManagedSession {
   const executable = options.findExecutable()
   if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
-  const prepared = options.prepare?.(seed.sessionId)
+  const messages = createLiveMessages()
+  const prepared = options.prepare?.(seed.sessionId, messages.record)
   let process: ClaudeProcess
   try {
     process = options.spawn(
@@ -74,21 +72,27 @@ function openChannel(
     prepared?.close()
     throw new ClaudeSessionDriverError('launch-failed')
   }
+  const frame = firstFrame(options.schedule)
   const session: ManagedSession = {
     applied: seed.setup,
     close: prepared?.close ?? (() => {}),
     cwd: seed.cwd,
+    ended: false,
+    messages,
     process,
     prompt: seed.prompt,
-    queue: Promise.resolve(),
+    queue: frame.ready,
     screen: '',
+    startedAt: options.now().toISOString(),
   }
   sessions.set(seed.sessionId, session)
   process.onData?.((data) => {
     session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
+    frame.see(session.screen)
   })
   options.ledger.bind(seed.sessionId)
   process.onExit?.(() => {
+    session.ended = true
     // A later channel for the same Session is not this one's to close.
     if (sessions.get(seed.sessionId) !== session) return
     session.close()
@@ -114,8 +118,12 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
   const resuming = new Map<string, Promise<ManagedSession>>()
   let closed = false
   const open = (seed: Seed) => openChannel(options, sessions, seed)
-  const wait: Wait = (milliseconds) =>
-    new Promise((resolve) => options.schedule(resolve, milliseconds))
+  const waitWhileLive =
+    (session: ManagedSession): Wait =>
+    async (milliseconds) => {
+      await new Promise<void>((resolve) => options.schedule(resolve, milliseconds))
+      if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+    }
 
   const resume = async (sessionId: string, turn: ClaudeTurnRequest) => {
     refuseUnlessResumable(options.ledger.standing(sessionId))
@@ -136,7 +144,11 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
     },
     // Turns queue so one's slash commands and Mode presses finish before the next is typed.
     write(session: ManagedSession, turn: ClaudeTurnRequest) {
-      const delivery = session.queue.then(() => deliverTurn(session, turn, wait))
+      const delivery = session.queue.then(() => {
+        if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+        session.messages.retire()
+        return deliverTurn(session, turn, waitWhileLive(session))
+      })
       session.queue = delivery.catch(() => {})
       return delivery
     },
