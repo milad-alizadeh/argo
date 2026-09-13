@@ -7,11 +7,14 @@ import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } f
 import { ArrowUp } from 'lucide-react'
 import { type RefObject, useCallback, useRef, useState } from 'react'
 
+import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
+import { SessionPlanPopover } from './SessionPlanPopover'
 
 export type SessionComposerProps = {
   isRunning?: boolean
   onInterrupt?: () => Promise<boolean>
+  plan: SessionPlan | null
   sessionId: string
   onSend: (text: string) => Promise<boolean>
 }
@@ -51,7 +54,7 @@ function ComposerEditor({
           <ContentEditable
             aria-label="Message"
             aria-placeholder="Direct the next move…"
-            className="min-h-20 flex-1 whitespace-pre-wrap px-4 py-3 text-sm leading-6 outline-none"
+            className="min-h-20 flex-1 whitespace-pre-wrap px-4 py-3 pr-28 text-sm leading-6 outline-none"
             onKeyDown={(event) => {
               if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
               event.preventDefault()
@@ -89,6 +92,7 @@ function ComposerEditor({
 export function SessionComposer({
   isRunning = false,
   onInterrupt,
+  plan,
   sessionId,
   onSend,
 }: SessionComposerProps) {
@@ -128,7 +132,12 @@ export function SessionComposer({
         void send()
       }}
     >
-      <div className="relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10">
+      <div
+        className={`relative flex overflow-hidden rounded-xl border bg-card shadow-lg shadow-foreground/10${plan?.state === 'available' ? ' min-h-40' : ''}`}
+      >
+        <div className="absolute top-4 right-4 z-20">
+          <SessionPlanPopover plan={plan} />
+        </div>
         <div className="min-w-0 flex-1">
           <ComposerEditor
             key={sessionId}

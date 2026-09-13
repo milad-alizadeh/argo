@@ -18,7 +18,11 @@ function activitySummary(session: Session): string {
 
 function sessionMetadata(session: Session): string[] {
   const metadata = [session.cli]
-  if (session.plan !== null) metadata.push(`${session.plan.completed}/${session.plan.total} steps`)
+  if (session.plan?.state === 'available') {
+    const completed = session.plan.entries.filter((entry) => entry.status === 'completed').length
+    metadata.push(`${completed}/${session.plan.entries.length} steps`)
+  }
+  if (session.plan?.state === 'malformed') metadata.push('Plan unreadable')
   if (session.delegations.length > 0) metadata.push(`${session.delegations.length} agents`)
   if (session.pullRequest !== null) metadata.push(`PR #${session.pullRequest.number}`)
   return metadata

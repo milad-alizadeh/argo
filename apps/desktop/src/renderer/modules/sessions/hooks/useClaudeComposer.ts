@@ -33,7 +33,7 @@ export function useClaudeComposer({
   selectedSessionId,
 }: ClaudeComposerOptions): {
   failure: string | null
-  props: SessionComposerProps
+  props: Omit<SessionComposerProps, 'plan'>
 } {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
