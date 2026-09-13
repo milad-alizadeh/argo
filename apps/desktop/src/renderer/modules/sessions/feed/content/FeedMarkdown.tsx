@@ -3,6 +3,7 @@ import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { FeedCode } from './FeedCode'
 import { FeedGallery, FeedImage } from './FeedImages'
+import { FeedMermaid } from './FeedMermaid'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 import { feedUrlTransform } from './markdownUrls'
 
@@ -156,7 +157,14 @@ const COMPONENTS: Components = {
       {children}
     </td>
   ),
-  pre: ({ node }) => <FeedCode {...fenceOf(node)} />,
+  pre: ({ node }) => {
+    const fence = fenceOf(node)
+    return fence.language === 'mermaid' ? (
+      <FeedMermaid source={fence.source} />
+    ) : (
+      <FeedCode {...fence} />
+    )
+  },
   // `pre` draws fenced code itself, so every `code` reaching this is inline.
   code: ({ children }) => (
     <code className="rounded-md bg-muted px-1 font-mono type-code">{children}</code>
@@ -164,7 +172,7 @@ const COMPONENTS: Components = {
   hr: () => <hr className="border-border" />,
 }
 
-// An assistant's prose as Markdown (#1835). Raw HTML stays text, which is react-markdown's default.
+// An assistant's prose, or a Ticket's description, as Markdown (#1835). Raw HTML stays text, which is react-markdown's default.
 export function FeedMarkdown({ text }: { text: string }) {
   return (
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">

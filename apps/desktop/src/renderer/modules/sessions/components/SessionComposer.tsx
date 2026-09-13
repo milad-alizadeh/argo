@@ -1,6 +1,7 @@
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef, useState } from 'react'
 
+import type { SessionPlan } from '@/core/sessions/models'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
 import { usePendingTurns } from './usePendingTurns'
@@ -10,6 +11,7 @@ export type SessionComposerProps = {
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string) => Promise<boolean>
+  plan: SessionPlan | null
 }
 
 function restorePendingTurn(
@@ -31,6 +33,7 @@ export function SessionComposer({
   onInterrupt,
   sessionId,
   onSend,
+  plan,
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
@@ -73,6 +76,7 @@ export function SessionComposer({
       onReorder={reorderPendingTurn}
       onSend={() => void send()}
       pendingTurns={pendingTurns}
+      plan={plan}
       sessionId={sessionId}
     />
   )

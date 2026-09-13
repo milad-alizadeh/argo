@@ -3,7 +3,14 @@
 // Every one is DERIVED from Tool Calls the transcript names, and each is absent rather than
 // guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
-import type { SessionActivity, SessionDelegation, SessionPlan, SessionShellCommand } from './models'
+import {
+  PLAN_ENTRY_STATUSES,
+  type SessionActivity,
+  type SessionDelegation,
+  type SessionPlan,
+  type SessionPlanEntry,
+  type SessionShellCommand,
+} from './models'
 import type { ToolCall, TranscriptMessage } from './transcript'
 
 // The tools that spawn a Subagent (CONTEXT.md L3 · Subagent). The CLI renamed `Task` to `Agent`,
@@ -15,7 +22,6 @@ const SHELL_TOOL = 'Bash'
 // The tool whose input is the Plan (CONTEXT.md L3 · Plan). Each call writes the whole list, so
 // the newest one is the Plan and every earlier one is history.
 const PLAN_TOOL = 'TodoWrite'
-const PLAN_STATUSES = ['pending', 'in_progress', 'completed']
 
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
@@ -55,27 +61,36 @@ export function readShellCommands(messages: TranscriptMessage[]): SessionShellCo
     }))
 }
 
-function isPlanEntry(value: unknown): value is { status: string } {
+type PlanEntryInput = Omit<SessionPlanEntry, 'position'>
+
+function isPlanEntry(value: unknown): value is PlanEntryInput {
   return (
     typeof value === 'object' &&
     value !== null &&
-    PLAN_STATUSES.includes((value as { status?: unknown }).status as string)
+    typeof (value as { content?: unknown }).content === 'string' &&
+    (value as { content: string }).content.trim().length > 0 &&
+    PLAN_ENTRY_STATUSES.includes(
+      (value as { status?: unknown }).status as SessionPlanEntry['status'],
+    )
   )
 }
 
-// A snapshot with an entry this reader cannot place is skipped whole rather than counted in part,
-// so the bar never draws a total the agent did not write.
+function isPlanSnapshot(value: unknown): value is PlanEntryInput[] {
+  return Array.isArray(value) && value.every(isPlanEntry)
+}
+
+// The newest TodoWrite owns the current Plan. A malformed write cannot safely retain rows from an
+// earlier Plan because that would report stale work as current.
 export function readPlan(messages: TranscriptMessage[]): SessionPlan | null {
   const snapshot = calls(messages)
     .filter((call) => call.name === PLAN_TOOL)
     .map((call) => call.input.todos)
-    .findLast((todos) => Array.isArray(todos) && todos.length > 0 && todos.every(isPlanEntry))
+    .at(-1)
   if (snapshot === undefined) return null
-  const statuses = (snapshot as { status: string }[]).map((entry) => entry.status)
+  if (!isPlanSnapshot(snapshot)) return { state: 'malformed' }
   return {
-    total: statuses.length,
-    completed: statuses.filter((status) => status === 'completed').length,
-    inProgress: statuses.filter((status) => status === 'in_progress').length,
+    state: 'available',
+    entries: snapshot.map((entry, position) => ({ ...entry, position })),
   }
 }
 
