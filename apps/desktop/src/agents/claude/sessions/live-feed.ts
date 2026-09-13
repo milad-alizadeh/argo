@@ -14,6 +14,8 @@ function landedMessages(rows: readonly SessionFeedRow[]): Prose[] {
   return rows.slice(prompt + 1).filter((row): row is Prose => isProse(row, 'assistant'))
 }
 
+const draftId = (message: LiveMessage) => `display:${message.id}`
+
 // The hook's `message_id` names no transcript record, so a draft is matched to its row by Turn
 // and by order. A landed row keeps the draft's id for the rest of this launch, so the reveal and
 // the scroll anchor carry on over the row rather than starting again (`aliases`).
@@ -23,17 +25,21 @@ export function draftOverlay(
 ): FeedOverlay | null {
   if (live.length === 0 && aliases.size === 0) return null
   return (rows) => {
-    const landed = landedMessages(rows)
     const taken = new Set(aliases.values())
-    landed.slice(0, live.length).forEach((row, index) => {
-      const draft = `display:${live[index]?.id}`
-      if (aliases.has(row.id) || taken.has(draft)) return
-      if (row.text.startsWith(live[index]?.text ?? '')) aliases.set(row.id, draft)
-    })
-    const drafts = live.slice(landed.length).map(
+    const waiting = live.filter((message) => !taken.has(draftId(message)))
+    let matched = 0
+    // A row the hook never drew, such as a `<synthetic>` API error, is passed over.
+    for (const row of landedMessages(rows)) {
+      const message = waiting[matched]
+      if (message === undefined) break
+      if (aliases.has(row.id) || !row.text.startsWith(message.text)) continue
+      aliases.set(row.id, draftId(message))
+      matched += 1
+    }
+    const drafts = waiting.slice(matched).map(
       (message): SessionFeedRow => ({
         shape: 'prose',
-        id: `display:${message.id}`,
+        id: draftId(message),
         role: 'assistant',
         text: message.text,
       }),
