@@ -14,6 +14,7 @@ import {
 import { installMenu } from './core/commands/menu'
 import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
+import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
 import {
@@ -99,6 +100,7 @@ function createWindow(): BrowserWindow {
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
+  attachWindowNavigation(window)
   const claudeSessionDriver = createSystemClaudeSessionDriver(
     path.join(userData, 'claude-permission-plugins'),
   )
