@@ -77,8 +77,12 @@ function backlog(pages: TicketPages, list: TicketListing, query: string): Omit<B
     total: pages.pages[0]?.total ?? null,
     hasMore: list.hasNextPage,
     loadingMore: list.isFetchingNextPage,
+    loadMoreError: list.isFetchNextPageError ? list.error.message : null,
     searching: list.isPlaceholderData,
     onLoadMore: () => {
+      if (!list.isFetching) void list.fetchNextPage()
+    },
+    onRetryLoadMore: () => {
       if (!list.isFetching) void list.fetchNextPage()
     },
   }
@@ -92,7 +96,9 @@ function boundView({ projectId, binding, list, query, onUnbind }: Bound): Ticket
     }
   }
   if (list.isPending) return loading('Reading Tickets')
-  if (list.error) return failure('Unable to read Tickets', list.error, list.refetch)
+  if (list.error && !list.isFetchNextPageError) {
+    return failure('Unable to read Tickets', list.error, list.refetch)
+  }
   return {
     kind: 'tickets',
     projectId,

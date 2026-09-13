@@ -68,8 +68,10 @@ export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({
   total: null,
   hasMore: false,
   loadingMore: false,
+  loadMoreError: null,
   searching: false,
   onLoadMore: fn(),
+  onRetryLoadMore: fn(),
   ...overrides,
 })
 

@@ -13,9 +13,12 @@ export type Backlog = {
   total: number | null
   hasMore: boolean
   loadingMore: boolean
+  // A later page can fail while the pages already read remain useful.
+  loadMoreError: string | null
   // A new query is reading while the last one's answer stays on screen.
   searching: boolean
   onLoadMore: () => void
+  onRetryLoadMore: () => void
 }
 
 // A Ticket opened while paging shifts the listing, so a Ticket can arrive on two pages.

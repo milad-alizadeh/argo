@@ -8,9 +8,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
+import { Button } from '../../../components/ui/button'
 import { Spinner } from '../../../components/ui/spinner'
 import { type Backlog, backlogRows, count } from '../lib/backlog'
-import { BacklogFilters } from './BacklogFilters'
 import { TicketRow } from './TicketRow'
 
 export type TicketListProps = {
@@ -33,10 +33,10 @@ function NextPage({ backlog }: { backlog: Backlog }) {
   const mark = useRef<HTMLLIElement>(null)
   const load = useRef(backlog.onLoadMore)
   load.current = backlog.onLoadMore
-  const { hasMore, loadingMore } = backlog
+  const { hasMore, loadingMore, loadMoreError, onRetryLoadMore } = backlog
   useEffect(() => {
     const node = mark.current
-    if (!(node && hasMore) || loadingMore) return
+    if (!(node && hasMore) || loadingMore || loadMoreError) return
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) load.current()
@@ -45,11 +45,20 @@ function NextPage({ backlog }: { backlog: Backlog }) {
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [hasMore, loadingMore])
+  }, [hasMore, loadingMore, loadMoreError])
   if (!hasMore) return null
   return (
     <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
-      {loadingMore ? <Spinner aria-label="Reading more Tickets" className="text-faint" /> : null}
+      {loadMoreError ? (
+        <div aria-live="polite" className="flex items-center gap-(--spacing-shell-item) type-meta" role="alert">
+          <span>{loadMoreError}</span>
+          <Button onClick={onRetryLoadMore} size="xs" variant="outline">
+            Try again
+          </Button>
+        </div>
+      ) : loadingMore ? (
+        <Spinner aria-label="Reading more Tickets" className="text-faint" />
+      ) : null}
     </li>
   )
 }
@@ -78,14 +87,11 @@ export function TicketList({ backlog, selectedNumber, onSelect }: TicketListProp
     <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
       <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
-      <header className="grid shrink-0 gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
-        <div className="flex items-baseline gap-(--spacing-shell-item)">
-          <h2 className="type-heading">Backlog</h2>
-          <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
-            {tally(backlog)}
-          </p>
-        </div>
-        <BacklogFilters />
+      <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
+        <h2 className="type-heading">Backlog</h2>
+        <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
+          {tally(backlog)}
+        </p>
       </header>
       {backlog.tickets.length === 0 ? <NoTickets query={backlog.query} /> : null}
       <ul

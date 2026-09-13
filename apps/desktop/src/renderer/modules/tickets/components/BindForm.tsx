@@ -66,13 +66,20 @@ export function BindForm({
   const connected = accounts.filter((account) => account.state === 'connected')
   const [accountId, setAccountId] = useState(connected[0]?.id ?? '')
   const [scope, setScope] = useState('')
+  const [missingScope, setMissingScope] = useState(false)
   if (connected.length === 0) return <NoAccount onConnect={onConnect} />
   const chosen = connected.some((account) => account.id === accountId)
     ? accountId
     : connected[0]?.id
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (chosen) onBind({ accountId: chosen, scope: scope.trim() })
+    const trimmedScope = scope.trim()
+    if (trimmedScope === '') {
+      setMissingScope(true)
+      return
+    }
+    setMissingScope(false)
+    if (chosen) onBind({ accountId: chosen, scope: trimmedScope })
   }
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
@@ -103,24 +110,31 @@ export function BindForm({
                   ))}
                 </NativeSelect>
               </Field>
-              <Field data-invalid={error ? true : undefined}>
+              <Field data-invalid={error || missingScope ? true : undefined}>
                 <FieldLabel htmlFor="bind-scope">Repository</FieldLabel>
                 <Input
-                  aria-describedby={error ? 'bind-scope-error' : undefined}
-                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error || missingScope ? 'bind-scope-error' : undefined}
+                  aria-invalid={error || missingScope ? true : undefined}
                   autoComplete="off"
                   id="bind-scope"
-                  onChange={(event) => setScope(event.target.value)}
+                  onChange={(event) => {
+                    setScope(event.target.value)
+                    if (missingScope) setMissingScope(false)
+                  }}
                   placeholder="owner/name"
                   spellCheck={false}
                   value={scope}
                 />
-                {error ? <FieldError id="bind-scope-error">{error.message}</FieldError> : null}
+                {error || missingScope ? (
+                  <FieldError id="bind-scope-error">
+                    {error?.message ?? 'Enter the GitHub repository as owner/name.'}
+                  </FieldError>
+                ) : null}
               </Field>
             </FieldGroup>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button disabled={pending || scope.trim() === ''} type="submit">
+            <Button disabled={pending} type="submit">
               {pending ? 'Checking the repository…' : 'Connect repository'}
             </Button>
           </CardFooter>

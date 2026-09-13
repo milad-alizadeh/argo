@@ -25,12 +25,16 @@ export const Bind: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const submit = canvas.getByRole('button', { name: 'Connect repository' })
-    await expect(submit).toBeDisabled()
+    await expect(submit).toBeEnabled()
     // A revoked Account cannot validate a repository, so it is not offered.
     await expect(canvas.getByRole('combobox', { name: 'GitHub Account' })).toHaveTextContent(
       'octocat',
     )
     await expect(canvas.queryByRole('option', { name: 'hubot' })).toBeNull()
+    await userEvent.click(submit)
+    await expect(canvas.getByRole('textbox', { name: 'Repository' })).toHaveAccessibleDescription(
+      'Enter the GitHub repository as owner/name.',
+    )
     await userEvent.type(
       canvas.getByRole('textbox', { name: 'Repository' }),
       ' octocat/hello-world ',

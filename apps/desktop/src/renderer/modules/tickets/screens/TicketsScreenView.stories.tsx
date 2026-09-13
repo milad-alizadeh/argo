@@ -4,7 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { TicketsSidebarContent } from '../components/TicketsSidebar'
-import { longBacklog, standalone, ticketsView } from '../components/ticket-fixtures'
+import { backlog, longBacklog, standalone, ticketsView } from '../components/ticket-fixtures'
 import { TicketsScreen } from './TicketsScreenView'
 
 const binding = {
@@ -98,6 +98,29 @@ export const Backlog: Story = {
     await readsTheBacklog(canvasElement)
     await readsNoDependencyFacts(canvasElement)
     await movesTheInspector(canvasElement)
+  },
+}
+
+const retryLoadMore = fn()
+
+export const MoreTicketsUnavailable: Story = {
+  args: {
+    view: {
+      kind: 'tickets',
+      projectId: 'storybook-project',
+      backlog: backlog({
+        hasMore: true,
+        loadMoreError: 'Argo cannot reach GitHub.',
+        onRetryLoadMore: retryLoadMore,
+      }),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /^#607/ })).toBeInTheDocument()
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot reach GitHub.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Try again' }))
+    await expect(retryLoadMore).toHaveBeenCalled()
   },
 }
 
