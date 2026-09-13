@@ -1,14 +1,41 @@
 import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
-import { type KeyboardEvent, useState } from 'react'
+import { type KeyboardEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
+import { currentSessionId } from '@/core/sessions/models'
 import { useSessions } from '../hooks/useSessions'
 import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionId, SessionsListed } from '../types'
+import type { Session, SessionError, SessionId, SessionsListed } from '../types'
+
+const SELECTED_SESSION_KEY = 'argo.selected-session-id'
+
+const STATUS_MARKS: Record<Session['status'], string> = {
+  asking: 'bg-warn',
+  ended: 'bg-danger',
+  idle: 'bg-idle',
+  permission: 'bg-warn',
+  running: 'bg-active shadow-state-glow',
+  starting: 'bg-active shadow-state-glow',
+  stopped: 'bg-danger',
+  unknown: 'bg-transparent shadow-state-outline',
+}
+
+function activitySummary(session: Session): string {
+  if (session.activity === null) return session.status
+  return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
+}
+
+function sessionMetadata(session: Session): string[] {
+  const metadata = [session.cli]
+  if (session.plan !== null) metadata.push(`${session.plan.completed}/${session.plan.total} steps`)
+  if (session.delegations.length > 0) metadata.push(`${session.delegations.length} agents`)
+  if (session.pullRequest !== null) metadata.push(`PR #${session.pullRequest.number}`)
+  return metadata
+}
 
 function sessionName(session: { id: string; title: { text: string } | null }) {
   return session.title?.text ?? session.id
@@ -117,9 +144,21 @@ export function SessionsSidebarContent({
                 tabIndex={session.id === tabStop ? 0 : -1}
                 type="button"
               >
-                <span className="block truncate font-medium">{sessionName(session)}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {session.status}
+                <span className="flex items-start gap-tight">
+                  <span
+                    aria-label={session.status}
+                    className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
+                    role="img"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{sessionName(session)}</span>
+                    <span className="block truncate text-meta text-faint">
+                      {activitySummary(session)}
+                    </span>
+                    <span className="block truncate font-mono text-meta text-faint">
+                      {sessionMetadata(session).join(' · ')}
+                    </span>
+                  </span>
                 </span>
               </button>
             </li>
@@ -161,7 +200,10 @@ export function SessionsSidebarContent({
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto py-3">{rows(visible, 'Sessions')}</div>
       {archived.length > 0 ? (
-        <details className="border-t border-border/60 py-3">
+        <details
+          className="border-t border-border/60 py-3"
+          open={archived.some((session) => session.id === selectedSessionId)}
+        >
           <summary className="cursor-pointer px-4 text-sm">Archived {archived.length}</summary>
           <div className="pt-2">{rows(archived, 'Archived')}</div>
         </details>
@@ -174,9 +216,24 @@ export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const { roster, rosterError } = useSessions(null)
+  useEffect(() => {
+    if (sessionId !== undefined || roster === null || rosterError !== null) return
+    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
+    if (storedId === null) return
+    const restoredId = currentSessionId(roster.sessions, storedId)
+    if (restoredId === null) {
+      window.localStorage.removeItem(SELECTED_SESSION_KEY)
+      return
+    }
+    navigate(`/sessions/${restoredId}`, { replace: true })
+  }, [navigate, roster, rosterError, sessionId])
+
   return (
     <SessionsSidebarContent
-      onSelect={(selectedSessionId) => navigate(`/sessions/${selectedSessionId}`)}
+      onSelect={(selectedSessionId) => {
+        window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
+        navigate(`/sessions/${selectedSessionId}`)
+      }}
       roster={roster}
       rosterError={rosterError}
       selectedSessionId={sessionId ?? null}

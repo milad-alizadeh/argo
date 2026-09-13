@@ -66,6 +66,17 @@ export type SessionRosterRow = {
   archived: boolean
 }
 
+export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | 'retiredIds'>>(
+  sessions: Session[],
+  rememberedId: string,
+): string | null {
+  return (
+    sessions.find(
+      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
+    )?.id ?? null
+  )
+}
+
 // The closed set of points a Feed marks, written once and derived from.
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export type FeedMarker = (typeof FEED_MARKERS)[number]

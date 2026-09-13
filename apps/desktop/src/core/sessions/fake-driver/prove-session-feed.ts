@@ -19,9 +19,18 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
-import { appendProse, prepare, streamProse } from './session-feed-fixture'
+import {
+  appendProse,
+  growCodexTranscript,
+  prepare,
+  removeProse,
+  streamProse,
+} from './session-feed-fixture'
 import { proveLiveFeed } from './session-live-feed-cases'
-import { provePackagedRosterSelection } from './session-roster-interaction-cases'
+import {
+  provePackagedRosterRestart,
+  provePackagedRosterSelection,
+} from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -30,28 +39,36 @@ let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
   const fixture = await prepare(root)
-  application = await electron.launch({
-    executablePath: appExecutable(fixture.application),
-    env: {
-      ...process.env,
-      [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
-      [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
-      [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
-      [PROJECT_PROOF_STORE_ENV]: fixture.userData,
-      [ACCEPTANCE_ENV]: '0',
-    },
-    timeout: 30_000,
-  })
-  const page = await application.firstWindow()
-  page.setDefaultTimeout(30_000)
-  await application.evaluate(({ BrowserWindow }, viewport) => {
-    BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
-  }, SESSION_VIEWPORT)
-  await page.waitForFunction(
-    (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
-    SESSION_VIEWPORT,
-  )
-  await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+  const launch = async () => {
+    application = await electron.launch({
+      executablePath: appExecutable(fixture.application),
+      env: {
+        ...process.env,
+        [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
+        [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
+        [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
+        [PROJECT_PROOF_STORE_ENV]: fixture.userData,
+        [ACCEPTANCE_ENV]: '0',
+      },
+      timeout: 30_000,
+    })
+    const page = await application.firstWindow()
+    page.setDefaultTimeout(30_000)
+    await application.evaluate(({ BrowserWindow }, viewport) => {
+      BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
+    }, SESSION_VIEWPORT)
+    await page.waitForFunction(
+      (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
+      SESSION_VIEWPORT,
+    )
+    await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+    return page
+  }
+  const restart = async () => {
+    await application?.close()
+    return launch()
+  }
+  let page = await launch()
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   // Each case names itself as it passes, so the list printed below is what ran rather than a list
   // kept by hand beside it. The value comes back, so a case that also reports a number goes
@@ -69,6 +86,17 @@ try {
       append: appendProse,
       stream: streamProse,
     }),
+  )
+  await ran(['session-roster-restart'], () =>
+    provePackagedRosterRestart(
+      page,
+      async () => {
+        page = await restart()
+        return page
+      },
+      () => growCodexTranscript(fixture.codexTranscripts),
+      () => removeProse(fixture.claudeTranscripts),
+    ),
   )
   await assertShippedFusesIntact()
   console.log(

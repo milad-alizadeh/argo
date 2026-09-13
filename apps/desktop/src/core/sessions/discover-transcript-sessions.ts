@@ -1,6 +1,7 @@
 import { stat } from 'node:fs/promises'
 import { type SessionChain, stitchChains } from './chains'
 import type { SessionRosterRow } from './models'
+import { currentSessionId } from './models'
 import { projectRosterRow } from './roster'
 import {
   readTranscriptFile,
@@ -96,9 +97,9 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
 
   async function readSessionFiles(root: string, sessionId: string): Promise<SessionChain | null> {
     const { files } = await summarise(root)
-    const chain = stitchChains(files).find(
-      (candidate) => candidate.id === sessionId || candidate.retiredIds.includes(sessionId),
-    )
+    const chains = stitchChains(files)
+    const currentId = currentSessionId(chains, sessionId)
+    const chain = chains.find((candidate) => candidate.id === currentId)
     if (chain === undefined) return null
     const read = await Promise.all(
       chain.files.map((file) =>

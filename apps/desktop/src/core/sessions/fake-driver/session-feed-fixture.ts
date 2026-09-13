@@ -1,7 +1,7 @@
 // The fixture half of the packaged Session proof: the disk state `prove-session-feed.ts` launches
 // the app against, and the two mutations that prove a re-read reaches the file system rather than
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
-import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import {
@@ -51,6 +51,10 @@ const GROWN_TURN = `${JSON.stringify({
 
 export async function growStranded(transcripts) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
+}
+
+export async function removeProse(transcripts) {
+  await rm(fixturePath(transcripts, 'prose'))
 }
 
 export async function appendProse(transcripts, uuid, text) {
