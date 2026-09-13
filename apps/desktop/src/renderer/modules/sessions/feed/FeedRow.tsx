@@ -24,7 +24,7 @@ export function FeedRow({
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
       data-role={'role' in row ? row.role : undefined}
-      style={height === undefined ? undefined : { height: `${height}px` }}
+      style={height === undefined || height === 0 ? undefined : { height: `${height}px` }}
     >
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}

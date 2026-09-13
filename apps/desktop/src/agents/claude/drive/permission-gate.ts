@@ -1,5 +1,7 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import net from 'node:net'
+import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
 import type { ClaudePermission } from '@/core/sessions/contract'
@@ -83,8 +85,10 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
 // gets its own Unix socket and plugin directory, so a late answer cannot reach a different turn.
 export function createClaudePermissionGate(root: string): ClaudePermissionGate {
   const waiting = new Map<string, { permission: ClaudePermission; socket: net.Socket }>()
+  // macOS caps a Unix socket path at 104 bytes and userData plus a UUID passes it (#1996).
+  const socketRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-'))
   return {
-    open: (sessionId) => openPermissionGate(root, sessionId, waiting),
+    open: (sessionId) => openPermissionGate({ root, socketRoot }, sessionId, waiting),
     pending(sessionId) {
       return waiting.get(sessionId)?.permission ?? null
     },
@@ -99,12 +103,15 @@ export function createClaudePermissionGate(root: string): ClaudePermissionGate {
 }
 
 function openPermissionGate(
-  root: string,
+  roots: { root: string; socketRoot: string },
   sessionId: string,
   waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>,
 ) {
-  const pluginRoot = writePlugin(root, sessionId)
-  const socketPath = path.join(root, `${sessionId}.permission.sock`)
+  const socketPath = path.join(
+    roots.socketRoot,
+    `${createHash('sha256').update(sessionId).digest('hex').slice(0, 16)}.sock`,
+  )
+  const pluginRoot = writePlugin(roots.root, sessionId, socketPath)
   const server = net.createServer((socket) => {
     let received = ''
     socket.setEncoding('utf8')
@@ -127,6 +134,8 @@ function openPermissionGate(
       socket.write('__ARGO_GATE_HELD__\n')
     })
   })
+  // Without a listener a failed listen is an uncaught main-process exception; the hook then denies.
+  server.on('error', (error) => console.error('Claude permission gate stopped listening', error))
   server.listen(socketPath)
   return {
     pluginRoot,
@@ -141,9 +150,8 @@ function openPermissionGate(
   }
 }
 
-function writePlugin(root: string, sessionId: string) {
+function writePlugin(root: string, sessionId: string, socketPath: string) {
   const pluginRoot = path.join(root, sessionId)
-  const socketPath = path.join(root, `${sessionId}.permission.sock`)
   rmSync(pluginRoot, { recursive: true, force: true })
   rmSync(socketPath, { force: true })
   mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true })

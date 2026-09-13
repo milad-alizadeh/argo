@@ -110,7 +110,7 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium shadow-(--shadow-control)"
+            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium"
             aria-label="Open task plan"
           />
         }
