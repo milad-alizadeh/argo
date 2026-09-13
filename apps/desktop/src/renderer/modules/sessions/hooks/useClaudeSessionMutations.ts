@@ -11,9 +11,6 @@ export function useClaudeSessionMutations() {
   const interrupt = useMutation<void, SessionContractError, string>({
     mutationFn: async (sessionId: string) => {
       const reply = await window.argo.interruptClaudeSession({
-        version: 1,
-        type: 'session.claude.interrupt',
-        requestId: crypto.randomUUID(),
         sessionId,
       })
       switch (reply.type) {
@@ -29,9 +26,6 @@ export function useClaudeSessionMutations() {
   const send = useMutation<void, SessionContractError, { prompt: string; sessionId: string }>({
     mutationFn: async ({ prompt, sessionId }: { prompt: string; sessionId: string }) => {
       const reply = await window.argo.sendClaudeSession({
-        version: 1,
-        type: 'session.claude.send',
-        requestId: crypto.randomUUID(),
         sessionId,
         prompt,
       })
@@ -52,9 +46,6 @@ export function useClaudeSessionMutations() {
   >({
     mutationFn: async ({ cwd, prompt }: { cwd: string; prompt: string }) => {
       const reply = await window.argo.startClaudeSession({
-        version: 1,
-        type: 'session.claude.start',
-        requestId: crypto.randomUUID(),
         cwd,
         prompt,
       })
