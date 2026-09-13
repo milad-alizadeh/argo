@@ -8,9 +8,9 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 ## Where things are written down
 
-- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
-  screenshot reaches a body only when a person drags it in; an agent records the Storybook route
-  instead, and keeps its own captures in a temp dir. Every issue is
+- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. An
+  agent attaches a screenshot to a body itself, through github.com in Chrome, and keeps no
+  capture in git. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
   Before triage, read `docs/agents/triage-labels.md`.

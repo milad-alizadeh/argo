@@ -28,6 +28,8 @@ function FeedRow({
 }: DrawnRowProps & { onOpenEvidence: FeedDocumentProps['onOpenEvidence'] }) {
   const element = useRef<HTMLElement>(null)
   useRevealAnimation(element, reveal)
+  const style = height === undefined || height === 0 ? undefined : { height: `${height}px` }
+
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
@@ -35,7 +37,7 @@ function FeedRow({
       data-revealing={reveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
       ref={element}
-      style={height === undefined ? undefined : { height: `${height}px` }}
+      style={style}
     >
       {row.shape === 'tool' ? (
         <button type="button" className="feed-evidence-link" onClick={() => onOpenEvidence(row)}>
