@@ -3,9 +3,14 @@
 // this adapter depends on, not just an in-memory fake of `CodexChannel`. It answers exactly the
 // verbs `codex-session-driver.ts` sends, grounded in codex-cli 0.147.0's schema
 // (docs/research/2026-09-09-codex-transport.md).
+import { appendFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 
 let threadCounter = 0
+
+// #1887: lets a proof assert the exact Turn text this fixture received, one line per Turn, with
+// no reformatting by this fixture or by the adapter in front of it.
+const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 
 function send(message: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify(message)}\n`)
@@ -35,6 +40,7 @@ lines.on('line', (line) => {
       const threadId = params.threadId
       const input = Array.isArray(params.input) ? params.input : []
       const text = typeof input[0]?.text === 'string' ? input[0].text : ''
+      if (echoFile) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
       const turnId = `fake-turn-${threadCounter}-${Date.now()}`
       send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
       send({

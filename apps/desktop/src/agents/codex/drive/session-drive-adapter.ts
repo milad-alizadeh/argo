@@ -1,11 +1,7 @@
-import { z } from 'zod'
+import { type CodexTurnSetup, codexTurnSetupSchema } from '@/core/sessions/codex-contract'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
 import type { CodexSessionDriver } from './codex-session-driver'
 import { CodexSessionDriverError } from './codex-session-error'
-
-// Codex declares no Turn setup yet (#1885 is out of scope): any value the composer sends is
-// refused with `invalid-request` because only `undefined` parses.
-const codexTurnSetupSchema = z.undefined()
 
 // `codex app-server` refuses a thread already active in another process (its own client or the
 // standalone Codex app) with a JSON-RPC error naming that fact; every other refusal falls back to
@@ -24,16 +20,16 @@ export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriv
   return {
     cli: 'codex',
     turnSetupSchema: codexTurnSetupSchema,
-    async start({ cwd, prompt }) {
+    async start({ cwd, prompt, setup }) {
       try {
-        return { sessionId: await driver.start({ cwd, prompt }) }
+        return { sessionId: await driver.start({ cwd, prompt, setup: setup as CodexTurnSetup }) }
       } catch (error) {
         return failureOf(error, 'launch-failed')
       }
     },
-    async send({ sessionId, prompt }) {
+    async send({ sessionId, prompt, setup }) {
       try {
-        await driver.send(sessionId, prompt)
+        await driver.send(sessionId, prompt, setup as CodexTurnSetup)
         return { ok: true }
       } catch (error) {
         console.error('Argo could not send to Codex Session', sessionId, error)

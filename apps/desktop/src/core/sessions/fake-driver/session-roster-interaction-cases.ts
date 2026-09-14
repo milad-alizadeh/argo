@@ -67,12 +67,14 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   assert.equal((await readRosterIds(updated))[0], 'rollout-codexParent')
 
-  await updated.locator('summary').click()
+  await updated.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
   await updated.locator('nav[aria-label="Archived"] button').click()
   await updated.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   const archived = await restart()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
-  assert.equal(await archived.locator('details[open]').count(), 1)
+  await archived
+    .locator('.roster__archived [data-slot="collapsible-trigger"][aria-expanded="true"]')
+    .waitFor()
   assert.equal(
     await archived
       .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')

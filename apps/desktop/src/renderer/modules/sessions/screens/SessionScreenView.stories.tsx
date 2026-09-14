@@ -5,7 +5,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
-import { SessionFacts } from '../components/SessionScreenDetails'
+import { SessionWorkInspector } from '../components/SessionScreenDetails'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionRosterRow } from '../session-fixtures'
@@ -133,7 +133,7 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
-        inspector={<SessionFacts session={session} />}
+        inspector={<SessionWorkInspector session={session} />}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         onAnswerQuestion={() => {}}
@@ -188,15 +188,55 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const before = composer.getBoundingClientRect()
+  const activeDocument = canvasElement.querySelector<HTMLElement>(
+    '.feed__document[data-active="true"]',
+  )
+  if (activeDocument === null) throw new Error('The active feed document is absent.')
+  const viewport = activeDocument.querySelector<HTMLElement>('.feed__viewport')
+  if (viewport === null) throw new Error('The active feed viewport is absent.')
+  const finalFeedLine = within(viewport).getByText(
+    'The transcript keeps the feed, plan, and composer visible together.',
+  )
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
+  expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
+  expect(finalFeedLine.getBoundingClientRect().bottom).toBeLessThanOrEqual(before.top)
   await userEvent.click(
     within(canvasElement).getByRole('button', { name: SCROLL_HISTORY_TO_START_LABEL }),
   )
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
+}
+
+function expectContextBarInset(canvasElement: HTMLElement) {
+  const composer = within(canvasElement).getByLabelText('Session composer')
+  const workspace = within(canvasElement).getByLabelText('Session workspace')
+  const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+  const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
+  const fade = workspace.querySelector<HTMLElement>('[data-component="SessionComposerFade"]')
+  if (card === null || contextBar === null || fade === null)
+    throw new Error('The attached composer surfaces are absent.')
+
+  const gutter = Number.parseFloat(
+    getComputedStyle(composer).getPropertyValue('--spacing-shell-gutter'),
+  )
+  expect(contextBar.getBoundingClientRect().left - card.getBoundingClientRect().left).toBeCloseTo(
+    gutter,
+    1,
+  )
+  expect(card.getBoundingClientRect().right - contextBar.getBoundingClientRect().right).toBeCloseTo(
+    gutter,
+    1,
+  )
+  expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
+  const composerBounds = composer.getBoundingClientRect()
+  expect(fade.getBoundingClientRect().top).toBeCloseTo(composerBounds.top, 1)
+  expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
+    workspace.getBoundingClientRect().bottom,
+    1,
+  )
 }
 
 const meta: Meta<typeof SessionScreenView> = {
@@ -255,5 +295,6 @@ export const ComposerStaysFixed: Story = {
       ),
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
+    expectContextBarInset(canvasElement)
   },
 }

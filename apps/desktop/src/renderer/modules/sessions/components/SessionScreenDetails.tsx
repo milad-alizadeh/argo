@@ -50,17 +50,31 @@ export function SessionComposerArea({
   )
 }
 
-export function SessionFacts({ session }: Pick<SessionScreenDetailsProps, 'session'>) {
-  if (session === null) return null
+export function SessionWorkInspector({ session }: Pick<SessionScreenDetailsProps, 'session'>) {
+  if (session === null || (session.delegations.length === 0 && session.shell.length === 0))
+    return null
   return (
-    <section aria-label="Session facts" className="p-4 text-meta text-muted-foreground">
-      <h2 className="font-medium text-foreground">Session facts</h2>
-      <Fact
-        label="Context"
-        value={session.contextTokens}
-        unavailable="Context is not available yet."
-      />
-      <Fact label="Usage" value={session.spentTokens} unavailable="Usage is not available yet." />
+    <section aria-label="Session work" className="p-4 type-meta text-muted-foreground">
+      {session.delegations.length > 0 ? (
+        <div>
+          <h2 className="font-medium text-foreground">Subagents</h2>
+          {session.delegations.map((delegation) => (
+            <p className="mt-2" key={delegation.id}>
+              {delegation.label ?? delegation.id}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {session.shell.length > 0 ? (
+        <div className={session.delegations.length > 0 ? 'mt-4' : undefined}>
+          <h2 className="font-medium text-foreground">Shell</h2>
+          {session.shell.map((command) => (
+            <p className="mt-2 font-mono" key={command.id}>
+              {command.command ?? command.id}
+            </p>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -72,21 +86,5 @@ function Failure({ message }: { message: string }) {
         <AlertDescription>{message}</AlertDescription>
       </Alert>
     </div>
-  )
-}
-
-function Fact({
-  label,
-  value,
-  unavailable,
-}: {
-  label: string
-  value: number | null | undefined
-  unavailable: string
-}) {
-  return (
-    <p className="mt-2">
-      {value == null ? unavailable : `${label}: ${value.toLocaleString()} tokens`}
-    </p>
   )
 }

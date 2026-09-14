@@ -15,7 +15,14 @@ export type RequestParams = {
   }
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
-  'turn/start': { threadId: string; input: Input[] }
+  'turn/start': {
+    threadId: string
+    input: Input[]
+    model: string
+    effort: string
+    approvalPolicy: 'on-request' | 'never'
+    sandboxPolicy: { type: 'readOnly' | 'workspaceWrite' | 'dangerFullAccess' }
+  }
   'turn/interrupt': { threadId: string; turnId: string }
   'thread/name/set': { threadId: string; name: string }
 }

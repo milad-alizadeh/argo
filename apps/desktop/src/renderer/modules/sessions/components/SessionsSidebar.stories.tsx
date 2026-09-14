@@ -144,6 +144,69 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const RosterStructure: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          activity: { tool: 'Bash', target: 'RTK_DISABLED=1 gh pr checks 2062 --watch' },
+          status: 'running',
+          turnStartedAt: '2026-09-14T03:30:00Z',
+          plan: {
+            state: 'available',
+            entries: [
+              { content: 'Inspect the roster', position: 0, status: 'completed' },
+              { content: 'Match the layout', position: 1, status: 'in_progress' },
+            ],
+          },
+          pullRequest: { number: 2062, repository: 'argo', url: 'https://example.com/pull/2062' },
+          title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
+    await expect(canvas.getByText('#2062')).toBeVisible()
+    await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
+    await expect(canvas.getByTitle(/^Running /)).toBeVisible()
+    await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
+  },
+}
+
+export const NarrowSidebarWithLongSessionName: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-44">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const sidebar = within(canvasElement).getByLabelText('Sessions sidebar')
+    const name = within(sidebar).getByText(/Keep the Sessions sidebar readable/)
+    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
+    await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+  },
+}
+
 // A title that fell back to the opening prompt draws its skill mention as a badge, not the raw
 // markdown-link brackets (#2049).
 export const SkillMentionTitle: Story = {
@@ -218,10 +281,10 @@ export const AllArchived: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByText('Archived 2')
-    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    const disclosure = canvas.getByRole('button', { name: 'Archived 2' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
-    await expect(disclosure.closest('details')).toHaveAttribute('open')
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
   },
 }

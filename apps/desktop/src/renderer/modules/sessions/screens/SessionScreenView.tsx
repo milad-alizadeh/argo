@@ -4,26 +4,20 @@ import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
-import type { HarnessControl, SessionCli } from '../harness/harnesses'
+import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeed, SessionFeedRow } from '../types'
+import { sessionHarness, sessionHasWork } from './sessionScreenState'
 import { SessionShell } from './SessionShell'
 
 // An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
   const row = feed?.rows.find((row) => row.shape === 'ask' && row.answer === null)
   return row?.id ?? null
-}
-
-// The Roster stores an open `cli` string (ADR-0021: an adapter registers, shared code doesn't
-// enumerate); this is the one seam that narrows it back to the closed `SessionCli` union.
-function sessionCliOf(session: { cli: string } | null): SessionCli {
-  return session?.cli === 'codex' ? 'codex' : 'claude'
 }
 
 // A screen is a thin container: it resolves state here, and SessionScreenView hands a pure
@@ -39,10 +33,7 @@ function useSessionScreenModel() {
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
-  const harness: HarnessControl =
-    selectedSessionId === null
-      ? { cli: lastHarness, onChange: chooseHarness }
-      : { cli: sessionCliOf(session) }
+  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,
     cockpit,
@@ -80,6 +71,7 @@ export function SessionScreenView() {
     permission,
     question,
   } = useSessionScreenModel()
+  const hasSessionWork = sessionHasWork(session)
   return (
     <SessionShell
       feed={feed}
@@ -107,11 +99,13 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionFacts session={session} />
+          <SessionWorkInspector session={session} />
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )
       }
+      defaultInspectorCollapsed={!hasSessionWork}
+      inspectorReveal={evidence?.id}
     />
   )
 }
