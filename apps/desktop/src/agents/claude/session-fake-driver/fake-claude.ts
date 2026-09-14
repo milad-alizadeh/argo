@@ -6,6 +6,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 const ESCAPE = String.fromCharCode(27)
+const COMPACTION_DELAY = 10_000
 // Argo's bracketed paste, then its carriage return, which the line discipline turns into a
 // newline when it arrives before this process has switched the terminal to raw mode.
 const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
@@ -59,7 +60,7 @@ process.stdin.on('data', (chunk: string) => {
   if (pending.includes('/compact\r')) {
     pending = pending.replace('/compact\r', '')
     process.stdout.write('Compacting conversation… (0m 00s · ↓ 10.1k tokens) 22%')
-    setTimeout(compact, 3_000)
+    setTimeout(compact, COMPACTION_DELAY)
   }
   for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
     pending = pending.slice(turn.index + turn[0].length)
