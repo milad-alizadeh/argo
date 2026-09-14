@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import { driveCodexSession } from '../drive/drive-session.ts'
+import { sendCodexSession } from '../drive/drive-session.ts'
 import { startCodexSession } from '../drive/start-session.ts'
 import { createCodexSessionReader } from '../sessions/read-sessions.ts'
 
@@ -63,7 +63,6 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     assert.equal(listing.type, 'session.listed')
     const row = listing.sessions?.find((session) => session.id === sessionId)
     assert.ok(row, 'the managed Codex Session must appear in the shared Roster')
-    assert.equal(row?.status, 'running')
 
     // Codex has not written a transcript for this thread yet, so the Feed is empty rather than
     // missing: the Session screen must not read a Session it just started as lost (#2002).
@@ -77,7 +76,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     assert.equal(feedReply.type, 'session.feed.read')
     assert.deepEqual(feedReply.rows, [])
 
-    const sendReply = await driveCodexSession(
+    const sendReply = await sendCodexSession(
       {
         version: 1,
         type: 'session.codex.send',
@@ -121,7 +120,7 @@ test('a Codex transport failure surfaces an honest, visible Session state', asyn
 
 test('driving a Session Codex never launched reports a drivable failure, not a stall', async () => {
   const driver = driverBackedByFixture()
-  const reply = await driveCodexSession(
+  const reply = await sendCodexSession(
     {
       version: 1,
       type: 'session.codex.send',

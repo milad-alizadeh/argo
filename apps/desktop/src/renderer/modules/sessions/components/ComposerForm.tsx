@@ -19,6 +19,7 @@ export const COMPOSER_COLUMN =
 export function ComposerForm({
   draft,
   editorRef,
+  focusOnMount,
   isRunning,
   onChange,
   onEdit,
@@ -34,6 +35,7 @@ export function ComposerForm({
 }: {
   draft: string
   editorRef: RefObject<LexicalEditor | null>
+  focusOnMount: boolean
   isRunning: boolean
   onChange: (text: string) => void
   onEdit: (turn: (typeof pendingTurns)[number]) => void
@@ -72,6 +74,7 @@ export function ComposerForm({
             key={sessionId}
             draft={draft}
             editorRef={editorRef}
+            focusOnMount={focusOnMount}
             onChange={onChange}
             onSend={onSend}
           />

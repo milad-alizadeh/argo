@@ -1,73 +1,69 @@
 import type { BrowserWindow } from 'electron'
 import type { ClaudeSessionDriver } from '../../agents/claude/drive/claude-session-driver'
-import { driveClaudeSession } from '../../agents/claude/drive/drive-session'
+import { interruptClaudeSession, sendClaudeSession } from '../../agents/claude/drive/drive-session'
 import {
   decideClaudePermission,
   readClaudePermission,
 } from '../../agents/claude/drive/permission-session'
-import { renameClaudeSession } from '../../agents/claude/drive/rename-session'
 import {
   type ClaudeSessionStarter,
   startClaudeSession,
 } from '../../agents/claude/drive/start-session'
 import type { CodexSessionDriver } from '../../agents/codex/drive/codex-session-driver'
-import { driveCodexSession } from '../../agents/codex/drive/drive-session'
+import { interruptCodexSession, sendCodexSession } from '../../agents/codex/drive/drive-session'
+import { renameCodexSession } from '../../agents/codex/drive/drive-session'
+import { renameClaudeSession } from '../../agents/claude/drive/rename-session'
 import { type CodexSessionStarter, startCodexSession } from '../../agents/codex/drive/start-session'
-import { requestIdentifier } from '../../boundary'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
-import { sessionError } from './contract'
+import { registerDomainHandlers } from '../contract/domain'
+import {
+  type SessionFeedReply,
+  type SessionFeedRequest,
+  type SessionListReply,
+  type SessionListRequest,
+  sessionError,
+} from './contract'
 import { SESSION_OPERATIONS } from './operations'
 
 export type SessionReader = {
-  listSessions(request: unknown): Promise<unknown>
-  readSessionFeed(request: unknown): Promise<unknown>
+  listSessions(request: SessionListRequest): Promise<SessionListReply>
+  readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+}
+
+type SessionContext = {
+  driver: ClaudeSessionDriver
+  codexDriver: CodexSessionDriver
+  codexStarter: CodexSessionStarter
+  reader: SessionReader
+  starter: ClaudeSessionStarter
 }
 
 // The same renderer authority the Project bridge asserts: the main frame of this window, on the
 // renderer URL this app loaded. A page that navigated away holds no Session.
 export function attachSessionBridge(
   window: BrowserWindow,
-  storage: {
-    driver: ClaudeSessionDriver
-    codexDriver: CodexSessionDriver
-    codexStarter: CodexSessionStarter
-    reader: SessionReader
-    starter: ClaudeSessionStarter
-    rendererURL: string
-  },
+  storage: SessionContext & { rendererURL: string },
 ): void {
-  const answer = (channel: string, read: (request: unknown) => Promise<unknown> | unknown) => {
-    window.webContents.ipc.handle(channel, (event, request: unknown) => {
-      if (!isTrustedRendererFrame(event, window, storage.rendererURL)) {
-        return sessionError('access-denied', requestIdentifier(request))
-      }
-      return read(request)
-    })
-  }
-  const handlers = {
-    list: storage.reader.listSessions,
-    feed: storage.reader.readSessionFeed,
-    async rename(request: unknown) {
-      const claude = await renameClaudeSession(request, storage.driver)
-      return claude.type === 'session.renamed'
-        ? claude
-        : driveCodexSession(request, storage.codexDriver)
+  registerDomainHandlers({
+    window,
+    rendererURL: storage.rendererURL,
+    operations: SESSION_OPERATIONS,
+    context: storage,
+    handlers: {
+      list: (request, context) => context.reader.listSessions(request),
+      feed: (request, context) => context.reader.readSessionFeed(request),
+      async rename(request, context) {
+        const claude = await renameClaudeSession(request, context.driver)
+        return claude.type === 'session.renamed' ? claude : renameCodexSession(request, context.codexDriver)
+      },
+      startClaude: (request, context) => startClaudeSession(request, context.starter),
+      sendClaude: (request, context) => sendClaudeSession(request, context.driver),
+      interruptClaude: (request, context) => interruptClaudeSession(request, context.driver),
+      readClaudePermission: (request, context) => readClaudePermission(request, context.driver),
+      decideClaudePermission: (request, context) => decideClaudePermission(request, context.driver),
+      startCodex: (request, context) => startCodexSession(request, context.codexStarter),
+      sendCodex: (request, context) => sendCodexSession(request, context.codexDriver),
+      interruptCodex: (request, context) => interruptCodexSession(request, context.codexDriver),
     },
-    startClaude: (request: unknown) => startClaudeSession(request, storage.starter),
-    sendClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
-    interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
-    readClaudePermission: (request: unknown) => readClaudePermission(request, storage.driver),
-    decideClaudePermission: (request: unknown) => decideClaudePermission(request, storage.driver),
-    startCodex: (request: unknown) => startCodexSession(request, storage.codexStarter),
-    sendCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
-    interruptCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
-  } satisfies Record<
-    keyof typeof SESSION_OPERATIONS,
-    (request: unknown) => Promise<unknown> | unknown
-  >
-  for (const operation of Object.keys(SESSION_OPERATIONS) as Array<
-    keyof typeof SESSION_OPERATIONS
-  >) {
-    answer(SESSION_OPERATIONS[operation].channel, handlers[operation])
-  }
+    error: sessionError,
+  })
 }

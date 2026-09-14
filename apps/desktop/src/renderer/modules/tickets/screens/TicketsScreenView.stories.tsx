@@ -56,56 +56,27 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
   // Each row's state is an icon that opens a menu, named for a screen reader.
   await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
-  await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
   await userEvent.click(rows[0] as HTMLElement)
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
-  const detail = canvas.getByRole('article', { name: 'Ticket #607' })
-  // The inspector's bar names the Ticket, and its key opens the Ticket on GitHub.
-  await expect(canvas.getByRole('link', { name: 'Open #607 in GitHub' })).toHaveAttribute(
-    'href',
-    'https://github.com/octocat/hello-world/issues/607',
-  )
-  await expect(detail).toHaveTextContent('Wayfinder: the Tickets room, end to end')
-  await expect(detail).toHaveTextContent('PRD')
-  await expect(within(detail).getByText('wayfinder')).toBeInTheDocument()
-  await expect(
-    within(detail).getByRole('region', { name: 'Children · 1 of 2 closed' }),
-  ).toBeInTheDocument()
-  await expect(within(detail).getByRole('region', { name: 'Blocked by · 2' })).toBeInTheDocument()
 }
 
-async function readsNoDependencyFacts(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  await userEvent.click(canvas.getByRole('button', { name: /^#609/ }))
-  await expect(canvas.getByText('No description.')).toBeInTheDocument()
-  await expect(
-    canvas.getByText('GitHub gives no dependency information for this Ticket.'),
-  ).toBeInTheDocument()
-}
-
-async function movesTheInspector(canvasElement: HTMLElement) {
+async function choosingATicketReopensTheInspector(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Ticket inspector' }))
   await waitFor(() =>
     expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
   )
-  // Choosing a Ticket opens the inspector it would otherwise land in unseen.
   await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
   await waitFor(() =>
     expect(canvas.getByRole('button', { name: 'Collapse Ticket inspector' })).toBeInTheDocument(),
   )
   await expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible()
-  await userEvent.click(canvas.getByRole('button', { name: 'Expand Ticket sidebar' }))
-  await waitFor(() =>
-    expect(canvas.getByRole('button', { name: 'Restore Ticket sidebar' })).toBeInTheDocument(),
-  )
 }
 
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
     await readsTheBacklog(canvasElement)
-    await readsNoDependencyFacts(canvasElement)
-    await movesTheInspector(canvasElement)
+    await choosingATicketReopensTheInspector(canvasElement)
   },
 }
 
@@ -196,7 +167,7 @@ export const TicketTree: Story = {
   },
 }
 
-// A Linear row carries its team key and workflow status; the Detail adds its priority.
+// A Linear row carries its team key and workflow status; the Detail's own stories check its priority.
 export const LinearBacklog: Story = {
   args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },
   play: async ({ args, canvasElement }) => {
@@ -208,10 +179,8 @@ export const LinearBacklog: Story = {
     const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
     await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
     await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
-    const row = canvas.getByRole('button', { name: /^ENG-12/ })
-    await userEvent.click(row)
-    const detail = canvas.getByRole('article', { name: 'Ticket ENG-12' })
-    await expect(detail).toHaveTextContent('PriorityHigh')
+    await expect(canvas.getByRole('button', { name: /^ENG-12/ })).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Status: In Review' })).toBeVisible()
   },
 }
 

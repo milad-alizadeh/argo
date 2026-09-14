@@ -19,6 +19,8 @@ export type TicketListProps = {
   backlog: Backlog
   selectedKey: string | null
   onSelect: (key: string) => void
+  // The moment a Ticket's age is measured against, so a caller controls whether it moves.
+  now: number
 }
 
 function tally({ tickets, query, total, hasMore, searching, provider }: Backlog): string {
@@ -107,8 +109,7 @@ function useFolds() {
   return { folded, toggle }
 }
 
-export function TicketList({ backlog, selectedKey, onSelect }: TicketListProps) {
-  const now = Date.now()
+export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListProps) {
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   const rails = treeRails(rows)

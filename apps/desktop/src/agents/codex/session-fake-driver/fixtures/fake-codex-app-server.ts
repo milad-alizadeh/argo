@@ -37,11 +37,19 @@ lines.on('line', (line) => {
       const text = typeof input[0]?.text === 'string' ? input[0].text : ''
       const turnId = `fake-turn-${threadCounter}-${Date.now()}`
       send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
+      send({
+        method: 'thread/status/changed',
+        params: { threadId, status: { type: 'active', activeFlags: [] } },
+      })
       setTimeout(() => {
         const status = text.includes('FAIL') ? 'failed' : 'completed'
         send({
           method: 'turn/completed',
           params: { threadId, turn: { id: turnId, status, error: null } },
+        })
+        send({
+          method: 'thread/status/changed',
+          params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
         })
       }, 10)
       return

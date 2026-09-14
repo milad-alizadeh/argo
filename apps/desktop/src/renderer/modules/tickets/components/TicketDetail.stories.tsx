@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { STATUSES } from './status-fixtures'
 import { TicketBar, TicketDetail } from './TicketDetail'
-import { engine, wayfinder } from './ticket-fixtures'
+import { engine, prototype, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
@@ -93,6 +93,18 @@ export const Linear: Story = {
   },
 }
 
+// #609 has no body and GitHub gives no dependency information for it.
+export const NoBody: Story = {
+  args: { ticket: prototype },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #609' })
+    await expect(within(article).getByText('No description.')).toBeInTheDocument()
+    await expect(
+      within(article).getByText('GitHub gives no dependency information for this Ticket.'),
+    ).toBeInTheDocument()
+  },
+}
+
 export const NothingSelected: Story = {
   args: { ticket: null },
   play: async ({ canvasElement }) => {
@@ -123,13 +135,9 @@ export const LongContent: Story = {
 const MARKDOWN_BODY = [
   '## Flow',
   'Read the [design notes](https://github.com/octocat/hello-world/wiki) first.',
-  '```mermaid',
-  'flowchart LR',
-  '  Backlog --> Ticket --> Session',
-  '```',
 ].join('\n')
 
-// A description draws as the feed draws Markdown: headings, links that open, and Mermaid diagrams.
+// A description reaches the feed's own Markdown renderer; FeedMarkdown's stories check its output.
 export const MarkdownBody: Story = {
   args: { ticket: { ...wayfinder, body: MARKDOWN_BODY } },
   play: async ({ canvasElement }) => {
@@ -139,8 +147,5 @@ export const MarkdownBody: Story = {
       'href',
       'https://github.com/octocat/hello-world/wiki',
     )
-    const diagram = within(article).getByRole('figure', { name: 'Mermaid diagram' })
-    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
-    await expect(diagram).toHaveTextContent('Session')
   },
 }

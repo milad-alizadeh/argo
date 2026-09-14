@@ -1,8 +1,9 @@
 import { type ReactNode, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
+import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
@@ -18,6 +19,7 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
@@ -31,6 +33,7 @@ const SESSION_SPLIT = {
 
 export function SessionScreenView() {
   const { sessionId } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const newSession = sessionId === 'new'
@@ -45,12 +48,20 @@ export function SessionScreenView() {
       ? { cli: lastHarness, onChange: chooseHarness }
       : { cli: sessionCliOf(session) }
   const cli = harness.cli
-  const composer = useSessionComposer({ cli, cockpit, navigate, roster, selectedSessionId })
+  const composer = useSessionComposer({
+    cli,
+    cockpit,
+    focusOnMount: location.state === COMPOSER_FOCUS_STATE,
+    navigate,
+    roster,
+    selectedSessionId,
+  })
   const permission = useClaudePermission(selectedSessionId)
   return (
     <SessionShell
       feed={feed}
       feedError={feedError}
+      isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
@@ -84,6 +95,7 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  isRunning,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -107,6 +119,7 @@ export function SessionShell({
                 activeEvidenceId={activeEvidenceId}
                 feed={feed}
                 failure={feedError}
+                isRunning={isRunning}
                 selectedSessionId={selectedSessionId}
                 onOpenEvidence={onOpenEvidence}
               />

@@ -35,7 +35,13 @@ async function rollout(context: { after: (cleanup: () => Promise<void>) => void 
 }
 
 function reading(revision: string | null) {
-  return { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: SESSION, revision }
+  return {
+    version: 1 as const,
+    type: 'session.feed' as const,
+    requestId: 'feed-1',
+    sessionId: SESSION,
+    revision,
+  }
 }
 
 async function read(reader: ReturnType<typeof createCodexSessionReader>, revision: string | null) {

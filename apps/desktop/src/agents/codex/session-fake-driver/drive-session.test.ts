@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { driveCodexSession } from '../drive/drive-session.ts'
+import { interruptCodexSession, sendCodexSession } from '../drive/drive-session.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
 
 test('sends a subsequent Turn to the selected managed Codex Session', async () => {
-  const reply = await driveCodexSession(
+  const reply = await sendCodexSession(
     {
       version: 1,
       type: 'session.codex.send',
@@ -32,7 +32,7 @@ test('sends a subsequent Turn to the selected managed Codex Session', async () =
 })
 
 test('interrupts only the selected managed Codex Session', async () => {
-  const reply = await driveCodexSession(
+  const reply = await interruptCodexSession(
     { version: 1, type: 'session.codex.interrupt', requestId: 'stop-1', sessionId },
     {
       async interrupt(receivedSessionId) {
@@ -47,7 +47,7 @@ test('interrupts only the selected managed Codex Session', async () => {
 })
 
 test('reports a Codex Session that is no longer drivable', async () => {
-  const reply = await driveCodexSession(
+  const reply = await sendCodexSession(
     { version: 1, type: 'session.codex.send', requestId: 'send-2', sessionId, prompt: 'Continue.' },
     {
       async interrupt() {},

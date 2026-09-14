@@ -1,68 +1,41 @@
 // The Account channel's main-process end. Every provider call and every credential stays behind it:
 // the renderer names an action and receives secret-free records (#1763).
 import type { BrowserWindow } from 'electron'
-import { requestIdentifier } from '../../boundary'
-import { createRouter } from '../contract/messages'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
+import { registerDomainHandlers } from '../contract/domain'
 import type { AccountAccess } from './access'
-import {
-  ACCOUNT_CHANNEL,
-  type AccountError,
-  accountError,
-  isAccountAction,
-  isAccountConnectRequest,
-  isAccountDisconnectRequest,
-} from './contract'
+import { accountError } from './contract'
 import { disconnect, dismissNotice, listed } from './listing'
+import { ACCOUNT_OPERATIONS } from './operations'
 import { createSignIn } from './sign-in'
 
 export type AccountContext = { access: AccountAccess; signIn: ReturnType<typeof createSignIn> }
-type Context = AccountContext
 
 export const createAccountContext = (access: AccountAccess): AccountContext => ({
   access,
   signIn: createSignIn(access),
 })
 
-// An action with no fields beyond the shared three, answered by one call.
-const bare = (type: string, answer: (context: Context, requestId: string) => Promise<unknown>) => {
-  const accept = isAccountAction(type)
-  return (request: unknown, context: Context) =>
-    accept(request)
-      ? answer(context, request.requestId)
-      : accountError('invalid-request', requestIdentifier(request))
-}
-
-const HANDLERS = {
-  'account.list': bare('account.list', ({ access }, requestId) => listed(access, requestId)),
-  'account.connect': (request: unknown, { signIn }: Context) =>
-    isAccountConnectRequest(request)
-      ? signIn.connect(request.requestId, request.provider)
-      : accountError('invalid-request', requestIdentifier(request)),
-  'account.verify': bare('account.verify', ({ signIn }, id) => signIn.verify(id)),
-  'account.await': bare('account.await', ({ signIn }, id) => signIn.wait(id)),
-  'account.cancel': bare('account.cancel', ({ signIn }, id) => signIn.cancel(id)),
-  'account.dismiss-notice': bare('account.dismiss-notice', ({ access }, id) =>
-    dismissNotice(access, id),
-  ),
-  'account.disconnect': (request: unknown, { access }: Context) =>
-    isAccountDisconnectRequest(request)
-      ? disconnect(access, request.requestId, request.accountId)
-      : accountError('invalid-request', requestIdentifier(request)),
-}
-
-export const routeAccountRequest = createRouter<Context, unknown>(HANDLERS, accountError)
-
 export function attachAccountBridge(
   window: BrowserWindow,
   options: { access: AccountAccess; rendererURL: string },
-): void {
+): AccountContext {
   const context = createAccountContext(options.access)
-  window.webContents.ipc.handle(ACCOUNT_CHANNEL, (event, request: unknown) => {
-    if (!isTrustedRendererFrame(event, window, options.rendererURL)) {
-      return accountError('access-denied', requestIdentifier(request)) satisfies AccountError
-    }
-    return routeAccountRequest(request, context)
+  registerDomainHandlers({
+    window,
+    rendererURL: options.rendererURL,
+    operations: ACCOUNT_OPERATIONS,
+    context,
+    handlers: {
+      list: (request, { access }) => listed(access, request.requestId),
+      connect: (request, { signIn }) => signIn.connect(request.requestId, request.provider),
+      verify: (request, { signIn }) => signIn.verify(request.requestId),
+      await: (request, { signIn }) => signIn.wait(request.requestId),
+      cancel: (request, { signIn }) => signIn.cancel(request.requestId),
+      dismissNotice: (request, { access }) => dismissNotice(access, request.requestId),
+      disconnect: (request, { access }) => disconnect(access, request.requestId, request.accountId),
+    },
+    error: accountError,
   })
   window.on('closed', () => context.signIn.dispose())
+  return context
 }
