@@ -259,7 +259,8 @@ export const GroupedToolCalls: Story = {
       const descendantHasMatch = Array.from(node?.querySelectorAll('*') ?? []).some(
         (descendant) => descendant.textContent === 'bun test composer',
       )
-      return isMatch && !descendantHasMatch
+      const isMeasurementClone = node?.closest('[aria-hidden="true"]') !== null
+      return isMatch && !descendantHasMatch && !isMeasurementClone
     })
     const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
