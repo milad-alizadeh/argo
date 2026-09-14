@@ -1,5 +1,5 @@
 import { Check, ChevronDown, FileWarning, ShieldQuestion, ShieldX } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -42,6 +42,17 @@ const PERMISSION_COMMAND =
   'bun install --frozen-lockfile && bun run typecheck && bun run test --filter composer'
 
 export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
+  // The Questionnaire warns when a choice is disabled in `items` and not where it is rendered, so
+  // a read-only Session disables it on both sides.
+  const items = useMemo(
+    () => [
+      {
+        ...CONCIERGE_QUESTION,
+        choices: CONCIERGE_QUESTION.choices.map((choice) => ({ ...choice, disabled: readOnly })),
+      },
+    ],
+    [readOnly],
+  )
   const [selection, setSelection] = useState('roster')
   const [answer, setAnswer] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -55,7 +66,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
     )
   return (
     <Questionnaire
-      items={[CONCIERGE_QUESTION]}
+      items={items}
       className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
       data-component="FeedStructuredQuestion"
       onSubmit={(event) => {
