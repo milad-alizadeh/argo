@@ -8,7 +8,7 @@ import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 import { driverBackedByFixture, ownerCliFor } from './fixture-driver.ts'
 
-test('driving a Session Codex never launched reports a drivable failure, not a stall', async () => {
+test('driving a Session with no findable transcript reports a drivable failure, not a stall', async () => {
   const driver = driverBackedByFixture()
   const adapters = { codex: createCodexDriveAdapter(driver) }
   const reply = await sendSession(
@@ -23,13 +23,14 @@ test('driving a Session Codex never launched reports a drivable failure, not a s
     ownerCliFor,
   )
   assert.equal(reply.type, 'session.error')
-  assert.equal(reply.code, 'not-drivable')
+  assert.equal(reply.code, 'missing-session')
 })
 
 test('Codex being unavailable on the machine reports an honest start failure', async () => {
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
     now: () => new Date(),
+    resumeTarget: async () => null,
     openChannel: () => {
       throw new Error('unreachable')
     },

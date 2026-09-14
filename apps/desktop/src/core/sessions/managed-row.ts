@@ -14,6 +14,7 @@ export const sessionRosterReconciliation = {
   entry: 'observed',
   cwd: 'observed',
   branch: 'observed',
+  locked: 'observed',
   updatedAt: 'observed',
   unreadableLines: 'observed',
   originUnread: 'observed',

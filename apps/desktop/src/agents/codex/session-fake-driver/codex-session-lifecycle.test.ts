@@ -27,6 +27,7 @@ test('follows a managed Session through Turn statuses and process exit', async (
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => new Date('2026-09-13T15:17:11.000Z'),
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
   const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })

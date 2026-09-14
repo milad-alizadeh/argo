@@ -69,6 +69,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
   const codexSessionDriver = createSystemCodexSessionDriver({
     executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
     ownership: path.join(userData, 'codex-session-ownership.json'),
+    transcripts: codexTranscriptsRoot(home),
   })
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
@@ -78,15 +79,15 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
         completeCompaction: claudeSessionDriver.completeCompaction,
-        orphans: claudeSessionDriver.orphans,
         liveMessages: claudeSessionDriver.liveMessages,
         rename: (request) => renameClaudeSession(request, claudeSessionDriver),
+        isLockedElsewhere: claudeSessionDriver.isLockedElsewhere,
       }),
       codexSessionSource(codexTranscriptsRoot(home), {
         roster: codexSessionDriver.roster,
-        orphans: codexSessionDriver.ownership.orphans,
         liveMessages: codexSessionDriver.liveMessages,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
+        isLockedElsewhere: codexSessionDriver.isLockedElsewhere,
       }),
     ]),
     adapters: {

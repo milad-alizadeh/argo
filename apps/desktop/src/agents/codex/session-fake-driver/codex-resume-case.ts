@@ -38,8 +38,8 @@ export async function provePackagedCodexResume(
   )
 
   const relaunched = await restart()
-  const [orphaned] = await rosterRow(relaunched, sessionId)
-  assert.equal(orphaned?.posture, 'orphaned')
+  const [reread] = await rosterRow(relaunched, sessionId)
+  assert.equal(reread?.posture, 'external')
   await relaunched
     .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
     .click()

@@ -1,6 +1,7 @@
-// #1842 inside the SHIPPED app: a Claude Session Argo started is still in the Roster after a
+// #2092 inside the SHIPPED app: a Claude Session Argo started is still in the Roster after a
 // restart, its recorded Feed opens, and the next Turn resumes it into a new drive channel on the
-// same resume-chain. A Session Argo never started refuses the Turn with its reason, draft kept.
+// same resume-chain. A Session Argo never started resumes the same way: origin does not decide
+// whether Argo can open a channel to a transcript it can read.
 import assert from 'node:assert/strict'
 import { chmod, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -62,8 +63,8 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await waitFor(async () => (await readFile(transcript, 'utf8').catch(() => '')).includes('Fake'))
 
   const relaunched = await restart()
-  const [orphaned] = await rosterRow(relaunched, sessionId)
-  assert.equal(orphaned?.posture, 'orphaned')
+  const [reread] = await rosterRow(relaunched, sessionId)
+  assert.equal(reread?.posture, 'external')
   await relaunched
     .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
     .click()
@@ -86,12 +87,9 @@ export async function provePackagedResume(page, { project, restart, transcripts 
     .locator('nav[aria-label="Sessions"] button[data-session-id="externalBasic"]')
     .click()
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
-  const composer = await sendFromComposer(relaunched, 'Take this one over.')
-  await relaunched
-    .getByRole('alert')
-    .filter({ hasText: 'Argo did not start this Claude Session, so it cannot send to it.' })
-    .waitFor()
-  assert.equal(await composer.textContent(), 'Take this one over.')
+  await sendFromComposer(relaunched, 'Take this one over.')
+  const externalHistory = relaunched.getByRole('region', { name: 'Session history' })
+  await externalHistory.getByText('Fake Claude read: Take this one over.').waitFor()
   return relaunched
 }
 

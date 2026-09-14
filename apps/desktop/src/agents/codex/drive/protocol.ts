@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 
-import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { CodexThreadStatus } from '../../../core/sessions/session-status-rollup'
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.
@@ -121,9 +121,11 @@ export function readCompletedTurn(message: WireMessage) {
   }
 }
 
+// Validates and reshapes the wire's own `thread/status/changed` envelope; deciding what each
+// shape MEANS for a Session's status is `session-status-rollup.ts`'s job, not this parser's.
 export function readThreadStatus(
   message: WireMessage,
-): { threadId: string; status: SessionRosterRow['status'] } | undefined {
+): { threadId: string; status: CodexThreadStatus } | undefined {
   if (!('method' in message) || message.method !== 'thread/status/changed') return undefined
   const status = protocolRecord(message.params.status, 'Thread status')
   const threadId = protocolString(message.params.threadId, 'Thread status thread ID')
@@ -134,16 +136,13 @@ export function readThreadStatus(
           status.activeFlags.every((flag) => typeof flag === 'string'),
         'Active thread status has invalid flags',
       )
-      if (status.activeFlags.includes('waitingOnApproval')) {
-        return { threadId, status: 'permission' }
-      }
-      if (status.activeFlags.includes('waitingOnUserInput')) return { threadId, status: 'asking' }
-      return { threadId, status: 'running' }
+      return { threadId, status: { type: 'active', activeFlags: status.activeFlags } }
     case 'idle':
-      return { threadId, status: 'idle' }
+      return { threadId, status: { type: 'idle' } }
     case 'systemError':
+      return { threadId, status: { type: 'systemError' } }
     case 'notLoaded':
-      return { threadId, status: 'unknown' }
+      return { threadId, status: { type: 'notLoaded' } }
     default:
       assert.fail('Invalid thread status type')
   }

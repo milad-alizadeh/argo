@@ -27,10 +27,6 @@ const DRIVE_SESSION_ERRORS = {
     claude: 'Argo no longer holds this Claude Session.',
     codex: 'Argo no longer holds this Codex Session.',
   },
-  'not-resumable': {
-    claude: 'Argo did not start this Claude Session, so it cannot send to it.',
-    codex: 'Argo did not start this Codex Session, so it cannot send to it.',
-  },
   'held-elsewhere': {
     claude: 'Another Argo window is driving this Claude Session.',
     codex: 'Another Argo window is driving this Codex Session.',

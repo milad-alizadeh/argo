@@ -16,7 +16,7 @@ export type ClaudeSessionDriver = {
   rename: (sessionId: string, name: string) => Promise<string>
   liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
-  orphans: () => ReadonlySet<string>
+  isLockedElsewhere: (sessionId: string) => boolean
   pendingPermission: (sessionId: string) => ClaudePermission | null
   decidePermission: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
   close: () => void
@@ -114,7 +114,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     },
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () => roster(options, sessions),
-    orphans: options.ledger.orphans,
+    isLockedElsewhere: (sessionId) => options.ledger.standing(sessionId) === 'held-elsewhere',
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),

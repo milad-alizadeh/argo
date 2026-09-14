@@ -6,7 +6,6 @@ export function sessionFailureState(code: SessionErrorCode) {
     case 'cli-unavailable':
     case 'held-elsewhere':
     case 'missing-session':
-    case 'not-resumable':
     case 'transcripts-unavailable':
       return 'unavailable'
     case 'connection-lost':

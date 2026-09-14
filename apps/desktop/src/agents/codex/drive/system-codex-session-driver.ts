@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { codexResumeTarget } from '../sessions/resume-target'
 import { openCodexChannel } from './codex-channel'
 import { createCodexSessionDriver } from './codex-session-driver'
 import { createCodexOwnershipLedger, isProcessAlive } from './ownership-ledger'
@@ -21,7 +22,11 @@ function spawnCodex(
   })
 }
 
-export function createSystemCodexSessionDriver(paths: { executable?: string; ownership: string }) {
+export function createSystemCodexSessionDriver(paths: {
+  executable?: string
+  ownership: string
+  transcripts: string
+}) {
   return createCodexSessionDriver({
     findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
     now: () => new Date(),
@@ -30,6 +35,7 @@ export function createSystemCodexSessionDriver(paths: { executable?: string; own
       owner: { pid: process.pid, registry: randomUUID() },
       isAlive: isProcessAlive,
     }),
+    resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
     openChannel: (executable, options) => {
       const child = spawnCodex(executable, options)
       // `codex app-server` prints its own diagnostics here; kept in the log rather than thrown

@@ -37,9 +37,9 @@ export function claudeSessionSource(roots: {
   archive?: string
   managedSessions?: () => SessionRosterRow[]
   completeCompaction?: (sessionId: string, completedAt: string) => void
-  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  isLockedElsewhere?: (sessionId: string) => boolean
 }): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
@@ -48,18 +48,14 @@ export function claudeSessionSource(roots: {
     cli: 'claude',
     discoverSessions: async () => {
       const discovered = await discoverSessions(roots.transcripts, roots.archive)
-      // ADR-0026: a Session an Argo held and no running window holds now reads orphaned.
-      const orphans = roots.orphans?.() ?? new Set()
-      const graded = discovered.rows.map(
-        (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
-      )
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-      return mergeManagedRoster({ ...discovered, rows: graded }, managed)
+      return mergeManagedRoster(discovered, managed)
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,
     managedSessions: roots.managedSessions,
+    isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,
     discoverArchivedSessions:
       archiveRoot === undefined
@@ -80,9 +76,9 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
-  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  isLockedElsewhere?: (sessionId: string) => boolean
 }): SessionReader {
   return createSessionReader([claudeSessionSource(roots)])
 }

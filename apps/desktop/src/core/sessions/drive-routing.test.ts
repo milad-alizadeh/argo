@@ -29,10 +29,10 @@ function fakeClaudeDriver() {
       interrupt: () => {},
       pendingPermission: () => null,
       decidePermission: () => true,
+      isLockedElsewhere: () => false,
       rename: async () => 'Renamed.',
       liveMessages: () => [],
       roster: () => [],
-      orphans: () => new Set<string>(),
       close: () => {},
     },
   }
