@@ -23,7 +23,7 @@ mock.module('electron', () => ({
 }))
 
 const [
-  { mkdtemp, rm },
+  { mkdir, mkdtemp, readFile, rm, writeFile },
   os,
   path,
   { test },
@@ -63,4 +63,30 @@ test('an untrusted set is refused, and a later trusted get shows the appearance 
     requestId: 'r2',
   })) as { appearance: string }
   assert.equal(after.appearance, 'system')
+})
+
+test('a field this build does not own survives a change of appearance', async (context) => {
+  const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-appearance-'))
+  context.after(() => rm(userData, { recursive: true, force: true }))
+  const settingsPath = path.join(userData, 'portable-v1', 'appearance.json')
+  await mkdir(path.dirname(settingsPath), { recursive: true })
+  await writeFile(
+    settingsPath,
+    JSON.stringify({ version: 1, appearance: 'light', importedFrom: 'swift' }),
+  )
+
+  const fake = createFakeIpcWindow()
+  attachAppearanceBridge(fake.window, { userData, rendererURL: RENDERER_URL })
+  await fake.trustedInvoke(APPEARANCE_OPERATIONS.set.channel, {
+    version: 1,
+    type: 'appearance.set',
+    requestId: 'r1',
+    appearance: 'dark',
+  })
+
+  assert.deepEqual(JSON.parse(await readFile(settingsPath, 'utf8')), {
+    version: 1,
+    appearance: 'dark',
+    importedFrom: 'swift',
+  })
 })

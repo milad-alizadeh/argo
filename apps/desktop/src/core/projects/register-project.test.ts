@@ -116,6 +116,19 @@ test('a registry that cannot be read in this format refuses every action', async
   assert.equal((await listProjects(list('l1'), setup.store.registryPath)).code, 'storage-invalid')
 })
 
+test('two registrations started together both land in the registry', async (context) => {
+  const setup = await fixture(context)
+  const alpha = await repository(setup.root, 'alpha')
+  const beta = await repository(setup.root, 'beta')
+  setup.chooseEach([alpha, beta])
+  await Promise.all([
+    registerProject(register('r1'), setup.store),
+    registerProject(register('r2'), setup.store),
+  ])
+  const stored = JSON.parse(await readFile(setup.store.registryPath, 'utf8'))
+  assert.deepEqual(stored.projects.map((project) => project.path).sort(), [alpha, beta].sort())
+})
+
 test('a registry written while the chooser is open survives the registration', async (context) => {
   const setup = await fixture(context)
   setup.choose(await repository(setup.root, 'alpha'))
