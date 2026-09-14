@@ -1,3 +1,4 @@
+import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
 import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
 import type { SessionRosterRow } from '../../../core/sessions/models'
 import type { QuestionAnswer } from '../../../core/sessions/question'
@@ -9,14 +10,24 @@ import { type ManagedSession, type ManagedSessionOptions, managedRoster } from '
 import { codexAnswersFor, type PendingCodexQuestion } from './question-protocol'
 import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
-import { beginSession, startTurn } from './start-turn'
+import { beginSession, startTurn } from './turn-lifecycle'
 
 export type { LiveMessage }
 export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
-  start: (request: { cwd: string; prompt: string; setup?: CodexTurnSetup }) => Promise<string>
-  send: (sessionId: string, text: string, setup?: CodexTurnSetup) => Promise<void>
+  start: (request: {
+    cwd: string
+    prompt: string
+    setup?: CodexTurnSetup
+    attachments: SessionAttachmentInput[]
+  }) => Promise<string>
+  send: (request: {
+    sessionId: string
+    text: string
+    setup: CodexTurnSetup | undefined
+    attachments: SessionAttachmentInput[]
+  }) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
@@ -48,9 +59,10 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
 
   return {
     start: (request) => beginSession({ driver: options, renameWaiters, request, sessions }),
-    async send(sessionId, text, setup) {
+    async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
       await startTurn({
+        attachments,
         channel: session.channel,
         prompt: text,
         sessionId,

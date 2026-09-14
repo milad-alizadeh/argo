@@ -1,5 +1,6 @@
 import { File, X } from 'lucide-react'
 
+import { attachmentKindOf } from '@/core/sessions/attachments-contract'
 import {
   Attachment,
   AttachmentAction,
@@ -11,8 +12,6 @@ import {
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
 import type { ComposerAttachment } from '../state/useComposerStore'
-
-const IMAGE_EXTENSION = /\.(avif|gif|jpe?g|png|webp)$/i
 
 // Extracted from the composer prototype's ReferenceStrip (602bcce2). The prototype names attached
 // files by a bare mock path; here `path` is the file's absolute path on disk.
@@ -43,7 +42,7 @@ export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmen
   return (
     <AttachmentGroup className="flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) p-(--spacing-composer-attachment-gutter)">
       {attachments.map((attachment) => {
-        const isImage = IMAGE_EXTENSION.test(attachment.path)
+        const isImage = attachmentKindOf(attachment.path) === 'image'
         const { title, extension } = parseFilename(attachment.path)
         return (
           <Attachment
