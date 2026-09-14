@@ -1,7 +1,7 @@
 // Shared fixtures for the reader.test.ts suite (#2025): temp roots and hand-written transcripts
 // for the real Claude and Codex adapters, plus request builders and typed reply readers.
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
@@ -29,8 +29,23 @@ export async function writeClaudeTranscript({ root, sessionId, text, updatedAt }
   )
 }
 
+function codexDay(root: string) {
+  return path.join(root, '2026', '09', '13')
+}
+
+function codexMessage(text: string, updatedAt: string, id = 'm') {
+  return `${JSON.stringify({
+    timestamp: updatedAt,
+    type: 'event_msg',
+    payload: {
+      type: 'agent_message',
+      item: { type: 'AgentMessage', id, content: [{ type: 'text', text }] },
+    },
+  })}\n`
+}
+
 export async function writeCodexTranscript({ root, sessionId, text, updatedAt }: TranscriptLine) {
-  const day = path.join(root, '2026', '09', '13')
+  const day = codexDay(root)
   await mkdir(day, { recursive: true })
   await writeFile(
     path.join(day, `${sessionId}.jsonl`),
@@ -38,15 +53,22 @@ export async function writeCodexTranscript({ root, sessionId, text, updatedAt }:
       timestamp: updatedAt,
       type: 'session_meta',
       payload: { id: sessionId },
-    })}\n${JSON.stringify({
-      timestamp: updatedAt,
-      type: 'event_msg',
-      payload: {
-        type: 'agent_message',
-        item: { type: 'AgentMessage', id: 'm', content: [{ type: 'text', text }] },
-      },
-    })}\n`,
+    })}\n${codexMessage(text, updatedAt)}`,
   )
+}
+
+// The CLI adding to a transcript the reader is already watching. `partial` writes half the
+// record and no closing newline, which is what a read racing the write sees; the returned
+// function writes the rest of it.
+export async function appendCodexTranscript(
+  { root, sessionId, text, updatedAt }: TranscriptLine,
+  { partial = false } = {},
+) {
+  const file = path.join(codexDay(root), `${sessionId}.jsonl`)
+  const record = codexMessage(text, updatedAt, `m-${updatedAt}`)
+  const cut = partial ? Math.floor(record.length / 2) : record.length
+  await appendFile(file, record.slice(0, cut))
+  return () => appendFile(file, record.slice(cut))
 }
 
 export function listing(requestId = 'list-1') {
