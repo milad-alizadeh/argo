@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import './zod-jitless'
+import { createCodexCompactionClient } from './agents/codex/compaction/compaction'
 import { createAccountClient } from './core/accounts/client'
 import { APPEARANCE_CHANGED_CHANNEL, createAppearanceClient } from './core/appearance/appearance'
 import { COMMAND_CHANNEL } from './core/commands/shortcuts'
@@ -13,6 +14,7 @@ contextBridge.exposeInMainWorld('argo', {
   ...createAccountClient((channel, request) => ipcRenderer.invoke(channel, request)),
   ...createTicketClient((channel, request) => ipcRenderer.invoke(channel, request)),
   ...createSessionClient((channel, request) => ipcRenderer.invoke(channel, request)),
+  ...createCodexCompactionClient((channel, request) => ipcRenderer.invoke(channel, request)),
   ...createAppearanceClient(
     (channel, request) => ipcRenderer.invoke(channel, request),
     (listener) => {

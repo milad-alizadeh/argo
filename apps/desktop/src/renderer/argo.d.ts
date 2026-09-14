@@ -1,3 +1,4 @@
+import type { CodexCompactionClient } from '../agents/codex/compaction/compaction'
 import type { AccountClient } from '../core/accounts/client'
 import type { AppearanceClient } from '../core/appearance/appearance'
 import type { ProjectClient } from '../core/projects/client'
@@ -10,7 +11,8 @@ declare global {
       SessionClient &
       AccountClient &
       TicketClient &
-      AppearanceClient & {
+      AppearanceClient &
+      CodexCompactionClient & {
         onCommand(listener: (command: string) => void): () => void
         zoomFactor(): number
         versions: { electron: string; chrome: string }
