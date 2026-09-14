@@ -1,6 +1,7 @@
 import { createDomainClient } from '../contract/domain'
 import {
   type SessionAcceptedReply,
+  type SessionArchiveListReply,
   type SessionChooseAttachmentsReply,
   type SessionFeedReply,
   type SessionListReply,
@@ -33,6 +34,10 @@ export type SessionClient = {
     decision: 'allow' | 'deny'
   }): Promise<SessionAcceptedReply>
   listSessions(): Promise<SessionListReply>
+  listArchivedSessions(request: {
+    cursor: string | null
+    restoreId: string | null
+  }): Promise<SessionArchiveListReply>
   readSessionFeed(request: {
     sessionId: string
     revision: string | null
@@ -54,6 +59,7 @@ export function createSessionClient(
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
     listSessions: () => client.list(),
+    listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),
     chooseSessionAttachments: () => client.chooseAttachments(),
     statSessionAttachments: (request) => client.statAttachments(request),

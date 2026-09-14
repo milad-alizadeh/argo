@@ -50,23 +50,21 @@ test('discovers Sessions with no Project registration and states what it read', 
 })
 
 // The archive flag is the Claude desktop app's own, read out of that app's store and joined on
-// the CLI Session id. A Session archived under an id it has since retired stays archived, and a
-// store that is not there at all is no archived Sessions rather than a failure.
-test('reads the archive flag from the desktop store, under any id the Session answered to', async (context) => {
+// the CLI Session id. A Session archived under an id it has since retired is excluded from the
+// active Roster under that id too (#1593), and a store that is not there at all is no archived
+// Sessions rather than a failure.
+test('excludes an archived Session from the Roster, under any id it answered to', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
   context.after(() => rm(store, { recursive: true, force: true }))
   await writeArchiveStore(store, ['resumeChild'])
   const reply = await listSessions(listing, root, store)
-  assert.deepEqual(reply.sessions.map((session) => [session.id, session.archived]).sort(), [
-    ['externalBasic', false],
-    ['resumeParent', true],
-  ])
+  assert.deepEqual(reply.sessions.map((session) => session.id).sort(), ['externalBasic'])
   const noStore = await listSessions(listing, root, `${store}/absent`)
-  assert.deepEqual(
-    noStore.sessions.filter((session) => session.archived),
-    [],
-  )
+  assert.deepEqual(noStore.sessions.map((session) => session.id).sort(), [
+    'externalBasic',
+    'resumeParent',
+  ])
 })
 
 test('puts the Session touched last at the top of the Roster', async (context) => {

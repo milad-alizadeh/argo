@@ -172,7 +172,9 @@ export const RosterStructure: Story = {
     await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
     await expect(canvas.getByText('#2062')).toBeVisible()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
-    await expect(canvas.getByTitle(/^Running /)).toBeVisible()
+    const timing = canvas.getByTitle(/^Running /)
+    await expect(timing).toBeVisible()
+    await expect(timing.parentElement?.firstElementChild).toBe(timing)
     await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
   },
 }
@@ -268,24 +270,37 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
-export const AllArchived: Story = {
-  args: {
-    roster: {
-      ...listed,
-      sessions: listed.sessions.map((session) => ({
-        ...session,
-        archived: true,
-      })),
-    },
+// The active Roster never carries an archived Session (#1593): Archive states live in
+// ArchivedSessions.stories.tsx, which drives window.argo.listArchivedSessions directly.
+export const WithArchive: Story = {
+  beforeEach: () => {
+    const before = window.argo
+    window.argo = {
+      ...before,
+      listArchivedSessions: () =>
+        Promise.resolve({
+          version: 1,
+          type: 'session.archive.listed',
+          requestId: 'storybook-archive',
+          sessions: [{ ...session, id: 'archived-session', archived: true }],
+          nextCursor: null,
+          restored: null,
+        }),
+    }
+    return () => {
+      window.argo = before
+    }
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByRole('button', { name: 'Archived 2' })
+    const disclosure = canvas.getByRole('button', { name: 'Archived' })
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
-    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+    const archived = within(canvas.getByRole('navigation', { name: 'Archived' }))
+    await expect(
+      archived.getByRole('button', { name: /Read the Session transcript/ }),
+    ).toBeVisible()
   },
 }
 

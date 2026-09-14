@@ -11,6 +11,14 @@ export async function proveSessionShell(page) {
   await page.waitForSelector('[data-component="SessionShell"]')
 
   const inspector = page.locator('aside[aria-label="Session inspector"]')
+  if (Math.round((await inspector.boundingBox())?.width ?? 0) !== 0) {
+    await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
+    await page.waitForFunction(
+      () =>
+        document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect()
+          .width === 0,
+    )
+  }
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
   await page.getByRole('button', { name: 'Open Session inspector' }).click()
   await page.waitForFunction(

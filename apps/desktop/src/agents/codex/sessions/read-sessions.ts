@@ -10,6 +10,7 @@ import { discoverSessions, readSessionFiles } from './discover'
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
   roster?: () => SessionRosterRow[]
+  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }
@@ -39,8 +40,14 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   const liveMessages = options?.liveMessages
   return {
     cli: 'codex',
-    discoverSessions: async () =>
-      mergeManagedRoster(await discoverSessions(root), options?.roster?.() ?? []),
+    discoverSessions: async () => {
+      const discovered = await discoverSessions(root)
+      const orphans = options?.orphans?.() ?? new Set()
+      const rows = discovered.rows.map((row) =>
+        orphans.has(row.id) ? { ...row, posture: 'orphaned' as const } : row,
+      )
+      return mergeManagedRoster({ ...discovered, rows }, options?.roster?.() ?? [])
+    },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
