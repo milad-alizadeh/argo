@@ -15,7 +15,7 @@ import {
 import type { Provider } from '@/core/accounts/contract'
 import type { ConnectionSummary, TicketErrorCode } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 
@@ -54,7 +54,7 @@ const RECONNECTABLE = new Set<string>([
 
 // Reconnecting opens the Accounts, named for the provider when the failure has one.
 const reconnectLabel = (provider: Provider | null) =>
-  provider ? `Reconnect ${PROVIDER_PRESENTATION[provider].name}` : 'Open Accounts'
+  provider ? `Reconnect ${providerPresentation(provider).name}` : 'Open Accounts'
 
 export type Recovery = { onRetry: () => void; onReconnect: () => void; provider: Provider | null }
 
@@ -112,7 +112,7 @@ export function connectionProblem(
   { onReconnect, onDisconnectSource }: ConnectionRecovery,
 ): TicketProblemProps {
   const { icon, title } = CONNECTION_PROBLEMS[connection.state]
-  const { name, scope } = PROVIDER_PRESENTATION[connection.provider]
+  const { name, scope } = providerPresentation(connection.provider)
   return {
     icon,
     title: title({ login: connection.login ?? 'this Account', name, scope: scope.one }),

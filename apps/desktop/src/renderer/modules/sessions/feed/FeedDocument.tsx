@@ -1,9 +1,10 @@
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow, useToolGroups } from './drawn-row'
 import { FeedRow } from './FeedRow'
 import { feedContent } from './feed-content'
+import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
 import { useSettledFeed } from './useSettledFeed'
 
@@ -13,9 +14,12 @@ type FeedDocumentProps = {
   compactionStartedAt: string | null
   compactionPercentage: number | null
   compactionTokens: string | null
+  handoffStartedAt: string | null
+  handoffTo: string | null
+  onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
@@ -31,6 +35,17 @@ function compactionMarker(
   )
 }
 
+function handoffMarker(
+  startedAt: string | null,
+  handoffTo: string | null,
+  onOpenSession: (sessionId: string) => void,
+) {
+  if (startedAt !== null) return <HandoffMarker />
+  if (handoffTo !== null)
+    return <HandoffCompletedMarker onOpenSession={onOpenSession} sessionId={handoffTo} />
+  return null
+}
+
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -39,6 +54,9 @@ export function FeedDocument({
   compactionStartedAt,
   compactionPercentage,
   compactionTokens,
+  handoffStartedAt,
+  handoffTo,
+  onOpenSession,
   feed,
   isRunning,
   onOpenEvidence,
@@ -94,6 +112,7 @@ export function FeedDocument({
         </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
+        {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}
       </div>
     </div>
   )

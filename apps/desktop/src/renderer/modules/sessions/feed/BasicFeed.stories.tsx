@@ -293,6 +293,7 @@ function StreamingFeed() {
           isRunning={false}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}

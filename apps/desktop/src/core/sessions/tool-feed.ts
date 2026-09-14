@@ -89,6 +89,7 @@ function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null
     id: call.id,
     questions: parsed.data.questions,
     answer: results.get(call.id)?.content ?? null,
+    unsupported: null,
   }
 }
 

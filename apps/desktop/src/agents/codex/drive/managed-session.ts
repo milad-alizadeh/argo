@@ -5,6 +5,7 @@ import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { CodexOwnershipLedger } from './ownership-ledger'
+import type { PendingCodexQuestion } from './question-protocol'
 import { codexNotificationRecorder } from './record-notification'
 
 export type ManagedSession = {
@@ -19,6 +20,7 @@ export type ManagedSession = {
   // item, not by a progress percentage (#2123), so there is no compactionPercentage/Tokens to hold.
   compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
+  pendingQuestion: PendingCodexQuestion | null
 }
 
 export type ManagedSessionOptions = {
@@ -29,6 +31,7 @@ export type ManagedSessionOptions = {
     options: { cwd: string; env: NodeJS.ProcessEnv },
   ) => CodexChannel
   ownership?: CodexOwnershipLedger
+  resumeTarget: (sessionId: string) => Promise<{ cwd: string } | null>
 }
 
 export async function openManagedChannel(options: ManagedSessionOptions, cwd: string) {
@@ -75,8 +78,9 @@ export function rememberManagedSession(options: {
     status: 'running',
     messages,
     compactionStartedAt: null,
+    pendingQuestion: null,
   })
-  driver.ownership?.bind(sessionId, cwd)
+  driver.ownership?.bind(sessionId)
   channel.onExit(() => {
     const session = sessions.get(sessionId)
     if (session) session.status = 'ended'

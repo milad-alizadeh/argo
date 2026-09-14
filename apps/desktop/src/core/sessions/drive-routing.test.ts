@@ -23,17 +23,19 @@ function fakeClaudeDriver() {
       start: () => 'claude-1',
       compact: async (_sessionId: string) => {},
       completeCompaction: () => {},
+      handoff: async (_sessionId: string) => {},
+      completeHandoffs: () => {},
       send: async (sessionId: string, turn: { prompt: string }) => {
         sent.push({ sessionId, prompt: turn.prompt })
       },
       interrupt: () => {},
       pendingPermission: () => null,
       decidePermission: () => true,
+      isLockedElsewhere: () => false,
       decideQuestion: async () => true,
       rename: async () => 'Renamed.',
       liveMessages: () => [],
       roster: () => [],
-      orphans: () => new Set<string>(),
       close: () => {},
     },
   }
@@ -45,14 +47,16 @@ function fakeCodexDriver() {
     sent,
     driver: {
       start: async () => 'codex-1',
-      send: async (sessionId: string, prompt: string) => {
-        sent.push({ sessionId, prompt })
+      send: async ({ sessionId, text }: { sessionId: string; text: string }) => {
+        sent.push({ sessionId, prompt: text })
       },
       interrupt: async () => {},
       compact: async () => {},
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
+      pendingQuestion: () => null,
+      decideQuestion: () => true,
       close: () => {},
     },
   }

@@ -8,17 +8,17 @@ import { SessionsSidebar } from '../components/SessionsSidebar'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './SessionScreenView'
 
-// ADR-0026 as amended by #1842: a Session Argo held before a restart reads orphaned, keeps its
-// composer, and the next Send is what resumes it.
-const orphaned = sessionRosterRow({
-  id: 'orphaned-session',
-  posture: 'orphaned',
+// #2092: a Session Argo held before a restart reads external, keeps its composer, and the next
+// Send is what resumes it, regardless of whether Argo started it originally.
+const resumable = sessionRosterRow({
+  id: 'resumable-session',
+  posture: 'external',
   title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',
 })
 
-// The bridge a restarted Argo answers with: the Roster lists the orphaned Session, and a Send
+// The bridge a restarted Argo answers with: the Roster lists the resumable Session, and a Send
 // either resumes it into a live managed channel or is refused with the reason.
 function restartedHost(refusal: DriveSessionErrorCode | null) {
   let resumed = false
@@ -29,7 +29,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null) {
       version: 1,
       type: 'session.listed',
       requestId: 'storybook-sessions',
-      sessions: [resumed ? { ...orphaned, posture: 'managed', status: 'running' } : orphaned],
+      sessions: [resumed ? { ...resumable, posture: 'managed', status: 'running' } : resumable],
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
@@ -52,7 +52,7 @@ const meta: Meta<typeof SessionScreenView> = {
   decorators: [
     (Story) => (
       <div className="h-dvh w-full">
-        <MemoryRouter initialEntries={[`/sessions/${orphaned.id}`]}>
+        <MemoryRouter initialEntries={[`/sessions/${resumable.id}`]}>
           <CockpitShell sidebar={<SessionsSidebar />}>
             <Routes>
               <Route path="/sessions/:sessionId" element={<Story />} />
@@ -73,7 +73,7 @@ async function sendDraft(canvasElement: HTMLElement, draft: string) {
   const composer = canvas.getByLabelText('Message')
   await userEvent.click(composer)
   await userEvent.type(composer, draft)
-  await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+  await userEvent.keyboard('{Enter}')
   return { canvas, composer }
 }
 
@@ -89,22 +89,24 @@ export const ResumesOnSend: Story = {
   },
 }
 
-// Every refusal draws the same alert with a different message, so one code stands for all of them.
+// Every refusal draws the same lock card, whatever CLI or message caused it (#2092 AC #4/#9).
 const REFUSAL: DriveSessionErrorCode = 'held-elsewhere'
 
 // A Session open in another app cannot take a Turn: the refusal replaces the composer with a
-// footer alert rather than sitting above it (#2053).
+// lock card rather than sitting above it (#2053, #2092).
 export const RefusedSend: Story = {
   beforeEach: () => restartedHost(REFUSAL),
   play: async ({ canvasElement }) => {
     const { canvas } = await sendDraft(canvasElement, 'Carry on with the fix.')
 
     await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(
-        driveSessionError(REFUSAL, 'claude', null).message,
-      ),
+      expect(canvas.getByRole('alert')).toHaveTextContent('This session is open in another app'),
+    )
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Close it there to continue it in Argo.',
     )
     await expect(canvas.queryByLabelText('Message')).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
   },
 }

@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict'
+import {
+  chooseHarness,
+  openNewSessionByClick,
+  openSessionByClick,
+  RUN_SETUP,
+} from './session-gestures'
 
-const RUN_SETUP = '[aria-label^="Choose run setup"]'
 const MODE = '[aria-label^="Choose permission mode"]'
 const MESSAGE = '[aria-label="Message"]'
-
-async function openSession(page, sessionId) {
-  await page.evaluate((id) => {
-    window.location.hash = `#/sessions/${id}`
-  }, sessionId)
-}
 
 async function waitForSetup(page, runSetup, mode) {
   await page.waitForFunction(
@@ -23,7 +22,7 @@ async function waitForSetup(page, runSetup, mode) {
 // The composer states the Model, Effort and Mode the Session's own records name, read through the
 // shipped main process and preload, and a choice made by keyboard outlives a Session switch.
 export async function proveTurnSetup(page) {
-  await openSession(page, 'setupAnswered')
+  await openSessionByClick(page, 'setupAnswered')
   await waitForSetup(page, 'Claude Code·Sonnet 5·High', 'Plan')
 
   await page.locator(RUN_SETUP).focus()
@@ -53,9 +52,8 @@ export async function proveTurnSetup(page) {
   await page.getByRole('menu').waitFor({ state: 'detached' })
   await waitForSetup(page, 'Claude Code·Haiku 4.5·Extra high', 'Auto')
 
-  await openSession(page, 'prose')
-  await page.waitForFunction(() => window.location.hash === '#/sessions/prose')
-  await openSession(page, 'setupAnswered')
+  await openSessionByClick(page, 'prose')
+  await openSessionByClick(page, 'setupAnswered')
   await waitForSetup(page, 'Claude Code·Haiku 4.5·Extra high', 'Auto')
 
   await proveComposerMemory(page)
@@ -65,11 +63,8 @@ export async function proveTurnSetup(page) {
 async function proveComposerMemory(page) {
   await page.locator(MESSAGE).click()
   await page.keyboard.type('Half a thought.')
-  await openSession(page, 'new')
-  await page.locator(RUN_SETUP).click()
-  await page.getByRole('tab', { name: 'Codex' }).click()
-  await page.keyboard.press('Escape')
-  await page.getByRole('tablist').waitFor({ state: 'detached' })
+  await openNewSessionByClick(page)
+  await chooseHarness(page, 'codex')
 
   await page.reload()
   await page.waitForFunction(
@@ -81,7 +76,7 @@ async function proveComposerMemory(page) {
     RUN_SETUP,
     { timeout: 10_000 },
   )
-  await openSession(page, 'setupAnswered')
+  await openSessionByClick(page, 'setupAnswered')
   await page.waitForFunction(
     (selector) => document.querySelector(selector)?.textContent === 'Half a thought.',
     MESSAGE,

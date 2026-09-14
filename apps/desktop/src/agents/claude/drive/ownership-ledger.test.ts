@@ -11,22 +11,21 @@ async function ledgerPath(context: TestContext) {
   return { root, file: path.join(root, 'claude-session-ownership.json') }
 }
 
-test('binding a Session claims it here, and releasing it orphans it', async (context) => {
+test('binding a Session claims it here, and releasing it leaves it resumable', async (context) => {
   const { file } = await ledgerPath(context)
   const ledger = createOwnershipLedger({
     path: file,
     owner: { pid: 1, registry: 'a' },
     isAlive: () => true,
   })
-  assert.equal(ledger.standing('s1'), 'never-owned')
+  assert.equal(ledger.standing('s1'), 'resumable')
   ledger.bind('s1')
   assert.equal(ledger.standing('s1'), 'held-here')
   ledger.release('s1')
-  assert.equal(ledger.standing('s1'), 'orphaned')
-  assert.deepEqual([...ledger.orphans()], ['s1'])
+  assert.equal(ledger.standing('s1'), 'resumable')
 })
 
-test('a Session another live process holds is held elsewhere, not orphaned', async (context) => {
+test('a Session another live process holds is held elsewhere, not resumable', async (context) => {
   const { file } = await ledgerPath(context)
   const holder = createOwnershipLedger({
     path: file,

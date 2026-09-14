@@ -1,27 +1,20 @@
 import { useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { AccountState, AccountSummary } from '@/core/accounts/contract'
 import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { useFocusRescue } from '../../../lib/focus-rescue'
-import { capitalized, PROVIDER_PRESENTATION } from '../lib/providers'
+import { providerPresentation } from '../lib/providers'
 
-const STATE_BADGES = {
-  connected: { label: 'Connected', variant: 'secondary' },
-  expired: { label: 'Sign-in expired', variant: 'destructive' },
-  revoked: { label: 'Access revoked', variant: 'destructive' },
-  unreadable: { label: 'Sign-in unreadable', variant: 'destructive' },
-} as const
-
-const STATE_NOTES: Record<AccountState, ((provider: string) => string) | null> = {
-  connected: null,
-  expired: (provider) =>
-    `The sign-in expired and ${provider} would not renew it. Reconnect to read Tickets again.`,
-  revoked: (provider) =>
-    `${provider} no longer accepts this sign-in. Reconnect to read Tickets again.`,
-  unreadable: () =>
-    'Argo cannot open the stored sign-in on this computer. Reconnect to read Tickets again.',
-}
+// How each Account state draws: its badge, and the note saying why, which a connected Account has
+// no need of.
+const STATE_PRESENTATION = {
+  connected: { variant: 'secondary', note: null },
+  expired: { variant: 'destructive', note: 'note.expired' },
+  revoked: { variant: 'destructive', note: 'note.revoked' },
+  unreadable: { variant: 'destructive', note: 'note.unreadable' },
+} as const satisfies Record<AccountState, { variant: string; note: string | null }>
 
 export type AccountRowProps = {
   account: AccountSummary
@@ -32,17 +25,15 @@ export type AccountRowProps = {
 
 // What a revoked grant or a disconnect affects is named at Account scope, one line per Connection.
 function Connections({ account }: { account: AccountSummary }) {
+  const { t } = useTranslation('accounts')
   if (account.connections.length === 0) {
-    return (
-      <p className="type-meta text-muted-foreground">
-        No Project reads Tickets through this Account.
-      </p>
-    )
+    return <p className="type-meta text-muted-foreground">{t('row.noConnections')}</p>
   }
-  const { scope } = PROVIDER_PRESENTATION[account.provider]
   return (
     <ul
-      aria-label={`${capitalized(scope.many)} for ${account.login}`}
+      // A whole sentence per provider: a language where a noun does not simply take a capital at
+      // the front cannot be served by capitalising the scope word here.
+      aria-label={t(`row.connections.${account.provider}`, { login: account.login })}
       className="grid gap-(--spacing-shell-tight)"
     >
       {account.connections.map((connection) => (
@@ -54,33 +45,27 @@ function Connections({ account }: { account: AccountSummary }) {
   )
 }
 
-function disconnectQuestion({ login, connections, provider }: AccountSummary): string {
-  if (connections.length === 0) return `Disconnect ${login}?`
-  const { scope } = PROVIDER_PRESENTATION[provider]
-  const subject =
-    connections.length === 1
-      ? `Its ${scope.one} stops`
-      : `Its ${connections.length} ${scope.many} stop`
-  return `Disconnect ${login}? ${subject} reading Tickets until you connect it again.`
-}
-
 // Labelled by its question rather than a legend: a legend sits outside the grid's gap.
 function ConfirmDisconnect({ account, onDisconnect, onKeep, busy }: ConfirmProps) {
+  const { t } = useTranslation('accounts')
   const question = useId()
+  const { login, connections, provider } = account
   return (
     <fieldset
       aria-labelledby={question}
       className="grid min-w-0 gap-(--spacing-shell-gutter) rounded-md bg-muted/60 p-(--spacing-shell-gutter)"
     >
       <p className="type-body" id={question}>
-        {disconnectQuestion(account)}
+        {connections.length === 0
+          ? t('confirm.unconnected', { login })
+          : t(`confirm.${provider}`, { login, count: connections.length })}
       </p>
       <div className="flex gap-(--spacing-shell-item)">
         <Button disabled={busy} onClick={onDisconnect} size="sm" variant="destructive">
-          Disconnect
+          {t('confirm.disconnect')}
         </Button>
         <Button data-focus-rescue disabled={busy} onClick={onKeep} size="sm" variant="ghost">
-          Keep
+          {t('confirm.keep')}
         </Button>
       </div>
     </fieldset>
@@ -95,16 +80,17 @@ type ConfirmProps = {
 }
 
 export function AccountRow({ account, busy, onDisconnect, onReconnect }: AccountRowProps) {
+  const { t } = useTranslation('accounts')
   const [confirming, setConfirming] = useState(false)
   const row = useRef<HTMLLIElement>(null)
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
-  const badge = STATE_BADGES[account.state]
-  const { name } = PROVIDER_PRESENTATION[account.provider]
-  const note = STATE_NOTES[account.state]?.(name) ?? null
+  const { name } = providerPresentation(account.provider)
+  const { variant, note } = STATE_PRESENTATION[account.state]
+  const reason = note ? t(note, { provider: name }) : null
   return (
     <li
-      aria-label={`${name} Account ${account.login}`}
+      aria-label={t('row.label', { provider: name, login: account.login })}
       ref={row}
       className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
     >
@@ -115,21 +101,21 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
             {account.workspace}
           </span>
         ) : null}
-        <Badge variant={badge.variant}>{badge.label}</Badge>
+        <Badge variant={variant}>{t(`state.${account.state}`)}</Badge>
         <span className="flex-1" />
         {confirming ? null : (
           <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
-            Disconnect…
+            {t('row.disconnect')}
           </Button>
         )}
       </div>
       <Connections account={account} />
-      {note ? (
+      {reason ? (
         <div className="grid justify-items-start gap-(--spacing-shell-item)">
-          <p className="type-meta text-destructive">{note}</p>
+          <p className="type-meta text-destructive">{reason}</p>
           {confirming ? null : (
             <Button onClick={onReconnect} size="sm" variant="outline">
-              Reconnect
+              {t('row.reconnect')}
             </Button>
           )}
         </div>

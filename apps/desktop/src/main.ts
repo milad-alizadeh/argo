@@ -23,6 +23,7 @@ import {
   readAppearance,
 } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
+import { setPlatformLanguage } from './core/i18n/platform'
 import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachWindowNavigation } from './core/security/window-navigation'
@@ -65,11 +66,14 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
     permissions: path.join(userData, 'claude-permission-plugins'),
     ledger: path.join(userData, 'claude-session-ownership.json'),
     transcripts: claudeTranscriptsRoot(home),
+    handoffBriefs: path.join(userData, 'claude-session-handoffs'),
+    handoffLedger: path.join(userData, 'claude-session-handoffs.json'),
     executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
   })
   const codexSessionDriver = createSystemCodexSessionDriver({
     executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
     ownership: path.join(userData, 'codex-session-ownership.json'),
+    transcripts: codexTranscriptsRoot(home),
   })
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
@@ -79,15 +83,18 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
         completeCompaction: claudeSessionDriver.completeCompaction,
-        orphans: claudeSessionDriver.orphans,
+        completeHandoffs: claudeSessionDriver.completeHandoffs,
+        handoffEdges: claudeSessionDriver.handoffEdges,
         liveMessages: claudeSessionDriver.liveMessages,
         rename: (request) => renameClaudeSession(request, claudeSessionDriver),
+        isLockedElsewhere: claudeSessionDriver.isLockedElsewhere,
       }),
       codexSessionSource(codexTranscriptsRoot(home), {
         roster: codexSessionDriver.roster,
-        orphans: codexSessionDriver.ownership.orphans,
         liveMessages: codexSessionDriver.liveMessages,
+        pendingQuestion: codexSessionDriver.pendingQuestion,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
+        isLockedElsewhere: codexSessionDriver.isLockedElsewhere,
       }),
     ]),
     adapters: {
@@ -151,6 +158,9 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(async () => {
+  // The menu and the native dialogs are the only words the main process draws, and it reads the
+  // language from the operating system. `app.getLocale()` answers only once Electron is ready.
+  setPlatformLanguage(app.getLocale())
   // The stored choice is applied before the first window exists, so the frame is never drawn in
   // one appearance and corrected into the other.
   applyStoredAppearance(await readAppearance(app.getPath('userData')))

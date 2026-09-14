@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
@@ -157,7 +157,7 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   }
   return (
     <a
-      aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
+      aria-label={`Open ${ticket.key} in ${providerPresentation(provider).name}`}
       className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
       href={ticket.url}
       rel="noreferrer"

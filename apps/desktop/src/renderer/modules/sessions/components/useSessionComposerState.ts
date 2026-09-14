@@ -7,7 +7,7 @@ import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { useAttachmentTransfer, useComposerAttachments } from './useComposerAttachments'
 import { type PendingTurn, usePendingTurns } from './usePendingTurns'
-import { useSend } from './useSend'
+import { type Send, useSend } from './useSend'
 
 // The setup a queued Turn was written with, narrowed to the choices still offered.
 function turnSetupOf(setup: TurnSetupControlProps | null, turnSetup: TurnSetup | undefined) {
@@ -62,7 +62,7 @@ export function useSessionComposerState({
   setup,
 }: {
   isRunning: boolean
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  onSend: Send
   sessionId: string
   setup: TurnSetupControlProps | null
 }) {
@@ -70,8 +70,9 @@ export function useSessionComposerState({
   const { changeDraft, clearDraft, draft } = useComposerDraft(sessionId, editorRef)
   const { attachments, attach, remove, markError, clear } = useComposerAttachments(sessionId)
   const onEdit = useEditPendingTurn(editorRef, changeDraft, setup)
-  const sendPendingTurn = useCallback(
-    (text: string, turnSetup: TurnSetup | undefined) => onSend(text, turnSetupOf(setup, turnSetup)),
+  const sendPendingTurn: Send = useCallback(
+    (text, turnSetup, pendingAttachments) =>
+      onSend(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments),
     [onSend, setup],
   )
   const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn } = usePendingTurns({
