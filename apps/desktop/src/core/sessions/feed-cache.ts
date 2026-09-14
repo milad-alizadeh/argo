@@ -38,6 +38,23 @@ export function feedReply(value: SessionFeedRequest, held: HeldFeed) {
   }
 }
 
+export function appendedReply(
+  value: SessionFeedRequest,
+  held: HeldFeed,
+  unchangedRowCount: number,
+) {
+  return {
+    version: 1 as const,
+    type: 'session.feed.appended' as const,
+    requestId: value.requestId,
+    sessionId: value.sessionId,
+    chainId: held.chainId,
+    revision: held.revision,
+    unchangedRowCount,
+    rows: held.rows.slice(unchangedRowCount),
+  }
+}
+
 export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
   return {
     version: 1 as const,
@@ -75,12 +92,17 @@ export async function stableChain(
   return unsettledRead
 }
 
-export function keepFeed(feeds: Map<string, HeldFeed>, key: string, feed: HeldFeed) {
+export type FeedCaches = { feeds: Map<string, HeldFeed>; projections: Map<string, unknown> }
+
+// Evicting from `projections` in lockstep keeps the two caches keyed the same: a document whose
+// Feed fell out of the kept set carries no incremental state worth resuming from either.
+export function keepFeed({ feeds, projections }: FeedCaches, key: string, feed: HeldFeed) {
   feeds.delete(key)
   feeds.set(key, feed)
   while (feeds.size > KEPT_FEED_LIMIT) {
     const oldest = feeds.keys().next().value
     if (oldest === undefined) return
     feeds.delete(oldest)
+    projections.delete(oldest)
   }
 }
