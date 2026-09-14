@@ -4,7 +4,13 @@
 // bugs reached the user.
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import { HARNESSES, type SessionCli } from '../../../renderer/modules/sessions/harness/harnesses'
+import type { SessionCli } from '../../../renderer/modules/sessions/harness/harnesses'
+
+// The harness tab labels, typed against SessionCli so a new CLI cannot be left out. The strings
+// themselves live in the renderer's turn setup (claude-turn-setup.ts, codex-turn-setup.ts), which
+// the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
+// runs leaves that unresolved.
+const HARNESS_TABS: Record<SessionCli, string> = { claude: 'Claude Code', codex: 'Codex' }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const ARCHIVED = '.roster__archived'
@@ -59,7 +65,7 @@ export async function deselectSession(page: Page) {
 // The harness tabs inside the run setup popover, dismissed the way a person dismisses it.
 export async function chooseHarness(page: Page, cli: SessionCli) {
   await page.locator(RUN_SETUP).click()
-  await page.getByRole('tab', { name: HARNESSES[cli].label }).click()
+  await page.getByRole('tab', { name: HARNESS_TABS[cli] }).click()
   await page.keyboard.press('Escape')
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
