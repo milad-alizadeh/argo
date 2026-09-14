@@ -11,8 +11,8 @@ import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeed, SessionFeedRow } from '../types'
-import { sessionHarness, sessionHasWork } from './sessionScreenState'
 import { SessionShell } from './SessionShell'
+import { sessionHarness, sessionHasWork } from './sessionScreenState'
 
 // An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
