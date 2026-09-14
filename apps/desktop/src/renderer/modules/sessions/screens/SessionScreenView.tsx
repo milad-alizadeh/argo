@@ -138,7 +138,7 @@ export function SessionShell({
             </section>
             <section
               aria-label="Session composer"
-              className="relative isolate shrink-0 bg-background"
+              className="relative isolate shrink-0 bg-background px-(--spacing-shell-inset)"
             >
               <div
                 aria-hidden="true"

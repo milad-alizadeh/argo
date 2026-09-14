@@ -195,6 +195,26 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
+function expectContextBarInset(canvasElement: HTMLElement) {
+  const composer = within(canvasElement).getByLabelText('Session composer')
+  const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+  const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
+  if (card === null || contextBar === null)
+    throw new Error('The attached composer surfaces are absent.')
+
+  const gutter = Number.parseFloat(
+    getComputedStyle(composer).getPropertyValue('--spacing-shell-gutter'),
+  )
+  expect(contextBar.getBoundingClientRect().left - card.getBoundingClientRect().left).toBeCloseTo(
+    gutter,
+    1,
+  )
+  expect(card.getBoundingClientRect().right - contextBar.getBoundingClientRect().right).toBeCloseTo(
+    gutter,
+    1,
+  )
+}
+
 const meta: Meta<typeof SessionScreenView> = {
   title: 'Sessions/Screen',
   component: SessionScreenView,
@@ -251,5 +271,6 @@ export const ComposerStaysFixed: Story = {
       ),
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
+    expectContextBarInset(canvasElement)
   },
 }

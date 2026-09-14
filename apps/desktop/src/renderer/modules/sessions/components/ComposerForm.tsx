@@ -13,9 +13,8 @@ import { SessionContextBar } from './SessionContextBar'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
-// The column the composer card sits in; a message about the composer shares it, so it is never wider.
-export const COMPOSER_COLUMN =
-  'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
+// The composer card's column; attached secondary surfaces inset from its edges.
+export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
 export function ComposerForm({
   draft,
@@ -78,6 +77,7 @@ export function ComposerForm({
       />
       <div className="relative">
         <div
+          data-component="ComposerCard"
           className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
         >
           <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
@@ -120,7 +120,7 @@ export function ComposerForm({
             </div>
           </div>
         </div>
-        <div className="absolute inset-x-0 top-full z-0 -mt-2">
+        <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
           <SessionContextBar
             contextTokens={contextTokens}
             harness={harness?.cli}
