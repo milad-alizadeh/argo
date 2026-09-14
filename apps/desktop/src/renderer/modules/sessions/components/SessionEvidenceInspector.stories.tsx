@@ -21,7 +21,7 @@ const meta: Meta<typeof SessionEvidenceInspector> = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-(--size-session-inspector)">
+      <div className="flex h-dvh min-h-0 w-full">
         <Story />
       </div>
     ),
@@ -63,6 +63,7 @@ export const FileDiff: Story = {
     await expect(canvas.getByRole('button', { name: 'Copy diff' })).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Current file' }))
     await expect(canvas.getByText('Current file is unavailable.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Diff' })).toHaveFocus()
   },
 }
 
