@@ -9,6 +9,14 @@ import { SessionRosterList } from './SessionRosterList'
 import { RosterLoading, rosterState, SessionsSidebarHeader } from './SessionsSidebarChrome'
 import { useRosterFocus } from './useRosterFocus'
 
+function filteredSessions(sessions: SessionsListed['sessions'], search: string) {
+  const query = search.trim().toLocaleLowerCase()
+  if (query === '') return sessions
+  return sessions.filter((session) =>
+    (session.title?.text ?? session.id).toLocaleLowerCase().includes(query),
+  )
+}
+
 function SidebarRows({
   onFocus,
   onRename,
@@ -87,9 +95,11 @@ export function SessionsSidebarContent({
   const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
   const [renamedTitles, setRenamedTitles] = useState<Record<string, string>>({})
-  const visible = roster?.sessions ?? []
+  const [search, setSearch] = useState('')
+  const sessions = roster?.sessions ?? []
+  const visible = filteredSessions(sessions, search)
   const { setFocusedSessionId, tabStop } = useRosterFocus(sidebar, visible, selectedSessionId)
-  const state = rosterState(roster, rosterError, visible.length)
+  const state = rosterState(roster, rosterError, sessions.length)
   const rosterRequestId = roster?.requestId
 
   useEffect(() => {
@@ -103,7 +113,7 @@ export function SessionsSidebarContent({
       data-state={state}
       ref={sidebar}
     >
-      <SessionsSidebarHeader onNew={onNew} />
+      <SessionsSidebarHeader onNew={onNew} onSearch={setSearch} search={search} />
       {rosterError ? (
         <Alert
           className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
@@ -115,7 +125,7 @@ export function SessionsSidebarContent({
         </Alert>
       ) : null}
       {roster === null && rosterError === null ? <RosterLoading /> : null}
-      {roster !== null && visible.length === 0 ? (
+      {roster !== null && sessions.length === 0 ? (
         <Empty className="flex-none border-0 px-4 py-8">
           <EmptyHeader>
             <EmptyMedia variant="icon">

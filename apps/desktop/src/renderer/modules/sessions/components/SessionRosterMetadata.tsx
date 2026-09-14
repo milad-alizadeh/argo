@@ -1,4 +1,4 @@
-import { Bot, GitPullRequest, Ticket } from 'lucide-react'
+import { Bot, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Session } from '../types'
 import { sessionTiming } from './session-timing'
@@ -62,7 +62,7 @@ export function SessionMetadata({ session }: { session: Session }) {
     timing !== null
   if (!hasMetadata) return null
   return (
-    <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
+    <span className="mt-1 flex items-center gap-2 type-roster-meta text-faint [&_svg]:size-(--size-icon-roster-meta)">
       {timing === null ? null : <SessionTiming timing={timing} />}
       <SessionPlanBar session={session} />
       {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
@@ -74,7 +74,7 @@ export function SessionMetadata({ session }: { session: Session }) {
       ) : null}
       {session.pullRequest !== null ? (
         <span className="inline-flex items-center gap-1">
-          <GitPullRequest aria-hidden="true" />
+          <Ticket aria-hidden="true" />
           <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}

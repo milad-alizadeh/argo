@@ -1,3 +1,20 @@
+.session-screen__shell {
+  --inset-session-inspector-toggle: var(--size-control);
+  --inset-session-sidebar-toggle: calc(var(--size-control) + var(--spacing-shell-tight));
+}
+
+[data-component="CockpitContent"][data-sidebar-state="collapsed"]
+  .session-screen__shell
+  [data-component="SessionHeader"] {
+  padding-inline-start: calc(var(--spacing-shell-gutter) + var(--inset-session-sidebar-toggle));
+}
+
+.session-screen__shell
+  [data-component="InspectorSplit"][data-state="collapsed"]
+  [data-component="SessionHeaderControls"] {
+  margin-inline-end: var(--inset-session-inspector-toggle);
+}
+
 .session-screen__feed .feed__content {
   padding-bottom: var(--spacing-session-feed-composer-inset);
 }

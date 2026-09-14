@@ -4,6 +4,7 @@ import { expect, within } from 'storybook/test'
 import { sessionDelegation } from '../session-fixtures'
 import type { SessionFeed } from '../types'
 import { SessionDelegationInspector } from './SessionDelegationInspector'
+import { SessionWorkInspectorHeader } from './SessionWorkInspectorHeader'
 
 // A fixed clock, so every duration these stories draw is the same on every run.
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')
@@ -53,6 +54,24 @@ const meta: Meta<typeof SessionDelegationInspector> = {
 export default meta
 type Story = StoryObj<typeof SessionDelegationInspector>
 
+function InspectorStory({
+  args,
+}: {
+  args: React.ComponentProps<typeof SessionDelegationInspector>
+}) {
+  return (
+    <>
+      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
+        <SessionWorkInspectorHeader
+          work={{ kind: 'delegation', delegation: args.delegation }}
+          now={args.now}
+        />
+      </header>
+      <SessionDelegationInspector {...args} />
+    </>
+  )
+}
+
 export const RunningSubagent: Story = {
   args: {
     activeEvidenceId: null,
@@ -62,6 +81,7 @@ export const RunningSubagent: Story = {
     onOpenEvidence: () => {},
     onOpenSession: () => {},
   },
+  render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Interface review')).toBeVisible()
@@ -69,5 +89,8 @@ export const RunningSubagent: Story = {
     await expect(
       canvas.getByText('The two work buttons take the control size and the meta typography role.'),
     ).toBeVisible()
+    const inspector = canvas.getByLabelText('Subagent')
+    const history = canvas.getByLabelText('Session history')
+    expect(history.getBoundingClientRect().bottom).toBe(inspector.getBoundingClientRect().bottom)
   },
 }

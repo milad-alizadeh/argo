@@ -38,10 +38,9 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   return (
     <nav
       aria-label={t('cockpit:rail.label')}
-      className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center bg-muted [&_svg]:size-(--size-icon-control)"
+      className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
     >
-      <div className="drag-region h-(--size-chrome-bar) w-full shrink-0" />
-      <div className="-mt-px flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
           const Icon = navigationIcons[itemDestination]
           const active = destination === itemDestination
@@ -60,13 +59,19 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               <span
                 className={`grid size-9 place-items-center rounded-lg transition-colors ${
                   active
-                    ? 'bg-card text-foreground ring-1 ring-border/70'
+                    ? 'bg-muted text-foreground'
                     : 'text-muted-foreground group-hover:bg-sidebar group-hover:text-foreground'
                 }`}
               >
                 <Icon />
               </span>
-              <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+              <span
+                className={
+                  active
+                    ? 'font-medium text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-foreground'
+                    : 'text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-muted-foreground'
+                }
+              >
                 {label}
               </span>
             </button>
@@ -82,7 +87,9 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Settings />
           </span>
-          <span className="text-muted-foreground">{settingsLabel}</span>
+          <span className="text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-muted-foreground">
+            {settingsLabel}
+          </span>
         </button>
       </div>
     </nav>
