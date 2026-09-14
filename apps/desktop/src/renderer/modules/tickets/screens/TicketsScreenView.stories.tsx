@@ -284,11 +284,8 @@ export const LongBacklog: Story = {
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
     const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
     if (list) list.scrollTop = list.scrollHeight
-    // The observer's own callback lands on a later frame, now racing the Linked Sessions
-    // query TicketDeck starts on mount (#2134): the default 1s waitFor is too tight for both.
-    await waitFor(
-      () => expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
-      { timeout: 3000 },
+    await waitFor(() =>
+      expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
     )
   },
 }

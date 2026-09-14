@@ -37,10 +37,11 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-function useRosterQuery(selectedSessionId: SessionId | null) {
+function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
   return useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
     staleTime: Infinity,
+    enabled,
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
@@ -91,9 +92,12 @@ function useFeedQuery(
   })
 }
 
-export function useSessions(selectedSessionId: SessionId | null) {
+// `rosterEnabled` lets a caller that only sometimes needs the roster (a Ticket's Linked
+// Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
+// roster in for a result it may throw away.
+export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
   const queryClient = useQueryClient()
-  const roster = useRosterQuery(selectedSessionId)
+  const roster = useRosterQuery(selectedSessionId, rosterEnabled)
   const feedSessionId = readableSessionId(selectedSessionId)
   const feed = useFeedQuery(feedSessionId, queryClient)
 
