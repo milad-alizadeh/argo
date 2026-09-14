@@ -2,11 +2,7 @@ import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
-
-const providerIcon: Record<ComposerTicketContext['provider'], string> = {
-  github: '/provider-icons/github.svg',
-  linear: '/provider-icons/linear.svg',
-}
+import { ticketProviderIconSource } from './TicketProviderIcon'
 
 function openTicket(ticketKey: string) {
   window.location.hash = `/tickets/${encodeURIComponent(ticketKey)}`
@@ -42,7 +38,7 @@ export class ComposerTicketReferenceNode extends TextNode {
     icon.alt = ''
     icon.className = 'mr-1 inline-block size-3 align-text-bottom dark:invert'
     icon.contentEditable = 'false'
-    icon.src = providerIcon[this.__provider]
+    icon.src = ticketProviderIconSource[this.__provider]
     element.className =
       'mx-0.5 cursor-pointer text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground'
     element.dataset.ticketKey = this.getTextContent()

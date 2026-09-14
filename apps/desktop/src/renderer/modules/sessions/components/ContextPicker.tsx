@@ -82,7 +82,7 @@ export function ContextPicker({
     <div
       aria-label={t('composer.contextPicker.label')}
       aria-modal="true"
-      className="absolute bottom-full left-0 z-40 mb-2 w-full max-w-lg rounded-xl border bg-card p-(--spacing-shell-item) shadow-xl"
+      className="absolute bottom-full left-0 z-40 mb-2 w-full rounded-xl border bg-card p-(--spacing-shell-item) shadow-xl"
       onKeyDown={focus.onKeyDown}
       ref={focus.pickerRef}
       role="dialog"

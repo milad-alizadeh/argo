@@ -30,6 +30,7 @@ async function sendDraft(canvas: ReturnType<typeof within>, draft: string) {
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
+const CONTEXT_PICKER_FRAME = SETUP_FRAME
 
 const plan: SessionPlan = {
   state: 'available' as const,
@@ -940,6 +941,7 @@ export const AttachViaButton: Story = {
 }
 
 export const SharedContextPicker: Story = {
+  parameters: { frame: CONTEXT_PICKER_FRAME },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 

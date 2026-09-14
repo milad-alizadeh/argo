@@ -29,7 +29,7 @@ export const sessionReferences = [
   {
     detail: 'Frequently used skill',
     kind: 'skill',
-    label: '$frontend-design',
+    label: 'frontend design',
     source: '@$frontend-design',
   },
   {
