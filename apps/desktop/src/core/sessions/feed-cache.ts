@@ -38,9 +38,7 @@ export function feedReply(value: SessionFeedRequest, held: HeldFeed) {
   }
 }
 
-export async function cachedReply(value: SessionFeedRequest, held: HeldFeed | undefined) {
-  if (held === undefined || (await chainStamps(held.paths)) !== held.stamps) return null
-  if (value.revision !== held.revision) return feedReply(value, held)
+export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
   return {
     version: 1 as const,
     type: 'session.feed.unchanged' as const,
