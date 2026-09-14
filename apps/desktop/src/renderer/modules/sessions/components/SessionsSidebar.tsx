@@ -16,7 +16,7 @@ function rosterState(
   rosterError: SessionError | null,
   count: number,
 ) {
-  if (rosterError !== null) return sessionFailureState(rosterError)
+  if (rosterError !== null) return sessionFailureState(rosterError.code)
   if (roster === null) return 'loading'
   return count === 0 ? 'empty' : 'ready'
 }
@@ -89,7 +89,9 @@ function SidebarRows({
   )
   return (
     <>
-      <div className="min-h-0 flex-1 overflow-y-auto py-3">{list(visible, 'Sessions')}</div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3">
+        {list(visible, 'Sessions')}
+      </div>
       <ArchivedSessions archived={archived} rows={list} selectedSessionId={selectedSessionId} />
     </>
   )
@@ -129,7 +131,7 @@ export function SessionsSidebarContent({
   return (
     <aside
       aria-label="Sessions sidebar"
-      className="flex h-full min-h-0 flex-col bg-sidebar"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
       data-state={state}
       ref={sidebar}
     >

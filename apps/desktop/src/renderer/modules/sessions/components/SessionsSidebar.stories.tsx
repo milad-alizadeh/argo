@@ -169,11 +169,67 @@ export const RosterStructure: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-
     await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
     await expect(canvas.getByText('#2062')).toBeVisible()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
     await expect(canvas.getByText(/^Running /)).toBeVisible()
+  },
+}
+
+export const NarrowSidebarWithLongSessionName: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-44">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const sidebar = within(canvasElement).getByLabelText('Sessions sidebar')
+    const name = within(sidebar).getByText(/Keep the Sessions sidebar readable/)
+    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
+    await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+  },
+}
+
+// A title that fell back to the opening prompt draws its skill mention as a badge, not the raw
+// markdown-link brackets (#2049).
+export const SkillMentionTitle: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const row = canvas.getByRole('button', { name: /Implement/ })
+    await expect(row).not.toHaveTextContent('[$implement]')
+    await expect(row.querySelector('svg')).not.toBeNull()
+    await expect(row).toHaveTextContent('https://github.com/milad-alizadeh/argo/issues/1944')
+    await expect(row.querySelector('a')).toBeNull()
   },
 }
 

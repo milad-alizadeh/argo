@@ -1,14 +1,20 @@
 import { useCallback } from 'react'
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionCli } from '../harness/harnesses'
+import { SessionContractError } from '../session-contract-error'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from './useSessionMutations'
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.
-export type Failure = { sessionId: string | null; message: string }
+export type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }
 
 export function messageFrom(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
+}
+
+export function codeFrom(error: unknown): SessionErrorCode | null {
+  return error instanceof SessionContractError ? error.code : null
 }
 
 export function useInterrupt(
@@ -25,6 +31,7 @@ export function useInterrupt(
       setFailure({
         sessionId,
         message: messageFrom(error, 'Argo could not interrupt this Session.'),
+        code: codeFrom(error),
       })
       return false
     }
@@ -43,7 +50,11 @@ export function useCompact(
       setFailure(null)
       return true
     } catch (error) {
-      setFailure({ sessionId, message: messageFrom(error, 'Argo could not compact this Session.') })
+      setFailure({
+        sessionId,
+        message: messageFrom(error, 'Argo could not compact this Session.'),
+        code: codeFrom(error),
+      })
       return false
     }
   }, [compact, sessionId, setFailure])
@@ -64,7 +75,11 @@ export async function sendMessage(
     await send.mutateAsync({ prompt, sessionId, setup })
     setFailure(null)
   } catch (error) {
-    setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
+    setFailure({
+      sessionId,
+      message: messageFrom(error, 'Argo could not send this message.'),
+      code: codeFrom(error),
+    })
     return false
   }
   await afterSend()
@@ -85,7 +100,11 @@ export async function startNewSession(
 ) {
   const { cli, cockpit, prompt, setup, start, setFailure } = request
   if (cockpit.project === null) {
-    setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
+    setFailure({
+      sessionId: null,
+      message: 'Select a Project before starting a Session.',
+      code: null,
+    })
     return false
   }
   try {
@@ -98,6 +117,7 @@ export async function startNewSession(
     setFailure({
       sessionId: null,
       message: messageFrom(error, 'Argo could not start this Session.'),
+      code: codeFrom(error),
     })
     return false
   }

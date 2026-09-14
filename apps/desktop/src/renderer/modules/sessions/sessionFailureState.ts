@@ -1,7 +1,7 @@
-import type { SessionError } from './types'
+import type { SessionErrorCode } from '@/core/sessions/contract'
 
-export function sessionFailureState(failure: SessionError) {
-  switch (failure.code) {
+export function sessionFailureState(code: SessionErrorCode) {
+  switch (code) {
     case 'access-denied':
     case 'cli-unavailable':
     case 'held-elsewhere':
@@ -15,6 +15,7 @@ export function sessionFailureState(failure: SessionError) {
     case 'invalid-response':
     case 'launch-failed':
     case 'not-drivable':
+    case 'stale-permission':
     case 'unsupported-version':
       return 'error'
   }

@@ -1,9 +1,15 @@
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import type { HarnessControl } from '../harness/harnesses'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
+
+// Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
+// way to the alert instead of sitting under it (#2053). Every other failure code (`not-resumable`
+// among them) keeps its draft in a still-active composer, as before.
+const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere'])
 
 type SessionScreenDetailsProps = {
   composer: Pick<
@@ -21,9 +27,12 @@ export function SessionComposerArea({
   session,
   harness,
 }: SessionScreenDetailsProps) {
+  if (composer.failure?.code && OPEN_ELSEWHERE.has(composer.failure.code)) {
+    return <Failure message={composer.failure.message} />
+  }
   return (
     <>
-      {composer.failure ? <Failure message={composer.failure} /> : null}
+      {composer.failure ? <Failure message={composer.failure.message} /> : null}
       {permission.failure ? <Failure message={permission.failure} /> : null}
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />

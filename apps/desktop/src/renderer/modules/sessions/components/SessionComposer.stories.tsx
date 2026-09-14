@@ -352,6 +352,22 @@ export const CompactionStarts: Story = {
   },
 }
 
+// The sent draft is the mention's own markdown-link syntax, unchanged by the badge it decorates
+// as (#2049): the CLI on the other end still reads `[$implement](path)`.
+export const SkillMentionSendsItsMarkdown: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, '[[$implement](/skills/implement/SKILL.md) go')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+      '[$implement](/skills/implement/SKILL.md) go',
+    )
+  },
+}
+
 export const DraftOutlivesItsComposer: Story = {
   render: () => <ClosableComposerStory />,
   play: async ({ canvasElement }) => {
@@ -471,6 +487,15 @@ const MARKDOWN_SHORTCUTS: Array<{
       await expect(composer.querySelector(':scope > code')).not.toBeNull()
     },
   },
+  {
+    sessionId: 'skill-mention-shortcut',
+    type: (composer) => userEvent.type(composer, '[[$implement](/skills/implement/SKILL.md)'),
+    assert: async (canvas, composer) => {
+      await expect(canvas.getByText('Implement')).toBeVisible()
+      await expect(composer.querySelector('svg')).not.toBeNull()
+      await expect(composer).not.toHaveTextContent('[$implement]')
+    },
+  },
 ]
 
 // Each shortcut gets its own composer instance: a shared editor can't be reset to a plain
@@ -498,6 +523,20 @@ export const MarkdownShortcuts: Story = {
       await type(composer)
       await assert(canvas, composer)
     }
+  },
+}
+
+export const SkillMentionPaste: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.paste('[$implement](/skills/implement/SKILL.md) go')
+    await expect(canvas.getByText('Implement')).toBeVisible()
+    await expect(composer.querySelector('svg')).not.toBeNull()
+    await expect(composer).not.toHaveTextContent('[$implement]')
+    await expect(composer).toHaveTextContent('go')
   },
 }
 

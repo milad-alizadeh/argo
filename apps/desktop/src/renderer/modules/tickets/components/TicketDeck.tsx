@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import type { Backlog } from '../lib/backlog'
-import { TicketBar, TicketDetail } from './TicketDetail'
+import { TicketDetail } from './TicketDetail'
 import { TicketList } from './TicketList'
 
 export type TicketDeckProps = { backlog: Backlog }
@@ -20,7 +20,7 @@ export function TicketDeck({ backlog }: TicketDeckProps) {
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   return (
     <InspectorSplit
-      bar={<TicketBar provider={backlog.provider} ticket={selected} />}
+      defaultInspectorSize="50%"
       inspector={
         <TicketDetail
           listed={listed}

@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { PromptText } from '../prompt/PromptText'
 import type { SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
@@ -82,7 +83,7 @@ function FeedPrompt({ text }: { text: string }) {
       data-variant="muted"
     >
       <span className="sr-only">You</span>
-      {text}
+      <PromptText text={text} />
     </p>
   )
 }

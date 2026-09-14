@@ -10,6 +10,7 @@ import {
 } from '@/renderer/components/ui/context-menu'
 import { HarnessLogo } from '../harness/HarnessLogo'
 import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
+import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
 import { sessionTiming } from './session-timing'
@@ -138,7 +139,7 @@ export function SessionRosterItem({
   tabIndex: number
 }) {
   return (
-    <li>
+    <li className="min-w-0">
       <ContextMenu>
         <ContextMenuTrigger
           render={
@@ -161,7 +162,11 @@ export function SessionRosterItem({
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate type-heading font-medium text-foreground">
-                    <SessionReferenceText text={sessionName(session)} />
+                    <PromptText
+                      interactiveLinks={false}
+                      renderText={(value) => <SessionReferenceText text={value} />}
+                      text={sessionName(session)}
+                    />
                   </span>
                   <span className="mt-0.5 flex min-w-0 items-center gap-2 type-meta text-faint">
                     <span className="min-w-0 flex-1 truncate">{activitySummary(session)}</span>

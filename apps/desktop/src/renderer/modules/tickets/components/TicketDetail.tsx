@@ -1,22 +1,16 @@
-import { CircleCheck, CircleDot, ExternalLink, Ticket as TicketMark } from 'lucide-react'
+import { Ban, CircleCheck, CircleDot, ExternalLink, GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
-import { buttonVariants } from '../../../components/ui/button'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '../../../components/ui/empty'
 import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 import { StatusMenu } from './StatusMenu'
+import { TicketDetailEmpty } from './TicketDetailEmpty'
+import { TicketDetailSection } from './TicketDetailSection'
 import { TicketLabel } from './TicketLabel'
 import { PriorityMark } from './TicketStatus'
 
@@ -26,26 +20,13 @@ const STATES = {
 } as const
 
 const stateIcon = 'size-(--size-icon-meta) shrink-0'
+const blockedIcon = `${stateIcon} text-danger`
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section
-      aria-label={title}
-      className="grid grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-tight)"
-    >
-      <h3 className="type-label text-muted-foreground">{title}</h3>
-      {children}
-    </section>
-  )
-}
-
-// Opens a linked Ticket beside its row; only a Ticket the backlog has read can be opened.
 type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) => void }
 
 const linkRow =
   'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
 
-// A linked Ticket's state is its icon, with the word kept for a screen reader, so the title keeps the width.
 function LinkContent({ link }: { link: TicketLink }) {
   const { label, Icon, tone } = STATES[link.state]
   return (
@@ -143,56 +124,47 @@ type DependenciesProps = { blockedBy: Ticket['blockedBy']; provider: Provider } 
 function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps) {
   if (blockedBy === null) {
     return (
-      <Section title="Blocked by">
+      <TicketDetailSection
+        title="Blocked by"
+        icon={<Ban aria-hidden="true" className={blockedIcon} />}
+      >
         <p className="type-meta text-muted-foreground">
           {SOURCE_PRESENTATION[provider].noDependencies}
         </p>
-      </Section>
+      </TicketDetailSection>
     )
   }
   if (blockedBy.length === 0) return null
   return (
-    <Section title={`Blocked by · ${blockedBy.length}`}>
+    <TicketDetailSection
+      title={`Blocked by · ${blockedBy.length}`}
+      icon={<Ban aria-hidden="true" className={blockedIcon} />}
+    >
       <Links links={blockedBy} {...navigation} />
-    </Section>
-  )
-}
-
-function NothingSelected() {
-  return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <TicketMark aria-hidden="true" />
-        </EmptyMedia>
-        <EmptyTitle>Select a Ticket</EmptyTitle>
-        <EmptyDescription>Its description, children and blockers show here.</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    </TicketDetailSection>
   )
 }
 
 const keyText = 'font-mono type-meta'
 
-// The inspector bar names the Ticket by its key, which opens it on the provider's own page. A
-// provider without a page for the Ticket shows its key as plain text.
-export function TicketBar({ ticket, provider }: { ticket: Ticket | null; provider: Provider }) {
-  if (ticket === null) return null
+function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
   if (ticket.url === null) {
-    return <span className={`${keyText} px-2 text-muted-foreground`}>{ticket.key}</span>
+    return (
+      <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
+        {ticket.key}
+      </span>
+    )
   }
-  // An anchor drawn as a button: Base UI's Button would give it the button role.
   return (
     <a
       aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
-      // Pulls the key onto the title's line past the xs button's 1px border.
-      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} -ml-px text-muted-foreground`}
+      className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
     >
       {ticket.key}
-      <ExternalLink aria-hidden="true" data-icon="inline-end" />
+      <ExternalLink aria-hidden="true" className="size-(--size-icon-meta) shrink-0" />
     </a>
   )
 }
@@ -205,14 +177,17 @@ export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & 
 
 export function TicketDetail(props: TicketDetailProps) {
   const { ticket, provider, statuses, onChangeStatus, ...navigation } = props
-  if (ticket === null) return <NothingSelected />
+  if (ticket === null) return <TicketDetailEmpty />
   const { children } = ticket
   const body = ticket.body?.trim()
   return (
     <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
       <header className="border-b border-border/60">
         <div className={measure}>
-          <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+          <div className="grid min-w-0 gap-(--spacing-shell-tight)">
+            <h2 className="min-w-0 ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+            <TicketKey provider={provider} ticket={ticket} />
+          </div>
           <Properties
             onChangeStatus={onChangeStatus}
             provider={provider}
@@ -228,9 +203,12 @@ export function TicketDetail(props: TicketDetailProps) {
           <p className="type-body text-muted-foreground">No description.</p>
         )}
         {children.length > 0 ? (
-          <Section title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}>
+          <TicketDetailSection
+            title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}
+            icon={<GitFork aria-hidden="true" className={stateIcon} />}
+          >
             <Links links={children} {...navigation} />
-          </Section>
+          </TicketDetailSection>
         ) : null}
         <Dependencies blockedBy={ticket.blockedBy} provider={provider} {...navigation} />
       </div>
