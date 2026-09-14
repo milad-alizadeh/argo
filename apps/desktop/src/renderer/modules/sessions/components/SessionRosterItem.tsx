@@ -1,3 +1,4 @@
+import { Bot } from 'lucide-react'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -24,16 +25,25 @@ function activitySummary(session: Session): string {
   return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
 }
 
-function sessionMetadata(session: Session): string[] {
-  const metadata = [session.cli]
-  if (session.plan?.state === 'available') {
-    const completed = session.plan.entries.filter((entry) => entry.status === 'completed').length
-    metadata.push(`${completed}/${session.plan.entries.length} steps`)
-  }
-  if (session.plan?.state === 'malformed') metadata.push('Plan unreadable')
-  if (session.delegations.length > 0) metadata.push(`${session.delegations.length} agents`)
-  if (session.pullRequest !== null) metadata.push(`PR #${session.pullRequest.number}`)
-  return metadata
+function SessionMetadata({ session }: { session: Session }) {
+  const completed =
+    session.plan?.state === 'available'
+      ? `${session.plan.entries.filter((entry) => entry.status === 'completed').length}/${session.plan.entries.length} steps`
+      : null
+  return (
+    <span className="flex items-center gap-1 truncate font-mono text-meta text-faint">
+      <span>{session.cli}</span>
+      {completed === null ? null : <span>{completed}</span>}
+      {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
+      {session.delegations.length > 0 ? (
+        <span className="inline-flex">
+          <Bot aria-hidden="true" className="size-3" />
+          <span className="sr-only">{session.delegations.length} subagents</span>
+        </span>
+      ) : null}
+      {session.pullRequest !== null ? <span>PR #{session.pullRequest.number}</span> : null}
+    </span>
+  )
 }
 
 function sessionName(session: Session): string {
@@ -79,9 +89,7 @@ export function SessionRosterItem({
                   <span className="block truncate text-meta text-faint">
                     {activitySummary(session)}
                   </span>
-                  <span className="block truncate font-mono text-meta text-faint">
-                    {sessionMetadata(session).join(' · ')}
-                  </span>
+                  <SessionMetadata session={session} />
                 </span>
               </span>
             </button>

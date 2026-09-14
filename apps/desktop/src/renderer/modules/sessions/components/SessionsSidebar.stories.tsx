@@ -12,6 +12,7 @@ const session = sessionRosterRow({
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
+  delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
 }) satisfies SessionsListed['sessions'][number]
 
 const listed = {
