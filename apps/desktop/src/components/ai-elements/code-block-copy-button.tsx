@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import { type ComponentProps, useCallback, useContext, useState } from 'react'
+import React, { type ComponentProps, useCallback, useContext, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 import { CodeBlockContext } from './code-block'
@@ -20,16 +20,16 @@ export function CodeBlockCopyButton({
     window.setTimeout(() => setCopied(false), timeout)
   }, [code, timeout])
   const Icon = copied ? CheckIcon : CopyIcon
-  return (
-    <Button
-      type="button"
-      size="icon"
-      variant="ghost"
-      className={cn('shrink-0', className)}
-      onClick={copy}
-      {...props}
-    >
-      {children ?? <Icon className="size-4" />}
-    </Button>
+  return React.createElement(
+    Button,
+    {
+      type: 'button',
+      size: 'icon',
+      variant: 'ghost',
+      className: cn('shrink-0', className),
+      onClick: copy,
+      ...props,
+    },
+    children ?? React.createElement(Icon, { className: 'size-4' }),
   )
 }
