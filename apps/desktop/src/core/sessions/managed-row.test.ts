@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { managedRow, mergeManagedRoster, sessionRosterReconciliation } from './managed-row'
-import { sessionRosterRowSchema, type SessionRosterRow, type SessionStatus } from './models'
+import { type SessionRosterRow, type SessionStatus, sessionRosterRowSchema } from './models'
 
 type ReconciliationRule =
   (typeof sessionRosterReconciliation)[keyof typeof sessionRosterReconciliation]
