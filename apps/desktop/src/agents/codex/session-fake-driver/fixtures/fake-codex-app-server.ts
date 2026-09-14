@@ -7,10 +7,14 @@
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
+import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../../../../core/sessions/proof-protocol'
 import { askQuestion, handleAskReply } from './fake-ask-question'
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
+const COMPLETION_DELAY_MS = 10
+const replyDelay = Number(process.env[SESSION_FAKE_REPLY_DELAY_MS_ENV] ?? '0')
+const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
 
 function threadIdFor(counter: number) {
   return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
@@ -95,7 +99,10 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     askQuestion(send, { threadId, turnId, text })
     return
   }
-  setTimeout(() => completeTurn(threadId, turnId, text), 10)
+  setTimeout(
+    () => completeTurn(threadId, turnId, text),
+    REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
+  )
 }
 
 function handleRequest(message: {

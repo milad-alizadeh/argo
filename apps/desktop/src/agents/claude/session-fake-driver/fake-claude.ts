@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../../../core/sessions/proof-protocol.ts'
 
 const ESCAPE = String.fromCharCode(27)
 const COMPACTION_DELAY = 10_000
@@ -14,6 +15,8 @@ const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 // The real CLI's own slash command: it writes a `custom-title` record rather than answering as a
 // Turn, and Argo's `driver.rename` reads that record back with source `custom` (issue #2134).
 const RENAME = /^\/rename (.+)$/
+const replyDelay = Number(process.env[SESSION_FAKE_REPLY_DELAY_MS_ENV] ?? '0')
+const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
 
 const [transcripts, ...flags] = process.argv.slice(2)
 
@@ -54,6 +57,14 @@ function compact() {
   )
 }
 
+function writeReply(text: string) {
+  write('assistant', {
+    role: 'assistant',
+    stop_reason: 'end_turn',
+    content: [{ type: 'text', text: `Fake Claude read: ${text}` }],
+  })
+}
+
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
@@ -78,10 +89,7 @@ process.stdin.on('data', (chunk: string) => {
       continue
     }
     write('user', { role: 'user', content: text })
-    write('assistant', {
-      role: 'assistant',
-      stop_reason: 'end_turn',
-      content: [{ type: 'text', text: `Fake Claude read: ${text}` }],
-    })
+    if (REPLY_DELAY_MS === 0) writeReply(text)
+    else setTimeout(() => writeReply(text), REPLY_DELAY_MS)
   }
 })
