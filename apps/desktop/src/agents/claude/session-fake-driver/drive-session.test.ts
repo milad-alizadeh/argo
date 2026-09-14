@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
-import { interruptClaudeSession, sendClaudeSession } from '../drive/drive-session.ts'
+import {
+  compactClaudeSession,
+  interruptClaudeSession,
+  sendClaudeSession,
+} from '../drive/drive-session.ts'
 import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
@@ -63,6 +67,22 @@ test('interrupts only the selected managed Claude Session', async () => {
   assert.deepEqual(interrupted, [sessionId])
   assert.equal(reply.type, 'session.claude.accepted')
   assert.equal(reply.requestId, 'stop-1')
+})
+
+test('starts compaction only for the selected managed Claude Session', async () => {
+  const compacted: string[] = []
+  const reply = await compactClaudeSession(
+    { version: 1, type: 'session.claude.compact', requestId: 'compact-1', sessionId },
+    {
+      compact: async (receivedSessionId) => compacted.push(receivedSessionId),
+      interrupt: () => {},
+      send: async () => {},
+    },
+  )
+
+  assert.deepEqual(compacted, [sessionId])
+  assert.equal(reply.type, 'session.claude.accepted')
+  assert.equal(reply.requestId, 'compact-1')
 })
 
 for (const code of [

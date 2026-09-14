@@ -4,7 +4,16 @@ import type { SessionRosterRow, SessionTitle } from './models'
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
 export function managedRow(
   id: string,
-  session: Pick<SessionRosterRow, 'cli' | 'cwd' | 'status' | 'setup'> & {
+  session: Pick<
+    SessionRosterRow,
+    | 'cli'
+    | 'compactionPercentage'
+    | 'compactionStartedAt'
+    | 'compactionTokens'
+    | 'cwd'
+    | 'status'
+    | 'setup'
+  > & {
     prompt: string
     startedAt: string
     title?: SessionTitle
@@ -33,6 +42,9 @@ export function managedRow(
     archived: false,
     contextTokens: null,
     spentTokens: null,
+    compactionStartedAt: session.compactionStartedAt,
+    compactionPercentage: session.compactionPercentage,
+    compactionTokens: session.compactionTokens,
     setup: session.setup,
   }
 }
@@ -48,6 +60,9 @@ export function mergeManagedRoster(
   managed: SessionRosterRow[],
   reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
     ...observed,
+    compactionPercentage: held.compactionPercentage,
+    compactionStartedAt: held.compactionStartedAt,
+    compactionTokens: held.compactionTokens,
     posture: held.posture,
     title: held.title,
   }),
