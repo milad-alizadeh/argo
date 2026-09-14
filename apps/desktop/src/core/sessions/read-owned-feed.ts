@@ -23,6 +23,7 @@ type FeedContext = {
   projections: Map<string, FeedProjectionState>
   managed: boolean
   key: string
+  signal: AbortSignal
 }
 
 function feedRevision(chainId: string, stamps: string) {
@@ -44,13 +45,16 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, projections, managed, key } = context
+  const { source, feeds, projections, managed, key, signal } = context
   const held = feeds.get(key)
   // The chain a resume belongs to can gain a file the held record never knew about (a Session
   // Argo never started, resumed for the first time): the file the held record already tracks
   // never changes, so statting only those paths would call this Feed unchanged forever. Deriving
   // the chain fresh every read, before trusting the cache, is what catches a new member.
-  const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
+  const stable = await stableChain(source, value.sessionId, {
+    startingPaths: held?.paths ?? [],
+    signal,
+  })
   if (stable === null) {
     if (managed) return unwrittenFeed(value)
     return sessionError('missing-session', value.requestId)
@@ -89,6 +93,7 @@ export async function readFeedWithOverlay(
   const overlay = context.source.overlayFor?.(value.sessionId) ?? null
   if (overlay === null) return readOwnedFeed(context, value)
   const reply = await readOwnedFeed(context, { ...value, revision: null })
+  context.signal.throwIfAborted()
   if (reply.type !== 'session.feed.read') return reply
   const shown = overlay(reply.rows)
   const revision = createHash('sha256')

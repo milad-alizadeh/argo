@@ -180,6 +180,7 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
+        onRetryFeed={() => {}}
         headerControls={
           <SessionWorkButtons
             delegations={session.delegations}

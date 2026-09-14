@@ -57,6 +57,7 @@ export type SessionClient = {
     revision: string | null
   }): Promise<SessionFeedReply>
   readWorkspaceFile(request: { sessionId: string; path: string }): Promise<SessionFileReply>
+  cancelSessionFeed(request: { sessionId: string }): Promise<SessionAcceptedReply>
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
@@ -87,9 +88,9 @@ export function createSessionClient(
     decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
+    readWorkspaceFile: (request) => client.file(request),
     readShellOutput: (request) => client.shellOutput(request),
     readDelegationUsage: (request) => client.delegationUsage(request),
-    readWorkspaceFile: (request) => client.file(request),
     renameSession: (request) => client.rename(request),
     connectSessionTicket: (request) => client.connectTicket(request),
     disconnectSessionTicket: (request) => client.disconnectTicket(request),
@@ -104,5 +105,6 @@ export function createSessionClient(
       }
       return reply
     },
+    cancelSessionFeed: (request) => client.cancelFeed(request),
   }
 }

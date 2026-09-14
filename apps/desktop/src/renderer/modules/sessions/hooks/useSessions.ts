@@ -96,5 +96,8 @@ export function useSessions(selectedSessionId: SessionId | null, rosterEnabled =
     feed: feed.data ?? null,
     feedError: feed.failureCount > 1 ? feed.error : null,
     reread: () => invalidateSessionRoster(queryClient),
+    // A read that never answers (#2102) leaves this query itself pending forever; a stalled
+    // reader's retry needs a fresh attempt, which only a refetch starts.
+    retryFeed: () => void feed.refetch(),
   }
 }

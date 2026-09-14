@@ -294,6 +294,7 @@ function StreamingFeed() {
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
+          onRetryFeed={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
@@ -345,6 +346,119 @@ function preferReducedMotion(): () => void {
   return () => {
     window.matchMedia = system
   }
+}
+
+const stalledFeed = {
+  ...feed,
+  sessionId: 'stalled',
+  chainId: 'stalled',
+  revision: 'stalled-one',
+  rows: [],
+} satisfies SessionFeed
+
+// A fixture whose Feed never settles: `rows` stays empty and `isRunning` stays true for the
+// whole story, so nothing ever satisfies `feedContent`'s running condition (#2102). `stallTimeoutMs`
+// stands in for the production bound so the story does not wait on the real one.
+function StalledFeedHarness() {
+  const [otherClicks, setOtherClicks] = useState(0)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
+        Other window control ({otherClicks})
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={stalledFeed}
+          failure={null}
+          isRunning
+          posture="external"
+          selectedSessionId="stalled"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          onAnswerQuestion={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+          stallTimeoutMs={50}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Past the stall bound, the reader sees a retry action instead of an indefinite spinner, and
+// nothing else in the window stops responding while it shows (#2102).
+export const Stalled: Story = {
+  render: () => <StalledFeedHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
+    await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
+    const retry = canvas.getByRole('button', { name: 'Retry' })
+
+    const otherControl = canvas.getByRole('button', { name: /Other window control/ })
+    await userEvent.click(otherControl)
+    await expect(
+      canvas.getByRole('button', { name: 'Other window control (1)' }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(retry)
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument())
+  },
+}
+
+// A Session whose read never answers at all (no SessionFeed ever arrives, #2111's repro):
+// `feed` stays null instead of arriving with empty `rows`. Retry calls `onRetryFeed`, the
+// reader's hook into a fresh IPC attempt, not just the local bound.
+function NeverArrivesHarness() {
+  const [retries, setRetries] = useState(0)
+  const [otherClicks, setOtherClicks] = useState(0)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
+        Other window control ({otherClicks})
+      </button>
+      <span>Retries: {retries}</span>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={null}
+          failure={null}
+          isRunning={false}
+          posture="external"
+          selectedSessionId="never-arrives"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => setRetries((count) => count + 1)}
+          onAnswerQuestion={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+          stallTimeoutMs={50}
+        />
+      </div>
+    </div>
+  )
+}
+
+// The window stays live while the read is stuck (nothing else stops responding), and the reader
+// gets a retry that reaches the actual read, not a reload (#2102).
+export const NeverArrives: Story = {
+  render: () => <NeverArrivesHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
+    await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
+
+    const otherControl = canvas.getByRole('button', { name: /Other window control/ })
+    await userEvent.click(otherControl)
+    await expect(
+      canvas.getByRole('button', { name: 'Other window control (1)' }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
+    await waitFor(() => expect(canvas.getByText('Retries: 1')).toBeInTheDocument())
+  },
 }
 
 export const StreamingReplyReducedMotion: Story = {
