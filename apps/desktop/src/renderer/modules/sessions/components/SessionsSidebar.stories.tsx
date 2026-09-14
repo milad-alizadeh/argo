@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRosterRow } from '../session-fixtures'
 import type { SessionError, SessionsListed } from '../types'
 import { SessionsSidebarContent, type SessionsSidebarContentProps } from './SessionsSidebar'
@@ -51,6 +52,16 @@ function RoutedRoster(args: SessionsSidebarContentProps) {
       <output aria-label="Session route">{location.pathname}</output>
     </>
   )
+}
+
+function FocusRecoveryRoster(args: SessionsSidebarContentProps) {
+  const [roster, setRoster] = useState(listed)
+  useEffect(() => {
+    const removeFocusedSession = () => setRoster({ ...listed, sessions: [session] })
+    window.addEventListener('story:remove-focused-session', removeFocusedSession)
+    return () => window.removeEventListener('story:remove-focused-session', removeFocusedSession)
+  }, [])
+  return <SessionsSidebarContent {...args} roster={roster} />
 }
 
 const meta: Meta<typeof SessionsSidebarContent> = {
@@ -110,6 +121,22 @@ export const CommandTitledSession: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
     await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
+  },
+}
+
+export const FocusRecovery: Story = {
+  render: (args) => <FocusRecoveryRoster {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const removed = canvas.getByRole('button', { name: /A second Session/ })
+    removed.focus()
+    await expect(removed).toHaveFocus()
+    window.dispatchEvent(new Event('story:remove-focused-session'))
+    const survivor = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await waitFor(async () => {
+      await expect(survivor).toHaveFocus()
+      await expect(survivor).toHaveAttribute('tabindex', '0')
+    })
   },
 }
 

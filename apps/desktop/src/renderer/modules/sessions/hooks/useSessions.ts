@@ -12,6 +12,23 @@ import {
 } from '../session-queries'
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
 
+let rosterOrder: SessionId[] = []
+
+function keepRosterOrder(sessions: SessionsListed['sessions']) {
+  const unmatched = [...sessions]
+  const ordered = rosterOrder.flatMap((rememberedId) => {
+    const index = unmatched.findIndex(
+      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
+    )
+    if (index === -1) return []
+    const session = unmatched.splice(index, 1)[0]
+    return session === undefined ? [] : [session]
+  })
+  ordered.push(...unmatched)
+  rosterOrder = ordered.map((session) => session.id)
+  return ordered
+}
+
 export function useSessions(selectedSessionId: SessionId | null) {
   const queryClient = useQueryClient()
   const roster = useQuery<SessionsListed, SessionContractError>({
@@ -23,7 +40,7 @@ export function useSessions(selectedSessionId: SessionId | null) {
       const reply = await window.argo.listSessions()
       switch (reply.type) {
         case 'session.listed':
-          return reply
+          return { ...reply, sessions: keepRosterOrder(reply.sessions) }
         case 'session.error':
           return throwSessionContractError(reply)
         default:

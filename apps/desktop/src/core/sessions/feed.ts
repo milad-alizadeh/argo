@@ -20,6 +20,8 @@ function rowsOfRecord(
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
     return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
+  if (record.kind === 'command-output')
+    return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []

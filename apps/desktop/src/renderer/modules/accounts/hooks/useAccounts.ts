@@ -2,7 +2,6 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AccountListed, AccountListReply } from '@/core/accounts/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import { accountAction, disconnectRequest } from '../lib/requests'
 
 export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 
@@ -21,8 +20,7 @@ export function storeListing(client: QueryClient, next: AccountListing): void {
 export function useAccounts() {
   return useQuery<AccountListing, ContractFailure>({
     queryKey: QUERY_KEYS.accounts,
-    queryFn: async () =>
-      listing(await settle(window.argo.listAccounts(accountAction('account.list')))),
+    queryFn: async () => listing(await settle(window.argo.listAccounts())),
   })
 }
 
@@ -35,9 +33,6 @@ function useListingAction<Input>(act: (input: Input) => Promise<AccountListReply
 }
 
 export const useDisconnect = () =>
-  useListingAction((accountId: string) =>
-    window.argo.disconnectAccount(disconnectRequest(accountId)),
-  )
+  useListingAction((accountId: string) => window.argo.disconnectAccount({ accountId }))
 
-export const useDismissNotice = () =>
-  useListingAction(() => window.argo.dismissAccountNotice(accountAction('account.dismiss-notice')))
+export const useDismissNotice = () => useListingAction(() => window.argo.dismissAccountNotice())

@@ -5,7 +5,6 @@ import type { TicketUpdated } from '@/core/tickets/contract'
 import { closureOf, type TicketStatus } from '@/core/tickets/ticket'
 import { useToastManager } from '../../../components/ui/toast'
 import { type ContractFailure, settle } from '../../../lib/query-client'
-import { updateRequest } from '../lib/requests'
 import { listKey, onRefused, type TicketPages } from './useTickets'
 
 export type StatusChange = { projectId: string; key: string; status: TicketStatus }
@@ -35,7 +34,7 @@ export function useUpdateStatus() {
   const { add } = useToastManager()
   return useMutation<TicketUpdated, ContractFailure, StatusChange, Snapshot>({
     mutationFn: ({ projectId, key, status }) =>
-      settle(window.argo.updateStatus(updateRequest(projectId, { key, statusId: status.id }))),
+      settle(window.argo.updateStatus({ projectId, key, statusId: status.id })),
     onMutate: async (change) => {
       await client.cancelQueries({ queryKey: listKey(change.projectId) })
       const snapshot = client.getQueriesData<TicketPages>({ queryKey: listKey(change.projectId) })

@@ -1,6 +1,6 @@
 import { opendir } from 'node:fs/promises'
-import { isRecord, requestIdentifier } from '../../boundary'
-import { type ProjectOpenReply, projectError, projectOpenRequestSchema } from './contract'
+import { isRecord } from '../../boundary'
+import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from './contract'
 import { readRegistry, toSummary } from './registry'
 
 // Opening reads storage that must already exist, so an absent registry is a storage failure here
@@ -11,14 +11,10 @@ async function loadProjects(registryPath: string) {
   return projectError(read.reason === 'invalid' ? 'storage-invalid' : 'storage-unavailable', null)
 }
 
-export async function openProject(value: unknown, registryPath: string): Promise<ProjectOpenReply> {
-  const requestId = requestIdentifier(value)
-  if (isRecord(value) && typeof value.version === 'number' && value.version !== 1) {
-    return projectError('unsupported-version', requestId)
-  }
-  const parsed = projectOpenRequestSchema.safeParse(value)
-  if (!parsed.success) return projectError('invalid-request', requestId)
-  const request = parsed.data
+export async function openProject(
+  request: ProjectOpenRequest,
+  registryPath: string,
+): Promise<ProjectOpenReply> {
   const projects = await loadProjects(registryPath)
   if (!Array.isArray(projects)) return { ...projects, requestId: request.requestId }
   const project = projects.find((entry) => entry.id === request.projectId)

@@ -2,13 +2,15 @@
 // window frame follows the page, and it writes the choice to `userData` (apps/desktop/AGENTS.md).
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { type BrowserWindow, type IpcMainInvokeEvent, nativeTheme } from 'electron'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
+import { type BrowserWindow, nativeTheme } from 'electron'
+import { registerDomainHandlers } from '../contract/domain'
 import {
   APPEARANCE_CHANGED_CHANNEL,
   APPEARANCE_OPERATIONS,
   type Appearance,
+  type AppearanceReply,
   type AppearanceState,
+  appearanceError,
   DEFAULT_APPEARANCE,
   isAppearance,
   windowBackground,
@@ -17,6 +19,13 @@ import {
 const state = (): AppearanceState => ({
   appearance: nativeTheme.themeSource,
   dark: nativeTheme.shouldUseDarkColors,
+})
+
+const reply = (requestId: string): AppearanceReply => ({
+  version: 1,
+  type: 'appearance.state',
+  requestId,
+  ...state(),
 })
 
 function settingsPath(userData: string): string {
@@ -51,25 +60,21 @@ export type AppearanceStorage = { userData: string; rendererURL: string }
 
 export function attachAppearanceBridge(window: BrowserWindow, storage: AppearanceStorage): void {
   const { userData, rendererURL } = storage
-  const handlers = {
-    get: () => state(),
-    set: async (event: IpcMainInvokeEvent, request: unknown) => {
-      const parsed = APPEARANCE_OPERATIONS.set.request.safeParse(request)
-      if (isTrustedRendererFrame(event, window, rendererURL) && parsed.success) {
-        nativeTheme.themeSource = parsed.data.appearance
-        await writeAppearance(userData, parsed.data.appearance)
-      }
-      return state()
+  registerDomainHandlers({
+    window,
+    rendererURL,
+    operations: APPEARANCE_OPERATIONS,
+    context: userData,
+    handlers: {
+      get: (request) => reply(request.requestId),
+      set: async (request, data) => {
+        nativeTheme.themeSource = request.appearance
+        await writeAppearance(data, request.appearance)
+        return reply(request.requestId)
+      },
     },
-  } satisfies Record<
-    keyof typeof APPEARANCE_OPERATIONS,
-    (event: IpcMainInvokeEvent, request: unknown) => Promise<AppearanceState> | AppearanceState
-  >
-  for (const operation of Object.keys(APPEARANCE_OPERATIONS) as Array<
-    keyof typeof APPEARANCE_OPERATIONS
-  >) {
-    window.webContents.ipc.handle(APPEARANCE_OPERATIONS[operation].channel, handlers[operation])
-  }
+    error: appearanceError,
+  })
   // System has to follow the operating system while the window is open, and only the main process
   // is told when that changes.
   const push = () => {
