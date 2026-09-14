@@ -71,15 +71,16 @@ function Group({
   )
 }
 
-// The badge is green while anything is still going and grey once everything has come back, so the
-// count answers "is something still running" without the list being opened.
+// A notification badge pinned to the icon's corner. It is green while anything is still going and
+// grey once everything has come back, so the count answers "is something still running" without
+// the list being opened. The ring cuts it out of the icon beneath it.
 function Badge({ count, running }: { count: number; running: boolean }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'flex h-4 min-w-4 items-center justify-center rounded-full px-1 type-meta tabular-nums',
-        running ? 'bg-active text-background' : 'bg-muted text-muted-foreground',
+        'absolute top-0 right-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-badge leading-none font-semibold tabular-nums ring-2 ring-background',
+        running ? 'bg-active text-background' : 'bg-muted-foreground text-background',
       )}
     >
       {count}
@@ -108,7 +109,7 @@ export function SessionWorkMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`${label} · ${entries.length}`}
-        className="flex h-(--size-control-sm) shrink-0 items-center gap-1.5 rounded-full border border-border/60 px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
+        className="relative flex size-(--size-control) shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
       >
         <Icon aria-hidden="true" className="size-(--size-icon-control)" />
         <Badge count={entries.length} running={running.length > 0} />
