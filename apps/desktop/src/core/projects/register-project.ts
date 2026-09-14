@@ -1,11 +1,7 @@
 // Registration and relocation. Both open a folder chooser, both prove the choice is a git root,
 // and neither ever creates a second identity for a repository that already has one.
 import { type ProjectError, type ProjectErrorCode, projectError } from './contract'
-import {
-  type ProjectListReply,
-  projectRegisterRequestSchema,
-  projectRelocateRequestSchema,
-} from './messages'
+import type { ProjectListReply, ProjectRegisterRequest, ProjectRelocateRequest } from './messages'
 import {
   EMPTY_REGISTRY,
   listed,
@@ -82,12 +78,9 @@ async function commit(
 }
 
 export async function registerProject(
-  value: unknown,
+  request: ProjectRegisterRequest,
   store: ProjectStore,
 ): Promise<ProjectListReply> {
-  const parsed = projectRegisterRequestSchema.safeParse(value)
-  if (!parsed.success) return projectError('invalid-request', null)
-  const request = parsed.data
   // Storage that cannot be read is reported before a chooser opens over it.
   const opened = await currentRegistry(store, request.requestId)
   if ('type' in opened) return opened
@@ -102,12 +95,9 @@ export async function registerProject(
 }
 
 export async function relocateProject(
-  value: unknown,
+  request: ProjectRelocateRequest,
   store: ProjectStore,
 ): Promise<ProjectListReply> {
-  const parsed = projectRelocateRequestSchema.safeParse(value)
-  if (!parsed.success) return projectError('invalid-request', null)
-  const request = parsed.data
   const opened = await currentRegistry(store, request.requestId)
   if ('type' in opened) return opened
   if (!opened.projects.some((project) => project.id === request.projectId)) {

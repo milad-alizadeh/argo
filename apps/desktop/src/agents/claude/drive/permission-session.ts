@@ -1,21 +1,16 @@
-import { requestIdentifier } from '@/boundary'
-import {
-  type ClaudeSessionPermissionDecisionReply,
-  type ClaudeSessionPermissionReply,
-  claudeSessionPermissionDecisionRequestSchema,
-  claudeSessionPermissionRequestSchema,
-  sessionError,
+import type {
+  ClaudeSessionPermissionDecisionReply,
+  ClaudeSessionPermissionDecisionRequest,
+  ClaudeSessionPermissionReply,
+  ClaudeSessionPermissionRequest,
 } from '@/core/sessions/contract'
+import { sessionError } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 
 export function readClaudePermission(
-  value: unknown,
+  request: ClaudeSessionPermissionRequest,
   driver: ClaudeSessionDriver,
 ): ClaudeSessionPermissionReply {
-  const requestId = requestIdentifier(value)
-  const parsed = claudeSessionPermissionRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', requestId)
-  const request = parsed.data
   return {
     version: 1,
     type: 'session.claude.permission.read',
@@ -26,13 +21,9 @@ export function readClaudePermission(
 }
 
 export function decideClaudePermission(
-  value: unknown,
+  request: ClaudeSessionPermissionDecisionRequest,
   driver: ClaudeSessionDriver,
 ): ClaudeSessionPermissionDecisionReply {
-  const requestId = requestIdentifier(value)
-  const parsed = claudeSessionPermissionDecisionRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', requestId)
-  const request = parsed.data
   if (!driver.decidePermission(request.sessionId, request.permissionId, request.decision)) {
     return sessionError('stale-permission', request.requestId)
   }
