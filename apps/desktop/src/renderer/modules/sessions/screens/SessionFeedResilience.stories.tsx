@@ -89,7 +89,9 @@ export const SurvivesATransientPoll: Story = {
     // `feed__measured` (BasicFeed.tsx) is an aria-hidden layout clone of the same text, so
     // queries here take the visible copy rather than asserting the text exists at all.
     const visible = () =>
-      canvas.getAllByText('Read before the flake.').filter((node) => node.closest('[aria-hidden]') === null)
+      canvas
+        .getAllByText('Read before the flake.')
+        .filter((node) => node.closest('[aria-hidden]') === null)
     await waitFor(() => expect(visible()).toHaveLength(1))
 
     // The next poll (500ms, session-queries.ts SESSION_REFRESH_MS) fails once; the transcript

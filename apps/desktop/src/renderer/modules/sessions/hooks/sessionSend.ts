@@ -1,13 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
-import { messageFrom } from './useSessionActions'
+import { codeFrom, messageFrom } from './useSessionActions'
 import type { SessionMutations } from './useSessionComposer'
 
-type Failure = { sessionId: string | null; message: string }
+type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }
 
 export async function startSession({
   cockpit,
@@ -29,7 +30,11 @@ export async function startSession({
   watchTurn: (sessionId: string, setup: TurnSetup, since: string | null) => void
 }) {
   if (cockpit.project === null) {
-    setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
+    setFailure({
+      sessionId: null,
+      message: 'Select a Project before starting a Session.',
+      code: null,
+    })
     return false
   }
   try {
@@ -43,6 +48,7 @@ export async function startSession({
     setFailure({
       sessionId: null,
       message: messageFrom(error, 'Argo could not start this Session.'),
+      code: codeFrom(error),
     })
     return false
   }
@@ -63,7 +69,11 @@ export async function sendMessage(
     await send.mutateAsync({ prompt, sessionId, setup })
     setFailure(null)
   } catch (error) {
-    setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
+    setFailure({
+      sessionId,
+      message: messageFrom(error, 'Argo could not send this message.'),
+      code: codeFrom(error),
+    })
     return false
   }
   await afterSend()

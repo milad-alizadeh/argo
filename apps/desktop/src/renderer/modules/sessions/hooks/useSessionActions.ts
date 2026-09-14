@@ -1,12 +1,18 @@
 import { useCallback } from 'react'
 
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionCli } from '../harness/harnesses'
+import { SessionContractError } from '../session-contract-error'
 import type { useClaudeSessionMutations } from './useClaudeSessionMutations'
 
-type Failure = { sessionId: string | null; message: string }
+type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }
 
 export function messageFrom(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
+}
+
+export function codeFrom(error: unknown): SessionErrorCode | null {
+  return error instanceof SessionContractError ? error.code : null
 }
 
 export function useCompact({
@@ -27,7 +33,11 @@ export function useCompact({
       setFailure(null)
       return true
     } catch (error) {
-      setFailure({ sessionId, message: messageFrom(error, 'Argo could not compact this Session.') })
+      setFailure({
+        sessionId,
+        message: messageFrom(error, 'Argo could not compact this Session.'),
+        code: codeFrom(error),
+      })
       return false
     }
   }, [cli, compact, sessionId, setFailure])
@@ -51,6 +61,7 @@ export function useInterrupt({
       setFailure({
         sessionId,
         message: messageFrom(error, 'Argo could not interrupt this Session.'),
+        code: codeFrom(error),
       })
       return false
     }

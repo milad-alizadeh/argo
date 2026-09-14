@@ -19,7 +19,8 @@ export const SESSION_ERRORS = {
   'codex-cli-unavailable': 'Codex is not available. Run codex doctor to repair it.',
   'codex-launch-failed': 'Argo could not start Codex.',
   'codex-not-drivable': 'Argo no longer holds this Codex Session.',
-  'codex-held-elsewhere': 'This Codex Session is open in another app. Close it there to resume it here.',
+  'codex-held-elsewhere':
+    'This Codex Session is open in another app. Close it there to resume it here.',
 } as const
 
 export type SessionErrorCode = keyof typeof SESSION_ERRORS
