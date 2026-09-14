@@ -167,6 +167,21 @@ const taskNotificationFeed = {
   ],
 } satisfies SessionFeed
 
+const skillMentionFeed = {
+  ...feed,
+  sessionId: 'skill-mention',
+  chainId: 'skill-mention',
+  revision: 'skill-mention-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'skill-mention-prompt',
+      role: 'user' as const,
+      text: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
+    },
+  ],
+} satisfies SessionFeed
+
 // A background task's delivery shows only its summary line, not the raw <task-notification>
 // envelope or its embedded JSON result (#2054).
 export const TaskNotification: Story = {
@@ -178,6 +193,22 @@ export const TaskNotification: Story = {
     )
     await expect(canvas.queryByText(/task-notification/)).toBeNull()
     await expect(canvas.queryByText(/"files"/)).toBeNull()
+  },
+}
+
+// A prompt that opens with a skill mention and a link draws a badge and a clean link, not the
+// raw markdown-link brackets (#2049).
+export const PromptWithSkillMentionAndLink: Story = {
+  args: { feed: skillMentionFeed, selectedSessionId: 'skill-mention' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(1))
+    const [prompt] = drawnRows(canvasElement)
+    await expect(prompt).toHaveTextContent('Implement')
+    await expect(prompt).not.toHaveTextContent('[$implement]')
+    await expect(
+      canvas.getByRole('link', { name: 'https://github.com/milad-alizadeh/argo/issues/1944' }),
+    ).toBeVisible()
   },
 }
 

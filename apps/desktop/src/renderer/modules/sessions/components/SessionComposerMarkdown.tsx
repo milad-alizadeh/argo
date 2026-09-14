@@ -16,6 +16,8 @@ import {
   PASTE_COMMAND,
 } from 'lexical'
 import { useEffect } from 'react'
+import { SkillMentionNode } from './SkillMentionNode'
+import { SKILL_MENTION_TRANSFORMER } from './skillMentionMarkdown'
 
 const MARKDOWN_PATTERN = /(^|\n)(#{1,6} |[-*+] |\d+\. |> |```)|\*\*.+\*\*|\[.+\]\(.+\)/
 
@@ -27,7 +29,12 @@ export const composerNodes = [
   LinkNode,
   CodeNode,
   HorizontalRuleNode,
+  SkillMentionNode,
 ]
+
+// The skill transformer goes first: its pattern is a stricter match on the same `[...](...)`
+// shape the stock LINK transformer also recognises, and the first match in the list wins.
+export const composerTransformers = [SKILL_MENTION_TRANSFORMER, ...DEFAULT_TRANSFORMERS]
 
 function isCodeFenceTrigger() {
   const selection = $getSelection()
@@ -99,7 +106,7 @@ export function MarkdownPastePlugin() {
           if (!isEmpty) return false
 
           event.preventDefault()
-          editor.update(() => $convertFromMarkdownString(markdown, DEFAULT_TRANSFORMERS))
+          editor.update(() => $convertFromMarkdownString(markdown, composerTransformers))
           return true
         },
         COMMAND_PRIORITY_HIGH,

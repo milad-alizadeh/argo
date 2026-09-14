@@ -7,8 +7,17 @@ import { CodexSessionDriverError } from './codex-session-error'
 // refused with `invalid-request` because only `undefined` parses.
 const codexTurnSetupSchema = z.undefined()
 
+// `codex app-server` refuses a thread already active in another process (its own client or the
+// standalone Codex app) with a JSON-RPC error naming that fact; every other refusal falls back to
+// the caller's own code. The exact wording still needs a live repro against a held Session (#2053)
+// to replace this heuristic with the real one.
+const ACTIVE_ELSEWHERE = /already active|in use|held by|another (client|session|instance)/i
+
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
-  return { error: error instanceof CodexSessionDriverError ? error.code : fallback }
+  if (error instanceof CodexSessionDriverError) return { error: error.code }
+  const message = error instanceof Error ? error.message : ''
+  if (ACTIVE_ELSEWHERE.test(message)) return { error: 'held-elsewhere' }
+  return { error: fallback }
 }
 
 export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriveAdapter {
@@ -27,6 +36,7 @@ export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriv
         await driver.send(sessionId, prompt)
         return { ok: true }
       } catch (error) {
+        console.error('Argo could not send to Codex Session', sessionId, error)
         return failureOf(error, 'not-drivable')
       }
     },
@@ -35,6 +45,7 @@ export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriv
         await driver.interrupt(sessionId)
         return { ok: true }
       } catch (error) {
+        console.error('Argo could not interrupt Codex Session', sessionId, error)
         return failureOf(error, 'not-drivable')
       }
     },

@@ -26,6 +26,7 @@ import { ComposerReferencePlugin } from './ComposerReferencePlugin'
 import { referenceMenu } from './composer-reference-menu'
 import {
   composerNodes,
+  composerTransformers,
   MarkdownPastePlugin,
   MarkdownTypingShortcutPlugin,
 } from './SessionComposerMarkdown'
@@ -145,7 +146,7 @@ export function ComposerEditor({
           state.read(() => onChange($convertToMarkdownString(TRANSFORMERS)))
         }}
       />
-      <MarkdownShortcutPlugin />
+      <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
       <ComposerReferencePlugin />
       <HorizontalRulePlugin />
