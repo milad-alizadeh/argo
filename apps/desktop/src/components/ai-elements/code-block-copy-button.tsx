@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import React, { type ComponentProps, useCallback, useContext, useState } from 'react'
+import { type ComponentProps, useCallback, useContext, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 import { CodeBlockContext } from './code-block'
