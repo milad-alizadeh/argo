@@ -1,7 +1,12 @@
 // Reading a Session's own Feed, or one Subagent's (#1582), and cancelling a read still in flight
 // when the caller switches away before it answers (#2102): split out of reader.ts to stay under
 // the file-length gate.
-import { sessionError, sessionFeedCancelRequestSchema, sessionFeedRequestSchema } from './contract'
+import {
+  type SessionFeedReply,
+  sessionError,
+  sessionFeedCancelRequestSchema,
+  sessionFeedRequestSchema,
+} from './contract'
 import type { HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import { createFeedReads, isAbortError } from './feed-reads'
@@ -31,6 +36,7 @@ export function createFeedReader(
       try {
         const owner = await ownership.ownerFor(sessionId)
         if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
+        let reply: SessionFeedReply
         if (delegationId !== null) {
           const source = delegationSource(owner, delegationId)
           const key = `${sessionId}#${delegationId}`
@@ -42,13 +48,25 @@ export function createFeedReader(
             key,
             signal: controller.signal,
           }
-          return await readOwnedFeed(context, parsed.data)
+          reply = await readOwnedFeed(context, parsed.data)
+        } else {
+          const managed = ownership.managed(owner, sessionId)
+          reply = await readFeedWithOverlay(
+            {
+              source: owner,
+              feeds,
+              projections,
+              managed,
+              key: sessionId,
+              signal: controller.signal,
+            },
+            parsed.data,
+          )
         }
-        const managed = ownership.managed(owner, sessionId)
-        return await readFeedWithOverlay(
-          { source: owner, feeds, projections, managed, key: sessionId, signal: controller.signal },
-          parsed.data,
-        )
+        // A cancel that lands after the owner lookup but before this settles still wins: the
+        // caller switched away and no longer wants an answer that finished instead of stopping.
+        if (controller.signal.aborted) return sessionError('cancelled', parsed.data.requestId)
+        return reply
       } catch (error) {
         if (isAbortError(error)) return sessionError('cancelled', parsed.data.requestId)
         return sessionError(readFailure(error), parsed.data.requestId)
