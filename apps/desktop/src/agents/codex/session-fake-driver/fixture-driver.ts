@@ -8,12 +8,15 @@ import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 
 const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', import.meta.url))
 
-export function driverBackedByFixture() {
+export function driverBackedByFixture(overrides: { env?: Record<string, string> } = {}) {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
     now: () => new Date(),
     openChannel: (executable, options) => {
-      const child = spawn(executable, [fixture], { cwd: options.cwd, env: options.env })
+      const child = spawn(executable, [fixture], {
+        cwd: options.cwd,
+        env: { ...options.env, ...overrides.env },
+      })
       child.stderr.on('data', () => {})
       return openCodexChannel({
         stdout: child.stdout,

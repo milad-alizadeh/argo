@@ -88,6 +88,7 @@ export function SessionScreenView() {
     />
   )
 }
+
 export function SessionShell({
   composer,
   inspector,

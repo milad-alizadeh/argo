@@ -13,3 +13,9 @@ export const HARNESSES: Record<SessionCli, { label: string; setup: TurnSetupChoi
 
 // Only a Session not yet started can change the harness it runs on.
 export type HarnessControl = { cli: SessionCli; onChange?: (cli: SessionCli) => void }
+
+// The Roster stores an open `cli` string (ADR-0021: an adapter registers, shared code doesn't
+// enumerate); this is the one seam that narrows it back to the closed `SessionCli` union.
+export function sessionCliOf(session: { cli: string } | null): SessionCli {
+  return session?.cli === 'codex' ? 'codex' : 'claude'
+}

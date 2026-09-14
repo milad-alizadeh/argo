@@ -1,6 +1,7 @@
-import { Command, FileText, type LucideIcon, Plug, WandSparkles } from 'lucide-react'
+import { Command, FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../../../components/ui/badge'
+import { HARNESSES, type SessionCli } from '../harness/harnesses'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
 
@@ -9,6 +10,9 @@ export type SessionReference = {
   kind: SessionReferenceKind
   label: string
   source: string
+  // Every CLI supports a reference unless this names the closed set that does; a plugin invoking
+  // Claude's own permission system has no Codex equivalent to name.
+  cli?: readonly SessionCli[]
 }
 
 export const sessionReferences = [
@@ -33,6 +37,7 @@ export const sessionReferences = [
     kind: 'plugin',
     label: 'Argo Session plugin',
     source: '@argo-plugin',
+    cli: ['claude'],
   },
 ] as const satisfies readonly SessionReference[]
 
@@ -53,8 +58,22 @@ export function SessionReferenceIcon({ kind }: { kind: SessionReferenceKind }) {
   return <Icon aria-hidden="true" className="size-3.5" />
 }
 
-function referenceBySource(source: string) {
+function renderReferenceIcon(unsupported: boolean, reference: SessionReference | undefined) {
+  if (unsupported) return <TriangleAlert aria-hidden="true" className="size-3.5" />
+  if (reference) return <SessionReferenceIcon kind={reference.kind} />
+  return null
+}
+
+export function referenceBySource(source: string) {
   return sessionReferences.find((reference) => reference.source === source)
+}
+
+export function referenceSupportsCli(reference: SessionReference, cli: SessionCli | null) {
+  return cli === null || reference.cli === undefined || reference.cli.includes(cli)
+}
+
+export function cliLabel(cli: SessionCli | null) {
+  return cli ? HARNESSES[cli].label : 'this CLI'
 }
 
 export function referenceInText(text: string) {
@@ -70,24 +89,45 @@ export function referenceInText(text: string) {
   }
 }
 
-export function SessionReferenceBadge({ source }: { source: string }) {
+export function SessionReferenceBadge({
+  cli = null,
+  source,
+}: {
+  cli?: SessionCli | null
+  source: string
+}) {
   const reference = referenceBySource(source)
+  const unsupported = reference !== undefined && !referenceSupportsCli(reference, cli)
   return (
-    <Badge className="mx-0.5 align-text-bottom font-mono text-meta" variant="outline">
-      {reference ? <SessionReferenceIcon kind={reference.kind} /> : null}
+    <Badge
+      className={`mx-0.5 align-text-bottom font-mono text-meta${unsupported ? ' border-dashed text-muted-foreground' : ''}`}
+      variant="outline"
+    >
+      {renderReferenceIcon(unsupported, reference)}
       {source}
+      {unsupported ? <span className="sr-only"> — not available for {cliLabel(cli)}</span> : null}
     </Badge>
   )
 }
 
-export function SessionReferenceText({ text }: { text: string }) {
+export function SessionReferenceText({
+  cli = null,
+  text,
+}: {
+  cli?: SessionCli | null
+  text: string
+}) {
   const fragments: ReactNode[] = []
   let cursor = 0
   let match = referenceInText(text)
   while (match !== null) {
     if (cursor < match.start) fragments.push(text.slice(cursor, match.start))
     fragments.push(
-      <SessionReferenceBadge key={`${match.start}:${match.source}`} source={match.source} />,
+      <SessionReferenceBadge
+        cli={cli}
+        key={`${match.start}:${match.source}`}
+        source={match.source}
+      />,
     )
     cursor = match.end
     match = referenceInText(text.slice(cursor))
