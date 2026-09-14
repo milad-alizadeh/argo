@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/core/sessions/models'
+import { type ComposerIdentity, composerIdentityKey } from '../hooks/composerIdentity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({
@@ -79,6 +80,27 @@ export function supportedSetup(
       ? setup[field]
       : fallback[field]
   return { model, effort: keep('effort'), mode: keep('mode') }
+}
+
+// What a composer shows: an explicit choice wins; a draft with none falls to the remembered
+// Model and Effort; a Session with none reads what its roster row last settled on.
+export function resolvedTurnSetup(
+  choices: TurnSetupChoices,
+  request: {
+    identity: ComposerIdentity
+    chosen: Map<string, TurnSetup>
+    rows: readonly { id: string; setup: SessionSetup }[]
+    remembered: Partial<Pick<TurnSetup, 'model' | 'effort'>>
+  },
+): TurnSetup {
+  const { identity, chosen, rows, remembered } = request
+  const explicit = chosen.get(composerIdentityKey(identity))
+  if (explicit !== undefined) return explicit
+  const row =
+    identity.kind === 'session' ? rows.find(({ id }) => id === identity.sessionId) : undefined
+  return row === undefined
+    ? supportedSetup(choices, { ...choices.opening, ...remembered }, choices.opening)
+    : setupFromReading(choices, row.setup)
 }
 
 // Model and Effort land only with a reply, so a Turn is judged once it replied or stopped.

@@ -1,0 +1,74 @@
+import { expect, test } from 'bun:test'
+import { QueryClient } from '@tanstack/react-query'
+
+import type { ProjectSummary } from '@/core/projects/messages'
+import { sendToNewSession, sendToSelected } from './useComposerSend'
+
+const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
+const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
+
+function fakeMutation<Args, Reply>(reply: (args: Args) => Promise<Reply>) {
+  const calls: Args[] = []
+  return {
+    calls,
+    mutateAsync: async (args: Args) => {
+      calls.push(args)
+      return reply(args)
+    },
+  }
+}
+
+// The identity's session variant routes a Send to that Session, never a new one.
+test('a Send with a selected Session sends to it', async () => {
+  const send = fakeMutation<{ prompt: string; sessionId: string; setup: unknown }, void>(
+    async () => undefined,
+  )
+  const watched: unknown[] = []
+  const sent = await sendToSelected({
+    queryClient: new QueryClient(),
+    roster: null,
+    selectedSessionId: 'session-1',
+    send: send as never,
+    setFailure: () => {},
+    prompt: 'hello',
+    setup: SETUP,
+    watchTurn: (...args) => watched.push(args),
+  })
+  expect(sent).toBe(true)
+  expect(send.calls).toEqual([{ prompt: 'hello', sessionId: 'session-1', setup: SETUP }])
+  expect(watched).toEqual([['session-1', SETUP, null]])
+})
+
+// The identity's draft variant routes a Send to starting a fresh Session, and moves there.
+test('a Send with no prior Session starts one and navigates to it', async () => {
+  const start = fakeMutation<
+    { cli: string; cwd: string; prompt: string; setup: unknown },
+    { sessionId: string }
+  >(async () => ({ sessionId: 'session-new' }))
+  const navigated: unknown[] = []
+  const sent = await sendToNewSession({
+    cli: 'claude',
+    cockpit: {
+      status: 'selected',
+      project: PROJECT,
+      projects: [PROJECT],
+      message: null,
+      code: null,
+      busy: false,
+    },
+    navigate: (...args) => {
+      navigated.push(args)
+      return undefined as never
+    },
+    queryClient: new QueryClient(),
+    send: fakeMutation(async () => undefined) as never,
+    setFailure: () => {},
+    start: start as never,
+    prompt: 'hello',
+    setup: SETUP,
+    watchTurn: () => {},
+  })
+  expect(sent).toBe(true)
+  expect(start.calls).toEqual([{ cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP }])
+  expect(navigated).toEqual([['/sessions/session-new', { state: 'focus-composer' }]])
+})

@@ -2,10 +2,12 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { managedRow, mergeManagedRoster, sessionRosterReconciliation } from './managed-row'
-import { sessionRosterRowSchema } from './models'
+import { sessionRosterRowSchema, type SessionRosterRow, type SessionStatus } from './models'
 
 type ReconciliationRule =
   (typeof sessionRosterReconciliation)[keyof typeof sessionRosterReconciliation]
+
+const setup = { model: null, effort: null, mode: null } as const
 
 function assertSessionRosterReconciliationIsTotal(
   schema: { shape: Record<string, unknown> },
@@ -22,6 +24,28 @@ function assertSessionRosterReconciliationIsTotal(
       throw new Error(`SessionRosterRow reconciliation has no field named "${field}".`)
     }
   }
+}
+
+function row(id: string, status: SessionStatus): SessionRosterRow {
+  return managedRow(id, {
+    cli: 'claude',
+    compactionPercentage: null,
+    compactionStartedAt: null,
+    compactionTokens: null,
+    cwd: '/projects/argo',
+    status,
+    setup,
+    prompt: 'Do the thing.',
+    startedAt: '2026-09-14T00:00:00.000Z',
+  })
+}
+
+function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
+  const merged = mergeManagedRoster(
+    { rows: [row('s1', discoveredStatus)], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    [row('s1', heldStatus)],
+  )
+  return merged.rows[0]?.status
 }
 
 test('states a reconciliation rule for every SessionRosterRow field', () => {
@@ -85,9 +109,9 @@ test('keeps the current held fields when reconciling a managed row', () => {
     filesUnreadable: 0,
   }
 
-  const [row] = mergeManagedRoster(discovered, [held]).rows
+  const [merged] = mergeManagedRoster(discovered, [held]).rows
 
-  assert.deepEqual(row, {
+  assert.deepEqual(merged, {
     ...observed,
     posture: held.posture,
     title: held.title,
@@ -95,4 +119,27 @@ test('keeps the current held fields when reconciling a managed row', () => {
     compactionPercentage: held.compactionPercentage,
     compactionTokens: held.compactionTokens,
   })
+})
+
+test('the held permission status always wins over the discovered floor', () => {
+  assert.equal(mergedStatus('idle', 'permission'), 'permission')
+  assert.equal(mergedStatus('unknown', 'permission'), 'permission')
+})
+
+test('the held status wins only where the discovered floor has nothing to say', () => {
+  assert.equal(mergedStatus('unknown', 'running'), 'running')
+})
+
+test('a definite discovered floor is never overridden by a held `running`', () => {
+  assert.equal(mergedStatus('idle', 'running'), 'idle')
+  assert.equal(mergedStatus('asking', 'running'), 'asking')
+  assert.equal(mergedStatus('stopped', 'running'), 'stopped')
+})
+
+test('a Session with no held counterpart passes through the discovered row untouched', () => {
+  const merged = mergeManagedRoster(
+    { rows: [row('only-discovered', 'idle')], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    [],
+  )
+  assert.equal(merged.rows[0]?.status, 'idle')
 })

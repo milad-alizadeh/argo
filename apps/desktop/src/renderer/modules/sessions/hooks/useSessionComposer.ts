@@ -8,6 +8,7 @@ import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
+import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
 import { sessionComposerProps } from './sessionComposerProps'
 import { useComposerSend } from './useComposerSend'
 import type { Failure } from './useSessionComposer-actions'
@@ -52,31 +53,31 @@ export function useSessionComposer({
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { compact, interrupt, send, start } = useSessionMutations()
-  const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
+  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
+  const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
     cli,
     choices: HARNESSES[cli].setup,
-    composerKey,
+    identity,
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
   })
-  const compactSession = useCompact(compact, selectedSessionId, setFailure)
+  const compactSession = useCompact(compact, sessionId, setFailure)
   const onCompact = useCallback(async () => {
     const compacted = await compactSession()
     if (compacted) await invalidateSessionRoster(queryClient)
     return compacted
   }, [compactSession, queryClient])
-  const onInterrupt = useInterrupt(interrupt, selectedSessionId, setFailure)
+  const onInterrupt = useInterrupt(interrupt, sessionId, setFailure)
   const isCompacting =
-    (roster?.sessions.find(({ id }) => id === selectedSessionId)?.compactionStartedAt ?? null) !==
-    null
+    (roster?.sessions.find(({ id }) => id === sessionId)?.compactionStartedAt ?? null) !== null
   const onSend = useComposerSend({
     cli,
     cockpit,
     navigate,
     queryClient,
     roster,
-    selectedSessionId,
+    identity,
     send,
     setFailure,
     start,
@@ -84,20 +85,18 @@ export function useSessionComposer({
   })
   return {
     failure:
-      failure?.sessionId === selectedSessionId
-        ? { message: failure.message, code: failure.code }
-        : null,
+      failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
     props: sessionComposerProps({
       cli,
-      isRunning: managedSessionIsRunning(roster, selectedSessionId),
+      isRunning: managedSessionIsRunning(roster, sessionId),
       focusOnMount,
       isCompacting,
       onCompact,
       onInterrupt,
       onSend,
-      sessionId: composerKey,
+      sessionId: composerIdentityKey(identity),
       setup: control,
-      selectedSessionId,
+      identity,
     }),
   }
 }
