@@ -195,11 +195,15 @@ export const ReturnStartsOnceAndShowsRunningUntilTheFirstEvent: Story = {
         canvasElement.querySelector('.feed__document[data-active="true"]'),
       ).toBeInTheDocument(),
     )
-    await expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible(),
+    )
     for (let frame = 0; frame < 5; frame += 1) {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()))
     }
-    await expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible(),
+    )
     await expect(canvas.queryByText('No messages')).toBeNull()
 
     returnHost.state.feedEventReady = true
