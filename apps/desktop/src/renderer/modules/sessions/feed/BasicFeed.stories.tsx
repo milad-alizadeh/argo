@@ -305,17 +305,11 @@ export const ToolGroupTogglesWithNoLag: Story = {
 
     await userEvent.click(group)
     // Close never clips: the row stays at the open height while the panel visibly slides away.
-    // The hidden measured copy is not a witness here — `content-visibility: hidden` skips running
-    // its close animation entirely, so it jumps straight to its final collapsed size while the
-    // real, visible panel is still genuinely animating; only the drawn row's own height matters.
+    // The hidden measured copy is no witness here: whether it plays its own close animation
+    // differs between Chromium builds, so only the drawn row's height is asserted.
     await expect(Number.parseFloat(row().style.height)).toBe(openHeight)
-    // …and settles to the collapsed height once that animation actually finishes, with no
-    // further pass required to notice. A longer timeout, as elsewhere in this file
-    // (`StreamingReply`): the assertion waits on a real CSS animation plus a browser-frame
-    // detection fallback, which a loaded CI runner can take longer than the default to clear.
-    await waitFor(() => expect(Number.parseFloat(row().style.height)).toBe(collapsedHeight), {
-      timeout: 3000,
-    })
+    // …and settles to the collapsed height once that animation finishes.
+    await waitFor(() => expect(Number.parseFloat(row().style.height)).toBe(collapsedHeight))
     await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
   },
 }
