@@ -1,7 +1,3 @@
-// The one Session reader in the main process (#2025). It parses each request once, at this
-// seam, and returns a reply typed by the contract's own schemas; nothing downstream parses or
-// casts again. Each CLI registers a `SessionSource` here rather than shared code branching on a
-// `cli` name (ADR-0021, ADR-0024).
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
@@ -20,6 +16,7 @@ import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { archiveListReply } from './read-archive-list'
 import { delegationUsageReply, type OwnerFor, shellOutputReply } from './read-background-work'
+import { workspaceFileReply } from './read-file-request'
 import { readFailure, versionFailure } from './read-request'
 import { createFeedReader } from './read-session-feed'
 import type { SessionSource } from './session-source'
@@ -128,6 +125,7 @@ export function createSessionReader(
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (value) => archiveListReply(sources, value),
+    readWorkspaceFile: (value) => workspaceFileReply(ownership.ownerFor, value),
     readSessionFeed: feedReader.readSessionFeed,
     cancelSessionFeed: feedReader.cancelSessionFeed,
     readShellOutput: (value) => shellOutputReply(ownership.ownerFor, value),

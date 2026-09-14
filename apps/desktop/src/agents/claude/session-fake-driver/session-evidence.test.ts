@@ -26,8 +26,8 @@ function assertToolRows(reply) {
     group.calls.map(({ label, detail, status }) => ({ label, detail, status })),
     [
       { label: 'Ran bun test', detail: null, status: 'succeeded' },
-      { label: 'Read app.ts', detail: null, status: 'failed' },
-      { label: 'Edited app.ts', detail: '+1 −1', status: 'running' },
+      { label: 'Read src/app.ts', detail: null, status: 'failed' },
+      { label: 'Edited src/app.ts', detail: '+1 −1', status: 'running' },
     ],
   )
   assert.equal(reply.rows[1]?.shape, 'prose')
@@ -37,6 +37,51 @@ function assertToolRows(reply) {
   const [unknown] = unknownGroup?.calls ?? []
   assert.equal(unknown?.label, 'Called an unclassified tool')
 }
+
+test('keeps each line of a multi-line edit in one unified patch', async (context) => {
+  const root = await fixtureRoot(context, [])
+  await writeFile(
+    path.join(root, 'project-one', 'patch.jsonl'),
+    `${JSON.stringify({
+      type: 'assistant',
+      uuid: 'edit',
+      message: {
+        content: [
+          {
+            type: 'tool_use',
+            id: 'patch',
+            name: 'Edit',
+            input: {
+              file_path: 'src/app.ts',
+              old_string: 'const oldValue = 1\nreturn oldValue',
+              new_string: 'const newValue = 2\nreturn newValue',
+            },
+          },
+        ],
+      },
+    })}\n`,
+  )
+  const reply = await readFeed(
+    {
+      version: 1,
+      type: 'session.feed',
+      requestId: 'patch',
+      sessionId: 'patch',
+      delegationId: null,
+      revision: null,
+    },
+    root,
+  )
+  assert.equal(reply.type, 'session.feed.read')
+  const [group] = reply.rows
+  assert.equal(group?.shape, 'tool-group')
+  const [row] = group?.calls ?? []
+  assert.equal(row?.evidence?.kind, 'diff')
+  assert.equal(
+    row?.evidence?.source,
+    '@@ -1,2 +1,2 @@\n-const oldValue = 1\n-return oldValue\n+const newValue = 2\n+return newValue',
+  )
+})
 
 test('projects recorded command, file, and edit evidence', async (context) => {
   const root = await fixtureRoot(context, [])

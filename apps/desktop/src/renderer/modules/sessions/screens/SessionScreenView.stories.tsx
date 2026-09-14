@@ -142,6 +142,7 @@ function ReviewInspector({
       delegation={delegation}
       delegationFeed={delegation === null ? null : feedFor(delegation.id)}
       evidence={null}
+      sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}

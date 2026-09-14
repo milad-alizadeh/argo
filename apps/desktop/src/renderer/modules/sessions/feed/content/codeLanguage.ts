@@ -30,6 +30,13 @@ export function detectCodeLanguage(source: string, language?: string): CodeLangu
   return null
 }
 
+// A File's suffix is the declared language for an inspector. Unlike a fence, a File does not
+// need a content guess: an unknown suffix stays plain text rather than borrowing a language.
+export function detectCodeLanguageFromPath(filePath: string): CodeLanguage | null {
+  const suffix = filePath.split('/').at(-1)?.split('.').at(-1)
+  return suffix === undefined || suffix === filePath ? null : languageNamed(suffix)
+}
+
 export function codeLanguageLabel(language: CodeLanguage | null) {
   return language?.label ?? 'Code'
 }

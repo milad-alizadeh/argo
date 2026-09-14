@@ -12,11 +12,11 @@ import { useTranslation } from 'react-i18next'
 import {
   CodeBlock,
   CodeBlockActions,
-  CodeBlockCopyButton,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
 } from '@/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
 import { TaskItem } from '@/components/ai-elements/task'
 import {
   Terminal,
