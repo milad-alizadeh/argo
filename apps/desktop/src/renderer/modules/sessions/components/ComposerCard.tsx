@@ -125,7 +125,6 @@ export function ComposerCard({
           onSend={onSend}
           plan={plan}
           sessionId={sessionId}
-          onOpenContextPicker={() => onContextPickerOpenChange(true)}
         />
         <ComposerToolbar
           attachments={attachments}

@@ -18,7 +18,6 @@ export function ComposerEditorArea({
   onChange,
   onRemoveAttachment,
   onRemoveTicket,
-  onOpenContextPicker,
   onSend,
   plan,
   sessionId,
@@ -32,7 +31,6 @@ export function ComposerEditorArea({
   onChange: (text: string) => void
   onRemoveAttachment: (id: string) => void
   onRemoveTicket: (id: string) => void
-  onOpenContextPicker: () => void
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
@@ -56,7 +54,6 @@ export function ComposerEditorArea({
           editorRef={editorRef}
           focusOnMount={focusOnMount}
           onChange={onChange}
-          onOpenContextPicker={onOpenContextPicker}
           onSend={onSend}
         />
       </div>

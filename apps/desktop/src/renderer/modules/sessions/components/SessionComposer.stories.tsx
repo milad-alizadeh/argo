@@ -949,8 +949,7 @@ export const SharedContextPicker: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Remove ENG-42' }))
     await expect(canvas.queryByText(/ENG-42 Keep the Composer draft/)).toBeNull()
 
-    await userEvent.click(canvas.getByLabelText('Message'))
-    await userEvent.type(canvas.getByLabelText('Message'), '@')
+    await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
     const keyboardPicker = await within(document.body).findByRole('dialog', {
       name: 'Context picker',
     })
