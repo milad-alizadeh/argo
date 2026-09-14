@@ -52,6 +52,7 @@ export type SessionClient = {
     sessionId: string
     revision: string | null
   }): Promise<SessionFeedReply>
+  cancelSessionFeed(request: { sessionId: string }): Promise<SessionAcceptedReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
   chooseSessionAttachments(): Promise<SessionChooseAttachmentsReply>
   statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
@@ -84,5 +85,6 @@ export function createSessionClient(
       }
       return reply
     },
+    cancelSessionFeed: (request) => client.cancelFeed(request),
   }
 }

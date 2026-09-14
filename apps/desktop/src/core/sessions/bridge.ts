@@ -3,8 +3,10 @@ import { registerDomainHandlers } from '../contract/domain'
 import { platformText } from '../i18n/platform'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
+  type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveListRequest,
+  type SessionFeedCancelRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
   type SessionListReply,
@@ -31,6 +33,7 @@ export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
 }
@@ -76,6 +79,7 @@ export function attachSessionBridge(
       list: (request, context) => context.reader.listSessions(request),
       archiveList: (request, context) => context.reader.archiveList(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
+      cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       rename: (request, context) => context.reader.renameSession(request),
       start: (request, context) => startSession(request, context.adapters),
       send: (request, context) => sendSession(request, ownerContext(context)),

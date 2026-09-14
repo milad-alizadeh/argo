@@ -27,6 +27,7 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
   compactionStartedAt?: string | null
   compactionPercentage?: number | null
   compactionTokens?: string | null
@@ -34,6 +35,7 @@ type SessionShellProps = {
   handoffTo?: string | null
   onOpenSession: (sessionId: string) => void
   isRunning: boolean
+  posture?: 'managed' | 'external' | null
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -49,6 +51,7 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  onRetryFeed,
   compactionStartedAt = null,
   compactionPercentage = null,
   compactionTokens = null,
@@ -56,6 +59,7 @@ export function SessionShell({
   handoffTo = null,
   onOpenSession,
   isRunning,
+  posture = null,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -103,7 +107,9 @@ export function SessionShell({
                 onOpenSession={onOpenSession}
                 feed={feed}
                 failure={feedError}
+                onRetryFeed={onRetryFeed}
                 isRunning={isRunning}
+                posture={posture}
                 selectedSessionId={selectedSessionId}
                 onOpenEvidence={onOpenEvidence}
                 onAnswerQuestion={onAnswerQuestion}

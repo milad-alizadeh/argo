@@ -133,6 +133,7 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
+        onRetryFeed={() => {}}
         inspector={<SessionWorkInspector session={session} />}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}

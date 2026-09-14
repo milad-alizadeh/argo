@@ -5,6 +5,7 @@ import {
   sessionChooseAttachmentsReplySchema,
   sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
+  sessionFeedCancelRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
   sessionHandoffRequestSchema,
@@ -44,6 +45,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed',
     request: sessionFeedRequestSchema,
     reply: sessionFeedReplySchema,
+  },
+  cancelFeed: {
+    name: 'session.feed.cancel',
+    channel: 'argo:session:feed:cancel',
+    request: sessionFeedCancelRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
   rename: {
     name: 'session.rename',

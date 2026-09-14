@@ -11,6 +11,7 @@ import { Spinner } from '../../../components/ui/spinner'
 import { AnchoredFeed } from './AnchoredFeed'
 import type { DrawnRowProps } from './drawn-row'
 import type { Reveal } from './reveal'
+import { StalledFeed } from './StalledFeed'
 import type { Settled, useSettledFeed } from './useSettledFeed'
 
 function RunningFeed() {
@@ -24,16 +25,24 @@ function RunningFeed() {
 export function feedContent({
   settled,
   isRunning,
+  stalled,
+  posture,
+  onRetry,
   DrawnRow,
   revealsFor,
 }: {
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
+  stalled: boolean
+  posture: 'managed' | 'external' | null
+  onRetry: () => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
 }) {
-  if (settled === null) return isRunning ? <RunningFeed /> : null
-  if (settled.rows.length === 0 && isRunning) return <RunningFeed />
+  if (isRunning && (settled === null || settled.rows.length === 0)) {
+    return stalled ? <StalledFeed onRetry={onRetry} posture={posture} /> : <RunningFeed />
+  }
+  if (settled === null) return null
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">

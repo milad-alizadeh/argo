@@ -58,14 +58,22 @@ export function useSessions(selectedSessionId: SessionId | null) {
     enabled: selectedSessionId !== null,
     refetchInterval: SESSION_REFRESH_MS,
     retry: false,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (selectedSessionId === null) return null
       const key = sessionFeedQueryKey(selectedSessionId)
       const cached = queryClient.getQueryData<SessionFeed>(key)
-      const reply = await window.argo.readSessionFeed({
-        sessionId: selectedSessionId,
-        revision: cached?.revision ?? null,
-      })
+      // The abort TanStack Query fires on a query-key change (switching Sessions) or unmount
+      // only stops the renderer from waiting on this promise; it does not reach the main
+      // process, so the settle loop there keeps running a read nothing will draw (#2102). This
+      // turns that local abort into the IPC call that actually stops it.
+      const onAbort = () => void window.argo.cancelSessionFeed({ sessionId: selectedSessionId })
+      signal.addEventListener('abort', onAbort)
+      const reply = await window.argo
+        .readSessionFeed({
+          sessionId: selectedSessionId,
+          revision: cached?.revision ?? null,
+        })
+        .finally(() => signal.removeEventListener('abort', onAbort))
       switch (reply.type) {
         case 'session.feed.read':
           return reply
@@ -89,5 +97,8 @@ export function useSessions(selectedSessionId: SessionId | null) {
     feed: feed.data ?? null,
     feedError: feed.failureCount > 1 ? feed.error : null,
     reread: () => invalidateSessionRoster(queryClient),
+    // A read that never answers (#2102) leaves this query itself pending forever; a stalled
+    // reader's retry needs a fresh attempt, which only a refetch starts.
+    retryFeed: () => void feed.refetch(),
   }
 }

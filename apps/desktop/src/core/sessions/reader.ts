@@ -2,36 +2,22 @@
 // seam, and returns a reply typed by the contract's own schemas; nothing downstream parses or
 // casts again. Each CLI registers a `SessionSource` here rather than shared code branching on a
 // `cli` name (ADR-0021, ADR-0024).
-import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import {
   driveSessionError,
   isDriveCli,
   sessionArchiveListRequestSchema,
   sessionError,
-  sessionFeedRequestSchema,
   sessionListRequestSchema,
   sessionRenameRequestSchema,
 } from './contract'
-import type { HeldFeed } from './feed-cache'
+import { createFeedHandlers } from './feed-handlers'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
-import { readFeedWithOverlay } from './read-owned-feed'
+import { readFailure, versionFailure } from './request-validation'
 import type { SessionSource } from './session-source'
 
 export type { FeedOverlay, SessionSource } from './session-source'
-
-function versionFailure(value: unknown) {
-  return isRecord(value) && typeof value.version === 'number' && value.version !== 1
-}
-
-function readFailure(error: unknown) {
-  if (isRecord(error) && (error.code === 'EACCES' || error.code === 'EPERM')) return 'access-denied'
-  if (isRecord(error) && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) {
-    return 'transcripts-unavailable'
-  }
-  return 'internal-error'
-}
 
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
@@ -107,8 +93,8 @@ async function archiveListReply(sources: SessionSource[], value: unknown) {
 // driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
 export function createSessionReader(sources: SessionSource[]): SessionReader {
-  const feeds = new Map<string, HeldFeed>()
   const ownership = createOwnerResolver(sources)
+  const feed = createFeedHandlers(ownership)
 
   return {
     async ownerCliFor(sessionId) {
@@ -129,19 +115,8 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
       return reply
     },
     archiveList: (value) => archiveListReply(sources, value),
-    async readSessionFeed(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionFeedRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
-      try {
-        const owner = await ownership.ownerFor(parsed.data.sessionId)
-        if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-        const managed = ownership.managed(owner, parsed.data.sessionId)
-        return await readFeedWithOverlay({ source: owner, feeds, managed }, parsed.data)
-      } catch (error) {
-        return sessionError(readFailure(error), parsed.data.requestId)
-      }
-    },
+    readSessionFeed: feed.readSessionFeed,
+    cancelSessionFeed: feed.cancelSessionFeed,
     async renameSession(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       const parsed = sessionRenameRequestSchema.safeParse(value)

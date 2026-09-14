@@ -19,10 +19,12 @@ type FeedDocumentProps = {
   onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
+  posture: 'managed' | 'external' | null
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
+  stallTimeoutMs?: number
 }
 
 function compactionMarker(
@@ -59,18 +61,22 @@ export function FeedDocument({
   onOpenSession,
   feed,
   isRunning,
+  posture,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
+  stallTimeoutMs,
 }: FeedDocumentProps) {
   const { onOpenToolGroup, openToolGroups } = useToolGroups()
   const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
-  const { column, measured, settled } = useSettledFeed({
+  const { column, measured, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
     revision: layoutRevision,
     rows: feed.rows,
+    isRunning,
+    stallTimeoutMs,
   })
   const revealsFor = useReveals()
   const DrawnRow = useDrawnRow({
@@ -83,7 +89,15 @@ export function FeedDocument({
     answeringQuestionId,
     questionFailure,
   })
-  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
+  const content = feedContent({
+    settled,
+    isRunning,
+    stalled,
+    posture,
+    onRetry: retry,
+    DrawnRow,
+    revealsFor,
+  })
 
   return (
     <div

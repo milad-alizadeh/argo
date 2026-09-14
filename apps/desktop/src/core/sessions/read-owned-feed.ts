@@ -6,7 +6,12 @@ import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './
 import { feedReply, type HeldFeed, keepFeed, stableChain, unchangedReply } from './feed-cache'
 import type { SessionSource } from './session-source'
 
-type FeedContext = { source: SessionSource; feeds: Map<string, HeldFeed>; managed: boolean }
+type FeedContext = {
+  source: SessionSource
+  feeds: Map<string, HeldFeed>
+  managed: boolean
+  signal: AbortSignal
+}
 
 function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
@@ -27,13 +32,16 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, managed } = context
+  const { source, feeds, managed, signal } = context
   const held = feeds.get(value.sessionId)
   // The chain a resume belongs to can gain a file the held record never knew about (a Session
   // Argo never started, resumed for the first time): the file the held record already tracks
   // never changes, so statting only those paths would call this Feed unchanged forever. Deriving
   // the chain fresh every read, before trusting the cache, is what catches a new member.
-  const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
+  const stable = await stableChain(source, value.sessionId, {
+    startingPaths: held?.paths ?? [],
+    signal,
+  })
   if (stable === null) {
     if (managed) return unwrittenFeed(value)
     return sessionError('missing-session', value.requestId)
@@ -65,6 +73,7 @@ export async function readFeedWithOverlay(
   const overlay = context.source.overlayFor?.(value.sessionId) ?? null
   if (overlay === null) return readOwnedFeed(context, value)
   const reply = await readOwnedFeed(context, { ...value, revision: null })
+  context.signal.throwIfAborted()
   if (reply.type !== 'session.feed.read') return reply
   const shown = overlay(reply.rows)
   const revision = createHash('sha256')
