@@ -54,7 +54,7 @@ export function useTicketsView(): TicketsScreenProps {
       onDisconnectSource: () => disconnectSource.mutate({ projectId }),
       onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
       selectedKey: ticketKey ?? null,
-      onSelect: (key) => navigate(`/tickets/${key}`),
+      onSelect: (key) => navigate(`/tickets/${encodeURIComponent(key)}`),
       onOpenSession: (id) => navigate(`/sessions/${id}`),
     })
   }
