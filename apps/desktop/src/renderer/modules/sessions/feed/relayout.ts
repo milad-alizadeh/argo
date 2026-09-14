@@ -49,25 +49,33 @@ export function settleRelayout({
   const relaidHeights = readRowHeights(container)
   heights.write(reading, relaidHeights)
   setSettled(settledFrom(reading, rows, relaidHeights))
-  // `column` carries the drawn rows as well as their hidden measured copies, so an animation still
-  // playing on either is caught. Nothing is running for an open, whose panel is already at its
-  // final size, or for a resize settling, which plays no animation at all.
-  const animations = column?.getAnimations({ subtree: true }) ?? []
-  if (animations.length === 0) return undefined
   let live = true
-  void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+  // A close animation is a CSS transition, born from a style change this same commit made. The
+  // browser only turns that into an `Animation` `getAnimations()` can see once it has run a style
+  // pass over the change, which a layout effect runs ahead of — so the check waits a frame, the
+  // same margin Base UI's own `useAnimationsFinished` gives it.
+  const frame = window.requestAnimationFrame(() => {
     if (!live) return
-    generation.current += 1
-    const settledReading: Reading = {
-      ...reading,
-      revision: `${reading.revision}#${generation.current}`,
-    }
-    const settledHeights = readRowHeights(container)
-    heights.write(settledReading, settledHeights)
-    setSettled(settledFrom(settledReading, rows, settledHeights))
+    // `column` carries the drawn rows as well as their hidden measured copies, so an animation
+    // still playing on either is caught. Nothing is running for an open, whose panel is already
+    // at its final size, or for a resize settling, which plays no animation at all.
+    const animations = column?.getAnimations({ subtree: true }) ?? []
+    if (animations.length === 0) return
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+      if (!live) return
+      generation.current += 1
+      const settledReading: Reading = {
+        ...reading,
+        revision: `${reading.revision}#${generation.current}`,
+      }
+      const settledHeights = readRowHeights(container)
+      heights.write(settledReading, settledHeights)
+      setSettled(settledFrom(settledReading, rows, settledHeights))
+    })
   })
   return () => {
     live = false
+    window.cancelAnimationFrame(frame)
   }
 }
 
