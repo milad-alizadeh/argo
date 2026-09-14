@@ -16,6 +16,16 @@ export type FeedOverlay = (rows: readonly SessionFeedRow[]) => {
   changes: unknown
 }
 
+// One page of a source's Archived Sessions (#1593): `restored` names the row for `restoreId`
+// when the caller passed one, whether or not it fell inside this page — the Archive section can
+// then open already showing a Session a reader had selected before, rather than requiring a page
+// through everything to find it.
+export type ArchivedSessionsPage = {
+  rows: SessionRosterRow[]
+  nextCursor: string | null
+  restored: SessionRosterRow | null
+}
+
 export type SessionSource = {
   cli: string
   discoverSessions: () => Promise<TranscriptDiscovery>
@@ -24,4 +34,10 @@ export type SessionSource = {
   managedSessions?: () => SessionRosterRow[]
   overlayFor?: (sessionId: string) => FeedOverlay | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  // Absent where the CLI has no archive concept of its own (Codex, today): the reader then
+  // answers every archive-list request with an empty page rather than guessing at one.
+  discoverArchivedSessions?: (options: {
+    cursor: string | null
+    restoreId: string | null
+  }) => Promise<ArchivedSessionsPage>
 }
