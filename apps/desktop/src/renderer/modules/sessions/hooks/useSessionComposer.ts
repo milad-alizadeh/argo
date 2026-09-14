@@ -47,7 +47,11 @@ function useComposerFacts(
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pendingSessionId)
+  const identity = composerIdentityOf(
+    selectedSessionId,
+    cockpit.project?.id ?? null,
+    pendingSessionId,
+  )
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
     cli,

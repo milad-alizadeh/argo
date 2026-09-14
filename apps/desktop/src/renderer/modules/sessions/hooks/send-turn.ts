@@ -12,8 +12,8 @@ import type { SessionsListed } from '../types'
 import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
 import { sendMessage } from './useSessionComposer-actions'
-import { startNewSession } from './useStartNewSession'
 import type { useSessionMutations } from './useSessionMutations'
+import { startNewSession } from './useStartNewSession'
 import type { TurnMarkerApi } from './useTurnMarker'
 
 export type TurnInput = {
