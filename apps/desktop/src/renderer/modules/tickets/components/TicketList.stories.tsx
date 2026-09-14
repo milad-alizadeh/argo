@@ -49,6 +49,7 @@ export const LongTitleWithLabels: Story = {
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list')
     const title = within(list).getByText(longTicket.title)
+    const status = within(list).getByRole('button', { name: 'State: Open' })
     for (const label of longTicket.labels) {
       const badge = within(list).getByText(label.name)
       await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
@@ -57,6 +58,11 @@ export const LongTitleWithLabels: Story = {
       )
     }
     await expect(title.clientHeight).toBeGreaterThan(20)
+    const titleLineHeight = Number.parseFloat(getComputedStyle(title).lineHeight)
+    const titleCenter = title.getBoundingClientRect().top + titleLineHeight / 2
+    const statusCenter =
+      status.getBoundingClientRect().top + status.getBoundingClientRect().height / 2
+    await expect(Math.abs(statusCenter - titleCenter)).toBeLessThanOrEqual(1)
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
   },
 }

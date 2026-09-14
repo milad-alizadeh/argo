@@ -3,6 +3,7 @@
 const LINE = 'pointer-events-none absolute bg-border'
 // A row's line crosses the 1px gap to the row below.
 const DOWN = `${LINE} left-1/2 top-0 -bottom-px w-px`
+const ANCHOR = 'top-[var(--ticket-tree-anchor)]'
 
 // `rails[column]` is true while the branch in that ancestor column runs on below this row; the last
 // column is this row's own branch, which turns into it.
@@ -14,8 +15,10 @@ export function TreeRails({ rails }: { rails: readonly boolean[] }) {
     <>
       <span aria-hidden="true" className="relative w-(--size-icon-control) shrink-0 self-stretch">
         {runsOn ? <span className={DOWN} /> : null}
-        {own && !runsOn ? <span className={`${LINE} left-1/2 top-0 h-1/2 w-px`} /> : null}
-        {own ? <span className={`${LINE} left-1/2 right-0 top-1/2 h-px`} /> : null}
+        {own && !runsOn ? (
+          <span className={`${LINE} bottom-auto left-1/2 top-0 h-(--ticket-tree-anchor) w-px`} />
+        ) : null}
+        {own ? <span className={`${ANCHOR} ${LINE} left-1/2 right-0 h-px`} /> : null}
       </span>
       <TreeRails rails={deeper} />
     </>
@@ -27,12 +30,12 @@ export function TreeStem() {
   return (
     <span
       aria-hidden="true"
-      className={`${LINE} left-1/2 top-[calc(50%+var(--size-icon-meta)/2)] -bottom-px w-px`}
+      className={`${LINE} left-1/2 top-[calc(var(--ticket-tree-anchor)+var(--size-icon-meta)/2)] -bottom-px w-px`}
     />
   )
 }
 
 // A leaf's branch runs on through the empty chevron column to its title.
 export function TreeTwig() {
-  return <span aria-hidden="true" className={`${LINE} left-0 right-0 top-1/2 h-px`} />
+  return <span aria-hidden="true" className={`${ANCHOR} ${LINE} left-0 right-0 h-px`} />
 }

@@ -74,7 +74,7 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
     <button
       aria-expanded={!folded}
       aria-label={`${folded ? 'Expand' : 'Collapse'} ${key}`}
-      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-center justify-center self-stretch rounded-row text-faint hover:text-foreground"
+      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-[calc(var(--spacing-shell-icon)+(var(--text-session-body--line-height)-var(--size-icon-meta))/2)] text-faint hover:text-foreground"
       onClick={onToggle}
       type="button"
     >
@@ -110,21 +110,23 @@ export function TicketRow(props: TicketRowProps) {
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
-    <div className="relative flex min-w-0 items-center gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
+    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} shrink-0 font-mono type-meta text-faint`}
+        className={`${presentation.keyColumn} mt-2 shrink-0 font-mono type-meta text-faint`}
       >
         {ticket.key}
       </span>
-      <StatusMenu
-        named={false}
-        noun={presentation.statusNoun}
-        onChange={onChangeStatus}
-        status={ticket.status}
-        statuses={statuses}
-      />
-      <span className="flex shrink-0 self-stretch">
+      <span className="mt-1 shrink-0">
+        <StatusMenu
+          named={false}
+          noun={presentation.statusNoun}
+          onChange={onChangeStatus}
+          status={ticket.status}
+          statuses={statuses}
+        />
+      </span>
+      <span className="[--ticket-tree-anchor:calc(var(--spacing-shell-icon)+(var(--text-session-body--line-height)/2))] flex shrink-0 self-stretch">
         <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
