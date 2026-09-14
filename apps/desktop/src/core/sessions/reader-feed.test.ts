@@ -8,12 +8,14 @@ import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
 import { createSessionReader } from './reader'
 import {
+  appendCodexTranscript,
   fed,
   feedRequest,
   listed,
   listing,
   tempRoot,
   writeClaudeTranscript,
+  writeCodexTranscript,
 } from './reader-test-helpers'
 
 test('answers with the first error when every CLI folder is missing', async (context) => {
@@ -83,6 +85,43 @@ test('reads a Session’s Feed as unchanged, and with a new revision once it gro
     grown.type === 'session.feed.read' ? grown.revision : null,
     first.type === 'session.feed.read' ? first.revision : null,
   )
+})
+
+// The settle loop's bound (SETTLING_READS, feed-cache.ts) exists so a transcript an external CLI
+// never stops writing still answers instead of holding the reply open forever (#2095, #2102).
+test('settles late on a transcript that never stops changing, instead of never answering', async (context) => {
+  const claudeRoot = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  await writeCodexTranscript({
+    root: codexRoot,
+    sessionId: 'busy',
+    text: 'First.',
+    updatedAt: '2026-09-13T09:00:00.000Z',
+  })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: claudeRoot }),
+    codexSessionSource(codexRoot),
+  ])
+
+  let writing = true
+  const keepWriting = (async () => {
+    let turn = 0
+    while (writing) {
+      turn += 1
+      await appendCodexTranscript({
+        root: codexRoot,
+        sessionId: 'busy',
+        text: `Turn ${turn}.`,
+        updatedAt: '2026-09-13T09:00:00.000Z',
+      })
+    }
+  })()
+
+  const reply = await fed(reader, feedRequest('busy'))
+  writing = false
+  await keepWriting
+
+  assert.equal(reply.type, 'session.feed.read')
 })
 
 test('says a Session is missing when no CLI can find it', async (context) => {

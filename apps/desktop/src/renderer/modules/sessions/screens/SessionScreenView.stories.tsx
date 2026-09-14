@@ -179,6 +179,7 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
+        onRetryFeed={() => {}}
         headerControls={
           <SessionWorkButtons
             delegations={session.delegations}
@@ -192,6 +193,56 @@ function ReviewScreen() {
         inspector={<ReviewInspector delegation={delegation} shell={shell} />}
         inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
         isRunning={session.status === 'running'}
+        onOpenEvidence={() => {}}
+        onOpenSession={() => {}}
+        onAnswerQuestion={() => {}}
+        answeringQuestionId={null}
+        questionFailure={() => null}
+        selectedSessionId={selectedSessionId}
+      />
+    </CockpitShell>
+  )
+}
+
+// Exercises the same selectedSessionId-gated composer wiring as SessionScreenView, so a reader
+// with no Session selected — on first render, or after deselecting one — sees no composer at all
+// (#2105).
+function DeselectableReviewScreen() {
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId) ?? null
+
+  return (
+    <CockpitShell
+      header={
+        selectedSessionId === null ? undefined : (
+          <Button onClick={() => setSelectedSessionId(null)} type="button" variant="secondary">
+            Close Session
+          </Button>
+        )
+      }
+      sidebar={
+        <ReviewSidebar
+          onSelect={setSelectedSessionId}
+          selectedSessionId={selectedSessionId ?? ''}
+        />
+      }
+    >
+      <SessionShell
+        activeEvidenceId={null}
+        composer={
+          selectedSessionId === null ? null : (
+            <SessionComposer
+              onSend={async () => true}
+              plan={session?.plan ?? null}
+              sessionId={selectedSessionId}
+            />
+          )
+        }
+        feed={selectedSessionId === null ? null : feedFor(selectedSessionId)}
+        feedError={null}
+        onRetryFeed={() => {}}
+        inspector={null}
+        isRunning={session?.status === 'running'}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}
         onAnswerQuestion={() => {}}
@@ -348,6 +399,24 @@ export const Open: Story = {
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
     await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
+  },
+}
+
+export const ComposerGatedBySelection: Story = {
+  render: () => <DeselectableReviewScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    // No frame where a composer renders with nothing selected, from the very first render.
+    expect(canvas.queryByLabelText('Session composer')).not.toBeInTheDocument()
+    await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: /Finish Session composer review/ }))
+    await waitFor(() => expect(canvas.getByLabelText('Session composer')).toBeInTheDocument())
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Close Session' }))
+    await waitFor(() => expect(canvas.queryByLabelText('Session composer')).not.toBeInTheDocument())
+    await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
   },
 }
 

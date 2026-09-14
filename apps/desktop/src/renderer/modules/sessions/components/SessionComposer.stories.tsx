@@ -171,6 +171,7 @@ function CompactingComposerStory() {
           feed={COMPACTION_FEED}
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
+          onRetryFeed={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
