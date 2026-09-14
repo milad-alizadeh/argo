@@ -56,10 +56,15 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
     async decidePermission() {
       return { error: 'stale-permission' }
     },
-    // Codex Questions are #1841, still out of scope: there is never a pending Question to read,
-    // and a decision always answers that it is no longer waiting.
-    async decideQuestion() {
-      return { error: 'stale-question' }
+    async decideQuestion({ sessionId, questionId, answers }) {
+      try {
+        if (!driver.decideQuestion(sessionId, questionId, answers)) {
+          return { error: 'stale-question' }
+        }
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
     },
   }
 }

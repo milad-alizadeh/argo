@@ -1,23 +1,15 @@
-import {
-  CODEX_OPENING_SETUP,
-  type CodexTurnSetup,
-  codexTurnSettings,
-} from '../../../core/sessions/codex-contract'
+import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
 import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { QuestionAnswer } from '../../../core/sessions/question'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'
 import type { LiveMessage, LiveMessages } from './live-messages'
-import {
-  type ManagedSession,
-  type ManagedSessionOptions,
-  managedRoster,
-  openManagedChannel,
-  rememberManagedSession,
-} from './managed-session'
-import { readStartedTurn, readThreadId } from './protocol'
+import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
+import { codexAnswersFor, type PendingCodexQuestion } from './question-protocol'
 import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
+import { beginSession, startTurn } from './start-turn'
 
 export type { LiveMessage }
 export { CodexSessionDriverError }
@@ -30,74 +22,23 @@ export type CodexSessionDriver = {
   roster: () => SessionRosterRow[]
   ownership: Pick<NonNullable<ManagedSessionOptions['ownership']>, 'orphans'>
   liveMessages: (sessionId: string) => LiveMessage[]
+  pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
+  decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
 }
 
 export type CodexSessionDrive = Pick<
   CodexSessionDriver,
-  'start' | 'send' | 'interrupt' | 'rename' | 'roster' | 'liveMessages' | 'close'
+  | 'start'
+  | 'send'
+  | 'interrupt'
+  | 'rename'
+  | 'roster'
+  | 'liveMessages'
+  | 'pendingQuestion'
+  | 'decideQuestion'
+  | 'close'
 >
-
-async function beginSession(options: {
-  driver: ManagedSessionOptions
-  sessions: Map<string, ManagedSession>
-  renameWaiters: Map<string, (title: string) => void>
-  request: { cwd: string; prompt: string; setup?: CodexTurnSetup }
-}) {
-  const { driver, renameWaiters, request, sessions } = options
-  const channel = await openManagedChannel(driver, request.cwd)
-  let sessionId: string | null = null
-  try {
-    sessionId = await channel.request('thread/start', { cwd: request.cwd }, readThreadId)
-    rememberManagedSession({
-      ...request,
-      channel,
-      driver,
-      renameWaiters,
-      sessionId,
-      sessions,
-    })
-    await startTurn({
-      channel,
-      prompt: request.prompt,
-      sessionId,
-      sessions,
-      setup: request.setup ?? CODEX_OPENING_SETUP,
-    })
-    return sessionId
-  } catch (error) {
-    channel.close()
-    if (sessionId) {
-      sessions.delete(sessionId)
-      driver.ownership?.release(sessionId)
-    }
-    if (error instanceof CodexSessionDriverError) throw error
-    throw new CodexSessionDriverError('launch-failed')
-  }
-}
-
-async function startTurn(options: {
-  channel: ManagedSession['channel']
-  sessions: Map<string, ManagedSession>
-  sessionId: string
-  prompt: string
-  setup: CodexTurnSetup
-}) {
-  const { channel, prompt, sessionId, sessions, setup } = options
-  const previous = sessions.get(sessionId)
-  previous?.messages.keepOnly(previous.turnId)
-  const started = await channel.request(
-    'turn/start',
-    {
-      threadId: sessionId,
-      input: [{ type: 'text', text: prompt, text_elements: [] }],
-      ...codexTurnSettings(setup),
-    },
-    readStartedTurn,
-  )
-  const session = sessions.get(sessionId)
-  if (session) session.turnId = started.id
-}
 
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
@@ -136,6 +77,16 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     roster: () => managedRoster(sessions),
     ownership: { orphans: () => options.ownership?.orphans() ?? new Set() },
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
+    pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
+    decideQuestion(sessionId, questionId, answers) {
+      const session = held(sessionId)
+      if (session === undefined || session.pendingQuestion === null) return false
+      const pending = session.pendingQuestion
+      if (pending.itemId !== questionId) return false
+      session.channel.respond(pending.requestId, codexAnswersFor(pending, answers))
+      session.pendingQuestion = null
+      return true
+    },
     close() {
       for (const [sessionId, session] of sessions) {
         options.ownership?.release(sessionId)
