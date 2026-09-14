@@ -1,5 +1,7 @@
 // One row of the work rail, and the two facts a row ends with. Shared by the Subagent half and the
 // Shell half, which differ only in what they put in the middle (#1582).
+import { CircleCheck } from 'lucide-react'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { cn } from '@/renderer/lib/utils'
 
 export function WorkRow({
@@ -43,5 +45,32 @@ export function Facts({ duration, tokens }: { duration: string | null; tokens: s
         .filter((fact) => fact !== null)
         .join(' · ')}
     </span>
+  )
+}
+
+// Finished work folds away behind its own count: a long Session ends with more landed Subagents
+// and finished commands than a rail can hold, and what a reader watches is the work still going.
+// An empty fold is no fold at all, so nothing here ever reads "0 finished".
+export function FinishedFold({
+  children,
+  count,
+  defaultOpen,
+}: {
+  children: React.ReactNode
+  count: number
+  defaultOpen: boolean
+}) {
+  if (count === 0) return null
+  return (
+    <div className="mt-3">
+      <CollapsibleText
+        content={<div className="space-y-1">{children}</div>}
+        contentVariant="plain"
+        defaultOpen={defaultOpen}
+        icon={CircleCheck}
+        title={`${count} finished`}
+        titleType="type-meta"
+      />
+    </div>
   )
 }

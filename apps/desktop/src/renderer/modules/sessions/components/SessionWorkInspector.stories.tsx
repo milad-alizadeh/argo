@@ -87,12 +87,15 @@ export const SubagentsAndShell: Story = {
       'true',
     )
     // Duration and spend are the two facts a Subagent row adds (#1582).
-    await expect(canvas.getByRole('button', { name: /Find every caller/ })).toHaveTextContent(
-      '1m 12s · 2.7k tokens',
-    )
     await expect(canvas.getByRole('button', { name: /Interface review/ })).toHaveTextContent(
       '5m 0s · 18k tokens',
     )
+    // One fold holds everything finished, a landed Subagent and a finished command alike.
+    await userEvent.click(canvas.getByRole('button', { name: '2 finished' }))
+    await expect(canvas.getByRole('button', { name: /Find every caller/ })).toHaveTextContent(
+      '1m 12s · 2.7k tokens',
+    )
+    await expect(canvas.getByRole('button', { name: /Completed.*bun run build/ })).toBeVisible()
   },
 }
 
@@ -116,6 +119,21 @@ export const RunningAndFinishedStates: Story = {
     await expect(canvas.queryByRole('button', { name: /bun run build/ })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: '1 finished' }))
     await expect(canvas.getByRole('button', { name: /Completed.*bun run build/ })).toBeVisible()
+  },
+}
+
+// Nothing has finished yet, so the rail draws no fold at all rather than one reading "0 finished".
+export const NothingFinished: Story = {
+  render: () => (
+    <Rail
+      delegations={DELEGATIONS.filter((delegation) => !delegation.landed)}
+      shell={SHELL.filter((command) => command.state === 'running')}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /Interface review/ })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /finished/ })).toBeNull()
   },
 }
 
