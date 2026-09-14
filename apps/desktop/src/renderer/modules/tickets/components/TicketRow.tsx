@@ -13,7 +13,7 @@ import { TicketLabel } from './TicketLabel'
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
 const treeAnchor: TreeAnchorStyle = {
-  '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height))',
+  '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2)',
 }
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2

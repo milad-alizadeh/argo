@@ -63,6 +63,17 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   const chevronCenter =
     chevronIcon.getBoundingClientRect().top + chevronIcon.getBoundingClientRect().height / 2
   await expect(Math.abs(chevronCenter - titleCenter)).toBeLessThanOrEqual(1)
+  const childRow = rows[1]?.parentElement
+  if (childRow === null || childRow === undefined) throw new Error('A child Ticket needs a row.')
+  const twig = childRow.querySelector('span.absolute.left-0')
+  if (twig === null) throw new Error('A child Ticket needs a tree twig.')
+  const childTitle = within(childRow).getByText('Prototype the Tickets room')
+  const childTitleFirstLineCenter =
+    childTitle.getBoundingClientRect().top +
+    Number.parseFloat(getComputedStyle(childTitle).lineHeight) / 2
+  await expect(
+    Math.abs(twig.getBoundingClientRect().top - childTitleFirstLineCenter),
+  ).toBeLessThanOrEqual(1)
   // Each row's state is an icon that opens a menu, named for a screen reader.
   await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
   await userEvent.click(rows[0] as HTMLElement)
@@ -180,8 +191,11 @@ export const TicketTree: Story = {
     const twig = leafRow?.querySelector('span.absolute.left-0')
     if (twig === null || twig === undefined) throw new Error('A child Ticket needs a tree twig.')
     const title = within(leafRow).getByText('Parse the plan file')
-    const titleCenter = title.getBoundingClientRect().top + title.getBoundingClientRect().height / 2
-    await expect(Math.abs(twig.getBoundingClientRect().top - titleCenter)).toBeLessThanOrEqual(1)
+    const titleFirstLineCenter =
+      title.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(title).lineHeight) / 2
+    await expect(
+      Math.abs(twig.getBoundingClientRect().top - titleFirstLineCenter),
+    ).toBeLessThanOrEqual(1)
   },
 }
 
