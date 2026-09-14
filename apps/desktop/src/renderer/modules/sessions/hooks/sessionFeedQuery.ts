@@ -2,6 +2,7 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, UseQueryOptions } from '@tanstack/react-query'
+import { mergeAppendedFeed } from '@/core/sessions/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -35,6 +36,10 @@ export function sessionFeedQuery(
       switch (reply.type) {
         case 'session.feed.read':
           return reply
+        // The server only sends this once it has seen this exact revision back from us, which
+        // means the cached read it was built from is the one still in the query cache.
+        case 'session.feed.appended':
+          return mergeAppendedFeed(cached, reply)
         case 'session.feed.unchanged':
           return cached ?? null
         case 'session.error':

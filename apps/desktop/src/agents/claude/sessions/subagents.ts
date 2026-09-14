@@ -52,7 +52,7 @@ function asOwnThread(file: TranscriptFile): TranscriptFile {
 }
 
 async function readSubagentFile(filePath: string): Promise<TranscriptFile | null> {
-  const records = await readRecords(filePath, { keep: false }).catch(() => null)
+  const records = await readRecords(filePath).catch(() => null)
   if (records === null) return null
   return asOwnThread(transcriptFileFrom(filePath, { fileName: path.basename(filePath), records }))
 }
