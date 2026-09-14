@@ -3,17 +3,21 @@
 // domain owns a catalog.
 import { useTranslation } from 'react-i18next'
 import type { ContractFailure } from '../lib/query-client'
+import { i18n } from './config'
 
-// A domain that has not moved its copy yet still draws the wire text. Each module's own pull
-// request turns one of these branches into a catalog read, and the last one closes the fallback.
-export function useContractText(): (failure: ContractFailure) => string {
-  const { t } = useTranslation(['accounts'])
-  return (failure) => {
-    switch (failure.type) {
-      case 'account.error':
-        return t(`accounts:error.${failure.code}`)
-      case 'ticket.error':
-        return failure.message
-    }
+// A lib file that is not itself a rendered component reads the current language this way, as
+// `providerPresentation` does: it answers correctly, but subscribes nothing to a language change.
+export function contractText(failure: ContractFailure): string {
+  switch (failure.type) {
+    case 'account.error':
+      return i18n.t(`accounts:error.${failure.code}`)
+    case 'ticket.error':
+      return i18n.t(`tickets:error.${failure.code}`)
   }
+}
+
+// A component that draws a failure holds this instead, so it redraws on a language change.
+export function useContractText(): (failure: ContractFailure) => string {
+  useTranslation(['accounts', 'tickets'])
+  return contractText
 }

@@ -1,6 +1,7 @@
 // How each Ticket source reads on screen. A view that differs by provider looks it up here, so a
 // concept one provider has and another lacks, a Linear cycle say, is one field on its entry.
 import type { Provider } from '@/core/accounts/contract'
+import { i18n } from '../../../i18n/config'
 
 export type SourcePresentation = {
   // The provider's own page for a new Ticket until Argo writes one (#1850, #1851), or null.
@@ -14,26 +15,36 @@ export type SourcePresentation = {
   // A column wide enough for the provider's keys: `#607`, or `ENG-1234`.
   keyColumn: string
   // The provider's word for a Ticket's status: GitHub's open or closed, Linear's workflow state.
-  statusNoun: 'State' | 'Status'
+  statusNoun: string
 }
 
-export const SOURCE_PRESENTATION: Record<Provider, SourcePresentation> = {
+// Neither a URL builder nor a CSS token is user-facing text, so both stay static per provider.
+const STATIC: Record<
+  Provider,
+  { newTicketURL: SourcePresentation['newTicketURL']; keyColumn: string }
+> = {
   github: {
     newTicketURL: (scope) => `https://github.com/${scope}/issues/new`,
-    items: 'GitHub Issues',
-    scopePlaceholder: 'Search owner/name',
-    noScopes: (login) => `${login} cannot see any repository with GitHub Issues turned on.`,
-    noDependencies: 'GitHub gives no dependency information for this Ticket.',
     keyColumn: 'w-(--size-ticket-key)',
-    statusNoun: 'State',
   },
   linear: {
     newTicketURL: null,
-    items: 'Linear issues',
-    scopePlaceholder: 'Search teams',
-    noScopes: (login) => `${login} cannot see any Linear team.`,
-    noDependencies: 'Linear gives no dependency information for this Ticket.',
     keyColumn: 'w-(--size-ticket-key-long)',
-    statusNoun: 'Status',
   },
+}
+
+// Read on call rather than built once at import, so it answers in the current language (#2130), as
+// `providerPresentation` does.
+export function sourcePresentation(provider: Provider): SourcePresentation {
+  return {
+    ...STATIC[provider],
+    items: i18n.t(`tickets:source.${provider}.items`),
+    scopePlaceholder: i18n.t(`tickets:source.${provider}.scopePlaceholder`),
+    noScopes: (login) => i18n.t(`tickets:source.${provider}.noScopes`, { login }),
+    noDependencies: i18n.t(`tickets:source.${provider}.noDependencies`),
+    statusNoun:
+      provider === 'github'
+        ? i18n.t('tickets:status.noun.state')
+        : i18n.t('tickets:status.noun.status'),
+  }
 }

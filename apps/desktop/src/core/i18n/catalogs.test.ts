@@ -13,7 +13,9 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { CATALOGS } from '../../renderer/i18n/catalogs'
 import accounts from '../../renderer/modules/accounts/locales/en.json'
+import tickets from '../../renderer/modules/tickets/locales/en.json'
 import { ACCOUNT_ERRORS, PROVIDERS } from '../accounts/contract'
+import { CONNECTION_STATES, TICKET_ERRORS } from '../tickets/contract'
 
 const NAMESPACES = Object.keys(CATALOGS)
 
@@ -113,4 +115,21 @@ test('the accounts catalog answers every provider', () => {
     .flatMap((key) => key.match(/^(.+)_(?:one|other)$/)?.[1] ?? [])
     .sort()
   assert.deepEqual([...new Set(confirm)], expected)
+})
+
+// The three closed sets the Tickets catalog is keyed by: a Ticket error code, a Connection state
+// and a provider, none reached by the patterns above.
+test('the tickets catalog answers every Ticket error code', () => {
+  assert.deepEqual(Object.keys(tickets.error).sort(), Object.keys(TICKET_ERRORS).sort())
+})
+
+test('the tickets catalog answers every Connection state but ready', () => {
+  const expected = CONNECTION_STATES.filter((state) => state !== 'ready').sort()
+  assert.deepEqual(Object.keys(tickets.connection.state).sort(), [...CONNECTION_STATES].sort())
+  assert.deepEqual(Object.keys(tickets.problem.connection).sort(), expected)
+})
+
+test('the tickets catalog answers every provider', () => {
+  const expected = [...PROVIDERS].sort()
+  assert.deepEqual(Object.keys(tickets.source).sort(), expected)
 })

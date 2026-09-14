@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import type { TicketStatus } from '@/core/tickets/contract'
 import { Button } from '../../../components/ui/button'
 import {
@@ -24,6 +26,7 @@ const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
 
 // A Ticket's status as a menu of every status its provider offers.
 export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMenuProps) {
+  const { t } = useTranslation('tickets')
   if (statuses.length === 0) return <StatusMark named={named} status={status} />
   const choose = (id: unknown) => {
     const next = statuses.find((candidate) => candidate.id === id)
@@ -32,7 +35,7 @@ export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMe
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`${noun}: ${status.name}`}
+        aria-label={t('status.trigger', { noun, status: status.name })}
         render={
           <Button
             className={`relative z-10 shrink-0 type-meta text-muted-foreground ${named ? NAMED_INSET : ''}`}

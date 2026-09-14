@@ -1,23 +1,24 @@
 import { Ban, CircleCheck, CircleDot, ExternalLink, GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
+import type { Ticket, TicketLink, TicketState, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
 import { providerPresentation } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import { closedChildren } from '../lib/backlog'
-import { SOURCE_PRESENTATION } from '../lib/sources'
+import { sourcePresentation } from '../lib/sources'
 import { StatusMenu } from './StatusMenu'
 import { TicketDetailEmpty } from './TicketDetailEmpty'
 import { TicketDetailSection } from './TicketDetailSection'
 import { TicketLabel } from './TicketLabel'
 import { PriorityMark } from './TicketStatus'
 
-const STATES = {
-  open: { label: 'Open', Icon: CircleDot, tone: 'text-active' },
-  closed: { label: 'Closed', Icon: CircleCheck, tone: 'text-muted-foreground' },
-} as const
+const STATE_ICONS: Record<TicketState, { Icon: typeof CircleDot; tone: string }> = {
+  open: { Icon: CircleDot, tone: 'text-active' },
+  closed: { Icon: CircleCheck, tone: 'text-muted-foreground' },
+}
 
 const stateIcon = 'size-(--size-icon-meta) shrink-0'
 const blockedIcon = `${stateIcon} text-danger`
@@ -28,11 +29,12 @@ const linkRow =
   'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
 
 function LinkContent({ link }: { link: TicketLink }) {
-  const { label, Icon, tone } = STATES[link.state]
+  const { t } = useTranslation('tickets')
+  const { Icon, tone } = STATE_ICONS[link.state]
   return (
     <>
       <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{t(`detail.state.${link.state}`)}</span>
       <span className="min-w-0 flex-1 truncate type-body">{link.title}</span>
       <span className="shrink-0 font-mono type-meta text-faint">{link.key}</span>
     </>
@@ -84,7 +86,8 @@ type Editing = {
 type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
 
 function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesProps) {
-  const noun = SOURCE_PRESENTATION[provider].statusNoun
+  const { t } = useTranslation('tickets')
+  const noun = sourcePresentation(provider).statusNoun
   return (
     <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
       <Property name={noun}>
@@ -97,19 +100,19 @@ function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesPr
         />
       </Property>
       {ticket.priority ? (
-        <Property name="Priority">
+        <Property name={t('detail.priority')}>
           <PriorityMark priority={ticket.priority} />
         </Property>
       ) : null}
       {ticket.type ? (
-        <Property name="Type">
+        <Property name={t('detail.type')}>
           <Badge className="type-meta" variant="secondary">
             {ticket.type}
           </Badge>
         </Property>
       ) : null}
       {ticket.labels.length > 0 ? (
-        <Property name="Labels">
+        <Property name={t('detail.labels')}>
           {ticket.labels.map((label) => (
             <TicketLabel key={label.name} label={label} />
           ))}
@@ -122,14 +125,15 @@ function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesPr
 type DependenciesProps = { blockedBy: Ticket['blockedBy']; provider: Provider } & Navigation
 
 function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps) {
+  const { t } = useTranslation('tickets')
   if (blockedBy === null) {
     return (
       <TicketDetailSection
-        title="Blocked by"
+        title={t('detail.blockedBy')}
         icon={<Ban aria-hidden="true" className={blockedIcon} />}
       >
         <p className="type-meta text-muted-foreground">
-          {SOURCE_PRESENTATION[provider].noDependencies}
+          {sourcePresentation(provider).noDependencies}
         </p>
       </TicketDetailSection>
     )
@@ -137,7 +141,7 @@ function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps)
   if (blockedBy.length === 0) return null
   return (
     <TicketDetailSection
-      title={`Blocked by · ${blockedBy.length}`}
+      title={t('detail.blockedByCount', { count: blockedBy.length })}
       icon={<Ban aria-hidden="true" className={blockedIcon} />}
     >
       <Links links={blockedBy} {...navigation} />
@@ -148,6 +152,7 @@ function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps)
 const keyText = 'font-mono type-meta'
 
 function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
+  const { t } = useTranslation('tickets')
   if (ticket.url === null) {
     return (
       <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
@@ -157,7 +162,10 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   }
   return (
     <a
-      aria-label={`Open ${ticket.key} in ${providerPresentation(provider).name}`}
+      aria-label={t('detail.openInProvider', {
+        key: ticket.key,
+        provider: providerPresentation(provider).name,
+      })}
       className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
       href={ticket.url}
       rel="noreferrer"
@@ -176,12 +184,16 @@ const measure =
 export type TicketDetailProps = { ticket: Ticket | null; provider: Provider } & Navigation & Editing
 
 export function TicketDetail(props: TicketDetailProps) {
+  const { t } = useTranslation('tickets')
   const { ticket, provider, statuses, onChangeStatus, ...navigation } = props
   if (ticket === null) return <TicketDetailEmpty />
   const { children } = ticket
   const body = ticket.body?.trim()
   return (
-    <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
+    <article
+      aria-label={t('detail.articleLabel', { key: ticket.key })}
+      className="min-h-0 flex-1 overflow-y-auto"
+    >
       <header className="border-b border-border/60">
         <div className={measure}>
           <div className="grid min-w-0 gap-(--spacing-shell-tight)">
@@ -200,11 +212,14 @@ export function TicketDetail(props: TicketDetailProps) {
         {body ? (
           <FeedMarkdown text={body} />
         ) : (
-          <p className="type-body text-muted-foreground">No description.</p>
+          <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
         )}
         {children.length > 0 ? (
           <TicketDetailSection
-            title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}
+            title={t('detail.childrenCount', {
+              closed: closedChildren(ticket),
+              count: children.length,
+            })}
             icon={<GitFork aria-hidden="true" className={stateIcon} />}
           >
             <Links links={children} {...navigation} />

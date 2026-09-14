@@ -1,4 +1,5 @@
 import { FolderGit2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import {
   Empty,
@@ -35,16 +36,15 @@ function Loading({ label }: { label: string }) {
 }
 
 function NoProject() {
+  const { t } = useTranslation('tickets')
   return (
     <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <FolderGit2 aria-hidden="true" />
         </EmptyMedia>
-        <EmptyTitle>Select a Project to read its Tickets</EmptyTitle>
-        <EmptyDescription>
-          A Project reads its Tickets from the GitHub repository or Linear team it is connected to.
-        </EmptyDescription>
+        <EmptyTitle>{t('screen.noProject.title')}</EmptyTitle>
+        <EmptyDescription>{t('screen.noProject.description')}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   )
@@ -78,8 +78,9 @@ export function TicketsScreenView() {
 }
 
 export function TicketsScreen({ view }: TicketsScreenProps) {
+  const { t } = useTranslation('tickets')
   return (
-    <main aria-label="Tickets" className="h-full min-h-0 bg-background">
+    <main aria-label={t('screen.label')} className="h-full min-h-0 bg-background">
       <Body view={view} />
     </main>
   )
