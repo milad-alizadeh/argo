@@ -42,7 +42,7 @@ export function useSessionScreenModel() {
   const [cockpit] = useProjects()
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId)
-  const { feed, feedError, roster } = useSessions(selectedSessionId)
+  const { feed, feedError, roster, retryFeed } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
@@ -67,6 +67,7 @@ export function useSessionScreenModel() {
     selectedSessionId,
     feed,
     feedError,
+    retryFeed,
     roster,
     navigate,
     session,

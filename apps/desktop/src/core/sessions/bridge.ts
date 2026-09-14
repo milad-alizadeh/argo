@@ -8,6 +8,7 @@ import {
   type SessionArchiveListRequest,
   type SessionDelegationUsageReply,
   type SessionDelegationUsageRequest,
+  type SessionFeedCancelRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
   type SessionListReply,
@@ -38,6 +39,7 @@ export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
   readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
@@ -87,6 +89,7 @@ export function attachSessionBridge(
       list: (request, context) => context.reader.listSessions(request),
       archiveList: (request, context) => context.reader.archiveList(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
+      cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       shellOutput: (request, context) => context.reader.readShellOutput(request),
       delegationUsage: (request, context) => context.reader.readDelegationUsage(request),
       rename: (request, context) => context.reader.renameSession(request),

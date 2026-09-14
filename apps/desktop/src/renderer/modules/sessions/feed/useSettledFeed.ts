@@ -1,8 +1,10 @@
-import { type MutableRefObject, type RefObject, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SessionFeedRow } from '../types'
+import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { createHeightStore, type Reading } from './heights'
 import { containerReading, settleReading } from './measure'
+import { useGeometry, useSettledWidth } from './useSettledGeometry'
 
 // One store for the launch, shared by every deck. Heights stay for every Session opened this
 // launch, so switching back to a Session already read runs no pass (ADR-0033 rule 4).
@@ -21,89 +23,26 @@ type SettledFeedOptions = {
   sessionId: string | null
   revision: string | null
   rows: readonly SessionFeedRow[]
-}
-
-// Rule 6: the Feed stays at its old width, clipped, for the length of a drag, and one pass runs
-// at drag end. This is that "drag end" — a width that has stopped moving.
-const RESIZE_SETTLE_MS = 180
-const GEOMETRY_REFRESH_MS = 500
-
-// The column is what a drag resizes, so it is what the observer watches. The width the pass keys
-// on is read elsewhere, off the container the rows are actually laid out in.
-function useSettledWidth(
-  active: boolean,
-  activeRef: MutableRefObject<boolean>,
-  column: RefObject<HTMLElement | null>,
-) {
-  const [width, setWidth] = useState<number | null>(null)
-  useEffect(() => {
-    if (!active) return
-    const element = column.current
-    if (element === null) return
-    let timer: number | undefined
-    const observer = new ResizeObserver(() => {
-      if (!activeRef.current) return
-      window.clearTimeout(timer)
-      timer = window.setTimeout(
-        () => setWidth(element.getBoundingClientRect().width),
-        RESIZE_SETTLE_MS,
-      )
-    })
-    observer.observe(element)
-    setWidth(element.getBoundingClientRect().width)
-    return () => {
-      window.clearTimeout(timer)
-      observer.disconnect()
-    }
-  }, [active, activeRef, column])
-  return width
-}
-
-// A font load or Electron zoom change can leave the CSS width alone while changing every prose
-// height. Watch those other two invalidators only while this visible deck may read layout.
-type Geometry = Pick<Reading, 'font' | 'zoom'>
-
-function useGeometry(
-  active: boolean,
-  activeRef: MutableRefObject<boolean>,
-  measured: RefObject<HTMLElement | null>,
-) {
-  const [geometry, setGeometry] = useState<Geometry | null>(null)
-  useEffect(() => {
-    if (!active) {
-      setGeometry(null)
-      return
-    }
-    const container = measured.current
-    if (container === null) return
-    if (!activeRef.current) return
-    let current = geometryOf(container)
-    setGeometry(current)
-    const reread = () => {
-      if (!activeRef.current) return
-      const next = geometryOf(container)
-      if (geometryKey(next) === geometryKey(current)) return
-      current = next
-      setGeometry(next)
-    }
-    document.fonts.addEventListener('loadingdone', reread)
-    const timer = window.setInterval(reread, GEOMETRY_REFRESH_MS)
-    return () => {
-      document.fonts.removeEventListener('loadingdone', reread)
-      window.clearInterval(timer)
-    }
-  }, [active, activeRef, measured])
-  return geometry
+  isRunning: boolean
+  stallTimeoutMs?: number
 }
 
 // Nothing is drawn until this returns a reading. A cached one returns on the same tick, which is
 // the kept-deck case; anything else runs one pass behind the activity indicator.
-export function useSettledFeed({ active, sessionId, revision, rows }: SettledFeedOptions) {
+export function useSettledFeed({
+  active,
+  sessionId,
+  revision,
+  rows,
+  isRunning,
+  stallTimeoutMs = FEED_STALL_TIMEOUT_MS,
+}: SettledFeedOptions) {
   const column = useRef<HTMLDivElement>(null)
   const measured = useRef<HTMLDivElement>(null)
   const activeRef = useRef(active)
   activeRef.current = active
   const [settled, setSettled] = useState<Settled | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
   const width = useSettledWidth(active, activeRef, column)
   const geometry = useGeometry(active, activeRef, measured)
 
@@ -143,20 +82,26 @@ export function useSettledFeed({ active, sessionId, revision, rows }: SettledFee
     return () => {
       live = false
     }
+    // A stall here is a DOM measurement never finishing, which this pipeline has never actually
+    // seen: `retryToken` is not a dependency, because retrying does not mean re-measuring, it
+    // means restarting the stall bound below while the real data keeps arriving on its own poll.
   }, [active, sessionId, revision, rows, width, geometry])
 
   // Never hand back another Session's document. A newer revision of this Session is deliberately
   // allowed to keep the older settled document visible while its complete replacement measures.
   const settledHere = settled !== null && settled.reading.sessionId === sessionId ? settled : null
 
-  return { column, measured, settled: settledHere }
-}
+  // The Feed pane shows RunningFeed exactly while this is true (feed-content.tsx). Past the
+  // bound, it shows StalledFeed instead of spinning forever (#2102).
+  // A kept document keeps its own hook instance for the Session it belongs to (BasicFeed.tsx), so
+  // this bound only ever watches a first load: a later revision leaves the previous settled
+  // document in place (the rule above) rather than making `awaitingFeed` true again.
+  const awaitingFeed = isRunning && (settledHere === null || settledHere.rows.length === 0)
+  const stalled = useStallTimer(awaitingFeed ? `${sessionId}:${retryToken}` : false, stallTimeoutMs)
 
-function geometryOf(container: HTMLElement): Geometry {
-  const reading = containerReading(container)
-  return { font: reading.font, zoom: reading.zoom }
-}
+  const retry = useCallback(() => {
+    setRetryToken((token) => token + 1)
+  }, [])
 
-function geometryKey(geometry: Geometry) {
-  return JSON.stringify(geometry)
+  return { column, measured, settled: settledHere, stalled, retry }
 }

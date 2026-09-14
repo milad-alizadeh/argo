@@ -48,6 +48,13 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
+  cancelSessionFeed: (request: { sessionId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.accepted',
+      requestId: 'storybook-feed-cancel',
+      sessionId: request.sessionId,
+    }),
   readSessionPermission: (request: { requestId: string; sessionId: string }) =>
     Promise.resolve({
       version: 1,
