@@ -45,6 +45,7 @@ const SURFACE = [
   'getAppearance',
   'interruptSession',
   'listAccounts',
+  'listArchivedSessions',
   'listProjects',
   'listSessions',
   'listTickets',

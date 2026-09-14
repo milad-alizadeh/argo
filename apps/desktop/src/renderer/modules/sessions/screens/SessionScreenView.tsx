@@ -13,6 +13,7 @@ import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
+import { useSelectedSession } from './useSelectedSession'
 
 // An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
@@ -31,7 +32,7 @@ function useSessionScreenModel() {
   const { feed, feedError, roster } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
-  const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({

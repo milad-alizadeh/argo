@@ -1,4 +1,4 @@
-import { GitFork, Layers3, Minimize2 } from 'lucide-react'
+import { GitFork, Minimize2 } from 'lucide-react'
 
 import { Button } from '../../../components/ui/button'
 import {
@@ -79,22 +79,19 @@ export function SessionContextBar({
           usedTokens={usedTokens}
         />
       </div>
-      <div
-        className={`hidden shrink-0 items-center gap-1.5 type-label font-medium @[40rem]:flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}
-      >
-        <Layers3 className="size-(--size-icon-inline)" />
-        Context
+      <div className="hidden shrink-0 @[40rem]:block">
+        <ContextPopover
+          harness={harness ?? 'codex'}
+          labelled
+          percentage={percentage}
+          usedTokens={usedTokens}
+        />
       </div>
       <ContextMeter contextAlert={contextAlert} percentage={percentage} />
       <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
         <span className="font-medium text-foreground">{usedTokenSummary}</span>
         <span className="text-muted-foreground"> / 200k</span>
         <span className="font-medium">· {percentage}%</span>
-        <ContextPopover
-          harness={harness ?? 'codex'}
-          percentage={percentage}
-          usedTokens={usedTokens}
-        />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[23rem]:hidden">
         <Button

@@ -2,6 +2,7 @@ import { createDomainClient } from '../contract/domain'
 import type { ClaudeQuestionAnswer } from './claude-contract'
 import {
   type SessionAcceptedReply,
+  type SessionArchiveListReply,
   type SessionFeedReply,
   type SessionListReply,
   type SessionPermissionReply,
@@ -37,6 +38,10 @@ export type SessionClient = {
     answers: ClaudeQuestionAnswer[]
   }): Promise<SessionAcceptedReply>
   listSessions(): Promise<SessionListReply>
+  listArchivedSessions(request: {
+    cursor: string | null
+    restoreId: string | null
+  }): Promise<SessionArchiveListReply>
   readSessionFeed(request: {
     sessionId: string
     revision: string | null
@@ -57,6 +62,7 @@ export function createSessionClient(
     decideSessionPermission: (request) => client.decidePermission(request),
     decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: () => client.list(),
+    listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),
     async readSessionFeed(request) {
       const reply = await client.feed(request)

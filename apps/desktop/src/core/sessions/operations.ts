@@ -1,5 +1,7 @@
 import {
   sessionAcceptedReplySchema,
+  sessionArchiveListReplySchema,
+  sessionArchiveListRequestSchema,
   sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
@@ -25,6 +27,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:list',
     request: sessionListRequestSchema,
     reply: sessionListReplySchema,
+  },
+  archiveList: {
+    name: 'session.archive.list',
+    channel: 'argo:session:archive:list',
+    request: sessionArchiveListRequestSchema,
+    reply: sessionArchiveListReplySchema,
   },
   feed: {
     name: 'session.feed',

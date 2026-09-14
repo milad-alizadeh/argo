@@ -8,6 +8,7 @@ import { permissionSchema } from './permission'
 import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
+export * from './archive-contract'
 export * from './claude-contract'
 export * from './permission'
 export * from './question-contract'

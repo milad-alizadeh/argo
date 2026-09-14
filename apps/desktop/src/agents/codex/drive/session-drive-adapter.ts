@@ -1,6 +1,6 @@
 import { type CodexTurnSetup, codexTurnSetupSchema } from '@/core/sessions/codex-contract'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
-import type { CodexSessionDriver } from './codex-session-driver'
+import type { CodexSessionDrive } from './codex-session-driver'
 import { CodexSessionDriverError } from './codex-session-error'
 
 // `codex app-server` refuses a thread already active in another process (its own client or the
@@ -16,7 +16,7 @@ function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailur
   return { error: fallback }
 }
 
-export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriveAdapter {
+export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
   return {
     cli: 'codex',
     turnSetupSchema: codexTurnSetupSchema,

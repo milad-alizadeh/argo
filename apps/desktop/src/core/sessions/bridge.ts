@@ -1,6 +1,8 @@
 import type { BrowserWindow } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
 import {
+  type SessionArchiveListReply,
+  type SessionArchiveListRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
   type SessionListReply,
@@ -24,6 +26,7 @@ import type { SessionDriveAdapters } from './session-drive-adapter'
 
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
+  archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
@@ -51,6 +54,7 @@ export function attachSessionBridge(
     context: storage,
     handlers: {
       list: (request, context) => context.reader.listSessions(request),
+      archiveList: (request, context) => context.reader.archiveList(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       rename: (request, context) => context.reader.renameSession(request),
       start: (request, context) => startSession(request, context.adapters),
