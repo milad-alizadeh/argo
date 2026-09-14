@@ -69,8 +69,11 @@ export const ChoosesModelAndEffort: Story = {
     await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
     await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('claude sonnet xhigh')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
-    await expect(within(harnesses).getByRole('tab', { name: 'Claude Code' })).toBeDisabled()
-    await expect(within(harnesses).getByRole('tab', { name: 'Codex' })).toBeDisabled()
+    for (const label of ['Claude Code', 'Codex']) {
+      const tab = within(harnesses).getByRole('tab', { name: label })
+      await expect(tab).toHaveAttribute('aria-disabled', 'true')
+      await expect(tab).toHaveAttribute('tabindex', '-1')
+    }
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull())

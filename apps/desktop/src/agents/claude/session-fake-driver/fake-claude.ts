@@ -59,7 +59,7 @@ process.stdin.on('data', (chunk: string) => {
   if (pending.includes('/compact\r')) {
     pending = pending.replace('/compact\r', '')
     process.stdout.write('Compacting conversation… (0m 00s · ↓ 10.1k tokens) 22%')
-    setTimeout(compact, 1_000)
+    setTimeout(compact, 3_000)
   }
   for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
     pending = pending.slice(turn.index + turn[0].length)

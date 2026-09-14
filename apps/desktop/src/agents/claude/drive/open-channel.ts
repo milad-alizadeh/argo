@@ -1,4 +1,4 @@
-import { launchArguments } from './claude-setup'
+import { compactionProgress, launchArguments } from './claude-setup'
 import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import type { DriverOptions, ManagedSession } from './drive-channel'
@@ -68,6 +68,13 @@ export function openChannel(
   sessions.set(seed.sessionId, session)
   process.onData?.((data) => {
     session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
+    if (session.compactionStartedAt !== null) {
+      const progress = compactionProgress(session.screen)
+      if (progress !== null) {
+        session.compactionPercentage = progress.percentage
+        session.compactionTokens = progress.tokens
+      }
+    }
     frame.see(session.screen)
   })
   options.ledger.bind(seed.sessionId)

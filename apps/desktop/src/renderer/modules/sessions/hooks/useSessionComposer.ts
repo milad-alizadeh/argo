@@ -43,8 +43,8 @@ function managedSessionIsRunning(
 
 function sessionState(roster: SessionComposerOptions['roster'], sessionId: string | null) {
   const selectedSession = roster?.sessions.find(({ id }) => id === sessionId)
-  const isCompacting =
-    selectedSession?.compactionStartedAt !== null && selectedSession !== undefined
+  const compactionStartedAt = selectedSession?.compactionStartedAt ?? null
+  const isCompacting = compactionStartedAt !== null
   return { isCompacting, isRunning: managedSessionIsRunning(roster, sessionId) || isCompacting }
 }
 
@@ -53,6 +53,17 @@ function sessionState(roster: SessionComposerOptions['roster'], sessionId: strin
 function useMutationsFor(cli: SessionCli) {
   const mutationsByCli = { claude: useClaudeSessionMutations(), codex: useCodexSessionMutations() }
   return mutationsByCli[cli]
+}
+
+function useRefreshedCompact(
+  compactSession: () => Promise<boolean>,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return useCallback(async () => {
+    const compacted = await compactSession()
+    if (compacted) await invalidateSessionRoster(queryClient)
+    return compacted
+  }, [compactSession, queryClient])
 }
 
 export type SessionMutations = ReturnType<typeof useMutationsFor>
@@ -80,7 +91,8 @@ export function useSessionComposer({
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: setFailure,
   })
-  const onCompact = useCompact({ compact, cli, sessionId: selectedSessionId, setFailure })
+  const compactSession = useCompact({ compact, cli, sessionId: selectedSessionId, setFailure })
+  const onCompact = useRefreshedCompact(compactSession, queryClient)
   const onInterrupt = useInterrupt({ interrupt, sessionId: selectedSessionId, setFailure })
   const { isCompacting, isRunning } = sessionState(roster, selectedSessionId)
   const onSend = useCallback(

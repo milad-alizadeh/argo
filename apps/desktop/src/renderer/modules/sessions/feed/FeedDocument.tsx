@@ -12,7 +12,6 @@ import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { CompactionMarker } from './CompactionMarker'
 import { FeedRow } from './FeedRow'
-import { MeasuredRows } from './MeasuredRows'
 import { type Reveal, useReveals } from './reveal'
 import { type Settled, useSettledFeed } from './useSettledFeed'
 
@@ -106,14 +105,18 @@ export function FeedDocument({
       inert={!active}
     >
       <div className="feed__column" ref={column}>
-        <MeasuredRows
-          activeEvidenceId={activeEvidenceId}
-          feed={feed}
-          measured={measured}
-          onOpenEvidence={onOpenEvidence}
-          onOpenToolGroup={openToolGroup.current}
-          openToolGroups={openToolGroups}
-        />
+        <div aria-hidden="true" className="feed__measured" ref={measured}>
+          {feed.rows.map((row) => (
+            <FeedRow
+              key={row.id}
+              activeEvidenceId={activeEvidenceId}
+              onOpenEvidence={onOpenEvidence}
+              onOpenToolGroup={openToolGroup.current}
+              openToolGroups={openToolGroups}
+              row={row}
+            />
+          ))}
+        </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
       </div>

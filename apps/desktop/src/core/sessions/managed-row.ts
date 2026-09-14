@@ -53,8 +53,11 @@ export function managedRow(
 export function mergeManagedRoster(
   discovered: TranscriptDiscovery,
   managed: SessionRosterRow[],
-  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
+  reconcile = (observed: SessionRosterRow, held: SessionRosterRow): SessionRosterRow => ({
     ...observed,
+    compactionPercentage: held.compactionPercentage,
+    compactionStartedAt: held.compactionStartedAt,
+    compactionTokens: held.compactionTokens,
     posture: held.posture,
   }),
 ): TranscriptDiscovery {

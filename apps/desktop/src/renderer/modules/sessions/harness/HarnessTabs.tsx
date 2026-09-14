@@ -33,6 +33,7 @@ export function HarnessTabs({
             <TabsTrigger
               key={option}
               disabled={onChange === undefined}
+              tabIndex={onChange === undefined ? -1 : undefined}
               value={option}
               className="h-8 gap-2 px-3 type-label font-medium text-muted-foreground data-active:bg-card"
             >
