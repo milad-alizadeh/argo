@@ -73,7 +73,8 @@ export const PercentageAndIcons: Story = {
     await expect(canvas.getByRole('button', { name: /Context 148k tokens/ })).toHaveAccessibleName(
       /74%/,
     )
-    expect(getComputedStyle(canvas.getByText('Compact')).display).toBe('none')
-    expect(getComputedStyle(canvas.getByText('Handoff')).display).toBe('none')
+    const labeledActions = canvas.getByText('Compact').parentElement
+    if (labeledActions === null) throw new Error('The full context actions are absent.')
+    expect(getComputedStyle(labeledActions).display).toBe('none')
   },
 }
