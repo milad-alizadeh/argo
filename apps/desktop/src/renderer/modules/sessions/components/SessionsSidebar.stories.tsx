@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionDelegation, sessionRosterRow } from '../session-fixtures'
 import type { SessionError, SessionsListed } from '../types'
 import { SessionsSidebarContent, type SessionsSidebarContentProps } from './SessionsSidebar'
 
@@ -12,7 +12,7 @@ const session = sessionRosterRow({
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
-  delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
+  delegations: [sessionDelegation({ id: 'interface-review', label: 'Interface review' })],
 }) satisfies SessionsListed['sessions'][number]
 
 const listed = {

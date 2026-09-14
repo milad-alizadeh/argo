@@ -14,7 +14,9 @@ export type Send = (
 
 // The draft/attachments state a Send needs, resolved and dispatched as either a queued Turn
 // (running) or the live Turn, then cleared only for what actually left the composer.
-async function performSend(input: {
+// Exported for direct testing: a queued Send must never reach onSend, since that is what begins
+// the Turn Marker (#2099) — a running Turn already owns it.
+export async function performSend(input: {
   draft: string
   attachments: ComposerAttachment[]
   markError: (ids: string[]) => void

@@ -32,6 +32,12 @@ async function waitForRoute(page: Page, route: string) {
   await page.waitForFunction((hash) => window.location.hash === hash, `#/sessions/${route}`)
 }
 
+// A "+" click opens a fresh composer (#2109): with a Project open, that composer already carries
+// an optimistic Session id, so the route past the click is that id, not the literal `new`.
+async function waitForNewSessionRoute(page: Page) {
+  await page.waitForFunction(() => /^#\/sessions\/(new|optimistic:)/.test(window.location.hash))
+}
+
 // Opening a Session is a click on its Roster row, the way a person opens one.
 export async function openSessionByClick(page: Page, sessionId: string) {
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
@@ -51,7 +57,7 @@ export async function openArchivedSessionByClick(page: Page, sessionId: string) 
 // The plus control above the Roster: the only way to the new Session composer.
 export async function openNewSessionByClick(page: Page) {
   await page.getByRole('button', { name: 'New Session' }).click()
-  await waitForRoute(page, 'new')
+  await waitForNewSessionRoute(page)
 }
 
 // No affordance reaches the Roster with nothing selected: a person lands there by launching, and
@@ -78,15 +84,19 @@ export async function rosterIds(page: Page): Promise<string[]> {
   return reply.sessions.map(({ id }: { id: string }) => id)
 }
 
-function readCreatedRow(page: Page, known: string[]) {
+function readCreatedRow(page: Page, known: string[], prompt: string) {
   return page.evaluate(
-    ({ selector, ids }) => {
+    ({ selector, ids, prompt }) => {
       const created = [...document.querySelectorAll<HTMLButtonElement>(selector)].filter(
         (row) => !ids.includes(row.dataset.sessionId ?? ''),
       )
       // Focused, not merely present: the row a person's gesture made is the one they are reading,
-      // and it has to be both before the CLI writes.
-      const first = created.find((row) => row.getAttribute('aria-current') === 'page')
+      // and it has to be both before the CLI writes. Its label starts as the optimistic row's own
+      // placeholder (#2109) and only carries the prompt once the real Session replaces it, so this
+      // waits for that rather than reading the placeholder as the answer.
+      const first = created.find(
+        (row) => row.getAttribute('aria-current') === 'page' && row.textContent?.includes(prompt),
+      )
       if (first === undefined) return null
       return {
         id: first.dataset.sessionId ?? '',
@@ -94,22 +104,22 @@ function readCreatedRow(page: Page, known: string[]) {
         newRows: created.length,
       }
     },
-    { selector: ROW, ids: known },
+    { selector: ROW, ids: known, prompt },
   )
 }
 
 async function waitForCreatedRow(
   page: Page,
   known: string[],
-  cliWrote: CreateRequest['cliWrote'],
+  request: CreateRequest,
 ): Promise<CreatedRow> {
   const deadline = Date.now() + ROW_TIMEOUT
   for (;;) {
-    const created = await readCreatedRow(page, known)
+    const created = await readCreatedRow(page, known, request.prompt)
     if (created !== null) return created
-    if (cliWrote !== undefined) {
+    if (request.cliWrote !== undefined) {
       assert.equal(
-        await cliWrote(),
+        await request.cliWrote(),
         false,
         'the CLI wrote before the new Session reached the Roster',
       )
@@ -131,11 +141,8 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await page.keyboard.type(request.prompt)
   await page.keyboard.press('Enter')
 
-  const created = await waitForCreatedRow(page, known, request.cliWrote)
+  const created = await waitForCreatedRow(page, known, request)
   // One gesture makes one Session: a second row is the duplicate-start bug this case exists for.
-  // The Session the gesture made is asserted again once its Feed lands, since a duplicate start
-  // reaches the Roster a moment behind the first row.
   assert.equal(created.newRows, 1)
-  assert.equal(created.label.includes(request.prompt), true, created.label)
   return created.id
 }

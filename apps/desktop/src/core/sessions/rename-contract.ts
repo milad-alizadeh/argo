@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
+import { sessionErrorSchema } from './session-error'
 
 function safeName(name: string): boolean {
   return [...name].every((character) => {
@@ -25,3 +26,6 @@ export const sessionRenamedSchema = z.strictObject({
   title: z.string().min(1),
 })
 export type SessionRenamed = z.infer<typeof sessionRenamedSchema>
+
+export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
+export type SessionRenameReply = z.infer<typeof sessionRenameReplySchema>

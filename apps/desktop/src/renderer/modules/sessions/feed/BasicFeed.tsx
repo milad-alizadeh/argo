@@ -1,69 +1,19 @@
-import { MessagesSquare, TriangleAlert } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '../../../components/ui/empty'
-import { Spinner } from '../../../components/ui/spinner'
-import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
-import { FeedDocument } from './FeedDocument'
+import type {
+  SessionError,
+  SessionEvidence,
+  SessionFeed,
+  SessionFeedRow,
+  SessionId,
+} from '../types'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
-import { useKeptDocuments } from './kept-documents'
-import { StalledFeed } from './StalledFeed'
+import { keptDocument } from './kept-document'
+import { Standing } from './Standing'
+import type { TurnMarkerView } from './turn-marker'
+import { useKeptDocuments } from './useKeptDocuments'
 
 import './feed.css'
-
-function Standing({
-  failure,
-  selected,
-  stalled,
-  posture,
-  onRetry,
-}: {
-  failure: SessionError | null
-  selected: boolean
-  stalled: boolean
-  posture: 'managed' | 'external' | null
-  onRetry: () => void
-}) {
-  if (failure !== null)
-    return (
-      <section
-        className="grid h-full place-items-center p-6"
-        data-state={sessionFailureState(failure.code)}
-      >
-        <Alert className="max-w-sm" variant="destructive">
-          <TriangleAlert aria-hidden="true" />
-          <AlertTitle>Unable to load Session</AlertTitle>
-          <AlertDescription>{failure.message}</AlertDescription>
-        </Alert>
-      </section>
-    )
-  if (!selected)
-    return (
-      <Empty className="h-full border-0" data-state="unselected">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <MessagesSquare aria-hidden="true" />
-          </EmptyMedia>
-          <EmptyTitle>No Session selected</EmptyTitle>
-          <EmptyDescription>Choose a Session from the Roster to read its history.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    )
-  if (stalled) return <StalledFeed posture={posture} onRetry={onRetry} />
-  return (
-    <section className="grid h-full place-items-center" data-state="loading">
-      <Spinner className="size-6" />
-    </section>
-  )
-}
 
 export function BasicFeed({
   feed,
@@ -77,8 +27,10 @@ export function BasicFeed({
   failure,
   onRetryFeed,
   isRunning,
+  optimisticRow = null,
   posture = null,
   selectedSessionId,
+  turnMarker = null,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -96,8 +48,10 @@ export function BasicFeed({
   failure: SessionError | null
   onRetryFeed: () => void
   isRunning: boolean
+  optimisticRow?: SessionFeedRow | null
   posture?: 'managed' | 'external' | null
   selectedSessionId: SessionId | null
+  turnMarker?: TurnMarkerView | null
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
@@ -118,29 +72,32 @@ export function BasicFeed({
     onRetryFeed()
   }, [onRetryFeed])
 
+  const shared = {
+    selectedSessionId,
+    facts: {
+      compactionStartedAt,
+      compactionPercentage,
+      compactionTokens,
+      handoffStartedAt,
+      handoffTo,
+      isRunning,
+      optimisticRow,
+      turnMarker,
+      posture,
+    },
+    activeEvidenceId,
+    failure,
+    onOpenSession,
+    onOpenEvidence,
+    onAnswerQuestion,
+    answeringQuestionId,
+    questionFailure,
+    stallTimeoutMs,
+  }
+
   return (
     <section aria-label="Session Feed" className="feed">
-      {ordered.map(([id, document]) => (
-        <FeedDocument
-          active={failure === null && id === selectedSessionId}
-          activeEvidenceId={activeEvidenceId}
-          compactionStartedAt={id === selectedSessionId ? compactionStartedAt : null}
-          compactionPercentage={id === selectedSessionId ? compactionPercentage : null}
-          compactionTokens={id === selectedSessionId ? compactionTokens : null}
-          handoffStartedAt={id === selectedSessionId ? handoffStartedAt : null}
-          handoffTo={id === selectedSessionId ? handoffTo : null}
-          onOpenSession={onOpenSession}
-          feed={document}
-          key={id}
-          onOpenEvidence={onOpenEvidence}
-          isRunning={isRunning && id === selectedSessionId}
-          posture={id === selectedSessionId ? posture : null}
-          onAnswerQuestion={onAnswerQuestion}
-          answeringQuestionId={answeringQuestionId}
-          questionFailure={questionFailure}
-          stallTimeoutMs={stallTimeoutMs}
-        />
-      ))}
+      {ordered.map(([id, document]) => keptDocument(id, document, shared))}
       {failure !== null || current === null ? (
         <Standing
           failure={failure}

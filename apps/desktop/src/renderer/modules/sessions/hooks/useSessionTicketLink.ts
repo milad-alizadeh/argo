@@ -1,0 +1,138 @@
+// Connecting or disconnecting the one Ticket a Session links to (CONTEXT.md L1 · Session →
+// Ticket, ADR-0017), and the rename that connecting can trigger. The link write and the rename
+// are two calls: a refused or skipped rename never undoes a successful link (issue #2134).
+
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { invalidateSessionRoster } from '../session-queries'
+import type { Session } from '../types'
+
+export type ConnectTicketInput = {
+  projectId: string
+  key: string
+  title: string
+  state: 'open' | 'closed'
+}
+
+// A Turn in progress owns the CLI's input; a rename must never compete with it (issue #2134).
+const TURN_IN_PROGRESS = new Set(['running', 'permission', 'asking'])
+
+export type ConnectOutcome = {
+  renamed: boolean
+  // Set only when the current title is `custom` and a reader has not yet said whether to
+  // replace it: the caller asks, then calls `connect` again with `confirmedRename: true`.
+  needsRenameConfirmation: boolean
+  renameFailure: string | null
+}
+
+type ArgoLike = {
+  connectSessionTicket: (typeof window.argo)['connectSessionTicket']
+  renameSession: (typeof window.argo)['renameSession']
+  disconnectSessionTicket: (typeof window.argo)['disconnectSessionTicket']
+}
+
+// Exported for direct testing: the connect/rename decision itself needs no React to prove.
+export async function connectTicket(request: {
+  argo: ArgoLike
+  session: Session
+  ticket: ConnectTicketInput
+  confirmedRename?: boolean
+}): Promise<{ outcome: ConnectOutcome; failure: string | null; invalidate: boolean }> {
+  const { argo, session, ticket, confirmedRename } = request
+  const source = session.title?.source ?? null
+  if (source === 'custom' && confirmedRename !== true) {
+    return {
+      outcome: { renamed: false, needsRenameConfirmation: true, renameFailure: null },
+      failure: null,
+      invalidate: false,
+    }
+  }
+  const reply = await argo.connectSessionTicket({ sessionId: session.id, ...ticket })
+  if (reply.type === 'session.error') {
+    return {
+      outcome: { renamed: false, needsRenameConfirmation: false, renameFailure: null },
+      failure: reply.message,
+      invalidate: false,
+    }
+  }
+  if (TURN_IN_PROGRESS.has(session.status)) {
+    return {
+      outcome: {
+        renamed: false,
+        needsRenameConfirmation: false,
+        renameFailure: 'Argo will not rename a Session while a Turn is running.',
+      },
+      failure: null,
+      invalidate: true,
+    }
+  }
+  const renameReply = await argo.renameSession({ sessionId: session.id, name: ticket.title })
+  if (renameReply.type === 'session.error') {
+    return {
+      outcome: {
+        renamed: false,
+        needsRenameConfirmation: false,
+        renameFailure: renameReply.message,
+      },
+      failure: null,
+      invalidate: true,
+    }
+  }
+  return {
+    outcome: { renamed: true, needsRenameConfirmation: false, renameFailure: null },
+    failure: null,
+    invalidate: true,
+  }
+}
+
+// Exported for direct testing, mirroring `connectTicket`.
+export async function disconnectTicket(
+  argo: ArgoLike,
+  sessionId: string,
+): Promise<{ failure: string | null; invalidate: boolean }> {
+  const reply = await argo.disconnectSessionTicket({ sessionId })
+  if (reply.type === 'session.error') return { failure: reply.message, invalidate: false }
+  return { failure: null, invalidate: true }
+}
+
+export function useSessionTicketLink() {
+  const client = useQueryClient()
+  const [pending, setPending] = useState(false)
+  const [failure, setFailure] = useState<string | null>(null)
+
+  async function connect(
+    session: Session,
+    ticket: ConnectTicketInput,
+    options: { confirmedRename?: boolean } = {},
+  ): Promise<ConnectOutcome> {
+    setPending(true)
+    setFailure(null)
+    try {
+      const result = await connectTicket({
+        argo: window.argo,
+        session,
+        ticket,
+        confirmedRename: options.confirmedRename,
+      })
+      if (result.failure !== null) setFailure(result.failure)
+      if (result.invalidate) await invalidateSessionRoster(client)
+      return result.outcome
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function disconnect(sessionId: string) {
+    setPending(true)
+    setFailure(null)
+    try {
+      const result = await disconnectTicket(window.argo, sessionId)
+      if (result.failure !== null) setFailure(result.failure)
+      if (result.invalidate) await invalidateSessionRoster(client)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return { connect, disconnect, pending, failure }
+}

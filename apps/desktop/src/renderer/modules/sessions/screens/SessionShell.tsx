@@ -3,8 +3,9 @@ import { type ReactNode, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { BasicFeed } from '../feed/BasicFeed'
+import type { TurnMarkerView } from '../feed/turn-marker'
 import type { useSessions } from '../hooks/useSessions'
-import type { SessionEvidence } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { useComposerFadeTop } from './useComposerFadeTop'
 
@@ -24,6 +25,9 @@ function ComposerFade({ top }: { top: number | null }) {
 
 type SessionShellProps = {
   composer: ReactNode
+  // The workspace header's own controls, drawn leading. A Session with no background work hands
+  // nothing here and the bar stays empty (#1582).
+  headerControls?: ReactNode
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
@@ -36,6 +40,8 @@ type SessionShellProps = {
   onOpenSession: (sessionId: string) => void
   isRunning: boolean
   posture?: 'managed' | 'external' | null
+  optimisticRow?: SessionFeedRow | null
+  turnMarker?: TurnMarkerView | null
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -48,6 +54,7 @@ type SessionShellProps = {
 
 export function SessionShell({
   composer,
+  headerControls = null,
   inspector,
   feed,
   feedError,
@@ -60,6 +67,8 @@ export function SessionShell({
   onOpenSession,
   isRunning,
   posture = null,
+  optimisticRow = null,
+  turnMarker = null,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -90,7 +99,8 @@ export function SessionShell({
             className="relative flex h-full min-h-0 flex-col"
             ref={workspaceElement}
           >
-            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
+            <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
+              {headerControls}
               <span className="flex-1" />
             </header>
             <section
@@ -110,6 +120,8 @@ export function SessionShell({
                 onRetryFeed={onRetryFeed}
                 isRunning={isRunning}
                 posture={posture}
+                optimisticRow={optimisticRow}
+                turnMarker={turnMarker}
                 selectedSessionId={selectedSessionId}
                 onOpenEvidence={onOpenEvidence}
                 onAnswerQuestion={onAnswerQuestion}

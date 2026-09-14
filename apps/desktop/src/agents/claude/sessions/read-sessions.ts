@@ -9,6 +9,8 @@ import type { LiveMessage } from '../drive/live-messages'
 import { discoverArchivedSessions, discoverSessions, readSessionFiles } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
+import { readShellOutput } from './shell-output'
+import { readDelegationChain, readDelegationTokens } from './subagents'
 
 async function completeCompactions(
   transcripts: string,
@@ -67,6 +69,12 @@ export function claudeSessionSource(roots: {
       }
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+    readShellOutput: async (sessionId, shellId) =>
+      readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
+    readDelegationFiles: async (sessionId, delegationId) =>
+      readDelegationChain(await readSessionFiles(roots.transcripts, sessionId), delegationId),
+    readDelegationUsage: async (sessionId) =>
+      readDelegationTokens(await readSessionFiles(roots.transcripts, sessionId)),
     projectFeed,
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,

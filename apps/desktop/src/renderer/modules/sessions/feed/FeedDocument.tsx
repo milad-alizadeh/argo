@@ -6,6 +6,8 @@ import { FeedRow } from './FeedRow'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
+import { TurnMarker } from './TurnMarker'
+import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
@@ -20,6 +22,7 @@ type FeedDocumentProps = {
   feed: SessionFeed
   isRunning: boolean
   posture: 'managed' | 'external' | null
+  turnMarker: TurnMarkerView | null
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
@@ -48,6 +51,28 @@ function handoffMarker(
   return null
 }
 
+// The hidden measuring pass draws every row with no interaction wired up: it only needs to match
+// the drawn layout's geometry, never to answer a click.
+function measuredRows(
+  feed: SessionFeed,
+  groups: Pick<ReturnType<typeof useToolGroups>, 'openToolGroups' | 'onOpenToolGroup'>,
+  props: Pick<FeedDocumentProps, 'activeEvidenceId' | 'onOpenEvidence'>,
+) {
+  return feed.rows.map((row) => (
+    <FeedRow
+      key={row.id}
+      activeEvidenceId={props.activeEvidenceId}
+      onOpenEvidence={props.onOpenEvidence}
+      onOpenToolGroup={groups.onOpenToolGroup}
+      openToolGroups={groups.openToolGroups}
+      onAnswerQuestion={() => {}}
+      answeringQuestionId={null}
+      questionFailure={() => null}
+      row={row}
+    />
+  ))
+}
+
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -62,6 +87,7 @@ export function FeedDocument({
   feed,
   isRunning,
   posture,
+  turnMarker,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -110,23 +136,18 @@ export function FeedDocument({
     >
       <div className="feed__column" ref={column}>
         <div aria-hidden="true" className="feed__measured" ref={measured}>
-          {feed.rows.map((row) => (
-            <FeedRow
-              key={row.id}
-              activeEvidenceId={activeEvidenceId}
-              onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={onOpenToolGroup}
-              openToolGroups={openToolGroups}
-              onAnswerQuestion={() => {}}
-              answeringQuestionId={null}
-              questionFailure={() => null}
-              row={row}
-            />
-          ))}
+          {measuredRows(
+            feed,
+            { openToolGroups, onOpenToolGroup },
+            { activeEvidenceId, onOpenEvidence },
+          )}
         </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
         {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}
+        {turnMarker === null ? null : (
+          <TurnMarker phase={turnMarker.phase} startedAt={turnMarker.startedAt} />
+        )}
       </div>
     </div>
   )

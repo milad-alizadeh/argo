@@ -5,6 +5,8 @@ import {
   sessionChooseAttachmentsReplySchema,
   sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
+  sessionDelegationUsageReplySchema,
+  sessionDelegationUsageRequestSchema,
   sessionFeedCancelRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
@@ -19,10 +21,14 @@ import {
   sessionRenameReplySchema,
   sessionRenameRequestSchema,
   sessionSendRequestSchema,
+  sessionShellOutputReplySchema,
+  sessionShellOutputRequestSchema,
   sessionStartReplySchema,
   sessionStartRequestSchema,
   sessionStatAttachmentsReplySchema,
   sessionStatAttachmentsRequestSchema,
+  sessionTicketConnectRequestSchema,
+  sessionTicketDisconnectRequestSchema,
 } from './contract'
 
 // One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
@@ -51,6 +57,18 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed:cancel',
     request: sessionFeedCancelRequestSchema,
     reply: sessionAcceptedReplySchema,
+  },
+  shellOutput: {
+    name: 'session.shell.output',
+    channel: 'argo:session:shell:output',
+    request: sessionShellOutputRequestSchema,
+    reply: sessionShellOutputReplySchema,
+  },
+  delegationUsage: {
+    name: 'session.delegation.usage',
+    channel: 'argo:session:delegation:usage',
+    request: sessionDelegationUsageRequestSchema,
+    reply: sessionDelegationUsageReplySchema,
   },
   rename: {
     name: 'session.rename',
@@ -117,5 +135,17 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:attachments:stat',
     request: sessionStatAttachmentsRequestSchema,
     reply: sessionStatAttachmentsReplySchema,
+  },
+  connectTicket: {
+    name: 'session.ticket.connect',
+    channel: 'argo:session:ticket:connect',
+    request: sessionTicketConnectRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  disconnectTicket: {
+    name: 'session.ticket.disconnect',
+    channel: 'argo:session:ticket:disconnect',
+    request: sessionTicketDisconnectRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
 } as const

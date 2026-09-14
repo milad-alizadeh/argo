@@ -1,0 +1,6 @@
+{
+  "agentType": "general-purpose",
+  "description": "find the callers",
+  "toolUseId": "call-task-1",
+  "spawnDepth": 1
+}

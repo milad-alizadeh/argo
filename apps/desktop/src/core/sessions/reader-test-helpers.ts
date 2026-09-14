@@ -5,6 +5,7 @@ import { appendFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
+import { mergeAppendedFeed } from './feed-contract'
 import type { createSessionReader } from './reader'
 
 export async function tempRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
@@ -83,6 +84,14 @@ export async function appendHalfCodexTranscript(line: TranscriptLine) {
   return () => appendFile(file, record.slice(cut))
 }
 
+// A whole line the CLI finished writing that is not a record: real corruption, not a torn read.
+export async function appendGarbledCodexLine({
+  root,
+  sessionId,
+}: Pick<TranscriptLine, 'root' | 'sessionId'>) {
+  await appendFile(path.join(codexDay(root), `${sessionId}.jsonl`), '{"type": garbled\n')
+}
+
 export function listing(requestId = 'list-1') {
   return { version: 1, type: 'session.list', requestId } as const
 }
@@ -92,7 +101,14 @@ export function feedRequest(
   requestId = 'feed-1',
   revision: string | null = null,
 ) {
-  return { version: 1, type: 'session.feed', requestId, sessionId, revision } as const
+  return {
+    version: 1,
+    type: 'session.feed',
+    requestId,
+    sessionId,
+    delegationId: null,
+    revision,
+  } as const
 }
 
 export async function listed(reader: ReturnType<typeof createSessionReader>, requestId?: string) {
@@ -106,4 +122,17 @@ export async function fed(
   request: ReturnType<typeof feedRequest>,
 ) {
   return sessionFeedReplySchema.parse(await reader.readSessionFeed(request))
+}
+
+// The renderer never sees `appended` on its own: it merges the reply against the rows it already
+// held for `previous`'s revision. Tests that only care what a poll draws use this rather than the
+// reply's own shape, which depends on how much of the last poll's projection froze.
+export function rowsOf(
+  reply: Awaited<ReturnType<typeof fed>>,
+  previous?: Awaited<ReturnType<typeof fed>>,
+) {
+  if (reply.type === 'session.feed.read') return reply.rows
+  if (reply.type !== 'session.feed.appended') return assert.fail(`unexpected reply: ${reply.type}`)
+  const cached = previous?.type === 'session.feed.read' ? previous : null
+  return mergeAppendedFeed(cached, reply).rows
 }

@@ -1,7 +1,28 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { hasRunningBackgroundWork } from './background-work'
-import type { SessionRosterRow } from './models'
+import type { SessionDelegation, SessionRosterRow, SessionShellCommand } from './models'
+
+const agent: SessionDelegation = {
+  id: 'agent',
+  label: null,
+  landed: false,
+  startedAt: null,
+  endedAt: null,
+}
+
+function shell(state: SessionShellCommand['state']): SessionShellCommand {
+  return {
+    id: 'shell',
+    command: 'bun test',
+    background: state !== 'running',
+    state,
+    startedAt: null,
+    endedAt: null,
+    outputPath: null,
+    result: null,
+  }
+}
 
 const session: SessionRosterRow = {
   id: 'session',
@@ -22,6 +43,7 @@ const session: SessionRosterRow = {
   delegations: [],
   shell: [],
   pullRequest: null,
+  ticket: null,
   archived: false,
   setup: { model: null, effort: null, mode: null },
 }
@@ -31,14 +53,14 @@ test('finds running background work only on a managed Session', () => {
   assert.equal(
     hasRunningBackgroundWork({
       ...session,
-      delegations: [{ id: 'agent', label: null, landed: false }],
+      delegations: [agent],
     }),
     true,
   )
   assert.equal(
     hasRunningBackgroundWork({
       ...session,
-      shell: [{ id: 'shell', command: 'bun test', background: false }],
+      shell: [shell('running')],
     }),
     true,
   )
@@ -46,7 +68,7 @@ test('finds running background work only on a managed Session', () => {
     hasRunningBackgroundWork({
       ...session,
       status: 'idle',
-      delegations: [{ id: 'agent', label: null, landed: false }],
+      delegations: [agent],
     }),
     false,
   )
@@ -54,8 +76,14 @@ test('finds running background work only on a managed Session', () => {
     hasRunningBackgroundWork({
       ...session,
       posture: 'external',
-      shell: [{ id: 'shell', command: 'bun test', background: false }],
+      shell: [shell('running')],
     }),
     false,
   )
+})
+
+// A background Shell stays in the Shell list after it ends, so the list is no longer the answer.
+test('reads a finished background Shell as no longer running', () => {
+  assert.equal(hasRunningBackgroundWork({ ...session, shell: [shell('completed')] }), false)
+  assert.equal(hasRunningBackgroundWork({ ...session, shell: [shell('failed')] }), false)
 })

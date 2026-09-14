@@ -6,6 +6,8 @@ import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveListRequest,
+  type SessionDelegationUsageReply,
+  type SessionDelegationUsageRequest,
   type SessionFeedCancelRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
@@ -13,6 +15,10 @@ import {
   type SessionListRequest,
   type SessionRenameReply,
   type SessionRenameRequest,
+  type SessionShellOutputReply,
+  type SessionShellOutputRequest,
+  type SessionTicketConnectRequest,
+  type SessionTicketDisconnectRequest,
   sessionError,
 } from './contract'
 import {
@@ -34,7 +40,11 @@ export type SessionReader = {
   archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
   cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
+  readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
+  readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
+  connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
+  disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
 }
 
@@ -80,7 +90,11 @@ export function attachSessionBridge(
       archiveList: (request, context) => context.reader.archiveList(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
+      shellOutput: (request, context) => context.reader.readShellOutput(request),
+      delegationUsage: (request, context) => context.reader.readDelegationUsage(request),
       rename: (request, context) => context.reader.renameSession(request),
+      connectTicket: (request, context) => context.reader.connectTicket(request),
+      disconnectTicket: (request, context) => context.reader.disconnectTicket(request),
       start: (request, context) => startSession(request, context.adapters),
       send: (request, context) => sendSession(request, ownerContext(context)),
       interrupt: (request, context) => interruptSession(request, ownerContext(context)),

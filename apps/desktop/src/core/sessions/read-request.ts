@@ -1,5 +1,5 @@
-// Shared by every reader request handler (#2025): the version check and the error code an fs
-// failure maps to. Split out so reader.ts and feed-handlers.ts both read it rather than copying.
+// What every Session read does before it reads: refuse a wire version this build does not speak,
+// and turn a filesystem failure into the contract's own error name.
 import { isRecord } from '../../boundary'
 
 export function versionFailure(value: unknown) {

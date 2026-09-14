@@ -162,8 +162,8 @@
   --size-icon-control: 16px;
   --size-control: 32px;
   --size-ticket-age-visible: 240px;
-  --size-session-inspector: 248px;
-  --size-session-inspector-min: 248px;
+  --size-session-inspector: 400px;
+  --size-session-inspector-min: 400px;
   --size-session-workspace-min: 360px;
   --spacing-shell-tight: 4px;
   --spacing-shell-icon: 6px;

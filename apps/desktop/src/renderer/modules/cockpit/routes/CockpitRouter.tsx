@@ -10,6 +10,7 @@ import { SessionsPage } from '../../sessions/pages/SessionsPage'
 import { SessionScreenView } from '../../sessions/screens/SessionScreenView'
 import { TicketsSidebar } from '../../tickets/components/TicketsSidebar'
 import { TicketsPage } from '../../tickets/pages/TicketsPage'
+import { TicketsScreenView } from '../../tickets/screens/TicketsScreenView'
 import { CockpitShell } from '../components/CockpitShell'
 import { ProjectSwitcher } from '../components/ProjectSwitcher'
 import { useCommands } from '../hooks/useCommands'
@@ -64,6 +65,10 @@ export const cockpitRouter = createHashRouter([
         path: '/tickets',
         handle: { sidebar: sidebarByPage.tickets } satisfies CockpitRouteHandle,
         element: <TicketsPage />,
+        children: [
+          { index: true, element: <TicketsScreenView /> },
+          { path: ':ticketKey', element: <TicketsScreenView /> },
+        ],
       },
       {
         path: '/atlas',
