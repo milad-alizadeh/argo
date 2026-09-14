@@ -24,6 +24,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
+import { proveSessionDiagram } from './session-diagram-case'
 import {
   appendProse,
   growCodexTranscript,
@@ -111,6 +112,8 @@ try {
       append: appendProse,
     }),
   )
+  const diagramFixture = { transcripts: fixture.claudeTranscripts, append: appendProse }
+  await ran(['session-diagram'], () => proveSessionDiagram(page, diagramFixture))
   await ran(['session-plan'], () =>
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
@@ -143,14 +146,7 @@ try {
     })
   })
   await assertShippedFusesIntact()
-  console.log(
-    JSON.stringify({
-      ok: true,
-      packaged: true,
-      cases,
-      formatted,
-    }),
-  )
+  console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
 } finally {
   try {
     if (application) await application.close()

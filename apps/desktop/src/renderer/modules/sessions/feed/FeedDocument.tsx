@@ -8,7 +8,7 @@ import {
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { CompactionMarker } from './CompactionMarker'
 import { FeedRow } from './FeedRow'
@@ -23,7 +23,7 @@ type FeedDocumentProps = {
   compactionTokens: string | null
   feed: SessionFeed
   isRunning: boolean
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
 }
 type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 

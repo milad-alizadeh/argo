@@ -12,7 +12,7 @@ import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
-import type { SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -25,7 +25,7 @@ type SessionShellProps = {
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
 }
 
 const SESSION_SPLIT = {
@@ -45,7 +45,7 @@ export function SessionScreenView() {
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
-  const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
+  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const harness: HarnessControl =
     selectedSessionId === null
       ? { cli: lastHarness, onChange: chooseHarness }

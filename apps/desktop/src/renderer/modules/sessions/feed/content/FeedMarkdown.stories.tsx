@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { roleColors } from './appearanceProbe'
 import { FeedMarkdown } from './FeedMarkdown'
 import { RICH_MARKDOWN, SAMPLE_PICTURE } from './feedSamples'
@@ -105,6 +105,38 @@ export const Diagram: Story = {
     const diagram = canvas.getByRole('figure', { name: 'Mermaid diagram' })
     await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
     await expect(diagram).toHaveTextContent('Session')
+  },
+}
+
+// Expanding a fence's diagram hands the caller the same evidence shape a tool call would.
+export const DiagramOpensEvidence: Story = {
+  args: { text: DIAGRAM_MARKDOWN, rowId: 'assistant-1', onOpenEvidence: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull(), {
+      timeout: 5000,
+    })
+    await userEvent.click(canvas.getByRole('button', { name: 'Expand diagram in inspector' }))
+    await expect(args.onOpenEvidence).toHaveBeenCalledTimes(1)
+    const evidence = (args.onOpenEvidence as ReturnType<typeof fn>).mock.calls[0]?.[0]
+    await expect(evidence).toMatchObject({
+      shape: 'diagram',
+      source: expect.stringContaining('Backlog'),
+    })
+  },
+}
+
+// The fence highlights when its id matches the currently open evidence. The fence's id is
+// `${rowId}:diagram:${offset}`, and the diagram is the first character of this fixture, so its
+// offset is 0.
+export const DiagramActive: Story = {
+  args: { text: DIAGRAM_MARKDOWN, rowId: 'assistant-1', activeEvidenceId: 'assistant-1:diagram:0' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull(), {
+      timeout: 5000,
+    })
+    const figure = canvasElement.querySelector('figure')
+    await expect(figure).toHaveAttribute('aria-current', 'true')
   },
 }
 
