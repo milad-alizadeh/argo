@@ -144,6 +144,36 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const NarrowSidebarWithLongSessionName: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-44">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const sidebar = within(canvasElement).getByLabelText('Sessions sidebar')
+    const name = within(sidebar).getByText(/Keep the Sessions sidebar readable/)
+    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
+    await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+  },
+}
+
 // A title that fell back to the opening prompt draws its skill mention as a badge, not the raw
 // markdown-link brackets (#2049).
 export const SkillMentionTitle: Story = {

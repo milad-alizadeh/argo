@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { STATUSES } from './status-fixtures'
-import { TicketBar, TicketDetail } from './TicketDetail'
+import { TicketDetail } from './TicketDetail'
 import { engine, prototype, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
@@ -11,12 +11,8 @@ const meta: Meta<typeof TicketDetail> = {
   component: TicketDetail,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    // The bar stands in for the inspector's, which holds the Ticket's key.
-    (Story, { args }) => (
+    (Story) => (
       <aside className="flex h-dvh w-(--size-ticket-inspector) flex-col bg-sidebar">
-        <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
-          <TicketBar provider={args.provider ?? 'github'} ticket={args.ticket ?? null} />
-        </header>
         <Story />
       </aside>
     ),
@@ -40,13 +36,33 @@ export const Default: Story = {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     // A linked Ticket's state is an icon, and its word stays in the text.
     const children = within(article).getByRole('region', { name: 'Children · 1 of 2 closed' })
+    await expect(
+      within(children)
+        .getByRole('heading', { name: 'Children · 1 of 2 closed' })
+        .querySelector('svg'),
+    ).not.toBeNull()
+    const dependencies = within(article).getByRole('region', { name: 'Blocked by · 2' })
+    const blockedIcon = within(dependencies)
+      .getByRole('heading', { name: 'Blocked by · 2' })
+      .querySelector('svg')
+    if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
+    await expect(blockedIcon).toHaveClass('text-danger')
     await expect(children).toHaveTextContent('ClosedTicket read path#388')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
     await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))
     await expect(args.onSelect).toHaveBeenCalledWith('#609')
-    await expect(
-      within(canvasElement).getByRole('link', { name: 'Open #607 in GitHub' }),
-    ).toHaveAttribute('href', 'https://github.com/octocat/hello-world/issues/607')
+    const ticketLink = within(article).getByRole('link', { name: 'Open #607 in GitHub' })
+    await expect(ticketLink).toHaveAttribute(
+      'href',
+      'https://github.com/octocat/hello-world/issues/607',
+    )
+    await expect(ticketLink).not.toHaveClass('group/button')
+    const title = within(article).getByRole('heading', { name: wayfinder.title })
+    const linkBounds = ticketLink.getBoundingClientRect()
+    const titleBounds = title.getBoundingClientRect()
+    await expect(linkBounds.top).toBeGreaterThanOrEqual(titleBounds.bottom)
+    await expect(Math.abs(linkBounds.left - titleBounds.left)).toBeLessThanOrEqual(1)
+    await expect(linkBounds.width).toBeLessThan(titleBounds.width)
     // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
@@ -85,7 +101,7 @@ export const Linear: Story = {
     await expect(within(article).queryByText('State')).toBeNull()
     await expect(within(article).getByRole('button', { name: 'Status: In Review' })).toBeVisible()
     await expect(
-      within(canvasElement).getByRole('link', { name: 'Open ENG-12 in Linear' }),
+      within(article).getByRole('link', { name: 'Open ENG-12 in Linear' }),
     ).toHaveAttribute('href', 'https://linear.app/analytical/issue/ENG-12')
     await expect(within(article).getByRole('region', { name: 'Blocked by · 1' })).toHaveTextContent(
       'ClosedStore the refresh tokenENG-9',
