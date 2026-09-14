@@ -2,16 +2,19 @@
 // fixtures/fake-codex-app-server.ts stands in for `codex app-server`, wired through the real
 // CodexChannel transport rather than an in-memory fake.
 import { spawn } from 'node:child_process'
+import { chmod, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
+import type { CodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 
 const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', import.meta.url))
 
-export function driverBackedByFixture() {
+export function driverBackedByFixture(options?: { ownership?: CodexOwnershipLedger }) {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
     now: () => new Date(),
+    ownership: options?.ownership,
     openChannel: (executable, options) => {
       const child = spawn(executable, [fixture], { cwd: options.cwd, env: options.env })
       child.stderr.on('data', () => {})
@@ -30,4 +33,14 @@ export function driverBackedByFixture() {
 
 export async function ownerCliFor() {
   return 'codex'
+}
+
+export async function writeFakeCodex(root: string) {
+  const executable = `${root}/codex`
+  await writeFile(
+    executable,
+    `#!/bin/sh\nexec "${process.execPath}" --no-warnings "${fixture}" "$@"\n`,
+  )
+  await chmod(executable, 0o755)
+  return executable
 }

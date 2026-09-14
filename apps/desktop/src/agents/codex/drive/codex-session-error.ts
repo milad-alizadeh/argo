@@ -1,7 +1,7 @@
-import { driveSessionError } from '@/core/sessions/session-error'
+import { type DriveSessionErrorCode, driveSessionError } from '@/core/sessions/session-error'
 
 export class CodexSessionDriverError extends Error {
-  constructor(readonly code: 'cli-unavailable' | 'launch-failed') {
+  constructor(readonly code: DriveSessionErrorCode) {
     super(driveSessionError(code, 'codex', null).message)
   }
 }

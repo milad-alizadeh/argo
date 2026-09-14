@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
-import type { CodexSessionDriver } from './codex-session-driver'
+import type { CodexSessionDrive } from './codex-session-driver'
 import { CodexSessionDriverError } from './codex-session-error'
 
 // Codex declares no Turn setup yet (#1885 is out of scope): any value the composer sends is
@@ -20,7 +20,7 @@ function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailur
   return { error: fallback }
 }
 
-export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriveAdapter {
+export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
   return {
     cli: 'codex',
     turnSetupSchema: codexTurnSetupSchema,

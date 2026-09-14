@@ -1,8 +1,11 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import process from 'node:process'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
 import { openCodexChannel } from './codex-channel'
 import { createCodexSessionDriver } from './codex-session-driver'
+import { createCodexOwnershipLedger, isProcessAlive } from './ownership-ledger'
 
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong
@@ -18,10 +21,15 @@ function spawnCodex(
   })
 }
 
-export function createSystemCodexSessionDriver() {
+export function createSystemCodexSessionDriver(paths: { executable?: string; ownership: string }) {
   return createCodexSessionDriver({
-    findExecutable: () => findExecutableOnLoginShellPath('codex'),
+    findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
     now: () => new Date(),
+    ownership: createCodexOwnershipLedger({
+      path: paths.ownership,
+      owner: { pid: process.pid, registry: randomUUID() },
+      isAlive: isProcessAlive,
+    }),
     openChannel: (executable, options) => {
       const child = spawnCodex(executable, options)
       // `codex app-server` prints its own diagnostics here; kept in the log rather than thrown
