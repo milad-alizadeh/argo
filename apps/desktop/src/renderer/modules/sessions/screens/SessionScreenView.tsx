@@ -10,7 +10,7 @@ import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
 import { useSelectedSession } from './useSelectedSession'
@@ -33,7 +33,7 @@ function useSessionScreenModel() {
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
-  const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
+  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,

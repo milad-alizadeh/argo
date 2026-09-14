@@ -4,7 +4,7 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { useSessions } from '../hooks/useSessions'
-import type { SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { useComposerFadeTop } from './useComposerFadeTop'
 
@@ -21,7 +21,7 @@ type SessionShellProps = {
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
