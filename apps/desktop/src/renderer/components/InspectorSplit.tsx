@@ -144,7 +144,9 @@ export function InspectorSplit(props: InspectorSplitProps) {
           id={`${id}-inspector`}
           collapsible
           collapsedSize={0}
-          defaultSize={defaultCollapsed ? 0 : (defaultInspectorSize ?? readCssSize(sizes.inspector))}
+          defaultSize={
+            defaultCollapsed ? 0 : (defaultInspectorSize ?? readCssSize(sizes.inspector))
+          }
           groupResizeBehavior="preserve-pixel-size"
           minSize={readCssSize(sizes.inspectorMin)}
           panelRef={panels.inspectorPanel}
