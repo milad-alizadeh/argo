@@ -1,5 +1,9 @@
+import {
+  CODEX_OPENING_SETUP,
+  type CodexTurnSetup,
+  codexTurnSettings,
+} from '@/core/sessions/codex-contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { CODEX_OPENING_SETUP, type CodexTurnSetup, codexTurnSettings } from '@/core/sessions/codex-contract'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'
@@ -29,7 +33,10 @@ export type CodexSessionDriver = {
   close: () => void
 }
 
-export type CodexSessionDrive = Pick<CodexSessionDriver, 'start' | 'send' | 'interrupt' | 'rename'>
+export type CodexSessionDrive = Pick<
+  CodexSessionDriver,
+  'start' | 'send' | 'interrupt' | 'rename' | 'roster' | 'liveMessages' | 'close'
+>
 
 async function beginSession(options: {
   driver: ManagedSessionOptions
@@ -50,7 +57,13 @@ async function beginSession(options: {
       sessionId,
       sessions,
     })
-    await startTurn({ channel, prompt: request.prompt, sessionId, sessions, setup: request.setup ?? CODEX_OPENING_SETUP })
+    await startTurn({
+      channel,
+      prompt: request.prompt,
+      sessionId,
+      sessions,
+      setup: request.setup ?? CODEX_OPENING_SETUP,
+    })
     return sessionId
   } catch (error) {
     channel.close()
@@ -70,12 +83,16 @@ async function startTurn(options: {
   prompt: string
   setup: CodexTurnSetup
 }) {
-  const { channel, prompt, sessionId, sessions } = options
+  const { channel, prompt, sessionId, sessions, setup } = options
   const previous = sessions.get(sessionId)
   previous?.messages.keepOnly(previous.turnId)
   const started = await channel.request(
     'turn/start',
-    { threadId: sessionId, input: [{ type: 'text', text: prompt, text_elements: [] }], ...codexTurnSettings(setup) },
+    {
+      threadId: sessionId,
+      input: [{ type: 'text', text: prompt, text_elements: [] }],
+      ...codexTurnSettings(setup),
+    },
     readStartedTurn,
   )
   const session = sessions.get(sessionId)
@@ -92,7 +109,13 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     start: (request) => beginSession({ driver: options, renameWaiters, request, sessions }),
     async send(sessionId, text, setup) {
       const session = await channelFor(sessionId)
-      await startTurn({ channel: session.channel, prompt: text, sessionId, sessions, setup: setup ?? CODEX_OPENING_SETUP })
+      await startTurn({
+        channel: session.channel,
+        prompt: text,
+        sessionId,
+        sessions,
+        setup: setup ?? CODEX_OPENING_SETUP,
+      })
     },
     async interrupt(sessionId) {
       const session = held(sessionId)

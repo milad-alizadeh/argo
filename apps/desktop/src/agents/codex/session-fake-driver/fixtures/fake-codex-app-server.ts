@@ -38,6 +38,18 @@ function request(line: string) {
   return JSON.parse(line) as { id?: unknown; method?: string; params?: Record<string, unknown> }
 }
 
+function completeTurn(threadId: unknown, turnId: string, text: string) {
+  const status = text.includes('FAIL') ? 'failed' : 'completed'
+  send({
+    method: 'turn/completed',
+    params: { threadId, turn: { id: turnId, status, error: null } },
+  })
+  send({
+    method: 'thread/status/changed',
+    params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
+  })
+}
+
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
   const message = request(line)
@@ -71,17 +83,7 @@ lines.on('line', (line) => {
         method: 'thread/status/changed',
         params: { threadId, status: { type: 'active', activeFlags: [] } },
       })
-      setTimeout(() => {
-        const status = text.includes('FAIL') ? 'failed' : 'completed'
-        send({
-          method: 'turn/completed',
-          params: { threadId, turn: { id: turnId, status, error: null } },
-        })
-        send({
-          method: 'thread/status/changed',
-          params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
-        })
-      }, 10)
+      setTimeout(() => completeTurn(threadId, turnId, text), 10)
       return
     }
     case 'turn/interrupt':
