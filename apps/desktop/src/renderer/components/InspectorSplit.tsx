@@ -19,6 +19,7 @@ export type InspectorSplitProps = {
   // What the inspector's top bar holds on the left, beside the toggles.
   bar?: ReactNode
   sizes: InspectorSizes
+  defaultInspectorSize?: string
   // A change of this value opens a collapsed inspector, as choosing something to inspect does.
   reveal?: unknown
 }
@@ -107,7 +108,7 @@ function InspectorToggles({ noun, state, onToggle, onToggleExpanded }: TogglesPr
 
 // A workspace beside a resizable inspector that collapses to nothing or expands over the workspace.
 export function InspectorSplit(props: InspectorSplitProps) {
-  const { noun, workspace, inspector, bar, sizes, reveal } = props
+  const { noun, workspace, inspector, bar, sizes, defaultInspectorSize, reveal } = props
   const panels = useInspectorPanels(sizes, reveal)
   const id = noun.toLowerCase()
   return (
@@ -133,7 +134,7 @@ export function InspectorSplit(props: InspectorSplitProps) {
           id={`${id}-inspector`}
           collapsible
           collapsedSize={0}
-          defaultSize={readCssSize(sizes.inspector)}
+          defaultSize={defaultInspectorSize ?? readCssSize(sizes.inspector)}
           groupResizeBehavior="preserve-pixel-size"
           minSize={readCssSize(sizes.inspectorMin)}
           panelRef={panels.inspectorPanel}
