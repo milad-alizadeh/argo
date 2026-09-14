@@ -1,5 +1,6 @@
 import { ArrowUp, Plus, Square } from 'lucide-react'
 import type { Ref } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../../components/ui/button'
 import { InputGroupButton } from '../../../components/ui/input-group'
@@ -9,9 +10,11 @@ import { ModeMenu } from './ModeMenu'
 import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
+  const { t } = useTranslation('sessions')
+
   return (
     <InputGroupButton
-      aria-label="Add context"
+      aria-label={t('composer.addContext')}
       onClick={onOpen}
       size="icon-sm"
       type="button"
