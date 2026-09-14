@@ -5,6 +5,7 @@ import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { CodexOwnershipLedger } from './ownership-ledger'
+import type { PendingCodexQuestion } from './question-protocol'
 import { codexNotificationRecorder } from './record-notification'
 
 export type ManagedSession = {
@@ -16,6 +17,7 @@ export type ManagedSession = {
   status: SessionRosterRow['status']
   messages: LiveMessages
   title?: { text: string; source: 'custom' }
+  pendingQuestion: PendingCodexQuestion | null
 }
 
 export type ManagedSessionOptions = {
@@ -26,6 +28,7 @@ export type ManagedSessionOptions = {
     options: { cwd: string; env: NodeJS.ProcessEnv },
   ) => CodexChannel
   ownership?: CodexOwnershipLedger
+  resumeTarget: (sessionId: string) => Promise<{ cwd: string } | null>
 }
 
 export async function openManagedChannel(options: ManagedSessionOptions, cwd: string) {
@@ -71,8 +74,9 @@ export function rememberManagedSession(options: {
     turnId: null,
     status: 'running',
     messages,
+    pendingQuestion: null,
   })
-  driver.ownership?.bind(sessionId, cwd)
+  driver.ownership?.bind(sessionId)
   channel.onExit(() => {
     const session = sessions.get(sessionId)
     if (session) session.status = 'ended'

@@ -61,7 +61,9 @@ export type TranscriptRecord =
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // `subagent` is Codex-only: true when the thread was spawned by another agent rather than
   // opened by a person, so discovery can drop the whole file rather than name it by its uuid.
-  | { kind: 'trace'; uuid: string; subagent?: boolean }
+  // `cwd` is Codex-only too: `session_meta` is the only record naming the folder a resume needs,
+  // since every codex message record carries none (#2092).
+  | { kind: 'trace'; uuid: string; subagent?: boolean; cwd?: string | null }
   // The CLI's `pr-link` record: a pull request this Session opened or was pointed at.
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   // The CLI's `compact_boundary` system record: the point where history was condensed.

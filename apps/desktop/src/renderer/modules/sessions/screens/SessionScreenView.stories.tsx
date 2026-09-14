@@ -151,6 +151,7 @@ function ReviewScreen() {
         }
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
+        onOpenSession={() => {}}
         onAnswerQuestion={() => {}}
         answeringQuestionId={null}
         questionFailure={() => null}

@@ -8,6 +8,10 @@ void i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
   lng: 'en',
+  // `init` resolves a tick late, and until it does `useTranslation` suspends, which reads in a
+  // test as a component suspending inside an unawaited `act`. Every resource is bundled here, so
+  // there is nothing to wait for.
+  react: { useSuspense: false },
   resources: { en: { sessions } },
 })
 

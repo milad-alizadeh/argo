@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '../../projects/hooks/useProjects'
 import type { WorkSelection } from '../components/SessionInspector'
 import { SessionInspector } from '../components/SessionInspector'
-import { SessionComposerArea } from '../components/SessionScreenDetails'
+import { SessionComposerArea, SessionHandoffFacts } from '../components/SessionScreenDetails'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
@@ -12,7 +12,7 @@ import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useDelegationUsage, useShellOutput } from '../hooks/useSessionWork'
 import { useComposerStore } from '../state/useComposerStore'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasBackgroundWork, sessionHasWork } from './sessionScreenState'
 import { useSelectedSession } from './useSelectedSession'
@@ -43,7 +43,7 @@ function useSessionScreenModel() {
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
-  const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
+  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,
@@ -69,6 +69,8 @@ function useSessionScreenModel() {
     selectedSessionId,
     feed,
     feedError,
+    roster,
+    navigate,
     session,
     evidence,
     setEvidence,
@@ -87,7 +89,7 @@ function useSessionScreenModel() {
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { composer, evidence, feed, feedError, harness, permission, question, session } = model
-  const { selectedSessionId, setEvidence } = model
+  const { navigate, roster, selectedSessionId, setEvidence } = model
   const hasSessionWork = sessionHasWork(session)
   return (
     <SessionShell
@@ -96,6 +98,9 @@ export function SessionScreenView() {
       compactionStartedAt={session?.compactionStartedAt ?? null}
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
+      handoffStartedAt={session?.handoffStartedAt ?? null}
+      handoffTo={session?.handoffTo ?? null}
+      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
@@ -118,6 +123,7 @@ export function SessionScreenView() {
         <SessionInspector
           delegationTokens={model.delegationTokens}
           evidence={evidence}
+          handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
           onPick={model.setPicked}
           selectedSessionId={selectedSessionId}
           session={session}

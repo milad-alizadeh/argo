@@ -30,29 +30,25 @@ test('finds nothing to resume for a Session with no transcript', async (context)
   assert.equal(await claudeResumeTarget(`${root}/absent`, 'resumeParent'), null)
 })
 
-test('reads a Session Argo held before a restart as orphaned, and every other as external', async (context) => {
+test('reads a Session Argo held before a restart as external, same as every other', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
-  const reader = createClaudeSessionReader({
-    transcripts: root,
-    orphans: () => new Set(['resumeParent']),
-  })
+  const reader = createClaudeSessionReader({ transcripts: root })
 
   const roster = await rosterOf(reader)
 
   assert.deepEqual(roster.map(({ id, posture }) => [id, posture]).sort(), [
     ['externalBasic', 'external'],
-    ['resumeParent', 'orphaned'],
+    ['resumeParent', 'external'],
   ])
 })
 
-test('reads a Session this window drives as managed, not orphaned', async (context) => {
+test('reads a Session this window drives as managed, not external', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild'])
   const [row] = await rosterOf(createClaudeSessionReader({ transcripts: root }))
   assert.ok(row)
   const driven: SessionRosterRow = { ...row, posture: 'managed' }
   const reader = createClaudeSessionReader({
     transcripts: root,
-    orphans: () => new Set([row.id]),
     managedSessions: () => [driven],
   })
 

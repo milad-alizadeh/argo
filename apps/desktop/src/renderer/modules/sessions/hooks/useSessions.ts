@@ -29,6 +29,8 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
   return ordered
 }
 
+export type SessionRoster = SessionsListed | null
+
 // `delegationId` names the Subagent whose Feed is being read, or null for the Session's own.
 export function useSessions(
   selectedSessionId: SessionId | null,

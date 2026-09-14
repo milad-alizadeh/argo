@@ -24,7 +24,7 @@ export const ROSTER_MOVES = {
   last: 'roster.last',
 } as const
 
-// Fires only while the composer holds focus, so Enter stays a new line (#1999).
+// Fires only while the composer holds focus, so Enter elsewhere is untouched (#2103).
 export const SEND_MESSAGE_COMMAND = 'composer.send'
 
 // The channel a menu item's command travels on, declared here with the table it comes from.
@@ -53,7 +53,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { command: ROSTER_MOVES.previous, label: 'Previous Session', chord: 'ArrowUp', scope: 'element' },
   { command: ROSTER_MOVES.first, label: 'First Session', chord: 'Home', scope: 'element' },
   { command: ROSTER_MOVES.last, label: 'Last Session', chord: 'End', scope: 'element' },
-  { command: SEND_MESSAGE_COMMAND, label: 'Send message', chord: 'Shift+Enter', scope: 'element' },
+  { command: SEND_MESSAGE_COMMAND, label: 'Send message', chord: 'Enter', scope: 'element' },
 ]
 
 // The template is plain data so that the table's rule can be proved without Electron. `src/menu.ts`

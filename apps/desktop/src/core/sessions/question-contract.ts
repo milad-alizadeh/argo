@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import { claudeQuestionAnswerSchema } from './claude-contract'
+import { questionAnswerSchema } from './question'
 
 // A pending question is answered rather than read: it already reaches the renderer through the
 // Feed's own `ask` row (tool-feed.ts), sourced off the same transcript every posture reads. There
@@ -13,6 +13,6 @@ export const sessionQuestionDecisionRequestSchema = z.strictObject({
   // The `AskUserQuestion` tool call id the Feed's `ask` row carries, so a decision cannot answer
   // a question this Session has already moved past.
   questionId: identifierSchema,
-  answers: z.array(claudeQuestionAnswerSchema).min(1),
+  answers: z.array(questionAnswerSchema).min(1),
 })
 export type SessionQuestionDecisionRequest = z.infer<typeof sessionQuestionDecisionRequestSchema>

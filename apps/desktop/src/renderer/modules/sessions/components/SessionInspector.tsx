@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react'
 import type { SessionShellCommand } from '@/core/sessions/models'
-import type { Session, SessionFeedRow } from '../types'
+import type { Session, SessionEvidence } from '../types'
 import { SessionEvidenceInspector } from './SessionEvidenceInspector'
 import { SessionShellInspector } from './SessionShellInspector'
 import { SessionWorkInspector } from './SessionWorkInspector'
@@ -18,6 +19,7 @@ export type WorkSelection = {
 export function SessionInspector({
   delegationTokens,
   evidence,
+  handoff,
   onPick,
   session,
   selectedSessionId,
@@ -26,7 +28,9 @@ export function SessionInspector({
   work,
 }: {
   delegationTokens: Record<string, number | null>
-  evidence: Extract<SessionFeedRow, { shape: 'tool' }> | null
+  evidence: SessionEvidence | null
+  // The Sessions this one was handed off to or from, drawn under the rail they belong beside.
+  handoff: ReactNode
   onPick: (selection: WorkSelection) => void
   session: Session | null
   selectedSessionId: string | null
@@ -46,16 +50,19 @@ export function SessionInspector({
   }
   if (session === null) return null
   return (
-    <SessionWorkInspector
-      delegations={session.delegations}
-      shell={session.shell}
-      delegationTokens={delegationTokens}
-      selectedDelegationId={work.delegationId}
-      onSelectDelegation={(delegationId) =>
-        onPick({ sessionId: selectedSessionId, delegationId, shellId: null })
-      }
-      selectedShellId={work.shellId}
-      onSelectShell={(shellId) => onPick({ ...work, sessionId: selectedSessionId, shellId })}
-    />
+    <>
+      <SessionWorkInspector
+        delegations={session.delegations}
+        shell={session.shell}
+        delegationTokens={delegationTokens}
+        selectedDelegationId={work.delegationId}
+        onSelectDelegation={(delegationId) =>
+          onPick({ sessionId: selectedSessionId, delegationId, shellId: null })
+        }
+        selectedShellId={work.shellId}
+        onSelectShell={(shellId) => onPick({ ...work, sessionId: selectedSessionId, shellId })}
+      />
+      {handoff}
+    </>
   )
 }

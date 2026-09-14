@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 
 import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './contract'
-import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
+import { feedReply, type HeldFeed, keepFeed, stableChain, unchangedReply } from './feed-cache'
 import type { SessionSource } from './session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
@@ -36,17 +36,20 @@ export async function readOwnedFeed(
 ): Promise<SessionFeedReply> {
   const { source, feeds, managed, key } = context
   const held = feeds.get(key)
-  const cached = await cachedReply(value, held)
-  if (cached !== null) {
-    if (held !== undefined) keepFeed(feeds, key, held)
-    return cached
-  }
+  // The chain a resume belongs to can gain a file the held record never knew about (a Session
+  // Argo never started, resumed for the first time): the file the held record already tracks
+  // never changes, so statting only those paths would call this Feed unchanged forever. Deriving
+  // the chain fresh every read, before trusting the cache, is what catches a new member.
   const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
   if (stable === null) {
     if (managed) return unwrittenFeed(value)
     return sessionError('missing-session', value.requestId)
   }
   const { chain, stamps } = stable
+  if (held !== undefined && held.stamps === stamps) {
+    keepFeed(feeds, key, held)
+    return value.revision === held.revision ? unchangedReply(value, held) : feedReply(value, held)
+  }
   const rows = source.projectFeed(chain)
   const revision = feedRevision(chain.id, stamps)
   const next = {

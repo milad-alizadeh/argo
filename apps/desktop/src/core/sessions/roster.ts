@@ -22,11 +22,9 @@ import { readExternalStatus } from './status'
 import type { TranscriptMessage } from './transcript'
 
 export type { RosterRow, SessionTitle }
-// The `managed | external` axis with `orphaned`, its third posture, beside it (CONTEXT.md L2).
-// This slice discovers Sessions from transcripts alone: it owns no PTY and reads no ownership
-// record, so every row it projects is `external`. Telling `orphaned` from `external` needs the
-// durable record of past ownership that a managed slice writes, and inventing one here would be
-// a false DIRECT.
+// The `managed | external` axis (CONTEXT.md L2). This slice discovers Sessions from transcripts
+// alone: it owns no PTY, so every row it projects is `external`. Whether Argo currently holds a
+// live channel to that Session is a fact only the managed slice's ownership ledger knows.
 export { SESSION_POSTURES, TITLE_SOURCES }
 
 // A subagent's records are dropped here rather than read as the Session's own. Its turn ends when
