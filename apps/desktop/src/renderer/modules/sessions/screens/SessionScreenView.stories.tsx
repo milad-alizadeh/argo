@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
-
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
+import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
-import { SessionWorkInspector } from '../components/SessionScreenDetails'
+import { SessionInspector } from '../components/SessionInspector'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
+import { SessionWorkButtons } from '../components/SessionWorkButtons'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
 import { SessionScreenView } from './SessionScreenView'
 import { SessionShell } from './SessionShell'
@@ -32,8 +33,14 @@ const SESSION_ROSTER = [
         { content: 'Record the visual review', position: 2, status: 'pending' },
       ],
     },
-    delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
-    shell: [{ id: 'quality', command: 'bun run quality', background: false }],
+    delegations: [
+      sessionDelegation({
+        id: 'interface-review',
+        label: 'Interface review',
+        startedAt: '2026-09-13T15:44:00Z',
+      }),
+    ],
+    shell: [sessionShellCommand({ id: 'quality', command: 'bun run quality' })],
     pullRequest: { number: 1846, url: 'https://example.com/pull/1846', repository: 'argo' },
     contextTokens: 54_000,
     spentTokens: 11_200,
@@ -97,29 +104,68 @@ function feedFor(sessionId: string) {
   } satisfies SessionFeed
 }
 
+function ReviewSidebar({
+  onSelect,
+  selectedSessionId,
+}: {
+  onSelect: (sessionId: string) => void
+  selectedSessionId: string
+}) {
+  return (
+    <SessionsSidebarContent
+      onSelect={onSelect}
+      roster={{
+        version: 1,
+        type: 'session.listed',
+        requestId: 'screen-review-roster',
+        sessions: SESSION_ROSTER,
+        filesFound: SESSION_ROSTER.length,
+        filesRead: SESSION_ROSTER.length,
+        filesUnreadable: 0,
+      }}
+      rosterError={null}
+      selectedSessionId={selectedSessionId}
+    />
+  )
+}
+
+function ReviewInspector({
+  delegation,
+  shell,
+}: {
+  delegation: SessionDelegation | null
+  shell: SessionShellCommand | null
+}) {
+  return (
+    <SessionInspector
+      activeEvidenceId={null}
+      delegation={delegation}
+      delegationFeed={delegation === null ? null : feedFor(delegation.id)}
+      evidence={null}
+      handoff={null}
+      onOpenEvidence={() => {}}
+      onOpenSession={() => {}}
+      shell={shell}
+      shellOutput={'Checked 187 files.\ncheck:design-tokens — clean.\n'}
+    />
+  )
+}
+
 function ReviewScreen() {
   const [selectedSessionId, setSelectedSessionId] = useState('composer-review')
+  // The header's picks drive a real inspector, so the story shows what picking a row opens.
+  const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
+  const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
   const feed = feedFor(selectedSessionId)
   if (session === undefined) return null
+  const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
+  const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
     <CockpitShell
       sidebar={
-        <SessionsSidebarContent
-          onSelect={setSelectedSessionId}
-          roster={{
-            version: 1,
-            type: 'session.listed',
-            requestId: 'screen-review-roster',
-            sessions: SESSION_ROSTER,
-            filesFound: SESSION_ROSTER.length,
-            filesRead: SESSION_ROSTER.length,
-            filesUnreadable: 0,
-          }}
-          rosterError={null}
-          selectedSessionId={selectedSessionId}
-        />
+        <ReviewSidebar onSelect={setSelectedSessionId} selectedSessionId={selectedSessionId} />
       }
     >
       <SessionShell
@@ -133,7 +179,18 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
-        inspector={<SessionWorkInspector session={session} />}
+        headerControls={
+          <SessionWorkButtons
+            delegations={session.delegations}
+            onSelectDelegation={pick}
+            onSelectShell={pick}
+            selectedDelegationId={delegation?.id ?? null}
+            selectedShellId={shell?.id ?? null}
+            shell={session.shell}
+          />
+        }
+        inspector={<ReviewInspector delegation={delegation} shell={shell} />}
+        inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}
@@ -283,6 +340,14 @@ export const Open: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
     expectSessionsSidebarIsOpen(canvasElement)
+
+    // Picking a Subagent in the header opens the collapsed inspector on its transcript.
+    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await waitFor(() =>
+      expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
+    )
+    await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
   },
 }
 

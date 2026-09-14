@@ -1,9 +1,6 @@
-import { TicketsScreenView } from '../screens/TicketsScreenView'
+import type { ReactNode } from 'react'
+import { Outlet } from 'react-router'
 
-export function TicketsPage() {
-  return (
-    <div className="h-full min-h-0">
-      <TicketsScreenView />
-    </div>
-  )
+export function TicketsPage({ children }: { children?: ReactNode }) {
+  return <div className="h-full min-h-0">{children ?? <Outlet />}</div>
 }

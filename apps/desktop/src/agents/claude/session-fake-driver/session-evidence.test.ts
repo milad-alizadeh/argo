@@ -80,6 +80,7 @@ test('projects recorded command, file, and edit evidence', async (context) => {
       type: 'session.feed',
       requestId: 'evidence',
       sessionId: 'evidence',
+      delegationId: null,
       revision: null,
     },
     root,

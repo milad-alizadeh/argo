@@ -111,6 +111,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     cli: pending.cli,
     posture: 'managed',
     title: null,
+    ticket: null,
     status: 'starting',
     entry: 'interactive',
     cwd: pending.cwd,

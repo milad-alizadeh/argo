@@ -2,9 +2,7 @@ import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
 import { deselectSession } from './session-gestures'
 
-const INSPECTOR_WIDTH = 248
-
-// The panel library reports a sub-pixel width (247.99...), so a strict-equality read of it never
+// The panel library reports a sub-pixel width, so a strict-equality read of it never
 // settles. Rounding matches the boundingBox() assertion below it and is what a person's eye sees.
 async function waitForInspectorWidth(page: Page, width: number) {
   await page.waitForFunction(
@@ -22,6 +20,13 @@ async function waitForInspectorWidth(page: Page, width: number) {
 export async function proveSessionShell(page: Page) {
   await deselectSession(page)
   await page.waitForSelector('[data-component="SessionShell"]')
+  // The width the shipped token asks for, read off the page so a token change moves this proof too.
+  const inspectorWidth = await page.evaluate(() =>
+    Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--size-session-inspector'),
+    ),
+  )
+  assert.ok(inspectorWidth > 0, '--size-session-inspector resolves to a width')
 
   const inspector = page.locator('aside[aria-label="Session inspector"]')
   if (Math.round((await inspector.boundingBox())?.width ?? 0) !== 0) {
@@ -30,8 +35,8 @@ export async function proveSessionShell(page: Page) {
   }
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
   await page.getByRole('button', { name: 'Open Session inspector' }).click()
-  await waitForInspectorWidth(page, INSPECTOR_WIDTH)
-  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
+  await waitForInspectorWidth(page, inspectorWidth)
+  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), inspectorWidth)
   await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
   await waitForInspectorWidth(page, 0)
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)

@@ -16,6 +16,10 @@ export const sessionFeedRequestSchema = z.strictObject({
   type: z.literal('session.feed'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
+  // The Subagent whose own Feed is wanted, named by the call that spawned it, or null for the
+  // Session's own Feed (#1582). A Subagent records a transcript of its own beside the Session's,
+  // and its rows are the Session's sidechain, so the two are separate documents.
+  delegationId: identifierSchema.nullable(),
   // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
   // a reloaded or evicted deck without rows to draw.
   revision: z.string().nullable(),
@@ -64,9 +68,47 @@ export const sessionFeedUnchangedSchema = z.strictObject({
 })
 export type SessionFeedUnchanged = z.infer<typeof sessionFeedUnchangedSchema>
 
+// The rows a poll's revision already covers stay unsent: the caller already holds the leading
+// `unchangedRowCount` rows of its own last reply, under `revision`, and keeps them in place; only
+// the rows a CLI's append could still touch travel here, replacing everything after that point.
+export const sessionFeedAppendedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.appended'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+  chainId: identifierSchema,
+  revision: z.string(),
+  unchangedRowCount: z.number().int().nonnegative(),
+  rows: z.array(sessionFeedRowSchema),
+})
+export type SessionFeedAppended = z.infer<typeof sessionFeedAppendedSchema>
+
+// The one place that turns an `appended` reply back into a whole document: the rows the caller's
+// own cached read already held, up to `unchangedRowCount`, followed by what the reply carries. A
+// caller with no cached read for this exact revision cannot apply the delta, so it is dropped:
+// `readOwnedFeed` only ever sends `appended` to a caller whose revision it already matched, but a
+// consumer that lost its cache between building the request and reading the reply falls back here
+// to only what the reply itself carries, rather than drawing a Feed missing its earlier rows.
+export function mergeAppendedFeed(
+  cached: SessionFeedRead | null | undefined,
+  reply: SessionFeedAppended,
+): SessionFeedRead {
+  const held = cached?.rows.slice(0, reply.unchangedRowCount) ?? []
+  return {
+    version: reply.version,
+    type: 'session.feed.read',
+    requestId: reply.requestId,
+    sessionId: reply.sessionId,
+    chainId: reply.chainId,
+    revision: reply.revision,
+    rows: [...held, ...reply.rows],
+  }
+}
+
 export const sessionListReplySchema = z.union([sessionsListedSchema, sessionErrorSchema])
 export const sessionFeedReplySchema = z.union([
   sessionFeedReadSchema,
+  sessionFeedAppendedSchema,
   sessionFeedUnchangedSchema,
   sessionErrorSchema,
 ])

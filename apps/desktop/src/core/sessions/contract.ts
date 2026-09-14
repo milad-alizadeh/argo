@@ -5,11 +5,11 @@ import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { sessionAttachmentInputSchema } from './attachments-contract'
 import { permissionSchema } from './permission'
-import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
 export * from './archive-contract'
 export * from './attachments-contract'
+export * from './background-work-contract'
 export * from './claude-contract'
 export * from './feed-contract'
 export * from './handoff-contract'
@@ -17,6 +17,7 @@ export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
+export * from './ticket-link-contract'
 
 // One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.
@@ -114,12 +115,10 @@ export const sessionPermissionReplySchema = z.union([
   sessionPermissionReadSchema,
   sessionErrorSchema,
 ])
-export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
 
 export type SessionStartReply = z.infer<typeof sessionStartReplySchema>
 export type SessionAcceptedReply = z.infer<typeof sessionAcceptedReplySchema>
 export type SessionPermissionReply = z.infer<typeof sessionPermissionReplySchema>
-export type SessionRenameReply = z.infer<typeof sessionRenameReplySchema>
 
 // This table is the Session IPC contract. Adding an operation means adding its four wire facts
 // here and one handler; clients and bridges select this entry rather than maintaining a second

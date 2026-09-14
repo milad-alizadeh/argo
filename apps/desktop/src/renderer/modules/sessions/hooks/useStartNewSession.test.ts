@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 
 import type { ProjectSummary } from '@/core/projects/messages'
 import { useSessionCreationStore } from '../state/useSessionCreationStore'
-import { sendToNewSession } from './useComposerSend'
+import { sendToNewSession } from './send-turn'
 
 const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
 const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
@@ -48,9 +48,7 @@ test('a Send against an already-pending row reuses it instead of beginning a sec
     send: fakeMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
-    prompt: 'hello',
-    setup: SETUP,
-    attachments: [],
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
     watchTurn: () => {},
   })
   expect(sent).toBe(true)
@@ -80,9 +78,7 @@ test('a second rapid Send while the first is still starting is dropped', async (
     send: fakeMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
-    prompt: 'hello',
-    setup: SETUP,
-    attachments: [],
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
     watchTurn: () => {},
   })
   expect(sent).toBe(false)
@@ -112,9 +108,7 @@ test('a failed start clears the pending row and leaves the composer navigable ag
     send: fakeMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
-    prompt: 'hello',
-    setup: SETUP,
-    attachments: [],
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
     watchTurn: () => {},
   })
   expect(sent).toBe(false)

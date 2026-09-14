@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 
 import type { ProjectSummary } from '@/core/projects/messages'
 import { useSessionCreationStore } from '../state/useSessionCreationStore'
-import { sendToNewSession, sendToSelected } from './useComposerSend'
+import { sendToNewSession, sendToSelected } from './send-turn'
 
 const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
 const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
@@ -39,13 +39,11 @@ test('a Send with a selected Session sends to it', async () => {
   const watched: unknown[] = []
   const sent = await sendToSelected({
     queryClient: new QueryClient(),
-    roster: null,
+    since: null,
     selectedSessionId: 'session-1',
     send: send as never,
     setFailure: () => {},
-    prompt: 'hello',
-    setup: SETUP,
-    attachments: [],
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
     watchTurn: (...args) => watched.push(args),
   })
   expect(sent).toBe(true)
@@ -74,9 +72,7 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
     send: fakeMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
-    prompt: 'hello',
-    setup: SETUP,
-    attachments: [],
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
     watchTurn: () => {},
   })
   expect(sent).toBe(true)

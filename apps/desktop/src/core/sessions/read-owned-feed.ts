@@ -3,10 +3,27 @@
 import { createHash } from 'node:crypto'
 
 import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './contract'
-import { feedReply, type HeldFeed, keepFeed, stableChain, unchangedReply } from './feed-cache'
+import {
+  appendedReply,
+  feedReply,
+  type HeldFeed,
+  keepFeed,
+  stableChain,
+  unchangedReply,
+} from './feed-cache'
+import { type FeedProjectionState, projectFeedIncrementally } from './feed-incremental'
 import type { SessionSource } from './session-source'
 
-type FeedContext = { source: SessionSource; feeds: Map<string, HeldFeed>; managed: boolean }
+// `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
+// Feeds are separate documents read from separate files, so they cannot share one entry, and
+// `projections` is keyed the same way so each document resumes from its own incremental state.
+type FeedContext = {
+  source: SessionSource
+  feeds: Map<string, HeldFeed>
+  projections: Map<string, FeedProjectionState>
+  managed: boolean
+  key: string
+}
 
 function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
@@ -27,8 +44,8 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, managed } = context
-  const held = feeds.get(value.sessionId)
+  const { source, feeds, projections, managed, key } = context
+  const held = feeds.get(key)
   // The chain a resume belongs to can gain a file the held record never knew about (a Session
   // Argo never started, resumed for the first time): the file the held record already tracks
   // never changes, so statting only those paths would call this Feed unchanged forever. Deriving
@@ -40,10 +57,14 @@ export async function readOwnedFeed(
   }
   const { chain, stamps } = stable
   if (held !== undefined && held.stamps === stamps) {
-    keepFeed(feeds, value.sessionId, held)
+    keepFeed({ feeds, projections }, key, held)
     return value.revision === held.revision ? unchangedReply(value, held) : feedReply(value, held)
   }
-  const rows = source.projectFeed(chain)
+  const { rows, previouslyFrozenCount, state } = projectFeedIncrementally(
+    chain,
+    projections.get(key),
+  )
+  projections.set(key, state)
   const revision = feedRevision(chain.id, stamps)
   const next = {
     chainId: chain.id,
@@ -52,7 +73,10 @@ export async function readOwnedFeed(
     revision,
     stamps,
   }
-  keepFeed(feeds, value.sessionId, next)
+  keepFeed({ feeds, projections }, key, next)
+  if (held !== undefined && value.revision === held.revision && previouslyFrozenCount > 0) {
+    return appendedReply(value, next, previouslyFrozenCount)
+  }
   return feedReply(value, next)
 }
 

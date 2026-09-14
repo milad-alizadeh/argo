@@ -8,6 +8,7 @@ const feed = {
   version: 1,
   type: 'session.feed',
   requestId: 'feed-1',
+  delegationId: null,
   revision: null,
 }
 

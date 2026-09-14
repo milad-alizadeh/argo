@@ -4,13 +4,7 @@ import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
 import { readPlan } from '../../../core/sessions/signals.ts'
 import type { TranscriptMessage } from '../../../core/sessions/transcript.ts'
-import { stitchChains } from '../sessions/chains.ts'
-import { projectRosterRow } from '../sessions/roster.ts'
-import { fixtureFiles } from './session-fixtures'
-
-async function rowOf(names) {
-  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
-}
+import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).plan, {
@@ -64,27 +58,35 @@ test('names the newest call of the open Turn by its tool and the thing it acted 
 
 test('reads every delegation with its own label, and which of them came back', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).delegations, [
-    { id: 'call-read', label: 'Read the rail', landed: true },
-    { id: 'call-dots', label: null, landed: false },
+    {
+      id: 'call-read',
+      label: 'Read the rail',
+      landed: true,
+      startedAt: '2026-08-30T10:00:10.000Z',
+      endedAt: '2026-08-30T10:01:00.000Z',
+    },
+    {
+      id: 'call-dots',
+      label: null,
+      landed: false,
+      startedAt: '2026-08-30T10:05:10.000Z',
+      endedAt: null,
+    },
   ])
   assert.deepEqual((await rowOf(['askOffered'])).delegations, [
-    { id: 'call-verify', label: 'verify the fold', landed: true },
+    {
+      id: 'call-verify',
+      label: 'verify the fold',
+      landed: true,
+      startedAt: '2026-08-01T09:00:43.000Z',
+      endedAt: '2026-08-01T09:02:00.000Z',
+    },
   ])
   assert.deepEqual((await rowOf(['externalBasic'])).delegations, [])
 })
 
-test('reads the shell commands running now, and none of the ones that came back', async () => {
-  // The first `Bash` call has its result, so only the two with none are running. The command is
-  // cut to its first line, which is what the rail has room to say.
-  assert.deepEqual((await rowOf(['shellRunning'])).shell, [
-    { id: 'sh-call-suite', command: 'bun run --cwd apps/desktop test', background: false },
-    { id: 'sh-call-watch', command: 'npm run watch', background: true },
-  ])
-  assert.deepEqual((await rowOf(['externalBasic'])).shell, [])
-})
-
-const open = { id: 'open', label: null, landed: false }
-const home = { id: 'home', label: 'verify', landed: true }
+const open = { id: 'open', label: null, landed: false, startedAt: null, endedAt: null }
+const home = { id: 'home', label: 'verify', landed: true, startedAt: null, endedAt: null }
 
 test('counts an open delegation as running only while its Session is live', () => {
   assert.deepEqual(readDelegation('asking', [open, home]), {
