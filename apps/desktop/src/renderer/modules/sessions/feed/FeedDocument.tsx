@@ -4,7 +4,7 @@ import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow, useToolGroups } from './drawn-row'
 import { FeedRow } from './FeedRow'
 import { feedContent } from './feed-content'
-import { HandoffMarker } from './HandoffMarker'
+import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
 import { useSettledFeed } from './useSettledFeed'
 
@@ -15,6 +15,8 @@ type FeedDocumentProps = {
   compactionPercentage: number | null
   compactionTokens: string | null
   handoffStartedAt: string | null
+  handoffTo: string | null
+  onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -33,6 +35,17 @@ function compactionMarker(
   )
 }
 
+function handoffMarker(
+  startedAt: string | null,
+  handoffTo: string | null,
+  onOpenSession: (sessionId: string) => void,
+) {
+  if (startedAt !== null) return <HandoffMarker />
+  if (handoffTo !== null)
+    return <HandoffCompletedMarker onOpenSession={onOpenSession} sessionId={handoffTo} />
+  return null
+}
+
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -42,6 +55,8 @@ export function FeedDocument({
   compactionPercentage,
   compactionTokens,
   handoffStartedAt,
+  handoffTo,
+  onOpenSession,
   feed,
   isRunning,
   onOpenEvidence,
@@ -97,7 +112,7 @@ export function FeedDocument({
         </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
-        {handoffStartedAt === null ? null : <HandoffMarker />}
+        {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}
       </div>
     </div>
   )

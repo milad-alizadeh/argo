@@ -70,7 +70,6 @@ export function useSessionComposer({
   const onHandoff = useHandoff(handoff, sessionId, setFailure)
   useHandoffCompletion({
     isHandingOff,
-    navigate,
     selectedRow,
     selectedSessionId: sessionId,
     setFailure,

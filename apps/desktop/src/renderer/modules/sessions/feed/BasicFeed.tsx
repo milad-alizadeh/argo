@@ -104,6 +104,8 @@ export function BasicFeed({
   compactionPercentage = null,
   compactionTokens = null,
   handoffStartedAt = null,
+  handoffTo = null,
+  onOpenSession,
   failure,
   isRunning,
   selectedSessionId,
@@ -118,6 +120,8 @@ export function BasicFeed({
   compactionPercentage?: number | null
   compactionTokens?: string | null
   handoffStartedAt?: string | null
+  handoffTo?: string | null
+  onOpenSession: (sessionId: string) => void
   failure: SessionError | null
   isRunning: boolean
   selectedSessionId: SessionId | null
@@ -138,6 +142,8 @@ export function BasicFeed({
           compactionPercentage={id === selectedSessionId ? compactionPercentage : null}
           compactionTokens={id === selectedSessionId ? compactionTokens : null}
           handoffStartedAt={id === selectedSessionId ? handoffStartedAt : null}
+          handoffTo={id === selectedSessionId ? handoffTo : null}
+          onOpenSession={onOpenSession}
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}

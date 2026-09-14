@@ -89,6 +89,8 @@ export function SessionScreenView() {
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
       handoffStartedAt={session?.handoffStartedAt ?? null}
+      handoffTo={session?.handoffTo ?? null}
+      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
