@@ -100,9 +100,21 @@ export async function provePackagedResume(page, { project, restart, transcripts 
     .catch(async (error) => {
       // A refused resume (`held-elsewhere`, or any other Turn failure) swaps the composer for an
       // Alert rather than throwing here, so the plain timeout above names nothing useful: read
-      // what actually rendered before failing.
+      // what actually rendered before failing. An empty alert list still leaves open whether the
+      // Turn was ever delivered, whether the resumed process ever wrote back, or whether the
+      // Roster read the write it made, so the diagnostic covers all three.
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()
-      throw new Error(`${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}`)
+      const feedRows = await relaunched
+        .locator('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
+        .allTextContents()
+      const [row] = await rosterRow(relaunched, 'externalBasic')
+      const written = await readFile(
+        path.join(transcripts, 'fake-claude', 'externalBasic.jsonl'),
+        'utf8',
+      ).catch((readError) => `<unreadable: ${readError.message}>`)
+      throw new Error(
+        `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nfake-claude/externalBasic.jsonl: ${written}`,
+      )
     })
   return relaunched
 }
