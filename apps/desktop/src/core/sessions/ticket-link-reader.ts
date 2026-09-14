@@ -8,7 +8,7 @@ import {
   sessionTicketConnectRequestSchema,
   sessionTicketDisconnectRequestSchema,
 } from './contract'
-import { versionFailure } from './reader'
+import { versionFailure } from './read-request'
 
 export async function connectTicketReply(store: SessionTicketLinkStore, request: unknown) {
   if (versionFailure(request)) return sessionError('unsupported-version', null)

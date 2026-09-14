@@ -24,6 +24,9 @@ function ComposerFade({ top }: { top: number | null }) {
 
 type SessionShellProps = {
   composer: ReactNode
+  // The workspace header's own controls, drawn leading. A Session with no background work hands
+  // nothing here and the bar stays empty (#1582).
+  headerControls?: ReactNode
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
@@ -46,6 +49,7 @@ type SessionShellProps = {
 
 export function SessionShell({
   composer,
+  headerControls = null,
   inspector,
   feed,
   feedError,
@@ -86,7 +90,8 @@ export function SessionShell({
             className="relative flex h-full min-h-0 flex-col"
             ref={workspaceElement}
           >
-            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
+            <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
+              {headerControls}
               <span className="flex-1" />
             </header>
             <section

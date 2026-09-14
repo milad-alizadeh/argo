@@ -1,7 +1,7 @@
-// Reply-building for `session.archive.list`, pulled out of reader.ts to keep that file under the
-// line cap.
+// The archived-Session page. One adapter answers it: the others have no archive of their own, and
+// an empty page is the honest reply rather than an error.
 import { sessionArchiveListRequestSchema, sessionError } from './contract'
-import { versionFailure } from './reader'
+import { versionFailure } from './read-request'
 import type { SessionSource } from './session-source'
 
 export async function archiveListReply(sources: SessionSource[], value: unknown) {

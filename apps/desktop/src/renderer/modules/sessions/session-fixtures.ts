@@ -1,5 +1,30 @@
 // Session roster rows the Sessions stories draw.
-import type { SessionRosterRow } from '@/core/sessions/models'
+import type {
+  SessionDelegation,
+  SessionRosterRow,
+  SessionShellCommand,
+} from '@/core/sessions/models'
+
+export function sessionShellCommand(
+  overrides: Partial<SessionShellCommand> & Pick<SessionShellCommand, 'id'>,
+): SessionShellCommand {
+  return {
+    command: null,
+    background: false,
+    state: 'running',
+    startedAt: null,
+    endedAt: null,
+    outputPath: null,
+    result: null,
+    ...overrides,
+  }
+}
+
+export function sessionDelegation(
+  overrides: Partial<SessionDelegation> & Pick<SessionDelegation, 'id'>,
+): SessionDelegation {
+  return { label: null, landed: false, startedAt: null, endedAt: null, ...overrides }
+}
 
 export function sessionRosterRow(
   overrides: Partial<SessionRosterRow> &

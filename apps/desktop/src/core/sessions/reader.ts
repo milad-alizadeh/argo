@@ -2,12 +2,10 @@
 // seam, and returns a reply typed by the contract's own schemas; nothing downstream parses or
 // casts again. Each CLI registers a `SessionSource` here rather than shared code branching on a
 // `cli` name (ADR-0021, ADR-0024).
-import { isRecord } from '../../boundary'
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '../tickets/session-links'
-import { archiveListReply } from './archive-list-reader'
 import type { SessionReader } from './bridge'
 import {
   driveSessionError,
@@ -20,23 +18,19 @@ import {
 import type { HeldFeed } from './feed-cache'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
-import { readFeedWithOverlay } from './read-owned-feed'
+import { archiveListReply } from './read-archive-list'
+import {
+  delegationSource,
+  delegationUsageReply,
+  type OwnerFor,
+  shellOutputReply,
+} from './read-background-work'
+import { readFeedWithOverlay, readOwnedFeed } from './read-owned-feed'
+import { readFailure, versionFailure } from './read-request'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
 export type { FeedOverlay, SessionSource } from './session-source'
-
-export function versionFailure(value: unknown) {
-  return isRecord(value) && typeof value.version === 'number' && value.version !== 1
-}
-
-function readFailure(error: unknown) {
-  if (isRecord(error) && (error.code === 'EACCES' || error.code === 'EPERM')) return 'access-denied'
-  if (isRecord(error) && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) {
-    return 'transcripts-unavailable'
-  }
-  return 'internal-error'
-}
 
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
@@ -86,6 +80,19 @@ function createOwnerResolver(sources: SessionSource[]) {
   }
 }
 
+async function renameReply(ownerFor: OwnerFor, value: unknown) {
+  if (versionFailure(value)) return sessionError('unsupported-version', null)
+  const parsed = sessionRenameRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', null)
+  const owner = await ownerFor(parsed.data.sessionId)
+  if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
+  if (owner.rename === undefined) {
+    const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
+    return driveSessionError('not-drivable', cli, parsed.data.requestId)
+  }
+  return owner.rename(parsed.data)
+}
+
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
 // driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
@@ -131,23 +138,23 @@ export function createSessionReader(
       try {
         const owner = await ownership.ownerFor(parsed.data.sessionId)
         if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-        const managed = ownership.managed(owner, parsed.data.sessionId)
-        return await readFeedWithOverlay({ source: owner, feeds, managed }, parsed.data)
+        const { sessionId, delegationId } = parsed.data
+        if (delegationId !== null) {
+          const source = delegationSource(owner, delegationId)
+          const key = `${sessionId}#${delegationId}`
+          return await readOwnedFeed({ source, feeds, managed: false, key }, parsed.data)
+        }
+        const managed = ownership.managed(owner, sessionId)
+        return await readFeedWithOverlay(
+          { source: owner, feeds, managed, key: sessionId },
+          parsed.data,
+        )
       } catch (error) {
         return sessionError(readFailure(error), parsed.data.requestId)
       }
     },
-    async renameSession(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionRenameRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
-      const owner = await ownership.ownerFor(parsed.data.sessionId)
-      if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-      if (owner.rename === undefined) {
-        const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
-        return driveSessionError('not-drivable', cli, parsed.data.requestId)
-      }
-      return owner.rename(parsed.data)
-    },
+    readShellOutput: (value) => shellOutputReply(ownership.ownerFor, value),
+    readDelegationUsage: (value) => delegationUsageReply(ownership.ownerFor, value),
+    renameSession: (value) => renameReply(ownership.ownerFor, value),
   }
 }

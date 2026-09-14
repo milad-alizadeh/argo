@@ -5,10 +5,12 @@ import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionChooseAttachmentsReply,
+  type SessionDelegationUsageReply,
   type SessionFeedReply,
   type SessionListReply,
   type SessionPermissionReply,
   type SessionRenameReply,
+  type SessionShellOutputReply,
   type SessionStartReply,
   type SessionStatAttachmentsReply,
   sessionError,
@@ -50,8 +52,11 @@ export type SessionClient = {
   }): Promise<SessionArchiveListReply>
   readSessionFeed(request: {
     sessionId: string
+    delegationId: string | null
     revision: string | null
   }): Promise<SessionFeedReply>
+  readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
+  readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
   connectSessionTicket(request: {
     sessionId: string
@@ -80,6 +85,8 @@ export function createSessionClient(
     decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
+    readShellOutput: (request) => client.shellOutput(request),
+    readDelegationUsage: (request) => client.delegationUsage(request),
     renameSession: (request) => client.rename(request),
     connectSessionTicket: (request) => client.connectTicket(request),
     disconnectSessionTicket: (request) => client.disconnectTicket(request),

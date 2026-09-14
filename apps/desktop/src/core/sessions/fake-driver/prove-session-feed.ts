@@ -8,6 +8,7 @@ import { provePackagedResume } from '../../../agents/claude/session-fake-driver/
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { createPackagedSessionHarness } from './packaged-session-harness'
+import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
 import { proveSessionDiagram } from './session-diagram-case'
 import { appendProse, growCodexTranscript, removeProse, streamProse } from './session-feed-fixture'
@@ -24,6 +25,8 @@ import {
 import { proveStableRosterPolling } from './session-roster-order-case'
 import { rosterOrderMutations } from './session-roster-order-fixture'
 import { proveSessionShell } from './session-shell-cases'
+import { completeWatch, writeWatchOutput } from './session-shell-fixture'
+import { proveSubagentFeed } from './session-subagent-feed-case'
 import { proveToolCalls } from './session-tool-calls-case'
 import { proveTurnSetup } from './session-turn-setup-cases'
 
@@ -46,6 +49,13 @@ try {
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
   await ran(['session-tool-calls'], () => proveToolCalls(page))
+  await ran(['session-subagent-feed'], () => proveSubagentFeed(page))
+  await ran(['session-background-shell'], () =>
+    proveBackgroundShell(page, {
+      writeOutput: (text) => writeWatchOutput(root, text),
+      complete: () => completeWatch(fixture.claudeTranscripts, root),
+    }),
+  )
   await ran(['session-question'], () => proveSessionQuestion(page))
   await ran(['session-feed-reader-anchor'], () =>
     proveLiveFeed(page, {
