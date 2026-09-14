@@ -72,7 +72,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await updated.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   const archived = await restart()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
-  assert.equal(await archived.locator('details[open]').count(), 1)
+  await archived.locator('details[open]').waitFor()
   assert.equal(
     await archived
       .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')

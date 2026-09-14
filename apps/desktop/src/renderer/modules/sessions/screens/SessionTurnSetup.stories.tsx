@@ -163,8 +163,8 @@ export const NewSessionChoosesTheHarness: Story = {
     await userEvent.click(trigger)
     await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
     await userEvent.keyboard('{Escape}')
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
-    await expect(canvas.queryByRole('button', { name: /^Choose permission mode/ })).toBeNull()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
+    await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
 
     await userEvent.click(trigger)
     await userEvent.click(await within(document.body).findByRole('tab', { name: 'Claude Code' }))
