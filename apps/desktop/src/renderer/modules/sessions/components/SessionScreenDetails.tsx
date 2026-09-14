@@ -1,10 +1,18 @@
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import type { HarnessControl } from '../harness/harnesses'
-import { sessionFailureState } from '../sessionFailureState'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
+
+// Only these two codes mean "open elsewhere": no Turn here can ever succeed, so the composer
+// gives way to the alert instead of sitting under it (#2053). Every other failure code
+// (`not-resumable` among them) keeps its draft in a still-active composer, as before.
+const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set([
+  'held-elsewhere',
+  'codex-held-elsewhere',
+])
 
 type SessionScreenDetailsProps = {
   composer: Pick<
@@ -22,9 +30,7 @@ export function SessionComposerArea({
   session,
   harness,
 }: SessionScreenDetailsProps) {
-  // A Session open in another app cannot take a Turn here, so the composer that would try gives
-  // way to the alert that explains why, rather than sitting under it (#2053).
-  if (composer.failure?.code && sessionFailureState(composer.failure.code) === 'unavailable') {
+  if (composer.failure?.code && OPEN_ELSEWHERE.has(composer.failure.code)) {
     return <Failure message={composer.failure.message} />
   }
   return (
