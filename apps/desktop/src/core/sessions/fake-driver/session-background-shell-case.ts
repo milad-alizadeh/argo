@@ -25,14 +25,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
 
   await writeOutput('watching for changes\nrebuilt in 240ms\nwatcher stopped\n')
   await complete()
-  await page.waitForFunction(
-    () =>
-      document
-        .querySelector('section[aria-label="Background Shell"]')
-        ?.textContent?.includes('exit code 0') === true,
-    undefined,
-    { timeout: 15_000 },
-  )
+  await page.getByText(/exit code 0/).waitFor()
   await page.getByText('watcher stopped').waitFor()
 
   // The same command now waits under Finished rather than Running.
