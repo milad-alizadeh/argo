@@ -5,6 +5,7 @@ import {
 } from '@/core/sessions/contract'
 import type { Permission, PermissionDecision } from '@/core/sessions/permission'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
+import { embedAttachments } from './attachment-prompt'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 
@@ -32,16 +33,25 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
   return {
     cli: 'claude',
     turnSetupSchema: claudeTurnSetupSchema,
-    async start({ cwd, prompt, setup }) {
+    async start({ cwd, prompt, setup, attachments }) {
       try {
-        return { sessionId: driver.start({ cwd, prompt, setup: setup as ClaudeTurnSetup }) }
+        return {
+          sessionId: driver.start({
+            cwd,
+            prompt: embedAttachments(prompt, attachments),
+            setup: setup as ClaudeTurnSetup,
+          }),
+        }
       } catch (error) {
         return failureOf(error, 'launch-failed')
       }
     },
-    async send({ sessionId, prompt, setup }) {
+    async send({ sessionId, prompt, setup, attachments }) {
       try {
-        await driver.send(sessionId, { prompt, setup: setup as ClaudeTurnSetup })
+        await driver.send(sessionId, {
+          prompt: embedAttachments(prompt, attachments),
+          setup: setup as ClaudeTurnSetup,
+        })
         return { ok: true }
       } catch (error) {
         return failureOf(error, 'not-drivable')
@@ -72,6 +82,16 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
         return { error: 'stale-permission' }
       }
       return { ok: true }
+    },
+    async decideQuestion({ sessionId, questionId, answers }) {
+      try {
+        if (!(await driver.decideQuestion(sessionId, questionId, answers))) {
+          return { error: 'stale-question' }
+        }
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
     },
   }
 }

@@ -30,6 +30,7 @@ function fakeClaudeDriver() {
       pendingPermission: () => null,
       decidePermission: () => true,
       isLockedElsewhere: () => false,
+      decideQuestion: async () => true,
       rename: async () => 'Renamed.',
       liveMessages: () => [],
       roster: () => [],
@@ -44,13 +45,15 @@ function fakeCodexDriver() {
     sent,
     driver: {
       start: async () => 'codex-1',
-      send: async (sessionId: string, prompt: string) => {
-        sent.push({ sessionId, prompt })
+      send: async ({ sessionId, text }: { sessionId: string; text: string }) => {
+        sent.push({ sessionId, prompt: text })
       },
       interrupt: async () => {},
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
+      pendingQuestion: () => null,
+      decideQuestion: () => true,
       close: () => {},
     },
   }
@@ -104,8 +107,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       prompt: 'To Claude.',
       setup: { model: 'sonnet', effort: 'medium', mode: 'manual' },
     },
-    adapters,
-    reader.ownerCliFor,
+    { adapters, ownerCliFor: reader.ownerCliFor },
   )
   const codexReply = await sendSession(
     {
@@ -115,8 +117,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       sessionId: 'codex-1',
       prompt: 'To Codex.',
     },
-    adapters,
-    reader.ownerCliFor,
+    { adapters, ownerCliFor: reader.ownerCliFor },
   )
 
   assert.equal(claudeReply.type, 'session.accepted')
@@ -138,8 +139,7 @@ test('routes compaction to its Claude Session owner', async (context) => {
 
   const reply = await compactSession(
     { version: 1, type: 'session.compact', requestId: 'compact-claude', sessionId: 'claude-1' },
-    adapters,
-    reader.ownerCliFor,
+    { adapters, ownerCliFor: reader.ownerCliFor },
   )
 
   assert.equal(reply.type, 'session.accepted')

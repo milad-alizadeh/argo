@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import type { ClaudePermission } from '@/core/sessions/contract'
 import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
 import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { createClaudeDriveAdapter } from '../drive/session-drive-adapter.ts'
@@ -33,7 +32,12 @@ test('starts a Claude Session at its chosen Turn setup', async () => {
     }),
   )
 
-  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'Inspect the test.', setup })
+  const result = await adapter.start({
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+    setup,
+    attachments: [],
+  })
   assert.deepEqual(result, { sessionId })
   assert.deepEqual(started, [{ cwd: '/projects/argo', prompt: 'Inspect the test.', setup }])
 })
@@ -47,7 +51,7 @@ test('reports a Claude launch failure by its named code', async () => {
     }),
   )
 
-  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'x', setup })
+  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'x', setup, attachments: [] })
   assert.deepEqual(result, { error: 'cli-unavailable' })
 })
 
@@ -61,7 +65,12 @@ test('sends a subsequent Turn to the selected managed Claude Session', async () 
     }),
   )
 
-  const result = await adapter.send({ sessionId, prompt: 'Continue with the tests.', setup })
+  const result = await adapter.send({
+    sessionId,
+    prompt: 'Continue with the tests.',
+    setup,
+    attachments: [],
+  })
   assert.deepEqual(result, { ok: true })
   assert.deepEqual(sent, [[sessionId, { prompt: 'Continue with the tests.', setup }]])
 })
@@ -81,7 +90,7 @@ for (const code of [
       }),
     )
 
-    const result = await adapter.send({ sessionId, prompt: 'x', setup })
+    const result = await adapter.send({ sessionId, prompt: 'x', setup, attachments: [] })
     assert.deepEqual(result, { error: code })
   })
 }
@@ -95,7 +104,7 @@ test('does not accept a Turn Claude could not be given', async () => {
     }),
   )
 
-  const result = await adapter.send({ sessionId, prompt: 'x', setup })
+  const result = await adapter.send({ sessionId, prompt: 'x', setup, attachments: [] })
   assert.deepEqual(result, { error: 'not-drivable' })
 })
 
@@ -119,55 +128,4 @@ test('compacts only the selected managed Claude Session', async () => {
   const result = await adapter.compact({ sessionId })
   assert.deepEqual(result, { ok: true })
   assert.deepEqual(compacted, [sessionId])
-})
-
-test('reads the pending Permission the driver holds, mapped onto the shared Permission shape', async () => {
-  const permission: ClaudePermission = {
-    id: 'permission-1',
-    sessionId,
-    toolName: 'Bash',
-    input: { command: 'bun test' },
-  }
-  const adapter = createClaudeDriveAdapter(fakeDriver({ pendingPermission: () => permission }))
-
-  assert.deepEqual(await adapter.readPermission({ sessionId }), {
-    permission: {
-      id: 'permission-1',
-      sessionId,
-      description: 'Bash {"command":"bun test"}',
-    },
-  })
-})
-
-test("translates every shared decision word into the two words Claude's hook answers with", async () => {
-  const decided: Array<'allow' | 'deny'> = []
-  const adapter = createClaudeDriveAdapter(
-    fakeDriver({
-      decidePermission: (_sessionId, _permissionId, decision) => {
-        decided.push(decision)
-        return true
-      },
-    }),
-  )
-
-  for (const decision of ['allow', 'deny', 'allowForSession', 'cancel'] as const) {
-    const result = await adapter.decidePermission({
-      sessionId,
-      permissionId: 'permission-1',
-      decision,
-    })
-    assert.deepEqual(result, { ok: true })
-  }
-  assert.deepEqual(decided, ['allow', 'deny', 'allow', 'deny'])
-})
-
-test('refuses a Permission decision that is no longer waiting', async () => {
-  const adapter = createClaudeDriveAdapter(fakeDriver({ decidePermission: () => false }))
-
-  const result = await adapter.decidePermission({
-    sessionId,
-    permissionId: 'permission-1',
-    decision: 'deny',
-  })
-  assert.deepEqual(result, { error: 'stale-permission' })
 })

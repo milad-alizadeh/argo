@@ -19,8 +19,7 @@ test('driving a Session with no findable transcript reports a drivable failure, 
       sessionId: 'never-started',
       prompt: 'x',
     },
-    adapters,
-    ownerCliFor,
+    { adapters, ownerCliFor },
   )
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.code, 'missing-session')

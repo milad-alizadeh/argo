@@ -26,6 +26,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
     }),
     decidePermission: () => true,
     isLockedElsewhere: () => false,
+    decideQuestion: async () => true,
     close: () => {},
   })
 }
@@ -38,6 +39,8 @@ function fakeCodexAdapter(): SessionDriveAdapter {
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
+    pendingQuestion: () => null,
+    decideQuestion: () => true,
     close: () => {},
   })
 }

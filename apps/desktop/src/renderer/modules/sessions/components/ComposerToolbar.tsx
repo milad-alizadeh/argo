@@ -68,6 +68,7 @@ function AddContextMenu({
 export function ComposerToolbar({
   draft,
   attachments,
+  disabled = false,
   editorRef,
   onAttach,
   harness,
@@ -78,6 +79,7 @@ export function ComposerToolbar({
 }: {
   draft: string
   attachments: ComposerAttachment[]
+  disabled?: boolean
   editorRef: RefObject<LexicalEditor | null>
   onAttach: () => void
   harness: HarnessControl | null
@@ -105,7 +107,7 @@ export function ComposerToolbar({
         ) : (
           <Button
             aria-label="Send message"
-            disabled={!draft.trim() && attachments.length === 0}
+            disabled={disabled || (!draft.trim() && attachments.length === 0)}
             size="icon-sm"
             type="submit"
           >

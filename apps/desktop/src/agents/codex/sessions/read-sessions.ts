@@ -5,12 +5,16 @@ import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
+import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { discoverSessions, readSessionFiles } from './discover'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
   roster?: () => SessionRosterRow[]
   liveMessages?: (sessionId: string) => LiveMessage[]
+  // Codex has no persisted transcript record of a still-open question (unlike Claude's
+  // `AskUserQuestion` tool call, #1841): the Feed's `ask` row exists only while this returns one.
+  pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
 }
@@ -28,16 +32,40 @@ function draftRows(rows: readonly SessionFeedRow[], live: LiveMessage[]): Sessio
     }))
 }
 
-function draftOverlay(live: LiveMessage[]): FeedOverlay | null {
-  if (live.length === 0) return null
+// A pending question has no persisted transcript row to replace, so it always draws as one more
+// row rather than matching an existing one the way a streamed draft message does. The row's id is
+// the request's own item ID, unprefixed: a decision names it back to `decideQuestion`, which
+// checks it against the same pending question's `itemId` (question-protocol.ts).
+function questionRow(pending: PendingCodexQuestion): SessionFeedRow {
+  return {
+    shape: 'ask',
+    id: pending.itemId,
+    questions: pending.questions,
+    answer: null,
+    unsupported: pending.unsupported,
+  }
+}
+
+function combinedOverlay(
+  live: LiveMessage[],
+  pending: PendingCodexQuestion | null,
+): FeedOverlay | null {
+  if (live.length === 0 && pending === null) return null
   return (rows) => {
     const drafts = draftRows(rows, live)
-    return { rows: [...rows, ...drafts], changes: drafts }
+    const asks = pending === null ? [] : [questionRow(pending)]
+    return { rows: [...rows, ...drafts, ...asks], changes: [...drafts, ...asks] }
   }
 }
 
 export function codexSessionSource(root: string, options?: ReaderOptions): SessionSource {
   const liveMessages = options?.liveMessages
+  const pendingQuestion = options?.pendingQuestion
+  const overlayFor =
+    liveMessages === undefined && pendingQuestion === undefined
+      ? undefined
+      : (sessionId: string) =>
+          combinedOverlay(liveMessages?.(sessionId) ?? [], pendingQuestion?.(sessionId) ?? null)
   return {
     cli: 'codex',
     discoverSessions: async () => {
@@ -49,8 +77,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,
-    overlayFor:
-      liveMessages === undefined ? undefined : (sessionId) => draftOverlay(liveMessages(sessionId)),
+    overlayFor,
   }
 }
 

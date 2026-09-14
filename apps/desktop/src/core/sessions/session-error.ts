@@ -35,6 +35,10 @@ const DRIVE_SESSION_ERRORS = {
     claude: 'This Claude permission is no longer waiting.',
     codex: 'This Codex permission is no longer waiting.',
   },
+  'stale-question': {
+    claude: 'This Claude question is no longer waiting.',
+    codex: 'This Codex question is no longer waiting.',
+  },
 } as const
 
 export type SharedSessionErrorCode = keyof typeof SHARED_SESSION_ERRORS

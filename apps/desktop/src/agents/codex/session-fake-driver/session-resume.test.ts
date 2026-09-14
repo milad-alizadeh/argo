@@ -18,7 +18,11 @@ test('resumes a Codex Session Argo held before restart in its recorded workspace
       isAlive: () => true,
     }),
   })
-  const sessionId = await first.start({ cwd: process.cwd(), prompt: 'Open the resume proof.' })
+  const sessionId = await first.start({
+    attachments: [],
+    cwd: process.cwd(),
+    prompt: 'Open the resume proof.',
+  })
   first.close()
 
   const resumed = driverBackedByFixture({
@@ -31,7 +35,12 @@ test('resumes a Codex Session Argo held before restart in its recorded workspace
   })
   context.after(() => resumed.close())
 
-  await resumed.send(sessionId, 'Carry on after the restart.')
+  await resumed.send({
+    sessionId,
+    text: 'Carry on after the restart.',
+    setup: undefined,
+    attachments: [],
+  })
 
   assert.deepEqual(
     resumed.roster().map(({ id, cwd, posture }) => ({ id, cwd, posture })),

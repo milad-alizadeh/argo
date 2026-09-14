@@ -1,3 +1,4 @@
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'
@@ -5,6 +6,7 @@ import type { LiveMessages } from './live-messages'
 import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 import type { ClaudePermissionGate } from './permission-gate'
+import { deliverAnswer } from './question-answer'
 
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.
@@ -27,6 +29,7 @@ export type DriverOptions = {
   extraParts?: (sessionId: string, record: (batch: unknown) => void) => CompanionPart[]
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
+  pendingQuestion: (sessionId: string) => Promise<{ id: string } | null>
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
@@ -98,6 +101,16 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
         session.process.write(`\u001b[200~/rename ${name}\u001b[201~`)
         await waitWhileLive(session)(150)
         session.process.write('\r')
+      })
+      session.queue = delivery.catch(() => {})
+      return delivery
+    },
+    // Queued behind any Turn or rename already typing, so an answer never interleaves keystrokes
+    // with one of those.
+    answer(session: ManagedSession, answers: ClaudeQuestionAnswer[]) {
+      const delivery = session.queue.then(() => {
+        if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+        return deliverAnswer(session, answers, waitWhileLive(session))
       })
       session.queue = delivery.catch(() => {})
       return delivery

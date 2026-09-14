@@ -28,6 +28,7 @@ function useFocusInterruptOnCompactStart(isCompacting: boolean) {
 
 export function ComposerForm({
   attachments,
+  disabled = false,
   draft,
   editorRef,
   focusOnMount,
@@ -51,6 +52,7 @@ export function ComposerForm({
   setup,
 }: {
   attachments: ComposerAttachment[]
+  disabled?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -92,7 +94,7 @@ export function ComposerForm({
         <fieldset
           aria-label="Message composer"
           data-component="ComposerCard"
-          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
           onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
           onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
             event.preventDefault()
@@ -113,6 +115,7 @@ export function ComposerForm({
           />
           <ComposerToolbar
             attachments={attachments}
+            disabled={disabled}
             draft={draft}
             editorRef={editorRef}
             harness={harness}

@@ -1,4 +1,6 @@
 import { createDomainClient } from '../contract/domain'
+import type { SessionAttachmentInput } from './attachments-contract'
+import type { ClaudeQuestionAnswer } from './claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -19,11 +21,13 @@ export type SessionClient = {
     cwd: string
     prompt: string
     setup?: unknown
+    attachments?: SessionAttachmentInput[]
   }): Promise<SessionStartReply>
   sendSession(request: {
     sessionId: string
     prompt: string
     setup?: unknown
+    attachments?: SessionAttachmentInput[]
   }): Promise<SessionAcceptedReply>
   interruptSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   compactSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
@@ -32,6 +36,11 @@ export type SessionClient = {
     sessionId: string
     permissionId: string
     decision: 'allow' | 'deny'
+  }): Promise<SessionAcceptedReply>
+  decideSessionQuestion(request: {
+    sessionId: string
+    questionId: string
+    answers: ClaudeQuestionAnswer[]
   }): Promise<SessionAcceptedReply>
   listSessions(): Promise<SessionListReply>
   listArchivedSessions(request: {
@@ -58,6 +67,7 @@ export function createSessionClient(
     compactSession: (request) => client.compact(request),
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
+    decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),

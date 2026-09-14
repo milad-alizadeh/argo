@@ -1,5 +1,6 @@
 import { MessagesSquare, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import {
   Empty,
@@ -10,7 +11,7 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
 import { readKeptSessionLimit } from './kept-documents'
 
@@ -49,27 +50,10 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
   )
 }
 
-export function BasicFeed({
-  feed,
-  activeEvidenceId,
-  compactionStartedAt = null,
-  compactionPercentage = null,
-  compactionTokens = null,
-  failure,
-  isRunning,
-  selectedSessionId,
-  onOpenEvidence,
-}: {
-  feed: SessionFeed | null
-  activeEvidenceId: string | null
-  compactionStartedAt?: string | null
-  compactionPercentage?: number | null
-  compactionTokens?: string | null
-  failure: SessionError | null
-  isRunning: boolean
-  selectedSessionId: SessionId | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
-}) {
+// Kept documents (#1834): a Session's Feed remains mounted, and its scroller state with it, when
+// the reader moves away, up to `keptDocumentLimit`. The selected Session's document is always
+// drawn first regardless of insertion order.
+function useKeptDocuments(feed: SessionFeed | null, selectedSessionId: SessionId | null) {
   const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
   const [documents, setDocuments] = useState<Map<SessionId, SessionFeed>>(new Map())
 
@@ -110,6 +94,37 @@ export function BasicFeed({
           [current.sessionId, current] as const,
           ...[...documents.entries()].filter(([id]) => id !== current.sessionId),
         ]
+  return { current, ordered }
+}
+
+export function BasicFeed({
+  feed,
+  activeEvidenceId,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
+  failure,
+  isRunning,
+  selectedSessionId,
+  onOpenEvidence,
+  onAnswerQuestion,
+  answeringQuestionId,
+  questionFailure,
+}: {
+  feed: SessionFeed | null
+  activeEvidenceId: string | null
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
+  failure: SessionError | null
+  isRunning: boolean
+  selectedSessionId: SessionId | null
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
+}) {
+  const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
 
   return (
     <section aria-label="Session Feed" className="feed">
@@ -124,6 +139,9 @@ export function BasicFeed({
           key={id}
           onOpenEvidence={onOpenEvidence}
           isRunning={isRunning && id === selectedSessionId}
+          onAnswerQuestion={onAnswerQuestion}
+          answeringQuestionId={answeringQuestionId}
+          questionFailure={questionFailure}
         />
       ))}
       {failure !== null || current === null ? (

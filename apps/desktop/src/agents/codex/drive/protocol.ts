@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 
 import type { CodexThreadStatus } from '../../../core/sessions/session-status-rollup'
+import type { Input } from './input-items'
+
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.
 export type RequestID = string | number
-export type TextInput = { type: 'text'; text: string; text_elements: [] }
-export type Input = TextInput | { type: 'localImage'; path: string }
 export type ThreadConfiguration = { cwd: string }
 export type RequestParams = {
   initialize: {

@@ -7,6 +7,7 @@ import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-ad
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
+import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
@@ -86,6 +87,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
       codexSessionSource(codexTranscriptsRoot(home), {
         roster: codexSessionDriver.roster,
         liveMessages: codexSessionDriver.liveMessages,
+        pendingQuestion: codexSessionDriver.pendingQuestion,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
         isLockedElsewhere: codexSessionDriver.isLockedElsewhere,
       }),
@@ -97,6 +99,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
     rendererURL,
   })
   attachAppearanceBridge(window, { userData, rendererURL })
+  attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({
     userData,
     endpoints: providerEndpoints(PROOF_ENABLED),

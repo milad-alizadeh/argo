@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import * as pty from 'node-pty'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { claudePendingQuestion } from '../sessions/pending-question'
 import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
 import { createMessageDisplay } from './message-display'
@@ -26,6 +27,7 @@ export function createSystemClaudeSessionDriver(paths: {
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),
+    pendingQuestion: (sessionId) => claudePendingQuestion(paths.transcripts, sessionId),
     schedule: (callback, milliseconds) => {
       setTimeout(callback, milliseconds)
     },

@@ -1,20 +1,21 @@
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
-import type { TurnSetup } from '../turn-setup/turn-setup'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
+import type { Send } from './useSend'
 import { useSessionComposerState } from './useSessionComposerState'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
+  disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
   isRunning?: boolean
   onCompact?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  onSend: Send
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
@@ -22,6 +23,7 @@ export type SessionComposerProps = {
 
 export function SessionComposer({
   contextTokens,
+  disabled = false,
   focusOnMount = false,
   isCompacting = false,
   isRunning = false,
@@ -38,6 +40,7 @@ export function SessionComposer({
     <ComposerForm
       attachments={state.attachments}
       contextTokens={contextTokens}
+      disabled={disabled}
       draft={state.draft}
       editorRef={state.editorRef}
       focusOnMount={focusOnMount}
@@ -53,7 +56,9 @@ export function SessionComposer({
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}
       onReorder={state.reorderPendingTurn}
-      onSend={() => void state.send()}
+      onSend={() => {
+        if (!disabled) void state.send()
+      }}
       pendingTurns={state.pendingTurns}
       plan={plan}
       sessionId={sessionId}
