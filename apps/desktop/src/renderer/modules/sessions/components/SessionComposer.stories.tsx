@@ -368,22 +368,26 @@ export const RichFormatting: Story = {
 }
 
 const MARKDOWN_SHORTCUTS: Array<{
+  sessionId: string
   type: (composer: HTMLElement) => Promise<unknown>
   assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>
 }> = [
   {
+    sessionId: 'markdown-heading',
     type: (composer) => userEvent.type(composer, '# Heading'),
     assert: async (canvas) => {
       await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
     },
   },
   {
+    sessionId: 'markdown-list',
     type: (composer) => userEvent.type(composer, '- First list item'),
     assert: async (canvas) => {
       await expect(canvas.getByRole('list')).toBeVisible()
     },
   },
   {
+    sessionId: 'markdown-quote',
     type: (composer) => userEvent.type(composer, '> Quoted detail'),
     assert: async (canvas, composer) => {
       await expect(canvas.getByText('Quoted detail')).toBeVisible()
@@ -391,12 +395,14 @@ const MARKDOWN_SHORTCUTS: Array<{
     },
   },
   {
+    sessionId: 'markdown-inline-code',
     type: (composer) => userEvent.type(composer, '`inline code`'),
     assert: async (canvas) => {
       await expect(canvas.getByText('inline code')).toBeVisible()
     },
   },
   {
+    sessionId: 'markdown-code-block',
     type: async (composer) => {
       await userEvent.type(composer, '``')
       await userEvent.keyboard('`')
@@ -408,14 +414,28 @@ const MARKDOWN_SHORTCUTS: Array<{
   },
 ]
 
+// Each shortcut gets its own composer instance: a shared editor can't be reset to a plain
+// paragraph between a list, a blockquote and a code block without racing Lexical's own state.
+function MarkdownShortcutsStory() {
+  return (
+    <>
+      {MARKDOWN_SHORTCUTS.map(({ sessionId }) => (
+        <SessionComposer key={sessionId} onSend={async () => true} sessionId={sessionId} />
+      ))}
+    </>
+  )
+}
+
 export const MarkdownShortcuts: Story = {
+  render: () => <MarkdownShortcutsStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
+    const composers = canvas.getAllByLabelText('Message')
 
-    await userEvent.click(composer)
     for (const [index, { type, assert }] of MARKDOWN_SHORTCUTS.entries()) {
-      if (index > 0) await userEvent.keyboard('{Enter}')
+      const composer = composers[index]
+      if (!composer) throw new Error(`Expected a composer for shortcut ${index}`)
+      await userEvent.click(composer)
       await type(composer)
       await assert(canvas, composer)
     }
