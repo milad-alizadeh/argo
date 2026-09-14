@@ -33,7 +33,7 @@ export function SessionShellInspector({
       <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-sidebar px-3">
         <Button variant="ghost" size="sm" className="justify-start p-0 type-label" onClick={onBack}>
           <ArrowLeft />
-          Session work
+          Back
         </Button>
       </header>
       <div className="shrink-0 px-4 py-3">

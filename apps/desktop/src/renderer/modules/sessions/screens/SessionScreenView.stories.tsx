@@ -6,7 +6,7 @@ import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
-import { SessionWorkInspector } from '../components/SessionWorkInspector'
+import { SessionWorkButtons } from '../components/SessionWorkButtons'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
@@ -139,16 +139,17 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
-        inspector={
-          <SessionWorkInspector
+        headerControls={
+          <SessionWorkButtons
             delegations={session.delegations}
-            shell={session.shell}
-            selectedDelegationId={null}
             onSelectDelegation={() => {}}
-            selectedShellId={null}
             onSelectShell={() => {}}
+            selectedDelegationId={null}
+            selectedShellId={null}
+            shell={session.shell}
           />
         }
+        inspector={null}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}

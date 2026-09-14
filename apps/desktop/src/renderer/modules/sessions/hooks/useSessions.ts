@@ -1,16 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../session-contract-error'
+import type { SessionContractError } from '../session-contract-error'
+import { throwSessionContractError, throwUnexpectedSessionReply } from '../session-contract-error'
 import {
   invalidateSessionRoster,
   SESSION_REFRESH_MS,
-  sessionFeedQueryKey,
   sessionRosterQueryKey,
 } from '../session-queries'
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
+import { sessionFeedQuery } from './sessionFeedQuery'
 
 let rosterOrder: SessionId[] = []
 
@@ -31,11 +28,9 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-// `delegationId` names the Subagent whose Feed is being read, or null for the Session's own.
-export function useSessions(
-  selectedSessionId: SessionId | null,
-  delegationId: string | null = null,
-) {
+// The main column always reads the Session's own Feed. A Subagent's Feed is a separate document
+// read beside it, drawn in the inspector, so opening one never takes the Session's away (#1582).
+export function useSessions(selectedSessionId: SessionId | null) {
   const queryClient = useQueryClient()
   const roster = useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
@@ -54,35 +49,9 @@ export function useSessions(
       }
     },
   })
-  const feed = useQuery<SessionFeed | null, SessionContractError>({
-    queryKey:
-      selectedSessionId === null
-        ? ['sessions', 'feed', null]
-        : sessionFeedQueryKey(selectedSessionId, delegationId),
-    enabled: selectedSessionId !== null,
-    refetchInterval: SESSION_REFRESH_MS,
-    retry: false,
-    queryFn: async () => {
-      if (selectedSessionId === null) return null
-      const key = sessionFeedQueryKey(selectedSessionId, delegationId)
-      const cached = queryClient.getQueryData<SessionFeed>(key)
-      const reply = await window.argo.readSessionFeed({
-        sessionId: selectedSessionId,
-        delegationId,
-        revision: cached?.revision ?? null,
-      })
-      switch (reply.type) {
-        case 'session.feed.read':
-          return reply
-        case 'session.feed.unchanged':
-          return cached ?? null
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
-  })
+  const feed = useQuery<SessionFeed | null, SessionContractError>(
+    sessionFeedQuery(queryClient, selectedSessionId, null),
+  )
 
   return {
     roster: roster.error === null ? (roster.data ?? null) : null,

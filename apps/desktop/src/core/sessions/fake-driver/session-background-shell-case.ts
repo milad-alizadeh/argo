@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict'
 
-// The whole vertical flow for a background Shell (#1582): the inspector opens on a Session that
-// runs no Subagent, the row names the command the CLI was given, selecting it draws what the
-// recorded output file holds, and the CLI's completion notification ends the running state.
+// The whole vertical flow for a background Shell (#1582): the header button counts the commands a
+// Session that runs no Subagent has, its list names the command the CLI was given, picking it opens
+// the inspector on what the recorded output file holds, and the CLI's completion notification ends
+// the running state.
 export async function proveBackgroundShell(page, { writeOutput, complete }) {
   await writeOutput('watching for changes\nrebuilt in 240ms\n')
   await page.evaluate(() => {
     window.location.hash = '#/sessions/shellRunning'
   })
-  const rail = page.locator('section[aria-label="Session work"]')
-  await rail.waitFor()
-  // No Subagent here, so the rail is the Shell section alone.
-  assert.equal(await page.getByRole('heading', { name: 'Shell · 3' }).count(), 1)
-  assert.equal(await page.getByRole('heading', { name: /Background Agents/ }).count(), 0)
+  const shellButton = page.getByRole('button', { name: 'Shell · 3' })
+  await shellButton.waitFor()
+  // No Subagent here, so the header carries the Shell button alone.
+  assert.equal(await page.getByRole('button', { name: /^Subagents/ }).count(), 0)
 
-  // The row names the real command and says it is still going.
-  const running = page.getByRole('button', { name: /Running.*npm run watch/ })
+  await shellButton.click()
+  const running = page.getByRole('menuitem', { name: /npm run watch/ })
   await running.waitFor()
   await running.click()
 
@@ -35,10 +35,10 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   )
   await page.getByText('watcher stopped').waitFor()
 
-  // Back to the rail, where the same command now waits behind the finished fold rather than
-  // standing in the running list.
-  await page.getByRole('button', { name: 'Session work' }).click()
-  await rail.waitFor()
-  await page.getByRole('button', { name: '2 finished' }).click()
-  await page.getByRole('button', { name: /Completed.*npm run watch/ }).waitFor()
+  // Back to the header, where the same command now waits under Finished rather than Running.
+  await page.getByRole('button', { name: 'Back' }).click()
+  await shellButton.click()
+  const finished = page.getByRole('group', { name: 'Finished' })
+  await finished.waitFor()
+  await finished.getByRole('menuitem', { name: /npm run watch/ }).waitFor()
 }

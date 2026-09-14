@@ -1,11 +1,14 @@
-// Picking a Subagent off the rail swaps the Feed for that Subagent's own transcript, and Main is
-// the way back to the Session's (#1582).
+// Picking a Subagent off the header button opens its own transcript in the inspector, beside the
+// Session's own Feed rather than in place of it (#1582).
 
 // The drawn Feed, never the measurement layer behind it, which holds a hidden copy of every row.
-function feedSays(page, text) {
+function textIn(page, selector, text) {
   return page.waitForFunction(
-    (needle) => document.querySelector('.feed__viewport')?.textContent?.includes(needle) === true,
-    text,
+    ([where, needle]) =>
+      [...document.querySelectorAll(where)].some(
+        (node) => node.textContent?.includes(needle) === true,
+      ),
+    [selector, text],
     { timeout: 15_000 },
   )
 }
@@ -14,12 +17,18 @@ export async function proveSubagentFeed(page) {
   await page.evaluate(() => {
     window.location.hash = '#/sessions/subagentTail'
   })
-  await page.locator('section[aria-label="Session work"]').waitFor()
-  await feedSays(page, 'Search the tree for every caller')
+  await textIn(page, '.feed__viewport', 'Search the tree for every caller')
 
-  await page.getByRole('button', { name: /call-task-1/ }).click()
-  await feedSays(page, 'Eleven callers, all in the same package.')
+  await page.getByRole('button', { name: /^Subagents/ }).click()
+  await page.getByRole('menuitem', { name: /call-task-1/ }).click()
 
-  await page.getByRole('button', { name: /Main/ }).click()
-  await feedSays(page, 'Search the tree for every caller')
+  const pane = page.locator('section[aria-label="Subagent"]')
+  await pane.waitFor()
+  await textIn(page, 'section[aria-label="Subagent"] .feed__viewport', 'Eleven callers')
+
+  // The Session's own Feed never left the column while the Subagent was open.
+  await textIn(page, '.feed__viewport', 'Search the tree for every caller')
+
+  await page.getByRole('button', { name: 'Back' }).click()
+  await pane.waitFor({ state: 'detached' })
 }

@@ -1,13 +1,15 @@
 // The two reads the work rail needs beyond the Roster row it already has (#1582): what each
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { SessionContractError } from '../session-contract-error'
 import {
   SESSION_REFRESH_MS,
   sessionDelegationUsageQueryKey,
   sessionShellOutputQueryKey,
 } from '../session-queries'
-import type { SessionId } from '../types'
+import type { SessionFeed, SessionId } from '../types'
+import { sessionFeedQuery } from './sessionFeedQuery'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
@@ -45,4 +47,14 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
     },
   })
   return output.data ?? null
+}
+
+// One Subagent's own transcript, read as its own document so the Session's Feed is never displaced
+// by it. Null until a Subagent is picked.
+export function useDelegationFeed(sessionId: SessionId | null, delegationId: string | null) {
+  const queryClient = useQueryClient()
+  const feed = useQuery<SessionFeed | null, SessionContractError>(
+    sessionFeedQuery(queryClient, delegationId === null ? null : sessionId, delegationId),
+  )
+  return feed.data ?? null
 }

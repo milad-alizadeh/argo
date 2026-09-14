@@ -71,7 +71,7 @@ export const NoRecordedOutput: Story = {
 export const GoesBackToTheRail: Story = {
   args: { command: WATCH, output: 'watching for changes\n' },
   play: async ({ args, canvasElement }) => {
-    const back = within(canvasElement).getByRole('button', { name: 'Session work' })
+    const back = within(canvasElement).getByRole('button', { name: 'Back' })
     back.focus()
     await expect(back).toHaveFocus()
     await userEvent.keyboard('{Enter}')

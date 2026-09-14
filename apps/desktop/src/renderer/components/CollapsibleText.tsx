@@ -5,7 +5,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/renderer/components/ui/collapsible'
-import { cn } from '@/renderer/lib/utils'
 
 export function CollapsibleText({
   content,
@@ -15,7 +14,6 @@ export function CollapsibleText({
   onOpenChange,
   open,
   title,
-  titleType = 'type-body',
 }: {
   content: ReactNode
   contentVariant?: 'line' | 'plain'
@@ -24,18 +22,10 @@ export function CollapsibleText({
   onOpenChange?: (open: boolean) => void
   open?: boolean
   title: ReactNode
-  // The typography role the trigger takes. A fold that sits inside a denser list asks for that
-  // list's role, so its title does not read as the loudest thing on the panel.
-  titleType?: string
 }) {
   return (
     <Collapsible defaultOpen={defaultOpen} className="mb-0" onOpenChange={onOpenChange} open={open}>
-      <CollapsibleTrigger
-        className={cn(
-          'group flex w-full items-center gap-2 py-1 text-muted-foreground transition-colors hover:text-foreground',
-          titleType,
-        )}
-      >
+      <CollapsibleTrigger className="group flex w-full items-center gap-2 py-1 type-body text-muted-foreground transition-colors hover:text-foreground">
         <Icon className="!size-(--size-icon-inline) shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
         <ChevronRightIcon className="!size-(--size-icon-inline) shrink-0 transition-transform group-data-[panel-open]:rotate-90" />
