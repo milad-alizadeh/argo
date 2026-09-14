@@ -5,6 +5,8 @@
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "newSession": "New Session",
+  "searchSessions": "Search Sessions",
+  "subagent": "Subagent",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "errors": {
