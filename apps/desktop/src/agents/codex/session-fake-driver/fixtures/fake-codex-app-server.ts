@@ -3,26 +3,62 @@
 // this adapter depends on, not just an in-memory fake of `CodexChannel`. It answers exactly the
 // verbs `codex-session-driver.ts` sends, grounded in codex-cli 0.147.0's schema
 // (docs/research/2026-09-09-codex-transport.md).
-import { appendFileSync } from 'node:fs'
+
+import { appendFileSync, mkdirSync } from 'node:fs'
+import path from 'node:path'
 import { createInterface } from 'node:readline'
 
 let threadCounter = 0
-
-// #1887: lets a proof assert the exact Turn text this fixture received, one line per Turn, with
-// no reformatting by this fixture or by the adapter in front of it.
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
+
+function threadIdFor(counter: number) {
+  return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
+}
+
+function recordTurn(threadId: string, text: string) {
+  const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
+  if (transcripts === undefined) return
+  const day = path.join(transcripts, '2026', '09', '14')
+  mkdirSync(day, { recursive: true })
+  const transcript = path.join(day, `rollout-2026-09-14T15-17-11-${threadId}.jsonl`)
+  appendFileSync(
+    transcript,
+    `${[
+      { timestamp: new Date().toISOString(), type: 'session_meta', payload: { id: threadId } },
+      {
+        timestamp: new Date().toISOString(),
+        type: 'event_msg',
+        payload: { type: 'user_message', message: text },
+      },
+    ]
+      .map((record) => JSON.stringify(record))
+      .join('\n')}\n`,
+  )
+}
 
 function send(message: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify(message)}\n`)
 }
 
+function request(line: string) {
+  return JSON.parse(line) as { id?: unknown; method?: string; params?: Record<string, unknown> }
+}
+
+function completeTurn(threadId: unknown, turnId: string, text: string) {
+  const status = text.includes('FAIL') ? 'failed' : 'completed'
+  send({
+    method: 'turn/completed',
+    params: { threadId, turn: { id: turnId, status, error: null } },
+  })
+  send({
+    method: 'thread/status/changed',
+    params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
+  })
+}
+
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
-  const message = JSON.parse(line) as {
-    id?: unknown
-    method?: string
-    params?: Record<string, unknown>
-  }
+  const message = request(line)
   if (message.method === undefined) return
   switch (message.method) {
     case 'initialize':
@@ -32,7 +68,12 @@ lines.on('line', (line) => {
       return
     case 'thread/start': {
       threadCounter += 1
-      send({ id: message.id, result: { thread: { id: `fake-thread-${threadCounter}` } } })
+      send({ id: message.id, result: { thread: { id: threadIdFor(threadCounter) } } })
+      return
+    }
+    case 'thread/resume': {
+      const threadId = message.params?.threadId
+      send({ id: message.id, result: { thread: { id: threadId } } })
       return
     }
     case 'turn/start': {
@@ -40,6 +81,7 @@ lines.on('line', (line) => {
       const threadId = params.threadId
       const input = Array.isArray(params.input) ? params.input : []
       const text = typeof input[0]?.text === 'string' ? input[0].text : ''
+      if (typeof threadId === 'string') recordTurn(threadId, text)
       if (echoFile) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
       const turnId = `fake-turn-${threadCounter}-${Date.now()}`
       send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
@@ -47,17 +89,7 @@ lines.on('line', (line) => {
         method: 'thread/status/changed',
         params: { threadId, status: { type: 'active', activeFlags: [] } },
       })
-      setTimeout(() => {
-        const status = text.includes('FAIL') ? 'failed' : 'completed'
-        send({
-          method: 'turn/completed',
-          params: { threadId, turn: { id: turnId, status, error: null } },
-        })
-        send({
-          method: 'thread/status/changed',
-          params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
-        })
-      }, 10)
+      setTimeout(() => completeTurn(threadId, turnId, text), 10)
       return
     }
     case 'turn/interrupt':
