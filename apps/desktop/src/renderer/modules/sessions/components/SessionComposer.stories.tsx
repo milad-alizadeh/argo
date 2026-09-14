@@ -19,6 +19,16 @@ async function attachViaMenu(canvas: ReturnType<typeof within>) {
   )
 }
 
+// The send chord spelled once, so the stories that only need a draft sent do not each restate it.
+// The stories that are about the chord itself press it directly.
+async function sendDraft(canvas: ReturnType<typeof within>, draft: string) {
+  const composer = canvas.getByLabelText('Message')
+  await userEvent.click(composer)
+  await userEvent.type(composer, draft)
+  await userEvent.keyboard('{Enter}')
+  return composer
+}
+
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
 
@@ -503,7 +513,7 @@ export const EnterSends: Story = {
   },
 }
 
-export const EnterOnAnEmptyComposerSendsNothing: Story = {
+export const EnterOnAnEmptyOrWhitespaceComposerSendsNothing: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -512,6 +522,7 @@ export const EnterOnAnEmptyComposerSendsNothing: Story = {
     await userEvent.click(composer)
     await userEvent.keyboard('{Enter}')
     await userEvent.keyboard('   {Enter}')
+    await userEvent.keyboard('{Backspace}{Backspace}{Backspace}')
     await userEvent.keyboard('Send this once.{Enter}')
 
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
@@ -527,11 +538,13 @@ export const EnterConfirmingAnImeCompositionSendsNothing: Story = {
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.keyboard('Send this once.')
+    await userEvent.keyboard('Half a thought.')
     fireEvent.keyDown(composer, { key: 'Enter', isComposing: true })
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard(' The rest of it.{Enter}')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
+      /^Half a thought\. The rest of it\.$/,
+    )
   },
 }
 
@@ -802,9 +815,7 @@ export const NewSessionChoosesCli: Story = {
     await userEvent.keyboard('{Escape}')
     await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
 
-    await userEvent.click(canvas.getByLabelText('Message'))
-    await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Fix the flaky test.')
     await expect(canvas.getByTestId('started-session')).toHaveTextContent(
       'codex: Fix the flaky test.',
     )
@@ -816,9 +827,7 @@ export const SendFinishesInAnotherSession: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.click(canvas.getByLabelText('Message'))
-    await userEvent.type(canvas.getByLabelText('Message'), 'Sent from session one.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Sent from session one.')
     await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Drafted in session two.')
@@ -833,17 +842,13 @@ export const QueuedTurn: Story = {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
-    await userEvent.click(composer)
-    await userEvent.type(composer, 'Run the focused checks after this Turn.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Run the focused checks after this Turn.')
 
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Run the focused checks after this Turn.',
     )
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent('')
-    await userEvent.click(composer)
-    await userEvent.type(composer, 'Then prepare the release notes.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Then prepare the release notes.')
     await expect(canvas.getAllByRole('listitem')[1]).toHaveClass(
       'session-page__queued-message--enter',
     )
@@ -880,11 +885,8 @@ export const FailedQueuedTurn: Story = {
   render: () => <FailedQueuedComposerStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
 
-    await userEvent.click(composer)
-    await userEvent.type(composer, 'Keep this pending when Claude rejects it.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Keep this pending when Claude rejects it.')
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Keep this pending when Claude rejects it.',
@@ -910,9 +912,7 @@ export const SendsTheChosenSetup: Story = {
       'Claude Code·Sonnet 5·Medium',
     )
 
-    await userEvent.click(canvas.getByLabelText('Message'))
-    await userEvent.type(canvas.getByLabelText('Message'), 'Plan the migration.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Plan the migration.')
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
       'Plan the migration. (sonnet medium plan)',
     )
@@ -1045,9 +1045,7 @@ export const QueuedTurnKeepsItsSetup: Story = {
     const mode = canvas.getByRole('button', { name: /^Choose permission mode/ })
 
     await chooseMode(canvasElement, /Plan/)
-    await userEvent.click(composer)
-    await userEvent.type(composer, 'Plan the release.')
-    await userEvent.keyboard('{Enter}')
+    await sendDraft(canvas, 'Plan the release.')
     await chooseMode(canvasElement, /Accept edits/)
     await expect(mode).toHaveTextContent('Accept edits')
 
