@@ -13,7 +13,7 @@ async function sendFromComposer(page: Page, text: string) {
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(text)
-  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.press('Enter')
 }
 
 export async function provePackagedCodexResume(

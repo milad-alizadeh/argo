@@ -54,6 +54,7 @@ function LightboxContent({
           variant="secondary"
           size="icon-sm"
           aria-label={`Download ${image.title}`}
+          nativeButton={false}
           render={<a href={image.source} download={image.title} />}
         >
           <Download />

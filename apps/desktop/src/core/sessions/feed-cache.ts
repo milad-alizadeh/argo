@@ -50,10 +50,10 @@ export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
 }
 
 // A Session its CLI is still writing never gives two stat readings that agree, so the wait for a
-// quiet chain is bounded. Past the bound the last read is kept and stamped as of BEFORE it: those
-// stamps are older than the file, so the next poll's fresh `stableChain` call reads it as stale
-// and reads again, rather than this one re-parsing a growing transcript until the heap is gone
-// (#2095).
+// quiet chain is bounded. Past the bound the last read is kept and stamped as of before it: those
+// stamps are older than the file, and cover the files the chain held before it, so the next
+// poll's fresh `stableChain` call reads it as stale and reads again, rather than this one
+// re-parsing a growing transcript until the heap is gone (#2095).
 const SETTLING_READS = 4
 
 export async function stableChain(
@@ -62,7 +62,7 @@ export async function stableChain(
   startingPaths: readonly string[],
 ): Promise<{ chain: SessionChain; stamps: string } | null> {
   let paths = startingPaths
-  let racing: { chain: SessionChain; stamps: string } | null = null
+  let unsettledRead: { chain: SessionChain; stamps: string } | null = null
   for (let read = 0; read < SETTLING_READS; read += 1) {
     const before = await chainStamps(paths)
     const chain = await source.readSessionFiles(sessionId)
@@ -70,9 +70,9 @@ export async function stableChain(
     paths = chain.files.map((file) => file.path)
     const stamps = await chainStamps(paths)
     if (before === stamps) return { chain, stamps }
-    racing = { chain, stamps: before }
+    unsettledRead = { chain, stamps: before }
   }
-  return racing
+  return unsettledRead
 }
 
 export function keepFeed(feeds: Map<string, HeldFeed>, sessionId: string, feed: HeldFeed) {
