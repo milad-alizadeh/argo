@@ -57,3 +57,17 @@ export const ProjectActions: Story = {
     )
   },
 }
+
+export const OpensProjectSettings: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const menu = within(canvasElement.ownerDocument.body)
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
+    await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Project settings…' }))
+    await expect(await menu.findByRole('heading', { name: 'Project settings' })).toBeInTheDocument()
+  },
+}

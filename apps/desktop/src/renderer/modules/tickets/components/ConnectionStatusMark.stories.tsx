@@ -1,42 +1,49 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 
+import type { ConnectionSummary } from '@/core/tickets/contract'
 import { ConnectionStatusMark } from './ConnectionStatusMark'
 
 const meta: Meta<typeof ConnectionStatusMark> = {
   title: 'Tickets/Connection Status Mark',
   component: ConnectionStatusMark,
   args: { children: 'GitHub · octocat' },
-  decorators: [
-    (Story) => (
-      <p className="flex w-(--size-cockpit-sidebar-default) items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
-        <Story />
-      </p>
-    ),
-  ],
 }
 
 export default meta
 type Story = StoryObj<typeof ConnectionStatusMark>
 
-const says =
-  (text: string): Story['play'] =>
-  async ({ canvasElement }) => {
-    const line = within(canvasElement).getByRole('paragraph')
-    await expect(within(line).getByText(text)).toHaveClass('sr-only')
-    // The state follows the label, so a button built on it is named "GitHub · octocat Connected".
-    await expect(line).toHaveTextContent(`GitHub · octocat${text}`)
-  }
-
-export const Connected: Story = { args: { state: 'ready' }, play: says('Connected') }
-
-// An unreadable sign-in draws this same dot; only its hidden words differ.
-export const AccessRevoked: Story = {
-  args: { state: 'account-revoked' },
-  play: says('Access revoked'),
+// One entry per ConnectionSummary['state'], so a new state added there fails this story until covered here.
+const STATE_TEXT: Record<ConnectionSummary['state'], string> = {
+  ready: 'Connected',
+  'account-expired': 'Sign-in expired',
+  'account-revoked': 'Access revoked',
+  'account-unreadable': 'Sign-in unreadable',
+  'account-missing': 'Disconnected',
 }
 
-export const Disconnected: Story = {
-  args: { state: 'account-missing' },
-  play: says('Disconnected'),
+export const States: Story = {
+  render: () => (
+    <>
+      {(Object.keys(STATE_TEXT) as ConnectionSummary['state'][]).map((state) => (
+        <p
+          key={state}
+          className="flex w-(--size-cockpit-sidebar-default) items-center gap-(--spacing-shell-item) type-meta text-muted-foreground"
+        >
+          <ConnectionStatusMark state={state}>GitHub · octocat</ConnectionStatusMark>
+        </p>
+      ))}
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const lines = within(canvasElement).getAllByRole('paragraph')
+
+    for (const [index, text] of Object.values(STATE_TEXT).entries()) {
+      const line = lines[index]
+      if (!line) throw new Error(`Expected a rendered line for state ${index}`)
+      await expect(within(line).getByText(text)).toHaveClass('sr-only')
+      // The state follows the label, so a button built on it is named "GitHub · octocat Connected".
+      await expect(line).toHaveTextContent(`GitHub · octocat${text}`)
+    }
+  },
 }

@@ -80,6 +80,9 @@ Do not report a usable control channel merely because the CLI satisfies the vers
 
 The required baseline includes `thread/start`, `thread/read`, `thread/resume`, `turn/start`, `turn/interrupt`,
 `turn/started`, `turn/completed`, and `thread/status/changed`.
+Codex 0.147.0 also declares `thread/name/set` with `threadId` and `name`. It sends
+`thread/name/updated` with `threadId` and `threadName`. The Session rename control uses these
+two protocol messages.
 Permission and question controls require their own request and response shapes before they become available.
 The CLI gate owns discovery, caching, invalidation, and the floor. #1825 owns how this evidence crosses its interfaces.
 This correction preserves #1756's floor, no ceiling, checked override, and degrade-down policy.

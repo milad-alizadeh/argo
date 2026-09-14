@@ -55,6 +55,7 @@ const SURFACE = [
   'readSessionFeed',
   'registerProject',
   'relocateProject',
+  'renameSession',
   'sendClaudeSession',
   'sendCodexSession',
   'setAppearance',

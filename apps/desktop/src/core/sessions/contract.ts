@@ -9,10 +9,12 @@ import {
 } from './claude-contract'
 import { codexSessionAcceptedSchema, codexSessionStartedSchema } from './codex-contract'
 import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
 export * from './claude-contract'
 export * from './codex-contract'
+export * from './rename-contract'
 export * from './session-error'
 
 export const sessionListRequestSchema = z.strictObject({
@@ -80,6 +82,7 @@ export const sessionFeedReplySchema = z.union([
   sessionFeedUnchangedSchema,
   sessionErrorSchema,
 ])
+export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
 export const claudeSessionStartReplySchema = z.union([
   claudeSessionStartedSchema,
   sessionErrorSchema,
@@ -97,6 +100,7 @@ export const codexSessionSendReplySchema = z.union([codexSessionAcceptedSchema, 
 
 export type SessionListReply = z.infer<typeof sessionListReplySchema>
 export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
+export type SessionRenameReply = z.infer<typeof sessionRenameReplySchema>
 export type ClaudeSessionStartReply = z.infer<typeof claudeSessionStartReplySchema>
 export type ClaudeSessionSendReply = z.infer<typeof claudeSessionSendReplySchema>
 export type ClaudeSessionInterruptReply = z.infer<typeof claudeSessionSendReplySchema>

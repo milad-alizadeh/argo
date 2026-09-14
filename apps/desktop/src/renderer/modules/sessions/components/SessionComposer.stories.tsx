@@ -367,61 +367,80 @@ export const RichFormatting: Story = {
   },
 }
 
-function markdownShortcutStory(
-  type: (composer: HTMLElement) => Promise<unknown>,
-  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>,
-): Story {
-  return {
-    play: async ({ canvasElement }) => {
-      const canvas = within(canvasElement)
-      const composer = canvas.getByLabelText('Message')
+const MARKDOWN_SHORTCUTS: Array<{
+  sessionId: string
+  type: (composer: HTMLElement) => Promise<unknown>
+  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>
+}> = [
+  {
+    sessionId: 'markdown-heading',
+    type: (composer) => userEvent.type(composer, '# Heading'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-list',
+    type: (composer) => userEvent.type(composer, '- First list item'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('list')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-quote',
+    type: (composer) => userEvent.type(composer, '> Quoted detail'),
+    assert: async (canvas, composer) => {
+      await expect(canvas.getByText('Quoted detail')).toBeVisible()
+      await expect(composer.querySelector('blockquote')).not.toBeNull()
+    },
+  },
+  {
+    sessionId: 'markdown-inline-code',
+    type: (composer) => userEvent.type(composer, '`inline code`'),
+    assert: async (canvas) => {
+      await expect(canvas.getByText('inline code')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-code-block',
+    type: async (composer) => {
+      await userEvent.type(composer, '``')
+      await userEvent.keyboard('`')
+      await userEvent.type(composer, 'const result = true')
+    },
+    assert: async (_canvas, composer) => {
+      await expect(composer.querySelector(':scope > code')).not.toBeNull()
+    },
+  },
+]
 
+// Each shortcut gets its own composer instance: a shared editor can't be reset to a plain
+// paragraph between a list, a blockquote and a code block without racing Lexical's own state.
+function MarkdownShortcutsStory() {
+  return (
+    <>
+      {MARKDOWN_SHORTCUTS.map(({ sessionId }) => (
+        <SessionComposer key={sessionId} onSend={async () => true} sessionId={sessionId} />
+      ))}
+    </>
+  )
+}
+
+export const MarkdownShortcuts: Story = {
+  render: () => <MarkdownShortcutsStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composers = canvas.getAllByLabelText('Message')
+
+    for (const [index, { type, assert }] of MARKDOWN_SHORTCUTS.entries()) {
+      const composer = composers[index]
+      if (!composer) throw new Error(`Expected a composer for shortcut ${index}`)
       await userEvent.click(composer)
       await type(composer)
       await assert(canvas, composer)
-    },
-  }
+    }
+  },
 }
-
-export const MarkdownHeadingShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '# Heading'),
-  async (canvas) => {
-    await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
-  },
-)
-
-export const MarkdownListShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '- First list item'),
-  async (canvas) => {
-    await expect(canvas.getByRole('list')).toBeVisible()
-  },
-)
-
-export const MarkdownQuoteShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '> Quoted detail'),
-  async (canvas, composer) => {
-    await expect(canvas.getByText('Quoted detail')).toBeVisible()
-    await expect(composer.querySelector('blockquote')).not.toBeNull()
-  },
-)
-
-export const MarkdownInlineCodeShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '`inline code`'),
-  async (canvas) => {
-    await expect(canvas.getByText('inline code')).toBeVisible()
-  },
-)
-
-export const MarkdownCodeBlockShortcut: Story = markdownShortcutStory(
-  async (composer) => {
-    await userEvent.type(composer, '``')
-    await userEvent.keyboard('`')
-    await userEvent.type(composer, 'const result = true')
-  },
-  async (_canvas, composer) => {
-    await expect(composer.querySelector(':scope > code')).not.toBeNull()
-  },
-)
 
 export const ManagedTurn: Story = {
   render: () => <ManagedComposerStory />,
