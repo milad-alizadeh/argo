@@ -197,3 +197,58 @@ export const UnreadableSignIn: Story = {
     await expect(args.signIn.start).toHaveBeenCalled()
   },
 }
+
+export const AddedNewAccount: Story = {
+  args: {
+    signIn: { ...idle, phase: 'connected', connected: { login: 'octocat', outcome: 'added' } },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent('Connected octocat.')
+  },
+}
+
+export const RequestingCode: Story = {
+  args: { signIn: { ...idle, phase: 'requesting', provider: 'github' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button', { name: 'Asking GitHub for a code…' })
+    await expect(button).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Connect a Linear Account' })).toBeDisabled()
+  },
+}
+
+export const DisconnectInProgress: Story = {
+  args: { disconnecting: octocat.id },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
+    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
+    await expect(within(row).getByRole('button', { name: 'Disconnect' })).toBeDisabled()
+    await expect(within(row).getByRole('button', { name: 'Keep' })).toBeDisabled()
+  },
+}
+
+const SIGN_IN_EXPIRED_TEXT = 'The sign-in expired before it was finished. Start again.'
+
+export const DisconnectFailed: Story = {
+  args: { disconnectError: accountError('sign-in-expired', 'request-1') },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText(SIGN_IN_EXPIRED_TEXT)).toBeInTheDocument()
+  },
+}
+
+export const ListFailed: Story = {
+  args: { listing: listing([]), listError: accountError('sign-in-expired', 'request-1') },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText(SIGN_IN_EXPIRED_TEXT)).toBeInTheDocument()
+  },
+}
+
+export const ReadingAccounts: Story = {
+  args: { listing: null, listError: null },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('Reading Accounts…')).toHaveAttribute(
+      'role',
+      'status',
+    )
+  },
+}
