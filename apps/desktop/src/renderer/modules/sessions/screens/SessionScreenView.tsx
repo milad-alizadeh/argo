@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import {
@@ -65,62 +66,56 @@ function useSessionScreenModel() {
   }
 }
 
-export function SessionScreenView() {
-  const {
-    selectedSessionId,
+function sessionShellProps(model: ReturnType<typeof useSessionScreenModel>) {
+  const { selectedSessionId, feed, feedError, roster, navigate, session, evidence, question } =
+    model
+  return {
     feed,
     feedError,
+    compactionStartedAt: session?.compactionStartedAt ?? null,
+    compactionPercentage: session?.compactionPercentage ?? null,
+    compactionTokens: session?.compactionTokens ?? null,
+    handoffStartedAt: session?.handoffStartedAt ?? null,
+    handoffTo: session?.handoffTo ?? null,
+    onOpenSession: (sessionId: string) => navigate(`/sessions/${sessionId}`),
+    isRunning: session?.status === 'running',
+    optimisticRow: model.composer.optimisticRow,
+    turnMarker: model.composer.markerView,
+    selectedSessionId,
+    activeEvidenceId: evidence?.id ?? null,
+    onOpenEvidence: model.setEvidence,
+    onAnswerQuestion: (_sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) =>
+      void question.decide(questionId, answers),
+    answeringQuestionId: question.answeringId,
+    questionFailure: question.failureFor,
+    defaultInspectorCollapsed: !sessionHasWork(session),
+    inspectorReveal: evidence?.id,
     roster,
-    navigate,
-    session,
-    evidence,
-    setEvidence,
-    harness,
-    composer,
-    permission,
-    question,
-  } = useSessionScreenModel()
-  const hasSessionWork = sessionHasWork(session)
-  return (
-    <SessionShell
-      feed={feed}
-      feedError={feedError}
-      compactionStartedAt={session?.compactionStartedAt ?? null}
-      compactionPercentage={session?.compactionPercentage ?? null}
-      compactionTokens={session?.compactionTokens ?? null}
-      handoffStartedAt={session?.handoffStartedAt ?? null}
-      handoffTo={session?.handoffTo ?? null}
-      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
-      isRunning={session?.status === 'running'}
-      selectedSessionId={selectedSessionId}
-      activeEvidenceId={evidence?.id ?? null}
-      onOpenEvidence={setEvidence}
-      onAnswerQuestion={(_sessionId, questionId, answers) =>
-        void question.decide(questionId, answers)
-      }
-      answeringQuestionId={question.answeringId}
-      questionFailure={question.failureFor}
-      composer={
-        <SessionComposerArea
-          composer={composer}
-          permission={permission}
-          questionPending={pendingQuestionId(feed) !== null}
-          session={session}
-          harness={harness}
-        />
-      }
-      inspector={
-        evidence === null ? (
-          <>
-            <SessionWorkInspector session={session} />
-            <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
-          </>
-        ) : (
-          <SessionEvidenceInspector evidence={evidence} />
-        )
-      }
-      defaultInspectorCollapsed={!hasSessionWork}
-      inspectorReveal={evidence?.id}
+  }
+}
+
+export function SessionScreenView() {
+  const model = useSessionScreenModel()
+  const { evidence, session, harness, composer, permission, feed, roster, navigate } = model
+  const composerArea = (
+    <SessionComposerArea
+      composer={composer}
+      permission={permission}
+      questionPending={pendingQuestionId(feed) !== null}
+      session={session}
+      harness={harness}
     />
+  )
+  const inspectorArea =
+    evidence === null ? (
+      <>
+        <SessionWorkInspector session={session} />
+        <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
+      </>
+    ) : (
+      <SessionEvidenceInspector evidence={evidence} />
+    )
+  return (
+    <SessionShell {...sessionShellProps(model)} composer={composerArea} inspector={inspectorArea} />
   )
 }
