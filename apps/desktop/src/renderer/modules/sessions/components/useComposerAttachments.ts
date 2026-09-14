@@ -3,8 +3,14 @@ import { useCallback } from 'react'
 import { embedAttachments } from '../prompt/attachmentPrompt'
 import { type ComposerAttachment, useComposerStore } from '../state/useComposerStore'
 
+// A stable reference for "no attachments yet": the selector below must return the same array on
+// every call with no entry, or zustand's useSyncExternalStore snapshot never settles (#1845).
+const NO_ATTACHMENTS: ComposerAttachment[] = []
+
 export function useComposerAttachments(sessionId: string) {
-  const attachments = useComposerStore(({ attachments }) => attachments[sessionId] ?? [])
+  const attachments = useComposerStore(
+    ({ attachments }) => attachments[sessionId] ?? NO_ATTACHMENTS,
+  )
   const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
   const removeAttachment = useComposerStore(({ removeAttachment }) => removeAttachment)
   const markAttachmentsError = useComposerStore(({ markAttachmentsError }) => markAttachmentsError)

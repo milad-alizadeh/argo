@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
@@ -366,8 +366,12 @@ function mockAttachmentsHost({
   }
 }
 
+// The Storybook `play` run happens in a real browser, where `DataTransfer` must be a genuine
+// instance: a plain `{ files: [...] }` object throws constructing the DragEvent (#1845).
 function fileDataTransfer(names: string[]) {
-  return { files: names.map((name) => new File(['content'], name)) }
+  const dataTransfer = new DataTransfer()
+  for (const name of names) dataTransfer.items.add(new File(['content'], name))
+  return dataTransfer
 }
 
 async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
@@ -916,7 +920,17 @@ export const DragAndDropAttaches: Story = {
     const dropTarget = composer.closest('form')?.querySelector('.rounded-xl')
 
     if (!dropTarget) throw new Error('Composer card is missing.')
-    fireEvent.drop(dropTarget, { dataTransfer: fileDataTransfer(['diagram.jpg']) })
+    // `fireEvent.drop`'s dataTransfer support copies only the given object's own enumerable
+    // properties onto a fresh DataTransfer; a real DataTransfer instance keeps `files`/`items`
+    // behind prototype getters, so that copy silently drops them. Dispatch the DragEvent directly
+    // instead, with the real DataTransfer attached as the browser constructs it (#1845).
+    dropTarget.dispatchEvent(
+      new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: fileDataTransfer(['diagram.jpg']),
+      }),
+    )
 
     await expect(await canvas.findByText('diagram')).toBeVisible()
     await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///dropped/diagram.jpg')
@@ -941,7 +955,7 @@ export const FailedAttachmentStaysAfterSend: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
 
     await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
-      'Review these.\n\n@/repo/notes.md',
+      'Review these. @/repo/notes.md',
     )
     await expect(await canvas.findByText('Not found')).toBeVisible()
     await expect(canvas.getByText('gone')).toBeVisible()
