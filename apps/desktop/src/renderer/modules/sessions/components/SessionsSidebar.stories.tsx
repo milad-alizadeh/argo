@@ -221,10 +221,10 @@ export const AllArchived: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByText('Archived 2')
-    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    const disclosure = canvas.getByRole('button', { name: 'Archived 2' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
-    await expect(disclosure.closest('details')).toHaveAttribute('open')
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
   },
 }

@@ -7,12 +7,12 @@ import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
-import type { HarnessControl, SessionCli } from '../harness/harnesses'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
+import { sessionHarness, sessionHasWork } from './sessionScreenState'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -48,10 +48,7 @@ export function SessionScreenView() {
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
-  const harness: HarnessControl =
-    selectedSessionId === null
-      ? { cli: lastHarness, onChange: chooseHarness }
-      : { cli: sessionCliOf(session) }
+  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const cli = harness.cli
   const composer = useSessionComposer({
     cli,
@@ -62,8 +59,7 @@ export function SessionScreenView() {
     selectedSessionId,
   })
   const permission = useSessionPermission(selectedSessionId)
-  const hasSessionWork =
-    session !== null && (session.delegations.length > 0 || session.shell.length > 0)
+  const hasSessionWork = sessionHasWork(session)
   return (
     <SessionShell
       feed={feed}
@@ -94,12 +90,6 @@ export function SessionScreenView() {
       inspectorReveal={evidence?.id}
     />
   )
-}
-
-// The Roster stores an open `cli` string (ADR-0021: an adapter registers, shared code doesn't
-// enumerate); this is the one seam that narrows it back to the closed `SessionCli` union.
-function sessionCliOf(session: { cli: string } | null): SessionCli {
-  return session?.cli === 'codex' ? 'codex' : 'claude'
 }
 
 export function SessionShell({
