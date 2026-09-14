@@ -213,6 +213,7 @@ function expectContextBarInset(canvasElement: HTMLElement) {
     gutter,
     1,
   )
+  expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
 }
 
 const meta: Meta<typeof SessionScreenView> = {
