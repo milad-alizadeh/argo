@@ -11,6 +11,12 @@ import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
+// The Attach button lives inside the "Add context" menu, matching the composer prototype.
+async function attachViaMenu(canvas: ReturnType<typeof within>) {
+  await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
+  await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Attachment' }))
+}
+
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
 
@@ -862,7 +868,7 @@ export const AttachViaButton: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await attachViaMenu(canvas)
     await expect(await canvas.findByText('notes')).toBeVisible()
     await expect(canvas.getByText('MD file')).toBeVisible()
   },
@@ -874,7 +880,7 @@ export const ImageAttachmentShowsAPreview: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await attachViaMenu(canvas)
     await canvas.findByText('notes')
     await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///repo/screenshot.png')
     await expect(canvas.getByText('MD file')).toBeVisible()
@@ -889,7 +895,7 @@ export const RemovingAnAttachmentKeepsTheDraft: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Half a thought.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await attachViaMenu(canvas)
     await canvas.findByText('notes')
     await userEvent.click(canvas.getByRole('button', { name: 'Remove notes' }))
 
@@ -903,7 +909,7 @@ export const AttachmentSurvivesASessionSwitch: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await attachViaMenu(canvas)
     await canvas.findByText('notes')
     await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
     await expect(canvas.queryByText('notes')).toBeNull()
@@ -950,7 +956,7 @@ export const FailedAttachmentStaysAfterSend: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Review these.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await attachViaMenu(canvas)
     await canvas.findByText('notes')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
 
