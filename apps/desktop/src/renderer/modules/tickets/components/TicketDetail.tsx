@@ -176,12 +176,16 @@ const keyText = 'font-mono type-meta'
 
 function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
   if (ticket.url === null) {
-    return <span className={`${keyText} shrink-0 text-muted-foreground`}>{ticket.key}</span>
+    return (
+      <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
+        {ticket.key}
+      </span>
+    )
   }
   return (
     <a
       aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
-      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} shrink-0 text-muted-foreground`}
+      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} justify-self-start shrink-0 text-muted-foreground`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
@@ -207,9 +211,9 @@ export function TicketDetail(props: TicketDetailProps) {
     <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
       <header className="border-b border-border/60">
         <div className={measure}>
-          <div className="flex min-w-0 items-start gap-(--spacing-shell-item)">
-            <TicketKey provider={provider} ticket={ticket} />
+          <div className="grid min-w-0 gap-(--spacing-shell-tight)">
             <h2 className="min-w-0 ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+            <TicketKey provider={provider} ticket={ticket} />
           </div>
           <Properties
             onChangeStatus={onChangeStatus}

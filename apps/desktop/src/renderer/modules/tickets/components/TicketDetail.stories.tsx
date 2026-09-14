@@ -48,7 +48,9 @@ export const Default: Story = {
     const title = within(article).getByRole('heading', { name: wayfinder.title })
     const linkBounds = ticketLink.getBoundingClientRect()
     const titleBounds = title.getBoundingClientRect()
-    await expect(Math.abs(linkBounds.top - titleBounds.top)).toBeLessThanOrEqual(1)
+    await expect(linkBounds.top).toBeGreaterThanOrEqual(titleBounds.bottom)
+    await expect(Math.abs(linkBounds.left - titleBounds.left)).toBeLessThanOrEqual(1)
+    await expect(linkBounds.width).toBeLessThan(titleBounds.width)
     // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
