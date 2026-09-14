@@ -3,11 +3,15 @@
 // casts again. Each CLI registers a `SessionSource` here rather than shared code branching on a
 // `cli` name (ADR-0021, ADR-0024).
 import { isRecord } from '../../boundary'
+import {
+  createInMemorySessionTicketLinkStore,
+  type SessionTicketLinkStore,
+} from '../tickets/session-links'
+import { archiveListReply } from './archive-list-reader'
 import type { SessionReader } from './bridge'
 import {
   driveSessionError,
   isDriveCli,
-  sessionArchiveListRequestSchema,
   sessionError,
   sessionFeedRequestSchema,
   sessionListRequestSchema,
@@ -18,10 +22,11 @@ import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { readFeedWithOverlay } from './read-owned-feed'
 import type { SessionSource } from './session-source'
+import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
-function versionFailure(value: unknown) {
+export function versionFailure(value: unknown) {
   return isRecord(value) && typeof value.version === 'number' && value.version !== 1
 }
 
@@ -75,32 +80,13 @@ function createOwnerResolver(sources: SessionSource[]) {
   }
 }
 
-async function archiveListReply(sources: SessionSource[], value: unknown) {
-  if (versionFailure(value)) return sessionError('unsupported-version', null)
-  const parsed = sessionArchiveListRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', null)
-  const source = sources.find((candidate) => candidate.discoverArchivedSessions !== undefined)
-  const page =
-    source?.discoverArchivedSessions === undefined
-      ? { rows: [], nextCursor: null, restored: null }
-      : await source.discoverArchivedSessions({
-          cursor: parsed.data.cursor,
-          restoreId: parsed.data.restoreId,
-        })
-  return {
-    version: 1 as const,
-    type: 'session.archive.listed' as const,
-    requestId: parsed.data.requestId,
-    sessions: page.rows,
-    nextCursor: page.nextCursor,
-    restored: page.restored,
-  }
-}
-
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
 // driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
-export function createSessionReader(sources: SessionSource[]): SessionReader {
+export function createSessionReader(
+  sources: SessionSource[],
+  ticketLinks: SessionTicketLinkStore = createInMemorySessionTicketLinkStore(),
+): SessionReader {
   const feeds = new Map<string, HeldFeed>()
   const ownership = createOwnerResolver(sources)
 
@@ -117,11 +103,20 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
         sources.map((source) => discoverFromSource(source, parsed.data.requestId)),
       )
       const reply = combineDiscoveries(discovered, parsed.data.requestId)
-      if (reply.type === 'session.listed') {
-        ownership.rememberDiscoveries(reply.sessions)
-      }
-      return reply
+      if (reply.type !== 'session.listed') return reply
+      ownership.rememberDiscoveries(reply.sessions)
+      // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
+      // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
+      const sessions = await Promise.all(
+        reply.sessions.map(async (session) => ({
+          ...session,
+          ticket: await ticketLinks.linkFor(session.id),
+        })),
+      )
+      return { ...reply, sessions }
     },
+    connectTicket: (request) => connectTicketReply(ticketLinks, request),
+    disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (value) => archiveListReply(sources, value),
     async readSessionFeed(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)

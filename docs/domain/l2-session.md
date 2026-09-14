@@ -69,6 +69,15 @@
   Claude records a custom title after `/rename`. Codex 0.147.0 accepts `thread/name/set` and sends
   `thread/name/updated`. Both CLIs therefore provide a native custom title.
 
+  **Connecting a Ticket can rename the Session** (#2134), the same way a reader's own typed name
+  does: Argo sends the Ticket's title through the existing rename path, and the CLI's own
+  `custom-title`/`thread/name/updated` record is what Argo reads back, so the result is
+  indistinguishable from a person having typed it. The honesty tier decides whether Argo asks
+  first: a `first-prompt` or `summarised` title cost the reader nothing to make, so it is replaced
+  without asking; a `custom` title is a reader's own word and is only replaced with their
+  confirmation. A rename the CLI refuses leaves the link in place — the link and the rename are
+  two separate outcomes, and the link is never undone by a refused or skipped rename.
+
 - **Session status** — a DERIVED rollup on the Session, with one DIRECT value beside it:
   - **starting** — Argo started the process and it has not written to the PTY yet. **DIRECT and
     managed-only**, and the only value read off no record at all: the CLI writes none until its

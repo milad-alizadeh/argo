@@ -33,6 +33,7 @@ import {
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
+import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
 import { providerEndpoints } from './providers/endpoints'
 
@@ -71,25 +72,31 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
     executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
     ownership: path.join(userData, 'codex-session-ownership.json'),
   })
+  const ticketLinks = createSessionTicketLinkStore(
+    path.join(userData, 'portable-v1', 'session-tickets.json'),
+  )
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
-    reader: createSessionReader([
-      claudeSessionSource({
-        transcripts: claudeTranscriptsRoot(home),
-        archive: claudeArchiveRoot(home),
-        managedSessions: claudeSessionDriver.roster,
-        completeCompaction: claudeSessionDriver.completeCompaction,
-        orphans: claudeSessionDriver.orphans,
-        liveMessages: claudeSessionDriver.liveMessages,
-        rename: (request) => renameClaudeSession(request, claudeSessionDriver),
-      }),
-      codexSessionSource(codexTranscriptsRoot(home), {
-        roster: codexSessionDriver.roster,
-        orphans: codexSessionDriver.ownership.orphans,
-        liveMessages: codexSessionDriver.liveMessages,
-        rename: (request) => renameCodexSession(request, codexSessionDriver),
-      }),
-    ]),
+    reader: createSessionReader(
+      [
+        claudeSessionSource({
+          transcripts: claudeTranscriptsRoot(home),
+          archive: claudeArchiveRoot(home),
+          managedSessions: claudeSessionDriver.roster,
+          completeCompaction: claudeSessionDriver.completeCompaction,
+          orphans: claudeSessionDriver.orphans,
+          liveMessages: claudeSessionDriver.liveMessages,
+          rename: (request) => renameClaudeSession(request, claudeSessionDriver),
+        }),
+        codexSessionSource(codexTranscriptsRoot(home), {
+          roster: codexSessionDriver.roster,
+          orphans: codexSessionDriver.ownership.orphans,
+          liveMessages: codexSessionDriver.liveMessages,
+          rename: (request) => renameCodexSession(request, codexSessionDriver),
+        }),
+      ],
+      ticketLinks,
+    ),
     adapters: {
       claude: createClaudeDriveAdapter(claudeSessionDriver),
       codex: createCodexDriveAdapter(codexSessionDriver),

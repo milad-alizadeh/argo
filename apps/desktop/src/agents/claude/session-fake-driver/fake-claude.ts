@@ -11,6 +11,9 @@ const COMPACT = /\/compact[\r\n]/
 // Argo's bracketed paste, then its carriage return, which the line discipline turns into a
 // newline when it arrives before this process has switched the terminal to raw mode.
 const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
+// The real CLI's own slash command: it writes a `custom-title` record rather than answering as a
+// Turn, and Argo's `driver.rename` reads that record back with source `custom` (issue #2134).
+const RENAME = /^\/rename (.+)$/
 
 const [transcripts, ...flags] = process.argv.slice(2)
 
@@ -66,6 +69,14 @@ process.stdin.on('data', (chunk: string) => {
   for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
     pending = pending.slice(turn.index + turn[0].length)
     const text = turn[1] ?? ''
+    const rename = RENAME.exec(text)
+    if (rename !== null) {
+      appendFileSync(
+        transcript,
+        `${JSON.stringify({ type: 'custom-title', customTitle: rename[1] })}\n`,
+      )
+      continue
+    }
     write('user', { role: 'user', content: text })
     write('assistant', {
       role: 'assistant',

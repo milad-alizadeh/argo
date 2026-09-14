@@ -114,6 +114,9 @@ export const MoreTicketsUnavailable: Story = {
         loadMoreError: 'Argo cannot reach GitHub.',
         onRetryLoadMore: retryLoadMore,
       }),
+      selectedKey: null,
+      onSelect: fn(),
+      onOpenSession: fn(),
     },
   },
   play: async ({ canvasElement }) => {

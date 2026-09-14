@@ -1,6 +1,7 @@
 // The Tickets screen's one reading of state: the selected Project, its Connection, the Accounts and
 // the Tickets, resolved into the single view the screen draws.
 import type { UseQueryResult } from '@tanstack/react-query'
+import { useNavigate, useParams } from 'react-router'
 import type { Provider } from '@/core/accounts/contract'
 import type { ProjectSummary } from '@/core/projects/messages'
 import type { ConnectionSummary, TicketStatus } from '@/core/tickets/contract'
@@ -77,12 +78,18 @@ type Connected = {
   query: string
   onDisconnectSource: () => void
   onChangeStatus: (key: string, status: TicketStatus) => void
+  selectedKey: string | null
+  onSelect: (key: string) => void
+  onOpenSession: (id: string) => void
 }
 
 function connectedView({
   projectId,
   connection,
   onDisconnectSource,
+  selectedKey,
+  onSelect,
+  onOpenSession,
   ...listing
 }: Connected): TicketsView {
   if (isConnectionProblem(connection)) {
@@ -102,6 +109,9 @@ function connectedView({
   return {
     kind: 'tickets',
     projectId,
+    selectedKey,
+    onSelect,
+    onOpenSession,
     backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },
   }
 }
@@ -116,6 +126,8 @@ export function useTicketsView(): TicketsScreenProps {
   const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
   const disconnectSource = useDisconnectSource()
   const updateStatus = useUpdateStatus()
+  const { ticketKey } = useParams()
+  const navigate = useNavigate()
 
   function view(): TicketsView {
     if (!project) return { kind: 'no-project' }
@@ -135,6 +147,9 @@ export function useTicketsView(): TicketsScreenProps {
       query,
       onDisconnectSource: () => disconnectSource.mutate({ projectId }),
       onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
+      selectedKey: ticketKey ?? null,
+      onSelect: (key) => navigate(`/tickets/${key}`),
+      onOpenSession: (id) => navigate(`/sessions/${id}`),
     })
   }
 

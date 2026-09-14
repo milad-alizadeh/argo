@@ -72,6 +72,9 @@ export function SessionRosterItem({
   onFocus,
   onSelect,
   onRename,
+  onOpenTicket,
+  onLinkTicket,
+  onUnlinkTicket,
   selected,
   session,
   tabIndex,
@@ -79,6 +82,9 @@ export function SessionRosterItem({
   onFocus: () => void
   onSelect: () => void
   onRename: () => void
+  onOpenTicket: () => void
+  onLinkTicket: () => void
+  onUnlinkTicket: () => void
   selected: boolean
   session: Session
   tabIndex: number
@@ -131,6 +137,14 @@ export function SessionRosterItem({
           <ContextMenuGroup>
             <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
             <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
+            {session.ticket !== null ? (
+              <>
+                <ContextMenuItem onClick={onOpenTicket}>Open Ticket</ContextMenuItem>
+                <ContextMenuItem onClick={onUnlinkTicket}>Unlink Ticket</ContextMenuItem>
+              </>
+            ) : (
+              <ContextMenuItem onClick={onLinkTicket}>Link Ticket…</ContextMenuItem>
+            )}
           </ContextMenuGroup>
         </ContextMenuContent>
       </ContextMenu>

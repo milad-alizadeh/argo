@@ -15,6 +15,7 @@ export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
+export * from './ticket-link-contract'
 
 export const sessionListRequestSchema = z.strictObject({
   version: z.literal(1),
