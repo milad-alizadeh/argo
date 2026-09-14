@@ -10,7 +10,10 @@ export type ProviderPresentation = {
   requesting: string
 }
 
-// Read per render rather than built once at import, so a change of language reaches the screen.
+// Read on call rather than built once at import, so it answers in the current language. `i18n.t`
+// subscribes to nothing, so a caller that must redraw on a language change holds `useTranslation`
+// of its own. The Accounts callers do; the Tickets callers draw English literals either way until
+// their own pull request moves them across (#2130).
 export function providerPresentation(provider: Provider): ProviderPresentation {
   return {
     name: i18n.t(`accounts:provider.${provider}.name`),

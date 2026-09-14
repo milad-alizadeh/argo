@@ -5,7 +5,7 @@ import type { AccountState, AccountSummary } from '@/core/accounts/contract'
 import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { useFocusRescue } from '../../../lib/focus-rescue'
-import { capitalized, providerPresentation } from '../lib/providers'
+import { providerPresentation } from '../lib/providers'
 
 // How each Account state draws: its badge, and the note saying why, which a connected Account has
 // no need of.
@@ -29,10 +29,11 @@ function Connections({ account }: { account: AccountSummary }) {
   if (account.connections.length === 0) {
     return <p className="type-meta text-muted-foreground">{t('row.noConnections')}</p>
   }
-  const { scope } = providerPresentation(account.provider)
   return (
     <ul
-      aria-label={t('row.connections', { scope: capitalized(scope.many), login: account.login })}
+      // A whole sentence per provider: a language where a noun does not simply take a capital at
+      // the front cannot be served by capitalising the scope word here.
+      aria-label={t(`row.connections.${account.provider}`, { login: account.login })}
       className="grid gap-(--spacing-shell-tight)"
     >
       {account.connections.map((connection) => (

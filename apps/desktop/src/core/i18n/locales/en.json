@@ -1,14 +1,22 @@
 {
   "shortcut": {
-    "project.register": "Open Project…",
-    "navigate.sessions": "Sessions",
-    "navigate.tickets": "Tickets",
-    "navigate.atlas": "Atlas",
-    "roster.next": "Next Session",
-    "roster.previous": "Previous Session",
-    "roster.first": "First Session",
-    "roster.last": "Last Session",
-    "composer.send": "Send message"
+    "project": {
+      "register": "Open Project…"
+    },
+    "navigate": {
+      "sessions": "Sessions",
+      "tickets": "Tickets",
+      "atlas": "Atlas"
+    },
+    "roster": {
+      "next": "Next Session",
+      "previous": "Previous Session",
+      "first": "First Session",
+      "last": "Last Session"
+    },
+    "composer": {
+      "send": "Send message"
+    }
   },
   "menu": {
     "file": "File"

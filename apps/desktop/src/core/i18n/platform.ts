@@ -1,13 +1,14 @@
 // The strings the operating system draws: the application menu and the native file dialogs. No
 // renderer draws them, so the main process translates them itself rather than sending a code the
-// way every other message does (#2130). The renderer reads the same catalog as its `platform`
-// namespace, so a shortcut named in the menu and again on screen is one word from one place.
+// way every other message does (#2130). The renderer registers this same file as its `platform`
+// namespace, so a shortcut the menu names and a renderer surface names later is one word from one
+// place. Every key here is spelled as i18next spells one, which is why none of the leaves is dotted.
 import en from './locales/en.json'
 
 export type PlatformCatalog = typeof en
 
-// A dotted key reaching a leaf. The shortcut keys hold dots of their own, which is why the catalog
-// is flattened into one map instead of walked segment by segment.
+// A dotted key reaching a leaf, spelled the way i18next spells one, so the renderer names the same
+// key this process does.
 type LeafKeys<Catalog> = Catalog extends string
   ? ''
   : {

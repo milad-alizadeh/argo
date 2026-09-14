@@ -4,7 +4,15 @@ import { SHORTCUTS } from '../commands/shortcuts'
 import en from './locales/en.json'
 import { platformText, setPlatformLanguage } from './platform'
 
-const shortcutKeys = Object.keys(en.shortcut).map((command) => `shortcut.${command}`)
+function leafKeys(catalog: object, prefix: string): string[] {
+  return Object.entries(catalog).flatMap(([segment, value]) =>
+    typeof value === 'string'
+      ? [`${prefix}.${segment}`]
+      : leafKeys(value as object, `${prefix}.${segment}`),
+  )
+}
+
+const shortcutKeys = leafKeys(en.shortcut, 'shortcut')
 
 test('every shortcut names a label the catalog holds', () => {
   const declared = SHORTCUTS.map((entry) => entry.labelKey).sort()

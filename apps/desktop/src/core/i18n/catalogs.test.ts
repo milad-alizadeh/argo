@@ -4,19 +4,18 @@
 // The typed `t` catches a missing key while the code is written, and this is the backstop: it also
 // reads the keys built from a variable, which no type can follow. It sits beside the platform
 // catalog rather than in the renderer because it walks the source tree, and the renderer may not
-// import a Node built-in.
+// import a Node built-in. The namespaces come from the renderer's own registration, so a namespace
+// is added in one place.
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import shared from '../../renderer/i18n/locales/en.json'
+import { CATALOGS } from '../../renderer/i18n/catalogs'
 import accounts from '../../renderer/modules/accounts/locales/en.json'
-import sessions from '../../renderer/modules/sessions/locales/en.json'
-import { ACCOUNT_ERRORS } from '../accounts/contract'
-import platform from './locales/en.json'
+import { ACCOUNT_ERRORS, PROVIDERS } from '../accounts/contract'
 
-const CATALOGS: Record<string, object> = { accounts, platform, sessions, shared }
+const NAMESPACES = Object.keys(CATALOGS)
 
 // A module keeps its catalog until its own pull request moves its copy across. Each migration
 // deletes a line here, and the last one deletes the list (#2130).
@@ -35,7 +34,9 @@ function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(directory, entry.name)
     if (entry.isDirectory()) return entry.name === 'locales' ? [] : sourceFiles(full)
-    return /\.tsx?$/.test(entry.name) && !entry.name.endsWith('.test.ts') ? [full] : []
+    // A story or a test is not a call site: a key only they name is copy no screen draws.
+    const proof = /\.(test|stories)\.tsx?$/.test(entry.name)
+    return /\.tsx?$/.test(entry.name) && !proof ? [full] : []
   })
 }
 
@@ -80,7 +81,7 @@ test('every catalog key has a call site', () => {
 })
 
 test('a call site naming a namespace names a key that namespace holds', () => {
-  const namespaced = /(?:accounts|platform|sessions|shared):[\w.-]+/g
+  const namespaced = new RegExp(`(?:${NAMESPACES.join('|')}):[\\w.-]+`, 'g')
   const declared = new Map(
     Object.entries(CATALOGS).map(([namespace, catalog]) => [
       namespace,
@@ -98,6 +99,18 @@ test('a call site naming a namespace names a key that namespace holds', () => {
   assert.deepEqual([...new Set(missing)], [])
 })
 
+// The two closed sets the Accounts catalog is keyed by. A key built from one of these is reached by
+// no pattern above, so a member added to either would otherwise draw its own key on screen.
 test('the accounts catalog answers every Account error code', () => {
   assert.deepEqual(Object.keys(accounts.error).sort(), Object.keys(ACCOUNT_ERRORS).sort())
+})
+
+test('the accounts catalog answers every provider', () => {
+  const expected = [...PROVIDERS].sort()
+  assert.deepEqual(Object.keys(accounts.provider).sort(), expected)
+  assert.deepEqual(Object.keys(accounts.row.connections).sort(), expected)
+  const confirm = Object.keys(accounts.confirm)
+    .flatMap((key) => key.match(/^(.+)_(?:one|other)$/)?.[1] ?? [])
+    .sort()
+  assert.deepEqual([...new Set(confirm)], expected)
 })
