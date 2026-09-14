@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
+import {
+  createSessionByClick,
+  openSessionByClick,
+} from '../../../core/sessions/fake-driver/session-gestures'
 
 type Restart = () => Promise<Page>
 
@@ -16,33 +20,16 @@ async function sendFromComposer(page: Page, text: string) {
   await page.keyboard.press('Shift+Enter')
 }
 
-export async function provePackagedCodexResume(
-  page: Page,
-  { project, restart }: { project: string; restart: Restart },
-) {
-  const started = await page.evaluate(
-    (cwd: string) =>
-      window.argo.startSession({
-        cli: 'codex',
-        cwd,
-        prompt: 'Open the Codex resume proof.',
-      }),
-    project,
-  )
-  assert.equal(started.type, 'session.started', JSON.stringify(started))
-  const sessionId = started.sessionId
-  await page.waitForFunction(
-    (id: string) =>
-      window.argo.listSessions().then((reply) => reply.sessions?.some((row) => row.id === id)),
-    sessionId,
-  )
+export async function provePackagedCodexResume(page: Page, { restart }: { restart: Restart }) {
+  const sessionId = await createSessionByClick(page, {
+    cli: 'codex',
+    prompt: 'Open the Codex resume proof.',
+  })
 
   const relaunched = await restart()
   const [orphaned] = await rosterRow(relaunched, sessionId)
   assert.equal(orphaned?.posture, 'orphaned')
-  await relaunched
-    .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
-    .click()
+  await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
   await history.getByText('Open the Codex resume proof.').waitFor()
 
