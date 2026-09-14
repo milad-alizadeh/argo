@@ -1,9 +1,11 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionCli } from '../harness/harnesses'
 import { SessionContractError } from '../session-contract-error'
+import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from './useSessionMutations'
 
@@ -59,6 +61,21 @@ export function useCompact(
       return false
     }
   }, [compact, sessionId, setFailure])
+}
+
+// Compacting changes the Session's context token count, which the roster reads too.
+export function useCompactWithInvalidate(request: {
+  compact: ReturnType<typeof useSessionMutations>['compact']
+  sessionId: string | null
+  setFailure: (failure: Failure | null) => void
+  queryClient: QueryClient
+}) {
+  const compactSession = useCompact(request.compact, request.sessionId, request.setFailure)
+  return useCallback(async () => {
+    const compacted = await compactSession()
+    if (compacted) await invalidateSessionRoster(request.queryClient)
+    return compacted
+  }, [compactSession, request.queryClient])
 }
 
 export async function sendMessage(

@@ -4,6 +4,7 @@ import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import type { HarnessControl } from '../harness/harnesses'
+import type { SessionRoster } from '../hooks/useSessions'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
@@ -76,6 +77,68 @@ export function SessionWorkInspector({ session }: Pick<SessionScreenDetailsProps
             </p>
           ))}
         </div>
+      ) : null}
+    </section>
+  )
+}
+
+function handoffTitle(roster: SessionRoster, sessionId: string) {
+  const row = roster?.sessions.find(({ id }) => id === sessionId)
+  return row?.title?.text ?? sessionId
+}
+
+function HandoffLink({
+  label,
+  sessionId,
+  roster,
+  onNavigate,
+}: {
+  label: string
+  sessionId: string
+  roster: SessionRoster
+  onNavigate: (path: string) => void
+}) {
+  return (
+    <p className="mt-2">
+      {label}{' '}
+      <button
+        className="text-foreground underline underline-offset-2"
+        onClick={() => onNavigate(`/sessions/${sessionId}`)}
+        type="button"
+      >
+        {handoffTitle(roster, sessionId)}
+      </button>
+    </p>
+  )
+}
+
+export function SessionHandoffFacts({
+  session,
+  roster = null,
+  onNavigate,
+}: Pick<SessionScreenDetailsProps, 'session'> & {
+  roster?: SessionRoster
+  onNavigate?: (path: string) => void
+}) {
+  if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
+  return (
+    <section aria-label="Session handoff" className="p-4 type-meta text-muted-foreground">
+      <h2 className="font-medium text-foreground">Handoff</h2>
+      {session.handoffTo ? (
+        <HandoffLink
+          label="Handed off to"
+          onNavigate={onNavigate}
+          roster={roster}
+          sessionId={session.handoffTo}
+        />
+      ) : null}
+      {session.handoffFrom ? (
+        <HandoffLink
+          label="Handed off from"
+          onNavigate={onNavigate}
+          roster={roster}
+          sessionId={session.handoffFrom}
+        />
       ) : null}
     </section>
   )

@@ -1,11 +1,10 @@
-// The one shared drive router (ADR-0024, #2030). `start` routes by the request's named CLI;
-// every other drive operation routes by the Session's owner, resolved through the reader's own
-// owner lookup (#2025/#2026) rather than a second lookup shared code would have to maintain.
+// The one shared drive router (ADR-0024, #2030): `start` routes by the named CLI, every other
+// operation by the Session's owner, resolved through the reader's own lookup (#2025/#2026).
 
 import {
-  driveSessionError,
   type SessionAcceptedReply,
   type SessionCompactRequest,
+  type SessionHandoffRequest,
   type SessionInterruptRequest,
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
@@ -21,7 +20,7 @@ import type {
   SessionDriveAdapter,
   SessionDriveAdapters,
 } from './session-drive-adapter'
-import { isDriveCli } from './session-error'
+import { driveSessionError, isDriveCli } from './session-error'
 
 export type OwnerContext = {
   adapters: SessionDriveAdapters
@@ -41,9 +40,8 @@ async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<O
   return adapter === undefined ? undefined : { adapter, cli }
 }
 
-// Every drive operation but `start` runs against the Session's own owner, then reports either the
-// shared `accepted` reply or the failure the adapter named — one shape the operations below share
-// rather than each repeating the owner lookup and the error mapping.
+// Every operation but `start` runs against the Session's own owner, then reports the shared
+// `accepted` reply or the failure the adapter named — the shape every operation below shares.
 async function ownedAccepted<T>(
   context: OwnerContext,
   request: { sessionId: string; requestId: string },
@@ -106,23 +104,26 @@ export async function sendSession(
   )
 }
 
-export function interruptSession(
-  request: SessionInterruptRequest,
+// interrupt/compact/handoff all reduce to the same shape: hand the Session id to the named
+// adapter method, no other arguments.
+function singleArgAccepted(
+  operation: 'interrupt' | 'compact' | 'handoff',
+  request: { sessionId: string; requestId: string },
   context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
   return ownedAccepted(context, request, (owned) =>
-    owned.adapter.interrupt({ sessionId: request.sessionId }),
+    owned.adapter[operation]({ sessionId: request.sessionId }),
   )
 }
 
-export function compactSession(
-  request: SessionCompactRequest,
-  context: OwnerContext,
-): Promise<SessionAcceptedReply> {
-  return ownedAccepted(context, request, (owned) =>
-    owned.adapter.compact({ sessionId: request.sessionId }),
-  )
-}
+export const interruptSession = (request: SessionInterruptRequest, context: OwnerContext) =>
+  singleArgAccepted('interrupt', request, context)
+
+export const compactSession = (request: SessionCompactRequest, context: OwnerContext) =>
+  singleArgAccepted('compact', request, context)
+
+export const handoffSession = (request: SessionHandoffRequest, context: OwnerContext) =>
+  singleArgAccepted('handoff', request, context)
 
 export async function readSessionPermission(
   request: SessionPermissionRequest,

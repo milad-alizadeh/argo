@@ -3,7 +3,11 @@ import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
+import {
+  SessionComposerArea,
+  SessionHandoffFacts,
+  SessionWorkInspector,
+} from '../components/SessionScreenDetails'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
@@ -49,6 +53,8 @@ function useSessionScreenModel() {
     selectedSessionId,
     feed,
     feedError,
+    roster,
+    navigate,
     session,
     evidence,
     setEvidence,
@@ -64,6 +70,8 @@ export function SessionScreenView() {
     selectedSessionId,
     feed,
     feedError,
+    roster,
+    navigate,
     session,
     evidence,
     setEvidence,
@@ -80,6 +88,9 @@ export function SessionScreenView() {
       compactionStartedAt={session?.compactionStartedAt ?? null}
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
+      handoffStartedAt={session?.handoffStartedAt ?? null}
+      handoffTo={session?.handoffTo ?? null}
+      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
@@ -100,7 +111,10 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionWorkInspector session={session} />
+          <>
+            <SessionWorkInspector session={session} />
+            <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
+          </>
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )

@@ -16,6 +16,8 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
     send: async () => {},
     interrupt: () => {},
     rename: async () => 'Renamed.',
+    handoff: async () => {},
+    completeHandoffs: () => {},
     liveMessages: () => [],
     roster: () => [],
     pendingPermission: () => ({

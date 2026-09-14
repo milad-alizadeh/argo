@@ -6,12 +6,17 @@ import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
+import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
 import type { LiveMessage } from './live-messages'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
   compact: (sessionId: string) => Promise<void>
   completeCompaction: (sessionId: string, completedAt: string) => void
+  handoff: (sessionId: string) => Promise<void>
+  // Runs on every roster read (the same hot poll path as the ownership ledger): spawns the fresh
+  // Session once a handing-off Session's brief arrives, or gives up past the patience limit.
+  completeHandoffs: () => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
   rename: (sessionId: string, name: string) => Promise<string>
@@ -30,6 +35,7 @@ export type ClaudeSessionDriver = {
 
 const INTERRUPT = '\u001b'
 const COMPACT = '/compact'
+type Sessions = Map<string, ManagedSession>
 
 function clearCompaction(session: ManagedSession) {
   session.compactionStartedAt = null
@@ -37,7 +43,7 @@ function clearCompaction(session: ManagedSession) {
   session.compactionTokens = null
 }
 
-function closeSessions(options: DriverOptions, sessions: Map<string, ManagedSession>) {
+function closeSessions(options: DriverOptions, sessions: Sessions) {
   for (const [sessionId, session] of sessions) {
     session.ended = true
     session.process.kill?.()
@@ -63,7 +69,7 @@ async function decideQuestion(
   context: {
     options: DriverOptions
     channel: ReturnType<typeof channelActions>
-    sessions: Map<string, ManagedSession>
+    sessions: Sessions
   },
   request: { sessionId: string; questionId: string; answers: ClaudeQuestionAnswer[] },
 ): Promise<boolean> {
@@ -75,7 +81,44 @@ async function decideQuestion(
   return true
 }
 
-function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
+function compactSession(options: DriverOptions, sessions: Sessions, sessionId: string) {
+  const session = sessions.get(sessionId)
+  if (!session) throw new ClaudeSessionDriverError('not-drivable')
+  clearCompaction(session)
+  session.compactionStartedAt = options.now().toISOString()
+  session.process.write(COMPACT)
+  session.process.write('\r')
+}
+
+function completeCompactionFor(sessions: Sessions, sessionId: string, completedAt: string) {
+  const session = sessions.get(sessionId)
+  if (!session || session.compactionStartedAt === null || completedAt < session.compactionStartedAt)
+    return
+  clearCompaction(session)
+}
+
+function interruptSession(sessions: Sessions, sessionId: string) {
+  const session = sessions.get(sessionId)
+  if (!session) throw new ClaudeSessionDriverError('not-drivable')
+  session.messages.retire()
+  clearCompaction(session)
+  clearHandoff(session)
+  session.process.write(INTERRUPT)
+}
+
+async function renameSession(
+  context: { channel: ReturnType<typeof channelActions>; sessions: Sessions },
+  sessionId: string,
+  name: string,
+) {
+  const session = context.sessions.get(sessionId)
+  if (!session) throw new ClaudeSessionDriverError('not-drivable')
+  await context.channel.rename(session, name)
+  session.title = { text: name, source: 'custom' }
+  return name
+}
+
+function roster(options: DriverOptions, sessions: Sessions) {
   return [...sessions.entries()].map(([id, session]) =>
     managedRow(id, {
       ...session,
@@ -96,44 +139,17 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
   const sessions = new Map<string, ManagedSession>()
   const channel = channelActions(options, sessions)
   return {
-    start(request) {
-      return startSession(options, channel, request)
-    },
-    async send(sessionId, turn) {
+    start: (request) => startSession(options, channel, request),
+    send: async (sessionId, turn) => {
       await channel.write(await channel.channelFor(sessionId, turn), turn)
     },
-    async compact(sessionId) {
-      const session = sessions.get(sessionId)
-      if (!session) throw new ClaudeSessionDriverError('not-drivable')
-      clearCompaction(session)
-      session.compactionStartedAt = options.now().toISOString()
-      session.process.write(COMPACT)
-      session.process.write('\r')
-    },
-    completeCompaction(sessionId, completedAt) {
-      const session = sessions.get(sessionId)
-      if (
-        !session ||
-        session.compactionStartedAt === null ||
-        completedAt < session.compactionStartedAt
-      )
-        return
-      clearCompaction(session)
-    },
-    interrupt(sessionId) {
-      const session = sessions.get(sessionId)
-      if (!session) throw new ClaudeSessionDriverError('not-drivable')
-      session.messages.retire()
-      clearCompaction(session)
-      session.process.write(INTERRUPT)
-    },
-    async rename(sessionId, name) {
-      const session = sessions.get(sessionId)
-      if (!session) throw new ClaudeSessionDriverError('not-drivable')
-      await channel.rename(session, name)
-      session.title = { text: name, source: 'custom' }
-      return name
-    },
+    compact: async (sessionId) => compactSession(options, sessions, sessionId),
+    completeCompaction: (sessionId, completedAt) =>
+      completeCompactionFor(sessions, sessionId, completedAt),
+    handoff: (sessionId) => startHandoff(options, sessions, sessionId),
+    completeHandoffs: () => completeHandoffs({ options, startSession, channel, sessions }),
+    interrupt: (sessionId) => interruptSession(sessions, sessionId),
+    rename: (sessionId, name) => renameSession({ channel, sessions }, sessionId, name),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () => roster(options, sessions),
     isLockedElsewhere: (sessionId) => options.ledger.standing(sessionId) === 'held-elsewhere',
