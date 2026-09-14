@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 
 import { sessionShellCommand } from '../session-fixtures'
 import { SessionShellInspector } from './SessionShellInspector'
@@ -18,7 +18,7 @@ const meta: Meta<typeof SessionShellInspector> = {
   title: 'Sessions/Screen/Shell Inspector',
   component: SessionShellInspector,
   parameters: { layout: 'fullscreen' },
-  args: { now: NOW, onBack: fn() },
+  args: { now: NOW },
   decorators: [
     (Story) => (
       <div className="flex h-dvh w-(--size-session-inspector) flex-col bg-sidebar">
@@ -65,16 +65,5 @@ export const NoRecordedOutput: Story = {
   args: { command: WATCH, output: null },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('This command recorded no output.')).toBeVisible()
-  },
-}
-
-export const GoesBackToTheRail: Story = {
-  args: { command: WATCH, output: 'watching for changes\n' },
-  play: async ({ args, canvasElement }) => {
-    const back = within(canvasElement).getByRole('button', { name: 'Back' })
-    back.focus()
-    await expect(back).toHaveFocus()
-    await userEvent.keyboard('{Enter}')
-    await expect(args.onBack).toHaveBeenCalled()
   },
 }

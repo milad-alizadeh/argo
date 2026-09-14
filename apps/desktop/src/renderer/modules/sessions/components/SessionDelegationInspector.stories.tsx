@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 
 import { sessionDelegation } from '../session-fixtures'
 import type { SessionFeed } from '../types'
@@ -60,7 +59,6 @@ export const RunningSubagent: Story = {
     delegation: DELEGATION,
     feed: FEED,
     now: NOW,
-    onBack: () => {},
     onOpenEvidence: () => {},
     onOpenSession: () => {},
   },
@@ -71,41 +69,5 @@ export const RunningSubagent: Story = {
     await expect(
       canvas.getByText('The two work buttons take the control size and the meta typography role.'),
     ).toBeVisible()
-  },
-}
-
-// The header's own control is the way back, and the inspector then holds the Subagent no longer.
-function Pane() {
-  const [picked, setPicked] = useState<string | null>(DELEGATION.id)
-  if (picked === null) return <p>Nothing picked</p>
-  return (
-    <SessionDelegationInspector
-      activeEvidenceId={null}
-      delegation={DELEGATION}
-      feed={FEED}
-      now={NOW}
-      onBack={() => setPicked(null)}
-      onOpenEvidence={() => {}}
-      onOpenSession={() => {}}
-    />
-  )
-}
-
-export const GoesBack: Story = {
-  render: () => <Pane />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
-    await expect(canvas.getByText('Nothing picked')).toBeVisible()
-  },
-}
-
-// The first read has not landed yet, so the pane states the Subagent and draws no document.
-export const StillReading: Story = {
-  args: { ...RunningSubagent.args, feed: null },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('Interface review')).toBeVisible()
-    await expect(canvasElement.querySelector('.feed__document')).toBeNull()
   },
 }

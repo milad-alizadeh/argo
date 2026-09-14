@@ -81,7 +81,7 @@ test('finds running background work only on a managed Session', () => {
   )
 })
 
-// A background Shell stays on the rail after it ends, so the list is no longer the answer.
+// A background Shell stays in the Shell list after it ends, so the list is no longer the answer.
 test('reads a finished background Shell as no longer running', () => {
   assert.equal(hasRunningBackgroundWork({ ...session, shell: [shell('completed')] }), false)
   assert.equal(hasRunningBackgroundWork({ ...session, shell: [shell('failed')] }), false)

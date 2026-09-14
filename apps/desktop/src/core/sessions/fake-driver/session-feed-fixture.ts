@@ -32,8 +32,8 @@ export const FIXTURES = [
   'harnessNoise',
   // Two background Shells, one still running and one the CLI already notified about (#1582).
   'shellRunning',
-  // One Subagent with a transcript of its own beside the Session's file, whose Feed the rail
-  // opens in place of the Session's (#1582).
+  // One Subagent with a transcript of its own beside the Session's file, whose Feed the header
+  // opens in the inspector beside the Session's (#1582).
   'subagentTail',
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']

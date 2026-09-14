@@ -35,8 +35,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   )
   await page.getByText('watcher stopped').waitFor()
 
-  // Back to the header, where the same command now waits under Finished rather than Running.
-  await page.getByRole('button', { name: 'Back' }).click()
+  // The same command now waits under Finished rather than Running.
   await shellButton.click()
   const finished = page.getByRole('group', { name: 'Finished' })
   await finished.waitFor()

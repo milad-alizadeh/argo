@@ -12,16 +12,16 @@ function pendingQuestionId(feed: SessionFeed | null): string | null {
 }
 
 function WorkButtons({ model }: { model: SessionScreenModel }) {
-  const { selectedSessionId, session, setPicked, work } = model
+  const { pick, selectedSessionId, session, work } = model
   return (
     <SessionWorkButtons
       delegations={session?.delegations ?? []}
       delegationTokens={model.delegationTokens}
       onSelectDelegation={(delegationId) =>
-        setPicked({ sessionId: selectedSessionId, delegationId, shellId: null })
+        pick({ sessionId: selectedSessionId, delegationId, shellId: null })
       }
       onSelectShell={(shellId) =>
-        setPicked({ sessionId: selectedSessionId, delegationId: null, shellId })
+        pick({ sessionId: selectedSessionId, delegationId: null, shellId })
       }
       selectedDelegationId={work.delegationId}
       selectedShellId={work.shellId}
@@ -41,10 +41,8 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
-      onPick={model.setPicked}
       shell={model.shell}
       shellOutput={model.shellOutput}
-      work={model.work}
     />
   )
 }
@@ -52,7 +50,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { composer, evidence, feed, feedError, harness, permission, question, session } = model
-  const { navigate, selectedSessionId, setEvidence, work } = model
+  const { navigate, selectedSessionId, setEvidence, workReveal } = model
   return (
     <SessionShell
       feed={feed}
@@ -87,7 +85,7 @@ export function SessionScreenView() {
       // Picking work in the header opens the inspector, the way opening recorded evidence does.
       // Nothing opens it on its own any more: the header buttons are what say a Session has
       // background work (#1582 AC1).
-      inspectorReveal={evidence?.id ?? work.delegationId ?? work.shellId ?? undefined}
+      inspectorReveal={evidence?.id ?? workReveal ?? undefined}
     />
   )
 }

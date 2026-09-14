@@ -3,7 +3,7 @@
 // clock rather than this module reading one.
 import type { ShellState } from '@/core/sessions/models'
 
-// What a reader is told a Shell's state is, on the rail and in the pane alike.
+// What a reader is told a Shell's state is, in the Shell list and in the pane alike.
 export const SHELL_STATE_WORDS: Record<ShellState, string> = {
   running: 'Running',
   completed: 'Completed',

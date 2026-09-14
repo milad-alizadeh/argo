@@ -29,6 +29,10 @@ export async function proveSubagentFeed(page) {
   // The Session's own Feed never left the column while the Subagent was open.
   await textIn(page, '.feed__viewport', 'Search the tree for every caller')
 
-  await page.getByRole('button', { name: 'Back' }).click()
-  await pane.waitFor({ state: 'detached' })
+  // Picking the same Subagent again reopens an inspector the reader collapsed.
+  await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
+  await page.getByRole('button', { name: 'Open Session inspector' }).waitFor()
+  await page.getByRole('button', { name: /^Subagents/ }).click()
+  await page.getByRole('menuitem', { name: /call-task-1/ }).click()
+  await page.getByRole('button', { name: 'Collapse Session inspector' }).waitFor()
 }

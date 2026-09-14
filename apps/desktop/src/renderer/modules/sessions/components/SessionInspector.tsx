@@ -24,10 +24,8 @@ export function SessionInspector({
   handoff,
   onOpenEvidence,
   onOpenSession,
-  onPick,
   shell,
   shellOutput,
-  work,
 }: {
   activeEvidenceId: string | null
   delegation: SessionDelegation | null
@@ -37,20 +35,12 @@ export function SessionInspector({
   handoff: ReactNode
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
-  onPick: (selection: WorkSelection) => void
   shell: SessionShellCommand | null
   shellOutput: string | null
-  work: WorkSelection
 }) {
   if (evidence !== null) return <SessionEvidenceInspector evidence={evidence} />
   if (shell !== null) {
-    return (
-      <SessionShellInspector
-        command={shell}
-        output={shellOutput}
-        onBack={() => onPick({ ...work, shellId: null })}
-      />
-    )
+    return <SessionShellInspector command={shell} output={shellOutput} />
   }
   if (delegation !== null) {
     return (
@@ -58,7 +48,6 @@ export function SessionInspector({
         activeEvidenceId={activeEvidenceId}
         delegation={delegation}
         feed={delegationFeed}
-        onBack={() => onPick({ ...work, delegationId: null })}
         onOpenEvidence={onOpenEvidence}
         onOpenSession={onOpenSession}
       />

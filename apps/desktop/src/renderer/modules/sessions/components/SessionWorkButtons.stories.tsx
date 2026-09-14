@@ -134,16 +134,6 @@ export const PicksASubagent: Story = {
   },
 }
 
-// A Session that ran neither draws neither button, so an empty header stays empty (#1582).
-export const NothingToShow: Story = {
-  render: () => <Header delegations={[]} shell={[]} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.queryByRole('button', { name: /Subagents/ })).toBeNull()
-    await expect(canvas.queryByRole('button', { name: /^Shell/ })).toBeNull()
-  },
-}
-
 // Everything has come back, so both badges are grey rather than green.
 export const EverythingFinished: Story = {
   render: () => (

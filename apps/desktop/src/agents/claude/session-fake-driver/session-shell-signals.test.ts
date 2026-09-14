@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 // A foreground call that came back is history, but a background one only ever gets a receipt,
-// so it stays on the rail and its notification is what ends it (#1582).
+// so it stays in the Shell list and its notification is what ends it (#1582).
 test('keeps every running command and every background one, and drops the rest', async () => {
   assert.deepEqual((await rowOf(['shellRunning'])).shell, [
     {

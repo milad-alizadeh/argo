@@ -22,14 +22,25 @@ function pickedIn(selection: WorkSelection, sessionId: string | null): WorkSelec
   return selection.sessionId === sessionId ? selection : { ...NOTHING_PICKED, sessionId }
 }
 
+// Each pick counts, so picking the same row again reopens an inspector the reader collapsed.
+function useWorkPick(sessionId: string | null) {
+  const [picked, setPicked] = useState({ selection: NOTHING_PICKED, count: 0 })
+  const work = pickedIn(picked.selection, sessionId)
+  const pickedId = work.delegationId ?? work.shellId
+  return {
+    work,
+    pick: (selection: WorkSelection) => setPicked(({ count }) => ({ selection, count: count + 1 })),
+    workReveal: pickedId === null ? null : `${pickedId}#${picked.count}`,
+  }
+}
+
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  const [picked, setPicked] = useState<WorkSelection>(NOTHING_PICKED)
-  const work = pickedIn(picked, selectedSessionId)
+  const { work, pick, workReveal } = useWorkPick(selectedSessionId)
   const { feed, feedError, roster } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
@@ -63,7 +74,8 @@ export function useSessionScreenModel() {
     permission,
     question,
     work,
-    setPicked,
+    pick,
+    workReveal,
     shell,
     delegation,
     delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),

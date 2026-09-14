@@ -1,9 +1,7 @@
 // One Subagent's own transcript, drawn in the inspector beside the Session's own Feed rather than
 // in place of it (#1582). The document is the Feed's, so a Subagent reads exactly the way the
 // Session it belongs to reads.
-import { ArrowLeft } from 'lucide-react'
 import type { SessionDelegation } from '@/core/sessions/models'
-import { Button } from '@/renderer/components/ui/button'
 import { FeedDocument } from '../feed/FeedDocument'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { workDuration } from './session-work'
@@ -15,7 +13,6 @@ export function SessionDelegationInspector({
   delegation,
   feed,
   now,
-  onBack,
   onOpenEvidence,
   onOpenSession,
 }: {
@@ -24,7 +21,6 @@ export function SessionDelegationInspector({
   // What the read has returned so far, or null while the first read is in flight.
   feed: SessionFeed | null
   now?: number
-  onBack: () => void
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
 }) {
@@ -32,12 +28,6 @@ export function SessionDelegationInspector({
   const duration = workDuration(delegation.startedAt, delegation.endedAt, now ?? Date.now())
   return (
     <section aria-label="Subagent" className="flex min-h-0 flex-1 flex-col">
-      <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-sidebar px-3">
-        <Button variant="ghost" size="sm" className="justify-start p-0 type-label" onClick={onBack}>
-          <ArrowLeft />
-          Back
-        </Button>
-      </header>
       <div className="shrink-0 px-4 py-3">
         <p className="truncate type-meta text-foreground">{title}</p>
         <p className="type-meta text-muted-foreground">

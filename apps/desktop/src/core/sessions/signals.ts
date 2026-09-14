@@ -20,7 +20,7 @@ export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task'
 // and a transcript written before the rename still names the old one.
 const DELEGATING_TOOLS = ['Task', 'Agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
-// come back is a command still running, which is what the rail's Shell section says.
+// come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
 // The tool whose input is the Plan (CONTEXT.md L3 · Plan). Each call writes the whole list, so
 // the newest one is the Plan and every earlier one is history.
@@ -77,10 +77,10 @@ function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {
   return new Map(notifications.map((notification) => [notification.callId, notification]))
 }
 
-// The shell commands the rail draws. A foreground `Bash` call the transcript holds no result for
+// The shell commands the Shell list draws. A foreground `Bash` call the transcript holds no result for
 // is running; one that came back is what the Session did rather than what it is doing, so it is
 // not read at all (#1907). A background call is the exception: its result is only a receipt, so
-// it stays on the rail under the state its completion notification gives it (#1582).
+// it stays in the Shell list under the state its completion notification gives it (#1582).
 export function readShellCommands(
   messages: TranscriptMessage[],
   notifications: BackgroundTask[],
