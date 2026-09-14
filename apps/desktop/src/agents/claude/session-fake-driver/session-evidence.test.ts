@@ -73,8 +73,9 @@ test('keeps each line of a multi-line edit in one unified patch', async (context
     root,
   )
   assert.equal(reply.type, 'session.feed.read')
-  const [row] = reply.rows
-  assert.equal(row?.shape, 'tool')
+  const [group] = reply.rows
+  assert.equal(group?.shape, 'tool-group')
+  const [row] = group?.calls ?? []
   assert.equal(row?.evidence?.kind, 'diff')
   assert.equal(
     row?.evidence?.source,
