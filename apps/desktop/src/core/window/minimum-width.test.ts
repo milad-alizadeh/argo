@@ -18,7 +18,7 @@ async function token(name: string) {
 
 test('the window is never narrower than the rail, the sidebar and the content at their minimums', async () => {
   const widths = await Promise.all(
-    ['size-navigation-rail', 'size-cockpit-sidebar-default', 'size-cockpit-content-min'].map(token),
+    ['size-navigation-rail', 'size-cockpit-sidebar-min', 'size-cockpit-content-min'].map(token),
   )
   assert.equal(
     WINDOW_MINIMUM_WIDTH,

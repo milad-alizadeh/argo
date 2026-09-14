@@ -112,12 +112,14 @@
   --size-chrome-bar: 52px;
   --size-navigation-rail: 88px;
   --size-cockpit-sidebar-default: 368px;
+  --size-cockpit-sidebar-min: 240px;
   --size-cockpit-sidebar-max: 460px;
-  --size-cockpit-content-min: 360px;
+  --size-cockpit-content-min: 400px;
   --size-navigation-item: 36px;
   --size-navigation-control: 28px;
   --size-icon-control: 16px;
   --size-control: 32px;
+  --size-ticket-age-visible: 240px;
   --size-session-inspector: 248px;
   --size-session-inspector-min: 248px;
   --size-session-workspace-min: 360px;
@@ -256,7 +258,7 @@
   --size-ticket-inspector-min: 440px;
   --text-ticket-title: var(--text-base, 1rem);
   --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
-  --size-ticket-workspace-min: 320px;
+  --size-ticket-workspace-min: 400px;
   --size-session-composer-fade: calc(var(--spacing-shell-region) * 2);
   --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
   --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);

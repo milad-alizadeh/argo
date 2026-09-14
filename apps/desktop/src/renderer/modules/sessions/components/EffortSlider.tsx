@@ -1,3 +1,4 @@
+import { effortChoices } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 
 // The end labels sit inside the track; the rest centre on their stop.
@@ -8,7 +9,7 @@ function labelShift(index: number, last: number) {
 }
 
 export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps) {
-  const efforts = choices.efforts
+  const efforts = effortChoices(choices, value.model)
   const effortIndex = Math.max(
     0,
     efforts.findIndex((effort) => effort.value === value.effort),
