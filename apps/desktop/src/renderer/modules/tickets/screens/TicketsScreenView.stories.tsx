@@ -175,6 +175,13 @@ export const TicketTree: Story = {
     ])
     await expect(rows[2]).toHaveAccessibleName(/child of #701$/)
     await expect(rows[3]).toHaveAccessibleName(/child of #700$/)
+    const leafRow = rows[2]?.parentElement
+    if (leafRow === null || leafRow === undefined) throw new Error('A child Ticket needs a row.')
+    const twig = leafRow?.querySelector('span.absolute.left-0')
+    if (twig === null || twig === undefined) throw new Error('A child Ticket needs a tree twig.')
+    const title = within(leafRow).getByText('Parse the plan file')
+    const titleCenter = title.getBoundingClientRect().top + title.getBoundingClientRect().height / 2
+    await expect(Math.abs(twig.getBoundingClientRect().top - titleCenter)).toBeLessThanOrEqual(1)
   },
 }
 

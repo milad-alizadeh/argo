@@ -1,4 +1,5 @@
 import { Ban, ChevronRight } from 'lucide-react'
+import type { CSSProperties } from 'react'
 
 import type { Ticket, TicketStatus } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'
@@ -10,6 +11,10 @@ import { StatusMenu } from './StatusMenu'
 import { TicketLabel } from './TicketLabel'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
+type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
+const treeAnchor: TreeAnchorStyle = {
+  '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height))',
+}
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
 
@@ -126,7 +131,7 @@ export function TicketRow(props: TicketRowProps) {
           statuses={statuses}
         />
       </span>
-      <span className="[--ticket-tree-anchor:calc(var(--spacing-shell-icon)_+_(var(--text-session-body--line-height)_/_2))] flex shrink-0 self-stretch">
+      <span className="flex shrink-0 self-stretch" style={treeAnchor}>
         <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
