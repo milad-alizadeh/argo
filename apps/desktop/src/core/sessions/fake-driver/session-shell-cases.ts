@@ -12,6 +12,13 @@ export async function proveSessionShell(page) {
 
   const inspector = page.locator('aside[aria-label="Session inspector"]')
   const workspace = page.locator('section[aria-label="Session workspace"]')
+  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
+  await page.getByRole('button', { name: 'Open Session inspector' }).click()
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ===
+      INSPECTOR_WIDTH,
+  )
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
   await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
   await page.waitForFunction(
@@ -20,17 +27,6 @@ export async function proveSessionShell(page) {
       0,
   )
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
-  await page.getByRole('button', { name: 'Open Session inspector' }).click()
-  await page.waitForFunction(
-    (inspectorWidth) =>
-      Math.round(
-        document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ??
-          0,
-      ) === inspectorWidth,
-    INSPECTOR_WIDTH,
-    { timeout: 10_000 },
-  )
-  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
   await page.getByRole('button', { name: 'Expand Session sidebar' }).click()
   await page.waitForFunction(
     () =>

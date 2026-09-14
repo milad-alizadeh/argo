@@ -73,7 +73,7 @@ export const PercentageAndIcons: Story = {
     await expect(canvas.getByRole('button', { name: /Context 148k tokens/ })).toHaveAccessibleName(
       /74%/,
     )
-    await expect(canvas.queryByText('Compact')).toBeNull()
-    await expect(canvas.queryByText('Handoff')).toBeNull()
+    expect(getComputedStyle(canvas.getByText('Compact')).display).toBe('none')
+    expect(getComputedStyle(canvas.getByText('Handoff')).display).toBe('none')
   },
 }
