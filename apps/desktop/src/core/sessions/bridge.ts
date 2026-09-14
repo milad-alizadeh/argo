@@ -1,6 +1,10 @@
 import type { BrowserWindow } from 'electron'
 import type { ClaudeSessionDriver } from '../../agents/claude/drive/claude-session-driver'
-import { interruptClaudeSession, sendClaudeSession } from '../../agents/claude/drive/drive-session'
+import {
+  compactClaudeSession,
+  interruptClaudeSession,
+  sendClaudeSession,
+} from '../../agents/claude/drive/drive-session'
 import {
   decideClaudePermission,
   readClaudePermission,
@@ -56,6 +60,7 @@ export function attachSessionBridge(
       startClaude: (request, context) => startClaudeSession(request, context.starter),
       sendClaude: (request, context) => sendClaudeSession(request, context.driver),
       interruptClaude: (request, context) => interruptClaudeSession(request, context.driver),
+      compactClaude: (request, context) => compactClaudeSession(request, context.driver),
       readClaudePermission: (request, context) => readClaudePermission(request, context.driver),
       decideClaudePermission: (request, context) => decideClaudePermission(request, context.driver),
       startCodex: (request, context) => startCodexSession(request, context.codexStarter),

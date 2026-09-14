@@ -54,7 +54,7 @@ export type TranscriptRecord =
   // The CLI's `pr-link` record: a pull request this Session opened or was pointed at.
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   // The CLI's `compact_boundary` system record: the point where history was condensed.
-  | { kind: 'compaction'; uuid: string }
+  | { kind: 'compaction'; uuid: string; timestamp?: string }
   | { kind: 'unreadable'; line: string }
 
 export type TranscriptFile = {

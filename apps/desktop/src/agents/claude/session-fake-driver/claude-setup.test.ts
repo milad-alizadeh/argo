@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { footerMode } from '../drive/claude-setup.ts'
+import { compactionProgress, footerMode } from '../drive/claude-setup.ts'
 
 // Bytes Claude Code 2.1.270 drew across two Shift+Tab presses.
 const CYCLED_SCREEN =
@@ -13,4 +13,13 @@ test('reads the Mode the Claude footer drew last', () => {
 
 test('reads no Mode off a screen with no Mode footer', () => {
   assert.equal(footerMode('\u001b[2mOpus Medium  |  Ctx n/a\u001b[22m'), null)
+})
+
+test('reads the percentage and token count Claude draws while compacting', () => {
+  assert.deepEqual(
+    compactionProgress(
+      '\u001b[38;2;178;199;255mCompacting conversation…\u001b[39m (2m 55s · ↓ 10.1k tokens) 22%',
+    ),
+    { percentage: 22, tokens: '10.1k tokens' },
+  )
 })

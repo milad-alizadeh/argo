@@ -33,6 +33,7 @@ async function prepare(root) {
 const SURFACE = [
   'awaitAccount',
   'cancelAccount',
+  'compactClaudeSession',
   'connectAccount',
   'connectSource',
   'decideClaudePermission',
