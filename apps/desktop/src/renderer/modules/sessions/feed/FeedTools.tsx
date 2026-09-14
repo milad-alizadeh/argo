@@ -8,6 +8,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CodeBlock,
   CodeBlockActions,
@@ -109,6 +110,7 @@ export function FeedToolLine({
 // the call has finished, is attached directly beneath it — the terminal styling belongs there,
 // since that content genuinely is terminal output.
 function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
+  const { t } = useTranslation('sessions')
   const source = call.text ?? ''
   const language = detectCodeLanguage(source, 'bash')
   const languageLabel = codeLanguageLabel(language)
@@ -128,11 +130,11 @@ function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
           </CodeBlockTitle>
           <CodeBlockActions>
             {call.status === 'failed' ? (
-              <span className="text-destructive">Failed</span>
+              <span className="text-destructive">{t('tools.failed')}</span>
             ) : (
               <StatusIcon status={call.status} />
             )}
-            <CodeBlockCopyButton aria-label="Copy command" className="size-7" />
+            <CodeBlockCopyButton aria-label={t('tools.copyCommand')} className="size-7" />
           </CodeBlockActions>
         </CodeBlockHeader>
       </CodeBlock>

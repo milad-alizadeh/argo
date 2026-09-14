@@ -82,6 +82,10 @@
   "facts": {
     "placeUnknown": "working directory unknown"
   },
+  "tools": {
+    "failed": "Failed",
+    "copyCommand": "Copy command"
+  },
   "rail": {
     "backgroundAgents": "Background agents",
     "shellSection": "Shell",

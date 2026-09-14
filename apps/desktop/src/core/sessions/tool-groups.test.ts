@@ -57,28 +57,18 @@ test('a mixed run states both counts in one summary', () => {
   assert.equal(found.label, 'Ran 2 commands, edited a file')
 })
 
-test('a run broken by intervening prose never merges', () => {
-  const rows = groupToolRuns([
-    ...rowsFor([bash('c1', 'bun test')]),
-    prose('p1'),
-    ...rowsFor([bash('c2', 'bun run build')]),
-  ])
-  assert.equal(rows.length, 3)
-  assert.equal(rows[0]?.shape, 'tool-group')
-  assert.equal(rows[1]?.shape, 'prose')
-  assert.equal(rows[2]?.shape, 'tool-group')
-})
-
-test('a run broken by a Turn boundary marker never merges', () => {
-  const rows = groupToolRuns([
-    ...rowsFor([bash('c1', 'bun test')]),
-    marker('m1'),
-    ...rowsFor([bash('c2', 'bun run build')]),
-  ])
-  assert.equal(rows.length, 3)
-  assert.equal(rows[0]?.shape, 'tool-group')
-  assert.equal(rows[1]?.shape, 'marker')
-  assert.equal(rows[2]?.shape, 'tool-group')
+test('a run broken by an intervening row never merges', () => {
+  for (const breaker of [prose('p1'), marker('m1')]) {
+    const rows = groupToolRuns([
+      ...rowsFor([bash('c1', 'bun test')]),
+      breaker,
+      ...rowsFor([bash('c2', 'bun run build')]),
+    ])
+    assert.equal(rows.length, 3)
+    assert.equal(rows[0]?.shape, 'tool-group')
+    assert.equal(rows[1]?.shape, breaker.shape)
+    assert.equal(rows[2]?.shape, 'tool-group')
+  }
 })
 
 test('a command routes inline and a file edit routes to the evidence panel', () => {
