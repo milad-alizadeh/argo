@@ -70,6 +70,15 @@
     "compacted": "Conversation compacted",
     "interrupted": "Interrupted"
   },
+  "diff": {
+    "readingFile": "Reading current file…",
+    "fileUnavailable": "Current file is unavailable.",
+    "copyFile": "Copy file",
+    "currentFile": "Current file",
+    "diff": "Diff",
+    "label": "File diff",
+    "copyDiff": "Copy diff"
+  },
   "row": {
     "activity": "Ran {{tool}} {{target}}",
     "activityBare": "Ran {{tool}}",

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CodeBlock,
   CodeBlockActions,
@@ -69,11 +70,12 @@ function currentFileContent(
   content: string | null | undefined,
   language: ReturnType<typeof detectCodeLanguageFromPath>,
   path: string,
+  text: { copyFile: string; unavailable: string; reading: string },
 ) {
   if (content === undefined)
-    return <p className="p-4 type-meta text-muted-foreground">Reading current file…</p>
+    return <p className="p-4 type-meta text-muted-foreground">{text.reading}</p>
   if (content === null)
-    return <p className="p-4 type-meta text-muted-foreground">Current file is unavailable.</p>
+    return <p className="p-4 type-meta text-muted-foreground">{text.unavailable}</p>
   return (
     <div className="min-h-0 flex-1 overflow-auto p-4">
       <CodeBlock code={content} language={language?.grammar ?? null} className="type-code-content">
@@ -82,7 +84,7 @@ function currentFileContent(
             <CodeBlockFilename>{path}</CodeBlockFilename>
           </CodeBlockTitle>
           <CodeBlockActions>
-            <CodeBlockCopyButton aria-label="Copy file" className="size-7" />
+            <CodeBlockCopyButton aria-label={text.copyFile} className="size-7" />
           </CodeBlockActions>
         </CodeBlockHeader>
       </CodeBlock>
@@ -99,25 +101,30 @@ export function SessionDiffViewer({
   sessionId: string | null
   source: string
 }) {
+  const { t } = useTranslation('sessions')
   const [view, setView] = useState<'diff' | 'file'>('diff')
   const [content, setContent] = useState<string | null | undefined>(undefined)
   const language = detectCodeLanguageFromPath(path)
   const lines = diffLines(source)
   if (view === 'file') {
     return (
-      <section className="flex min-h-0 flex-1 flex-col" aria-label="Current file">
+      <section className="flex min-h-0 flex-1 flex-col" aria-label={t('diff.currentFile')}>
         <header className="flex items-center justify-between border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
           <span className="truncate">{path}</span>
           <Button size="sm" variant="ghost" onClick={() => setView('diff')}>
-            Diff
+            {t('diff.diff')}
           </Button>
         </header>
-        {currentFileContent(content, language, path)}
+        {currentFileContent(content, language, path, {
+          copyFile: t('diff.copyFile'),
+          unavailable: t('diff.fileUnavailable'),
+          reading: t('diff.readingFile'),
+        })}
       </section>
     )
   }
   return (
-    <section className="flex min-h-0 flex-1 flex-col" aria-label="File diff">
+    <section className="flex min-h-0 flex-1 flex-col" aria-label={t('diff.label')}>
       <header className="flex items-center justify-between border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
         <span className="truncate">{path}</span>
         <Button
@@ -133,7 +140,7 @@ export function SessionDiffViewer({
               )
           }}
         >
-          Current file
+          {t('diff.currentFile')}
         </Button>
       </header>
       <div className="min-h-0 flex-1 overflow-auto p-4">
@@ -151,7 +158,7 @@ export function SessionDiffViewer({
               <CodeBlockFilename>{path}</CodeBlockFilename>
             </CodeBlockTitle>
             <CodeBlockActions>
-              <CodeBlockCopyButton aria-label="Copy diff" className="size-7" />
+              <CodeBlockCopyButton aria-label={t('diff.copyDiff')} className="size-7" />
             </CodeBlockActions>
           </CodeBlockHeader>
         </CodeBlock>
