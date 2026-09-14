@@ -15,11 +15,11 @@ export function SessionsSidebar() {
     if (sessionId !== undefined || roster === null || rosterError !== null) return
     const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
     if (storedId === null) return
-    const restoredId = currentSessionId(roster.sessions, storedId)
-    if (restoredId === null) {
-      window.localStorage.removeItem(SELECTED_SESSION_KEY)
-      return
-    }
+    // A stored id absent from the active Roster is not necessarily gone: the active list never
+    // carries an archived Session, so this can still be one, restored by the Archive section
+    // asking the reader for it by id (#1593). Navigate under the stored id either way; only a
+    // Session the reader answers for nowhere at all fails to resolve, same as any stale id.
+    const restoredId = currentSessionId(roster.sessions, storedId) ?? storedId
     navigate(`/sessions/${restoredId}`, { replace: true })
   }, [navigate, roster, rosterError, sessionId])
 

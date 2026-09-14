@@ -1,11 +1,4 @@
-// The #1831 slice inside the SHIPPED app: discovery with no Project registration, the Feed
-// contract over the real preload, and the ADR-0033 geometry rule that a row is measured in a
-// hidden container before it is drawn. A dev-server run proves none of it.
-//
-// `--shots <dir>` writes the packaged screens for a person who wants to look at them. Nothing in
-// CI passes it any more, and the PNG files are disposable: point it at a temporary directory and
-// delete them (#1910). Reviewers inspect the screens in Storybook, and the contract this
-// file asserts is read out of the DOM, so no assertion here depends on a pixel.
+// The #1831 slice proves Session contracts over the real preload, not a dev server (#1910).
 import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -16,12 +9,15 @@ import {
   provePackagedResume,
   writeFakeClaude,
 } from '../../../agents/claude/session-fake-driver/session-resume-case'
+import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
+import { writeFakeCodex } from '../../../agents/codex/session-fake-driver/fixture-driver'
 import { appExecutable, assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
   SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
 import {
@@ -53,6 +49,7 @@ const cases = []
 try {
   const fixture = await prepare(root)
   const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
+  const fakeCodex = await writeFakeCodex(root)
   const launch = async () => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
@@ -62,6 +59,7 @@ try {
         [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
         [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
         [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
+        [SESSION_CODEX_EXECUTABLE_ENV]: fakeCodex,
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
@@ -85,9 +83,7 @@ try {
   }
   let page = await launch()
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
-  // Each case names itself as it passes, so the list printed below is what ran rather than a list
-  // kept by hand beside it. The value comes back, so a case that also reports a number goes
-  // through here too and there is one mechanism rather than two.
+  // Each passing case records its name.
   const ran = async (names, prove) => {
     const reading = await prove()
     cases.push(...names)
@@ -134,7 +130,6 @@ try {
       updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
     }),
   )
-  // Last, because the Session it starts becomes the newest row and reorders the Roster.
   await ran(['session-claude-resume'], async () => {
     page = await provePackagedResume(page, {
       project: fixture.project,
@@ -142,15 +137,11 @@ try {
       transcripts: fixture.claudeTranscripts,
     })
   })
+  await ran(['session-codex-resume'], async () => {
+    page = await provePackagedCodexResume(page, { project: fixture.project, restart })
+  })
   await assertShippedFusesIntact()
-  console.log(
-    JSON.stringify({
-      ok: true,
-      packaged: true,
-      cases,
-      formatted,
-    }),
-  )
+  console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
 } finally {
   try {
     if (application) await application.close()

@@ -26,7 +26,10 @@ import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
-import { SESSION_CLAUDE_EXECUTABLE_ENV } from './core/sessions/proof-protocol'
+import {
+  SESSION_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CODEX_EXECUTABLE_ENV,
+} from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
@@ -63,7 +66,10 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
     transcripts: claudeTranscriptsRoot(home),
     executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
   })
-  const codexSessionDriver = createSystemCodexSessionDriver()
+  const codexSessionDriver = createSystemCodexSessionDriver({
+    executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
+    ownership: path.join(userData, 'codex-session-ownership.json'),
+  })
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: createSessionReader([
@@ -78,6 +84,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
       }),
       codexSessionSource(codexTranscriptsRoot(home), {
         roster: codexSessionDriver.roster,
+        orphans: codexSessionDriver.ownership.orphans,
         liveMessages: codexSessionDriver.liveMessages,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
       }),

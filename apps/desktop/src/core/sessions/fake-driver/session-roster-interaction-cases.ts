@@ -11,10 +11,16 @@ async function proveRetiredSelection(page, restart) {
 async function proveFreshOrder(page, previousOrder) {
   const refreshedOrder = await readRosterIds(page)
   assert.deepEqual(refreshedOrder.slice(0, 2), ['replacementParent', 'prose'])
+  // askPending's tail position going into the restart was itself a client-only artifact of the
+  // earlier archive/restore round trip (#1593): a restart drops that memory and the Session
+  // resorts to its real, untouched updatedAt position, ahead of harnessNoise here.
+  const excludingBumped = (sessionId) =>
+    sessionId !== 'replacementParent' && sessionId !== 'prose' && sessionId !== 'askPending'
   assert.deepEqual(
-    refreshedOrder.slice(2),
-    previousOrder.filter((sessionId) => sessionId !== 'replacementParent' && sessionId !== 'prose'),
+    refreshedOrder.slice(2).filter(excludingBumped),
+    previousOrder.filter(excludingBumped),
   )
+  assert.equal(refreshedOrder.indexOf('askPending') < refreshedOrder.indexOf('harnessNoise'), true)
 }
 
 export async function provePackagedRosterSelection(page) {
@@ -37,6 +43,29 @@ export async function provePackagedRosterSelection(page) {
   )
   assert.notEqual(focusedSessionId, sessionId)
   assert.equal(await selected.getAttribute('aria-current'), 'page')
+}
+
+async function proveArchivedRestart(page, restart) {
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
+  await page.locator('nav[aria-label="Archived"] button').click()
+  await page.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
+  const archived = await restart()
+  await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
+  // Restoring the selected archived Session opens the section on its own, but only once the
+  // reader's request for that row resolves, so this waits rather than reading the count once.
+  await archived
+    .locator('.roster__archived [data-slot="collapsible-trigger"][aria-expanded="true"]')
+    .waitFor()
+  await archived
+    .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
+    .waitFor()
+  assert.equal(
+    await archived
+      .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
+      .getAttribute('aria-current'),
+    'page',
+  )
+  return archived
 }
 
 export async function provePackagedRosterRestart(page, { remove, restart, updateRoster }) {
@@ -67,18 +96,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   assert.equal((await readRosterIds(updated))[0], 'rollout-codexParent')
 
-  await updated.locator('summary').click()
-  await updated.locator('nav[aria-label="Archived"] button').click()
-  await updated.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
-  const archived = await restart()
-  await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
-  await archived.locator('details[open]').waitFor()
-  assert.equal(
-    await archived
-      .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
-      .getAttribute('aria-current'),
-    'page',
-  )
+  const archived = await proveArchivedRestart(updated, restart)
 
   await archived.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]').click()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/prose')
