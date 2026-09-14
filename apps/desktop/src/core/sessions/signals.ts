@@ -12,13 +12,15 @@ import {
   type SessionSetup,
   type SessionShellCommand,
 } from './models'
-import type { ToolCall, TranscriptMessage } from './transcript'
+import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
+
+export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
 
 // The tools that spawn a Subagent (CONTEXT.md L3 · Subagent). The CLI renamed `Task` to `Agent`,
 // and a transcript written before the rename still names the old one.
 const DELEGATING_TOOLS = ['Task', 'Agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
-// come back is a command still running, which is what the rail's Shell section says.
+// come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
 // The tool whose input is the Plan (CONTEXT.md L3 · Plan). Each call writes the whole list, so
 // the newest one is the Plan and every earlier one is history.
@@ -37,29 +39,81 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-export function readDelegations(messages: TranscriptMessage[]): SessionDelegation[] {
+// When each call was written, and when the record answering it was. A call the transcript holds
+// no answer for has no end, which is what makes it the work still open.
+type CallTimes = { started: Map<string, string | null>; ended: Map<string, string | null> }
+
+function callTimes(messages: TranscriptMessage[]): CallTimes {
+  const started = new Map<string, string | null>()
+  const ended = new Map<string, string | null>()
+  for (const message of messages) {
+    for (const call of message.toolCalls) started.set(call.id, message.timestamp)
+    for (const callId of message.answeredCalls) ended.set(callId, message.timestamp)
+  }
+  return { started, ended }
+}
+
+export function readDelegations(
+  messages: TranscriptMessage[],
+  notifications: BackgroundTask[],
+): SessionDelegation[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
+  const times = callTimes(messages)
+  const ended = endings(notifications)
   return calls(messages)
     .filter((call) => DELEGATING_TOOLS.includes(call.name))
     .map((call) => ({
       id: call.id,
       label: text(call.input.description),
       landed: answered.has(call.id),
+      startedAt: times.started.get(call.id) ?? null,
+      // A Subagent sent to the background answers its call at once with a receipt, so the
+      // notification is what says when it actually stopped.
+      endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
     }))
 }
 
-// The shell commands running now: `Bash` calls the transcript holds no result for. A command that
-// finished is what the Session did rather than what it is doing, so it is not read at all, and the
-// count in the rail's header is therefore only ever what is running (#1907).
-export function readShellCommands(messages: TranscriptMessage[]): SessionShellCommand[] {
+function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {
+  return new Map(notifications.map((notification) => [notification.callId, notification]))
+}
+
+// The shell commands the Shell list draws. A foreground `Bash` call the transcript holds no result for
+// is running; one that came back is what the Session did rather than what it is doing, so it is
+// not read at all (#1907). A background call is the exception: its result is only a receipt, so
+// it stays in the Shell list under the state its completion notification gives it (#1582).
+export function readShellCommands(
+  messages: TranscriptMessage[],
+  notifications: BackgroundTask[],
+): SessionShellCommand[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
+  const receipts = new Map(
+    messages
+      .flatMap((message) => message.toolResults ?? [])
+      .flatMap((result) =>
+        result.background === undefined ? [] : [[result.callId, result.background] as const],
+      ),
+  )
+  const times = callTimes(messages)
+  const ended = endings(notifications)
   return calls(messages)
-    .filter((call) => call.name === SHELL_TOOL && !answered.has(call.id))
-    .map((call) => ({
-      id: call.id,
-      command: text(call.input.command)?.trim().split('\n', 1).join('') ?? null,
-      background: call.input.run_in_background === true,
-    }))
+    .filter((call) => call.name === SHELL_TOOL)
+    .flatMap((call) => {
+      const receipt = receipts.get(call.id)
+      if (receipt === undefined && answered.has(call.id)) return []
+      const notification = ended.get(call.id)
+      return [
+        {
+          id: call.id,
+          command: text(call.input.command)?.trim().split('\n', 1).join('') ?? null,
+          background: receipt !== undefined || call.input.run_in_background === true,
+          state: notification?.state ?? ('running' as const),
+          startedAt: times.started.get(call.id) ?? null,
+          endedAt: notification?.timestamp ?? null,
+          outputPath: notification?.outputPath ?? receipt?.outputPath ?? null,
+          result: notification?.summary ?? null,
+        },
+      ]
+    })
 }
 
 type PlanEntryInput = Omit<SessionPlanEntry, 'position'>

@@ -32,6 +32,14 @@ export type SessionSource = {
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
   managedSessions?: () => SessionRosterRow[]
+  // The tail of one background Shell's recorded output, addressed by the call that started it
+  // (#1582). Absent where the CLI records no output source, which is every CLI but Claude today.
+  readShellOutput?: (sessionId: string, shellId: string) => Promise<string | null>
+  // One Subagent's own transcript, read as a chain so the Feed projects it the same way it
+  // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
+  readDelegationFiles?: (sessionId: string, delegationId: string) => Promise<SessionChain | null>
+  // What each of this Session's Subagents spent, keyed by the call that spawned it.
+  readDelegationUsage?: (sessionId: string) => Promise<{ id: string; tokens: number | null }[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
   // Absent where the CLI keeps no ownership ledger, which the reader reads as never locked.
   isLockedElsewhere?: (sessionId: string) => boolean

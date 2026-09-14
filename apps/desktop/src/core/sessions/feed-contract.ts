@@ -16,6 +16,10 @@ export const sessionFeedRequestSchema = z.strictObject({
   type: z.literal('session.feed'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
+  // The Subagent whose own Feed is wanted, named by the call that spawned it, or null for the
+  // Session's own Feed (#1582). A Subagent records a transcript of its own beside the Session's,
+  // and its rows are the Session's sidechain, so the two are separate documents.
+  delegationId: identifierSchema.nullable(),
   // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
   // a reloaded or evicted deck without rows to draw.
   revision: z.string().nullable(),

@@ -1,6 +1,9 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, ToolCall, ToolResult } from '@/core/sessions/transcript'
 
+// The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
+const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
+
 const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
 
 function readBlock(value: unknown): ContentBlock | null {
@@ -46,17 +49,34 @@ export function readToolCalls(content: unknown): ToolCall[] {
   )
 }
 
-export function readToolResults(content: unknown): ToolResult[] {
+// The call went to the background, so `result` is a receipt rather than the command's output.
+// The task id is a field of the record's own `toolUseResult`; the output file is only ever
+// stated in the receipt's sentence, so it is read from there and absent when it is not.
+function readBackground(
+  result: unknown,
+  content: string | null,
+): ToolResult['background'] | undefined {
+  if (!isRecord(result) || typeof result.backgroundTaskId !== 'string') return undefined
+  return {
+    taskId: result.backgroundTaskId,
+    outputPath: (content === null ? null : OUTPUT_FILE.exec(content)?.[1]) ?? null,
+  }
+}
+
+export function readToolResults(content: unknown, result?: unknown): ToolResult[] {
   if (!Array.isArray(content)) return []
-  return content.flatMap((block: unknown) =>
-    isRecord(block) && block.type === 'tool_result' && typeof block.tool_use_id === 'string'
-      ? [
-          {
-            callId: block.tool_use_id,
-            content: typeof block.content === 'string' ? block.content : null,
-            failed: block.is_error === true,
-          },
-        ]
-      : [],
-  )
+  return content.flatMap((block: unknown) => {
+    if (!isRecord(block) || block.type !== 'tool_result') return []
+    if (typeof block.tool_use_id !== 'string') return []
+    const text = typeof block.content === 'string' ? block.content : null
+    const background = readBackground(result, text)
+    return [
+      {
+        callId: block.tool_use_id,
+        content: text,
+        failed: block.is_error === true,
+        ...(background === undefined ? {} : { background }),
+      },
+    ]
+  })
 }

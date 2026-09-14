@@ -4,6 +4,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fixtureLines, writeFixtureTree } from '@/core/sessions/fake-driver/session-fixture-files'
+import { stitchChains } from '../sessions/chains.ts'
+import { projectRosterRow } from '../sessions/roster.ts'
 import { readTranscriptFile } from '../sessions/transcript-file.ts'
 
 export async function fixtureFile(name) {
@@ -21,4 +23,9 @@ export async function fixtureRoot(context, names, directory = 'project-one') {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-sessions-'))
   context.after(() => rm(root, { recursive: true, force: true }))
   return writeFixtureTree(root, names, { directory })
+}
+
+// The Roster row the named fixtures project into, which is what most signal tests assert on.
+export async function fixtureRosterRow(names) {
+  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
 }

@@ -94,11 +94,11 @@ export async function stableChain(
 
 export type FeedCaches = { feeds: Map<string, HeldFeed>; projections: Map<string, unknown> }
 
-// Evicting from `projections` in lockstep keeps the two caches keyed the same: a Session whose
+// Evicting from `projections` in lockstep keeps the two caches keyed the same: a document whose
 // Feed fell out of the kept set carries no incremental state worth resuming from either.
-export function keepFeed({ feeds, projections }: FeedCaches, sessionId: string, feed: HeldFeed) {
-  feeds.delete(sessionId)
-  feeds.set(sessionId, feed)
+export function keepFeed({ feeds, projections }: FeedCaches, key: string, feed: HeldFeed) {
+  feeds.delete(key)
+  feeds.set(key, feed)
   while (feeds.size > KEPT_FEED_LIMIT) {
     const oldest = feeds.keys().next().value
     if (oldest === undefined) return

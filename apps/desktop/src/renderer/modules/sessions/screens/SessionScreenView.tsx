@@ -1,24 +1,9 @@
-import { useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
-
-import { useProjects } from '../../projects/hooks/useProjects'
-import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import {
-  SessionComposerArea,
-  SessionHandoffFacts,
-  SessionWorkInspector,
-} from '../components/SessionScreenDetails'
-import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { useSessionComposer } from '../hooks/useSessionComposer'
-import { useSessionPermission } from '../hooks/useSessionPermission'
-import { useSessionQuestion } from '../hooks/useSessionQuestion'
-import { useSessions } from '../hooks/useSessions'
-import { useComposerStore } from '../state/useComposerStore'
-import { readableSessionId } from '../state/useSessionCreationStore'
-import type { SessionEvidence, SessionFeed } from '../types'
+import { SessionInspector } from '../components/SessionInspector'
+import { SessionComposerArea, SessionHandoffFacts } from '../components/SessionScreenDetails'
+import { SessionWorkButtons } from '../components/SessionWorkButtons'
+import type { SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
-import { sessionHarness, sessionHasWork } from './sessionScreenState'
-import { useSelectedSession } from './useSelectedSession'
+import { type SessionScreenModel, useSessionScreenModel } from './useSessionScreenModel'
 
 // An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
@@ -26,64 +11,46 @@ function pendingQuestionId(feed: SessionFeed | null): string | null {
   return row?.id ?? null
 }
 
-// A screen is a thin container: it resolves state here, and SessionScreenView hands a pure
-// render surface the result.
-function useSessionScreenModel() {
-  const { sessionId } = useParams()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [cockpit] = useProjects()
-  const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  const { feed, feedError, roster } = useSessions(selectedSessionId)
-  const lastHarness = useComposerStore(({ harness }) => harness)
-  const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
-  const session = useSelectedSession(selectedSessionId, roster)
-  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
-  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  const composer = useSessionComposer({
-    cli: harness.cli,
-    cockpit,
-    focusOnMount: location.state === COMPOSER_FOCUS_STATE,
-    navigate,
-    roster,
-    selectedSessionId,
-  })
-  // A Session that only exists as an optimistic Roster row has no backend record to poll yet
-  // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
-  const permission = useSessionPermission(readableSessionId(selectedSessionId))
-  const question = useSessionQuestion(readableSessionId(selectedSessionId))
-  return {
-    selectedSessionId,
-    feed,
-    feedError,
-    roster,
-    navigate,
-    session,
-    evidence,
-    setEvidence,
-    harness,
-    composer,
-    permission,
-    question,
-  }
+function WorkButtons({ model }: { model: SessionScreenModel }) {
+  const { pick, selectedSessionId, session, work } = model
+  return (
+    <SessionWorkButtons
+      delegations={session?.delegations ?? []}
+      delegationTokens={model.delegationTokens}
+      onSelectDelegation={(delegationId) =>
+        pick({ sessionId: selectedSessionId, delegationId, shellId: null })
+      }
+      onSelectShell={(shellId) =>
+        pick({ sessionId: selectedSessionId, delegationId: null, shellId })
+      }
+      selectedDelegationId={work.delegationId}
+      selectedShellId={work.shellId}
+      shell={session?.shell ?? []}
+    />
+  )
+}
+
+function Inspector({ model }: { model: SessionScreenModel }) {
+  const { evidence, navigate, roster, session, setEvidence } = model
+  return (
+    <SessionInspector
+      activeEvidenceId={evidence?.id ?? null}
+      delegation={model.delegation}
+      delegationFeed={model.delegationFeed}
+      evidence={evidence}
+      handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
+      onOpenEvidence={setEvidence}
+      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
+      shell={model.shell}
+      shellOutput={model.shellOutput}
+    />
+  )
 }
 
 export function SessionScreenView() {
-  const {
-    selectedSessionId,
-    feed,
-    feedError,
-    roster,
-    navigate,
-    session,
-    evidence,
-    setEvidence,
-    harness,
-    composer,
-    permission,
-    question,
-  } = useSessionScreenModel()
-  const hasSessionWork = sessionHasWork(session)
+  const model = useSessionScreenModel()
+  const { composer, evidence, feed, feedError, harness, permission, question, session } = model
+  const { navigate, selectedSessionId, setEvidence, workReveal } = model
   return (
     <SessionShell
       feed={feed}
@@ -95,6 +62,8 @@ export function SessionScreenView() {
       handoffTo={session?.handoffTo ?? null}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
+      optimisticRow={composer.optimisticRow}
+      turnMarker={composer.markerView}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
@@ -112,18 +81,13 @@ export function SessionScreenView() {
           harness={harness}
         />
       }
-      inspector={
-        evidence === null ? (
-          <>
-            <SessionWorkInspector session={session} />
-            <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
-          </>
-        ) : (
-          <SessionEvidenceInspector evidence={evidence} />
-        )
-      }
-      defaultInspectorCollapsed={!hasSessionWork}
-      inspectorReveal={evidence?.id}
+      headerControls={<WorkButtons model={model} />}
+      inspector={<Inspector model={model} />}
+      defaultInspectorCollapsed={true}
+      // Picking work in the header opens the inspector, the way opening recorded evidence does.
+      // Nothing opens it on its own any more: the header buttons are what say a Session has
+      // background work (#1582 AC1).
+      inspectorReveal={evidence?.id ?? workReveal ?? undefined}
     />
   )
 }

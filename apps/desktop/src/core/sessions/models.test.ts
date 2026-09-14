@@ -21,6 +21,7 @@ const roster = {
   delegations: [],
   shell: [],
   pullRequest: null,
+  ticket: null,
   archived: false,
   setup: { model: null, effort: null, mode: null },
 }

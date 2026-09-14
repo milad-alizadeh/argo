@@ -10,6 +10,7 @@ import {
   TITLE_SOURCES,
 } from './models'
 import {
+  type BackgroundTask,
   readActivity,
   readDelegations,
   readPlan,
@@ -34,6 +35,13 @@ export function chainMessages(chain: SessionChain): TranscriptMessage[] {
     file.records.filter(
       (record): record is TranscriptMessage => record.kind === 'message' && !record.sidechain,
     ),
+  )
+}
+
+// The completion notifications the chain carries, whatever tool started the task they end.
+export function chainBackgroundTasks(chain: SessionChain): BackgroundTask[] {
+  return chain.files.flatMap((file) =>
+    file.records.filter((record) => record.kind === 'background-task'),
   )
 }
 
@@ -94,6 +102,7 @@ function readUsage(messages: TranscriptMessage[]) {
 
 export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
+  const notifications = chainBackgroundTasks(chain)
   const stamps = messages.flatMap((message) =>
     message.timestamp === null ? [] : [message.timestamp],
   )
@@ -115,9 +124,12 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(messages),
-    delegations: readDelegations(messages),
-    shell: readShellCommands(messages),
+    delegations: readDelegations(messages, notifications),
+    shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
+    // Joined in by `reader.ts` from the owned Session → Ticket link store after this projection
+    // runs (CONTEXT.md L1 · Session → Ticket): no transcript record carries it.
+    ticket: null,
     // Whether the reader archived this Session is not a transcript fact: it comes from the
     // Claude desktop app's own store, joined in by `agents/claude/sessions/discover.ts` after
     // this projection runs. Every other caller — Codex included — reads false.
