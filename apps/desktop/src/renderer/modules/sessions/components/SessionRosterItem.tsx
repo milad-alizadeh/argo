@@ -77,12 +77,33 @@ function SessionPlanBar({ session }: { session: Session }) {
   )
 }
 
+type SessionTimingValue = NonNullable<ReturnType<typeof sessionTiming>>
+
+function SessionTiming({ timing }: { timing: SessionTimingValue }) {
+  return (
+    <time
+      className="inline-flex shrink-0 tabular-nums"
+      dateTime={timing.dateTime}
+      title={timing.label}
+    >
+      {timing.text}
+    </time>
+  )
+}
+
 function SessionMetadata({ session }: { session: Session }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const timing = sessionTiming(session, now)
   const hasMetadata =
     session.plan?.state === 'available' ||
     session.plan?.state === 'malformed' ||
     session.delegations.length > 0 ||
-    session.pullRequest !== null
+    session.pullRequest !== null ||
+    timing !== null
   if (!hasMetadata) return null
   return (
     <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
@@ -100,22 +121,8 @@ function SessionMetadata({ session }: { session: Session }) {
           <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}
+      {timing === null ? null : <SessionTiming timing={timing} />}
     </span>
-  )
-}
-
-function SessionTiming({ session }: { session: Session }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [])
-  const timing = sessionTiming(session, now)
-  if (timing === null) return null
-  return (
-    <time className="shrink-0 tabular-nums" dateTime={timing.dateTime}>
-      {timing.text}
-    </time>
   )
 }
 
@@ -168,9 +175,8 @@ export function SessionRosterItem({
                       text={sessionName(session)}
                     />
                   </span>
-                  <span className="mt-0.5 flex min-w-0 items-center gap-2 type-meta text-faint">
-                    <span className="min-w-0 flex-1 truncate">{activitySummary(session)}</span>
-                    <SessionTiming session={session} />
+                  <span className="mt-0.5 block truncate type-meta text-faint">
+                    {activitySummary(session)}
                   </span>
                   <SessionMetadata session={session} />
                 </span>

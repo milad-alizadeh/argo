@@ -15,7 +15,7 @@ test('shows the current Turn duration for a running Session', () => {
     turnStartedAt: '2026-09-14T10:43:00.000Z',
   })
 
-  expect(sessionTiming(session, NOW)?.text).toBe('Running 1h 17m')
+  expect(sessionTiming(session, NOW)).toMatchObject({ label: 'Running 1h', text: '1h' })
 })
 
 test('shows recency instead of accumulated lifetime for an idle Session', () => {
@@ -28,5 +28,5 @@ test('shows recency instead of accumulated lifetime for an idle Session', () => 
     updatedAt: '2026-09-14T11:52:00.000Z',
   })
 
-  expect(sessionTiming(session, NOW)?.text).toBe('Updated 8m ago')
+  expect(sessionTiming(session, NOW)).toMatchObject({ label: 'Updated 8m ago', text: '8m' })
 })

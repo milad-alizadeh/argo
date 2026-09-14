@@ -26,9 +26,8 @@ function compactDuration(minutes: number) {
   if (minutes < 1) return '<1m'
   if (minutes < 60) return `${minutes}m`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ${minutes % 60}m`
-  const days = Math.floor(hours / 24)
-  return `${days}d ${hours % 24}h`
+  if (hours < 24) return `${hours}h`
+  return `${Math.floor(hours / 24)}d`
 }
 
 export function sessionTiming(session: Session, now: number) {
@@ -37,11 +36,13 @@ export function sessionTiming(session: Session, now: number) {
   if (timestamp === null) return null
   const minutes = elapsedMinutes(timestamp, now)
   if (minutes === null) return null
+  const duration = compactDuration(minutes)
   if (timing.style === 'elapsed') {
-    return { dateTime: timestamp, text: `${timing.label} ${compactDuration(minutes)}` }
+    return { dateTime: timestamp, label: `${timing.label} ${duration}`, text: duration }
   }
   return {
     dateTime: timestamp,
-    text: minutes < 1 ? 'Updated just now' : `Updated ${compactDuration(minutes)} ago`,
+    label: minutes < 1 ? 'Updated just now' : `Updated ${duration} ago`,
+    text: duration,
   }
 }
