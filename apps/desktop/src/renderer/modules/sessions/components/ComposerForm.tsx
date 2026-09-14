@@ -11,9 +11,8 @@ import type { TurnSetupControlProps } from './RunSetupMenu'
 import { SessionContextBar } from './SessionContextBar'
 import type { usePendingTurns } from './usePendingTurns'
 
-// The column the composer card sits in; a message about the composer shares it, so it is never wider.
-export const COMPOSER_COLUMN =
-  'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
+// The composer card's column; attached secondary surfaces inset from its edges.
+export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
 export function ComposerForm({
   attachments,
@@ -70,7 +69,7 @@ export function ComposerForm({
   }, [isCompacting])
   return (
     <form
-      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
+      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
@@ -85,7 +84,8 @@ export function ComposerForm({
       <div className="relative">
         <fieldset
           aria-label="Message composer"
-          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+          data-component="ComposerCard"
+          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
           onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
           onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
             event.preventDefault()
@@ -115,7 +115,7 @@ export function ComposerForm({
             setup={setup}
           />
         </fieldset>
-        <div className="absolute inset-x-0 top-full z-0 -mt-2">
+        <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
           <SessionContextBar
             contextTokens={contextTokens}
             harness={harness?.cli}
