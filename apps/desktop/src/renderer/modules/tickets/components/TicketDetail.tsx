@@ -174,19 +174,14 @@ function NothingSelected() {
 
 const keyText = 'font-mono type-meta'
 
-// The inspector bar names the Ticket by its key, which opens it on the provider's own page. A
-// provider without a page for the Ticket shows its key as plain text.
-export function TicketBar({ ticket, provider }: { ticket: Ticket | null; provider: Provider }) {
-  if (ticket === null) return null
+function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
   if (ticket.url === null) {
-    return <span className={`${keyText} px-2 text-muted-foreground`}>{ticket.key}</span>
+    return <span className={`${keyText} shrink-0 text-muted-foreground`}>{ticket.key}</span>
   }
-  // An anchor drawn as a button: Base UI's Button would give it the button role.
   return (
     <a
       aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
-      // Pulls the key onto the title's line past the xs button's 1px border.
-      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} -ml-px text-muted-foreground`}
+      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} shrink-0 text-muted-foreground`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
@@ -212,7 +207,10 @@ export function TicketDetail(props: TicketDetailProps) {
     <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
       <header className="border-b border-border/60">
         <div className={measure}>
-          <h2 className="ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+          <div className="flex min-w-0 items-start gap-(--spacing-shell-item)">
+            <TicketKey provider={provider} ticket={ticket} />
+            <h2 className="min-w-0 ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+          </div>
           <Properties
             onChangeStatus={onChangeStatus}
             provider={provider}
