@@ -3,6 +3,13 @@ import { TextNode } from 'lexical'
 import type { SessionCli } from '../harness/harnesses'
 import { cliLabel, referenceBySource, referenceSupportsCli } from './SessionReference'
 
+const contextIcon = {
+  command: '⌘',
+  file: '▱',
+  plugin: '⌁',
+  skill: '✦',
+} as const
+
 const SUPPORTED_CLASS = 'composer-inline-context mx-0.5 cursor-text font-semibold text-destructive'
 const UNSUPPORTED_CLASS =
   'composer-inline-context mx-0.5 cursor-text text-muted-foreground underline decoration-dashed underline-offset-4'
@@ -39,6 +46,7 @@ export class ComposerReferenceNode extends TextNode {
     element.className = unsupported ? UNSUPPORTED_CLASS : SUPPORTED_CLASS
     element.dataset.reference = text
     element.dataset.contextLabel = reference?.label ?? text
+    if (reference) element.dataset.contextIcon = contextIcon[reference.kind]
     if (unsupported) {
       element.dataset.unsupported = 'true'
       const fact = element.ownerDocument.createElement('span')
