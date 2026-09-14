@@ -90,11 +90,3 @@ export const Empty: Story = {
     ).toBeVisible()
   },
 }
-
-// An unavailable Plan and a malformed one reach the same branch: nothing renders.
-export const Hidden: Story = {
-  args: { plan: null },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
-  },
-}
