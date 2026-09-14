@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webFrame } from 'electron'
+import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './zod-jitless'
 import { createCodexCompactionClient } from './agents/codex/compaction/compaction'
 import { createAccountClient } from './core/accounts/client'
@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('argo', {
     }
   },
   zoomFactor: () => webFrame.getZoomFactor(),
+  // A dropped File is a page object; only the preload world can resolve it back to the absolute
+  // path a native dialog would have handed the renderer directly.
+  pathForFile: (file: File) => webUtils.getPathForFile(file),
   versions: {
     electron: process.versions.electron,
     chrome: process.versions.chrome,

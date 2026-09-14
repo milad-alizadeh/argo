@@ -1,10 +1,4 @@
-import { Info } from 'lucide-react'
-import { useEffect, useState } from 'react'
-
-import {
-  AUTO_COMPACT_LIMIT_MAX,
-  AUTO_COMPACT_LIMIT_MIN,
-} from '@/agents/codex/compaction/compaction'
+import { Info, Layers3 } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import {
   Popover,
@@ -14,8 +8,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '../../../components/ui/popover'
-import { useCodexAutoCompactThreshold } from '../hooks/useCodexAutoCompactThreshold'
-import { ClaudeContextComposition } from './ClaudeContextComposition'
+import { ContextDetails } from './ContextDetails'
 
 function contextZone(percentage: number) {
   if (percentage <= 20) return { label: 'Smart Zone', text: 'text-emerald-600' }
@@ -23,193 +16,103 @@ function contextZone(percentage: number) {
   return { label: 'Dumb Zone', text: 'text-red-600' }
 }
 
-// Codex is the only harness with a real lever: the threshold lives in the person's own
-// `~/.codex/config.toml`, custom per machine and never committed (#1904). Claude Code offers no
-// equivalent knob to write, so the control only appears for Codex.
-function CodexAutoCompact() {
-  const [threshold, setThreshold] = useCodexAutoCompactThreshold()
-  const [thresholdInput, setThresholdInput] = useState(String(threshold))
-
-  useEffect(() => {
-    setThresholdInput(String(threshold))
-  }, [threshold])
-
-  return (
-    <div className="grid gap-2.5 border-t pt-3">
-      <div className="flex items-center justify-between gap-3 type-body">
-        <span className="font-semibold">Auto-compact</span>
-        <span className="text-muted-foreground">
-          At {Math.round((threshold / 200_000) * 100)}% of total
-        </span>
-      </div>
-      <input
-        aria-label="Auto-compact threshold"
-        className="h-1.5 w-full cursor-pointer accent-foreground"
-        max="95"
-        min="40"
-        onChange={(event) => {
-          const nextThreshold = Math.round((200_000 * Number(event.target.value)) / 100)
-          setThreshold(nextThreshold)
-        }}
-        step="5"
-        type="range"
-        value={Math.round((threshold / 200_000) * 100)}
-      />
-      <label className="flex items-center justify-between gap-3 type-body text-muted-foreground">
-        <span>Threshold</span>
-        <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
-          <input
-            aria-label="Auto-compact threshold tokens"
-            className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
-            max={AUTO_COMPACT_LIMIT_MAX}
-            min={AUTO_COMPACT_LIMIT_MIN}
-            onBlur={() => {
-              const nextThreshold = Math.min(
-                AUTO_COMPACT_LIMIT_MAX,
-                Math.max(AUTO_COMPACT_LIMIT_MIN, Number(thresholdInput) || threshold),
-              )
-              setThreshold(nextThreshold)
-            }}
-            onChange={(event) => setThresholdInput(event.target.value)}
-            step="1000"
-            type="number"
-            value={thresholdInput}
-          />
-          <span className="shrink-0 text-muted-foreground">tokens</span>
-        </span>
-      </label>
-    </div>
-  )
-}
-
-function ContextDetails({
-  harness,
+function ContextPopoverTrigger({
+  compact,
+  labelled,
   percentage,
   usedTokens,
 }: {
-  harness: 'claude' | 'codex'
+  compact: boolean
+  labelled: boolean
   percentage: number
   usedTokens: number
 }) {
+  const value = `${Math.round(usedTokens / 1000)}k / 200k · ${percentage}%`
   const zone = contextZone(percentage)
-  return (
-    <>
-      <div className="grid gap-2.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="type-title font-semibold tabular-nums">
-            {Math.round(usedTokens / 1000)}k{' '}
-            <span className="type-body font-normal text-muted-foreground">/ 200k tokens</span>
-          </div>
-          <span className={`type-heading font-medium ${zone.text}`}>
-            {percentage}% used · {zone.label}
-          </span>
-        </div>
-        <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="absolute inset-y-0 left-0 bg-foreground/70"
-            style={{ width: `${percentage}%` }}
+  let accessibleName = 'Context details'
+  let button = <Button aria-label={accessibleName} size="icon-sm" variant="ghost" />
+  let content = <Info />
+  if (compact) {
+    accessibleName = `Context ${Math.round(usedTokens / 1000)}k tokens of 200k tokens, ${percentage}%`
+    button = (
+      <Button
+        aria-label={accessibleName}
+        className="gap-1.5 px-2 type-label font-medium text-foreground"
+        size="sm"
+        variant="ghost"
+      />
+    )
+    content = (
+      <>
+        <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
+          <circle
+            cx="10"
+            cy="10"
+            r="7"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.2"
+            strokeWidth="2.5"
           />
-          <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
-        </div>
-        <div className="flex justify-between type-body text-muted-foreground">
-          <span>Working target · 40k tokens</span>
-          <span>Current · {Math.round(usedTokens / 1000)}k tokens</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3 type-prose">
-          <div>
-            <div className="font-semibold text-foreground">Smart Zone · 0–20%</div>
-            <p className="mt-1 text-muted-foreground">
-              Focused context. Instructions and recent decisions remain easy to weigh.
-            </p>
-          </div>
-          <div>
-            <div className="font-semibold text-foreground">Dumb Zone · 40%+</div>
-            <p className="mt-1 text-muted-foreground">
-              History still fits, but noise and stale decisions weaken attention.
-            </p>
-          </div>
-        </div>
-        <p className="type-prose text-muted-foreground">
-          At this level, older context can compete with the current task. Compact before starting
-          another substantial phase.
-        </p>
-      </div>
-      {harness === 'claude' ? <ClaudeContextComposition /> : null}
-      {harness === 'codex' ? <CodexAutoCompact /> : null}
-    </>
-  )
+          <circle
+            cx="10"
+            cy="10"
+            r="7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            pathLength="100"
+            strokeDasharray={`${percentage} 100`}
+          />
+        </svg>
+        <span>
+          Context{' '}
+          <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">{value}</span>
+          <span className="tabular-nums text-muted-foreground @[23rem]:hidden">{percentage}%</span>
+        </span>
+      </>
+    )
+  } else if (labelled) {
+    accessibleName = `Context ${percentage}%`
+    button = (
+      <Button
+        aria-label={accessibleName}
+        className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage >= 40 ? 'text-red-600' : 'text-foreground'}`}
+        size="sm"
+        variant="ghost"
+      />
+    )
+    content = (
+      <>
+        <Layers3 />
+        <span>Context</span>
+      </>
+    )
+  }
+  return <PopoverTrigger render={button}>{content}</PopoverTrigger>
 }
-
 export function ContextPopover({
   compact = false,
   harness = 'codex',
+  labelled = false,
   percentage,
   usedTokens,
 }: {
   compact?: boolean
   harness?: 'claude' | 'codex'
+  labelled?: boolean
   percentage: number
   usedTokens: number
 }) {
-  const value = `${Math.round(usedTokens / 1000)}k / 200k · ${percentage}%`
-  const accessibleName = compact
-    ? `Context ${Math.round(usedTokens / 1000)}k tokens of 200k tokens, ${percentage}%`
-    : 'Context details'
-  const zone = contextZone(percentage)
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          compact ? (
-            <Button
-              aria-label={accessibleName}
-              className="gap-1.5 px-2 type-label font-medium text-foreground"
-              size="sm"
-              variant="ghost"
-            />
-          ) : (
-            <Button aria-label={accessibleName} size="icon-sm" variant="ghost" />
-          )
-        }
-      >
-        {compact ? (
-          <>
-            <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
-              <circle
-                cx="10"
-                cy="10"
-                r="7"
-                fill="none"
-                stroke="currentColor"
-                strokeOpacity="0.2"
-                strokeWidth="2.5"
-              />
-              <circle
-                cx="10"
-                cy="10"
-                r="7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                pathLength="100"
-                strokeDasharray={`${percentage} 100`}
-              />
-            </svg>
-            <span>
-              Context{' '}
-              <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">
-                {value}
-              </span>
-              <span className="tabular-nums text-muted-foreground @[23rem]:hidden">
-                {percentage}%
-              </span>
-            </span>
-          </>
-        ) : (
-          <Info />
-        )}
-      </PopoverTrigger>
+      <ContextPopoverTrigger
+        compact={compact}
+        labelled={labelled}
+        percentage={percentage}
+        usedTokens={usedTokens}
+      />
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>

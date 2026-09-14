@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react'
+import { Badge } from '@/renderer/components/ui/badge'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,6 +12,7 @@ import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesse
 import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
+import { SessionMetadata } from './SessionRosterMetadata'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -41,34 +42,26 @@ function knownCli(cli: string): cli is SessionCli {
   return (SESSION_CLIS as readonly string[]).includes(cli)
 }
 
+// The two blocking statuses the dot already colours `bg-warn` for, named so a reader can tell
+// which one without opening the Session (#2088). Every other status shows no badge.
+const BLOCKED_BADGE_LABELS: Partial<Record<Session['status'], string>> = {
+  asking: 'Answer',
+  permission: 'Permission Approval',
+}
+
+function SessionBlockedBadge({ session }: { session: Session }) {
+  const label = BLOCKED_BADGE_LABELS[session.status]
+  if (label === undefined) return null
+  return (
+    <Badge className="border-warn/40 text-warn" variant="outline">
+      {label}
+    </Badge>
+  )
+}
+
 function activitySummary(session: Session): string {
   if (session.activity === null) return session.status
   return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
-}
-
-function SessionMetadata({ session }: { session: Session }) {
-  const completed =
-    session.plan?.state === 'available'
-      ? `${session.plan.entries.filter((entry) => entry.status === 'completed').length}/${session.plan.entries.length} steps`
-      : null
-  const details = [
-    session.cli,
-    completed,
-    session.plan?.state === 'malformed' ? 'Plan unreadable' : null,
-    session.pullRequest === null ? null : `PR #${session.pullRequest.number}`,
-  ].filter(Boolean)
-  return (
-    <span className="flex min-w-0 items-center gap-1 font-mono text-meta text-faint">
-      {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
-      <span className="min-w-0 flex-1 truncate">{details.join(' · ')}</span>
-      {session.delegations.length > 0 ? (
-        <span className="inline-flex shrink-0">
-          <Bot aria-hidden="true" className="size-3" />
-          <span className="sr-only">{session.delegations.length} subagents</span>
-        </span>
-      ) : null}
-    </span>
-  )
 }
 
 function sessionName(session: Session): string {
@@ -104,23 +97,28 @@ export function SessionRosterItem({
               tabIndex={tabIndex}
               type="button"
             >
-              <span className="flex items-start gap-tight">
-                <span
-                  aria-hidden="true"
-                  className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
-                />
+              <span className="flex items-start gap-2">
+                <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
+                  {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+                  <span
+                    className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ring-2 ring-sidebar ${STATUS_MARKS[session.status]}`}
+                  />
+                </span>
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">
-                    <PromptText
-                      interactiveLinks={false}
-                      renderText={(value) => (
-                        <SessionReferenceText cli={sessionCliOf(session)} text={value} />
-                      )}
-                      text={sessionName(session)}
-                    />
+                  <span className="flex items-center gap-2">
+                    <span className="block min-w-0 truncate type-heading font-medium text-foreground">
+                      <PromptText
+                        interactiveLinks={false}
+                        renderText={(value) => (
+                          <SessionReferenceText cli={sessionCliOf(session)} text={value} />
+                        )}
+                        text={sessionName(session)}
+                      />
+                    </span>
+                    <SessionBlockedBadge session={session} />
                   </span>
-                  <span className="block truncate text-meta text-faint">
+                  <span className="mt-0.5 block truncate type-meta text-faint">
                     {activitySummary(session)}
                   </span>
                   <SessionMetadata session={session} />

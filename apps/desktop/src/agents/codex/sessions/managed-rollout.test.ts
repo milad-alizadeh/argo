@@ -91,3 +91,27 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
     ['Inspect the failing test.', 'The test is fixed.'],
   )
 })
+
+test('a Codex Session Argo held before restart is orphaned and keeps its recorded Feed', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-orphaned-session-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const sessionId = '01a09cee-bb4c-7991-b10d-7c58aff5e0ff'
+  await writeManagedRollout(root, sessionId)
+  const reader = createCodexSessionReader(root, { orphans: () => new Set([sessionId]) })
+
+  const roster = listed(await reader.listSessions(listing))
+  assert.deepEqual(
+    roster.sessions.map(({ id, posture }) => ({ id, posture })),
+    [{ id: sessionId, posture: 'orphaned' }],
+  )
+  const feed = sessionFeedReplySchema.parse(
+    await reader.readSessionFeed({
+      version: 1,
+      type: 'session.feed',
+      requestId: 'feed-1',
+      sessionId,
+      revision: null,
+    }),
+  )
+  assert.equal(feed.type, 'session.feed.read')
+})

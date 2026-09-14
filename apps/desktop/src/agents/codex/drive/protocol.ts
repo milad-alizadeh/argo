@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 
-import type { SessionRosterRow } from '@/core/sessions/models'
+import type { SessionRosterRow } from '../../../core/sessions/models'
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.

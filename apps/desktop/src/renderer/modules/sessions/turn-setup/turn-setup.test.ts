@@ -7,7 +7,13 @@ import {
   claudeTurnSetupSchema,
 } from '@/core/sessions/contract'
 import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
-import { refusalOf, setupFromReading, supportedSetup, turnSettled } from './turn-setup'
+import {
+  refusalOf,
+  resolvedTurnSetup,
+  setupFromReading,
+  supportedSetup,
+  turnSettled,
+} from './turn-setup'
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 
@@ -76,6 +82,43 @@ test('keeps each restored choice Argo still offers and replaces the rest', () =>
       { model: 'sonnet', effort: 'low', mode: 'plan' },
     ),
   ).toEqual({ model: 'sonnet', effort: 'xhigh', mode: 'plan' })
+})
+
+test('resolves a draft to an explicit choice, then the remembered Model and Effort, then the opening setup', () => {
+  const identity = { kind: 'draft', projectId: 'project-1' } as const
+  expect(
+    resolvedTurnSetup(CLAUDE_TURN_SETUP, { identity, chosen: new Map(), rows: [], remembered: {} }),
+  ).toEqual(CLAUDE_TURN_SETUP.opening)
+  expect(
+    resolvedTurnSetup(CLAUDE_TURN_SETUP, {
+      identity,
+      chosen: new Map(),
+      rows: [],
+      remembered: { model: 'sonnet', effort: 'xhigh' },
+    }),
+  ).toEqual({ ...CLAUDE_TURN_SETUP.opening, model: 'sonnet', effort: 'xhigh' })
+  const chosen = new Map([['new:project-1', requested]])
+  expect(
+    resolvedTurnSetup(CLAUDE_TURN_SETUP, { identity, chosen, rows: [], remembered: {} }),
+  ).toEqual(requested)
+})
+
+test('carries a draft choice into the Session it started, and reads the roster once it has none', () => {
+  const chosen = new Map([['new:project-1', requested]])
+  const identity = { kind: 'session', sessionId: 'session-1' } as const
+  const rows = [
+    {
+      id: 'session-1',
+      setup: { model: 'claude-opus-5', effort: 'max', mode: 'bypassPermissions' },
+    },
+  ]
+  // The draft's own choice is keyed to the draft, so a fresh Session starts from the roster.
+  expect(resolvedTurnSetup(CLAUDE_TURN_SETUP, { identity, chosen, rows, remembered: {} })).toEqual(
+    requested,
+  )
+  expect(
+    resolvedTurnSetup(CLAUDE_TURN_SETUP, { identity, chosen, rows: [], remembered: {} }),
+  ).toEqual(CLAUDE_TURN_SETUP.opening)
 })
 
 test('judges a Turn once it has started after the send and either replied or stopped', () => {
