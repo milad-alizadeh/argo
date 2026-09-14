@@ -26,6 +26,16 @@ export const sessionFeedRequestSchema = z.strictObject({
 })
 export type SessionFeedRequest = z.infer<typeof sessionFeedRequestSchema>
 
+// Switching away from a Session while its read is still in flight (#2102) sends this so the main
+// process stops the settle loop instead of finishing a read nothing will draw.
+export const sessionFeedCancelRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.feed.cancel'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type SessionFeedCancelRequest = z.infer<typeof sessionFeedCancelRequestSchema>
+
 export const sessionsListedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.listed'),

@@ -55,6 +55,7 @@ export type SessionClient = {
     delegationId: string | null
     revision: string | null
   }): Promise<SessionFeedReply>
+  cancelSessionFeed(request: { sessionId: string }): Promise<SessionAcceptedReply>
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
@@ -101,5 +102,6 @@ export function createSessionClient(
       }
       return reply
     },
+    cancelSessionFeed: (request) => client.cancelFeed(request),
   }
 }

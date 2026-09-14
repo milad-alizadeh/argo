@@ -10,13 +10,20 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError } from '../types'
+import { StalledFeed } from './StalledFeed'
 
 export function Standing({
   failure,
   selected,
+  stalled,
+  posture,
+  onRetry,
 }: {
   failure: SessionError | null
   selected: boolean
+  stalled: boolean
+  posture: 'managed' | 'external' | null
+  onRetry: () => void
 }) {
   if (failure !== null)
     return (
@@ -43,6 +50,7 @@ export function Standing({
         </EmptyHeader>
       </Empty>
     )
+  if (stalled) return <StalledFeed posture={posture} onRetry={onRetry} />
   return (
     <section className="grid h-full place-items-center" data-state="loading">
       <Spinner className="size-6" />
