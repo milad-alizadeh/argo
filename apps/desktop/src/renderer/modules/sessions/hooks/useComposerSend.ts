@@ -37,6 +37,7 @@ export function sendToSelected(request: {
 export function sendToNewSession(request: {
   cli: SessionCli
   cockpit: Cockpit
+  identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
   send: ReturnType<typeof useSessionMutations>['send']
@@ -46,15 +47,16 @@ export function sendToNewSession(request: {
   setup: TurnSetup | null
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }) {
-  const { cli, cockpit, navigate, queryClient, setFailure, start, prompt, setup, watchTurn } =
+  const { cli, cockpit, identity, navigate, queryClient, setFailure, start, prompt, setup, watchTurn } =
     request
   return startNewSession(
-    { cli, cockpit, prompt, setup, start, setFailure },
+    { cli, cockpit, identity, prompt, setup, start, setFailure },
     (sessionId) => {
       if (setup !== null) watchTurn(sessionId, setup, null)
       return invalidateSessionRoster(queryClient)
     },
-    (sessionId) => navigate(`/sessions/${sessionId}`, { state: COMPOSER_FOCUS_STATE }),
+    (sessionId) => navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE }),
+    () => navigate('/sessions/new', { replace: true }),
   )
 }
 
@@ -99,6 +101,7 @@ export function useComposerSend(request: {
       return sendToNewSession({
         cli,
         cockpit,
+        identity,
         navigate,
         queryClient,
         send,

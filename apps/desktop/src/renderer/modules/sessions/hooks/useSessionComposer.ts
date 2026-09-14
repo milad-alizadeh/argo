@@ -7,6 +7,7 @@ import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
+import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
 import { sessionComposerProps } from './sessionComposerProps'
@@ -53,7 +54,9 @@ export function useSessionComposer({
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { compact, interrupt, send, start } = useSessionMutations()
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
+  const pending = useSessionCreationStore((state) => state.pending)
+  const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
+  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pendingSessionId)
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
     cli,

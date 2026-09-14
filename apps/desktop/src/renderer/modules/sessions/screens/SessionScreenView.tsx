@@ -10,6 +10,7 @@ import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
+import { readableSessionId } from '../state/useSessionCreationStore'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
@@ -43,8 +44,10 @@ function useSessionScreenModel() {
     roster,
     selectedSessionId,
   })
-  const permission = useSessionPermission(selectedSessionId)
-  const question = useSessionQuestion(selectedSessionId)
+  // A Session that only exists as an optimistic Roster row has no backend record to poll yet
+  // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
+  const permission = useSessionPermission(readableSessionId(selectedSessionId))
+  const question = useSessionQuestion(readableSessionId(selectedSessionId))
   return {
     selectedSessionId,
     feed,
