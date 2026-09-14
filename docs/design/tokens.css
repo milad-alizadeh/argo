@@ -168,6 +168,8 @@
   --size-feed-image-frame: 208px;
   --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
   --size-composer-attachment: var(--size-attachment-card);
+  --size-composer-attachment-chip-min: 160px;
+  --size-composer-attachment-chip-max: 224px;
   --size-composer-reference-strip: calc(
     var(--size-composer-attachment) +
     2 *

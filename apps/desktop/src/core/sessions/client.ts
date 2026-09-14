@@ -2,11 +2,13 @@ import { createDomainClient } from '../contract/domain'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
+  type SessionChooseAttachmentsReply,
   type SessionFeedReply,
   type SessionListReply,
   type SessionPermissionReply,
   type SessionRenameReply,
   type SessionStartReply,
+  type SessionStatAttachmentsReply,
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
@@ -41,6 +43,8 @@ export type SessionClient = {
     revision: string | null
   }): Promise<SessionFeedReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
+  chooseSessionAttachments(): Promise<SessionChooseAttachmentsReply>
+  statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
 }
 
 export function createSessionClient(
@@ -57,6 +61,8 @@ export function createSessionClient(
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),
+    chooseSessionAttachments: () => client.chooseAttachments(),
+    statSessionAttachments: (request) => client.statAttachments(request),
     async readSessionFeed(request) {
       const reply = await client.feed(request)
       // A Feed that answers for a different Session would draw one Session's history under

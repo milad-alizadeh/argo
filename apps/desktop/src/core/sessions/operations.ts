@@ -2,6 +2,8 @@ import {
   sessionAcceptedReplySchema,
   sessionArchiveListReplySchema,
   sessionArchiveListRequestSchema,
+  sessionChooseAttachmentsReplySchema,
+  sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
@@ -16,6 +18,8 @@ import {
   sessionSendRequestSchema,
   sessionStartReplySchema,
   sessionStartRequestSchema,
+  sessionStatAttachmentsReplySchema,
+  sessionStatAttachmentsRequestSchema,
 } from './contract'
 
 // One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
@@ -80,5 +84,17 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:permission:decide',
     request: sessionPermissionDecisionRequestSchema,
     reply: sessionAcceptedReplySchema,
+  },
+  chooseAttachments: {
+    name: 'session.attachments.choose',
+    channel: 'argo:session:attachments:choose',
+    request: sessionChooseAttachmentsRequestSchema,
+    reply: sessionChooseAttachmentsReplySchema,
+  },
+  statAttachments: {
+    name: 'session.attachments.stat',
+    channel: 'argo:session:attachments:stat',
+    request: sessionStatAttachmentsRequestSchema,
+    reply: sessionStatAttachmentsReplySchema,
   },
 } as const
