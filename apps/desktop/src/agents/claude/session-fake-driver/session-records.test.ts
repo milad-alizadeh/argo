@@ -119,3 +119,31 @@ test('refuses a message record with no identity', () => {
   const line = '{"type":"user","message":{"role":"user","content":"no uuid"}}'
   assert.deepEqual(parseTranscriptLine(line), { kind: 'unreadable', line })
 })
+
+test('reads a sent command as its visible source text', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'command-1',
+    message: {
+      role: 'user',
+      content:
+        '<command-name>/implement</command-name>\n<command-message>implement</command-message>\n<command-args>1847</command-args>',
+    },
+  })
+  const record = parseTranscriptLine(line)
+  assert.deepEqual(record.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: '/implement 1847' },
+  ])
+})
+
+test('does not expose incomplete command tags', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'command-2',
+    message: { role: 'user', content: '<command-message>implement</command-message>' },
+  })
+  const record = parseTranscriptLine(line)
+  assert.deepEqual(record.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: 'implement' },
+  ])
+})

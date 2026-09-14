@@ -1,9 +1,12 @@
-import { readAgentMessageDelta, readCompletedAgentMessage, type WireMessage } from './protocol'
+import { type AgentMessageText, readCompletedAgentMessage } from './agent-message-protocol'
+import { readAgentMessageDelta, type WireMessage } from './protocol'
 
 // An agent message as the app-server has streamed it so far; `id` is its rollout message id.
 export type LiveMessage = { id: string; text: string }
 
-function readMessageText(message: WireMessage) {
+function readMessageText(
+  message: WireMessage,
+): (AgentMessageText & { whole: boolean }) | undefined {
   try {
     const delta = readAgentMessageDelta(message)
     if (delta !== undefined) return { ...delta, whole: false }
