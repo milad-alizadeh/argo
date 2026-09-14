@@ -87,7 +87,7 @@ Two readings, both of them the mechanism:
 read open forever and reads the window while the spinner shows. It passes today:
 
 - `document.elementFromPoint` over a Roster row answers with the row, so nothing covers it.
-- Clicking that row reaches its handler and the chosen Session is written.
+- A click on that row is delivered to it and leaves the focus there, which a cover would prevent.
 - The spinner is still there a second later, since nothing bounds it.
 
 The loading state is a `<section>` inside the Feed pane. No portal, no `inert` and no

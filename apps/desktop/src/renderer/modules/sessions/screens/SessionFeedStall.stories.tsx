@@ -28,11 +28,8 @@ const other = sessionRosterRow({
   cwd: '/storybook/argo',
 })
 
-const SELECTED_SESSION_KEY = 'argo.selected-session-id'
-
 function stalledFeedHost() {
   const before = window.argo
-  const selectedBefore = window.localStorage.getItem(SELECTED_SESSION_KEY)
   window.argo = {
     ...before,
     listSessions: async () => ({
@@ -46,12 +43,8 @@ function stalledFeedHost() {
     }),
     readSessionFeed: () => new Promise(() => {}),
   }
-  // The chosen Session is read back on the next mount, so this story puts it back as it found it
-  // rather than steering a later story's first navigation.
   return () => {
     window.argo = before
-    if (selectedBefore === null) window.localStorage.removeItem(SELECTED_SESSION_KEY)
-    else window.localStorage.setItem(SELECTED_SESSION_KEY, selectedBefore)
   }
 }
 
@@ -99,13 +92,10 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
     await expect(row.contains(hit)).toBe(true)
 
-    // And the click the report says is swallowed still reaches the row's own handler, which
-    // writes the chosen Session before it navigates (SessionsSidebarContainer.tsx).
-    window.localStorage.removeItem(SELECTED_SESSION_KEY)
+    // And the click the report says is swallowed is delivered to that row: the pointer press
+    // reaches it and leaves the focus there, which a cover over the window would prevent.
     await userEvent.click(canvas.getByText('Another Session to switch to'))
-    await waitFor(() =>
-      expect(window.localStorage.getItem(SELECTED_SESSION_KEY)).toBe(other.id),
-    )
+    await waitFor(() => expect(document.activeElement).toBe(row))
 
     // Still spinning: nothing in the Feed's own loading state bounds it.
     await new Promise((resolve) => setTimeout(resolve, 1000))
