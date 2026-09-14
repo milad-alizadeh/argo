@@ -78,6 +78,7 @@ const meta: Meta<typeof SessionsSidebarContent> = {
     ),
   ],
   args: {
+    onRename: fn(async (_session, name) => name),
     onSelect: fn(),
     roster: listed,
     rosterError: null,
