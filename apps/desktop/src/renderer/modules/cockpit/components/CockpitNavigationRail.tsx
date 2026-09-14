@@ -1,7 +1,14 @@
 import { type LucideIcon, Map as MapIcon, MessagesSquare, Settings, Ticket } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/core/commands/shortcuts'
+import {
+  DESTINATION_PATHS,
+  DESTINATIONS,
+  type Destination,
+  navigateCommand,
+  shortcut,
+} from '@/core/commands/shortcuts'
 
 const navigationIcons: Record<Destination, LucideIcon> = {
   Sessions: MessagesSquare,
@@ -18,7 +25,9 @@ function destinationFromHash(): Destination {
 }
 
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
+  const { t } = useTranslation(['cockpit', 'platform'])
   const [destination, setDestination] = useState(destinationFromHash)
+  const settingsLabel = t('cockpit:rail.settings')
 
   useEffect(() => {
     const updateDestination = () => setDestination(destinationFromHash())
@@ -28,7 +37,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
 
   return (
     <nav
-      aria-label="Main navigation"
+      aria-label={t('cockpit:rail.label')}
       className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center bg-muted [&_svg]:size-(--size-icon-control)"
     >
       <div className="drag-region h-(--size-chrome-bar) w-full shrink-0" />
@@ -36,12 +45,13 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         {DESTINATIONS.map((itemDestination) => {
           const Icon = navigationIcons[itemDestination]
           const active = destination === itemDestination
+          const label = t(`platform:${shortcut(navigateCommand(itemDestination)).labelKey}`)
           return (
             <button
               key={itemDestination}
               type="button"
               aria-current={active ? 'page' : undefined}
-              aria-label={itemDestination}
+              aria-label={label}
               className="group flex flex-col items-center gap-1 type-label"
               onClick={() => {
                 window.location.hash = DESTINATION_PATHS[itemDestination]
@@ -57,7 +67,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
                 <Icon />
               </span>
               <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                {itemDestination}
+                {label}
               </span>
             </button>
           )
@@ -66,13 +76,13 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
       <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
         <button
           type="button"
-          aria-label="Settings"
+          aria-label={settingsLabel}
           className="group flex flex-col items-center gap-1 type-label"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Settings />
           </span>
-          <span className="text-muted-foreground">Settings</span>
+          <span className="text-muted-foreground">{settingsLabel}</span>
         </button>
       </div>
     </nav>

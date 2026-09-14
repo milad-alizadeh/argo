@@ -1,5 +1,6 @@
 import { PanelLeftIcon } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { Button } from '../../../components/ui/button'
@@ -26,10 +27,11 @@ type SidebarHeaderProps = {
 }
 
 function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
+  const { t } = useTranslation('cockpit')
   return (
     <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 px-(--spacing-shell-gutter)">
       <Button
-        aria-label="Collapse sidebar"
+        aria-label={t('shell.collapseSidebar')}
         variant="ghost"
         size="icon-sm"
         className="no-drag-region"
@@ -49,6 +51,7 @@ export function CockpitShell({
   header = <ProjectSwitcher />,
   children,
 }: CockpitShellProps) {
+  const { t } = useTranslation('cockpit')
   const sidebarPanelRef = usePanelRef()
   const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')
   const sidebarMaximumWidth = readCssSize('--size-cockpit-sidebar-max')
@@ -93,7 +96,7 @@ export function CockpitShell({
         {isSidebarCollapsed ? (
           <div className="absolute top-0 left-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center gap-(--spacing-shell-tight)">
             <Button
-              aria-label="Open sidebar"
+              aria-label={t('shell.openSidebar')}
               variant="ghost"
               size="icon-sm"
               ref={sidebarToggleRef}

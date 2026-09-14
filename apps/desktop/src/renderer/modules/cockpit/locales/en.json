@@ -1,0 +1,19 @@
+{
+  "rail": {
+    "label": "Main navigation",
+    "settings": "Settings"
+  },
+  "projectSwitcher": {
+    "placeholder": "Select project",
+    "current": "Current project: {{name}}",
+    "switchLabel": "Switch project",
+    "switchTo": "Switch to {{name}}",
+    "add": "Add project",
+    "addEllipsis": "Add project…",
+    "settings": "Project settings…"
+  },
+  "shell": {
+    "collapseSidebar": "Collapse sidebar",
+    "openSidebar": "Open sidebar"
+  }
+}
