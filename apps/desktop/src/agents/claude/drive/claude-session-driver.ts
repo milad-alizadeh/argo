@@ -52,6 +52,18 @@ function startSession(
   return sessionId
 }
 
+function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
+  return [...sessions.entries()].map(([id, session]) =>
+    managedRow(id, {
+      ...session,
+      cli: 'claude',
+      status: options.gate.pending(id) === null ? 'running' : 'permission',
+      setup: session.applied,
+      title: session.title,
+    }),
+  )
+}
+
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
   const sessions = new Map<string, ManagedSession>()
   const channel = channelActions(options, sessions)
@@ -95,16 +107,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       return name
     },
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
-    roster: () =>
-      [...sessions.entries()].map(([id, session]) =>
-        managedRow(id, {
-          ...session,
-          cli: 'claude',
-          status: options.gate.pending(id) === null ? 'running' : 'permission',
-          setup: session.applied,
-          title: session.title,
-        }),
-      ),
+    roster: () => roster(options, sessions),
     orphans: options.ledger.orphans,
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
     decidePermission: (sessionId, permissionId, decision) =>
