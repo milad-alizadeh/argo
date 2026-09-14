@@ -6,7 +6,14 @@ import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './
 import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
 import type { SessionSource } from './session-source'
 
-type FeedContext = { source: SessionSource; feeds: Map<string, HeldFeed>; managed: boolean }
+// `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
+// Feeds are separate documents read from separate files, so they cannot share one entry.
+type FeedContext = {
+  source: SessionSource
+  feeds: Map<string, HeldFeed>
+  managed: boolean
+  key: string
+}
 
 function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
@@ -27,11 +34,11 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, managed } = context
-  const held = feeds.get(value.sessionId)
+  const { source, feeds, managed, key } = context
+  const held = feeds.get(key)
   const cached = await cachedReply(value, held)
   if (cached !== null) {
-    if (held !== undefined) keepFeed(feeds, value.sessionId, held)
+    if (held !== undefined) keepFeed(feeds, key, held)
     return cached
   }
   const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
@@ -49,7 +56,7 @@ export async function readOwnedFeed(
     revision,
     stamps,
   }
-  keepFeed(feeds, value.sessionId, next)
+  keepFeed(feeds, key, next)
   return feedReply(value, next)
 }
 

@@ -5,11 +5,11 @@ import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
 import { permissionSchema } from './permission'
-import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
 export * from './archive-contract'
 export * from './attachments-contract'
+export * from './background-work-contract'
 export * from './claude-contract'
 export * from './permission'
 export * from './question-contract'
@@ -27,6 +27,10 @@ export const sessionFeedRequestSchema = z.strictObject({
   type: z.literal('session.feed'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
+  // The Subagent whose own Feed is wanted, named by the call that spawned it, or null for the
+  // Session's own Feed (#1582). A Subagent records a transcript of its own beside the Session's,
+  // and its rows are the Session's sidechain, so the two are separate documents.
+  delegationId: identifierSchema.nullable(),
   // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
   // a reloaded or evicted deck without rows to draw.
   revision: z.string().nullable(),
@@ -171,14 +175,12 @@ export const sessionPermissionReplySchema = z.union([
   sessionPermissionReadSchema,
   sessionErrorSchema,
 ])
-export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
 
 export type SessionListReply = z.infer<typeof sessionListReplySchema>
 export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
 export type SessionStartReply = z.infer<typeof sessionStartReplySchema>
 export type SessionAcceptedReply = z.infer<typeof sessionAcceptedReplySchema>
 export type SessionPermissionReply = z.infer<typeof sessionPermissionReplySchema>
-export type SessionRenameReply = z.infer<typeof sessionRenameReplySchema>
 
 // This table is the Session IPC contract. Adding an operation means adding its four wire facts
 // here and one handler; clients and bridges select this entry rather than maintaining a second

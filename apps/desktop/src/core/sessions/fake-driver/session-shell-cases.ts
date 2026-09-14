@@ -21,10 +21,14 @@ export async function proveSessionShell(page) {
   }
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
   await page.getByRole('button', { name: 'Open Session inspector' }).click()
+  // Rounded like the assertion below: the settled width reads 247.99 on a fractional device pixel
+  // ratio, so an exact comparison never becomes true.
   await page.waitForFunction(
     (inspectorWidth) =>
-      document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ===
-      inspectorWidth,
+      Math.round(
+        document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ??
+          0,
+      ) === inspectorWidth,
     INSPECTOR_WIDTH,
   )
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)

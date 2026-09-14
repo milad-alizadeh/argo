@@ -80,6 +80,7 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
+      delegationId: null,
       revision: null,
     }),
   )
@@ -110,6 +111,7 @@ test('a Codex Session Argo held before restart is orphaned and keeps its recorde
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
+      delegationId: null,
       revision: null,
     }),
   )

@@ -10,6 +10,7 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from './session-fixture-files'
+import { pointShellOutputAtRoot } from './session-shell-fixture'
 
 export const FIXTURES = [
   'resumeParent',
@@ -29,6 +30,11 @@ export const FIXTURES = [
   'setupAnswered',
   // Current Claude harness records: the first visible name must be the reconstructed command.
   'harnessNoise',
+  // Two background Shells, one still running and one the CLI already notified about (#1582).
+  'shellRunning',
+  // One Subagent with a transcript of its own beside the Session's file, whose Feed the rail
+  // opens in place of the Session's (#1582).
+  'subagentTail',
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
@@ -96,6 +102,7 @@ export async function prepare(root) {
   const claudeTranscripts = path.join(root, 'claude-transcripts')
   const codexTranscripts = path.join(root, 'codex-transcripts')
   await writeFixtureTree(claudeTranscripts, FIXTURES)
+  await pointShellOutputAtRoot(claudeTranscripts, root)
   await writeFixtureTree(codexTranscripts, CODEX_FIXTURE_NAMES, {
     directory: '2026/09/10',
     fixtures: CODEX_FIXTURES,

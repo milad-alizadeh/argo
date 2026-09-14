@@ -6,6 +6,7 @@ import { SESSION_OPERATIONS } from '@/core/sessions/operations.ts'
 
 const feed = {
   sessionId: 'session-a',
+  delegationId: null,
   revision: null,
 }
 

@@ -5,10 +5,10 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
-import { SessionWorkInspector } from '../components/SessionScreenDetails'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
+import { SessionWorkInspector } from '../components/SessionWorkInspector'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
 import { SessionScreenView } from './SessionScreenView'
 import { SessionShell } from './SessionShell'
@@ -32,8 +32,14 @@ const SESSION_ROSTER = [
         { content: 'Record the visual review', position: 2, status: 'pending' },
       ],
     },
-    delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
-    shell: [{ id: 'quality', command: 'bun run quality', background: false }],
+    delegations: [
+      sessionDelegation({
+        id: 'interface-review',
+        label: 'Interface review',
+        startedAt: '2026-09-13T15:44:00Z',
+      }),
+    ],
+    shell: [sessionShellCommand({ id: 'quality', command: 'bun run quality' })],
     pullRequest: { number: 1846, url: 'https://example.com/pull/1846', repository: 'argo' },
     contextTokens: 54_000,
     spentTokens: 11_200,
@@ -133,7 +139,16 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
-        inspector={<SessionWorkInspector session={session} />}
+        inspector={
+          <SessionWorkInspector
+            delegations={session.delegations}
+            shell={session.shell}
+            selectedDelegationId={null}
+            onSelectDelegation={() => {}}
+            selectedShellId={null}
+            onSelectShell={() => {}}
+          />
+        }
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         onAnswerQuestion={() => {}}

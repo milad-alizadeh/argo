@@ -13,6 +13,7 @@ const feed = {
   type: 'session.feed',
   requestId: 'feed-1',
   sessionId: 'resumeParent',
+  delegationId: null,
   revision: null,
 }
 

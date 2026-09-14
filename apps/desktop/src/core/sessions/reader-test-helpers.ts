@@ -58,7 +58,14 @@ export function feedRequest(
   requestId = 'feed-1',
   revision: string | null = null,
 ) {
-  return { version: 1, type: 'session.feed', requestId, sessionId, revision } as const
+  return {
+    version: 1,
+    type: 'session.feed',
+    requestId,
+    sessionId,
+    delegationId: null,
+    revision,
+  } as const
 }
 
 export async function listed(reader: ReturnType<typeof createSessionReader>, requestId?: string) {

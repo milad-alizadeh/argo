@@ -12,7 +12,14 @@ export type ContentBlock =
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
-export type ToolResult = { callId: string; content: string | null; failed: boolean }
+export type ToolResult = {
+  callId: string
+  content: string | null
+  failed: boolean
+  // The receipt a call sent to the background writes instead of a result: the id the CLI will
+  // notify under, and the file it streams the command's output to (CONTEXT.md L3 · Tool Call).
+  background?: { taskId: string; outputPath: string | null }
+}
 export type TranscriptUsage = {
   inputTokens: number
   outputTokens: number
@@ -43,6 +50,10 @@ export type TranscriptMessage = {
   usage: TranscriptUsage | null
 }
 
+// The statuses a background task ends on, as the CLI's own notification words them.
+export const BACKGROUND_STATES = ['completed', 'failed', 'killed', 'stopped'] as const
+export type BackgroundState = (typeof BACKGROUND_STATES)[number]
+
 export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
@@ -55,6 +66,17 @@ export type TranscriptRecord =
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   // The CLI's `compact_boundary` system record: the point where history was condensed.
   | { kind: 'compaction'; uuid: string; timestamp?: string }
+  // The CLI's `task-notification`: the end of one background task, naming the call that started
+  // it, where its output was written, and how it ended.
+  | {
+      kind: 'background-task'
+      taskId: string
+      callId: string
+      outputPath: string | null
+      state: BackgroundState
+      summary: string | null
+      timestamp: string | null
+    }
   | { kind: 'unreadable'; line: string }
 
 export type TranscriptFile = {

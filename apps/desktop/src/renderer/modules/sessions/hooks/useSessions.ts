@@ -29,7 +29,11 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
   return ordered
 }
 
-export function useSessions(selectedSessionId: SessionId | null) {
+// `delegationId` names the Subagent whose Feed is being read, or null for the Session's own.
+export function useSessions(
+  selectedSessionId: SessionId | null,
+  delegationId: string | null = null,
+) {
   const queryClient = useQueryClient()
   const roster = useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
@@ -52,16 +56,17 @@ export function useSessions(selectedSessionId: SessionId | null) {
     queryKey:
       selectedSessionId === null
         ? ['sessions', 'feed', null]
-        : sessionFeedQueryKey(selectedSessionId),
+        : sessionFeedQueryKey(selectedSessionId, delegationId),
     enabled: selectedSessionId !== null,
     refetchInterval: SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       if (selectedSessionId === null) return null
-      const key = sessionFeedQueryKey(selectedSessionId)
+      const key = sessionFeedQueryKey(selectedSessionId, delegationId)
       const cached = queryClient.getQueryData<SessionFeed>(key)
       const reply = await window.argo.readSessionFeed({
         sessionId: selectedSessionId,
+        delegationId,
         revision: cached?.revision ?? null,
       })
       switch (reply.type) {

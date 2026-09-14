@@ -69,9 +69,9 @@ export async function stableChain(
   }
 }
 
-export function keepFeed(feeds: Map<string, HeldFeed>, sessionId: string, feed: HeldFeed) {
-  feeds.delete(sessionId)
-  feeds.set(sessionId, feed)
+export function keepFeed(feeds: Map<string, HeldFeed>, key: string, feed: HeldFeed) {
+  feeds.delete(key)
+  feeds.set(key, feed)
   while (feeds.size > KEPT_FEED_LIMIT) {
     const oldest = feeds.keys().next().value
     if (oldest === undefined) return

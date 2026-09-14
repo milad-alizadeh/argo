@@ -25,3 +25,12 @@ export function sessionHarness({
 export function sessionHasWork(session: Pick<Session, 'delegations' | 'shell'> | null) {
   return session !== null && (session.delegations.length > 0 || session.shell.length > 0)
 }
+
+// What opens a collapsed inspector on its own: a Subagent, or a Shell the CLI put in the
+// background. A foreground command is already in the Feed, so it opens nothing (#1582).
+export function sessionHasBackgroundWork(session: Pick<Session, 'delegations' | 'shell'> | null) {
+  return (
+    session !== null &&
+    (session.delegations.length > 0 || session.shell.some((command) => command.background))
+  )
+}
