@@ -199,7 +199,8 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
   const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
-  if (card === null || contextBar === null)
+  const fade = composer.querySelector<HTMLElement>('[data-component="SessionComposerFade"]')
+  if (card === null || contextBar === null || fade === null)
     throw new Error('The attached composer surfaces are absent.')
 
   const gutter = Number.parseFloat(
@@ -214,6 +215,11 @@ function expectContextBarInset(canvasElement: HTMLElement) {
     1,
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
+  const composerBounds = composer.getBoundingClientRect()
+  expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
+    composerBounds.top + composerBounds.height / 2,
+    1,
+  )
 }
 
 const meta: Meta<typeof SessionScreenView> = {

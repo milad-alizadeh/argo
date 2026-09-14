@@ -142,7 +142,8 @@ export function SessionShell({
             >
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+                data-component="SessionComposerFade"
+                className="pointer-events-none absolute inset-x-0 bottom-1/2 h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
               />
               {composer}
             </section>
