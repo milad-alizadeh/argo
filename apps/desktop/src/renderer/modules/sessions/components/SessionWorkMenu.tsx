@@ -79,7 +79,7 @@ function Badge({ count, running }: { count: number; running: boolean }) {
     <span
       aria-hidden="true"
       className={cn(
-        'absolute top-0 right-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-badge leading-none font-semibold tabular-nums ring-2 ring-background',
+        'absolute -top-1 right-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-badge leading-none font-semibold tabular-nums ring-2 ring-background',
         running ? 'bg-active text-background' : 'bg-muted-foreground text-background',
       )}
     >
