@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
@@ -13,11 +14,33 @@ import {
   standalone,
   ticketsView,
 } from '../components/ticket-fixtures'
+import type { TicketsScreenProps } from '../hooks/useTicketsView'
 import { TicketsScreen } from './TicketsScreenView'
 
-const meta: Meta<typeof TicketsScreen> = {
+// The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
+// same Ticket after a reload), so a story stands in for the router state that owns it in the app.
+function TicketsScreenStory({ view }: TicketsScreenProps) {
+  const [selectedKey, setSelectedKey] = useState<string | null>(
+    view.kind === 'tickets' ? view.selectedKey : null,
+  )
+  if (view.kind !== 'tickets') return <TicketsScreen view={view} />
+  return (
+    <TicketsScreen
+      view={{
+        ...view,
+        selectedKey,
+        onSelect: (key) => {
+          view.onSelect(key)
+          setSelectedKey(key)
+        },
+      }}
+    />
+  )
+}
+
+const meta: Meta<typeof TicketsScreenStory> = {
   title: 'Tickets/Screen',
-  component: TicketsScreen,
+  component: TicketsScreenStory,
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story, { parameters }) => (
@@ -43,7 +66,7 @@ const meta: Meta<typeof TicketsScreen> = {
 }
 
 export default meta
-type Story = StoryObj<typeof TicketsScreen>
+type Story = StoryObj<typeof TicketsScreenStory>
 
 async function readsTheBacklog(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
@@ -261,8 +284,11 @@ export const LongBacklog: Story = {
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
     const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
     if (list) list.scrollTop = list.scrollHeight
-    await waitFor(() =>
-      expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
+    // The observer's own callback lands on a later frame, now racing the Linked Sessions
+    // query TicketDeck starts on mount (#2134): the default 1s waitFor is too tight for both.
+    await waitFor(
+      () => expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
+      { timeout: 3000 },
     )
   },
 }
