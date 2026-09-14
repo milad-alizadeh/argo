@@ -12,6 +12,7 @@
     "feed": "Argo cannot read this Session's history."
   },
   "feedLabel": "Session Feed",
+  "composerRegionLabel": "Session composer",
   "historyLabel": "Session history",
   "composer": {
     "label": "Session input",

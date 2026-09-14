@@ -240,6 +240,7 @@ function DeselectableReviewScreen() {
         }
         feed={selectedSessionId === null ? null : feedFor(selectedSessionId)}
         feedError={null}
+        onRetryFeed={() => {}}
         inspector={null}
         isRunning={session?.status === 'running'}
         onOpenEvidence={() => {}}
