@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  APPEARANCE_OPERATIONS,
   APPEARANCES,
   createAppearanceClient,
   DEFAULT_APPEARANCE,
@@ -8,7 +9,17 @@ import {
   windowBackground,
 } from './appearance'
 
-const client = (invoke) => createAppearanceClient(invoke, () => {})
+const state = (requestId: string, appearance = 'system', dark = true) => ({
+  version: 1,
+  type: 'appearance.state',
+  requestId,
+  appearance,
+  dark,
+})
+
+function client(invoke: (channel: string, request: unknown) => Promise<unknown>) {
+  return createAppearanceClient(invoke, () => () => {})
+}
 
 test('the three appearances are System, Light and Dark, and System is the default', () => {
   assert.deepEqual([...APPEARANCES], ['system', 'light', 'dark'])
@@ -28,34 +39,38 @@ test('a window that cannot read its appearance still draws a dark one', async ()
 })
 
 test('choosing an appearance sends it and answers with what the main process resolved', async () => {
-  const sent = []
-  const resolved = { appearance: 'light', dark: false }
-  const surface = client((_operation, appearance) => {
-    sent.push(appearance)
-    return Promise.resolve(resolved)
+  const sent: Array<{ channel: string; request: unknown }> = []
+  const surface = client((channel, request) => {
+    sent.push({ channel, request })
+    const requestId = (request as { requestId: string }).requestId
+    return Promise.resolve(state(requestId, 'light', false))
   })
-  assert.deepEqual(await surface.setAppearance('light'), resolved)
-  assert.equal(sent[0].type, 'appearance.set')
-  assert.equal(sent[0].appearance, 'light')
+  assert.deepEqual(await surface.setAppearance('light'), { appearance: 'light', dark: false })
+  const [call] = sent
+  assert.ok(call)
+  assert.equal(call.channel, APPEARANCE_OPERATIONS.set.channel)
+  assert.equal((call.request as { appearance: string }).appearance, 'light')
 })
 
 test('an appearance the contract does not name is never sent', async () => {
-  const sent = []
-  const surface = client((_operation, appearance) => {
-    sent.push(appearance)
-    return Promise.resolve({ appearance: 'system', dark: true })
+  const sent: string[] = []
+  const surface = client((channel, request) => {
+    sent.push(channel)
+    const requestId = (request as { requestId: string }).requestId
+    return Promise.resolve(state(requestId))
   })
-  await surface.setAppearance('sepia')
-  assert.equal(sent[0].type, 'appearance.get')
+  await surface.setAppearance('sepia' as never)
+  assert.equal(sent[0], APPEARANCE_OPERATIONS.get.channel)
 })
 
 test('a changed appearance reaches the listener only when it is one', () => {
-  const seen = []
-  let push = () => {}
+  const seen: unknown[] = []
+  let push: (state: unknown) => void = () => {}
   createAppearanceClient(
     () => Promise.resolve(null),
     (listener) => {
       push = listener
+      return () => {}
     },
   ).onAppearanceChanged((state) => seen.push(state))
   push({ appearance: 'dark', dark: true })
@@ -72,4 +87,18 @@ test('a state is only a state with both halves', () => {
   assert.equal(isAppearanceState({ appearance: 'system', dark: true }), true)
   assert.equal(isAppearanceState({ appearance: 'system' }), false)
   assert.equal(isAppearanceState(null), false)
+})
+
+test('an untrusted set is refused, not swallowed as a state', async () => {
+  const surface = client((_channel, request) => {
+    const requestId = (request as { requestId: string }).requestId
+    return Promise.resolve({
+      version: 1,
+      type: 'appearance.error',
+      requestId,
+      code: 'access-denied',
+      message: 'Argo cannot change the appearance from here.',
+    })
+  })
+  assert.deepEqual(await surface.setAppearance('light'), { appearance: 'system', dark: true })
 })

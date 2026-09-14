@@ -1,33 +1,28 @@
-import { requestIdentifier } from '@/boundary'
-import {
-  type ClaudeSessionInterruptReply,
-  type ClaudeSessionSendReply,
-  claudeSessionInterruptRequestSchema,
-  claudeSessionSendRequestSchema,
-  sessionError,
+import type {
+  ClaudeSessionInterruptRequest,
+  ClaudeSessionSendReply,
+  ClaudeSessionSendRequest,
 } from '@/core/sessions/contract'
+import { sessionError } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 
 type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
 
-export async function driveClaudeSession(
-  value: unknown,
+export async function sendClaudeSession(
+  request: ClaudeSessionSendRequest,
   driver: ClaudeSessionDrive,
-): Promise<ClaudeSessionSendReply | ClaudeSessionInterruptReply> {
-  const send = claudeSessionSendRequestSchema.safeParse(value)
-  if (send.success) {
-    const request = send.data
-    return accept(request, () =>
-      driver.send(request.sessionId, { prompt: request.prompt, setup: request.setup }),
-    )
-  }
-  const interrupt = claudeSessionInterruptRequestSchema.safeParse(value)
-  if (interrupt.success) {
-    const request = interrupt.data
-    return accept(request, () => driver.interrupt(request.sessionId))
-  }
-  return sessionError('invalid-request', requestIdentifier(value))
+): Promise<ClaudeSessionSendReply> {
+  return accept(request, () =>
+    driver.send(request.sessionId, { prompt: request.prompt, setup: request.setup }),
+  )
+}
+
+export async function interruptClaudeSession(
+  request: ClaudeSessionInterruptRequest,
+  driver: ClaudeSessionDrive,
+): Promise<ClaudeSessionSendReply> {
+  return accept(request, () => driver.interrupt(request.sessionId))
 }
 
 async function accept(

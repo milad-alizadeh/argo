@@ -1,16 +1,14 @@
 // Restoring the cockpit on launch: the known set and the Project that was open when it last closed.
 import { projectError } from './contract'
-import { type ProjectListReply, projectListRequestSchema } from './messages'
+import type { ProjectListReply, ProjectListRequest } from './messages'
 import { openRegistry } from './register-project'
 import { listed, readRegistry } from './registry'
 
 export async function listProjects(
-  value: unknown,
+  request: ProjectListRequest,
   registryPath: string,
 ): Promise<ProjectListReply> {
-  const parsed = projectListRequestSchema.safeParse(value)
-  if (!parsed.success) return projectError('invalid-request', null)
   const registry = openRegistry(await readRegistry(registryPath))
-  if (typeof registry === 'string') return projectError(registry, parsed.data.requestId)
-  return listed(parsed.data.requestId, registry)
+  if (typeof registry === 'string') return projectError(registry, request.requestId)
+  return listed(request.requestId, registry)
 }

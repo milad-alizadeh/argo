@@ -10,7 +10,7 @@ import {
   repository,
 } from './fake-driver/registration-fixture'
 import { listProjects } from './list-projects'
-import { registerProject, relocateProject } from './register-project'
+import { registerProject } from './register-project'
 
 test('registering a folder creates one Project, selects it and writes it down', async (context) => {
   const setup = await fixture(context)
@@ -114,19 +114,6 @@ test('a registry that cannot be read in this format refuses every action', async
   await writeFile(setup.store.registryPath, '{ not json')
   assert.equal((await registerProject(register('r1'), setup.store)).code, 'storage-invalid')
   assert.equal((await listProjects(list('l1'), setup.store.registryPath)).code, 'storage-invalid')
-})
-
-test('an action that is not the one it names is refused', async (context) => {
-  const setup = await fixture(context)
-  assert.equal(
-    (await registerProject({ version: 1, type: 'nope' }, setup.store)).code,
-    'invalid-request',
-  )
-  assert.equal((await relocateProject(register('r1'), setup.store)).code, 'invalid-request')
-  assert.equal(
-    (await listProjects(register('r1'), setup.store.registryPath)).code,
-    'invalid-request',
-  )
 })
 
 test('a registry written while the chooser is open survives the registration', async (context) => {
