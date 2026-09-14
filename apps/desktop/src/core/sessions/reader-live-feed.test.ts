@@ -85,10 +85,9 @@ test('reads the Feed again once the CLI that was writing it stops', async (conte
   assert.notEqual(settled.revision, raced.revision)
 })
 
-// A read taken while the CLI writes can catch the last record half written. It draws as one
-// unreadable row rather than failing the read, and the row it belongs to arrives once the CLI
-// finishes the line.
-test('draws a half-written record as unreadable, and as itself once it is whole', async (context) => {
+// A read taken while the CLI writes can catch the last record half written. A last line with no
+// newline is not yet a record, so it draws nothing until the CLI finishes it (#2127).
+test('draws nothing for a half-written last record, and the record once it is whole', async (context) => {
   const root = await liveRoot(context)
   const record = {
     root,
@@ -103,7 +102,6 @@ test('draws a half-written record as unreadable, and as itself once it is whole'
   assert.equal(torn.type, 'session.feed.read')
   assert.deepEqual(torn.type === 'session.feed.read' && torn.rows.map((row) => row.shape), [
     'prose',
-    'unreadable',
   ])
 
   await finish()
@@ -115,23 +113,34 @@ test('draws a half-written record as unreadable, and as itself once it is whole'
   ])
 })
 
-// The chain kept past the settle bound is a read taken mid-write, so it can hold the half-written
-// record too. It is still answered, and still one unreadable row rather than a failed read.
+// A streaming CLI finishes one record and starts the next between any two reads, so every read
+// past the settle bound ends on a torn line. None of them draws it.
+function sourceTornDuringEveryRead(root: string) {
+  const source = codexSessionSource(root)
+  let finish = async () => {}
+  return {
+    ...source,
+    readSessionFiles: async (sessionId: string) => {
+      await finish()
+      finish = await appendHalfCodexTranscript({
+        root,
+        sessionId: SESSION,
+        text: 'still going',
+        updatedAt: '2026-09-13T09:00:01.000Z',
+      })
+      return source.readSessionFiles(sessionId)
+    },
+  }
+}
+
 test('answers a Session still being written whose last record is half written', async (context) => {
-  const root = await liveRoot(context)
-  await appendHalfCodexTranscript({
-    root,
-    sessionId: SESSION,
-    text: 'Second.',
-    updatedAt: '2026-09-13T09:00:02.000Z',
-  })
-  const reader = createSessionReader([sourceWrittenDuringEveryRead(root, () => true)])
+  const reader = createSessionReader([sourceTornDuringEveryRead(await liveRoot(context))])
 
   const reply = await fed(reader, feedRequest(SESSION))
 
   assert.equal(reply.type, 'session.feed.read')
   assert.equal(
     reply.type === 'session.feed.read' && reply.rows.some((row) => row.shape === 'unreadable'),
-    true,
+    false,
   )
 })
