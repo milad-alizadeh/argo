@@ -4,7 +4,7 @@ import type { SessionPosture, SessionStatus } from './models'
 import { rollupSessionStatus } from './session-status-rollup'
 
 test('a non-managed posture always reads the floor, whatever the signal claims', () => {
-  const postures: SessionPosture[] = ['external', 'orphaned']
+  const postures: SessionPosture[] = ['external']
   for (const posture of postures) {
     assert.equal(
       rollupSessionStatus('idle', posture, { kind: 'claude', pendingPermission: true }),
@@ -42,18 +42,44 @@ test('Claude: running only wins where the floor has nothing to say', () => {
 test('Codex: a thread reading only wins where the floor has nothing to say', () => {
   const signal = {
     kind: 'codex' as const,
-    reading: { kind: 'thread' as const, status: 'idle' as const },
+    reading: { kind: 'thread' as const, status: { type: 'idle' as const } },
   }
   assert.equal(rollupSessionStatus('unknown', 'managed', signal), 'idle')
   assert.equal(rollupSessionStatus('asking', 'managed', signal), 'asking')
 })
 
-test('Codex: a permission reading is DIRECT and wins over any floor', () => {
+test('Codex: a waitingOnApproval thread flag is DIRECT and wins over any floor', () => {
   const signal = {
     kind: 'codex' as const,
-    reading: { kind: 'thread' as const, status: 'permission' as const },
+    reading: {
+      kind: 'thread' as const,
+      status: { type: 'active' as const, activeFlags: ['waitingOnApproval'] },
+    },
   }
   assert.equal(rollupSessionStatus('idle', 'managed', signal), 'permission')
+})
+
+test('Codex: a waitingOnUserInput thread flag only wins where the floor has nothing to say', () => {
+  const signal = {
+    kind: 'codex' as const,
+    reading: {
+      kind: 'thread' as const,
+      status: { type: 'active' as const, activeFlags: ['waitingOnUserInput'] },
+    },
+  }
+  assert.equal(rollupSessionStatus('unknown', 'managed', signal), 'asking')
+  assert.equal(rollupSessionStatus('idle', 'managed', signal), 'idle')
+})
+
+test('Codex: systemError and notLoaded are degrade-down, never a guessed status', () => {
+  for (const type of ['systemError', 'notLoaded'] as const) {
+    const signal = {
+      kind: 'codex' as const,
+      reading: { kind: 'thread' as const, status: { type } },
+    }
+    assert.equal(rollupSessionStatus('unknown', 'managed', signal), 'unknown')
+    assert.equal(rollupSessionStatus('idle', 'managed', signal), 'idle')
+  }
 })
 
 test('Codex: a failed Turn is a degrade-down case, not a one-off exception, so it reads unknown', () => {

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import type { SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './FeedRow'
 import type { Reveal } from './reveal'
 
@@ -22,7 +22,7 @@ export function useToolGroups() {
 type DrawnRowInputs = {
   sessionId: string
   activeEvidenceId: string | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   openToolGroups: ReadonlySet<string>
   onOpenToolGroup: (id: string, open: boolean) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
@@ -55,7 +55,7 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
       <FeedRow
         {...props}
         activeEvidenceId={evidence.current}
-        onOpenEvidence={(row) => openEvidence.current(row)}
+        onOpenEvidence={(evidence) => openEvidence.current(evidence)}
         onOpenToolGroup={openToolGroup.current}
         openToolGroups={toolGroups.current}
         onAnswerQuestion={(questionId, answers) =>

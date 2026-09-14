@@ -11,7 +11,17 @@
 
 import type { SessionPosture, SessionStatus } from './models'
 
-export type CodexStatusReading = { kind: 'thread'; status: SessionStatus } | { kind: 'turn-failed' }
+// The wire's own thread-status shape (codex app-server's `thread/status/changed`), read raw:
+// this fold owns the one decision of what each shape MEANS, so `protocol.ts` only validates and
+// hands the shape over rather than pre-deciding a SessionStatus the fold cannot then reconcile.
+export type CodexThreadStatus =
+  | { type: 'active'; activeFlags: readonly string[] }
+  | { type: 'idle' }
+  | { type: 'systemError' | 'notLoaded' }
+
+export type CodexStatusReading =
+  | { kind: 'thread'; status: CodexThreadStatus }
+  | { kind: 'turn-failed' }
 
 export type ManagedStatusSignal =
   | { kind: 'claude'; pendingPermission: boolean }
@@ -19,6 +29,20 @@ export type ManagedStatusSignal =
   // Already-derived: a caller (managed-row.ts) reconciling two rows that each ran their own CLI
   // signal through this fold once already needs no second derivation, only the tie-break.
   | { kind: 'already'; status: SessionStatus }
+
+function deriveCodexThreadStatus(status: CodexThreadStatus): SessionStatus {
+  switch (status.type) {
+    case 'active':
+      if (status.activeFlags.includes('waitingOnApproval')) return 'permission'
+      if (status.activeFlags.includes('waitingOnUserInput')) return 'asking'
+      return 'running'
+    case 'idle':
+      return 'idle'
+    case 'systemError':
+    case 'notLoaded':
+      return 'unknown'
+  }
+}
 
 function deriveManagedStatus(signal: ManagedStatusSignal): SessionStatus {
   switch (signal.kind) {
@@ -33,7 +57,7 @@ function deriveManagedStatus(signal: ManagedStatusSignal): SessionStatus {
         case 'turn-failed':
           return 'unknown'
         case 'thread':
-          return signal.reading.status
+          return deriveCodexThreadStatus(signal.reading.status)
       }
   }
 }

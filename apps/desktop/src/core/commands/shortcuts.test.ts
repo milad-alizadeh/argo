@@ -64,9 +64,9 @@ test('the Roster movement chords fire on one element', () => {
   }
 })
 
-test('the composer sends only with Shift+Enter', () => {
-  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter')), false)
-  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter', { shift: true })), true)
+test('the composer sends only with a plain Enter', () => {
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter')), true)
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter', { shift: true })), false)
 })
 
 test('a plain chord refuses a modifier', () => {

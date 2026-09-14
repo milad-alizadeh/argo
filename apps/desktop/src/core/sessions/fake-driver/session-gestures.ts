@@ -123,7 +123,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await composer.click()
   assert.equal(await composer.textContent(), '')
   await page.keyboard.type(request.prompt)
-  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.press('Enter')
 
   const created = await waitForCreatedRow(page, known, request.cliWrote)
   // One gesture makes one Session: a second row is the duplicate-start bug this case exists for.

@@ -4,11 +4,23 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { useSessions } from '../hooks/useSessions'
-import type { SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { useComposerFadeTop } from './useComposerFadeTop'
 
 import './session-screen.css'
+
+function ComposerFade({ top }: { top: number | null }) {
+  if (top === null) return null
+  return (
+    <div
+      aria-hidden="true"
+      data-component="SessionComposerFade"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
+      style={{ top: `${top}px` }}
+    />
+  )
+}
 
 type SessionShellProps = {
   composer: ReactNode
@@ -18,10 +30,13 @@ type SessionShellProps = {
   compactionStartedAt?: string | null
   compactionPercentage?: number | null
   compactionTokens?: string | null
+  handoffStartedAt?: string | null
+  handoffTo?: string | null
+  onOpenSession: (sessionId: string) => void
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
@@ -37,6 +52,9 @@ export function SessionShell({
   compactionStartedAt = null,
   compactionPercentage = null,
   compactionTokens = null,
+  handoffStartedAt = null,
+  handoffTo = null,
+  onOpenSession,
   isRunning,
   selectedSessionId,
   activeEvidenceId,
@@ -80,6 +98,9 @@ export function SessionShell({
                 compactionStartedAt={compactionStartedAt}
                 compactionPercentage={compactionPercentage}
                 compactionTokens={compactionTokens}
+                handoffStartedAt={handoffStartedAt}
+                handoffTo={handoffTo}
+                onOpenSession={onOpenSession}
                 feed={feed}
                 failure={feedError}
                 isRunning={isRunning}
@@ -90,14 +111,7 @@ export function SessionShell({
                 questionFailure={questionFailure}
               />
             </section>
-            {fadeTop === null ? null : (
-              <div
-                aria-hidden="true"
-                data-component="SessionComposerFade"
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
-                style={{ top: `${fadeTop}px` }}
-              />
-            )}
+            <ComposerFade top={fadeTop} />
             <section
               aria-label="Session composer"
               className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"

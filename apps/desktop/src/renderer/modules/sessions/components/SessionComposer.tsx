@@ -1,9 +1,9 @@
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
-import type { TurnSetup } from '../turn-setup/turn-setup'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
+import type { Send } from './useSend'
 import { useSessionComposerState } from './useSessionComposerState'
 
 export type SessionComposerProps = {
@@ -11,11 +11,13 @@ export type SessionComposerProps = {
   disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
+  isHandingOff?: boolean
   isRunning?: boolean
   onCompact?: () => Promise<boolean>
+  onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  onSend: Send
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
@@ -26,8 +28,10 @@ export function SessionComposer({
   disabled = false,
   focusOnMount = false,
   isCompacting = false,
+  isHandingOff = false,
   isRunning = false,
   onCompact,
+  onHandoff,
   onInterrupt,
   sessionId,
   onSend,
@@ -46,12 +50,14 @@ export function SessionComposer({
       focusOnMount={focusOnMount}
       harness={harness}
       isCompacting={isCompacting}
+      isHandingOff={isHandingOff}
       isRunning={isRunning}
       onAttach={() => void state.attachFiles()}
       onChange={state.changeDraft}
       onCompact={onCompact}
       onDropFiles={state.dropFiles}
       onEdit={state.onEdit}
+      onHandoff={onHandoff}
       onInterrupt={onInterrupt}
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}

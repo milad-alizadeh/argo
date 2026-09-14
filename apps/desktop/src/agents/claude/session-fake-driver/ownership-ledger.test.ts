@@ -10,13 +10,13 @@ function ledgerAt(file: string, owner: { pid: number; registry: string }, alive:
   return createOwnershipLedger({ path: file, owner, isAlive: (pid) => alive.includes(pid) })
 }
 
-test('reads a Session no Argo ever held as never owned', async (context) => {
+test('reads a Session no Argo ever held as resumable', async (context) => {
   const ledger = ledgerAt(await ledgerPath(context), { pid: 10, registry: 'window-a' })
 
-  assert.equal(ledger.standing('never-seen'), 'never-owned')
+  assert.equal(ledger.standing('never-seen'), 'resumable')
 })
 
-test('reads a Session a previous launch held and released as orphaned after a restart', async (context) => {
+test('reads a Session a previous launch held and released as resumable after a restart', async (context) => {
   const file = await ledgerPath(context)
   const before = ledgerAt(file, { pid: 10, registry: 'window-a' })
   before.bind('session-1')
@@ -24,16 +24,16 @@ test('reads a Session a previous launch held and released as orphaned after a re
 
   const after = ledgerAt(file, { pid: 20, registry: 'window-b' }, [20])
 
-  assert.equal(after.standing('session-1'), 'orphaned')
+  assert.equal(after.standing('session-1'), 'resumable')
 })
 
-test('reads a Session whose owner was killed before it could release as orphaned', async (context) => {
+test('reads a Session whose owner was killed before it could release as resumable', async (context) => {
   const file = await ledgerPath(context)
   ledgerAt(file, { pid: 10, registry: 'window-a' }).bind('session-1')
 
   const after = ledgerAt(file, { pid: 20, registry: 'window-b' }, [20])
 
-  assert.equal(after.standing('session-1'), 'orphaned')
+  assert.equal(after.standing('session-1'), 'resumable')
 })
 
 test('reads a Session another running Argo window still drives as held elsewhere', async (context) => {
@@ -77,25 +77,12 @@ test('a window that let a Session go reads it as held elsewhere once another win
   )
 })
 
-test('lists as orphans only the Sessions no running window holds', async (context) => {
-  const file = await ledgerPath(context)
-  const gone = ledgerAt(file, { pid: 5, registry: 'killed-launch' })
-  gone.bind('killed')
-  gone.bind('released')
-  gone.release('released')
-  ledgerAt(file, { pid: 20, registry: 'other-window' }, [20]).bind('driven-elsewhere')
-  const ledger = ledgerAt(file, { pid: 10, registry: 'window-a' }, [10, 20])
-  ledger.bind('driven-here')
-
-  assert.deepEqual([...ledger.orphans()].sort(), ['killed', 'released'])
-})
-
 test('reads an unreadable ledger as no Sessions owned and rewrites it on the next claim', async (context) => {
   const file = await ledgerPath(context)
   await writeFile(file, '{ not json')
   const ledger = ledgerAt(file, { pid: 10, registry: 'window-a' })
 
-  assert.equal(ledger.standing('session-1'), 'never-owned')
+  assert.equal(ledger.standing('session-1'), 'resumable')
   ledger.bind('session-1')
   assert.deepEqual(JSON.parse(await readFile(file, 'utf8')), {
     'session-1': { owner: { pid: 10, registry: 'window-a' } },
@@ -121,7 +108,7 @@ test('reads a Session this window holds as held here', async (context) => {
 
   assert.equal(ledger.standing('session-1'), 'held-here')
   ledger.release('session-1')
-  assert.equal(ledger.standing('session-1'), 'orphaned')
+  assert.equal(ledger.standing('session-1'), 'resumable')
 })
 
 test('a ledger that cannot be written still grades this launch correctly', async (context) => {

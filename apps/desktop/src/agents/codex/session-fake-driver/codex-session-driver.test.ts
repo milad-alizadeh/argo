@@ -1,3 +1,5 @@
+// Post-start Turn tracking (marking a failed Session, and live message retention) is split into
+// codex-session-driver-turns.test.ts to stay under the file's line cap.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
@@ -34,6 +36,7 @@ function fakeChannel(): CodexChannel & {
     },
     onNotification: (listener) => notifications.push(listener as never),
     onExit: () => {},
+    respond: () => {},
     close: () => {},
   }
 }
@@ -44,6 +47,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: (executable, options) => {
       assert.equal(executable, '/usr/local/bin/codex')
       environments.push(options.env)
@@ -56,6 +60,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
   process.env.CODEX_API_KEY = 'codex-test'
   try {
     const sessionId = await driver.start({
+      attachments: [],
       cwd: '/projects/argo',
       prompt: 'Inspect the failing test.',
     })
@@ -92,11 +97,12 @@ test('reports Codex as unavailable rather than throwing an unrelated error', asy
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => fakeChannel(),
   })
 
   await assert.rejects(
-    driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' }),
+    driver.start({ attachments: [], cwd: '/projects/argo', prompt: 'Inspect the failing test.' }),
     (error) => error instanceof CodexSessionDriverError && error.code === 'cli-unavailable',
   )
 })
@@ -113,51 +119,12 @@ test('a Session whose opening Turn fails to start leaves no phantom Roster row',
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
 
-  await assert.rejects(driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' }))
-  assert.deepEqual(driver.roster(), [])
-})
-
-test('marks a Session unknown once its Turn is reported failed', async () => {
-  const channel = fakeChannel()
-  const driver = createCodexSessionDriver({
-    findExecutable: () => '/usr/local/bin/codex',
-    now: () => STARTED_AT,
-    openChannel: () => channel,
-  })
-
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
-  const notify = channel.notifications[0]
-  assert.ok(notify)
-  notify({
-    method: 'turn/completed',
-    params: { threadId: sessionId, turn: { id: 'turn-1', status: 'failed', error: 'boom' } },
-  } as never)
-
-  assert.deepEqual(
-    driver.roster().map(({ id, status }) => ({ id, status })),
-    [{ id: sessionId, status: 'unknown' }],
+  await assert.rejects(
+    driver.start({ attachments: [], cwd: '/projects/argo', prompt: 'Inspect the test.' }),
   )
-})
-
-test('keeps the streamed messages of the last Turn through a quick reply, and forgets older ones', async () => {
-  const channel = fakeChannel()
-  const driver = createCodexSessionDriver({
-    findExecutable: () => '/usr/local/bin/codex',
-    now: () => STARTED_AT,
-    openChannel: () => channel,
-  })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Write about ducks.' })
-  channel.notifications[0]?.({
-    method: 'item/agentMessage/delta',
-    params: { threadId: sessionId, turnId: 'turn-1', itemId: 'msg-1', delta: 'Ducks' },
-  } as never)
-
-  await driver.send(sessionId, 'And geese?')
-  assert.deepEqual(driver.liveMessages(sessionId), [{ id: 'msg-1', text: 'Ducks' }])
-
-  await driver.send(sessionId, 'And swans?')
-  assert.deepEqual(driver.liveMessages(sessionId), [])
+  assert.deepEqual(driver.roster(), [])
 })

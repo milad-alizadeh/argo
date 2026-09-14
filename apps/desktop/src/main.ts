@@ -65,11 +65,14 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
     permissions: path.join(userData, 'claude-permission-plugins'),
     ledger: path.join(userData, 'claude-session-ownership.json'),
     transcripts: claudeTranscriptsRoot(home),
+    handoffBriefs: path.join(userData, 'claude-session-handoffs'),
+    handoffLedger: path.join(userData, 'claude-session-handoffs.json'),
     executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
   })
   const codexSessionDriver = createSystemCodexSessionDriver({
     executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
     ownership: path.join(userData, 'codex-session-ownership.json'),
+    transcripts: codexTranscriptsRoot(home),
   })
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
@@ -79,15 +82,18 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
         completeCompaction: claudeSessionDriver.completeCompaction,
-        orphans: claudeSessionDriver.orphans,
+        completeHandoffs: claudeSessionDriver.completeHandoffs,
+        handoffEdges: claudeSessionDriver.handoffEdges,
         liveMessages: claudeSessionDriver.liveMessages,
         rename: (request) => renameClaudeSession(request, claudeSessionDriver),
+        isLockedElsewhere: claudeSessionDriver.isLockedElsewhere,
       }),
       codexSessionSource(codexTranscriptsRoot(home), {
         roster: codexSessionDriver.roster,
-        orphans: codexSessionDriver.ownership.orphans,
         liveMessages: codexSessionDriver.liveMessages,
+        pendingQuestion: codexSessionDriver.pendingQuestion,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
+        isLockedElsewhere: codexSessionDriver.isLockedElsewhere,
       }),
     ]),
     adapters: {
