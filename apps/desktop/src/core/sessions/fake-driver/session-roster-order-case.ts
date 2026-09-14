@@ -82,7 +82,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 }
 
 async function proveArchiveOrderAndFocus(page, mutations, withParent) {
-  await page.locator('details summary').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
   await page.locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]').waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()

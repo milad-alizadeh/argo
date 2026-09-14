@@ -28,7 +28,11 @@ export function ArchivedSessions({
   if (archived.length === 0) return null
 
   return (
-    <Collapsible className="border-t border-border/60 py-3" onOpenChange={setOpen} open={open}>
+    <Collapsible
+      className="roster__archived border-t border-border/60 py-3"
+      onOpenChange={setOpen}
+      open={open}
+    >
       <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-4 py-1 text-left type-body text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
         <ChevronRight
           aria-hidden="true"
