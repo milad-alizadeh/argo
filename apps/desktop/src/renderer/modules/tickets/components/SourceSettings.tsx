@@ -15,7 +15,7 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { ConnectionStatusMark } from './ConnectionStatusMark'
 
 export type SourceSettingsProps = {
@@ -69,7 +69,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
       </Item>
     )
   }
-  const { name, scope } = PROVIDER_PRESENTATION[connection.provider]
+  const { name, scope } = providerPresentation(connection.provider)
   return (
     <Item variant="outline">
       <ItemMedia className={mediaTile} variant="icon">
