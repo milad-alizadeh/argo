@@ -78,6 +78,10 @@ jobs:
       # The one cap biome can't express: duplication is whole-tree, and a linter reads one
       # file at a time. Its own step so a breach doesn't hide the hook tests' output
       # (see AGENTS.md "Quality gates").
+      - name: Fetch duplication baseline
+        if: ${{ !cancelled() }}
+        run: git fetch --no-tags origin main
+
       - name: Duplication gate
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
