@@ -57,7 +57,6 @@ function SessionsSidebarHeader({ onNew }: { onNew: () => void }) {
 }
 
 function SidebarRows({
-  archived,
   onFocus,
   onRename,
   onSelect,
@@ -66,7 +65,6 @@ function SidebarRows({
   tabStop,
   visible,
 }: {
-  archived: SessionsListed['sessions']
   onFocus: (sessionId: SessionId) => void
   onRename: (session: SessionsListed['sessions'][number]) => void
   onSelect: (sessionId: SessionId) => void
@@ -90,7 +88,11 @@ function SidebarRows({
   return (
     <>
       <div className="min-h-0 flex-1 overflow-y-auto py-3">{list(visible, 'Sessions')}</div>
-      <ArchivedSessions archived={archived} rows={list} selectedSessionId={selectedSessionId} />
+      <ArchivedSessions
+        rows={list}
+        selectedSessionId={selectedSessionId}
+        visibleSessionIds={visible.map((session) => session.id)}
+      />
     </>
   )
 }
@@ -115,9 +117,7 @@ export function SessionsSidebarContent({
   const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
   const [renamedTitles, setRenamedTitles] = useState<Record<string, string>>({})
-  const sessions = roster?.sessions ?? []
-  const visible = sessions.filter((session) => !session.archived)
-  const archived = sessions.filter((session) => session.archived)
+  const visible = roster?.sessions ?? []
   const { setFocusedSessionId, tabStop } = useRosterFocus(sidebar, visible, selectedSessionId)
   const state = rosterState(roster, rosterError, visible.length)
   const rosterRequestId = roster?.requestId
@@ -151,14 +151,11 @@ export function SessionsSidebarContent({
             <EmptyMedia variant="icon">
               <Inbox aria-hidden="true" />
             </EmptyMedia>
-            <EmptyTitle>
-              {archived.length > 0 ? 'No active Sessions' : 'No Sessions found'}
-            </EmptyTitle>
+            <EmptyTitle>No Sessions found</EmptyTitle>
           </EmptyHeader>
         </Empty>
       ) : null}
       <SidebarRows
-        archived={archived}
         onFocus={setFocusedSessionId}
         onRename={setRenameTarget}
         onSelect={onSelect}

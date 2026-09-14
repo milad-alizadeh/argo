@@ -5,11 +5,12 @@ export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions())
   assert.equal(list.type, 'session.listed')
   assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 13, read: 13 })
+  // Discovery still reads every transcript file (`filesRead` above), but an archived Session
+  // never projects into this active list (#1593): `plannedWork` is read out of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
     'harnessNoise',
-    'plannedWork',
     'prose',
     'resumeParent',
     'rollout-codexParent',
@@ -19,8 +20,19 @@ export async function proveContract(page) {
   ])
   assert.deepEqual(
     list.sessions.filter((session) => session.archived).map((session) => session.id),
+    [],
+  )
+  const archived = await page.evaluate(() =>
+    window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
+  )
+  assert.equal(archived.type, 'session.archive.listed')
+  assert.deepEqual(
+    archived.sessions.map((session) => session.id),
     ['plannedWork'],
   )
+  assert.equal(archived.sessions[0].archived, true)
+  assert.equal(archived.nextCursor, null)
+  assert.equal(archived.restored, null)
   assert.deepEqual(
     list.sessions.filter((session) => session.originUnread).map((session) => session.id),
     ['strandedResume'],

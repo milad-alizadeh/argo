@@ -205,20 +205,30 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
-export const AllArchived: Story = {
-  args: {
-    roster: {
-      ...listed,
-      sessions: listed.sessions.map((session) => ({
-        ...session,
-        archived: true,
-      })),
-    },
+// The active Roster never carries an archived Session (#1593): Archive states live in
+// ArchivedSessions.stories.tsx, which drives window.argo.listArchivedSessions directly.
+export const WithArchive: Story = {
+  beforeEach: () => {
+    const before = window.argo
+    window.argo = {
+      ...before,
+      listArchivedSessions: () =>
+        Promise.resolve({
+          version: 1,
+          type: 'session.archive.listed',
+          requestId: 'storybook-archive',
+          sessions: [{ ...session, id: 'archived-session', archived: true }],
+          nextCursor: null,
+          restored: null,
+        }),
+    }
+    return () => {
+      window.argo = before
+    }
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByText('Archived 2')
+    const disclosure = canvas.getByText('Archived')
     await expect(disclosure.closest('details')).not.toHaveAttribute('open')
     await userEvent.click(disclosure)
     await expect(disclosure.closest('details')).toHaveAttribute('open')

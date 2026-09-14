@@ -8,6 +8,7 @@ import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { HarnessControl, SessionCli } from '../harness/harnesses'
+import { useArchivedSessions } from '../hooks/useArchivedSessions'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
@@ -34,6 +35,19 @@ const SESSION_SPLIT = {
   workspaceMin: '--size-session-workspace-min',
 }
 
+// The active Roster never carries an archived Session (#1593): a direct open of one (a restored
+// route, a stored selection) asks the reader for its row by id instead of finding it in the
+// Roster's own list.
+function useSelectedSession(
+  selectedSessionId: string | null,
+  roster: ReturnType<typeof useSessions>['roster'],
+) {
+  const activeSession = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const archiveRestoreId = activeSession === null ? selectedSessionId : null
+  const { restored } = useArchivedSessions(archiveRestoreId !== null, archiveRestoreId)
+  return activeSession ?? restored
+}
+
 export function SessionScreenView() {
   const { sessionId } = useParams()
   const location = useLocation()
@@ -44,7 +58,7 @@ export function SessionScreenView() {
   const { feed, feedError, roster } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
-  const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
   const harness: HarnessControl =
     selectedSessionId === null

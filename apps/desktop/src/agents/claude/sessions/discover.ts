@@ -7,8 +7,12 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import type { ArchivedSessionsPage } from '@/core/sessions/session-source'
 import { readArchivedSessions } from './archive'
 import { parseTranscriptLine } from './records'
+
+// A page's worth of Archived Sessions (#1593), read on demand rather than on every poll.
+const ARCHIVE_PAGE_LIMIT = 20
 
 // How many transcript files one Roster pass reads, most recently written first. Measured on a
 // real tree of 1,055 files holding 3.3 GB: streaming 200 of them costs about 1.6 s and 60 about
@@ -37,18 +41,51 @@ const reader = createTranscriptDiscoverer({
 
 export const { readSessionFiles } = reader
 
+function isArchived(
+  row: { id: string; retiredIds: string[] },
+  archived: ReadonlySet<string>,
+): boolean {
+  return archived.has(row.id) || row.retiredIds.some((id) => archived.has(id))
+}
+
 // A Session the archive store names is joined by its stable id or by any id it retired: a resume
 // can move a Session's id forward, and the store still names whichever id was current when the
-// reader archived it.
+// reader archived it. The active Roster never carries an archived row (#1593): expanding Archive
+// asks discoverArchivedSessions below instead, on demand.
 export async function discoverSessions(root: string, archiveRoot?: string): Promise<Discovery> {
   const discovery = await reader.discoverSessions(root)
   if (archiveRoot === undefined) return discovery
   const archived = await readArchivedSessions(archiveRoot)
   return {
     ...discovery,
-    rows: discovery.rows.map((row) => ({
-      ...row,
-      archived: archived.has(row.id) || row.retiredIds.some((id) => archived.has(id)),
-    })),
+    rows: discovery.rows
+      .map((row) => ({ ...row, archived: isArchived(row, archived) }))
+      .filter((row) => !row.archived),
   }
+}
+
+// One page of the reader's Archived Sessions, offset-paginated over the same parsed, cached rows
+// discoverSessions above reads: detecting an archived row requires the full chain-stitched parse
+// (a Session can be archived under a retired id), so a page costs the same read as the active
+// list and only withholds its rows from that reply.
+export async function discoverArchivedSessions(
+  root: string,
+  archiveRoot: string,
+  options: { cursor: string | null; restoreId: string | null },
+): Promise<ArchivedSessionsPage> {
+  const discovery = await reader.discoverSessions(root)
+  const archivedIds = await readArchivedSessions(archiveRoot)
+  const archived = discovery.rows
+    .filter((row) => isArchived(row, archivedIds))
+    .map((row) => ({ ...row, archived: true }))
+  const offset = options.cursor === null ? 0 : Number.parseInt(options.cursor, 10)
+  const page = archived.slice(offset, offset + ARCHIVE_PAGE_LIMIT)
+  const nextCursor =
+    offset + ARCHIVE_PAGE_LIMIT >= archived.length ? null : String(offset + ARCHIVE_PAGE_LIMIT)
+  const restoreId = options.restoreId
+  const restored =
+    restoreId === null
+      ? null
+      : (archived.find((row) => row.id === restoreId || row.retiredIds.includes(restoreId)) ?? null)
+  return { rows: page, nextCursor, restored }
 }

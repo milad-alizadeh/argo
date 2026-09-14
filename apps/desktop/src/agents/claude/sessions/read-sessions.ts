@@ -6,7 +6,7 @@ import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
-import { discoverSessions, readSessionFiles } from './discover'
+import { discoverArchivedSessions, discoverSessions, readSessionFiles } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
 
@@ -43,6 +43,7 @@ export function claudeSessionSource(roots: {
 }): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
+  const archiveRoot = roots.archive
   return {
     cli: 'claude',
     discoverSessions: async () => {
@@ -60,6 +61,10 @@ export function claudeSessionSource(roots: {
     projectFeed,
     managedSessions: roots.managedSessions,
     rename: roots.rename,
+    discoverArchivedSessions:
+      archiveRoot === undefined
+        ? undefined
+        : (options) => discoverArchivedSessions(roots.transcripts, archiveRoot, options),
     overlayFor:
       liveMessages === undefined
         ? undefined
