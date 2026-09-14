@@ -75,7 +75,7 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   const compacting = relaunched.getByRole('status')
   await compacting.getByText('Compacting conversation').waitFor()
-  await compacting.getByText('22%').waitFor()
+  await relaunched.getByText('22%').waitFor()
   await history.getByText('Conversation compacted').waitFor()
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
