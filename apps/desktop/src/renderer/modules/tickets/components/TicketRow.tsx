@@ -142,14 +142,14 @@ export function TicketRow(props: TicketRowProps) {
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>
-        <span className="order-1 min-w-0 basis-full line-clamp-2 type-body @[22rem]:basis-auto @[22rem]:flex-1 @[22rem]:line-clamp-none @[22rem]:truncate">
+        <span className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate">
           {ticket.title}
         </span>
-        <span className="order-2 flex min-w-0 basis-full @[22rem]:basis-auto">
-          <Labels labels={ticket.labels} />
-        </span>
-        <span className="order-3">
+        <span className="order-2 mt-[calc((var(--text-body--line-height)-var(--size-icon-meta))_/_2)] self-start @[22rem]:order-3 @[22rem]:mt-0 @[22rem]:self-auto">
           <Marks ticket={ticket} />
+        </span>
+        <span className="order-3 flex min-w-0 basis-full @[22rem]:order-2 @[22rem]:basis-auto">
+          <Labels labels={ticket.labels} />
         </span>
         <time
           className="order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"

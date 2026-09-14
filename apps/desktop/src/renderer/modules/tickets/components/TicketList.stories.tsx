@@ -4,7 +4,7 @@ import { TicketList } from './TicketList'
 import { backlog, standalone, wayfinder } from './ticket-fixtures'
 
 const longTicket = {
-  ...standalone,
+  ...wayfinder,
   title:
     'Truncate Ticket and sidebar text before a long title can widen the Ticket list beyond its pane',
   labels: [
@@ -50,6 +50,7 @@ export const LongTitleWithLabels: Story = {
     const list = within(canvasElement).getByRole('list')
     const title = within(list).getByText(longTicket.title)
     const status = within(list).getByRole('button', { name: 'State: Open' })
+    const progress = within(list).getByText('1/2')
     for (const label of longTicket.labels) {
       const badge = within(list).getByText(label.name)
       await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
@@ -63,6 +64,9 @@ export const LongTitleWithLabels: Story = {
     const statusCenter =
       status.getBoundingClientRect().top + status.getBoundingClientRect().height / 2
     await expect(Math.abs(statusCenter - titleCenter)).toBeLessThanOrEqual(1)
+    const progressCenter =
+      progress.getBoundingClientRect().top + progress.getBoundingClientRect().height / 2
+    await expect(Math.abs(progressCenter - titleCenter)).toBeLessThanOrEqual(1)
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
   },
 }
