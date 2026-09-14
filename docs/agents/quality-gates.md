@@ -132,7 +132,8 @@ config file .jscpd.json line 1: expected value
 ```
 
 and exits non-zero, instead of quietly running unconfigured. **Dropping that flag restores the
-fail-open.**
+fail-open.** The command compares the branch with `origin/main` and fails on a new clone. CI
+fetches that ref before it runs the gate.
 
 ## Never prove the config by exit code
 

@@ -205,6 +205,7 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   beside its only caller and hoists on the third.
 - **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
   Resolve experimental values into those tokens before review.
+- **Reader text uses i18n.** Move each new production UI label, message, or accessible name into its locale catalog.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 

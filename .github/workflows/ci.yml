@@ -63,6 +63,14 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
+      - name: Fetch main baseline
+        if: ${{ !cancelled() }}
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: i18n guard
+        if: ${{ !cancelled() }}
+        run: bun run quality:i18n
+
       # Biome does not type-check, so this is the gate that reads types. `apps/desktop` landed
       # with a `typecheck` script no caller ran, which meant a type error in the Electron app
       # was caught by nothing (#1733). `tsc --noEmit` needs no Mac and no packaging, so it
