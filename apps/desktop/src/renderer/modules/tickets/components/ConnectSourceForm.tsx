@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '../../../components/ui/select'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 import { offered, type SourceDiscovery, SourceField } from './SourceField'
 
@@ -89,10 +89,10 @@ export function ConnectSourceForm({
     setMissingScope(scope === null)
     if (scope !== null) onConnectSource({ accountId: chosen.id, scope: scope.scope })
   }
-  const noun = PROVIDER_PRESENTATION[chosen.provider].scope.one
+  const noun = providerPresentation(chosen.provider).scope.one
   const choices = connected.map((account) => ({
     value: account.id,
-    label: `${PROVIDER_PRESENTATION[account.provider].name} · ${account.login}`,
+    label: `${providerPresentation(account.provider).name} · ${account.login}`,
   }))
   const problem = error?.message ?? (missingScope ? `Choose a ${noun}.` : null)
   return (

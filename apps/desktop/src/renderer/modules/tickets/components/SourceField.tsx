@@ -10,7 +10,7 @@ import {
   ComboboxList,
 } from '../../../components/ui/combobox'
 import { Field, FieldDescription, FieldError, FieldLabel } from '../../../components/ui/field'
-import { capitalized, PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { capitalized, providerPresentation } from '../../accounts/lib/providers'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 
 // The sources the chosen Account can see, read from its provider before the form can offer one.
@@ -34,7 +34,7 @@ type SourceFieldProps = {
 // What the field says under the input: a refusal first, then how the discovery stands.
 function SourceNote({ provider, login, sources, problem }: SourceFieldProps) {
   if (problem) return <FieldError id={NOTE_ID}>{problem}</FieldError>
-  const { scope } = PROVIDER_PRESENTATION[provider]
+  const { scope } = providerPresentation(provider)
   switch (sources.state) {
     case 'loading':
       return (
@@ -71,7 +71,7 @@ const sameScope = (item: TicketScope, value: TicketScope) => item.scope === valu
 
 export function SourceField(props: SourceFieldProps) {
   const { provider, sources, scope, problem, pending, onChange } = props
-  const noun = PROVIDER_PRESENTATION[provider].scope
+  const noun = providerPresentation(provider).scope
   const scopes = offered(sources)
   const disabled = pending || scopes.length === 0
   const described = problem !== null || sources.state !== 'listed' || scopes.length === 0

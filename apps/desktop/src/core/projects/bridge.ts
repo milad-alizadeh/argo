@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
+import { platformText } from '../i18n/platform'
 import { createWriteQueue } from '../storage/portable-file'
 import { projectError } from './contract'
 import { listProjects } from './list-projects'
@@ -12,8 +13,8 @@ import { type ProjectStore, registerProject, relocateProject } from './register-
 // asks for the action by name and receives the resulting registry (docs/portable-integration-contracts.md).
 async function chooseFolder(window: BrowserWindow): Promise<string | null> {
   const chosen = await dialog.showOpenDialog(window, {
-    title: 'Open Project',
-    buttonLabel: 'Open',
+    title: platformText('dialog.openProject.title'),
+    buttonLabel: platformText('dialog.openProject.confirm'),
     properties: ['openDirectory'],
   })
   if (chosen.canceled) return null

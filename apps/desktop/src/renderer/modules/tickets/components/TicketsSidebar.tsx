@@ -4,7 +4,7 @@ import type { ConnectionSummary } from '@/core/tickets/contract'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import { SignInNotice, type SignInNoticeProps } from '../../accounts/components/SignInNotice'
 import { useAccounts, useDismissNotice } from '../../accounts/hooks/useAccounts'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
 import { useConnection, useTicketList } from '../hooks/useTickets'
@@ -33,7 +33,7 @@ function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
       >
         {connection ? (
           <ConnectionStatusMark state={connection.state}>
-            {PROVIDER_PRESENTATION[connection.provider].name} · {connection.login ?? 'no Account'}
+            {providerPresentation(connection.provider).name} · {connection.login ?? 'no Account'}
           </ConnectionStatusMark>
         ) : (
           <span className="min-w-0 flex-1 truncate">Accounts</span>

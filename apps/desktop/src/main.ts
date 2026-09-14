@@ -23,6 +23,7 @@ import {
   readAppearance,
 } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
+import { setPlatformLanguage } from './core/i18n/platform'
 import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachWindowNavigation } from './core/security/window-navigation'
@@ -151,6 +152,9 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(async () => {
+  // The menu and the native dialogs are the only words the main process draws, and it reads the
+  // language from the operating system. `app.getLocale()` answers only once Electron is ready.
+  setPlatformLanguage(app.getLocale())
   // The stored choice is applied before the first window exists, so the frame is never drawn in
   // one appearance and corrected into the other.
   applyStoredAppearance(await readAppearance(app.getPath('userData')))

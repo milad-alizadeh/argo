@@ -1,6 +1,7 @@
 // How each provider reads on screen. A view that differs by provider looks it up here, so a new
-// provider is one entry and a provider's own concept is one field on its entry.
+// provider is one entry in the catalog and a provider's own concept is one key on that entry.
 import type { Provider } from '@/core/accounts/contract'
+import { i18n } from '../../../i18n/config'
 
 export type ProviderPresentation = {
   name: string
@@ -9,17 +10,16 @@ export type ProviderPresentation = {
   requesting: string
 }
 
-export const PROVIDER_PRESENTATION: Record<Provider, ProviderPresentation> = {
-  github: {
-    name: 'GitHub',
-    scope: { one: 'repository', many: 'repositories' },
-    requesting: 'Asking GitHub for a code…',
-  },
-  linear: {
-    name: 'Linear',
-    scope: { one: 'team', many: 'teams' },
-    requesting: 'Opening Linear…',
-  },
+// Read per render rather than built once at import, so a change of language reaches the screen.
+export function providerPresentation(provider: Provider): ProviderPresentation {
+  return {
+    name: i18n.t(`accounts:provider.${provider}.name`),
+    scope: {
+      one: i18n.t(`accounts:provider.${provider}.scopeOne`),
+      many: i18n.t(`accounts:provider.${provider}.scopeMany`),
+    },
+    requesting: i18n.t(`accounts:provider.${provider}.requesting`),
+  }
 }
 
 export const capitalized = (word: string) => word.charAt(0).toUpperCase() + word.slice(1)

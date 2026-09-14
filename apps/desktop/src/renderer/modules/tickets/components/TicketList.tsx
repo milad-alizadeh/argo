@@ -10,7 +10,7 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { useToastManager } from '../../../components/ui/toast'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { type Backlog, backlogRows, count, treeRails, unfoldedRows } from '../lib/backlog'
 import { SOURCE_PRESENTATION } from '../lib/sources'
 import { TicketRow } from './TicketRow'
@@ -24,7 +24,7 @@ export type TicketListProps = {
 }
 
 function tally({ tickets, query, total, hasMore, searching, provider }: Backlog): string {
-  if (searching) return `Searching ${PROVIDER_PRESENTATION[provider].name}…`
+  if (searching) return `Searching ${providerPresentation(provider).name}…`
   if (query !== '') return count(total ?? tickets.length, 'match', 'matches')
   return hasMore
     ? `All open · ${tickets.length}+ Tickets`
@@ -79,7 +79,7 @@ function NextPage({ backlog }: { backlog: Backlog }) {
 }
 
 function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
-  const { name, scope } = PROVIDER_PRESENTATION[provider]
+  const { name, scope } = providerPresentation(provider)
   return (
     <Empty className="flex-none border-0">
       <EmptyHeader>

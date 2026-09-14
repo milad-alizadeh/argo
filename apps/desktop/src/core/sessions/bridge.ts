@@ -1,5 +1,6 @@
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
+import { platformText } from '../i18n/platform'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
   type SessionArchiveListReply,
@@ -44,8 +45,8 @@ type SessionContext = {
 // none. A chosen folder attaches the same way a file does, as an `@path` reference (#1845).
 async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
   const chosen = await dialog.showOpenDialog(window, {
-    title: 'Attach Files & Folders',
-    buttonLabel: 'Attach',
+    title: platformText('dialog.attachFiles.title'),
+    buttonLabel: platformText('dialog.attachFiles.confirm'),
     properties: ['openFile', 'openDirectory', 'multiSelections'],
   })
   return chosen.canceled ? [] : chosen.filePaths
