@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
+import { ticketKey } from '../tickets/ticket'
 
 export {
   FEED_MARKERS,
@@ -82,6 +83,19 @@ export const sessionPullRequestSchema = z.strictObject({
 })
 export type SessionPullRequest = z.infer<typeof sessionPullRequestSchema>
 
+// The Ticket a reader asserted this Session works on (CONTEXT.md L1 · Session → Ticket), the
+// fallback link ADR-0017 persists for a Session with no branch to derive one through. `title` and
+// `state` are the cached echo from the moment a reader connected it, never authoritative: a screen
+// that needs the current fact re-reads the Ticket through its Project's Connection.
+export const sessionTicketSchema = z.strictObject({
+  projectId: identifierSchema,
+  key: ticketKey,
+  title: z.string(),
+  state: z.enum(['open', 'closed']),
+  createdAt: z.iso.datetime(),
+})
+export type SessionTicket = z.infer<typeof sessionTicketSchema>
+
 // A shell command the Session is running now: the first line of what it was asked to run, and
 // whether it was sent to the background. `command` is absent where the call carries none.
 export const sessionShellCommandSchema = z.strictObject({
@@ -124,6 +138,7 @@ export const sessionRosterRowSchema = z.strictObject({
   // The shell commands running now, read off `Bash` calls with no result (`sessions/signals.ts`).
   shell: z.array(sessionShellCommandSchema),
   pullRequest: sessionPullRequestSchema.nullable(),
+  ticket: sessionTicketSchema.nullable(),
   // Whether the reader has archived this Session. Argo keeps no flag of its own: this is the
   // Claude desktop app's own `isArchived`, joined on the CLI Session id (`sessions/archive.ts`).
   archived: z.boolean(),

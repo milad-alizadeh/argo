@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
@@ -99,6 +100,9 @@ try {
   await ran(['session-codex-resume'], async () => {
     page = await provePackagedCodexResume(page, { restart })
   })
+  await ran(['session-claude-rename'], () =>
+    proveClaudeRename(page, { project: fixture.project, transcripts: fixture.claudeTranscripts }),
+  )
   await assertShippedFusesIntact()
   console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
 } finally {

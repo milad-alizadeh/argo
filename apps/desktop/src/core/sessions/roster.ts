@@ -118,6 +118,9 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     delegations: readDelegations(messages),
     shell: readShellCommands(messages),
     pullRequest: readPullRequest(chain),
+    // Joined in by `reader.ts` from the owned Session → Ticket link store after this projection
+    // runs (CONTEXT.md L1 · Session → Ticket): no transcript record carries it.
+    ticket: null,
     // Whether the reader archived this Session is not a transcript fact: it comes from the
     // Claude desktop app's own store, joined in by `agents/claude/sessions/discover.ts` after
     // this projection runs. Every other caller — Codex included — reads false.

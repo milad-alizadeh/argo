@@ -53,6 +53,14 @@ export type SessionClient = {
     revision: string | null
   }): Promise<SessionFeedReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
+  connectSessionTicket(request: {
+    sessionId: string
+    projectId: string
+    key: string
+    title: string
+    state: 'open' | 'closed'
+  }): Promise<SessionAcceptedReply>
+  disconnectSessionTicket(request: { sessionId: string }): Promise<SessionAcceptedReply>
   chooseSessionAttachments(): Promise<SessionChooseAttachmentsReply>
   statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
 }
@@ -73,6 +81,8 @@ export function createSessionClient(
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),
+    connectSessionTicket: (request) => client.connectTicket(request),
+    disconnectSessionTicket: (request) => client.disconnectTicket(request),
     chooseSessionAttachments: () => client.chooseAttachments(),
     statSessionAttachments: (request) => client.statAttachments(request),
     async readSessionFeed(request) {

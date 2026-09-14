@@ -17,6 +17,7 @@ export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
+export * from './ticket-link-contract'
 
 // One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.
