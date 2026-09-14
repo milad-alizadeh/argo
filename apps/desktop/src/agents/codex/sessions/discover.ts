@@ -36,6 +36,19 @@ function withoutDuplicateMessages(records: TranscriptRecord[]): TranscriptRecord
   })
 }
 
+// A subagent thread is dispatched programmatically, never by a person, so it never writes the
+// `user_message` event a title needs and would otherwise surface in the Roster named by its raw
+// uuid. Dropping every record once the file's own `session_meta` names it a subagent thread
+// keeps that filtering in the Codex adapter rather than teaching shared discovery about `cli`.
+function droppingSubagentThreads(records: TranscriptRecord[]): TranscriptRecord[] {
+  const isSubagentThread = records.some((record) => record.kind === 'trace' && record.subagent)
+  return isSubagentThread ? [] : records
+}
+
+function normalizeRecords(records: TranscriptRecord[]): TranscriptRecord[] {
+  return droppingSubagentThreads(withoutDuplicateMessages(records))
+}
+
 async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
   const years = await directories(root)
   const months = (await Promise.all(years.map(directories))).flat()
@@ -47,7 +60,7 @@ const reader = createTranscriptDiscoverer({
   cli: 'codex',
   transcriptPaths,
   parse: parseCodexTranscriptLine,
-  normalizeRecords: withoutDuplicateMessages,
+  normalizeRecords,
 })
 
 export const { discoverSessions, readSessionFiles } = reader

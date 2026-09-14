@@ -5,7 +5,6 @@ import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
 import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
-import { managedRow } from '@/core/sessions/managed-row'
 import { createCodexSessionReader } from './read-sessions'
 
 const listing = { version: 1 as const, type: 'session.list' as const, requestId: 'list-1' }
@@ -78,64 +77,49 @@ test('does not list transcripts without messages, but counts and re-reads them',
   )
 })
 
-async function writeManagedRollout(root: string, sessionId: string) {
-  const day = path.join(root, '2026', '09', '13')
+test('excludes a subagent thread from the roster even though it holds assistant messages', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-subagent-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const day = path.join(root, '2026', '09', '14')
   await mkdir(day, { recursive: true })
-  const file = path.join(day, `rollout-2026-09-13T15-17-11-${sessionId}.jsonl`)
+  const sessionId = '01a09d44-306e-7b00-b7c7-0391bb2ae34f'
   await writeFile(
-    file,
+    path.join(day, `rollout-2026-09-14T01-14-46-${sessionId}.jsonl`),
     [
       {
-        timestamp: '2026-09-13T15:17:11.000Z',
+        timestamp: '2026-09-14T00:14:46.946Z',
         type: 'session_meta',
-        payload: { id: sessionId },
+        payload: {
+          id: sessionId,
+          thread_source: 'subagent',
+          source: { subagent: { agent_nickname: 'Ptolemy' } },
+        },
       },
       {
-        timestamp: '2026-09-13T15:17:12.000Z',
-        type: 'event_msg',
-        payload: { type: 'user_message', message: 'Inspect the failing test.' },
-      },
-      {
-        timestamp: '2026-09-13T15:17:14.000Z',
+        timestamp: '2026-09-14T00:14:50.000Z',
         type: 'response_item',
         payload: {
           type: 'message',
           role: 'assistant',
           id: 'message-1',
-          content: [{ type: 'output_text', text: 'The test is fixed.' }],
+          content: [{ type: 'output_text', text: 'Reviewed the spec.' }],
         },
       },
     ]
       .map((record) => JSON.stringify(record))
       .join('\n'),
   )
-}
 
-test('joins a timestamped rollout to its managed Session and reads its Feed under that ID', async (context) => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-managed-session-'))
-  context.after(() => rm(root, { recursive: true, force: true }))
-  const sessionId = '01a09cee-bb4c-7991-b10d-7c58aff5e0ff'
-  await writeManagedRollout(root, sessionId)
-  const reader = createCodexSessionReader(root, {
-    roster: () => [
-      managedRow(sessionId, {
-        cli: 'codex',
-        status: 'running',
-        cwd: '/projects/argo',
-        prompt: 'Inspect the failing test.',
-        startedAt: '2026-09-13T15:17:11.000Z',
-        setup: { model: null, effort: null, mode: null },
-      }),
-    ],
-  })
-
-  const roster = listed(await reader.listSessions(listing))
+  const result = listed(await listSessions(listing, root))
   assert.deepEqual(
-    roster.sessions.map(({ id, posture, status }) => ({ id, posture, status })),
-    [{ id: sessionId, posture: 'managed', status: 'running' }],
+    { found: result.filesFound, sessions: result.sessions },
+    { found: 1, sessions: [] },
   )
+
+  // Excluded from the roster, but a direct feed read by id must still come back clean rather
+  // than surfacing the dropped assistant message or throwing.
   const feed = sessionFeedReplySchema.parse(
-    await reader.readSessionFeed({
+    await createCodexSessionReader(root).readSessionFeed({
       version: 1,
       type: 'session.feed',
       requestId: 'feed-1',
@@ -143,11 +127,9 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
       revision: null,
     }),
   )
-  assert.equal(feed.type, 'session.feed.read')
-  if (feed.type !== 'session.feed.read') return
-  assert.equal(feed.chainId, sessionId)
-  assert.deepEqual(
-    feed.rows.filter((row) => row.shape === 'prose').map(({ text }) => text),
-    ['Inspect the failing test.', 'The test is fixed.'],
-  )
+  if (feed.type === 'session.feed.read') {
+    assert.deepEqual(feed.rows, [])
+  } else {
+    assert.equal(feed.type, 'session.error')
+  }
 })
