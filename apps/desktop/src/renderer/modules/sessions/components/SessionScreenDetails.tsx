@@ -2,6 +2,7 @@ import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import type { HarnessControl } from '../harness/harnesses'
+import type { SessionRoster } from '../hooks/useSessions'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
@@ -76,10 +77,7 @@ export function SessionWorkInspector({ session }: Pick<SessionScreenDetailsProps
   )
 }
 
-function handoffTitle(
-  roster: ReturnType<typeof import('../hooks/useSessions').useSessions>['roster'],
-  sessionId: string,
-) {
+function handoffTitle(roster: SessionRoster, sessionId: string) {
   const row = roster?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
 }
@@ -92,7 +90,7 @@ function HandoffLink({
 }: {
   label: string
   sessionId: string
-  roster: ReturnType<typeof import('../hooks/useSessions').useSessions>['roster']
+  roster: SessionRoster
   onNavigate: (path: string) => void
 }) {
   return (
@@ -114,7 +112,7 @@ export function SessionHandoffFacts({
   roster = null,
   onNavigate,
 }: Pick<SessionScreenDetailsProps, 'session'> & {
-  roster?: ReturnType<typeof import('../hooks/useSessions').useSessions>['roster']
+  roster?: SessionRoster
   onNavigate?: (path: string) => void
 }) {
   if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
