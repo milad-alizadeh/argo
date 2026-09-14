@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/core/projects/messages'
 import {
   Dialog,
@@ -19,13 +20,14 @@ type ProjectSettingsDialogProps = {
 const TICKETS_PATH = '#/tickets'
 
 export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSettingsDialogProps) {
+  const { t } = useTranslation('projects')
   const connection = useConnection(project.id)
   const disconnectSource = useDisconnectSource()
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Project settings</DialogTitle>
+          <DialogTitle>{t('settings.title')}</DialogTitle>
           <DialogDescription className="grid">
             <span className="type-body font-medium text-foreground">{project.name}</span>
             <span className="truncate font-mono type-meta" title={project.path}>

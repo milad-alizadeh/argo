@@ -83,6 +83,14 @@ export async function appendHalfCodexTranscript(line: TranscriptLine) {
   return () => appendFile(file, record.slice(cut))
 }
 
+// A whole line the CLI finished writing that is not a record: real corruption, not a torn read.
+export async function appendGarbledCodexLine({
+  root,
+  sessionId,
+}: Pick<TranscriptLine, 'root' | 'sessionId'>) {
+  await appendFile(path.join(codexDay(root), `${sessionId}.jsonl`), '{"type": garbled\n')
+}
+
 export function listing(requestId = 'list-1') {
   return { version: 1, type: 'session.list', requestId } as const
 }
