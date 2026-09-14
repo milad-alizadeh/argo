@@ -34,7 +34,11 @@ test('renames a Codex Session through thread/name/set and accepts its native not
     now: () => new Date(),
     openChannel: () => channel,
   })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const sessionId = await driver.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+  })
   assert.equal(await driver.rename(sessionId, 'Keep the roster stable'), 'Confirmed by Codex')
   assert.deepEqual(calls.at(-1), {
     method: 'thread/name/set',

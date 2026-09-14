@@ -1,9 +1,9 @@
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
-import type { TurnSetup } from '../turn-setup/turn-setup'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
+import type { Send } from './useSend'
 import { useSessionComposerState } from './useSessionComposerState'
 
 export type SessionComposerProps = {
@@ -15,7 +15,7 @@ export type SessionComposerProps = {
   onCompact?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  onSend: Send
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null

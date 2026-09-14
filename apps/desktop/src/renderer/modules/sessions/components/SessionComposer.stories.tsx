@@ -87,8 +87,9 @@ function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
         </Button>
       </div>
       <SessionComposer
-        onSend={async (text) => {
-          setSent(text)
+        onSend={async (text, _setup, attachments) => {
+          const refs = attachments.map(({ path }) => `@${path}`).join(' ')
+          setSent(refs.length > 0 ? `${text} ${refs}`.trim() : text)
           return true
         }}
         plan={plan}

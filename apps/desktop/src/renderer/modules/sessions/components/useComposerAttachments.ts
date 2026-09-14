@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { embedAttachments } from '../prompt/attachmentPrompt'
+import { attachmentKindOf, type SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import { type ComposerAttachment, useComposerStore } from '../state/useComposerStore'
 
 // A stable reference for "no attachments yet": the selector below must return the same array on
@@ -54,15 +54,16 @@ export function useAttachmentTransfer(attach: (paths: string[]) => void) {
 }
 
 // Every attached path is checked again right before it leaves the composer: a file removed since
-// it was attached is caught here rather than reaching a Turn as a reference to nothing. A path
-// that still reads becomes an inline `@path` reference (Claude Code's own file-mention syntax);
-// one that does not stays in the strip, marked so the user can retry or remove it (AC5, #1845).
+// it was attached is caught here rather than reaching a Turn as a reference to nothing (an
+// "unsupported" attachment, AC4). What a readable path becomes on the wire is each CLI's own
+// adapter's call (agents/<cli>/), so this hands back the draft text and the attachments untouched
+// rather than folding them into the prompt itself (#1886).
 export async function resolveAttachments(
   draft: string,
   attachments: ComposerAttachment[],
   markError: (ids: string[]) => void,
-): Promise<{ prompt: string; sentIds: string[] }> {
-  if (attachments.length === 0) return { prompt: draft, sentIds: [] }
+): Promise<{ prompt: string; attachments: SessionAttachmentInput[]; sentIds: string[] }> {
+  if (attachments.length === 0) return { prompt: draft, attachments: [], sentIds: [] }
   const reply = await window.argo.statSessionAttachments({
     paths: attachments.map((attachment) => attachment.path),
   })
@@ -74,10 +75,11 @@ export async function resolveAttachments(
   const failed = attachments.filter((attachment) => !readable.has(attachment.path))
   if (failed.length > 0) markError(failed.map((attachment) => attachment.id))
   return {
-    prompt: embedAttachments(
-      draft,
-      sent.map((attachment) => attachment.path),
-    ),
+    prompt: draft,
+    attachments: sent.map((attachment) => ({
+      path: attachment.path,
+      kind: attachmentKindOf(attachment.path),
+    })),
     sentIds: sent.map((attachment) => attachment.id),
   }
 }
