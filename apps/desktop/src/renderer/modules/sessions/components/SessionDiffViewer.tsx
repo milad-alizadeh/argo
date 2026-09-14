@@ -66,12 +66,17 @@ function lineClass(line: DiffLine) {
   }
 }
 
-function currentFileContent(
-  content: string | null | undefined,
-  language: ReturnType<typeof detectCodeLanguageFromPath>,
-  path: string,
-  text: { copyFile: string; unavailable: string; reading: string },
-) {
+function currentFileContent({
+  content,
+  language,
+  path,
+  text,
+}: {
+  content: string | null | undefined
+  language: ReturnType<typeof detectCodeLanguageFromPath>
+  path: string
+  text: { copyFile: string; unavailable: string; reading: string }
+}) {
   if (content === undefined)
     return <p className="p-4 type-meta text-muted-foreground">{text.reading}</p>
   if (content === null)
@@ -115,10 +120,15 @@ export function SessionDiffViewer({
             {t('diff.diff')}
           </Button>
         </header>
-        {currentFileContent(content, language, path, {
-          copyFile: t('diff.copyFile'),
-          unavailable: t('diff.fileUnavailable'),
-          reading: t('diff.readingFile'),
+        {currentFileContent({
+          content,
+          language,
+          path,
+          text: {
+            copyFile: t('diff.copyFile'),
+            unavailable: t('diff.fileUnavailable'),
+            reading: t('diff.readingFile'),
+          },
         })}
       </section>
     )
