@@ -12,7 +12,7 @@ export function feedProjection(rows: readonly SessionFeedRow[]): string {
   return JSON.stringify(rows)
 }
 
-function rowsOfRecord(
+export function rowsOfRecord(
   record: TranscriptRecord,
   position: string,
   results: Map<string, ToolResult>,
@@ -44,7 +44,7 @@ function rowsOfRecord(
 // dozens in a row, and a row each turns a Feed into a wall of the same sentence, which says no more
 // than the first one does (#1907). So consecutive damaged lines are drawn as a single row; the
 // count is deliberately not said, because a reader can do nothing with it.
-function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] {
+export function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] {
   return rows.filter(
     (row, index) => row.shape !== 'unreadable' || rows[index - 1]?.shape !== 'unreadable',
   )

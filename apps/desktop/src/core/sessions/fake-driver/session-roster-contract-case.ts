@@ -1,27 +1,8 @@
 import assert from 'node:assert/strict'
 import { CLAUDE_FEED_REQUEST, CODEX_FEED_REQUEST } from './session-proof-requests'
 
-export async function proveContract(page) {
-  const list = await page.evaluate(() => window.argo.listSessions())
-  assert.equal(list.type, 'session.listed')
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 13, read: 13 })
-  // Discovery still reads every transcript file (`filesRead` above), but an archived Session
-  // never projects into this active list (#1593): `plannedWork` is read out of it below instead.
-  assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
-    'askPending',
-    'externalBasic',
-    'harnessNoise',
-    'prose',
-    'resumeParent',
-    'rollout-codexParent',
-    'setupAnswered',
-    'strandedResume',
-    'toolCalls',
-  ])
-  assert.deepEqual(
-    list.sessions.filter((session) => session.archived).map((session) => session.id),
-    [],
-  )
+// The archived Sessions answer their own read, one page of them, and never the active list.
+async function proveArchivedPage(page) {
   const archived = await page.evaluate(() =>
     window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
   )
@@ -33,6 +14,32 @@ export async function proveContract(page) {
   assert.equal(archived.sessions[0].archived, true)
   assert.equal(archived.nextCursor, null)
   assert.equal(archived.restored, null)
+}
+
+export async function proveContract(page) {
+  const list = await page.evaluate(() => window.argo.listSessions())
+  assert.equal(list.type, 'session.listed')
+  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 15, read: 15 })
+  // Discovery still reads every transcript file (`filesRead` above), but an archived Session
+  // never projects into this active list (#1593): `plannedWork` is read out of it below instead.
+  assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
+    'askPending',
+    'externalBasic',
+    'harnessNoise',
+    'prose',
+    'resumeParent',
+    'rollout-codexParent',
+    'setupAnswered',
+    'shellRunning',
+    'strandedResume',
+    'subagentTail',
+    'toolCalls',
+  ])
+  assert.deepEqual(
+    list.sessions.filter((session) => session.archived).map((session) => session.id),
+    [],
+  )
+  await proveArchivedPage(page)
   assert.deepEqual(
     list.sessions.filter((session) => session.originUnread).map((session) => session.id),
     ['strandedResume'],

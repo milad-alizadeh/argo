@@ -5,11 +5,23 @@
 // menu and again on screen is one word from one file.
 import platform from '../../core/i18n/locales/en.json'
 import accounts from '../modules/accounts/locales/en.json'
+import atlas from '../modules/atlas/locales/en.json'
+import cockpit from '../modules/cockpit/locales/en.json'
+import projects from '../modules/projects/locales/en.json'
 import sessions from '../modules/sessions/locales/en.json'
 import tickets from '../modules/tickets/locales/en.json'
 import shared from './locales/en.json'
 
-export const CATALOGS = { accounts, platform, sessions, shared, tickets } as const
+export const CATALOGS = {
+  accounts,
+  atlas,
+  cockpit,
+  platform,
+  projects,
+  sessions,
+  shared,
+  tickets,
+} as const
 
 export type Namespace = keyof typeof CATALOGS
 

@@ -11,6 +11,7 @@ import {
   appendHalfCodexTranscript,
   fed,
   feedRequest,
+  rowsOf,
   tempRoot,
   writeCodexTranscript,
 } from './reader-test-helpers'
@@ -81,14 +82,16 @@ test('reads the Feed again once the CLI that was writing it stops', async (conte
   writing = false
   const settled = await fed(reader, feedRequest(SESSION, 'feed-2', raced.revision))
 
-  assert.equal(settled.type, 'session.feed.read', 'a racing read was cached as the whole Feed')
+  assert.ok(
+    settled.type === 'session.feed.read' || settled.type === 'session.feed.appended',
+    'a racing read was cached as the whole Feed',
+  )
   assert.notEqual(settled.revision, raced.revision)
 })
 
-// A read taken while the CLI writes can catch the last record half written. It draws as one
-// unreadable row rather than failing the read, and the row it belongs to arrives once the CLI
-// finishes the line.
-test('draws a half-written record as unreadable, and as itself once it is whole', async (context) => {
+// A read taken while the CLI writes can catch the last record half written. A last line with no
+// newline is not yet a record, so it draws nothing until the CLI finishes it (#2127).
+test('draws nothing for a half-written last record, and the record once it is whole', async (context) => {
   const root = await liveRoot(context)
   const record = {
     root,
@@ -101,37 +104,47 @@ test('draws a half-written record as unreadable, and as itself once it is whole'
   const finish = await appendHalfCodexTranscript(record)
   const torn = await fed(reader, feedRequest(SESSION))
   assert.equal(torn.type, 'session.feed.read')
-  assert.deepEqual(torn.type === 'session.feed.read' && torn.rows.map((row) => row.shape), [
-    'prose',
-    'unreadable',
-  ])
+  assert.deepEqual(
+    rowsOf(torn).map((row) => row.shape),
+    ['prose'],
+  )
 
   await finish()
   const whole = await fed(reader, feedRequest(SESSION, 'feed-2', torn.revision))
-  assert.equal(whole.type, 'session.feed.read')
-  assert.deepEqual(whole.type === 'session.feed.read' && whole.rows.map((row) => row.shape), [
-    'prose',
-    'prose',
-  ])
+  assert.deepEqual(
+    rowsOf(whole, torn).map((row) => row.shape),
+    ['prose', 'prose'],
+  )
 })
 
-// The chain kept past the settle bound is a read taken mid-write, so it can hold the half-written
-// record too. It is still answered, and still one unreadable row rather than a failed read.
+// A streaming CLI finishes one record and starts the next between any two reads, so every read
+// past the settle bound ends on a torn line. None of them draws it.
+function sourceTornDuringEveryRead(root: string) {
+  const source = codexSessionSource(root)
+  let finish = async () => {}
+  return {
+    ...source,
+    readSessionFiles: async (sessionId: string) => {
+      await finish()
+      finish = await appendHalfCodexTranscript({
+        root,
+        sessionId: SESSION,
+        text: 'still going',
+        updatedAt: '2026-09-13T09:00:01.000Z',
+      })
+      return source.readSessionFiles(sessionId)
+    },
+  }
+}
+
 test('answers a Session still being written whose last record is half written', async (context) => {
-  const root = await liveRoot(context)
-  await appendHalfCodexTranscript({
-    root,
-    sessionId: SESSION,
-    text: 'Second.',
-    updatedAt: '2026-09-13T09:00:02.000Z',
-  })
-  const reader = createSessionReader([sourceWrittenDuringEveryRead(root, () => true)])
+  const reader = createSessionReader([sourceTornDuringEveryRead(await liveRoot(context))])
 
   const reply = await fed(reader, feedRequest(SESSION))
 
   assert.equal(reply.type, 'session.feed.read')
   assert.equal(
     reply.type === 'session.feed.read' && reply.rows.some((row) => row.shape === 'unreadable'),
-    true,
+    false,
   )
 })

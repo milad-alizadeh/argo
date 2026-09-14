@@ -7,7 +7,7 @@
 //
 // Kept apart from `session-fixtures` because the packaged proof runs under node, which cannot
 // resolve the extensionless TypeScript imports that file reaches for.
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -58,6 +58,11 @@ export async function writeFixtureTree(root, names, options = {}) {
       path.join(inside, `${name}.jsonl`),
       `${(await fixtureLines(name, fixtures)).join('\n')}\n`,
     )
+    // The Subagent transcripts the CLI keeps in a folder beside the Session's own file, for the
+    // fixtures that have them. Copied as-is, so the tree matches the layout the reader walks.
+    await cp(path.join(fixtures, '..', 'subagents', name), path.join(inside, name, 'subagents'), {
+      recursive: true,
+    }).catch(() => {})
   }
   return root
 }

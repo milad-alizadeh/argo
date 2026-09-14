@@ -6,6 +6,8 @@ import { FeedRow } from './FeedRow'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
+import { TurnMarker } from './TurnMarker'
+import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
@@ -19,6 +21,7 @@ type FeedDocumentProps = {
   onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
+  turnMarker: TurnMarkerView | null
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
@@ -59,6 +62,7 @@ export function FeedDocument({
   onOpenSession,
   feed,
   isRunning,
+  turnMarker,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -114,6 +118,9 @@ export function FeedDocument({
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
         {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}
+        {turnMarker === null ? null : (
+          <TurnMarker phase={turnMarker.phase} startedAt={turnMarker.startedAt} />
+        )}
       </div>
     </div>
   )

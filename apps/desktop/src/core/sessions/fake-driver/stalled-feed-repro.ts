@@ -77,6 +77,7 @@ const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 const opened = performance.now()
 let feedReads = 0
 let feedSettledMs: number | null = null
+let feedBytes = 0
 let rosterPolls = 0
 let maxPingMs = 0
 let maxRssMb = 0
@@ -86,6 +87,9 @@ const rss = setInterval(() => {
 }, 200)
 
 const feedQuery = async () => {
+  // Mirrors the renderer's own cache: the revision from the last reply that carried rows, sent
+  // back on the next poll so an unchanged or appended reply can fire instead of the whole Feed.
+  let revision: string | null = null
   while (running) {
     feedReads += 1
     const reply = await reader.readSessionFeed({
@@ -93,8 +97,11 @@ const feedQuery = async () => {
       type: 'session.feed',
       requestId: `feed-${feedReads}`,
       sessionId: SESSION,
-      revision: null,
+      delegationId: null,
+      revision,
     })
+    feedBytes += JSON.stringify(reply).length
+    if ('revision' in reply) revision = reply.revision
     if (feedSettledMs === null && reply.type !== 'session.error') {
       feedSettledMs = performance.now() - opened
     }
@@ -139,6 +146,8 @@ console.log(
     ok,
     feedSettled: settled,
     feedSettledMs: feedSettledMs === null ? null : Math.round(feedSettledMs),
+    feedReads,
+    feedIpcBytes: feedBytes,
     rosterPollsCompleted: rosterPolls,
     maxPingMs: Math.round(maxPingMs),
     maxRssMb: Math.round(maxRssMb),

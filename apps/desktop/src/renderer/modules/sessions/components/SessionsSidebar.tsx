@@ -1,64 +1,20 @@
-import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
+import { Inbox, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
-import { Skeleton } from '../../../components/ui/skeleton'
-import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
 import { ArchivedSessions } from './ArchivedSessions'
 import { RenameDialog } from './RenameDialog'
 import { SessionRosterList } from './SessionRosterList'
+import { RosterLoading, rosterState, SessionsSidebarHeader } from './SessionsSidebarChrome'
 import { useRosterFocus } from './useRosterFocus'
-
-function rosterState(
-  roster: SessionsListed | null,
-  rosterError: SessionError | null,
-  count: number,
-) {
-  if (rosterError !== null) return sessionFailureState(rosterError.code)
-  if (roster === null) return 'loading'
-  return count === 0 ? 'empty' : 'ready'
-}
-
-function RosterLoading() {
-  return (
-    <div aria-label="Reading Sessions" className="space-y-4 px-5 py-4" role="status">
-      {[0, 1, 2].map((index) => (
-        <div key={index}>
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="mt-2 h-3 w-1/3" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function SessionsSidebarHeader({ onNew }: { onNew: () => void }) {
-  return (
-    <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-4">
-      <h2 className="flex-1 text-sm font-medium">Sessions</h2>
-      <div className="flex items-center gap-1">
-        <Button aria-label="New Session" onClick={onNew} size="icon-sm" variant="ghost">
-          <Plus />
-        </Button>
-        <Button
-          aria-label="Find a Session"
-          className="disabled:opacity-100"
-          disabled
-          size="icon-sm"
-          variant="ghost"
-        >
-          <Search />
-        </Button>
-      </div>
-    </header>
-  )
-}
 
 function SidebarRows({
   onFocus,
   onRename,
+  onOpenTicket,
+  onLinkTicket,
+  onUnlinkTicket,
   onSelect,
   renamedTitles,
   selectedSessionId,
@@ -67,6 +23,9 @@ function SidebarRows({
 }: {
   onFocus: (sessionId: SessionId) => void
   onRename: (session: SessionsListed['sessions'][number]) => void
+  onOpenTicket: (session: SessionsListed['sessions'][number]) => void
+  onLinkTicket: (session: SessionsListed['sessions'][number]) => void
+  onUnlinkTicket: (session: SessionsListed['sessions'][number]) => void
   onSelect: (sessionId: SessionId) => void
   renamedTitles: Record<string, string>
   selectedSessionId: SessionId | null
@@ -79,6 +38,9 @@ function SidebarRows({
       label={label}
       onFocus={onFocus}
       onRename={onRename}
+      onOpenTicket={onOpenTicket}
+      onLinkTicket={onLinkTicket}
+      onUnlinkTicket={onUnlinkTicket}
       onSelect={onSelect}
       renamedTitles={renamedTitles}
       selectedSessionId={selectedSessionId}
@@ -106,6 +68,9 @@ export type SessionsSidebarContentProps = {
   selectedSessionId: SessionId | null
   onSelect: (sessionId: SessionId) => void
   onRename?: (session: SessionsListed['sessions'][number], name: string) => Promise<string>
+  onOpenTicket?: (session: SessionsListed['sessions'][number]) => void
+  onLinkTicket?: (session: SessionsListed['sessions'][number]) => void
+  onUnlinkTicket?: (session: SessionsListed['sessions'][number]) => void
 }
 
 export function SessionsSidebarContent({
@@ -115,6 +80,9 @@ export function SessionsSidebarContent({
   onSelect,
   onNew = () => {},
   onRename = async (_session, name) => name,
+  onOpenTicket = () => {},
+  onLinkTicket = () => {},
+  onUnlinkTicket = () => {},
 }: SessionsSidebarContentProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
@@ -160,6 +128,9 @@ export function SessionsSidebarContent({
       <SidebarRows
         onFocus={setFocusedSessionId}
         onRename={setRenameTarget}
+        onOpenTicket={onOpenTicket}
+        onLinkTicket={onLinkTicket}
+        onUnlinkTicket={onUnlinkTicket}
         onSelect={onSelect}
         renamedTitles={renamedTitles}
         selectedSessionId={selectedSessionId}
