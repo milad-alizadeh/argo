@@ -60,6 +60,7 @@ export class ComposerTicketReferenceNode extends TextNode {
       }
 
       event.preventDefault()
+      event.stopPropagation()
       openTicket(this.getTextContent())
     })
     return element
