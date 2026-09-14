@@ -30,7 +30,7 @@ async function sendDraft(canvas: ReturnType<typeof within>, draft: string) {
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
-const CONTEXT_PICKER_FRAME = SETUP_FRAME
+const CONTEXT_PICKER_FRAME = 'mx-auto max-w-4xl p-8 pt-[34rem]'
 
 const plan: SessionPlan = {
   state: 'available' as const,
