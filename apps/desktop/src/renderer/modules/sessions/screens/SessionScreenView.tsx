@@ -5,7 +5,7 @@ import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
+import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { HarnessControl, SessionCli } from '../harness/harnesses'
 import { useSessionComposer } from '../hooks/useSessionComposer'
@@ -26,6 +26,8 @@ type SessionShellProps = {
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  defaultInspectorCollapsed?: boolean
+  inspectorReveal?: string | null
 }
 
 const SESSION_SPLIT = {
@@ -60,6 +62,8 @@ export function SessionScreenView() {
     selectedSessionId,
   })
   const permission = useSessionPermission(selectedSessionId)
+  const hasSessionWork =
+    session !== null && (session.delegations.length > 0 || session.shell.length > 0)
   return (
     <SessionShell
       feed={feed}
@@ -81,11 +85,13 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionFacts session={session} />
+          <SessionWorkInspector session={session} />
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )
       }
+      defaultInspectorCollapsed={!hasSessionWork}
+      inspectorReveal={evidence?.id}
     />
   )
 }
@@ -108,6 +114,8 @@ export function SessionShell({
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
+  defaultInspectorCollapsed = false,
+  inspectorReveal = null,
 }: SessionShellProps) {
   return (
     <main
@@ -116,7 +124,9 @@ export function SessionShell({
     >
       <InspectorSplit
         inspector={inspector}
+        defaultCollapsed={defaultInspectorCollapsed}
         noun="Session"
+        reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
         workspace={
           <section aria-label="Session workspace" className="flex h-full min-h-0 flex-col">

@@ -64,7 +64,7 @@ export function SessionContextBar({
   const usedTokenSummary = `${Math.round(usedTokens / 1000)}k`
 
   return (
-    <div className="@container relative z-0 mx-(--spacing-shell-gutter) -mt-2 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-lg shadow-foreground/10 @[40rem]:gap-3 @[40rem]:px-4">
+    <div className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[40rem]:gap-3 @[40rem]:px-4">
       <div className="shrink-0 border-r border-border/60 pr-2 @[40rem]:pr-4">
         <UsagePopover harness={harness ?? 'codex'} />
       </div>

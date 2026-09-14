@@ -5,7 +5,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
-import { SessionFacts } from '../components/SessionScreenDetails'
+import { SessionWorkInspector } from '../components/SessionScreenDetails'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionRosterRow } from '../session-fixtures'
@@ -132,7 +132,7 @@ function ReviewScreen() {
         }
         feed={feed}
         feedError={null}
-        inspector={<SessionFacts session={session} />}
+        inspector={<SessionWorkInspector session={session} />}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         selectedSessionId={selectedSessionId}
