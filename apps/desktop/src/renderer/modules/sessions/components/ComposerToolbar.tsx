@@ -2,6 +2,7 @@ import { ArrowUp, Paperclip, Square } from 'lucide-react'
 import type { Ref } from 'react'
 
 import { Button } from '../../../components/ui/button'
+import { InputGroupButton } from '../../../components/ui/input-group'
 import type { HarnessControl } from '../harness/harnesses'
 import type { ComposerAttachment } from '../state/useComposerStore'
 import { ModeMenu } from './ModeMenu'
@@ -28,9 +29,9 @@ export function ComposerToolbar({
 }) {
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
-      <Button aria-label="Attach files" onClick={onAttach} size="icon-sm" type="button">
+      <InputGroupButton aria-label="Attach files" onClick={onAttach} size="icon-sm">
         <Paperclip />
-      </Button>
+      </InputGroupButton>
       {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
       <div className="ml-auto flex items-center gap-1">
         {setup ? <ModeMenu {...setup} /> : null}
