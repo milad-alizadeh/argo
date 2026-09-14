@@ -37,6 +37,7 @@ type ComposerFormProps = {
   onAttach: () => void
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onContextPickerOpenChange: (open: boolean) => void
+  onOpenTicket?: (key: string) => void
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
@@ -70,6 +71,7 @@ export function ComposerForm({
   onAttach,
   onAddTicket,
   onContextPickerOpenChange,
+  onOpenTicket,
   isHandingOff,
   onCompact,
   onHandoff,
@@ -120,6 +122,7 @@ export function ComposerForm({
         onAttach={onAttach}
         onAddTicket={onAddTicket}
         onChange={onChange}
+        onOpenTicket={onOpenTicket}
         onCompact={onCompact}
         onDropFiles={onDropFiles}
         onHandoff={onHandoff}

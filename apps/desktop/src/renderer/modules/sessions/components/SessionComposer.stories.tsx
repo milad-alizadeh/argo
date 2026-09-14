@@ -83,6 +83,7 @@ const CODEX_REFERENCE_DRAFT =
 
 function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
   const [sessionId, setSessionId] = useState('session-one')
+  const [openedTicket, setOpenedTicket] = useState<string | null>(null)
   const [sent, setSent] = useState<string | null>(null)
 
   return (
@@ -101,12 +102,14 @@ function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
           setSent(refs.length > 0 ? `${text} ${refs}`.trim() : text)
           return true
         }}
+        onOpenTicket={setOpenedTicket}
         plan={plan}
         sessionId={sessionId}
       />
       <output className="mt-4 block text-sm" data-testid="sent-message">
         {sent}
       </output>
+      <output data-testid="opened-ticket">{openedTicket}</output>
     </>
   )
 }
@@ -560,7 +563,14 @@ export const EnterPicksAReferenceWhileTheMenuIsOpen: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Read @argo')
-    await canvas.findByRole('option', { name: /Argo Session plugin/ })
+    const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
+    const menu = option.closest('[role="listbox"]')
+    const card = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    if (!menu || !card) throw new Error('Reference menu or Composer card is missing.')
+    await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      card.getBoundingClientRect().top,
+    )
+    await expect(menu.getBoundingClientRect().width).toBeCloseTo(card.getBoundingClientRect().width)
     await userEvent.keyboard('{Enter}')
 
     await expect(canvas.queryByRole('option')).toBeNull()
@@ -945,9 +955,11 @@ export const SharedContextPicker: Story = {
     await expect(within(picker).getByRole('button', { name: /Goals.*Coming soon/ })).toBeDisabled()
 
     await userEvent.click(within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }))
-    await expect(canvas.getByText(/ENG-42 Keep the Composer draft/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Open ENG-42' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Open ENG-42' }))
+    await expect(canvas.getByTestId('opened-ticket')).toHaveTextContent('ENG-42')
     await userEvent.click(canvas.getByRole('button', { name: 'Remove ENG-42' }))
-    await expect(canvas.queryByText(/ENG-42 Keep the Composer draft/)).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Open ENG-42' })).toBeNull()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
     const keyboardPicker = await within(document.body).findByRole('dialog', {
@@ -963,7 +975,7 @@ export const SharedContextPicker: Story = {
     await userEvent.click(
       within(keyboardPicker).getByRole('button', { name: /ENG-9.*Store the refresh token/ }),
     )
-    await expect(canvas.getByText(/ENG-9 Store the refresh token/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Open ENG-9' })).toBeVisible()
     await expect(canvas.getByLabelText('Message')).toHaveFocus()
   },
 }

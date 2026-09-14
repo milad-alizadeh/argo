@@ -5,6 +5,7 @@ import type { SessionPlan } from '@/core/sessions/models'
 import type { SessionCli } from '../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerAttachments } from './ComposerAttachments'
+import { ComposerTicketContexts } from './ComposerTicketContexts'
 import { ComposerEditor } from './SessionComposerEditor'
 import { SessionPlanPopover } from './SessionPlanPopover'
 
@@ -16,6 +17,7 @@ export function ComposerEditorArea({
   editorRef,
   focusOnMount,
   onChange,
+  onOpenTicket,
   onRemoveAttachment,
   onRemoveTicket,
   onSend,
@@ -29,6 +31,7 @@ export function ComposerEditorArea({
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   onChange: (text: string) => void
+  onOpenTicket?: (key: string) => void
   onRemoveAttachment: (id: string) => void
   onRemoveTicket: (id: string) => void
   onSend: () => void
@@ -40,13 +43,13 @@ export function ComposerEditorArea({
       <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
         <SessionPlanPopover plan={plan} />
       </div>
-      <ComposerAttachments
-        attachments={attachments}
-        onRemove={onRemoveAttachment}
-        onRemoveTicket={onRemoveTicket}
+      <ComposerAttachments attachments={attachments} onRemove={onRemoveAttachment} />
+      <ComposerTicketContexts
+        onOpenTicket={onOpenTicket}
+        onRemove={onRemoveTicket}
         tickets={tickets}
       />
-      <div className="relative min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
           cli={cli}

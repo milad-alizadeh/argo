@@ -88,6 +88,7 @@ export function SessionScreenView() {
             questionPending={pendingQuestionId(feed) !== null}
             session={session}
             harness={model.harness}
+            onNavigate={navigate}
           />
         )
       }

@@ -96,7 +96,7 @@ export function ComposerReferenceMenu({
   return (
     <div
       aria-label="References"
-      className="absolute bottom-full left-0 z-40 mb-2 w-full max-w-md overflow-hidden rounded-xl border bg-card p-1 shadow-xl"
+      className="absolute bottom-full left-0 z-40 mb-2 w-full overflow-hidden rounded-xl border bg-card p-1 shadow-xl"
       id="composer-references"
       role="listbox"
     >

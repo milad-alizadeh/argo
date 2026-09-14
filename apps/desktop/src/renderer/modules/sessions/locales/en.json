@@ -40,6 +40,8 @@
       "blocked": "Blocked",
       "terminal": "Terminal · {{status}}",
       "removeTicket": "Remove {{key}}",
+      "openTicket": "Open {{key}}",
+      "selectedTickets": "Selected Tickets",
       "provider": { "github": "GitHub", "linear": "Linear" },
       "ticket": {
         "sharedPicker": "Add a shared context picker to the Session composer",

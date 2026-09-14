@@ -28,6 +28,7 @@ type ComposerCardProps = {
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onContextPickerOpenChange: (open: boolean) => void
   onChange: (text: string) => void
+  onOpenTicket?: (key: string) => void
   onCompact?: () => Promise<boolean>
   onDropFiles: (files: FileList) => void
   onHandoff?: () => Promise<boolean>
@@ -89,6 +90,7 @@ export function ComposerCard({
   onAddTicket,
   onContextPickerOpenChange,
   onChange,
+  onOpenTicket,
   onCompact,
   onDropFiles,
   onHandoff,
@@ -105,7 +107,7 @@ export function ComposerCard({
       <fieldset
         aria-label="Message composer"
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
           event.preventDefault()
@@ -120,6 +122,7 @@ export function ComposerCard({
           editorRef={editorRef}
           focusOnMount={focusOnMount}
           onChange={onChange}
+          onOpenTicket={onOpenTicket}
           onRemoveAttachment={onRemoveAttachment}
           onRemoveTicket={onRemoveTicket}
           onSend={onSend}

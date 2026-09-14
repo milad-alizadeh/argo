@@ -1,22 +1,10 @@
-import { Ban, File, Folder, GitBranch } from 'lucide-react'
+import { Ban, File, Folder } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
+import { TicketProviderIcon } from './TicketProviderIcon'
 
 export type TicketChoice = Omit<ComposerTicketContext, 'id'>
-
-function ProviderLogo({ provider }: { provider: TicketChoice['provider'] }) {
-  return provider === 'github' ? (
-    <GitBranch aria-hidden="true" className="size-4 shrink-0" />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-primary font-bold text-primary-foreground type-meta"
-    >
-      L
-    </span>
-  )
-}
 
 function TicketResult({
   onSelect,
@@ -34,7 +22,7 @@ function TicketResult({
       onClick={() => onSelect(ticket)}
       type="button"
     >
-      <ProviderLogo provider={ticket.provider} />
+      <TicketProviderIcon provider={ticket.provider} />
       <span className="sr-only">{providerLabel(ticket.provider)} </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-(--spacing-shell-tight) type-label">

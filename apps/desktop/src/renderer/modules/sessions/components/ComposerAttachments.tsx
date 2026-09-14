@@ -12,7 +12,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
-import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
+import type { ComposerAttachment } from '../state/useComposerStore'
 
 // Extracted from the composer prototype's ReferenceStrip (602bcce2). The prototype names attached
 // files by a bare mock path; here `path` is the file's absolute path on disk.
@@ -31,19 +31,12 @@ function fileUrl(path: string): string {
 
 export type ComposerAttachmentsProps = {
   attachments: ComposerAttachment[]
-  tickets: ComposerTicketContext[]
   onRemove: (id: string) => void
-  onRemoveTicket: (id: string) => void
 }
 
-export function ComposerAttachments({
-  attachments,
-  tickets,
-  onRemove,
-  onRemoveTicket,
-}: ComposerAttachmentsProps) {
+export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmentsProps) {
   const { t } = useTranslation('sessions')
-  if (attachments.length === 0 && tickets.length === 0) return null
+  if (attachments.length === 0) return null
   return (
     <AttachmentGroup className="flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) p-(--spacing-composer-attachment-gutter)">
       {attachments.map((attachment) => {
@@ -91,33 +84,6 @@ export function ComposerAttachments({
           </Attachment>
         )
       })}
-      {tickets.map((ticket) => (
-        <Attachment
-          key={ticket.id}
-          className="relative h-(--size-composer-attachment) w-fit min-w-(--size-composer-attachment-chip-min) max-w-(--size-composer-attachment-chip-max) shrink-0 items-start border-border py-1 pr-9 pl-2"
-          size="xs"
-          state="done"
-        >
-          <AttachmentContent className="!min-w-0 !max-w-36 self-start overflow-hidden pr-6">
-            <AttachmentTitle className="!block !max-w-32 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label">
-              {ticket.key} {ticket.title}
-            </AttachmentTitle>
-            <AttachmentDescription
-              className={ticket.terminal ? 'type-meta text-danger' : 'type-meta'}
-            >
-              {t(`composer.contextPicker.provider.${ticket.provider}`)} · {ticket.status}
-            </AttachmentDescription>
-          </AttachmentContent>
-          <AttachmentActions className="absolute top-0 right-0">
-            <AttachmentAction
-              aria-label={t('composer.contextPicker.removeTicket', { key: ticket.key })}
-              onClick={() => onRemoveTicket(ticket.id)}
-            >
-              <X />
-            </AttachmentAction>
-          </AttachmentActions>
-        </Attachment>
-      ))}
     </AttachmentGroup>
   )
 }
