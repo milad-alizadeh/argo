@@ -71,8 +71,26 @@
   --size-session-feed-min: 360px;
   --size-session-column: 896px;
   --size-queue-row: 44px;
-  --size-composer-field: 80px;
+  --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
+  --spacing-session-composer-bottom: calc(
+    var(--spacing-shell-region) *
+    2 +
+    var(--spacing-shell-inset)
+  );
+  --size-session-composer-overlay: calc(
+    var(--spacing-shell-section) +
+    var(--size-composer-field) +
+    var(--size-control) +
+    var(--spacing-shell-item) *
+    2 +
+    var(--spacing-session-composer-bottom) +
+    var(--spacing-hair)
+  );
+  --spacing-session-feed-composer-inset: calc(
+    var(--size-session-composer-overlay) +
+    var(--spacing-snug)
+  );
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
@@ -259,7 +277,6 @@
   --text-ticket-title: var(--text-base, 1rem);
   --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
   --size-ticket-workspace-min: 400px;
-  --size-session-composer-fade: calc(var(--spacing-shell-region) * 2);
   --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
   --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
   --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
