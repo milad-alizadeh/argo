@@ -3,10 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import {
-  proveClaudeRename,
-  provePackagedResume,
-} from '../../../agents/claude/session-fake-driver/session-resume-case'
+import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
+import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { createPackagedSessionHarness } from './packaged-session-harness'
