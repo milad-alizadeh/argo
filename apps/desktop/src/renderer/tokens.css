@@ -71,7 +71,7 @@
   --size-session-feed-min: 360px;
   --size-session-column: 896px;
   --size-queue-row: 44px;
-  --size-composer-field: 80px;
+  --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
   --spacing-session-composer-bottom: calc(
     var(--spacing-shell-region) *
