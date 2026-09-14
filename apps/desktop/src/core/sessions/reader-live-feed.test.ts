@@ -8,6 +8,7 @@ import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,
+  appendHalfCodexTranscript,
   fed,
   feedRequest,
   tempRoot,
@@ -59,14 +60,14 @@ test('reads the Feed of a Session its CLI is still writing rather than spinning 
   let budget: ReturnType<typeof setTimeout> | undefined
   const reply = await Promise.race([
     fed(reader, feedRequest(SESSION)),
-    new Promise((resolve) => {
+    new Promise<typeof gaveUp>((resolve) => {
       budget = setTimeout(() => resolve(gaveUp), READ_BUDGET_MS)
     }),
   ])
   clearTimeout(budget)
 
-  assert.notEqual(reply, gaveUp, 'the read never returned against a transcript still being written')
-  assert.equal((reply as Awaited<ReturnType<typeof fed>>).type, 'session.feed.read')
+  if (reply === gaveUp) assert.fail('the read never returned against a transcript being written')
+  assert.equal(reply.type, 'session.feed.read')
 })
 
 // The read that raced the writer is stamped as of before it, so what it missed is not cached as
@@ -97,7 +98,7 @@ test('draws a half-written record as unreadable, and as itself once it is whole'
   }
   const reader = createSessionReader([codexSessionSource(root)])
 
-  const finish = await appendCodexTranscript(record, { partial: true })
+  const finish = await appendHalfCodexTranscript(record)
   const torn = await fed(reader, feedRequest(SESSION))
   assert.equal(torn.type, 'session.feed.read')
   assert.deepEqual(torn.type === 'session.feed.read' && torn.rows.map((row) => row.shape), [
@@ -112,4 +113,25 @@ test('draws a half-written record as unreadable, and as itself once it is whole'
     'prose',
     'prose',
   ])
+})
+
+// The chain kept past the settle bound is a read taken mid-write, so it can hold the half-written
+// record too. It is still answered, and still one unreadable row rather than a failed read.
+test('answers a Session still being written whose last record is half written', async (context) => {
+  const root = await liveRoot(context)
+  await appendHalfCodexTranscript({
+    root,
+    sessionId: SESSION,
+    text: 'Second.',
+    updatedAt: '2026-09-13T09:00:02.000Z',
+  })
+  const reader = createSessionReader([sourceWrittenDuringEveryRead(root, () => true)])
+
+  const reply = await fed(reader, feedRequest(SESSION))
+
+  assert.equal(reply.type, 'session.feed.read')
+  assert.equal(
+    reply.type === 'session.feed.read' && reply.rows.some((row) => row.shape === 'unreadable'),
+    true,
+  )
 })

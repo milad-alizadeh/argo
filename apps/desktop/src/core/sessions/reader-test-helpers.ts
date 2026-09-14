@@ -57,16 +57,28 @@ export async function writeCodexTranscript({ root, sessionId, text, updatedAt }:
   )
 }
 
-// The CLI adding to a transcript the reader is already watching. `partial` writes half the
-// record and no closing newline, which is what a read racing the write sees; the returned
-// function writes the rest of it.
-export async function appendCodexTranscript(
-  { root, sessionId, text, updatedAt }: TranscriptLine,
-  { partial = false } = {},
-) {
-  const file = path.join(codexDay(root), `${sessionId}.jsonl`)
-  const record = codexMessage(text, updatedAt, `m-${updatedAt}`)
-  const cut = partial ? Math.floor(record.length / 2) : record.length
+// Each appended record needs an id of its own, or the Feed reads two of them as one Message.
+let appended = 0
+
+function codexRecord({ root, sessionId, text, updatedAt }: TranscriptLine) {
+  appended += 1
+  return {
+    file: path.join(codexDay(root), `${sessionId}.jsonl`),
+    record: codexMessage(text, updatedAt, `m-${appended}`),
+  }
+}
+
+// The CLI adding to a transcript the reader is already watching.
+export async function appendCodexTranscript(line: TranscriptLine) {
+  const { file, record } = codexRecord(line)
+  await appendFile(file, record)
+}
+
+// The same append caught halfway: half the record and no closing newline, which is what a read
+// racing the write sees. The returned function writes the rest of the same bytes.
+export async function appendHalfCodexTranscript(line: TranscriptLine) {
+  const { file, record } = codexRecord(line)
+  const cut = Math.floor(record.length / 2)
   await appendFile(file, record.slice(0, cut))
   return () => appendFile(file, record.slice(cut))
 }
