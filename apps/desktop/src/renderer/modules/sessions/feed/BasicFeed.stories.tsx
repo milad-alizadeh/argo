@@ -254,7 +254,13 @@ export const GroupedToolCalls: Story = {
     const canvas = within(canvasElement)
     const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
     await userEvent.click(group)
-    const commandText = await canvas.findByText('bun test composer')
+    const commandText = await canvas.findByText((_content, node) => {
+      const isMatch = node?.textContent === 'bun test composer'
+      const childHasMatch = Array.from(node?.children ?? []).some(
+        (child) => child.textContent === 'bun test composer',
+      )
+      return isMatch && !childHasMatch
+    })
     const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
     await expect(commandText).toBeVisible()
