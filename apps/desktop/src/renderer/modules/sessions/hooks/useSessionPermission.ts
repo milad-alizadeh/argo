@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { ClaudePermission } from '@/core/sessions/contract'
+import type { Permission } from '@/core/sessions/contract'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -11,7 +11,7 @@ import { invalidateSessionRoster, sessionPermissionQueryKey } from '../session-q
 export function useSessionPermission(sessionId: string | null) {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
-  const permission = useQuery<ClaudePermission | null, SessionContractError>({
+  const permission = useQuery<Permission | null, SessionContractError>({
     queryKey:
       sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId),
     enabled: sessionId !== null,
@@ -58,7 +58,7 @@ function usePermissionDecision() {
       permission,
     }: {
       decision: 'allow' | 'deny'
-      permission: ClaudePermission
+      permission: Permission
     }) => {
       const reply = await window.argo.decideSessionPermission({
         sessionId: permission.sessionId,

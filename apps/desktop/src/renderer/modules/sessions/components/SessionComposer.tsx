@@ -11,8 +11,6 @@ import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { type PendingTurn, usePendingTurns } from './usePendingTurns'
 
-export const COMPOSER_FOCUS_STATE = 'focus-composer'
-
 export type SessionComposerProps = {
   contextTokens?: number | null
   disabled?: boolean
