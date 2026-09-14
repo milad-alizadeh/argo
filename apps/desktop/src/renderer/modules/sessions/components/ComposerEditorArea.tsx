@@ -2,6 +2,7 @@ import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
+import type { SessionCli } from '../harness/harnesses'
 import type { ComposerAttachment } from '../state/useComposerStore'
 import { ComposerAttachments } from './ComposerAttachments'
 import { ComposerEditor } from './SessionComposerEditor'
@@ -9,6 +10,7 @@ import { SessionPlanPopover } from './SessionPlanPopover'
 
 export function ComposerEditorArea({
   attachments,
+  cli,
   draft,
   editorRef,
   focusOnMount,
@@ -19,6 +21,7 @@ export function ComposerEditorArea({
   sessionId,
 }: {
   attachments: ComposerAttachment[]
+  cli: SessionCli | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -37,6 +40,7 @@ export function ComposerEditorArea({
       <div className="relative min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
+          cli={cli}
           draft={draft}
           editorRef={editorRef}
           focusOnMount={focusOnMount}

@@ -17,6 +17,7 @@ export type SetupChoice = {
   label: string
   detail?: string
   reads: (reading: string) => boolean
+  efforts?: readonly string[]
 }
 export type ModeChoice = SetupChoice & { detail: string; icon: LucideIcon }
 
@@ -33,8 +34,17 @@ export type TurnSetupChoices = {
 const FIELDS = ['model', 'effort', 'mode'] as const
 type SetupField = (typeof FIELDS)[number]
 
-function fieldChoices(choices: TurnSetupChoices, field: SetupField): SetupChoice[] {
-  return { model: choices.models, effort: choices.efforts, mode: choices.modes }[field]
+function fieldChoices(choices: TurnSetupChoices, field: SetupField, model?: string): SetupChoice[] {
+  if (field !== 'effort' || model === undefined)
+    return { model: choices.models, effort: choices.efforts, mode: choices.modes }[field]
+  const supported = choices.models.find((choice) => choice.value === model)?.efforts
+  return supported === undefined
+    ? choices.efforts
+    : choices.efforts.filter((choice) => supported.includes(choice.value))
+}
+
+export function effortChoices(choices: TurnSetupChoices, model: string) {
+  return fieldChoices(choices, 'effort', model)
 }
 
 function choiceRead(choices: TurnSetupChoices, field: SetupField, reading: string | null) {
@@ -59,11 +69,16 @@ export function supportedSetup(
   setup: TurnSetup,
   fallback: TurnSetup,
 ): TurnSetup {
+  const model = fieldChoices(choices, 'model').some((choice) => choice.value === setup.model)
+    ? setup.model
+    : fallback.model
   const keep = (field: SetupField) =>
-    fieldChoices(choices, field).some((choice) => choice.value === setup[field])
+    fieldChoices(choices, field, field === 'effort' ? model : undefined).some(
+      (choice) => choice.value === setup[field],
+    )
       ? setup[field]
       : fallback[field]
-  return { model: keep('model'), effort: keep('effort'), mode: keep('mode') }
+  return { model, effort: keep('effort'), mode: keep('mode') }
 }
 
 // Model and Effort land only with a reply, so a Turn is judged once it replied or stopped.

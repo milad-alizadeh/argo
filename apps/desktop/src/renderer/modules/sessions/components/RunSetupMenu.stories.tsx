@@ -11,10 +11,15 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
   const [cli, setCli] = useState<SessionCli>('claude')
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
   const choices = HARNESSES[cli].setup
+  const chooseHarness = (nextCli: SessionCli) => {
+    setCli(nextCli)
+    const nextSetup = HARNESSES[nextCli].setup
+    if (nextSetup !== null) setSetup(nextSetup.opening)
+  }
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
-        harness={started ? { cli } : { cli, onChange: setCli }}
+        harness={started ? { cli } : { cli, onChange: chooseHarness }}
         setup={choices ? { choices, value: setup, onChange: setSetup } : null}
       />
       <output hidden data-testid="chosen-setup">
@@ -134,12 +139,11 @@ export const NewSessionChoosesHarness: Story = {
     await userEvent.keyboard('{ArrowRight}{Enter}')
     const codex = within(harnesses).getByRole('tab', { name: 'Codex' })
     await expect(codex).toHaveAttribute('aria-selected', 'true')
-    await expect(page().getByRole('tabpanel')).toHaveTextContent(
-      'Codex runs at the Model and Effort in its own settings.',
-    )
-    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
-    await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('codex')
+    const codexModels = page().getByRole('radiogroup', { name: 'Model' })
+    await expect(within(codexModels).getAllByRole('radio')).toHaveLength(5)
+    await expect(within(codexModels).getByRole('radio', { name: /Gpt 5.6 Sol/ })).toBeChecked()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
+    await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('codex gpt-5.6-sol low')
 
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()

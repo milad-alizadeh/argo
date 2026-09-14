@@ -94,6 +94,7 @@ export function ComposerForm({
         >
           <ComposerEditorArea
             attachments={attachments}
+            cli={harness?.cli ?? null}
             draft={draft}
             editorRef={editorRef}
             focusOnMount={focusOnMount}

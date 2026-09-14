@@ -15,10 +15,25 @@ function fakeDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
 
-test('refuses any Turn setup a composer sends, since Codex declares none yet (#1885)', () => {
+test('accepts the Codex Turn setup the adapter declares', () => {
   const adapter = createCodexDriveAdapter(fakeDriver())
+  assert.equal(
+    adapter.turnSetupSchema.safeParse({
+      model: 'gpt-5.6-sol',
+      effort: 'high',
+      mode: 'workspace-write',
+    }).success,
+    true,
+  )
   assert.equal(adapter.turnSetupSchema.safeParse(undefined).success, true)
-  assert.equal(adapter.turnSetupSchema.safeParse({ model: 'gpt' }).success, false)
+  assert.equal(
+    adapter.turnSetupSchema.safeParse({
+      model: 'gpt-5.6-luna',
+      effort: 'ultra',
+      mode: 'workspace-write',
+    }).success,
+    false,
+  )
 })
 
 test('starts a Codex Session', async () => {
@@ -32,9 +47,10 @@ test('starts a Codex Session', async () => {
     }),
   )
 
-  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const setup = { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' } as const
+  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'Inspect the test.', setup })
   assert.deepEqual(result, { sessionId })
-  assert.deepEqual(started, [{ cwd: '/projects/argo', prompt: 'Inspect the test.' }])
+  assert.deepEqual(started, [{ cwd: '/projects/argo', prompt: 'Inspect the test.', setup }])
 })
 
 test('reports a Codex launch failure by its named code', async () => {
@@ -56,7 +72,11 @@ test('sends a Turn to the selected managed Codex Session', async () => {
     fakeDriver({ send: async (id, text) => void sent.push([id, text]) }),
   )
 
-  const result = await adapter.send({ sessionId, prompt: 'Continue.', setup: undefined })
+  const result = await adapter.send({
+    sessionId,
+    prompt: 'Continue.',
+    setup: { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' },
+  })
   assert.deepEqual(result, { ok: true })
   assert.deepEqual(sent, [[sessionId, 'Continue.']])
 })

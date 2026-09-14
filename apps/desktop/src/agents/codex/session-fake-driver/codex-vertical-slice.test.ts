@@ -2,7 +2,7 @@
 // fixture app-server (fixtures/fake-codex-app-server.ts) stands in for `codex app-server`, so this
 // proves the wire framing and the driver together, not just an in-memory fake of `CodexChannel`.
 import assert from 'node:assert/strict'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -65,6 +65,39 @@ test('starting a Codex Session over the real transport makes it appear in the sh
       async () => 'codex',
     )
     assert.equal(sendReply.type, 'session.accepted')
+  } finally {
+    driver.close()
+  }
+})
+
+// #1887: the composer sends the shared rich editor's exact markdown serialization, so a Codex
+// Turn must carry it unchanged all the way to the transport, code blocks, links and recognized
+// references included, not a reformatted stand-in for it.
+test('a Codex Turn carries the shared editor markdown to the transport verbatim', async () => {
+  const echoDir = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-echo-'))
+  const echoFile = path.join(echoDir, 'turns.jsonl')
+  writeFileSync(echoFile, '')
+  const driver = driverBackedByFixture({ env: { ARGO_CODEX_ECHO_FILE: echoFile } })
+  const adapters = { codex: createCodexDriveAdapter(driver) }
+  const prompt =
+    'Run `bun run quality` before @argo-plugin reviews it. See [notes](https://example.com/notes).'
+  try {
+    const startReply = await startSession(
+      {
+        version: 1,
+        type: 'session.start',
+        requestId: 'start-3',
+        cli: 'codex',
+        cwd: process.cwd(),
+        prompt,
+      },
+      adapters,
+    )
+    assert.equal(startReply.type, 'session.started')
+
+    const lines = readFileSync(echoFile, 'utf8').trim().split('\n')
+    assert.equal(lines.length, 1)
+    assert.equal(JSON.parse(lines[0] ?? ''), prompt)
   } finally {
     driver.close()
   }
