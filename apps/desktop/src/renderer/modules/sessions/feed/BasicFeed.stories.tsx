@@ -373,7 +373,9 @@ export const ToolGroupExpandDuringFeedUpdate: Story = {
     await waitFor(() => expect(drawnRow(canvasElement, 'tools-update-reply')).toBeDefined())
     await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
     await expect(Number.parseFloat(row().style.height)).toBeGreaterThan(collapsedHeight)
-    await expect(drawnRows(canvasElement).filter((drawn) => drawn.dataset.feedRow === groupId)).toHaveLength(1)
+    await expect(
+      drawnRows(canvasElement).filter((drawn) => drawn.dataset.feedRow === groupId),
+    ).toHaveLength(1)
   },
 }
 
