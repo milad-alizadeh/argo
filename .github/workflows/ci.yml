@@ -65,7 +65,7 @@ jobs:
 
       - name: Fetch main baseline
         if: ${{ !cancelled() }}
-        run: git fetch --no-tags origin main
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
 
       - name: i18n guard
         if: ${{ !cancelled() }}
