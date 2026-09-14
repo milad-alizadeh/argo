@@ -24,7 +24,7 @@ function ComposerFade({ top }: { top: number | null }) {
 }
 
 type SessionShellProps = {
-  composer: ReactNode
+  composer: ReactNode | null
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
@@ -123,14 +123,18 @@ export function SessionShell({
                 questionFailure={questionFailure}
               />
             </section>
-            <ComposerFade top={fadeTop} />
-            <section
-              aria-label="Session composer"
-              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
-              ref={composerElement}
-            >
-              {composer}
-            </section>
+            {composer === null ? null : (
+              <>
+                <ComposerFade top={fadeTop} />
+                <section
+                  aria-label="Session composer"
+                  className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+                  ref={composerElement}
+                >
+                  {composer}
+                </section>
+              </>
+            )}
           </section>
         }
       />
