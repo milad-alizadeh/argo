@@ -6,8 +6,6 @@ import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { useSessionComposerState } from './useSessionComposerState'
 
-export const COMPOSER_FOCUS_STATE = 'focus-composer'
-
 export type SessionComposerProps = {
   contextTokens?: number | null
   focusOnMount?: boolean

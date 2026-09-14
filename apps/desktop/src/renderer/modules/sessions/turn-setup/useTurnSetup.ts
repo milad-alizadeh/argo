@@ -3,10 +3,10 @@ import { z } from 'zod'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { TurnSetupControlProps } from '../components/RunSetupMenu'
+import { type ComposerIdentity, composerIdentityKey } from '../hooks/composerIdentity'
 import {
   refusalOf,
-  setupFromReading,
-  supportedSetup,
+  resolvedTurnSetup,
   type TurnSetup,
   type TurnSetupChoices,
   turnSettled,
@@ -42,13 +42,13 @@ function persistRemembered(remembered: Remembered) {
 export function useTurnSetup({
   cli,
   choices,
-  composerKey,
+  identity,
   rows,
   onRefusal,
 }: {
   cli: string
   choices: TurnSetupChoices | null
-  composerKey: string
+  identity: ComposerIdentity
   rows: SessionRosterRow[]
   onRefusal: (refusal: { sessionId: string; message: string }) => void
 }) {
@@ -94,7 +94,7 @@ export function useTurnSetup({
   const control = useComposerControl({
     choices,
     chosen,
-    composerKey,
+    identity,
     rows,
     remembered,
     cli,
@@ -106,7 +106,7 @@ export function useTurnSetup({
 function useComposerControl({
   choices,
   chosen,
-  composerKey,
+  identity,
   rows,
   remembered,
   cli,
@@ -114,24 +114,22 @@ function useComposerControl({
 }: {
   choices: TurnSetupChoices | null
   chosen: Map<string, TurnSetup>
-  composerKey: string
+  identity: ComposerIdentity
   rows: SessionRosterRow[]
   remembered: Remembered
   cli: string
   choose: (key: string, setup: TurnSetup) => void
 }): TurnSetupControlProps | null {
   const onChange = useCallback(
-    (setup: TurnSetup) => choose(composerKey, setup),
-    [choose, composerKey],
+    (setup: TurnSetup) => choose(composerIdentityKey(identity), setup),
+    [choose, identity],
   )
   if (choices === null) return null
-  const row = rows.find(({ id }) => id === composerKey)
-  const opening = supportedSetup(
-    choices,
-    { ...choices.opening, ...remembered[cli] },
-    choices.opening,
-  )
-  const value =
-    chosen.get(composerKey) ?? (row === undefined ? opening : setupFromReading(choices, row.setup))
+  const value = resolvedTurnSetup(choices, {
+    identity,
+    chosen,
+    rows,
+    remembered: remembered[cli] ?? {},
+  })
   return { choices, value, onChange }
 }
