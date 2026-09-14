@@ -25,17 +25,17 @@ export function CompactionMarker({
     return () => window.clearInterval(timer)
   }, [])
   return (
-    <article className="feed-row feed-row--marker grid gap-2">
+    <article className="feed-row feed-row--marker grid gap-2" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-        <span role="status">Compacting conversation…</span>
+        <span>Compacting conversation…</span>
         <span aria-hidden="true" className="text-muted-foreground tabular-nums">
           ({elapsedSince(startedAt, now)}
           {tokens === null ? '' : ` · ↓ ${tokens}`})
         </span>
       </div>
       {percentage === null ? null : (
-        <div aria-hidden="true" className="flex items-center gap-2 pl-6">
+        <div className="flex items-center gap-2 pl-6">
           <Progress
             className="min-w-0 flex-1 [&_[data-slot=progress-track]]:h-2"
             value={percentage}
