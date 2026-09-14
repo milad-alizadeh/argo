@@ -4,7 +4,6 @@
 import type { SessionDelegation } from '@/core/sessions/models'
 import { FeedDocument } from '../feed/FeedDocument'
 import type { SessionEvidence, SessionFeed } from '../types'
-import { workDuration } from './session-work'
 
 import '../feed/feed.css'
 
@@ -12,7 +11,6 @@ export function SessionDelegationInspector({
   activeEvidenceId,
   delegation,
   feed,
-  now,
   onOpenEvidence,
   onOpenSession,
 }: {
@@ -24,18 +22,8 @@ export function SessionDelegationInspector({
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
 }) {
-  const title = delegation.label ?? delegation.id
-  const duration = workDuration(delegation.startedAt, delegation.endedAt, now ?? Date.now())
   return (
-    <section aria-label="Subagent" className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 px-4 py-3">
-        <p className="truncate type-meta text-foreground">{title}</p>
-        <p className="type-meta text-muted-foreground">
-          {[delegation.landed ? 'Landed' : 'Running', duration]
-            .filter((fact) => fact !== null)
-            .join(' · ')}
-        </p>
-      </div>
+    <section aria-label="Subagent" className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <div className="feed min-h-0 flex-1">
         {feed === null ? null : (
           <FeedDocument

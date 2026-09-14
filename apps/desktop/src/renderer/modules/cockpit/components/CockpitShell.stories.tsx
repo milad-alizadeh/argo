@@ -32,11 +32,32 @@ export const SidebarControls: Story = {
   args,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const rail = canvas.getByRole('navigation')
+    const header = canvasElement.querySelector<HTMLElement>(
+      '[data-component="CockpitSidebarHeader"]',
+    )
+    const railChrome = canvasElement.querySelector<HTMLElement>(
+      '[data-component="CockpitRailChrome"]',
+    )
+    if (header === null || railChrome === null) throw new Error('The cockpit chrome is absent.')
+
+    expect(rail.getBoundingClientRect().width).toBe(64)
+    await expect(canvas.getByRole('button', { name: 'Sessions' })).toHaveStyle({ fontSize: '10px' })
+    expect(canvas.getByLabelText('Cockpit sidebar').getBoundingClientRect().width).toBe(368)
+    expect(rail.getBoundingClientRect().top).toBeCloseTo(header.getBoundingClientRect().bottom, 1)
+    expect(railChrome.getBoundingClientRect().bottom).toBeCloseTo(
+      header.getBoundingClientRect().bottom,
+      1,
+    )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeInTheDocument(),
     )
+    await expect(
+      canvasElement.querySelector('[data-component="CockpitCollapsedSidebarControl"]')
+        ?.childElementCount,
+    ).toBe(1)
     await userEvent.click(canvas.getByRole('button', { name: 'Open sidebar' }))
     await expect(canvas.getByLabelText('Cockpit sidebar')).toBeInTheDocument()
   },

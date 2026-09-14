@@ -2,12 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
-import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
 import { SessionInspector } from '../components/SessionInspector'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { SessionWorkButtons } from '../components/SessionWorkButtons'
+import { SessionWorkInspectorHeader } from '../components/SessionWorkInspectorHeader'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
@@ -20,7 +20,7 @@ const SESSION_ROSTER = [
     posture: 'external',
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
     status: 'running',
-    cwd: '/workspace/argo',
+    cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
     branch: 'argo/#1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
     turnStartedAt: '2026-09-13T15:42:00Z',
@@ -72,7 +72,6 @@ const SESSION_ROSTER = [
 ] satisfies Session[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
-const SCROLL_HISTORY_TO_START_LABEL = 'Scroll Session history to start'
 
 function feedFor(sessionId: string) {
   return {
@@ -152,8 +151,22 @@ function ReviewInspector({
   )
 }
 
-function ReviewScreen() {
-  const [selectedSessionId, setSelectedSessionId] = useState('composer-review')
+function ReviewInspectorBar({
+  delegation,
+  shell,
+}: {
+  delegation: SessionDelegation | null
+  shell: SessionShellCommand | null
+}) {
+  if (shell !== null) return <SessionWorkInspectorHeader work={{ kind: 'shell', command: shell }} />
+  if (delegation !== null) {
+    return <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation }} />
+  }
+  return null
+}
+
+function ReviewScreen({ initialSessionId = 'composer-review' }: { initialSessionId?: string }) {
+  const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
@@ -191,7 +204,10 @@ function ReviewScreen() {
             shell={session.shell}
           />
         }
+        session={session}
         inspector={<ReviewInspector delegation={delegation} shell={shell} />}
+        inspectorBar={<ReviewInspectorBar delegation={delegation} shell={shell} />}
+        defaultInspectorCollapsed
         inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
@@ -202,78 +218,6 @@ function ReviewScreen() {
         selectedSessionId={selectedSessionId}
       />
     </CockpitShell>
-  )
-}
-
-// Exercises the same selectedSessionId-gated composer wiring as SessionScreenView, so a reader
-// with no Session selected — on first render, or after deselecting one — sees no composer at all
-// (#2105).
-function DeselectableReviewScreen() {
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId) ?? null
-
-  return (
-    <CockpitShell
-      header={
-        selectedSessionId === null ? undefined : (
-          <Button onClick={() => setSelectedSessionId(null)} type="button" variant="secondary">
-            Close Session
-          </Button>
-        )
-      }
-      sidebar={
-        <ReviewSidebar
-          onSelect={setSelectedSessionId}
-          selectedSessionId={selectedSessionId ?? ''}
-        />
-      }
-    >
-      <SessionShell
-        activeEvidenceId={null}
-        composer={
-          selectedSessionId === null ? null : (
-            <SessionComposer
-              onSend={async () => true}
-              plan={session?.plan ?? null}
-              sessionId={selectedSessionId}
-            />
-          )
-        }
-        feed={selectedSessionId === null ? null : feedFor(selectedSessionId)}
-        feedError={null}
-        onRetryFeed={() => {}}
-        inspector={null}
-        isRunning={session?.status === 'running'}
-        onOpenEvidence={() => {}}
-        onOpenSession={() => {}}
-        onAnswerQuestion={() => {}}
-        answeringQuestionId={null}
-        questionFailure={() => null}
-        selectedSessionId={selectedSessionId}
-      />
-    </CockpitShell>
-  )
-}
-
-function ScrollableReviewScreen() {
-  const scrollHistoryToStart = () => {
-    document
-      .querySelector<HTMLElement>(`[aria-label="${SESSION_HISTORY_LABEL}"]`)
-      ?.scrollTo({ top: 0 })
-  }
-
-  return (
-    <div className="relative h-full">
-      <ReviewScreen />
-      <Button
-        className="absolute top-2 left-2 z-10"
-        type="button"
-        variant="secondary"
-        onClick={scrollHistoryToStart}
-      >
-        {SCROLL_HISTORY_TO_START_LABEL}
-      </Button>
-    </div>
   )
 }
 
@@ -312,9 +256,7 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(history.scrollTop).toBeGreaterThan(0)
   expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
   expect(finalFeedLine.getBoundingClientRect().bottom).toBeLessThanOrEqual(before.top)
-  await userEvent.click(
-    within(canvasElement).getByRole('button', { name: SCROLL_HISTORY_TO_START_LABEL }),
-  )
+  history.scrollTo({ top: 0 })
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
@@ -349,6 +291,37 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
 }
 
+function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const headerControls = canvasElement.querySelector<HTMLElement>(
+    '[data-component="SessionHeaderControls"]',
+  )
+  const subagents = canvas.getByRole('button', { name: /^Subagents/ })
+  const shell = canvas.getByRole('button', { name: /^Shell/ })
+  const inspector = canvas.getByRole('button', { name: 'Open Session inspector' })
+  if (headerControls === null) throw new Error('The Session header controls are absent.')
+
+  expect(subagents).toHaveAccessibleName(/^Subagents/)
+  expect(shell).toHaveAccessibleName(/^Shell/)
+  expect(headerControls.getBoundingClientRect().right).toBeLessThanOrEqual(
+    inspector.getBoundingClientRect().left -
+      Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap')),
+  )
+}
+
+async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+  const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+  const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
+  expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+    opener.getBoundingClientRect().right +
+      Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+  )
+  await userEvent.click(opener)
+  await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
+}
+
 const meta: Meta<typeof SessionScreenView> = {
   title: 'Sessions/Screen',
   component: SessionScreenView,
@@ -375,6 +348,12 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('button', { name: /Finish Session composer review/ }),
     ).toHaveAttribute('aria-current', 'page')
+    await expect(
+      canvas.getByRole('heading', { name: 'Finish Session composer review' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectHeaderActionsAtTrailingEdge(canvasElement)
+    await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
@@ -399,7 +378,17 @@ export const Open: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
+    const inspector = canvas.getByRole('region', { name: 'Subagent' })
+    await expect(inspector).toBeVisible()
+    expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
     await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await expect(inspector).toBeVisible()
+    expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
   },
 }
 
@@ -422,7 +411,7 @@ export const ComposerGatedBySelection: Story = {
 }
 
 export const ComposerStaysFixed: Story = {
-  render: () => <ScrollableReviewScreen />,
+  render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -432,5 +421,32 @@ export const ComposerStaysFixed: Story = {
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
     expectContextBarInset(canvasElement)
+  },
+}
+
+export const SharedCheckout: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
+    ).toBeVisible()
+    expect(canvas.queryByText('ticket-1846-composer')).not.toBeInTheDocument()
+  },
+}
+
+export const NarrowHeader: Story = {
+  render: () => (
+    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
+      <ReviewScreen />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('heading', { name: 'Finish Session composer review' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectHeaderActionsAtTrailingEdge(canvasElement)
   },
 }
