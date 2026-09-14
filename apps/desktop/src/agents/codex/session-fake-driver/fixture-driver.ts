@@ -8,7 +8,10 @@ import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import type { CodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 
-const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', import.meta.url))
+const fixturePath = import.meta.url.endsWith('.mjs')
+  ? './fake-codex-app-server.mjs'
+  : './fixtures/fake-codex-app-server.ts'
+const fixture = fileURLToPath(new URL(fixturePath, import.meta.url))
 
 export function driverBackedByFixture(
   driverOptions: { ownership?: CodexOwnershipLedger; env?: Record<string, string> } = {},
