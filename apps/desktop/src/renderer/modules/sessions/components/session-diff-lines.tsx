@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 type DiffLine = {
-  kind: 'added' | 'context' | 'removed' | 'title'
+  kind: 'added' | 'context' | 'hunk' | 'removed' | 'title'
   newLine: number | null
   oldLine: number | null
 }
@@ -17,7 +17,7 @@ export function diffLines(source: string): DiffLine[] {
       if (matched !== null) {
         oldLine = Number(matched[1])
         newLine = Number(matched[2])
-        return { kind: 'title', oldLine: null, newLine: null }
+        return { kind: 'hunk', oldLine: null, newLine: null }
       }
       if (line.startsWith('-')) return { kind: 'removed', oldLine: oldLine++, newLine: null }
       if (line.startsWith('+')) return { kind: 'added', oldLine: null, newLine: newLine++ }
@@ -37,6 +37,9 @@ export function diffLineDecoration(line: DiffLine): { className?: string; prefix
       break
     case 'context':
     case 'title':
+      break
+    case 'hunk':
+      className = 'hidden'
       break
   }
   return {
