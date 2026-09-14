@@ -2,6 +2,7 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { SessionInspector } from '../components/SessionInspector'
 import { SessionComposerArea, SessionHandoffFacts } from '../components/SessionScreenDetails'
 import { SessionWorkButtons } from '../components/SessionWorkButtons'
+import { SessionWorkInspectorHeader } from '../components/SessionWorkInspectorHeader'
 import type { SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
 import { type SessionScreenModel, useSessionScreenModel } from './useSessionScreenModel'
@@ -49,6 +50,19 @@ function Inspector({ model }: { model: SessionScreenModel }) {
   )
 }
 
+function InspectorBar({ model }: { model: SessionScreenModel }) {
+  if (model.evidence !== null) return null
+  if (model.shell !== null) {
+    return <SessionWorkInspectorHeader work={{ kind: 'shell', command: model.shell }} />
+  }
+  if (model.delegation !== null) {
+    return (
+      <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation: model.delegation }} />
+    )
+  }
+  return null
+}
+
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { composer, evidence, feed, feedError, question, session } = model
@@ -92,7 +106,9 @@ export function SessionScreenView() {
         )
       }
       headerControls={<WorkButtons model={model} />}
+      session={session}
       inspector={<Inspector model={model} />}
+      inspectorBar={<InspectorBar model={model} />}
       defaultInspectorCollapsed={true}
       // Picking work in the header opens the inspector, the way opening recorded evidence does.
       // Nothing opens it on its own any more: the header buttons are what say a Session has

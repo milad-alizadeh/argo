@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 
 import { sessionShellCommand } from '../session-fixtures'
 import { SessionShellInspector } from './SessionShellInspector'
+import { SessionWorkInspectorHeader } from './SessionWorkInspectorHeader'
 
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')
 
@@ -31,8 +32,23 @@ const meta: Meta<typeof SessionShellInspector> = {
 export default meta
 type Story = StoryObj<typeof SessionShellInspector>
 
+function InspectorStory({ args }: { args: React.ComponentProps<typeof SessionShellInspector> }) {
+  return (
+    <>
+      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
+        <SessionWorkInspectorHeader
+          work={{ kind: 'shell', command: args.command }}
+          now={args.now}
+        />
+      </header>
+      <SessionShellInspector {...args} />
+    </>
+  )
+}
+
 export const Running: Story = {
   args: { command: WATCH, output: 'watching for changes\nrebuilt in 240ms\n' },
+  render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('npm run watch')).toHaveLength(2)
@@ -54,6 +70,7 @@ export const Completed: Story = {
     }),
     output: 'building\ndone in 43s\n',
   },
+  render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Completed · 43s · .*exit code 0/)).toBeVisible()
@@ -63,6 +80,7 @@ export const Completed: Story = {
 
 export const NoRecordedOutput: Story = {
   args: { command: WATCH, output: null },
+  render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('This command recorded no output.')).toBeVisible()
   },

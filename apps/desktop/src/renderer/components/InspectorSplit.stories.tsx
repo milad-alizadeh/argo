@@ -43,12 +43,17 @@ export const CollapseExpandRestore: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open Panel inspector' })).toBeInTheDocument(),
     )
+    await expect(canvas.getByLabelText('Panel contents')).not.toBeVisible()
     const openControl = canvas.getByRole('button', { name: 'Open Panel inspector' })
     await expect(openControl.getBoundingClientRect().left).toBe(collapseLeft)
     await userEvent.click(openControl)
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Collapse Panel inspector' })).toBeInTheDocument(),
     )
+    await expect(canvas.getByLabelText('Panel contents')).toBeVisible()
+    expect(
+      canvas.getByLabelText('Panel contents').getBoundingClientRect().width,
+    ).toBeGreaterThanOrEqual(440)
 
     // Expanding and restoring does the same, one slot to the left of collapse.
     const expandControl = canvas.getByRole('button', { name: 'Expand Panel sidebar' })
