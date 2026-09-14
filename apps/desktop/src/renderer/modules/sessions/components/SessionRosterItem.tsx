@@ -1,3 +1,5 @@
+import { Lock } from 'lucide-react'
+
 import { Badge } from '@/renderer/components/ui/badge'
 import {
   ContextMenu,
@@ -59,6 +61,22 @@ function SessionBlockedBadge({ session }: { session: Session }) {
   )
 }
 
+// Another live Argo window holds this Session's channel (ADR-0040): Send is refused, so the
+// fact goes in text beside the title rather than only in a tooltip (apps/desktop/AGENTS.md
+// "Accessible names" — a mark that is not a control).
+const OPEN_ELSEWHERE_MESSAGE =
+  'This session is open in another app. Close it there to continue it in Argo.'
+
+function SessionLockedMark({ session }: { session: Session }) {
+  if (session.locked !== true) return null
+  return (
+    <span className="inline-flex shrink-0 items-center" title={OPEN_ELSEWHERE_MESSAGE}>
+      <Lock aria-hidden className="size-3.5 text-faint" />
+      <span className="sr-only">{OPEN_ELSEWHERE_MESSAGE}</span>
+    </span>
+  )
+}
+
 function activitySummary(session: Session): string {
   if (session.activity === null) return session.status
   return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
@@ -117,6 +135,7 @@ export function SessionRosterItem({
                       />
                     </span>
                     <SessionBlockedBadge session={session} />
+                    <SessionLockedMark session={session} />
                   </span>
                   <span className="mt-0.5 block truncate type-meta text-faint">
                     {activitySummary(session)}

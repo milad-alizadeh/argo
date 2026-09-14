@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { codexResumeTarget } from '../sessions/resume-target'
 import { openCodexChannel } from './codex-channel'
 import { createCodexSessionDriver } from './codex-session-driver'
 import { createCodexOwnershipLedger, isProcessAlive } from './ownership-ledger'
@@ -10,18 +11,31 @@ import { createCodexOwnershipLedger, isProcessAlive } from './ownership-ledger'
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong
 // on this channel, unlike the Claude adapter's PTY.
+//
+// `item/tool/requestUserInput` (#1841) sits behind `features.default_mode_request_user_input`,
+// `false` (and marked "under development") in a stock `codex features list`; live-verified against
+// codex-cli 0.147.0 that this override actually turns the tool on for the model to call, not just
+// a schema that never fires.
 function spawnCodex(
   executable: string,
   options: { cwd: string; env: NodeJS.ProcessEnv },
 ): ChildProcessWithoutNullStreams {
-  return spawn(executable, ['app-server', '--listen', 'stdio://'], {
-    cwd: options.cwd,
-    env: options.env,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  })
+  return spawn(
+    executable,
+    ['app-server', '--listen', 'stdio://', '-c', 'features.default_mode_request_user_input=true'],
+    {
+      cwd: options.cwd,
+      env: options.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    },
+  )
 }
 
-export function createSystemCodexSessionDriver(paths: { executable?: string; ownership: string }) {
+export function createSystemCodexSessionDriver(paths: {
+  executable?: string
+  ownership: string
+  transcripts: string
+}) {
   return createCodexSessionDriver({
     findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
     now: () => new Date(),
@@ -30,6 +44,7 @@ export function createSystemCodexSessionDriver(paths: { executable?: string; own
       owner: { pid: process.pid, registry: randomUUID() },
       isAlive: isProcessAlive,
     }),
+    resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
     openChannel: (executable, options) => {
       const child = spawnCodex(executable, options)
       // `codex app-server` prints its own diagnostics here; kept in the log rather than thrown

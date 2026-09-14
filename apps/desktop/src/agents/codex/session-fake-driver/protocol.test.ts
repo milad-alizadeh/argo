@@ -63,7 +63,7 @@ test('reads a completed-Turn notification, and ignores any other notification', 
   )
 })
 
-test('reads the thread status that says whether a Codex Session can accept an interrupt', () => {
+test('reads the thread status envelope, leaving what it means to the status rollup', () => {
   assert.deepEqual(
     readThreadStatus({
       method: 'thread/status/changed',
@@ -72,14 +72,14 @@ test('reads the thread status that says whether a Codex Session can accept an in
         status: { type: 'active', activeFlags: [] },
       },
     }),
-    { threadId: 'thread-1', status: 'running' },
+    { threadId: 'thread-1', status: { type: 'active', activeFlags: [] } },
   )
   assert.deepEqual(
     readThreadStatus({
       method: 'thread/status/changed',
       params: { threadId: 'thread-1', status: { type: 'idle' } },
     }),
-    { threadId: 'thread-1', status: 'idle' },
+    { threadId: 'thread-1', status: { type: 'idle' } },
   )
   assert.throws(() =>
     readThreadStatus({

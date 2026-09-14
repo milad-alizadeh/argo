@@ -7,7 +7,6 @@ const ownerSchema = z.strictObject({
   registry: z.string().min(1),
 })
 const entrySchema = z.strictObject({
-  cwd: z.string().min(1),
   owner: ownerSchema.nullable(),
 })
 const ledgerSchema = z.record(z.string(), entrySchema)
@@ -15,13 +14,15 @@ const ledgerSchema = z.record(z.string(), entrySchema)
 type Owner = z.infer<typeof ownerSchema>
 type Ledger = z.infer<typeof ledgerSchema>
 
-export type CodexOwnershipStanding = 'never-owned' | 'orphaned' | 'held-here' | 'held-elsewhere'
+// Whether an Argo window currently holds a Session's app-server thread. Per machine, never
+// committed, and not a roster. Origin does not matter: a thread this Argo never started grades
+// the same as one it released.
+export type CodexOwnershipStanding = 'resumable' | 'held-here' | 'held-elsewhere'
 
 export type CodexOwnershipLedger = {
-  bind: (sessionId: string, cwd: string) => void
+  bind: (sessionId: string) => void
   release: (sessionId: string) => void
-  resumeTarget: (sessionId: string) => { cwd: string } | null
-  orphans: () => ReadonlySet<string>
+  standing: (sessionId: string) => CodexOwnershipStanding
 }
 
 function readLedger(file: string): Ledger {
@@ -38,12 +39,11 @@ export function createCodexOwnershipLedger(options: {
 }): CodexOwnershipLedger {
   const mine: Ledger = {}
   const entries = (): Ledger => ({ ...mine, ...readLedger(options.path) })
-  const standing = (entry: Ledger[string] | undefined): CodexOwnershipStanding => {
-    if (entry === undefined) return 'never-owned'
-    if (entry.owner === null) return 'orphaned'
+  const grade = (entry: Ledger[string] | undefined): CodexOwnershipStanding => {
+    if (entry === undefined || entry.owner === null) return 'resumable'
     if (entry.owner.pid === options.owner.pid && entry.owner.registry === options.owner.registry)
       return 'held-here'
-    return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'orphaned'
+    return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'resumable'
   }
   const write = (sessionId: string, entry: Ledger[string]) => {
     mine[sessionId] = entry
@@ -51,24 +51,13 @@ export function createCodexOwnershipLedger(options: {
   }
 
   return {
-    bind(sessionId, cwd) {
-      write(sessionId, { cwd, owner: options.owner })
+    bind(sessionId) {
+      write(sessionId, { owner: options.owner })
     },
     release(sessionId) {
-      const entry = entries()[sessionId]
-      if (entry !== undefined) write(sessionId, { ...entry, owner: null })
+      write(sessionId, { owner: null })
     },
-    resumeTarget(sessionId) {
-      const entry = entries()[sessionId]
-      return standing(entry) === 'orphaned' && entry !== undefined ? { cwd: entry.cwd } : null
-    },
-    orphans() {
-      return new Set(
-        Object.entries(entries())
-          .filter(([, entry]) => standing(entry) === 'orphaned')
-          .map(([sessionId]) => sessionId),
-      )
-    },
+    standing: (sessionId) => grade(entries()[sessionId]),
   }
 }
 

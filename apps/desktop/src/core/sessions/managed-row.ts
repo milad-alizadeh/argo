@@ -14,6 +14,7 @@ export const sessionRosterReconciliation = {
   entry: 'observed',
   cwd: 'observed',
   branch: 'observed',
+  locked: 'observed',
   updatedAt: 'observed',
   unreadableLines: 'observed',
   originUnread: 'observed',
@@ -29,6 +30,10 @@ export const sessionRosterReconciliation = {
   compactionStartedAt: 'held',
   compactionPercentage: 'held',
   compactionTokens: 'held',
+  handoffStartedAt: 'held',
+  handoffFailure: 'held',
+  handoffTo: 'observed',
+  handoffFrom: 'observed',
   setup: 'observed',
 } as const satisfies Record<keyof SessionRosterRow, ReconciliationSource>
 
@@ -52,6 +57,8 @@ export function managedRow(
     | 'compactionPercentage'
     | 'compactionStartedAt'
     | 'compactionTokens'
+    | 'handoffFailure'
+    | 'handoffStartedAt'
     | 'cwd'
     | 'status'
     | 'setup'
@@ -87,6 +94,10 @@ export function managedRow(
     compactionStartedAt: session.compactionStartedAt,
     compactionPercentage: session.compactionPercentage,
     compactionTokens: session.compactionTokens,
+    handoffStartedAt: session.handoffStartedAt,
+    handoffFailure: session.handoffFailure,
+    handoffTo: null,
+    handoffFrom: null,
     setup: session.setup,
   }
 }

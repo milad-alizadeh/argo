@@ -25,7 +25,7 @@ export const ROSTER_MOVES = {
   last: 'roster.last',
 } as const
 
-// Fires only while the composer holds focus, so Enter stays a new line (#1999).
+// Fires only while the composer holds focus, so Enter elsewhere is untouched (#2103).
 export const SEND_MESSAGE_COMMAND = 'composer.send'
 
 // The channel a menu item's command travels on, declared here with the table it comes from.
@@ -85,7 +85,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   {
     command: SEND_MESSAGE_COMMAND,
     labelKey: 'shortcut.composer.send',
-    chord: 'Shift+Enter',
+    chord: 'Enter',
     scope: 'element',
   },
 ]

@@ -1,9 +1,16 @@
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { ComposerAttachment } from '../state/useComposerStore'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { resolveAttachments } from './useComposerAttachments'
+
+export type Send = (
+  text: string,
+  setup: TurnSetup | null,
+  attachments: SessionAttachmentInput[],
+) => Promise<boolean>
 
 // The draft/attachments state a Send needs, resolved and dispatched as either a queued Turn
 // (running) or the live Turn, then cleared only for what actually left the composer.
@@ -12,9 +19,13 @@ async function performSend(input: {
   attachments: ComposerAttachment[]
   markError: (ids: string[]) => void
   isRunning: boolean
-  addPendingTurn: (text: string, setup: TurnSetup | undefined) => void
+  addPendingTurn: (
+    text: string,
+    setup: TurnSetup | undefined,
+    attachments: SessionAttachmentInput[],
+  ) => void
   editor: LexicalEditor | null
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  onSend: Send
   setupValue: TurnSetup | null | undefined
   clearDraft: (editor?: LexicalEditor | null) => void
   clear: (ids: string[]) => void
@@ -22,17 +33,17 @@ async function performSend(input: {
   const { draft, attachments, markError, isRunning, addPendingTurn, editor, onSend } = input
   const { setupValue, clearDraft, clear } = input
   if (!draft.trim() && attachments.length === 0) return
-  const { prompt, sentIds } = await resolveAttachments(draft, attachments, markError)
-  if (!prompt.trim()) return
+  const resolved = await resolveAttachments(draft, attachments, markError)
+  if (!resolved.prompt.trim() && resolved.attachments.length === 0) return
   if (isRunning) {
-    addPendingTurn(prompt, setupValue ?? undefined)
+    addPendingTurn(resolved.prompt, setupValue ?? undefined, resolved.attachments)
     clearDraft()
-    clear(sentIds)
+    clear(resolved.sentIds)
     return
   }
-  if (await onSend(prompt, setupValue ?? null)) {
+  if (await onSend(resolved.prompt, setupValue ?? null, resolved.attachments)) {
     clearDraft(editor)
-    clear(sentIds)
+    clear(resolved.sentIds)
   }
 }
 
@@ -45,8 +56,12 @@ export function useSend(input: {
   clearDraft: (editor?: LexicalEditor | null) => void
   isRunning: boolean
   markError: (ids: string[]) => void
-  addPendingTurn: (text: string, setup: TurnSetup | undefined) => void
-  onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
+  addPendingTurn: (
+    text: string,
+    setup: TurnSetup | undefined,
+    attachments: SessionAttachmentInput[],
+  ) => void
+  onSend: Send
   setupValue: TurnSetup | null | undefined
 }) {
   const { editorRef, draft, attachments, clear, clearDraft, isRunning } = input

@@ -50,16 +50,21 @@ export function SessionContextBar({
   contextTokens,
   harness,
   isCompacting,
+  isHandingOff,
   onCompact,
+  onHandoff,
 }: {
   contextTokens: number | null | undefined
   harness: 'claude' | 'codex' | undefined
   isCompacting: boolean
+  isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
+  onHandoff?: () => Promise<boolean>
 }) {
   const usedTokens = contextTokens ?? 148_000
   const percentage = Math.round((usedTokens / CONTEXT_CAPACITY_TOKENS) * 100)
   const canCompact = onCompact !== undefined
+  const canHandoff = onHandoff !== undefined
   const contextAlert = percentage >= 40
   const usedTokenSummary = `${Math.round(usedTokens / 1000)}k`
 
@@ -106,7 +111,8 @@ export function SessionContextBar({
         </Button>
         <Button
           aria-label="Handoff Session"
-          disabled
+          disabled={!canHandoff || isHandingOff}
+          onClick={() => void onHandoff?.()}
           size="icon-sm"
           type="button"
           variant="outline"
@@ -126,7 +132,14 @@ export function SessionContextBar({
           <Minimize2 />
           Compact
         </Button>
-        <Button aria-label="Handoff Session" disabled size="sm" type="button" variant="outline">
+        <Button
+          aria-label="Handoff Session"
+          disabled={!canHandoff || isHandingOff}
+          onClick={() => void onHandoff?.()}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
           <GitFork />
           Handoff
         </Button>

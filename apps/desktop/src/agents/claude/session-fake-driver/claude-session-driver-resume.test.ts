@@ -8,8 +8,9 @@ import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claud
 
 const turn = (prompt: string) => ({ prompt, setup: OPENING })
 
-// ADR-0026 as amended by #1842: the next Turn is what resumes a Session Argo held before.
-test('the next Turn to an orphaned Session resumes its chain in a new drive channel', async (context) => {
+// #2092: the next Turn is what resumes a Session Argo held before, or any Session whose
+// transcript Argo can read, whichever it is.
+test('the next Turn to an external Session resumes its chain in a new drive channel', async (context) => {
   const file = await ledgerFile(context)
   ownedBeforeRestart(file, 'chain-root')
   const { driver, spawned, pluginRoot } = launch(file, {
@@ -100,12 +101,6 @@ const refusals: Array<{
   arrange: (file: string) => void
   options: Parameters<typeof launch>[1]
 }> = [
-  {
-    claim: 'refuses a Session Argo never started',
-    code: 'not-resumable',
-    arrange: (_file: string) => {},
-    options: {},
-  },
   {
     claim: 'refuses a Session another Argo window drives now',
     code: 'held-elsewhere',

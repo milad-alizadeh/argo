@@ -1,10 +1,11 @@
-import { createContext, type ReactNode, useContext } from 'react'
+import type { ReactNode } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import type { SessionDiagramEvidence } from '../../types'
 import { FeedCode } from './FeedCode'
-import { FeedGallery, FeedImage } from './FeedImages'
-import { FeedMermaid } from './FeedMermaid'
+import { GalleryImage, GalleryParagraph } from './FeedMarkdownGallery'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
+import { DiagramEvidence, type DiagramEvidenceContextValue, MermaidFence } from './MermaidFence'
 import { feedUrlTransform } from './markdownUrls'
 
 type MarkdownNode = ExtraProps['node']
@@ -13,27 +14,6 @@ const REMARK_PLUGINS = [remarkGfm]
 // The wrapper carries `type-prose`: on the heading itself its doubled selector drops the weight.
 const HEADING_CLASS = 'mb-2 font-medium'
 const LANGUAGE_CLASS = 'language-'
-
-// True inside a paragraph drawn as a gallery, so its images do not each open their own row.
-const InGallery = createContext(false)
-
-function elementsOf(node: MarkdownNode) {
-  return (node?.children ?? []).filter(
-    (child) => child.type === 'element' || (child.type === 'text' && child.value.trim() !== ''),
-  )
-}
-
-function holdsOnlyImages(node: MarkdownNode) {
-  const children = elementsOf(node)
-  return (
-    children.length > 0 &&
-    children.every((child) => child.type === 'element' && child.tagName === 'img')
-  )
-}
-
-function holdsImage(node: MarkdownNode) {
-  return elementsOf(node).some((child) => child.type === 'element' && child.tagName === 'img')
-}
 
 // A fence reaches `pre` as one `code` element holding the text, with its word as `language-*`.
 function fenceOf(node: MarkdownNode) {
@@ -48,25 +28,6 @@ function fenceOf(node: MarkdownNode) {
     : undefined
   const source = code.children.map((child) => (child.type === 'text' ? child.value : '')).join('')
   return { source, language }
-}
-
-function Paragraph({ node, children }: { node?: MarkdownNode; children?: ReactNode }) {
-  if (holdsOnlyImages(node))
-    return (
-      <InGallery.Provider value={true}>
-        <FeedGallery>{children}</FeedGallery>
-      </InGallery.Provider>
-    )
-  // A `p` cannot hold the gallery's `div`, so a paragraph mixing text and images is a `div`.
-  if (holdsImage(node)) return <div>{children}</div>
-  return <p>{children}</p>
-}
-
-function Image({ src, alt }: { src?: string | Blob; alt?: string }) {
-  const inGallery = useContext(InGallery)
-  const source = typeof src === 'string' ? src : ''
-  const image = <FeedImage key={source} source={source} alt={alt ?? ''} />
-  return inGallery ? image : <FeedGallery>{image}</FeedGallery>
 }
 
 function Link({ href, children }: { href?: string; children?: ReactNode }) {
@@ -112,8 +73,8 @@ function ListItem({ node, children }: { node?: MarkdownNode; children?: ReactNod
 }
 
 const COMPONENTS: Components = {
-  p: Paragraph,
-  img: Image,
+  p: GalleryParagraph,
+  img: GalleryImage,
   a: Link,
   li: ListItem,
   h1: ({ children }) => <h3 className={HEADING_CLASS}>{children}</h3>,
@@ -160,7 +121,7 @@ const COMPONENTS: Components = {
   pre: ({ node }) => {
     const fence = fenceOf(node)
     return fence.language === 'mermaid' ? (
-      <FeedMermaid source={fence.source} />
+      <MermaidFence node={node} source={fence.source} />
     ) : (
       <FeedCode {...fence} />
     )
@@ -173,16 +134,32 @@ const COMPONENTS: Components = {
 }
 
 // An assistant's prose, or a Ticket's description, as Markdown (#1835). Raw HTML stays text, which is react-markdown's default.
-export function FeedMarkdown({ text }: { text: string }) {
+export function FeedMarkdown({
+  text,
+  rowId,
+  activeEvidenceId = null,
+  onOpenEvidence,
+}: {
+  text: string
+  rowId?: string
+  activeEvidenceId?: string | null
+  onOpenEvidence?: (evidence: SessionDiagramEvidence) => void
+}) {
+  const diagramEvidence: DiagramEvidenceContextValue | null =
+    rowId === undefined || onOpenEvidence === undefined
+      ? null
+      : { rowId, activeEvidenceId, onOpenEvidence }
   return (
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">
-      <Markdown
-        remarkPlugins={REMARK_PLUGINS}
-        components={COMPONENTS}
-        urlTransform={feedUrlTransform}
-      >
-        {text}
-      </Markdown>
+      <DiagramEvidence.Provider value={diagramEvidence}>
+        <Markdown
+          remarkPlugins={REMARK_PLUGINS}
+          components={COMPONENTS}
+          urlTransform={feedUrlTransform}
+        >
+          {text}
+        </Markdown>
+      </DiagramEvidence.Provider>
     </div>
   )
 }

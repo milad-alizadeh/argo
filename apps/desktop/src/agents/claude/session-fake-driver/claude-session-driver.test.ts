@@ -151,7 +151,7 @@ test('does not let the parent Claude Session suppress transcript persistence', a
   assert.equal(spawned[0]?.environment.CLAUDE_CODE_CHILD_SESSION, undefined)
 })
 
-test('a Session Argo starts is still read as Argo’s after the app restarts', async (context) => {
+test('a Session Argo starts is still resumable after the app restarts', async (context) => {
   const file = await ledgerFile(context)
   const first = launch(file)
   const sessionId = first.driver.start({
@@ -163,5 +163,5 @@ test('a Session Argo starts is still read as Argo’s after the app restarts', a
 
   const second = launch(file, { registry: 'window-b' })
 
-  assert.deepEqual([...second.driver.orphans()], [sessionId])
+  assert.equal(second.ledger.standing(sessionId), 'resumable')
 })

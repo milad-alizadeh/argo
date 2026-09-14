@@ -38,9 +38,7 @@ export function feedReply(value: SessionFeedRequest, held: HeldFeed) {
   }
 }
 
-export async function cachedReply(value: SessionFeedRequest, held: HeldFeed | undefined) {
-  if (held === undefined || (await chainStamps(held.paths)) !== held.stamps) return null
-  if (value.revision !== held.revision) return feedReply(value, held)
+export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
   return {
     version: 1 as const,
     type: 'session.feed.unchanged' as const,
@@ -51,22 +49,30 @@ export async function cachedReply(value: SessionFeedRequest, held: HeldFeed | un
   }
 }
 
+// A Session its CLI is still writing never gives two stat readings that agree, so the wait for a
+// quiet chain is bounded. Past the bound the last read is kept and stamped as of before it: those
+// stamps are older than the file, and cover the files the chain held before it, so the next
+// poll's fresh `stableChain` call reads it as stale and reads again, rather than this one
+// re-parsing a growing transcript until the heap is gone (#2095).
+const SETTLING_READS = 4
+
 export async function stableChain(
   source: { readSessionFiles: (sessionId: string) => Promise<SessionChain | null> },
   sessionId: string,
   startingPaths: readonly string[],
 ): Promise<{ chain: SessionChain; stamps: string } | null> {
   let paths = startingPaths
-  let before = await chainStamps(paths)
-  for (;;) {
+  let unsettledRead: { chain: SessionChain; stamps: string } | null = null
+  for (let read = 0; read < SETTLING_READS; read += 1) {
+    const before = await chainStamps(paths)
     const chain = await source.readSessionFiles(sessionId)
     if (chain === null) return null
-    const nextPaths = chain.files.map((file) => file.path)
-    const stamps = await chainStamps(nextPaths)
+    paths = chain.files.map((file) => file.path)
+    const stamps = await chainStamps(paths)
     if (before === stamps) return { chain, stamps }
-    paths = nextPaths
-    before = stamps
+    unsettledRead = { chain, stamps: before }
   }
+  return unsettledRead
 }
 
 export function keepFeed(feeds: Map<string, HeldFeed>, sessionId: string, feed: HeldFeed) {
