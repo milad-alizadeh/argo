@@ -11,6 +11,10 @@ import { createInterface } from 'node:readline'
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 
+function threadIdFor(counter: number) {
+  return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
+}
+
 function recordTurn(threadId: string, text: string) {
   const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
   if (transcripts === undefined) return
@@ -19,14 +23,16 @@ function recordTurn(threadId: string, text: string) {
   const transcript = path.join(day, `rollout-2026-09-14T15-17-11-${threadId}.jsonl`)
   appendFileSync(
     transcript,
-    `${JSON.stringify({
-      timestamp: new Date().toISOString(),
-      type: 'event_msg',
-      payload: {
-        type: 'user_message',
-        message: text,
+    `${[
+      { timestamp: new Date().toISOString(), type: 'session_meta', payload: { id: threadId } },
+      {
+        timestamp: new Date().toISOString(),
+        type: 'event_msg',
+        payload: { type: 'user_message', message: text },
       },
-    })}\n`,
+    ]
+      .map((record) => JSON.stringify(record))
+      .join('\n')}\n`,
   )
 }
 
@@ -62,7 +68,7 @@ lines.on('line', (line) => {
       return
     case 'thread/start': {
       threadCounter += 1
-      send({ id: message.id, result: { thread: { id: `fake-thread-${threadCounter}` } } })
+      send({ id: message.id, result: { thread: { id: threadIdFor(threadCounter) } } })
       return
     }
     case 'thread/resume': {
