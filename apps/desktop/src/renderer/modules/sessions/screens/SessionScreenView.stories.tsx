@@ -184,9 +184,15 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const before = composer.getBoundingClientRect()
+  const finalFeedLine = within(canvasElement)
+    .getAllByText('The transcript keeps the feed, plan, and composer visible together.')
+    .find((line) => line.getBoundingClientRect().height > 0)
+  if (finalFeedLine === undefined) throw new Error('The visible final feed line is absent.')
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
+  expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
+  expect(finalFeedLine.getBoundingClientRect().bottom).toBeLessThanOrEqual(before.top)
   await userEvent.click(
     within(canvasElement).getByRole('button', { name: SCROLL_HISTORY_TO_START_LABEL }),
   )

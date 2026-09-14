@@ -14,6 +14,8 @@ import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
 
+import './session-screen.css'
+
 type SessionShellProps = {
   composer: ReactNode
   inspector: ReactNode
@@ -119,11 +121,14 @@ export function SessionShell({
         reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
         workspace={
-          <section aria-label="Session workspace" className="flex h-full min-h-0 flex-col">
+          <section aria-label="Session workspace" className="relative flex h-full min-h-0 flex-col">
             <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
-            <section aria-label="Session feed" className="min-h-0 flex-1 overflow-hidden">
+            <section
+              aria-label="Session feed"
+              className="session-screen__feed min-h-0 flex-1 overflow-hidden"
+            >
               <BasicFeed
                 activeEvidenceId={activeEvidenceId}
                 compactionStartedAt={compactionStartedAt}
@@ -138,7 +143,7 @@ export function SessionShell({
             </section>
             <section
               aria-label="Session composer"
-              className="relative isolate shrink-0 bg-background px-(--spacing-shell-inset)"
+              className="absolute inset-x-0 bottom-0 z-10 isolate px-(--spacing-shell-inset)"
             >
               <div
                 aria-hidden="true"
