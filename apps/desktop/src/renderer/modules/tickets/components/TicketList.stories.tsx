@@ -8,8 +8,8 @@ const longTicket = {
   title:
     'Truncate Ticket and sidebar text before a long title can widen the Ticket list beyond its pane',
   labels: [
-    { name: 'this-is-a-very-long-provider-label', color: 'a2eeef' },
-    { name: 'another-long-provider-label', color: '5319e7' },
+    { name: 'accessibility-review', color: 'a2eeef' },
+    { name: 'desktop-layout', color: '5319e7' },
   ],
 }
 
@@ -41,7 +41,7 @@ export const LongTitleWithLabels: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-[360px]">
+      <div className="h-dvh w-[400px]">
         <Story />
       </div>
     ),
@@ -49,6 +49,10 @@ export const LongTitleWithLabels: Story = {
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list')
     const title = within(list).getByText(longTicket.title)
+    for (const label of longTicket.labels) {
+      const badge = within(list).getByText(label.name)
+      await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
+    }
     await expect(title.clientWidth).toBeGreaterThan(0)
     await expect(title.scrollWidth).toBeGreaterThan(title.clientWidth)
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)

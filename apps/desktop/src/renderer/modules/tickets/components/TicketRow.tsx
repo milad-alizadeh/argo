@@ -47,11 +47,7 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
   return (
     <span className="flex shrink-0 items-center gap-(--spacing-shell-tight)">
       {labels.slice(0, SHOWN_LABELS).map((label) => (
-        <TicketLabel
-          className="max-w-(--size-ticket-label-max) truncate"
-          key={label.name}
-          label={label}
-        />
+        <TicketLabel key={label.name} label={label} />
       ))}
       {hidden > 0 ? (
         <span className="type-meta text-faint">
