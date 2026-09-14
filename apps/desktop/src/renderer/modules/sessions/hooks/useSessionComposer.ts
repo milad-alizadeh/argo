@@ -7,6 +7,7 @@ import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
 import type { TurnMarkerView } from '../feed/turn-marker'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionFeedRow } from '../types'
 import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composerIdentity'
@@ -43,7 +44,10 @@ function useComposerFacts(
   setFailure: (failure: Failure | null) => void,
 ) {
   const { cli, cockpit, roster, selectedSessionId } = options
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
+  // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
+  const pending = useSessionCreationStore((state) => state.pending)
+  const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
+  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pendingSessionId)
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
     cli,

@@ -5,7 +5,7 @@ import type { Send } from '../components/useSend'
 import type { SessionCli } from '../harness/harnesses'
 import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
-import { type ComposerIdentity, composerIdentityKey } from './composerIdentity'
+import type { ComposerIdentity } from './composerIdentity'
 import { type SendDeps, sendToDraftIdentity, sendToSessionIdentity } from './send-turn'
 import type { Failure } from './useSessionComposer-actions'
 import type { useSessionMutations } from './useSessionMutations'
@@ -30,6 +30,6 @@ export function useComposerSend(request: {
     const turn = { prompt, setup, attachments }
     return identity.kind === 'session'
       ? sendToSessionIdentity(typedDeps, identity.sessionId, turn)
-      : sendToDraftIdentity(typedDeps, composerIdentityKey(identity), turn)
+      : sendToDraftIdentity(typedDeps, identity, turn)
   }
 }

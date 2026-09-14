@@ -9,9 +9,10 @@ import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
-import { findSessionRow } from './composerIdentity'
+import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
-import { sendMessage, startNewSession } from './useSessionComposer-actions'
+import { sendMessage } from './useSessionComposer-actions'
+import { startNewSession } from './useStartNewSession'
 import type { useSessionMutations } from './useSessionMutations'
 import type { TurnMarkerApi } from './useTurnMarker'
 
@@ -46,6 +47,7 @@ export function sendToSelected(request: {
 export function sendToNewSession(request: {
   cli: SessionCli
   cockpit: Cockpit
+  identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
   send: ReturnType<typeof useSessionMutations>['send']
@@ -57,18 +59,31 @@ export function sendToNewSession(request: {
   // Marker begun under the draft composer's key lives there too.
   onStarted?: (sessionId: string) => void
 }) {
-  const { cli, cockpit, navigate, queryClient, setFailure, start, turn, watchTurn, onStarted } =
-    request
+  const {
+    cli,
+    cockpit,
+    identity,
+    navigate,
+    queryClient,
+    setFailure,
+    start,
+    turn,
+    watchTurn,
+    onStarted,
+  } = request
   const { prompt, setup, attachments } = turn
   return startNewSession(
-    { cli, cockpit, prompt, setup, attachments, start, setFailure },
-    (sessionId) => {
-      if (setup !== null) watchTurn(sessionId, setup, null)
-      return invalidateSessionRoster(queryClient)
-    },
-    (sessionId) => {
-      onStarted?.(sessionId)
-      navigate(`/sessions/${sessionId}`, { state: COMPOSER_FOCUS_STATE })
+    { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
+    {
+      afterStart: (sessionId) => {
+        if (setup !== null) watchTurn(sessionId, setup, null)
+        return invalidateSessionRoster(queryClient)
+      },
+      onStarted: (sessionId) => {
+        onStarted?.(sessionId)
+        navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE })
+      },
+      onFailed: () => navigate('/sessions/new', { replace: true }),
     },
   )
 }
@@ -108,12 +123,18 @@ export async function sendToSessionIdentity(deps: SendDeps, sessionId: string, t
   return sent
 }
 
-export async function sendToDraftIdentity(deps: SendDeps, key: string, turn: TurnInput) {
+export async function sendToDraftIdentity(
+  deps: SendDeps,
+  identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
+  turn: TurnInput,
+) {
   const { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn } = deps
+  const key = composerIdentityKey(identity)
   marker.begin(key, { stage: 'starting', since: null, prompt: turn.prompt })
   const sent = await sendToNewSession({
     cli,
     cockpit,
+    identity,
     navigate,
     queryClient,
     send,
