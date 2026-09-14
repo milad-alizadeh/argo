@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 
 import type { SessionFeedRow } from '../types'
+import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { createHeightStore, type Reading } from './heights'
 import { containerReading } from './measure'
 import { runSettlePass } from './relayout'
@@ -28,6 +29,8 @@ type SettledFeedOptions = {
   // behind the warm-up rule 3 built for new content.
   contentRevision: string | null
   rows: readonly SessionFeedRow[]
+  isRunning: boolean
+  stallTimeoutMs?: number
 }
 
 // Nothing is drawn until this returns a reading. A cached one returns on the same tick, which is
@@ -39,12 +42,15 @@ export function useSettledFeed({
   revision,
   contentRevision,
   rows,
+  isRunning,
+  stallTimeoutMs = FEED_STALL_TIMEOUT_MS,
 }: SettledFeedOptions) {
   const column = useRef<HTMLDivElement>(null)
   const measured = useRef<HTMLDivElement>(null)
   const activeRef = useRef(active)
   activeRef.current = active
   const [settled, setSettled] = useState<Settled | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
   const width = useSettledWidth(active, activeRef, column)
   const geometry = useGeometry(active, activeRef, measured)
   // The (Session, content) pair the last settled reading was drawn against, read and written in
@@ -89,11 +95,26 @@ export function useSettledFeed({
       isActive: () => activeRef.current,
       setSettled,
     })
+    // A stall here is a DOM measurement never finishing, which this pipeline has never actually
+    // seen: `retryToken` is not a dependency, because retrying does not mean re-measuring, it
+    // means restarting the stall bound below while the real data keeps arriving on its own poll.
   }, [active, sessionId, revision, contentRevision, rows, width, geometry])
 
   // Never hand back another Session's document. A newer revision of this Session is deliberately
   // allowed to keep the older settled document visible while its complete replacement measures.
   const settledHere = settled !== null && settled.reading.sessionId === sessionId ? settled : null
 
-  return { column, measured, settled: settledHere }
+  // The Feed pane shows RunningFeed exactly while this is true (feed-content.tsx). Past the
+  // bound, it shows StalledFeed instead of spinning forever (#2102).
+  // A kept document keeps its own hook instance for the Session it belongs to (BasicFeed.tsx), so
+  // this bound only ever watches a first load: a later revision leaves the previous settled
+  // document in place (the rule above) rather than making `awaitingFeed` true again.
+  const awaitingFeed = isRunning && (settledHere === null || settledHere.rows.length === 0)
+  const stalled = useStallTimer(awaitingFeed ? `${sessionId}:${retryToken}` : false, stallTimeoutMs)
+
+  const retry = useCallback(() => {
+    setRetryToken((token) => token + 1)
+  }, [])
+
+  return { column, measured, settled: settledHere, stalled, retry }
 }

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionEvidenceInspector } from './SessionEvidenceInspector'
 
@@ -13,6 +13,7 @@ const command = {
   detail: '13 passed',
   status: 'succeeded' as const,
   evidence: { kind: 'output' as const, title: 'bun test', source: '13 pass\n0 fail' },
+  text: 'bun test',
 }
 
 const meta: Meta<typeof SessionEvidenceInspector> = {
@@ -21,7 +22,7 @@ const meta: Meta<typeof SessionEvidenceInspector> = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-(--size-session-inspector)">
+      <div className="flex h-dvh min-h-0 w-full">
         <Story />
       </div>
     ),
@@ -32,7 +33,7 @@ export default meta
 type Story = StoryObj<typeof SessionEvidenceInspector>
 
 export const CommandOutput: Story = {
-  args: { evidence: command },
+  args: { evidence: command, sessionId: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('bun test')).toHaveLength(2)
@@ -40,24 +41,35 @@ export const CommandOutput: Story = {
   },
 }
 
-// File content and a diff draw the same recorded-text block.
-export const RecordedText: Story = {
+export const FileDiff: Story = {
   args: {
+    sessionId: null,
     evidence: {
       ...command,
       id: 'file',
-      evidence: { kind: 'document', title: 'src/app.ts', source: 'export {}' },
+      evidence: {
+        kind: 'diff',
+        title: 'src/app.ts',
+        source:
+          '@@ -8,3 +8,3 @@\n export function run() {\n-  return oldValue\n+  return newValue\n }',
+      },
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('src/app.ts')).toBeVisible()
-    await expect(canvas.getByText('export {}')).toBeVisible()
+    await expect(canvas.getByText(/oldValue/)).toBeVisible()
+    await expect(canvas.getByText(/newValue/)).toBeVisible()
+    await expect(canvas.getAllByText('9')).toHaveLength(2)
+    await expect(canvas.getByRole('button', { name: 'Copy diff' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Current file' }))
+    await expect(canvas.getByText('Current file is unavailable.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Diff' })).toHaveFocus()
   },
 }
 
 export const Unavailable: Story = {
-  args: { evidence: { ...command, id: 'missing', evidence: null } },
+  args: { evidence: { ...command, id: 'missing', evidence: null }, sessionId: null },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('Recorded evidence is unavailable.')).toBeVisible()
   },
@@ -65,6 +77,7 @@ export const Unavailable: Story = {
 
 export const Diagram: Story = {
   args: {
+    sessionId: null,
     evidence: {
       shape: 'diagram' as const,
       id: 'diagram',

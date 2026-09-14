@@ -52,6 +52,7 @@ export function SessionDelegationInspector({
             onAnswerQuestion={() => {}}
             onOpenEvidence={onOpenEvidence}
             onOpenSession={onOpenSession}
+            posture={null}
             questionFailure={() => null}
             turnMarker={null}
           />

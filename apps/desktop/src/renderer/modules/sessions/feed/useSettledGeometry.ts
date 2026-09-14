@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useState } from 'react'
+import { type MutableRefObject, type RefObject, useEffect, useState } from 'react'
 
 import type { Reading } from './heights'
 import { containerReading } from './measure'
@@ -12,7 +12,7 @@ const GEOMETRY_REFRESH_MS = 500
 // on is read elsewhere, off the container the rows are actually laid out in.
 export function useSettledWidth(
   active: boolean,
-  activeRef: RefObject<boolean>,
+  activeRef: MutableRefObject<boolean>,
   column: RefObject<HTMLElement | null>,
 ) {
   const [width, setWidth] = useState<number | null>(null)
@@ -45,7 +45,7 @@ export type Geometry = Pick<Reading, 'font' | 'zoom'>
 
 export function useGeometry(
   active: boolean,
-  activeRef: RefObject<boolean>,
+  activeRef: MutableRefObject<boolean>,
   measured: RefObject<HTMLElement | null>,
 ) {
   const [geometry, setGeometry] = useState<Geometry | null>(null)

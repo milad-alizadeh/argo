@@ -10,6 +10,15 @@ import { TurnMarker } from './TurnMarker'
 import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
 
+// Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
+export type FeedQuestionHandlers = {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
+  stallTimeoutMs?: number
+}
+
 type FeedDocumentProps = {
   active: boolean
   activeEvidenceId: string | null
@@ -21,12 +30,9 @@ type FeedDocumentProps = {
   onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
+  posture: 'managed' | 'external' | null
   turnMarker: TurnMarkerView | null
-  onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
-}
+} & FeedQuestionHandlers
 
 function compactionMarker(
   startedAt: string | null,
@@ -49,6 +55,28 @@ function handoffMarker(
   return null
 }
 
+// The hidden measuring pass draws every row with no interaction wired up: it only needs to match
+// the drawn layout's geometry, never to answer a click.
+function measuredRows(
+  feed: SessionFeed,
+  groups: Pick<ReturnType<typeof useToolGroups>, 'openToolGroups' | 'onOpenToolGroup'>,
+  props: Pick<FeedDocumentProps, 'activeEvidenceId' | 'onOpenEvidence'>,
+) {
+  return feed.rows.map((row) => (
+    <FeedRow
+      key={row.id}
+      activeEvidenceId={props.activeEvidenceId}
+      onOpenEvidence={props.onOpenEvidence}
+      onOpenToolGroup={groups.onOpenToolGroup}
+      openToolGroups={groups.openToolGroups}
+      onAnswerQuestion={() => {}}
+      answeringQuestionId={null}
+      questionFailure={() => null}
+      row={row}
+    />
+  ))
+}
+
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -62,20 +90,24 @@ export function FeedDocument({
   onOpenSession,
   feed,
   isRunning,
+  posture,
   turnMarker,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
+  stallTimeoutMs,
 }: FeedDocumentProps) {
   const { onOpenToolGroup, openToolGroups } = useToolGroups()
   const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
-  const { column, measured, settled } = useSettledFeed({
+  const { column, measured, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
     revision: layoutRevision,
     contentRevision: feed.revision,
     rows: feed.rows,
+    isRunning,
+    stallTimeoutMs,
   })
   const revealsFor = useReveals()
   const DrawnRow = useDrawnRow({
@@ -88,7 +120,15 @@ export function FeedDocument({
     answeringQuestionId,
     questionFailure,
   })
-  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
+  const content = feedContent({
+    settled,
+    isRunning,
+    stalled,
+    posture,
+    onRetry: retry,
+    DrawnRow,
+    revealsFor,
+  })
 
   return (
     <div
@@ -101,19 +141,11 @@ export function FeedDocument({
     >
       <div className="feed__column" ref={column}>
         <div aria-hidden="true" className="feed__measured" ref={measured}>
-          {feed.rows.map((row) => (
-            <FeedRow
-              key={row.id}
-              activeEvidenceId={activeEvidenceId}
-              onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={onOpenToolGroup}
-              openToolGroups={openToolGroups}
-              onAnswerQuestion={() => {}}
-              answeringQuestionId={null}
-              questionFailure={() => null}
-              row={row}
-            />
-          ))}
+          {measuredRows(
+            feed,
+            { openToolGroups, onOpenToolGroup },
+            { activeEvidenceId, onOpenEvidence },
+          )}
         </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}

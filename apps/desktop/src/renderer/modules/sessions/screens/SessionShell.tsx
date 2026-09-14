@@ -1,4 +1,5 @@
 import { type ReactNode, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
@@ -23,14 +24,42 @@ function ComposerFade({ top }: { top: number | null }) {
   )
 }
 
+// Unmounted rather than hidden: a Session with nothing selected has no composer at all (#2105).
+function ComposerSection({
+  composer,
+  fadeTop,
+  label,
+  sectionRef,
+}: {
+  composer: ReactNode | null
+  fadeTop: number | null
+  label: string
+  sectionRef: React.RefObject<HTMLElement | null>
+}) {
+  if (composer === null) return null
+  return (
+    <>
+      <ComposerFade top={fadeTop} />
+      <section
+        aria-label={label}
+        className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+        ref={sectionRef}
+      >
+        {composer}
+      </section>
+    </>
+  )
+}
+
 type SessionShellProps = {
-  composer: ReactNode
+  composer: ReactNode | null
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
   compactionStartedAt?: string | null
   compactionPercentage?: number | null
   compactionTokens?: string | null
@@ -38,6 +67,7 @@ type SessionShellProps = {
   handoffTo?: string | null
   onOpenSession: (sessionId: string) => void
   isRunning: boolean
+  posture?: 'managed' | 'external' | null
   optimisticRow?: SessionFeedRow | null
   turnMarker?: TurnMarkerView | null
   selectedSessionId: string | null
@@ -56,6 +86,7 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  onRetryFeed,
   compactionStartedAt = null,
   compactionPercentage = null,
   compactionTokens = null,
@@ -63,6 +94,7 @@ export function SessionShell({
   handoffTo = null,
   onOpenSession,
   isRunning,
+  posture = null,
   optimisticRow = null,
   turnMarker = null,
   selectedSessionId,
@@ -77,6 +109,7 @@ export function SessionShell({
   const composerElement = useRef<HTMLElement>(null)
   const workspaceElement = useRef<HTMLElement>(null)
   const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
+  const { t } = useTranslation('sessions')
 
   return (
     <main
@@ -113,7 +146,9 @@ export function SessionShell({
                 onOpenSession={onOpenSession}
                 feed={feed}
                 failure={feedError}
+                onRetryFeed={onRetryFeed}
                 isRunning={isRunning}
+                posture={posture}
                 optimisticRow={optimisticRow}
                 turnMarker={turnMarker}
                 selectedSessionId={selectedSessionId}
@@ -123,14 +158,12 @@ export function SessionShell({
                 questionFailure={questionFailure}
               />
             </section>
-            <ComposerFade top={fadeTop} />
-            <section
-              aria-label="Session composer"
-              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
-              ref={composerElement}
-            >
-              {composer}
-            </section>
+            <ComposerSection
+              composer={composer}
+              fadeTop={fadeTop}
+              label={t('composerRegionLabel')}
+              sectionRef={composerElement}
+            />
           </section>
         }
       />

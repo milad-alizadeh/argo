@@ -8,9 +8,29 @@ import {
   Wrench,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockFilename,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from '@/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
 import { TaskItem } from '@/components/ai-elements/task'
+import {
+  Terminal,
+  TerminalContent,
+  TerminalCopyButton,
+  TerminalHeader,
+  TerminalTitle,
+} from '@/components/ai-elements/terminal'
+import { TOOL_CONTENT_ROUTE } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import type { SessionFeedRow } from '../types'
+import { CodeLanguageIcon } from './content/CodeLanguageIcon'
+import { codeLanguageLabel, detectCodeLanguage } from './content/codeLanguage'
+import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
@@ -85,6 +105,52 @@ export function FeedToolLine({
   )
 }
 
+// A command needs no separate evidence-panel step: its own text is the thing there is to read,
+// so it draws inline as a labelled code block, never styled as a terminal (#2110). Its output, if
+// the call has finished, is attached directly beneath it — the terminal styling belongs there,
+// since that content genuinely is terminal output.
+function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
+  const { t } = useTranslation('sessions')
+  const source = call.text ?? ''
+  const language = detectCodeLanguage(source, 'bash')
+  const languageLabel = codeLanguageLabel(language)
+  return (
+    <div className="space-y-2">
+      <CodeBlock
+        code={source}
+        language={language?.grammar ?? null}
+        className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
+      >
+        <CodeBlockHeader className="bg-muted type-meta">
+          <CodeBlockTitle>
+            <span aria-hidden="true">
+              <CodeLanguageIcon language={language} />
+            </span>
+            <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
+          </CodeBlockTitle>
+          <CodeBlockActions>
+            {call.status === 'failed' ? (
+              <span className="text-destructive">{t('tools.failed')}</span>
+            ) : (
+              <StatusIcon status={call.status} />
+            )}
+            <CodeBlockCopyButton aria-label={t('tools.copyCommand')} className="size-7" />
+          </CodeBlockActions>
+        </CodeBlockHeader>
+      </CodeBlock>
+      {call.evidence?.kind === 'output' ? (
+        <Terminal output={call.evidence.source} aria-label={call.evidence.title}>
+          <TerminalHeader>
+            <TerminalTitle className="type-meta" />
+            <TerminalCopyButton />
+          </TerminalHeader>
+          <TerminalContent className="type-code" />
+        </Terminal>
+      ) : null}
+    </div>
+  )
+}
+
 export function FeedToolGroup({
   group,
   activeEvidenceId,
@@ -98,13 +164,21 @@ export function FeedToolGroup({
   onOpen: (row: ToolRow) => void
   onOpenChange: (open: boolean) => void
 }) {
+  // A code block already draws its own border, which would clash with the connecting line; a
+  // group of evidence-panel rows alone keeps the line, matching every collapsible outside a group.
+  const hasInlineCall = group.calls.some((call) => TOOL_CONTENT_ROUTE[call.kind] === 'inline')
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
         <TaskItem key={call.id}>
-          <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
+          {TOOL_CONTENT_ROUTE[call.kind] === 'inline' ? (
+            <FeedInlineCommand call={call} />
+          ) : (
+            <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
+          )}
         </TaskItem>
       ))}
+      contentVariant={hasInlineCall ? 'plain' : 'line'}
       icon={TerminalIcon}
       onOpenChange={onOpenChange}
       open={open}

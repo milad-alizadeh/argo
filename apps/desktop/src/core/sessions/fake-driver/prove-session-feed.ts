@@ -11,12 +11,19 @@ import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
 import { proveSessionDiagram } from './session-diagram-case'
-import { appendProse, growCodexTranscript, removeProse, streamProse } from './session-feed-fixture'
+import {
+  appendProse,
+  growCodexTranscript,
+  openSessionsScreen,
+  removeProse,
+  streamProse,
+} from './session-feed-fixture'
 import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
 import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
 import { proveSessionQuestion } from './session-question-case'
+import { proveDuplicateSend, proveReplyWait } from './session-reply-delay-case'
 import { proveContract } from './session-roster-contract-case'
 import {
   provePackagedRosterRestart,
@@ -31,6 +38,7 @@ import { proveToolCalls } from './session-tool-calls-case'
 import { proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
+let delayedRoot: string | undefined
 const cases = []
 let harness: Awaited<ReturnType<typeof createPackagedSessionHarness>> | undefined
 try {
@@ -113,6 +121,16 @@ try {
   await ran(['session-claude-rename'], () =>
     proveClaudeRename(page, { project: fixture.project, transcripts: fixture.claudeTranscripts }),
   )
+  await harness.close()
+  delayedRoot = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
+  const delayed = await createPackagedSessionHarness(delayedRoot, { replyDelayMs: 2_000 })
+  harness = delayed
+  page = await delayed.launch()
+  await openSessionsScreen(page)
+  await ran(['session-reply-wait'], () => proveReplyWait(page, delayed.fixture.claudeTranscripts))
+  await ran(['session-duplicate-send'], () =>
+    proveDuplicateSend(page, delayed.fixture.claudeTranscripts),
+  )
   await assertShippedFusesIntact()
   console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
 } finally {
@@ -120,5 +138,6 @@ try {
     await harness?.close()
   } finally {
     await rm(root, { recursive: true, force: true })
+    if (delayedRoot !== undefined) await rm(delayedRoot, { recursive: true, force: true })
   }
 }

@@ -11,6 +11,7 @@ const SHARED_SESSION_ERRORS = {
   'internal-error': 'Argo could not read these Sessions.',
   'invalid-response': 'Argo received an invalid Session response.',
   'connection-lost': 'The connection to Argo was lost.',
+  cancelled: 'Argo cancelled this Session read.',
 } as const
 
 // One failure kind, the same code for every CLI (#2030); only the message names which CLI failed.

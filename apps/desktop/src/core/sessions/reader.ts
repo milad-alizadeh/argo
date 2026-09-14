@@ -1,7 +1,3 @@
-// The one Session reader in the main process (#2025). It parses each request once, at this
-// seam, and returns a reply typed by the contract's own schemas; nothing downstream parses or
-// casts again. Each CLI registers a `SessionSource` here rather than shared code branching on a
-// `cli` name (ADR-0021, ADR-0024).
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
@@ -11,7 +7,6 @@ import {
   driveSessionError,
   isDriveCli,
   sessionError,
-  sessionFeedRequestSchema,
   sessionListRequestSchema,
   sessionRenameRequestSchema,
 } from './contract'
@@ -20,14 +15,10 @@ import type { FeedProjectionState } from './feed-incremental'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { archiveListReply } from './read-archive-list'
-import {
-  delegationSource,
-  delegationUsageReply,
-  type OwnerFor,
-  shellOutputReply,
-} from './read-background-work'
-import { readFeedWithOverlay, readOwnedFeed } from './read-owned-feed'
+import { delegationUsageReply, type OwnerFor, shellOutputReply } from './read-background-work'
+import { workspaceFileReply } from './read-file-request'
 import { readFailure, versionFailure } from './read-request'
+import { createFeedReader } from './read-session-feed'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
@@ -104,6 +95,7 @@ export function createSessionReader(
   const feeds = new Map<string, HeldFeed>()
   const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
+  const feedReader = createFeedReader(ownership, feeds, projections)
 
   return {
     async ownerCliFor(sessionId) {
@@ -133,29 +125,9 @@ export function createSessionReader(
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (value) => archiveListReply(sources, value),
-    async readSessionFeed(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionFeedRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
-      try {
-        const owner = await ownership.ownerFor(parsed.data.sessionId)
-        if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-        const { sessionId, delegationId } = parsed.data
-        if (delegationId !== null) {
-          const source = delegationSource(owner, delegationId)
-          const key = `${sessionId}#${delegationId}`
-          const context = { source, feeds, projections, managed: false, key }
-          return await readOwnedFeed(context, parsed.data)
-        }
-        const managed = ownership.managed(owner, sessionId)
-        return await readFeedWithOverlay(
-          { source: owner, feeds, projections, managed, key: sessionId },
-          parsed.data,
-        )
-      } catch (error) {
-        return sessionError(readFailure(error), parsed.data.requestId)
-      }
-    },
+    readWorkspaceFile: (value) => workspaceFileReply(ownership.ownerFor, value),
+    readSessionFeed: feedReader.readSessionFeed,
+    cancelSessionFeed: feedReader.cancelSessionFeed,
     readShellOutput: (value) => shellOutputReply(ownership.ownerFor, value),
     readDelegationUsage: (value) => delegationUsageReply(ownership.ownerFor, value),
     renameSession: (value) => renameReply(ownership.ownerFor, value),

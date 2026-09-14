@@ -1,3 +1,4 @@
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { SessionInspector } from '../components/SessionInspector'
 import { SessionComposerArea, SessionHandoffFacts } from '../components/SessionScreenDetails'
 import { SessionWorkButtons } from '../components/SessionWorkButtons'
@@ -38,6 +39,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       delegation={model.delegation}
       delegationFeed={model.delegationFeed}
       evidence={evidence}
+      sessionId={model.selectedSessionId}
       handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
@@ -49,37 +51,45 @@ function Inspector({ model }: { model: SessionScreenModel }) {
 
 export function SessionScreenView() {
   const model = useSessionScreenModel()
-  const { composer, evidence, feed, feedError, harness, permission, question, session } = model
-  const { navigate, selectedSessionId, setEvidence, workReveal } = model
+  const { composer, evidence, feed, feedError, question, session } = model
+  const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
+  const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
+  const answerQuestion = (
+    _sessionId: string,
+    questionId: string,
+    answers: ClaudeQuestionAnswer[],
+  ) => void question.decide(questionId, answers)
   return (
     <SessionShell
       feed={feed}
       feedError={feedError}
+      onRetryFeed={retryFeed}
       compactionStartedAt={session?.compactionStartedAt ?? null}
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
       handoffStartedAt={session?.handoffStartedAt ?? null}
       handoffTo={session?.handoffTo ?? null}
-      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
+      onOpenSession={openSession}
       isRunning={session?.status === 'running'}
+      posture={session?.posture ?? null}
       optimisticRow={composer.optimisticRow}
       turnMarker={composer.markerView}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
-      onAnswerQuestion={(_sessionId, questionId, answers) =>
-        void question.decide(questionId, answers)
-      }
-      answeringQuestionId={question.answeringId}
-      questionFailure={question.failureFor}
+      onAnswerQuestion={answerQuestion}
+      answeringQuestionId={model.question.answeringId}
+      questionFailure={model.question.failureFor}
       composer={
-        <SessionComposerArea
-          composer={composer}
-          permission={permission}
-          questionPending={pendingQuestionId(feed) !== null}
-          session={session}
-          harness={harness}
-        />
+        selectedSessionId === null ? null : (
+          <SessionComposerArea
+            composer={model.composer}
+            permission={model.permission}
+            questionPending={pendingQuestionId(feed) !== null}
+            session={session}
+            harness={model.harness}
+          />
+        )
       }
       headerControls={<WorkButtons model={model} />}
       inspector={<Inspector model={model} />}
