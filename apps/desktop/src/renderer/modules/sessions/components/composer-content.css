@@ -97,8 +97,11 @@
   height: var(--size-icon-control);
 }
 
-.composer-inline-context::before {
-  margin-inline-end: var(--spacing-shell-tight);
-  color: var(--muted-foreground);
-  content: attr(data-context-icon);
+.composer-inline-context {
+  font-size: 0;
+}
+.composer-inline-context::after {
+  content: attr(data-context-label);
+  font-size: var(--text-prose);
+  line-height: var(--text-prose--line-height);
 }
