@@ -87,7 +87,10 @@ export function FeedDocument({
     answeringQuestionId,
     questionFailure,
   })
-  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
+  const lastRow = feed.rows[feed.rows.length - 1]
+  const streamingRowId =
+    isRunning && lastRow?.shape === 'prose' && lastRow.role === 'assistant' ? lastRow.id : null
+  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor, streamingRowId })
 
   return (
     <div

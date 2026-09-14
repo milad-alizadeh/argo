@@ -9,6 +9,7 @@ type FeedRowComponent = (props: {
   row: SessionFeedRow
   height?: number
   reveal?: Reveal
+  streaming?: boolean
 }) => ReactNode
 type AnchoredFeedProps = {
   FeedRow: FeedRowComponent
@@ -16,6 +17,7 @@ type AnchoredFeedProps = {
   settled: Settled
   // Asked of the document actually drawn, which can trail `settled` while the reader scrolls.
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  streamingRowId: string | null
 }
 type AnchoredFeedState = Pick<AnchoredFeedProps, 'rows' | 'settled'>
 
@@ -88,7 +90,7 @@ export class AnchoredFeed extends Component<AnchoredFeedProps, AnchoredFeedState
   }
 
   render() {
-    const { FeedRow, revealsFor } = this.props
+    const { FeedRow, revealsFor, streamingRowId } = this.props
     const { rows, settled } = this.state
     const reveals = revealsFor(settled)
     return (
@@ -113,6 +115,7 @@ export class AnchoredFeed extends Component<AnchoredFeedProps, AnchoredFeedState
                     height={settled.heights.get(row.id)}
                     reveal={reveals.get(row.id)}
                     row={row}
+                    streaming={row.id === streamingRowId}
                   />
                 </MessageScroller.Item>
               ))}

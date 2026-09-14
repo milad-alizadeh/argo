@@ -6,11 +6,13 @@ import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
+import { useStreamingText } from './streaming-text'
 
 export type FeedRowProps = {
   row: SessionFeedRow
   height?: number
   reveal?: Reveal
+  streaming?: boolean
   activeEvidenceId: string | null
   openToolGroups: ReadonlySet<string>
   onOpenToolGroup: (id: string, open: boolean) => void
@@ -24,6 +26,7 @@ export function FeedRow({
   row,
   height,
   reveal,
+  streaming = false,
   activeEvidenceId,
   onOpenEvidence,
   openToolGroups,
@@ -33,16 +36,24 @@ export function FeedRow({
   questionFailure,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
-  useRevealAnimation(element, reveal)
+  const hasStreamed = useRef(streaming)
+  if (streaming) hasStreamed.current = true
+  const rowReveal = streaming ? undefined : reveal
+  const text = useStreamingText(
+    row.shape === 'prose' && row.role === 'assistant' ? row.text : '',
+    streaming,
+  )
+  useRevealAnimation(element, rowReveal)
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
-      data-revealing={reveal === undefined ? undefined : true}
+      data-revealing={rowReveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
       ref={element}
       style={height === undefined || height === 0 ? undefined : { height: `${height}px` }}
     >
+      <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
@@ -52,8 +63,18 @@ export function FeedRow({
         answeringQuestionId={answeringQuestionId}
         questionFailure={questionFailure}
         row={row}
+        streamingText={text}
       />
     </article>
+  )
+}
+
+function StreamingStatus({ hasStreamed, streaming }: { hasStreamed: boolean; streaming: boolean }) {
+  if (!hasStreamed) return null
+  return (
+    <span aria-live="polite" className="sr-only" role="status">
+      {streaming ? 'Assistant is responding.' : 'Assistant response complete.'}
+    </span>
   )
 }
 
@@ -66,7 +87,8 @@ function FeedRowContent({
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
-}: Omit<FeedRowProps, 'height'>) {
+  streamingText,
+}: Omit<FeedRowProps, 'height'> & { streamingText: string }) {
   switch (row.shape) {
     case 'tool':
       return <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
@@ -87,7 +109,7 @@ function FeedRowContent({
             activeEvidenceId={activeEvidenceId}
             onOpenEvidence={onOpenEvidence}
             rowId={row.id}
-            text={row.text}
+            text={streamingText}
           />
         )
       return <FeedPrompt text={row.text} />

@@ -363,3 +363,133 @@ export const StreamingReplyReducedMotion: Story = {
     }
   },
 }
+
+const streamingText = 'The check ran.'
+const firstChunkText =
+  'The check ran. The reader sees each new word at a steady pace while the response arrives.'
+const streamedText =
+  'The check ran. The reader sees each new word at a steady pace while the response is still arriving.'
+
+function streamingAssistantRow(text: string) {
+  return { shape: 'prose' as const, id: 'streaming-text', role: 'assistant' as const, text }
+}
+
+const streamingTextFeed = {
+  ...streamingFeed,
+  revision: 'streaming-text-one',
+  rows: [
+    { shape: 'prose', id: 'streaming-prompt', role: 'user', text: 'Summarise the check.' },
+    streamingAssistantRow(streamingText),
+  ],
+} satisfies SessionFeed
+
+const streamedTextFeed = {
+  ...streamingTextFeed,
+  revision: 'streaming-text-three',
+  rows: [...streamingTextFeed.rows.slice(0, 1), streamingAssistantRow(streamedText)],
+} satisfies SessionFeed
+
+const firstChunkFeed = {
+  ...streamingTextFeed,
+  revision: 'streaming-text-two',
+  rows: [...streamingTextFeed.rows.slice(0, 1), streamingAssistantRow(firstChunkText)],
+} satisfies SessionFeed
+
+function StreamingTextFeed() {
+  const [current, setCurrent] = useState<SessionFeed>(streamingTextFeed)
+  const [running, setRunning] = useState(true)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(firstChunkFeed)}>
+        Receive chunk
+      </button>
+      <button type="button" onClick={() => setCurrent(streamedTextFeed)}>
+        Receive final chunk
+      </button>
+      <button type="button" onClick={() => setRunning(false)}>
+        Complete reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          isRunning={running}
+          selectedSessionId="streaming"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onAnswerQuestion={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Streaming prose advances independently from the transcript poll: it first trails a new chunk,
+// then reaches it, and completion settles the whole Message without waiting for another frame.
+export const SmoothedStreamingText: Story = {
+  render: () => <StreamingTextFeed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const reply = () => drawnRow(canvasElement, 'streaming-text') as HTMLElement
+    await waitFor(() => expect(reply()).toBeDefined())
+    await expect(reply()).not.toHaveTextContent(streamingText)
+    await waitFor(() => expect(reply()).toHaveTextContent(streamingText))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Assistant is responding.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive chunk' }))
+    await expect(reply()).not.toHaveTextContent(firstChunkText)
+    await expect(reply()).not.toHaveAttribute('data-revealing')
+    await waitFor(() => expect(reply()).toHaveTextContent(firstChunkText), { timeout: 3000 })
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive final chunk' }))
+    await expect(reply()).not.toHaveTextContent(streamedText)
+    await userEvent.click(canvas.getByRole('button', { name: 'Complete reply' }))
+    await waitFor(() => expect(reply()).toHaveTextContent(streamedText))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Assistant response complete.')
+  },
+}
+
+export const SmoothedStreamingTextReducedMotion: Story = {
+  render: () => <StreamingTextFeed />,
+  play: async ({ canvasElement }) => {
+    const restore = preferReducedMotion()
+    try {
+      const canvas = within(canvasElement)
+      const reply = () => drawnRow(canvasElement, 'streaming-text') as HTMLElement
+      await waitFor(() => expect(reply()).toHaveTextContent(streamingText))
+      await userEvent.click(canvas.getByRole('button', { name: 'Receive chunk' }))
+      await waitFor(() => expect(reply()).toHaveTextContent(firstChunkText))
+    } finally {
+      restore()
+    }
+  },
+}
+
+export const SmoothedStreamingTextSettled: Story = {
+  args: { feed: streamedTextFeed, isRunning: false, selectedSessionId: 'streaming' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
+    )
+  },
+}
+
+const runningToolFeed = {
+  ...streamedTextFeed,
+  revision: 'streaming-text-tool',
+  rows: [
+    ...streamedTextFeed.rows,
+    { shape: 'command-output' as const, id: 'streaming-tool', text: 'Still working.' },
+  ],
+} satisfies SessionFeed
+
+export const RunningToolAfterAssistantReply: Story = {
+  args: { feed: runningToolFeed, isRunning: true, selectedSessionId: 'streaming' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
+    )
+    await expect(drawnRow(canvasElement, 'streaming-tool')).toHaveTextContent('Still working.')
+  },
+}

@@ -4,7 +4,12 @@ import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './FeedRow'
 import type { Reveal } from './reveal'
 
-export type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
+export type DrawnRowProps = {
+  row: SessionFeedRow
+  height?: number
+  reveal?: Reveal
+  streaming?: boolean
+}
 
 export function useToolGroups() {
   const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())

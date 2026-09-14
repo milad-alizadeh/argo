@@ -26,11 +26,13 @@ export function feedContent({
   isRunning,
   DrawnRow,
   revealsFor,
+  streamingRowId,
 }: {
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  streamingRowId: string | null
 }) {
   if (settled === null) return isRunning ? <RunningFeed /> : null
   if (settled.rows.length === 0 && isRunning) return <RunningFeed />
@@ -52,6 +54,7 @@ export function feedContent({
       settled={settled}
       FeedRow={DrawnRow}
       revealsFor={revealsFor}
+      streamingRowId={streamingRowId}
     />
   )
 }
