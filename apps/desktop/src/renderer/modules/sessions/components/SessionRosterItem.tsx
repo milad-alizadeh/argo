@@ -8,7 +8,7 @@ import {
   ContextMenuTrigger,
 } from '@/renderer/components/ui/context-menu'
 import { HarnessLogo } from '../harness/HarnessLogo'
-import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
+import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesses'
 import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
@@ -114,7 +114,9 @@ export function SessionRosterItem({
                   <span className="block truncate font-medium">
                     <PromptText
                       interactiveLinks={false}
-                      renderText={(value) => <SessionReferenceText text={value} />}
+                      renderText={(value) => (
+                        <SessionReferenceText cli={sessionCliOf(session)} text={value} />
+                      )}
                       text={sessionName(session)}
                     />
                   </span>

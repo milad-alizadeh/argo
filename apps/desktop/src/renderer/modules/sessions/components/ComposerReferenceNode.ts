@@ -1,13 +1,27 @@
-import type { EditorConfig, SerializedTextNode } from 'lexical'
+import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
+import type { SessionCli } from '../harness/harnesses'
+import { cliLabel, referenceBySource, referenceSupportsCli } from './SessionReference'
+
+const SUPPORTED_CLASS =
+  'mx-0.5 inline-flex rounded-4xl border border-border bg-secondary px-2 py-0.5 font-mono text-meta text-foreground'
+const UNSUPPORTED_CLASS =
+  'mx-0.5 inline-flex rounded-4xl border border-dashed border-border bg-secondary px-2 py-0.5 font-mono text-meta text-muted-foreground'
 
 export class ComposerReferenceNode extends TextNode {
+  __cli: SessionCli | null
+
+  constructor(text: string, cli: SessionCli | null = null, key?: NodeKey) {
+    super(text, key)
+    this.__cli = cli
+  }
+
   static getType() {
     return 'composer-reference'
   }
 
   static clone(node: ComposerReferenceNode) {
-    return new ComposerReferenceNode(node.__text, node.__key)
+    return new ComposerReferenceNode(node.__text, node.__cli, node.__key)
   }
 
   static importJSON(serializedNode: SerializedTextNode) {
@@ -20,9 +34,18 @@ export class ComposerReferenceNode extends TextNode {
 
   createDOM(config: EditorConfig) {
     const element = super.createDOM(config)
-    element.className =
-      'mx-0.5 inline-flex rounded-4xl border border-border bg-secondary px-2 py-0.5 font-mono text-meta text-foreground'
-    element.dataset.reference = this.getTextContent()
+    const text = this.getTextContent()
+    const reference = referenceBySource(text)
+    const unsupported = reference !== undefined && !referenceSupportsCli(reference, this.__cli)
+    element.className = unsupported ? UNSUPPORTED_CLASS : SUPPORTED_CLASS
+    element.dataset.reference = text
+    if (unsupported) {
+      element.dataset.unsupported = 'true'
+      const fact = element.ownerDocument.createElement('span')
+      fact.className = 'sr-only'
+      fact.textContent = ` — not available for ${cliLabel(this.__cli)}`
+      element.appendChild(fact)
+    }
     return element
   }
 
@@ -31,6 +54,6 @@ export class ComposerReferenceNode extends TextNode {
   }
 }
 
-export function $createComposerReferenceNode(text: string) {
-  return new ComposerReferenceNode(text)
+export function $createComposerReferenceNode(text: string, cli: SessionCli | null = null) {
+  return new ComposerReferenceNode(text, cli)
 }

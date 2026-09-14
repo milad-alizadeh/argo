@@ -86,6 +86,7 @@ export function ComposerForm({
           <div className="relative min-w-0 flex-1">
             <ComposerEditor
               key={sessionId}
+              cli={harness?.cli ?? null}
               draft={draft}
               editorRef={editorRef}
               focusOnMount={focusOnMount}

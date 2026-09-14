@@ -61,6 +61,9 @@ bun run quality
 
 Formatting is preserved while you edit.`
 
+const CODEX_REFERENCE_DRAFT =
+  'Run `bun run quality` before @argo-plugin reviews it. See [notes](https://example.com/notes).'
+
 function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
   const [sessionId, setSessionId] = useState('session-one')
   const [sent, setSent] = useState<string | null>(null)
@@ -91,15 +94,28 @@ function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
 }
 
 // Closing the composer stands in for leaving the Session page and coming back to it.
-function ClosableComposerStory() {
+function ClosableComposerStory({ cli = 'claude' }: { cli?: SessionCli }) {
   const [open, setOpen] = useState(true)
+  const [sent, setSent] = useState<string | null>(null)
 
   return (
     <>
       <Button onClick={() => setOpen(!open)} type="button" variant="outline">
         {open ? 'Leave the Session' : 'Return to the Session'}
       </Button>
-      {open ? <SessionComposer onSend={async () => true} sessionId="closable-session" /> : null}
+      {open ? (
+        <SessionComposer
+          harness={{ cli }}
+          onSend={async (text) => {
+            setSent(text)
+            return true
+          }}
+          sessionId="closable-session"
+        />
+      ) : null}
+      <output className="mt-4 block text-sm" data-testid="sent-message">
+        {sent}
+      </output>
     </>
   )
 }
@@ -236,6 +252,26 @@ function PendingSendStory() {
         plan={null}
         sessionId={sessionId}
       />
+    </>
+  )
+}
+
+function CodexComposerStory() {
+  const [sent, setSent] = useState<string | null>(null)
+
+  return (
+    <>
+      <SessionComposer
+        harness={{ cli: 'codex' }}
+        onSend={async (text) => {
+          setSent(text)
+          return true
+        }}
+        sessionId="codex-session"
+      />
+      <output className="mt-4 block text-sm" data-testid="sent-message">
+        {sent}
+      </output>
     </>
   )
 }
@@ -439,6 +475,66 @@ export const RichFormatting: Story = {
     await expect(canvas.getByRole('link', { name: 'Release notes' })).toBeVisible()
     await expect(canvas.getByText('bun run quality')).toBeVisible()
     await expect(canvas.getByRole('separator')).toBeVisible()
+  },
+}
+
+// #1887: a Claude-only reference typed into a Codex Session shows as unsupported, and the exact
+// markdown Codex receives is never rewritten to compensate.
+export const CodexUnsupportedReferenceIsHonest: Story = {
+  render: () => <CodexComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.paste(CODEX_REFERENCE_DRAFT)
+
+    const reference = canvasElement.querySelector('[data-reference="@argo-plugin"]')
+    if (!reference) throw new Error('The @argo-plugin reference did not render.')
+    await expect(reference).toHaveAttribute('data-unsupported', 'true')
+    await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(CODEX_REFERENCE_DRAFT)
+  },
+}
+
+// #1887: leaving and returning to a Codex Session restores the exact draft, unsupported
+// reference included, not a document that lost its honest state along the way.
+export const CodexDraftRestoresUnsupportedReference: Story = {
+  render: () => <ClosableComposerStory cli="codex" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.paste(CODEX_REFERENCE_DRAFT)
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    await expect(canvas.getByLabelText('Message')).toBeVisible()
+
+    const reference = canvasElement.querySelector('[data-reference="@argo-plugin"]')
+    if (!reference) throw new Error('The @argo-plugin reference did not survive restoration.')
+    await expect(reference).toHaveAttribute('data-unsupported', 'true')
+    await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(CODEX_REFERENCE_DRAFT)
+  },
+}
+
+export const ReferenceMenuFlagsUnsupportedForCodex: Story = {
+  render: () => <CodexComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, '@argo')
+
+    const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
+    await expect(option).toHaveTextContent('Not available for Codex')
   },
 }
 

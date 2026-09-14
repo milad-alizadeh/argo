@@ -1,6 +1,7 @@
 import { useLexicalTextEntity } from '@lexical/react/useLexicalTextEntity'
 import type { EntityMatch } from '@lexical/text'
 import type { TextNode } from 'lexical'
+import type { SessionCli } from '../harness/harnesses'
 import { $createComposerReferenceNode, ComposerReferenceNode } from './ComposerReferenceNode'
 import { referenceInText } from './SessionReference'
 
@@ -10,11 +11,9 @@ function referenceMatch(text: string): EntityMatch | null {
   return { end: match.end, start: match.start }
 }
 
-function createReferenceNode(textNode: TextNode) {
-  return $createComposerReferenceNode(textNode.getTextContent())
-}
-
-export function ComposerReferencePlugin() {
-  useLexicalTextEntity(referenceMatch, ComposerReferenceNode, createReferenceNode)
+export function ComposerReferencePlugin({ cli = null }: { cli?: SessionCli | null }) {
+  useLexicalTextEntity(referenceMatch, ComposerReferenceNode, (textNode: TextNode) =>
+    $createComposerReferenceNode(textNode.getTextContent(), cli),
+  )
   return null
 }
