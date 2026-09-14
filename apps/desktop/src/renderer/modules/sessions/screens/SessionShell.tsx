@@ -3,8 +3,9 @@ import { type ReactNode, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { BasicFeed } from '../feed/BasicFeed'
+import type { TurnMarkerView } from '../feed/turn-marker'
 import type { useSessions } from '../hooks/useSessions'
-import type { SessionEvidence } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { useComposerFadeTop } from './useComposerFadeTop'
 
@@ -37,6 +38,8 @@ type SessionShellProps = {
   handoffTo?: string | null
   onOpenSession: (sessionId: string) => void
   isRunning: boolean
+  optimisticRow?: SessionFeedRow | null
+  turnMarker?: TurnMarkerView | null
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -60,6 +63,8 @@ export function SessionShell({
   handoffTo = null,
   onOpenSession,
   isRunning,
+  optimisticRow = null,
+  turnMarker = null,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -109,6 +114,8 @@ export function SessionShell({
                 feed={feed}
                 failure={feedError}
                 isRunning={isRunning}
+                optimisticRow={optimisticRow}
+                turnMarker={turnMarker}
                 selectedSessionId={selectedSessionId}
                 onOpenEvidence={onOpenEvidence}
                 onAnswerQuestion={onAnswerQuestion}

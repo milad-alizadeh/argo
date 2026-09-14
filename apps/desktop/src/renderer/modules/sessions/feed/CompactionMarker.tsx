@@ -2,12 +2,10 @@ import { LoaderCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Progress } from '../../../components/ui/progress'
+import { formatElapsed } from './elapsed'
 
 function elapsedSince(startedAt: string, now: number) {
-  const elapsed = Math.max(0, now - Date.parse(startedAt))
-  const minutes = Math.floor(elapsed / 60_000)
-  const seconds = Math.floor((elapsed % 60_000) / 1_000)
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
+  return formatElapsed(now - Date.parse(startedAt))
 }
 
 export function CompactionMarker({

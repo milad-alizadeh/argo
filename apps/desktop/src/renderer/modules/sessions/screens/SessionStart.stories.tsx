@@ -60,7 +60,17 @@ function sessionClient(state: StartState) {
       version: 1 as const,
       type: 'session.listed' as const,
       requestId: 'start-session-list',
-      sessions: state.prompts.length === 0 ? [] : [session],
+      sessions:
+        state.prompts.length === 0
+          ? []
+          : [
+              {
+                ...session,
+                // The CLI records the turn once it reads the first event (#2099): the Marker
+                // settles by noticing this move, not by a new signal of its own.
+                turnStartedAt: state.feedEventReady ? '2026-09-14T00:00:00Z' : null,
+              },
+            ],
       filesFound: state.prompts.length,
       filesRead: state.prompts.length,
       filesUnreadable: 0,
@@ -185,11 +195,15 @@ export const ReturnStartsOnceAndShowsRunningUntilTheFirstEvent: Story = {
         canvasElement.querySelector('.feed__document[data-active="true"]'),
       ).toBeInTheDocument(),
     )
-    await expect(canvas.getByRole('status', { name: 'Loading' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible(),
+    )
     for (let frame = 0; frame < 5; frame += 1) {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()))
     }
-    await expect(canvas.getByRole('status', { name: 'Loading' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('status', { name: 'Starting Session' })).toBeVisible(),
+    )
     await expect(canvas.queryByText('No messages')).toBeNull()
 
     returnHost.state.feedEventReady = true
@@ -200,7 +214,9 @@ export const ReturnStartsOnceAndShowsRunningUntilTheFirstEvent: Story = {
       ),
     )
     await expect(canvas.getByLabelText('Session history')).toHaveTextContent(PROMPT)
-    await expect(canvas.queryByRole('status', { name: 'Loading' })).toBeNull()
+    await waitFor(() =>
+      expect(canvas.queryByRole('status', { name: 'Starting Session' })).toBeNull(),
+    )
   },
 }
 

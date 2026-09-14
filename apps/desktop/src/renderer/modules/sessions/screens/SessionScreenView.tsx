@@ -62,6 +62,8 @@ export function SessionScreenView() {
       handoffTo={session?.handoffTo ?? null}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
+      optimisticRow={composer.optimisticRow}
+      turnMarker={composer.markerView}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}

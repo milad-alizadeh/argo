@@ -5,16 +5,18 @@ import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
+import type { TurnMarkerView } from '../feed/turn-marker'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
-import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
+import type { SessionFeedRow } from '../types'
+import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composerIdentity'
+import { managedSessionIsRunning, useComposerActions } from './useComposerActions'
 import { useComposerSend } from './useComposerSend'
-import { useHandoff, useHandoffCompletion } from './useHandoffActions'
 import type { Failure } from './useSessionComposer-actions'
-import { useCompactWithInvalidate, useInterrupt } from './useSessionComposer-actions'
 import { useSessionMutations } from './useSessionMutations'
 import type { useSessions } from './useSessions'
+import { useTurnMarker } from './useTurnMarker'
 
 const NO_ROWS: SessionRosterRow[] = []
 
@@ -27,37 +29,40 @@ type SessionComposerOptions = {
   selectedSessionId: string | null
 }
 
-function managedSessionIsRunning(
-  roster: SessionComposerOptions['roster'],
-  sessionId: string | null,
-): boolean {
-  return (
-    roster?.sessions.some(
-      (session) =>
-        session.id === sessionId && session.posture === 'managed' && session.status === 'running',
-    ) ?? false
-  )
+type ComposerResult = {
+  failure: { message: string; code: SessionErrorCode | null } | null
+  retry: () => void
+  props: Omit<SessionComposerProps, 'plan' | 'harness'>
+  markerView: TurnMarkerView | null
+  optimisticRow: SessionFeedRow | null
 }
 
-function useComposerIdentity(selectedSessionId: string | null, cockpit: Cockpit) {
+// The facts the setup pane, the mutations, and the Turn Marker all need before they can be wired:
+// who is selected, and the harness setup control that goes with them.
+function useComposerFacts(
+  options: Pick<SessionComposerOptions, 'cli' | 'cockpit' | 'roster' | 'selectedSessionId'>,
+  setFailure: (failure: Failure | null) => void,
+) {
+  const { cli, cockpit, roster, selectedSessionId } = options
+  // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
-  return composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pendingSessionId)
-}
-
-function useHandoffState(request: {
-  roster: SessionComposerOptions['roster']
-  sessionId: string | null
-  handoff: ReturnType<typeof useSessionMutations>['handoff']
-  setFailure: (failure: Failure | null) => void
-}) {
-  const { roster, sessionId, handoff, setFailure } = request
-  const selectedRow = roster?.sessions.find(({ id }) => id === sessionId) ?? null
-  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
-  const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
-  const onHandoff = useHandoff(handoff, sessionId, setFailure)
-  useHandoffCompletion({ isHandingOff, selectedRow, selectedSessionId: sessionId, setFailure })
-  return { isCompacting, isHandingOff, onHandoff }
+  const identity = composerIdentityOf(
+    selectedSessionId,
+    cockpit.project?.id ?? null,
+    pendingSessionId,
+  )
+  const sessionId = identity.kind === 'session' ? identity.sessionId : null
+  const { control, watchTurn } = useTurnSetup({
+    cli,
+    choices: HARNESSES[cli].setup,
+    identity,
+    rows: roster?.sessions ?? NO_ROWS,
+    onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
+  })
+  const marker = useTurnMarker()
+  const selectedRow = findSessionRow(roster, sessionId)
+  return { identity, sessionId, control, watchTurn, marker, selectedRow }
 }
 
 export function useSessionComposer({
@@ -67,31 +72,28 @@ export function useSessionComposer({
   navigate,
   roster,
   selectedSessionId,
-}: SessionComposerOptions): {
-  failure: { message: string; code: SessionErrorCode | null } | null
-  retry: () => void
-  props: Omit<SessionComposerProps, 'plan' | 'harness'>
-} {
+}: SessionComposerOptions): ComposerResult {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { compact, handoff, interrupt, send, start } = useSessionMutations()
-  const identity = useComposerIdentity(selectedSessionId, cockpit)
-  const sessionId = identity.kind === 'session' ? identity.sessionId : null
-  const { control, watchTurn } = useTurnSetup({
-    cli,
-    choices: HARNESSES[cli].setup,
-    identity,
-    rows: roster?.sessions ?? NO_ROWS,
-    onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
-  })
-  const onCompact = useCompactWithInvalidate({ compact, sessionId, setFailure, queryClient })
-  const onInterrupt = useInterrupt(interrupt, sessionId, setFailure)
-  const { isCompacting, isHandingOff, onHandoff } = useHandoffState({
-    roster,
-    sessionId,
-    handoff,
+  const mutations = useSessionMutations()
+  const { send, start } = mutations
+  const { identity, sessionId, control, watchTurn, marker, selectedRow } = useComposerFacts(
+    { cli, cockpit, roster, selectedSessionId },
     setFailure,
-  })
+  )
+  const { isHandingOff, onCompact, onHandoff, onInterrupt, markerView, optimisticRow } =
+    useComposerActions({
+      cli,
+      identity,
+      mutations,
+      marker,
+      roster,
+      sessionId,
+      selectedRow,
+      setFailure,
+      queryClient,
+    })
+  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
   const onSend = useComposerSend({
     cli,
     cockpit,
@@ -99,27 +101,52 @@ export function useSessionComposer({
     queryClient,
     roster,
     identity,
+    marker,
     send,
     setFailure,
     start,
     watchTurn,
   })
-  const handoffable = cli === 'claude' && identity.kind === 'session'
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
     retry: () => setFailure(null),
-    props: {
-      isRunning: managedSessionIsRunning(roster, sessionId),
+    markerView,
+    optimisticRow,
+    props: composerProps({
+      roster,
+      sessionId,
       focusOnMount,
       isCompacting,
       isHandingOff,
-      onCompact: identity.kind === 'session' ? onCompact : undefined,
-      onHandoff: handoffable ? onHandoff : undefined,
+      onCompact,
+      onHandoff,
       onInterrupt,
       onSend,
-      sessionId: composerIdentityKey(identity),
-      setup: control,
-    },
+      identity,
+      control,
+    }),
+  }
+}
+
+function composerProps(input: {
+  roster: SessionComposerOptions['roster']
+  sessionId: string | null
+  focusOnMount: boolean
+  isCompacting: boolean
+  isHandingOff: boolean
+  onCompact: (() => Promise<boolean>) | undefined
+  onHandoff: (() => Promise<boolean>) | undefined
+  onInterrupt: () => Promise<boolean>
+  onSend: SessionComposerProps['onSend']
+  identity: ReturnType<typeof composerIdentityOf>
+  control: SessionComposerProps['setup']
+}): Omit<SessionComposerProps, 'plan' | 'harness'> {
+  const { roster, sessionId, identity, control, ...rest } = input
+  return {
+    ...rest,
+    isRunning: managedSessionIsRunning(roster, sessionId),
+    sessionId: composerIdentityKey(identity),
+    setup: control,
   }
 }
