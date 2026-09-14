@@ -51,6 +51,7 @@ export function CockpitShell({
 }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
   const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
+  const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')
   const sidebarMaximumWidth = readCssSize('--size-cockpit-sidebar-max')
   const contentMinimumWidth = readCssSize('--size-cockpit-content-min')
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
@@ -109,7 +110,7 @@ export function CockpitShell({
           collapsible
           collapsedSize={0}
           defaultSize={sidebarDefaultWidth}
-          minSize={sidebarDefaultWidth}
+          minSize={sidebarMinimumWidth}
           maxSize={sidebarMaximumWidth}
           panelRef={sidebarPanelRef}
         >

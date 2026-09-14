@@ -66,12 +66,15 @@
   --size-chrome-bar: 52px;
   --size-navigation-rail: 88px;
   --size-cockpit-sidebar-default: 368px;
+  --size-cockpit-sidebar-min: 240px;
   --size-cockpit-sidebar-max: 460px;
   --size-cockpit-content-min: 360px;
   --size-navigation-item: 36px;
   --size-navigation-control: 28px;
   --size-icon-control: 16px;
   --size-control: 32px;
+  --size-ticket-label-max: 80px;
+  --size-ticket-age-visible: 240px;
   --size-session-inspector: 248px;
   --size-session-inspector-min: 248px;
   --size-session-workspace-min: 360px;

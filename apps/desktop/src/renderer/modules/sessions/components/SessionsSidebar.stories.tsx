@@ -142,6 +142,36 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const NarrowSidebarWithLongSessionName: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-44">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const sidebar = within(canvasElement).getByLabelText('Sessions sidebar')
+    const name = within(sidebar).getByText(/Keep the Sessions sidebar readable/)
+    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
+    await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+  },
+}
+
 export const FocusRecovery: Story = {
   render: (args) => <FocusRecoveryRoster {...args} />,
   play: async ({ canvasElement }) => {

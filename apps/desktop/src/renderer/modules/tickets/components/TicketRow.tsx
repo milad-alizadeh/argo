@@ -47,7 +47,11 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
   return (
     <span className="flex shrink-0 items-center gap-(--spacing-shell-tight)">
       {labels.slice(0, SHOWN_LABELS).map((label) => (
-        <TicketLabel key={label.name} label={label} />
+        <TicketLabel
+          className="max-w-(--size-ticket-label-max) truncate"
+          key={label.name}
+          label={label}
+        />
       ))}
       {hidden > 0 ? (
         <span className="type-meta text-faint">
@@ -111,7 +115,7 @@ export function TicketRow(props: TicketRowProps) {
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
-    <div className="relative flex items-center gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
+    <div className="relative flex min-w-0 items-center gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
       <span
         aria-hidden="true"
         className={`${presentation.keyColumn} shrink-0 font-mono type-meta text-faint`}
@@ -131,7 +135,7 @@ export function TicketRow(props: TicketRowProps) {
       </span>
       <button
         aria-current={selected ? 'true' : undefined}
-        className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+        className="@container flex min-w-0 flex-1 items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
         onClick={onSelect}
         type="button"
       >
@@ -140,7 +144,7 @@ export function TicketRow(props: TicketRowProps) {
         <Labels labels={ticket.labels} />
         <Marks ticket={ticket} />
         <time
-          className="w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums"
+          className="hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
           dateTime={ticket.createdAt}
         >
           <span aria-hidden="true">{age.short}</span>
