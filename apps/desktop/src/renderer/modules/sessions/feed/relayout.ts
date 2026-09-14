@@ -3,7 +3,7 @@ import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { SessionFeedRow } from '../types'
 import type { createHeightStore, Reading } from './heights'
 import { readRowHeights, settleReading } from './measure'
-import { afterAnimations, watchMeasured } from './relayout-watch'
+import { watchMeasured } from './relayout-watch'
 import type { Settled } from './useSettledFeed'
 
 type HeightStore = ReturnType<typeof createHeightStore>
@@ -19,7 +19,6 @@ export function settledFrom(
 
 type RelayoutInputs = {
   container: HTMLElement
-  column: HTMLElement | null
   reading: Reading
   rows: readonly SessionFeedRow[]
   heights: HeightStore
@@ -33,14 +32,12 @@ function sameHeights(left: Map<string, number>, right: Map<string, number>) {
   return true
 }
 
-// A closing disclosure holds its panel at its expanded size for the length of its close animation
-// (`useCollapsiblePanel.js`'s close branch), so the first read is the true current size. The size
-// after the animation is read once every animation under `column` (drawn rows and measured copies)
-// has finished, and again on any later change to the measured copy. `generation` suffixes each
-// later reading's key, which `AnchoredFeed` would otherwise treat as the same document and ignore.
+// Base UI collapses a closed panel in a later commit than the toggle (`useCollapsiblePanel.js`'s
+// close branch), so the first read can still see the expanded size and every later change to the
+// measured copy is read again. `generation` suffixes each later reading's key, which
+// `AnchoredFeed` would otherwise treat as the same document and ignore.
 export function settleRelayout({
   container,
-  column,
   reading,
   rows,
   heights,
@@ -50,8 +47,7 @@ export function settleRelayout({
   let committed = readRowHeights(container)
   heights.write(reading, committed)
   setSettled(settledFrom(reading, rows, committed))
-  if (column === null) return undefined
-  const reread = () => {
+  return watchMeasured(container, () => {
     const next = readRowHeights(container)
     if (sameHeights(next, committed)) return
     committed = next
@@ -62,21 +58,11 @@ export function settleRelayout({
     }
     heights.write(settledReading, next)
     setSettled(settledFrom(settledReading, rows, next))
-  }
-  let stopWatching = () => {}
-  const stopWaiting = afterAnimations(column, () => {
-    reread()
-    stopWatching = watchMeasured(container, reread)
   })
-  return () => {
-    stopWaiting()
-    stopWatching()
-  }
 }
 
 type SettlePassInputs = {
   container: HTMLElement
-  column: HTMLElement | null
   reading: Reading
   rows: readonly SessionFeedRow[]
   heights: HeightStore
@@ -92,7 +78,6 @@ type SettlePassInputs = {
 // (sessionId, contentRevision) pair is a relayout, and anything else is a live update.
 export function runSettlePass({
   container,
-  column,
   reading,
   rows,
   heights,
@@ -114,7 +99,7 @@ export function runSettlePass({
     settledContent.current.contentRevision === contentRevision
   settledContent.current = { sessionId, contentRevision }
   if (isRelayout) {
-    return settleRelayout({ container, column, reading, rows, heights, generation, setSettled })
+    return settleRelayout({ container, reading, rows, heights, generation, setSettled })
   }
   return settleLiveUpdate({ container, reading, rows, heights, sessionId, isActive, setSettled })
 }

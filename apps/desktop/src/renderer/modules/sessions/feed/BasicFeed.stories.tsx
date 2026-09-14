@@ -279,9 +279,7 @@ const toolLagFeed = {
 
 // A group's own drawn height must always match its panel's real size, on the very tick a toggle
 // settles: a frame where the panel already shows its open content while the row still carries its
-// old, smaller pixel height is the overlapping-render artifact #2104 reproduces. Base UI holds a
-// closing panel at its expanded size for the length of its own close animation, so the row's
-// height rightly does too, and only drops once that animation actually finishes.
+// old, smaller pixel height is the overlapping-render artifact #2104 reproduces.
 export const ToolGroupTogglesWithNoLag: Story = {
   args: { feed: toolLagFeed, selectedSessionId: 'tools-lag' },
   play: async ({ canvasElement }) => {
@@ -301,14 +299,9 @@ export const ToolGroupTogglesWithNoLag: Story = {
     // Open is instant: the panel's own final size is known before its fade-and-slide plays.
     await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
     await expect(Number.parseFloat(row().style.height)).toBeGreaterThan(collapsedHeight)
-    const openHeight = Number.parseFloat(row().style.height)
 
     await userEvent.click(group)
-    // Close never clips: the row stays at the open height while the panel visibly slides away.
-    // The hidden measured copy is no witness here: whether it plays its own close animation
-    // differs between Chromium builds, so only the drawn row's height is asserted.
-    await expect(Number.parseFloat(row().style.height)).toBe(openHeight)
-    // …and settles to the collapsed height once that animation finishes.
+    // Close follows the panel's own collapse, which Base UI commits after the toggle.
     await waitFor(() => expect(Number.parseFloat(row().style.height)).toBe(collapsedHeight))
     await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
   },

@@ -84,7 +84,6 @@ export function useSettledFeed({
     }
     return runSettlePass({
       container,
-      column: column.current,
       reading,
       rows,
       heights,
