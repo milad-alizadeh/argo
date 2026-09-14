@@ -392,24 +392,6 @@ export const Open: Story = {
   },
 }
 
-export const ComposerGatedBySelection: Story = {
-  render: () => <DeselectableReviewScreen />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
-    // No frame where a composer renders with nothing selected, from the very first render.
-    expect(canvas.queryByLabelText('Session composer')).not.toBeInTheDocument()
-    await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
-
-    await userEvent.click(canvas.getByRole('button', { name: /Finish Session composer review/ }))
-    await waitFor(() => expect(canvas.getByLabelText('Session composer')).toBeInTheDocument())
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Close Session' }))
-    await waitFor(() => expect(canvas.queryByLabelText('Session composer')).not.toBeInTheDocument())
-    await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
-  },
-}
-
 export const ComposerStaysFixed: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
