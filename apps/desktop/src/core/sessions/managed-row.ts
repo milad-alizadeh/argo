@@ -95,6 +95,8 @@ export function managedRow(
     compactionTokens: session.compactionTokens,
     handoffStartedAt: session.handoffStartedAt,
     handoffFailure: session.handoffFailure,
+    handoffTo: null,
+    handoffFrom: null,
     setup: session.setup,
   }
 }
