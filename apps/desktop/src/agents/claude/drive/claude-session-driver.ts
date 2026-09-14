@@ -21,7 +21,7 @@ export type ClaudeSessionDriver = {
 }
 
 const INTERRUPT = '\u001b'
-const COMPACT = '/compact\r'
+const COMPACT = '/compact'
 
 function clearCompaction(session: ManagedSession) {
   session.compactionStartedAt = null
@@ -67,6 +67,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       clearCompaction(session)
       session.compactionStartedAt = options.now().toISOString()
       session.process.write(COMPACT)
+      session.process.write('\r')
     },
     completeCompaction(sessionId, completedAt) {
       const session = sessions.get(sessionId)

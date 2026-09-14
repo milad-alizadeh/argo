@@ -180,7 +180,13 @@ export function ContextPopover({
               />
             </svg>
             <span>
-              Context <span className="tabular-nums text-muted-foreground">{value}</span>
+              Context{' '}
+              <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">
+                {value}
+              </span>
+              <span className="tabular-nums text-muted-foreground @[23rem]:hidden">
+                {percentage}%
+              </span>
             </span>
           </>
         ) : (
