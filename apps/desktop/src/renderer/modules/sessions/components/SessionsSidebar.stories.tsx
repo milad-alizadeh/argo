@@ -144,6 +144,33 @@ export const CommandTitledSession: Story = {
   },
 }
 
+// A title that fell back to the opening prompt draws its skill mention as a badge, not the raw
+// markdown-link brackets (#2049).
+export const SkillMentionTitle: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          title: {
+            text: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
+            source: 'first-prompt',
+          },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const row = canvas.getByRole('button', { name: /Implement/ })
+    await expect(row).not.toHaveTextContent('[$implement]')
+    await expect(row.querySelector('svg')).not.toBeNull()
+    await expect(row).toHaveTextContent('https://github.com/milad-alizadeh/argo/issues/1944')
+    await expect(row.querySelector('a')).toBeNull()
+  },
+}
+
 export const FocusRecovery: Story = {
   render: (args) => <FocusRecoveryRoster {...args} />,
   play: async ({ canvasElement }) => {
