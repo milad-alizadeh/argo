@@ -1,7 +1,7 @@
 // Renders a stored prompt's skill mentions and links inline (#2049), shared by the Feed, the
 // Roster and the composer (SkillMentionNode.tsx decorates with the same SkillBadge).
 import { Sparkles } from 'lucide-react'
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Badge } from '@/renderer/components/ui/badge'
 import { formatSkillLabel, type PromptSegment, parsePromptText } from './promptSegments'
 
@@ -40,36 +40,48 @@ function segmentIdentity(segment: PromptSegment): string {
   }
 }
 
-function renderSegment(segment: PromptSegment, key: string, interactiveLinks: boolean) {
+type RenderOptions = {
+  interactiveLinks: boolean
+  renderText: (value: string) => ReactNode
+}
+
+function renderSegment(segment: PromptSegment, key: string, options: RenderOptions) {
   switch (segment.kind) {
     case 'skill':
       return <SkillBadge key={key} name={segment.name} />
     case 'link':
-      return interactiveLinks ? (
+      return options.interactiveLinks ? (
         <PromptLink href={segment.href} key={key} label={segment.label} />
       ) : (
         <Fragment key={key}>{segment.label}</Fragment>
       )
     case 'text':
-      return <Fragment key={key}>{segment.value}</Fragment>
+      return <Fragment key={key}>{options.renderText(segment.value)}</Fragment>
   }
 }
 
 // `interactiveLinks` draws a link as an `<a>`. The Roster's title sits inside the row's own
 // button, and a nested `<a>` there would be an interactive control inside another one, so it
 // passes false and keeps the link text as plain text.
+//
+// `renderText` lets a caller further decorate a segment's plain-text leftovers, e.g. the
+// Roster badging the composer's own bare reference tokens (`/implement`, `@AGENTS.md`) via
+// `SessionReferenceText` (#2044) — a fixed-list token match unrelated to this module's dynamic
+// markdown-mention parsing, so it stays out of `promptSegments` rather than merge with it.
 export function PromptText({
   text,
   interactiveLinks = true,
+  renderText = (value) => value,
 }: {
   text: string
   interactiveLinks?: boolean
+  renderText?: (value: string) => ReactNode
 }) {
   const seen = new Map<string, number>()
   return parsePromptText(text).map((segment) => {
     const identity = segmentIdentity(segment)
     const occurrence = seen.get(identity) ?? 0
     seen.set(identity, occurrence + 1)
-    return renderSegment(segment, `${identity}:${occurrence}`, interactiveLinks)
+    return renderSegment(segment, `${identity}:${occurrence}`, { interactiveLinks, renderText })
   })
 }
