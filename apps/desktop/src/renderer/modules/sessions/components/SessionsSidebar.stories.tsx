@@ -117,6 +117,27 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
+export const AllArchived: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: listed.sessions.map((session) => ({
+        ...session,
+        archived: true,
+      })),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
+    const disclosure = canvas.getByText('Archived 2')
+    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    await userEvent.click(disclosure)
+    await expect(disclosure.closest('details')).toHaveAttribute('open')
+    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+  },
+}
+
 export const Failure: Story = {
   args: { roster: null, rosterError: readFailure },
   play: async ({ canvasElement }) => {
