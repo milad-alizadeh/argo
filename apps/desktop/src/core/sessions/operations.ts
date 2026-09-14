@@ -17,6 +17,8 @@ import {
   sessionFeedRequestSchema,
   sessionListReplySchema,
   sessionListRequestSchema,
+  sessionRenameReplySchema,
+  sessionRenameRequestSchema,
 } from './contract'
 
 export const SESSION_OPERATIONS = {
@@ -31,6 +33,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed',
     request: sessionFeedRequestSchema,
     reply: sessionFeedReplySchema,
+  },
+  rename: {
+    name: 'session.rename',
+    channel: 'argo:session:rename',
+    request: sessionRenameRequestSchema,
+    reply: sessionRenameReplySchema,
   },
   startClaude: {
     name: 'session.claude.start',

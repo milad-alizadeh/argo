@@ -37,6 +37,7 @@ export type ManagedSession = TurnTarget & {
   messages: LiveMessages
   process: ClaudeProcess
   prompt: string
+  title?: { text: string; source: 'custom' }
   queue: Promise<void>
   startedAt: string
   // Set when `claude` exits or the driver closes; a Turn queued or mid-pause then types nothing.
@@ -89,6 +90,16 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
         if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
         session.messages.retire()
         return deliverTurn(session, turn, waitWhileLive(session))
+      })
+      session.queue = delivery.catch(() => {})
+      return delivery
+    },
+    rename(session: ManagedSession, name: string) {
+      const delivery = session.queue.then(async () => {
+        if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
+        session.process.write(`\u001b[200~/rename ${name}\u001b[201~`)
+        await waitWhileLive(session)(150)
+        session.process.write('\r')
       })
       session.queue = delivery.catch(() => {})
       return delivery

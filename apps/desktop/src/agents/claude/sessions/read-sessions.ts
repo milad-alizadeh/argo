@@ -1,6 +1,7 @@
 // The Claude source the shared Session reader drives (#2025). Everything this slice touches is
 // read-only: it observes transcripts and writes nothing back to them.
 import type { SessionReader } from '@/core/sessions/bridge'
+import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
@@ -38,6 +39,7 @@ export function claudeSessionSource(roots: {
   completeCompaction?: (sessionId: string, completedAt: string) => void
   orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
+  rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
@@ -57,6 +59,7 @@ export function claudeSessionSource(roots: {
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,
     managedSessions: roots.managedSessions,
+    rename: roots.rename,
     overlayFor:
       liveMessages === undefined
         ? undefined
@@ -74,6 +77,7 @@ export function createClaudeSessionReader(roots: {
   managedSessions?: () => SessionRosterRow[]
   orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
+  rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }): SessionReader {
   return createSessionReader([claudeSessionSource(roots)])
 }

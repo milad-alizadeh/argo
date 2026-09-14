@@ -12,6 +12,7 @@ export type ClaudeSessionDriver = {
   completeCompaction: (sessionId: string, completedAt: string) => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
+  rename: (sessionId: string, name: string) => Promise<string>
   liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
   orphans: () => ReadonlySet<string>
@@ -86,6 +87,13 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       clearCompaction(session)
       session.process.write(INTERRUPT)
     },
+    async rename(sessionId, name) {
+      const session = sessions.get(sessionId)
+      if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      await channel.rename(session, name)
+      session.title = { text: name, source: 'custom' }
+      return name
+    },
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
@@ -94,6 +102,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
           cli: 'claude',
           status: options.gate.pending(id) === null ? 'running' : 'permission',
           setup: session.applied,
+          title: session.title,
         }),
       ),
     orphans: options.ledger.orphans,

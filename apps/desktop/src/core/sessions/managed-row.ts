@@ -1,5 +1,5 @@
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
-import type { SessionRosterRow } from './models'
+import type { SessionRosterRow, SessionTitle } from './models'
 
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
 export function managedRow(
@@ -16,6 +16,7 @@ export function managedRow(
   > & {
     prompt: string
     startedAt: string
+    title?: SessionTitle
   },
 ): SessionRosterRow {
   return {
@@ -23,7 +24,7 @@ export function managedRow(
     retiredIds: [],
     cli: session.cli,
     posture: 'managed',
-    title: { text: session.prompt, source: 'first-prompt' },
+    title: session.title ?? { text: session.prompt, source: 'first-prompt' },
     status: session.status,
     entry: 'interactive',
     cwd: session.cwd,
@@ -57,6 +58,14 @@ export function managedRow(
 export function mergeManagedRoster(
   discovered: TranscriptDiscovery,
   managed: SessionRosterRow[],
+  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
+    ...observed,
+    compactionPercentage: held.compactionPercentage,
+    compactionStartedAt: held.compactionStartedAt,
+    compactionTokens: held.compactionTokens,
+    posture: held.posture,
+    title: held.title,
+  }),
 ): TranscriptDiscovery {
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
@@ -64,14 +73,7 @@ export function mergeManagedRoster(
     if (held === undefined) return session
     const status =
       held.status === 'permission' || session.status === 'unknown' ? held.status : session.status
-    return {
-      ...session,
-      compactionPercentage: held.compactionPercentage,
-      compactionStartedAt: held.compactionStartedAt,
-      compactionTokens: held.compactionTokens,
-      posture: held.posture,
-      status,
-    }
+    return reconcile({ ...session, posture: held.posture, status }, held)
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),
