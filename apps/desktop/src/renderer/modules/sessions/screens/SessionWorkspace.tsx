@@ -96,16 +96,17 @@ export function SessionWorkspace({
   const composerElement = useRef<HTMLElement>(null)
   const workspaceElement = useRef<HTMLElement>(null)
   const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
+  const { t } = useTranslation('sessions')
 
   return (
     <section
-      aria-label="Session workspace"
+      aria-label={t('workspaceLabel')}
       className="relative flex h-full min-h-0 flex-col"
       ref={workspaceElement}
     >
       {header}
       <section
-        aria-label="Session feed"
+        aria-label={t('feedRegionLabel')}
         className="session-screen__feed min-h-0 flex-1 overflow-hidden"
       >
         <BasicFeed
