@@ -1,6 +1,6 @@
 // One shape every CLI's drive adapter fills in (ADR-0024, #2030). Shared code calls only this
 // port; it never branches on which CLI it is talking to.
-import type { ClaudePermission } from './claude-contract'
+import type { Permission, PermissionDecision } from './permission'
 import type { DriveSessionErrorCode } from './session-error'
 
 export type DriveFailureCode = DriveSessionErrorCode | 'missing-session'
@@ -24,11 +24,11 @@ export type SessionDriveAdapter = {
   }): Promise<DriveOk | DriveFailure>
   interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   compact(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
-  readPermission(request: { sessionId: string }): Promise<{ permission: ClaudePermission | null }>
+  readPermission(request: { sessionId: string }): Promise<{ permission: Permission | null }>
   decidePermission(request: {
     sessionId: string
     permissionId: string
-    decision: 'allow' | 'deny'
+    decision: PermissionDecision
   }): Promise<DriveOk | DriveFailure>
 }
 

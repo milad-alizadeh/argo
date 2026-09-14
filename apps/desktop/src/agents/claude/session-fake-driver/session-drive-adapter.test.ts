@@ -120,36 +120,44 @@ test('compacts only the selected managed Claude Session', async () => {
   assert.deepEqual(compacted, [sessionId])
 })
 
-test('reads the pending Permission the driver holds for a Session', async () => {
+test('reads the pending Permission the driver holds, mapped onto the shared Permission shape', async () => {
   const permission: ClaudePermission = {
     id: 'permission-1',
     sessionId,
     toolName: 'Bash',
-    input: {},
+    input: { command: 'bun test' },
   }
   const adapter = createClaudeDriveAdapter(fakeDriver({ pendingPermission: () => permission }))
 
-  assert.deepEqual(await adapter.readPermission({ sessionId }), { permission })
+  assert.deepEqual(await adapter.readPermission({ sessionId }), {
+    permission: {
+      id: 'permission-1',
+      sessionId,
+      description: 'Bash {"command":"bun test"}',
+    },
+  })
 })
 
-test('accepts a Permission decision the driver still holds pending', async () => {
-  const decided: Array<[string, string, 'allow' | 'deny']> = []
+test("translates every shared decision word into the two words Claude's hook answers with", async () => {
+  const decided: Array<'allow' | 'deny'> = []
   const adapter = createClaudeDriveAdapter(
     fakeDriver({
-      decidePermission: (receivedSessionId, permissionId, decision) => {
-        decided.push([receivedSessionId, permissionId, decision])
+      decidePermission: (_sessionId, _permissionId, decision) => {
+        decided.push(decision)
         return true
       },
     }),
   )
 
-  const result = await adapter.decidePermission({
-    sessionId,
-    permissionId: 'permission-1',
-    decision: 'allow',
-  })
-  assert.deepEqual(result, { ok: true })
-  assert.deepEqual(decided, [[sessionId, 'permission-1', 'allow']])
+  for (const decision of ['allow', 'deny', 'allowForSession', 'cancel'] as const) {
+    const result = await adapter.decidePermission({
+      sessionId,
+      permissionId: 'permission-1',
+      decision,
+    })
+    assert.deepEqual(result, { ok: true })
+  }
+  assert.deepEqual(decided, ['allow', 'deny', 'allow', 'deny'])
 })
 
 test('refuses a Permission decision that is no longer waiting', async () => {

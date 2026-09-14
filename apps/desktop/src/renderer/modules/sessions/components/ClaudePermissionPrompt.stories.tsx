@@ -9,8 +9,7 @@ const meta = {
     permission: {
       id: 'permission-one',
       sessionId: 'session-one',
-      toolName: 'Bash',
-      input: { command: 'bun test' },
+      description: 'Bash {"command":"bun test"}',
     },
     onDecide: fn(async () => true),
   },
@@ -22,7 +21,7 @@ type Story = StoryObj<typeof meta>
 export const Pending: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Allow Bash?' })).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'Allow this?' })).toBeInTheDocument()
     await expect(canvas.getByText(/bun test/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Allow' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'Deny' })).toBeEnabled()
