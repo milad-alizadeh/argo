@@ -6,6 +6,7 @@ import assert from 'node:assert/strict'
 import { chmod, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { fixturePath } from '../../../core/sessions/fake-driver/session-fixture-files'
 
 // The proof always starts in `apps/desktop`, as the fixture files note.
 const FAKE_CLAUDE = path.join(
@@ -83,6 +84,10 @@ export async function provePackagedResume(page, { project, restart, transcripts 
     ['managed'],
   )
 
+  // externalBasic's fixture cwd (`/Users/x/proj`) is a display-only fake path; a real send
+  // resumes a real process, so it needs a directory that exists on this machine.
+  await replaceInFile(fixturePath(transcripts, 'externalBasic'), '/Users/x/proj', project)
+
   await relaunched
     .locator('nav[aria-label="Sessions"] button[data-session-id="externalBasic"]')
     .click()
@@ -104,6 +109,11 @@ async function waitForCompactionFeed(page, sessionId) {
       .allTextContents()
     return rows.some((row) => row.includes('Conversation compacted'))
   }, 60_000)
+}
+
+async function replaceInFile(file, search, replacement) {
+  const before = await readFile(file, 'utf8')
+  await writeFile(file, before.split(search).join(replacement))
 }
 
 async function waitFor(condition, timeout = 10_000) {
