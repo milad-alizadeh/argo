@@ -9,6 +9,12 @@ import {
 } from './SessionReference'
 
 export type ReferenceSuggestion = SessionReference
+type ActiveReference = {
+  leading: string
+  query: string
+  source: string
+  trigger: '/' | '@'
+}
 
 export const composerPlaceholder = (
   <span
@@ -19,23 +25,27 @@ export const composerPlaceholder = (
   </span>
 )
 
-export function activeReference(text: string) {
-  const match = text.match(/(^|\s)(\/)([^\s]*)$/)
+function referenceTrigger(value: string | undefined): '/' | '@' | null {
+  return value === '/' || value === '@' ? value : null
+}
+
+export function activeReference(text: string): ActiveReference | null {
+  const match = text.match(/(^|\s)(\/|@)([^\s]*)$/)
   if (match === null) return null
-  const trigger = match[2]
-  if (trigger !== '/') return null
+  const trigger = referenceTrigger(match[2])
+  if (trigger === null) return null
   return {
     leading: match[1] ?? '',
     query: match[3] ?? '',
     source: match[0],
-    trigger: '/',
+    trigger,
   }
 }
 
 export function referenceMenu(draft: string) {
   const active = activeReference(draft)
   if (active === null) return null
-  const choices = referenceSuggestions(active.trigger as '/', active.query)
+  const choices = referenceSuggestions(active.trigger, active.query)
   return choices.length === 0 ? null : choices
 }
 
