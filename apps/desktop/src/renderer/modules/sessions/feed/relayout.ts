@@ -49,38 +49,43 @@ export function settleRelayout({
   const relaidHeights = readRowHeights(container)
   heights.write(reading, relaidHeights)
   setSettled(settledFrom(reading, rows, relaidHeights))
+  if (column === null) return undefined
   let live = true
-  let inner = -1
-  // A close animation is a CSS transition, born from a style change this same commit made, and a
-  // layout effect runs ahead of the browser's own style pass over that change. Base UI hits the
-  // identical race in its own `useAnimationsFinished` caller (base-ui#3099) and settles it by
-  // watching from a passive effect, one frame later still: two `requestAnimationFrame` turns from
-  // here, the first standing in for that passive effect's own post-paint timing.
-  const outer = window.requestAnimationFrame(() => {
-    inner = window.requestAnimationFrame(() => {
+  let started = false
+  // A close animation is a CSS transition born from a style change this same commit made, and
+  // the browser can register it a frame or more after that commit — Base UI documents the exact
+  // same race in its own `useAnimationsFinished` caller (base-ui#3099). Guessing a frame count to
+  // wait was unreliable across environments (it passed locally but not in every CI browser), so
+  // this waits for the browser's own start signal instead: `transitionrun` (and `animationstart`
+  // for a keyframe-driven variant) fires the instant the animation is actually registered.
+  const handleStart = () => {
+    if (started) return
+    started = true
+    column.removeEventListener('transitionrun', handleStart)
+    column.removeEventListener('animationstart', handleStart)
+    // `column` carries the drawn rows as well as their hidden measured copies, so an animation
+    // still playing on either is caught. Nothing is running for an open, whose panel is already
+    // at its final size, or for a resize settling, which plays no animation at all.
+    const animations = column.getAnimations({ subtree: true })
+    if (animations.length === 0) return
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
       if (!live) return
-      // `column` carries the drawn rows as well as their hidden measured copies, so an animation
-      // still playing on either is caught. Nothing is running for an open, whose panel is already
-      // at its final size, or for a resize settling, which plays no animation at all.
-      const animations = column?.getAnimations({ subtree: true }) ?? []
-      if (animations.length === 0) return
-      void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
-        if (!live) return
-        generation.current += 1
-        const settledReading: Reading = {
-          ...reading,
-          revision: `${reading.revision}#${generation.current}`,
-        }
-        const settledHeights = readRowHeights(container)
-        heights.write(settledReading, settledHeights)
-        setSettled(settledFrom(settledReading, rows, settledHeights))
-      })
+      generation.current += 1
+      const settledReading: Reading = {
+        ...reading,
+        revision: `${reading.revision}#${generation.current}`,
+      }
+      const settledHeights = readRowHeights(container)
+      heights.write(settledReading, settledHeights)
+      setSettled(settledFrom(settledReading, rows, settledHeights))
     })
-  })
+  }
+  column.addEventListener('transitionrun', handleStart)
+  column.addEventListener('animationstart', handleStart)
   return () => {
     live = false
-    window.cancelAnimationFrame(outer)
-    window.cancelAnimationFrame(inner)
+    column.removeEventListener('transitionrun', handleStart)
+    column.removeEventListener('animationstart', handleStart)
   }
 }
 
