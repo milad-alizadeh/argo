@@ -56,10 +56,10 @@ export const FileDiff: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('src/app.ts')).toBeVisible()
-    await expect(canvas.getByText('oldValue')).toBeVisible()
-    await expect(canvas.getByText('newValue')).toBeVisible()
-    await expect(canvas.getByText('9')).toBeVisible()
+    await expect(canvas.getAllByText('src/app.ts')).toHaveLength(2)
+    await expect(canvas.getByText(/oldValue/)).toBeVisible()
+    await expect(canvas.getByText(/newValue/)).toBeVisible()
+    await expect(canvas.getAllByText('9')).toHaveLength(2)
     await expect(canvas.getByRole('button', { name: 'Copy diff' })).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Current file' }))
     await expect(canvas.getByText('Current file is unavailable.')).toBeVisible()
