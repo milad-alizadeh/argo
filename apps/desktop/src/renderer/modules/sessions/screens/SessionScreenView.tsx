@@ -81,13 +81,15 @@ export function SessionScreenView() {
       answeringQuestionId={model.question.answeringId}
       questionFailure={model.question.failureFor}
       composer={
-        <SessionComposerArea
-          composer={model.composer}
-          permission={model.permission}
-          questionPending={pendingQuestionId(feed) !== null}
-          session={session}
-          harness={model.harness}
-        />
+        selectedSessionId === null ? null : (
+          <SessionComposerArea
+            composer={model.composer}
+            permission={model.permission}
+            questionPending={pendingQuestionId(feed) !== null}
+            session={session}
+            harness={model.harness}
+          />
+        )
       }
       headerControls={<WorkButtons model={model} />}
       inspector={<Inspector model={model} />}

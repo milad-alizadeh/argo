@@ -1,4 +1,5 @@
 import { RotateCw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
 import {
   Empty,
@@ -18,22 +19,23 @@ export function StalledFeed({
   posture: 'managed' | 'external' | null
   onRetry: () => void
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <Empty className="h-full border-0" data-state="stalled">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <RotateCw aria-hidden="true" />
         </EmptyMedia>
-        <EmptyTitle>Could not load this Session</EmptyTitle>
+        <EmptyTitle>{t('stalled.title')}</EmptyTitle>
         <EmptyDescription>
-          {posture === 'external'
-            ? 'This Session is external. Argo reads its history from a file it does not control, and the read is taking too long.'
-            : 'Argo tried to load the history for this Session, but the load did not finish.'}
+          {t(
+            posture === 'external' ? 'stalled.description.external' : 'stalled.description.managed',
+          )}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center">
         <Button onClick={onRetry} type="button" variant="outline">
-          Retry
+          {t('stalled.retry')}
         </Button>
       </EmptyContent>
     </Empty>

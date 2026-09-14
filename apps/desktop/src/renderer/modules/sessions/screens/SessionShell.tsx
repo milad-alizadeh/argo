@@ -24,8 +24,35 @@ function ComposerFade({ top }: { top: number | null }) {
   )
 }
 
+// Unmounted rather than hidden: a Session with nothing selected has no composer at all (#2105).
+function ComposerSection({
+  composer,
+  fadeTop,
+  label,
+  sectionRef,
+}: {
+  composer: ReactNode | null
+  fadeTop: number | null
+  label: string
+  sectionRef: React.RefObject<HTMLElement | null>
+}) {
+  if (composer === null) return null
+  return (
+    <>
+      <ComposerFade top={fadeTop} />
+      <section
+        aria-label={label}
+        className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+        ref={sectionRef}
+      >
+        {composer}
+      </section>
+    </>
+  )
+}
+
 type SessionShellProps = {
-  composer: ReactNode
+  composer: ReactNode | null
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
@@ -83,6 +110,7 @@ export function SessionShell({
   const composerElement = useRef<HTMLElement>(null)
   const workspaceElement = useRef<HTMLElement>(null)
   const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
+  const { t } = useTranslation('sessions')
 
   return (
     <main
@@ -131,14 +159,12 @@ export function SessionShell({
                 questionFailure={questionFailure}
               />
             </section>
-            <ComposerFade top={fadeTop} />
-            <section
-              aria-label={t('composer.label')}
-              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
-              ref={composerElement}
-            >
-              {composer}
-            </section>
+            <ComposerSection
+              composer={composer}
+              fadeTop={fadeTop}
+              label={t('composerRegionLabel')}
+              sectionRef={composerElement}
+            />
           </section>
         }
       />

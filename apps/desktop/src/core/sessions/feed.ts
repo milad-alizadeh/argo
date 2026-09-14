@@ -1,6 +1,7 @@
 import type { SessionChain } from './chains'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
-import { groupToolRuns, type ToolResult, toolRows } from './tool-feed'
+import { type ToolResult, toolRows } from './tool-feed'
+import { groupToolRuns } from './tool-groups'
 import type { TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }

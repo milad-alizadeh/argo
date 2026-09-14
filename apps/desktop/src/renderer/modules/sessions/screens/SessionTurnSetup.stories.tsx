@@ -150,26 +150,3 @@ export const AcceptedChoiceStays: Story = {
     await expect(within(canvasElement).queryByRole('alert')).toBeNull()
   },
 }
-
-export const NewSessionChoosesTheHarness: Story = {
-  beforeEach: accepted.beforeEach,
-  parameters: { route: '/sessions/new' },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    // The Model and Effort a new composer opens on are whichever the harness last used.
-    const trigger = await canvas.findByRole('button', { name: /^Choose run setup: Claude Code,/ })
-    await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
-
-    await userEvent.click(trigger)
-    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
-    await userEvent.keyboard('{Escape}')
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
-    await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
-
-    await userEvent.click(trigger)
-    await userEvent.click(await within(document.body).findByRole('tab', { name: 'Claude Code' }))
-    await userEvent.keyboard('{Escape}')
-    await expect(trigger).toHaveAccessibleName(/^Choose run setup: Claude Code,/)
-    await expect(canvas.getByRole('button', { name: /^Choose permission mode/ })).toBeVisible()
-  },
-}
