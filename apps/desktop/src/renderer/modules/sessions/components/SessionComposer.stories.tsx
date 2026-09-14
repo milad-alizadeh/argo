@@ -4,9 +4,11 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
+import { BasicFeed } from '../feed/BasicFeed'
 import type { SessionCli } from '../harness/harnesses'
 import { useComposerStore } from '../state/useComposerStore'
 import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
@@ -16,6 +18,16 @@ const plan: SessionPlan = {
   state: 'available' as const,
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
+
+const COMPACTION_FEED = {
+  version: 1,
+  type: 'session.feed.read',
+  requestId: 'storybook-compaction',
+  sessionId: 'compacting-session',
+  chainId: 'compacting-session',
+  revision: 'one',
+  rows: [{ shape: 'prose', id: 'prompt', role: 'user', text: 'Condense the Session.' }],
+} satisfies SessionFeed
 
 const RICH_FORMATTING_DRAFT = `# Release notes
 
@@ -106,6 +118,39 @@ function ManagedComposerStory() {
       plan={null}
       sessionId="managed-session"
     />
+  )
+}
+
+function CompactingComposerStory() {
+  const [compacting, setCompacting] = useState(false)
+
+  return (
+    <div className="mx-auto flex h-dvh w-full max-w-none flex-col p-8">
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          compactionPercentage={compacting ? 22 : null}
+          compactionStartedAt={compacting ? '2026-09-13T22:01:00.000Z' : null}
+          compactionTokens={compacting ? '10.1k tokens' : null}
+          failure={null}
+          feed={COMPACTION_FEED}
+          onOpenEvidence={() => {}}
+          isRunning={compacting}
+          selectedSessionId="compacting-session"
+        />
+      </div>
+      <SessionComposer
+        contextTokens={148_000}
+        isCompacting={compacting}
+        isRunning={compacting}
+        onCompact={async () => {
+          setCompacting(true)
+          return true
+        }}
+        onSend={async () => true}
+        sessionId="compacting-session"
+      />
+    </div>
   )
 }
 
@@ -293,6 +338,20 @@ export const PlainText: Story = {
   },
 }
 
+export const CompactionStarts: Story = {
+  parameters: { frame: 'w-full' },
+  render: () => <CompactingComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
+    const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
+    await expect(interrupt).toHaveFocus()
+    await expect(canvas.getByText('Compacting conversation…')).toBeVisible()
+    await expect(canvas.getByText('22%')).toBeVisible()
+  },
+}
+
 export const DraftOutlivesItsComposer: Story = {
   render: () => <ClosableComposerStory />,
   play: async ({ canvasElement }) => {
@@ -367,61 +426,80 @@ export const RichFormatting: Story = {
   },
 }
 
-function markdownShortcutStory(
-  type: (composer: HTMLElement) => Promise<unknown>,
-  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>,
-): Story {
-  return {
-    play: async ({ canvasElement }) => {
-      const canvas = within(canvasElement)
-      const composer = canvas.getByLabelText('Message')
+const MARKDOWN_SHORTCUTS: Array<{
+  sessionId: string
+  type: (composer: HTMLElement) => Promise<unknown>
+  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>
+}> = [
+  {
+    sessionId: 'markdown-heading',
+    type: (composer) => userEvent.type(composer, '# Heading'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-list',
+    type: (composer) => userEvent.type(composer, '- First list item'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('list')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-quote',
+    type: (composer) => userEvent.type(composer, '> Quoted detail'),
+    assert: async (canvas, composer) => {
+      await expect(canvas.getByText('Quoted detail')).toBeVisible()
+      await expect(composer.querySelector('blockquote')).not.toBeNull()
+    },
+  },
+  {
+    sessionId: 'markdown-inline-code',
+    type: (composer) => userEvent.type(composer, '`inline code`'),
+    assert: async (canvas) => {
+      await expect(canvas.getByText('inline code')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-code-block',
+    type: async (composer) => {
+      await userEvent.type(composer, '``')
+      await userEvent.keyboard('`')
+      await userEvent.type(composer, 'const result = true')
+    },
+    assert: async (_canvas, composer) => {
+      await expect(composer.querySelector(':scope > code')).not.toBeNull()
+    },
+  },
+]
 
+// Each shortcut gets its own composer instance: a shared editor can't be reset to a plain
+// paragraph between a list, a blockquote and a code block without racing Lexical's own state.
+function MarkdownShortcutsStory() {
+  return (
+    <>
+      {MARKDOWN_SHORTCUTS.map(({ sessionId }) => (
+        <SessionComposer key={sessionId} onSend={async () => true} sessionId={sessionId} />
+      ))}
+    </>
+  )
+}
+
+export const MarkdownShortcuts: Story = {
+  render: () => <MarkdownShortcutsStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composers = canvas.getAllByLabelText('Message')
+
+    for (const [index, { type, assert }] of MARKDOWN_SHORTCUTS.entries()) {
+      const composer = composers[index]
+      if (!composer) throw new Error(`Expected a composer for shortcut ${index}`)
       await userEvent.click(composer)
       await type(composer)
       await assert(canvas, composer)
-    },
-  }
+    }
+  },
 }
-
-export const MarkdownHeadingShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '# Heading'),
-  async (canvas) => {
-    await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
-  },
-)
-
-export const MarkdownListShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '- First list item'),
-  async (canvas) => {
-    await expect(canvas.getByRole('list')).toBeVisible()
-  },
-)
-
-export const MarkdownQuoteShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '> Quoted detail'),
-  async (canvas, composer) => {
-    await expect(canvas.getByText('Quoted detail')).toBeVisible()
-    await expect(composer.querySelector('blockquote')).not.toBeNull()
-  },
-)
-
-export const MarkdownInlineCodeShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '`inline code`'),
-  async (canvas) => {
-    await expect(canvas.getByText('inline code')).toBeVisible()
-  },
-)
-
-export const MarkdownCodeBlockShortcut: Story = markdownShortcutStory(
-  async (composer) => {
-    await userEvent.type(composer, '``')
-    await userEvent.keyboard('`')
-    await userEvent.type(composer, 'const result = true')
-  },
-  async (_canvas, composer) => {
-    await expect(composer.querySelector(':scope > code')).not.toBeNull()
-  },
-)
 
 export const ManagedTurn: Story = {
   render: () => <ManagedComposerStory />,

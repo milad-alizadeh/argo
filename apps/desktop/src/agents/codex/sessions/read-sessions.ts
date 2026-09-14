@@ -1,4 +1,5 @@
 import type { SessionReader } from '@/core/sessions/bridge'
+import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { projectFeed } from '@/core/sessions/feed'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
@@ -10,6 +11,7 @@ import { discoverSessions, readSessionFiles } from './discover'
 type ReaderOptions = {
   roster?: () => SessionRosterRow[]
   liveMessages?: (sessionId: string) => LiveMessage[]
+  rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }
 
 // A streamed message takes the row id the rollout's own message will get (`feed.ts`), so the
@@ -42,6 +44,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
+    rename: options?.rename,
     overlayFor:
       liveMessages === undefined ? undefined : (sessionId) => draftOverlay(liveMessages(sessionId)),
   }

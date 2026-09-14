@@ -34,7 +34,12 @@ export function SessionComposerArea({
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} plan={session?.plan ?? null} harness={harness} />
+      <SessionComposer
+        {...composer.props}
+        contextTokens={session?.contextTokens}
+        harness={harness}
+        plan={session?.plan ?? null}
+      />
     </>
   )
 }

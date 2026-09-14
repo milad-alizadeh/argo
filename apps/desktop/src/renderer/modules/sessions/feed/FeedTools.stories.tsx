@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta } from '@storybook/react'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 
 const command = {
@@ -18,11 +18,28 @@ const meta: Meta<typeof FeedToolLine> = {
 }
 
 export default meta
-type Story = StoryObj<typeof FeedToolLine>
 
-export const Succeeded: Story = {}
-export const Failed: Story = { args: { call: { ...command, status: 'failed' } } }
-export const InProgress: Story = { args: { call: { ...command, status: 'running' } } }
+export const StatusVariants = {
+  render: () => (
+    <div className="flex flex-col gap-2">
+      <FeedToolLine
+        activeEvidenceId={null}
+        call={{ ...command, status: 'succeeded' }}
+        onOpen={() => {}}
+      />
+      <FeedToolLine
+        activeEvidenceId={null}
+        call={{ ...command, status: 'failed' }}
+        onOpen={() => {}}
+      />
+      <FeedToolLine
+        activeEvidenceId={null}
+        call={{ ...command, status: 'running' }}
+        onOpen={() => {}}
+      />
+    </div>
+  ),
+}
 
 export const GroupClosed = {
   render: () => (

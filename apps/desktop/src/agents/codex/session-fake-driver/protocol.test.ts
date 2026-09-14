@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
+import { readInterrupt } from '../drive/interrupt-protocol.ts'
 import {
   readCompletedTurn,
-  readInterrupt,
   readMessage,
   readStartedTurn,
   readThreadId,

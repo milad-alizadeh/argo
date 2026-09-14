@@ -52,6 +52,9 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
 export function BasicFeed({
   feed,
   activeEvidenceId,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
   failure,
   isRunning,
   selectedSessionId,
@@ -59,6 +62,9 @@ export function BasicFeed({
 }: {
   feed: SessionFeed | null
   activeEvidenceId: string | null
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
   failure: SessionError | null
   isRunning: boolean
   selectedSessionId: SessionId | null
@@ -111,6 +117,9 @@ export function BasicFeed({
         <FeedDocument
           active={failure === null && id === selectedSessionId}
           activeEvidenceId={activeEvidenceId}
+          compactionStartedAt={id === selectedSessionId ? compactionStartedAt : null}
+          compactionPercentage={id === selectedSessionId ? compactionPercentage : null}
+          compactionTokens={id === selectedSessionId ? compactionTokens : null}
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}

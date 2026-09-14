@@ -2,12 +2,15 @@ import type {
   CodexSessionInterruptRequest,
   CodexSessionSendReply,
   CodexSessionSendRequest,
+  SessionRenameReply,
+  SessionRenameRequest,
 } from '@/core/sessions/contract'
 import { sessionError } from '@/core/sessions/contract'
 
 type CodexSessionDrive = {
   interrupt: (sessionId: string) => Promise<void>
   send: (sessionId: string, prompt: string) => Promise<void>
+  rename: (sessionId: string, name: string) => Promise<string>
 }
 
 // `codex app-server` refuses a thread already active in another process (its own client or the
@@ -54,5 +57,23 @@ export async function interruptCodexSession(
   } catch (error) {
     console.error('Argo could not interrupt Codex Session', request.sessionId, error)
     return sessionError(codexErrorCode(error), request.requestId)
+  }
+}
+
+export async function renameCodexSession(
+  request: SessionRenameRequest,
+  driver: CodexSessionDrive,
+): Promise<SessionRenameReply> {
+  try {
+    const title = await driver.rename(request.sessionId, request.name)
+    return {
+      version: 1,
+      type: 'session.renamed',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      title,
+    }
+  } catch {
+    return sessionError('codex-not-drivable', request.requestId)
   }
 }

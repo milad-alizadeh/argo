@@ -4,14 +4,16 @@ import type { NavigateFunction } from 'react-router'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
-import { COMPOSER_FOCUS_STATE, type SessionComposerProps } from '../components/SessionComposer'
+import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
-import { SessionContractError } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
+import { sessionComposerProps } from './sessionComposerProps'
+import { sendMessage, startSession } from './sessionSend'
 import { useClaudeSessionMutations } from './useClaudeSessionMutations'
 import { useCodexSessionMutations } from './useCodexSessionMutations'
+import { useCompact, useInterrupt } from './useSessionActions'
 import type { useSessions } from './useSessions'
 
 const NO_ROWS: SessionRosterRow[] = []
@@ -41,12 +43,32 @@ function managedSessionIsRunning(
   )
 }
 
+function sessionState(roster: SessionComposerOptions['roster'], sessionId: string | null) {
+  const selectedSession = roster?.sessions.find(({ id }) => id === sessionId)
+  const compactionStartedAt = selectedSession?.compactionStartedAt ?? null
+  const isCompacting = compactionStartedAt !== null
+  return { isCompacting, isRunning: managedSessionIsRunning(roster, sessionId) || isCompacting }
+}
+
 // A CLI's own hook owns its IPC calls (ADR-0021); this is the one seam that picks between them,
 // so the composer it hands back never has to know which CLI it is driving.
 function useMutationsFor(cli: SessionCli) {
   const mutationsByCli = { claude: useClaudeSessionMutations(), codex: useCodexSessionMutations() }
   return mutationsByCli[cli]
 }
+
+function useRefreshedCompact(
+  compactSession: () => Promise<boolean>,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return useCallback(async () => {
+    const compacted = await compactSession()
+    if (compacted) await invalidateSessionRoster(queryClient)
+    return compacted
+  }, [compactSession, queryClient])
+}
+
+export type SessionMutations = ReturnType<typeof useMutationsFor>
 
 export function useSessionComposer({
   cli,
@@ -61,6 +83,7 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
+  const { compact } = useClaudeSessionMutations()
   const { interrupt, send, start } = useMutationsFor(cli)
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
   const { control, watchTurn } = useTurnSetup({
@@ -70,7 +93,10 @@ export function useSessionComposer({
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
   })
-  const onInterrupt = useInterrupt(interrupt, selectedSessionId, setFailure)
+  const compactSession = useCompact({ compact, cli, sessionId: selectedSessionId, setFailure })
+  const onCompact = useRefreshedCompact(compactSession, queryClient)
+  const onInterrupt = useInterrupt({ interrupt, sessionId: selectedSessionId, setFailure })
+  const { isCompacting, isRunning } = sessionState(roster, selectedSessionId)
   const onSend = useCallback(
     async (prompt: string, setup: TurnSetup | null) => {
       if (selectedSessionId !== null) {
@@ -85,97 +111,33 @@ export function useSessionComposer({
           },
         )
       }
-      if (cockpit.project === null) {
-        setFailure({
-          sessionId: null,
-          message: 'Select a Project before starting a Session.',
-          code: null,
-        })
-        return false
-      }
-      try {
-        const reply = await start.mutateAsync({ cwd: cockpit.project.path, prompt, setup })
-        setFailure(null)
-        if (setup !== null) watchTurn(reply.sessionId, setup, null)
-        await invalidateSessionRoster(queryClient)
-        navigate(`/sessions/${reply.sessionId}`, { state: COMPOSER_FOCUS_STATE })
-        return true
-      } catch (error) {
-        setFailure({
-          sessionId: null,
-          message: messageFrom(error, 'Argo could not start this Session.'),
-          code: codeFrom(error),
-        })
-        return false
-      }
+      return startSession({
+        cockpit,
+        navigate,
+        prompt,
+        queryClient,
+        setFailure,
+        setup,
+        start,
+        watchTurn,
+      })
     },
-    [cockpit.project, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
+    [cockpit, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
   )
   const active = failure?.sessionId === selectedSessionId ? failure : null
   return {
     failure: active === null ? null : { message: active.message, code: active.code },
-    props: {
-      isRunning: managedSessionIsRunning(roster, selectedSessionId),
+    props: sessionComposerProps({
+      cli,
       focusOnMount,
+      isCompacting,
+      isRunning,
+      onCompact,
       onInterrupt,
       onSend,
+      selectedSessionId,
       sessionId: composerKey,
       setup: control,
-    },
+    }),
   }
-}
-
-function useInterrupt(
-  interrupt: ReturnType<typeof useMutationsFor>['interrupt'],
-  sessionId: string | null,
-  setFailure: (failure: Failure | null) => void,
-) {
-  return useCallback(async () => {
-    if (sessionId === null) return false
-    try {
-      await interrupt.mutateAsync(sessionId)
-      return true
-    } catch (error) {
-      setFailure({
-        sessionId,
-        message: messageFrom(error, 'Argo could not interrupt this Session.'),
-        code: codeFrom(error),
-      })
-      return false
-    }
-  }, [interrupt, sessionId, setFailure])
-}
-
-async function sendMessage(
-  request: {
-    send: ReturnType<typeof useMutationsFor>['send']
-    prompt: string
-    setup: TurnSetup | null
-    sessionId: string
-    setFailure: (failure: Failure | null) => void
-  },
-  afterSend: () => Promise<void>,
-) {
-  const { send, prompt, setup, sessionId, setFailure } = request
-  try {
-    await send.mutateAsync({ prompt, sessionId, setup })
-    setFailure(null)
-  } catch (error) {
-    setFailure({
-      sessionId,
-      message: messageFrom(error, 'Argo could not send this message.'),
-      code: codeFrom(error),
-    })
-    return false
-  }
-  await afterSend()
-  return true
-}
-
-function messageFrom(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
-}
-
-function codeFrom(error: unknown): SessionErrorCode | null {
-  return error instanceof SessionContractError ? error.code : null
 }

@@ -1,4 +1,5 @@
 import type {
+  ClaudeSessionCompactRequest,
   ClaudeSessionInterruptRequest,
   ClaudeSessionSendReply,
   ClaudeSessionSendRequest,
@@ -7,7 +8,7 @@ import { sessionError } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 
-type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
+type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'compact' | 'interrupt' | 'send'>
 
 export async function sendClaudeSession(
   request: ClaudeSessionSendRequest,
@@ -23,6 +24,13 @@ export async function interruptClaudeSession(
   driver: ClaudeSessionDrive,
 ): Promise<ClaudeSessionSendReply> {
   return accept(request, () => driver.interrupt(request.sessionId))
+}
+
+export async function compactClaudeSession(
+  request: ClaudeSessionCompactRequest,
+  driver: ClaudeSessionDrive,
+): Promise<ClaudeSessionSendReply> {
+  return accept(request, () => driver.compact(request.sessionId))
 }
 
 async function accept(

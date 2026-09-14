@@ -111,6 +111,31 @@ test('types a setup command only for what the next Turn changes, then the prompt
   }
 })
 
+test('keeps the selected Session compacting until a newer compact boundary arrives', async (context) => {
+  const { driver, sessionId, writes } = await startedSession(context)
+
+  await driver.compact(sessionId)
+
+  assert.deepEqual(writes, ['/compact', '\r'])
+  const startedAt = driver.roster()[0]?.compactionStartedAt
+  assert.notEqual(startedAt, null)
+  if (startedAt === null || startedAt === undefined) throw new Error('Compaction did not start.')
+  driver.completeCompaction(sessionId, new Date(Date.parse(startedAt) + 1).toISOString())
+  assert.equal(driver.roster()[0]?.compactionStartedAt, null)
+})
+
+test('renames a managed Claude Session with one bracketed native command', async (context) => {
+  const { driver, sessionId, writes } = await startedSession(context)
+
+  await driver.rename(sessionId, 'Keep the roster stable')
+
+  assert.deepEqual(writes, PASTED('/rename Keep the roster stable'))
+  assert.deepEqual(
+    driver.roster().map(({ title }) => title),
+    [{ text: 'Keep the roster stable', source: 'custom' }],
+  )
+})
+
 test('does not let the parent Claude Session suppress transcript persistence', async (context) => {
   const { driver, spawned } = launch(await ledgerFile(context))
 

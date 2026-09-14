@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { createWriteQueue } from '../../storage/portable-file'
 
 const run = promisify(execFile)
 
@@ -19,7 +20,7 @@ export async function repository(root, name) {
 export async function fixture(context) {
   const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-registration-')))
   context.after(() => rm(root, { recursive: true, force: true }))
-  const chosen = { folder: null, during: null }
+  const chosen = { folder: null, during: null, queue: null }
   return {
     root,
     store: {
@@ -28,11 +29,18 @@ export async function fixture(context) {
         // Whatever the machine does while the chooser is open. A modal chooser can stay open for
         // minutes, and the registry is a file another window of the app writes.
         if (chosen.during) await chosen.during()
+        if (chosen.queue) return chosen.queue.shift() ?? null
         return chosen.folder
       },
+      exclusive: createWriteQueue(),
     },
     choose(folder) {
       chosen.folder = folder
+    },
+    // One answer per call, in order, for two calls started together: the write queue serializes
+    // their choosers, so the first call in gets the first answer.
+    chooseEach(folders) {
+      chosen.queue = [...folders]
     },
     duringChoice(work) {
       chosen.during = work
