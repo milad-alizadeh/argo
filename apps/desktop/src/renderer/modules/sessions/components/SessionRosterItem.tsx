@@ -1,6 +1,7 @@
 import {
   ContextMenu,
   ContextMenuContent,
+  ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuTrigger,
@@ -87,8 +88,10 @@ export function SessionRosterItem({
           }
         />
         <ContextMenuContent aria-label={`${sessionName(session)} actions`}>
-          <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
-          <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
+          <ContextMenuGroup>
+            <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
+            <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
+          </ContextMenuGroup>
         </ContextMenuContent>
       </ContextMenu>
     </li>
