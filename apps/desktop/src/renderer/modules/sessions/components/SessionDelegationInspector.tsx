@@ -53,6 +53,7 @@ export function SessionDelegationInspector({
             onOpenEvidence={onOpenEvidence}
             onOpenSession={onOpenSession}
             questionFailure={() => null}
+            turnMarker={null}
           />
         )}
       </div>
