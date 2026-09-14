@@ -13,6 +13,7 @@ const command = {
   detail: '13 passed',
   status: 'succeeded' as const,
   evidence: { kind: 'output' as const, title: 'bun test', source: '13 pass\n0 fail' },
+  text: 'bun test',
 }
 
 const meta: Meta<typeof SessionEvidenceInspector> = {

@@ -63,7 +63,7 @@ test('leaves a subagent turn out of the Session history', async () => {
   const rows = await feedOf(['subagentTail'])
   assert.deepEqual(
     rows.map((row) => row.shape),
-    ['prose', 'tool'],
+    ['prose', 'tool-group'],
   )
   assert.equal(
     rows.some((row) => row.text === 'Eleven callers, all in the same package.'),

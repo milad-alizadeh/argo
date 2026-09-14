@@ -21,6 +21,9 @@ const toolCallSchema = z.strictObject({
   detail: z.string().nullable(),
   status: z.enum(['succeeded', 'failed', 'running']),
   evidence: toolEvidenceSchema,
+  // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
+  // kind routed to the evidence panel, which reads the call through `evidence` instead.
+  text: z.string().nullable(),
 })
 
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
