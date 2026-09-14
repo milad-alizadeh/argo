@@ -13,6 +13,7 @@ declare global {
       AppearanceClient & {
         onCommand(listener: (command: string) => void): () => void
         zoomFactor(): number
+        pathForFile(file: File): string
         versions: { electron: string; chrome: string }
       }
   }
