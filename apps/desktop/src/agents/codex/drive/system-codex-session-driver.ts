@@ -24,7 +24,11 @@ export function createSystemCodexSessionDriver() {
     now: () => new Date(),
     openChannel: (executable, options) => {
       const child = spawnCodex(executable, options)
-      child.stderr.on('data', () => {})
+      // `codex app-server` prints its own diagnostics here; kept in the log rather than thrown
+      // away, since a refusal on the JSON-RPC channel rarely says why on its own (#2053).
+      child.stderr.on('data', (chunk: Buffer) => {
+        console.error(`codex app-server stderr: ${chunk.toString('utf8').trimEnd()}`)
+      })
       return openCodexChannel({
         stdout: child.stdout,
         write: (line) => {

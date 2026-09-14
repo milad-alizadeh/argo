@@ -74,6 +74,19 @@ test('does not accept a Turn Codex could not be given', async () => {
   assert.deepEqual(result, { error: 'not-drivable' })
 })
 
+test('reports a Codex Session another app already holds active, by the refusal it names', async () => {
+  const adapter = createCodexDriveAdapter(
+    fakeDriver({
+      send: async () => {
+        throw new Error('Thread thread-1 is already active in another client.')
+      },
+    }),
+  )
+
+  const result = await adapter.send({ sessionId, prompt: 'x', setup: undefined })
+  assert.deepEqual(result, { error: 'held-elsewhere' })
+})
+
 test('interrupts only the selected managed Codex Session', async () => {
   const interrupted: string[] = []
   const adapter = createCodexDriveAdapter(
