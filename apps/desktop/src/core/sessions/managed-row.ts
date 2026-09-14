@@ -70,7 +70,10 @@ export function mergeManagedRoster(
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
     if (held === undefined) return session
-    const status = rollupSessionStatus(session.status, held.posture, held.status)
+    const status = rollupSessionStatus(session.status, held.posture, {
+      kind: 'already',
+      status: held.status,
+    })
     return reconcile({ ...session, posture: held.posture, status }, held)
   })
   const unobserved = managed.filter(

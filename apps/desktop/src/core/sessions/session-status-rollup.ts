@@ -14,18 +14,28 @@ import type { SessionPosture, SessionStatus } from './models'
 export type CodexStatusReading = { kind: 'thread'; status: SessionStatus } | { kind: 'turn-failed' }
 
 export type ManagedStatusSignal =
-  | { cli: 'claude'; pendingPermission: boolean }
-  | { cli: 'codex'; reading: CodexStatusReading }
+  | { kind: 'claude'; pendingPermission: boolean }
+  | { kind: 'codex'; reading: CodexStatusReading }
   // Already-derived: a caller (managed-row.ts) reconciling two rows that each ran their own CLI
   // signal through this fold once already needs no second derivation, only the tie-break.
-  | SessionStatus
+  | { kind: 'already'; status: SessionStatus }
 
 function deriveManagedStatus(signal: ManagedStatusSignal): SessionStatus {
-  if (typeof signal === 'string') return signal
-  if (signal.cli === 'claude') return signal.pendingPermission ? 'permission' : 'running'
-  // A failed Turn is a degrade-down case, not a one-off exception: the protocol has spoken, but
-  // not into a word this fold's closed set can stand behind.
-  return signal.reading.kind === 'turn-failed' ? 'unknown' : signal.reading.status
+  switch (signal.kind) {
+    case 'already':
+      return signal.status
+    case 'claude':
+      return signal.pendingPermission ? 'permission' : 'running'
+    case 'codex':
+      // A failed Turn is a degrade-down case, not a one-off exception: the protocol has spoken,
+      // but not into a word this fold's closed set can stand behind.
+      switch (signal.reading.kind) {
+        case 'turn-failed':
+          return 'unknown'
+        case 'thread':
+          return signal.reading.status
+      }
+  }
 }
 
 export function rollupSessionStatus(

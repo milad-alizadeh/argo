@@ -58,8 +58,10 @@ function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
     managedRow(id, {
       ...session,
       cli: 'claude',
+      // No transcript floor participates in a live managed reading, so `unknown` — the honest
+      // "nothing observed" floor — leaves the gate's own signal standing unopposed.
       status: rollupSessionStatus('unknown', 'managed', {
-        cli: 'claude',
+        kind: 'claude',
         pendingPermission: options.gate.pending(id) !== null,
       }),
       setup: session.applied,
