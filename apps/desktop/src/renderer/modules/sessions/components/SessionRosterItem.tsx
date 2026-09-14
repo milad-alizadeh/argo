@@ -9,8 +9,8 @@ import {
 } from '@/renderer/components/ui/context-menu'
 import { HarnessLogo } from '../harness/HarnessLogo'
 import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
+import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
-import { SessionReferenceText } from './SessionReference'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -108,7 +108,7 @@ export function SessionRosterItem({
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">
-                    <SessionReferenceText text={sessionName(session)} />
+                    <PromptText interactiveLinks={false} text={sessionName(session)} />
                   </span>
                   <span className="block truncate text-meta text-faint">
                     {activitySummary(session)}
