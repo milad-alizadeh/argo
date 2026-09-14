@@ -136,6 +136,7 @@ function ReviewScreen() {
         inspector={<SessionWorkInspector session={session} />}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
+        onOpenSession={() => {}}
         onAnswerQuestion={() => {}}
         answeringQuestionId={null}
         questionFailure={() => null}

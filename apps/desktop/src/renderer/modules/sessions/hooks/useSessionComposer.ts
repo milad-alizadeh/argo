@@ -1,18 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
-import { invalidateSessionRoster } from '../session-queries'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
 import { sessionComposerProps } from './sessionComposerProps'
 import { useComposerSend } from './useComposerSend'
+import { useHandoff, useHandoffCompletion } from './useHandoffActions'
 import type { Failure } from './useSessionComposer-actions'
-import { useCompact, useInterrupt } from './useSessionComposer-actions'
+import { useCompactWithInvalidate, useInterrupt } from './useSessionComposer-actions'
 import { useSessionMutations } from './useSessionMutations'
 import type { useSessions } from './useSessions'
 
@@ -52,7 +52,7 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { compact, interrupt, send, start } = useSessionMutations()
+  const { compact, handoff, interrupt, send, start } = useSessionMutations()
   const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
@@ -62,15 +62,18 @@ export function useSessionComposer({
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
   })
-  const compactSession = useCompact(compact, sessionId, setFailure)
-  const onCompact = useCallback(async () => {
-    const compacted = await compactSession()
-    if (compacted) await invalidateSessionRoster(queryClient)
-    return compacted
-  }, [compactSession, queryClient])
+  const onCompact = useCompactWithInvalidate({ compact, sessionId, setFailure, queryClient })
   const onInterrupt = useInterrupt(interrupt, sessionId, setFailure)
-  const isCompacting =
-    (roster?.sessions.find(({ id }) => id === sessionId)?.compactionStartedAt ?? null) !== null
+  const selectedRow = roster?.sessions.find(({ id }) => id === sessionId) ?? null
+  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
+  const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
+  const onHandoff = useHandoff(handoff, sessionId, setFailure)
+  useHandoffCompletion({
+    isHandingOff,
+    selectedRow,
+    selectedSessionId: sessionId,
+    setFailure,
+  })
   const onSend = useComposerSend({
     cli,
     cockpit,
@@ -91,7 +94,9 @@ export function useSessionComposer({
       isRunning: managedSessionIsRunning(roster, sessionId),
       focusOnMount,
       isCompacting,
+      isHandingOff,
       onCompact,
+      onHandoff,
       onInterrupt,
       onSend,
       sessionId: composerIdentityKey(identity),

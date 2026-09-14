@@ -10,8 +10,10 @@ export function sessionComposerProps({
   cli: SessionCli
   identity: ComposerIdentity
 }) {
+  const managed = cli === 'claude' && identity.kind === 'session'
   return {
     ...props,
-    onCompact: cli === 'claude' && identity.kind === 'session' ? props.onCompact : undefined,
+    onCompact: managed ? props.onCompact : undefined,
+    onHandoff: managed ? props.onHandoff : undefined,
   }
 }

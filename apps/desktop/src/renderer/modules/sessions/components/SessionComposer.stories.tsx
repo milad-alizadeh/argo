@@ -160,6 +160,7 @@ function CompactingComposerStory() {
           failure={null}
           feed={COMPACTION_FEED}
           onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
