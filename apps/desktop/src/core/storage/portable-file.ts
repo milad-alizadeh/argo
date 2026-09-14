@@ -1,6 +1,7 @@
 // One JSON document under `<userData>/portable-v1`, read and replaced whole. Every store the
 // cockpit owns goes through here, so each gets the same atomic write and the same three failures.
 import { randomUUID } from 'node:crypto'
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isRecord } from '../../boundary'
@@ -45,6 +46,45 @@ export async function writeDocument(
     return true
   } catch {
     await rm(pending, { force: true }).catch(() => undefined)
+    return false
+  }
+}
+
+// The synchronous twin of `readDocument`/`writeDocument`, for the one caller that reads and saves
+// from a signal handler and a hot poll path where an `await` cannot fit: the Session ownership
+// ledger. Same shape, same atomic rename, same three failures.
+export function readDocumentSync(documentPath: string): DocumentRead {
+  let content: string
+  try {
+    content = readFileSync(documentPath, 'utf8')
+  } catch (error) {
+    const missing = isRecord(error) && (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+    return { ok: false, reason: missing ? 'missing' : 'unreadable' }
+  }
+  try {
+    return { ok: true, document: JSON.parse(content) }
+  } catch {
+    return { ok: false, reason: 'invalid' }
+  }
+}
+
+export function writeDocumentSync(
+  documentPath: string,
+  document: Record<string, unknown>,
+  mode = 0o644,
+): boolean {
+  const pending = `${documentPath}.${randomUUID()}.pending`
+  try {
+    mkdirSync(path.dirname(documentPath), { recursive: true })
+    writeFileSync(pending, `${JSON.stringify(document, null, 2)}\n`, { mode })
+    renameSync(pending, documentPath)
+    return true
+  } catch {
+    try {
+      rmSync(pending, { force: true })
+    } catch {
+      // Best effort: the pending file, if it exists at all, is orphaned but harmless.
+    }
     return false
   }
 }

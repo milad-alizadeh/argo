@@ -12,7 +12,7 @@ export function HarnessTabs({
   children,
 }: {
   cli: SessionCli
-  onChange: (cli: SessionCli) => void
+  onChange?: (cli: SessionCli) => void
   children: ReactNode
 }) {
   return (
@@ -20,7 +20,7 @@ export function HarnessTabs({
       value={cli}
       onValueChange={(value) => {
         const chosen = SESSION_CLIS.find((option) => option === value)
-        if (chosen) onChange(chosen)
+        if (chosen) onChange?.(chosen)
       }}
       className="gap-0"
     >
@@ -32,6 +32,8 @@ export function HarnessTabs({
           {SESSION_CLIS.map((option) => (
             <TabsTrigger
               key={option}
+              disabled={onChange === undefined}
+              tabIndex={onChange === undefined || option !== cli ? -1 : 0}
               value={option}
               className="h-8 gap-2 px-3 type-label font-medium text-muted-foreground data-active:bg-card"
             >

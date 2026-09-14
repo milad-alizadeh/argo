@@ -85,6 +85,11 @@ test('interrupts only the selected managed Codex Session', async () => {
   assert.deepEqual(interrupted, [sessionId])
 })
 
+test('refuses compaction, which Codex does not support yet', async () => {
+  const adapter = createCodexDriveAdapter(fakeDriver())
+  assert.deepEqual(await adapter.compact({ sessionId }), { error: 'not-drivable' })
+})
+
 test('reads no pending Permission, since Codex Permissions are #1841', async () => {
   const adapter = createCodexDriveAdapter(fakeDriver())
   assert.deepEqual(await adapter.readPermission({ sessionId }), { permission: null })

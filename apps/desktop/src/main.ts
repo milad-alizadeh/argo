@@ -71,6 +71,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         transcripts: claudeTranscriptsRoot(home),
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
+        completeCompaction: claudeSessionDriver.completeCompaction,
         orphans: claudeSessionDriver.orphans,
         liveMessages: claudeSessionDriver.liveMessages,
         rename: (request) => renameClaudeSession(request, claudeSessionDriver),

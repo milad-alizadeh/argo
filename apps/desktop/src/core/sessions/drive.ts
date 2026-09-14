@@ -5,6 +5,7 @@
 import {
   driveSessionError,
   type SessionAcceptedReply,
+  type SessionCompactRequest,
   type SessionInterruptRequest,
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
@@ -88,6 +89,23 @@ export async function interruptSession(
   const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await owned.adapter.interrupt({ sessionId: request.sessionId })
+  if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
+  return {
+    version: 1,
+    type: 'session.accepted',
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+  }
+}
+
+export async function compactSession(
+  request: SessionCompactRequest,
+  adapters: SessionDriveAdapters,
+  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+): Promise<SessionAcceptedReply> {
+  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
+  if (owned === undefined) return sessionError('missing-session', request.requestId)
+  const result = await owned.adapter.compact({ sessionId: request.sessionId })
   if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
   return {
     version: 1,

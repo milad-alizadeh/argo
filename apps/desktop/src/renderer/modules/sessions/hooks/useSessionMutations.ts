@@ -14,6 +14,19 @@ type Turn = { prompt: string; setup: TurnSetup | null }
 // One mutation hook for every CLI (#2030): each adapter validates its own Turn-setup shape at
 // its own boundary, so this hook passes `setup` through rather than choosing a schema for it.
 export function useSessionMutations() {
+  const compact = useMutation<void, SessionContractError, string>({
+    mutationFn: async (sessionId: string) => {
+      const reply = await window.argo.compactSession({ sessionId })
+      switch (reply.type) {
+        case 'session.accepted':
+          return
+        case 'session.error':
+          return throwSessionContractError(reply)
+        default:
+          return throwUnexpectedSessionReply(reply)
+      }
+    },
+  })
   const interrupt = useMutation<void, SessionContractError, string>({
     mutationFn: async (sessionId: string) => {
       const reply = await window.argo.interruptSession({ sessionId })
@@ -58,5 +71,5 @@ export function useSessionMutations() {
     },
   })
 
-  return { interrupt, send, start }
+  return { compact, interrupt, send, start }
 }

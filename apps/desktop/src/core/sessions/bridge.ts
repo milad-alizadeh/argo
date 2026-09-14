@@ -10,6 +10,7 @@ import {
   sessionError,
 } from './contract'
 import {
+  compactSession,
   decideSessionPermission,
   interruptSession,
   readSessionPermission,
@@ -51,6 +52,8 @@ export function attachSessionBridge(
         sendSession(request, context.adapters, context.reader.ownerCliFor),
       interrupt: (request, context) =>
         interruptSession(request, context.adapters, context.reader.ownerCliFor),
+      compact: (request, context) =>
+        compactSession(request, context.adapters, context.reader.ownerCliFor),
       readPermission: (request, context) =>
         readSessionPermission(request, context.adapters, context.reader.ownerCliFor),
       decidePermission: (request, context) =>

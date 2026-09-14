@@ -1,5 +1,6 @@
 import {
   sessionAcceptedReplySchema,
+  sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
   sessionInterruptRequestSchema,
@@ -52,6 +53,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.interrupt',
     channel: 'argo:session:interrupt',
     request: sessionInterruptRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  compact: {
+    name: 'session.compact',
+    channel: 'argo:session:compact',
+    request: sessionCompactRequestSchema,
     reply: sessionAcceptedReplySchema,
   },
   readPermission: {

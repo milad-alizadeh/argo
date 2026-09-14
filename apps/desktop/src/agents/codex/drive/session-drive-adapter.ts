@@ -38,6 +38,9 @@ export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriv
         return failureOf(error, 'not-drivable')
       }
     },
+    async compact() {
+      return { error: 'not-drivable' }
+    },
     // Codex Permissions are #1841, still out of scope: there is never a pending Permission to
     // read, and a decision always answers that it is no longer waiting.
     async readPermission() {

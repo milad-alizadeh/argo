@@ -7,7 +7,7 @@ import { createClaudeDriveAdapter } from '../../agents/claude/drive/session-driv
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { createCodexDriveAdapter } from '../../agents/codex/drive/session-drive-adapter'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
-import { sendSession } from './drive'
+import { compactSession, sendSession } from './drive'
 import { managedRow } from './managed-row'
 import { createSessionReader } from './reader'
 import { tempRoot } from './reader-test-helpers'
@@ -21,6 +21,8 @@ function fakeClaudeDriver() {
     sent,
     driver: {
       start: () => 'claude-1',
+      compact: async (_sessionId: string) => {},
+      completeCompaction: () => {},
       send: async (sessionId: string, turn: { prompt: string }) => {
         sent.push({ sessionId, prompt: turn.prompt })
       },
@@ -121,4 +123,25 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
   assert.equal(codexReply.type, 'session.accepted')
   assert.deepEqual(claude.sent, [{ sessionId: 'claude-1', prompt: 'To Claude.' }])
   assert.deepEqual(codex.sent, [{ sessionId: 'codex-1', prompt: 'To Codex.' }])
+})
+
+test('routes compaction to its Claude Session owner', async (context) => {
+  const compacted: string[] = []
+  const claude = fakeClaudeDriver()
+  claude.driver.compact = async (sessionId: string) => void compacted.push(sessionId)
+  const codex = fakeCodexDriver()
+  const reader = await readerWithBothManagedSessions(context)
+  const adapters: SessionDriveAdapters = {
+    claude: createClaudeDriveAdapter(claude.driver),
+    codex: createCodexDriveAdapter(codex.driver),
+  }
+
+  const reply = await compactSession(
+    { version: 1, type: 'session.compact', requestId: 'compact-claude', sessionId: 'claude-1' },
+    adapters,
+    reader.ownerCliFor,
+  )
+
+  assert.equal(reply.type, 'session.accepted')
+  assert.deepEqual(compacted, ['claude-1'])
 })

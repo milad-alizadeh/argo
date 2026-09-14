@@ -31,6 +31,24 @@ export function useInterrupt(
   }, [interrupt, sessionId, setFailure])
 }
 
+export function useCompact(
+  compact: ReturnType<typeof useSessionMutations>['compact'],
+  sessionId: string | null,
+  setFailure: (failure: Failure | null) => void,
+) {
+  return useCallback(async () => {
+    if (sessionId === null) return false
+    try {
+      await compact.mutateAsync(sessionId)
+      setFailure(null)
+      return true
+    } catch (error) {
+      setFailure({ sessionId, message: messageFrom(error, 'Argo could not compact this Session.') })
+      return false
+    }
+  }, [compact, sessionId, setFailure])
+}
+
 export async function sendMessage(
   request: {
     send: ReturnType<typeof useSessionMutations>['send']

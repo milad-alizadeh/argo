@@ -23,6 +23,7 @@ export type SessionDriveAdapter = {
     setup: unknown
   }): Promise<DriveOk | DriveFailure>
   interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
+  compact(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   readPermission(request: { sessionId: string }): Promise<{ permission: ClaudePermission | null }>
   decidePermission(request: {
     sessionId: string

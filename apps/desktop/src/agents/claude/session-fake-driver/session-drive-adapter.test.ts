@@ -12,6 +12,7 @@ const setup = { model: 'haiku', effort: 'low', mode: 'plan' } as const
 function fakeDriver(overrides: Partial<Parameters<typeof createClaudeDriveAdapter>[0]> = {}) {
   return {
     start: () => sessionId,
+    compact: async () => {},
     send: async () => {},
     interrupt: () => {},
     pendingPermission: () => null,
@@ -106,6 +107,17 @@ test('interrupts only the selected managed Claude Session', async () => {
   const result = await adapter.interrupt({ sessionId })
   assert.deepEqual(result, { ok: true })
   assert.deepEqual(interrupted, [sessionId])
+})
+
+test('compacts only the selected managed Claude Session', async () => {
+  const compacted: string[] = []
+  const adapter = createClaudeDriveAdapter(
+    fakeDriver({ compact: async (receivedSessionId) => void compacted.push(receivedSessionId) }),
+  )
+
+  const result = await adapter.compact({ sessionId })
+  assert.deepEqual(result, { ok: true })
+  assert.deepEqual(compacted, [sessionId])
 })
 
 test('reads the pending Permission the driver holds for a Session', async () => {

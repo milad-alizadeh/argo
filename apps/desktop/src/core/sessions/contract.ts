@@ -110,6 +110,14 @@ export const sessionInterruptRequestSchema = z.strictObject({
 })
 export type SessionInterruptRequest = z.infer<typeof sessionInterruptRequestSchema>
 
+export const sessionCompactRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.compact'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type SessionCompactRequest = z.infer<typeof sessionCompactRequestSchema>
+
 export const sessionAcceptedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.accepted'),

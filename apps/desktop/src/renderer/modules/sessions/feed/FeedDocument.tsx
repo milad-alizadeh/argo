@@ -10,6 +10,7 @@ import {
 import { Spinner } from '../../../components/ui/spinner'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
+import { CompactionMarker } from './CompactionMarker'
 import { FeedRow } from './FeedRow'
 import { type Reveal, useReveals } from './reveal'
 import { type Settled, useSettledFeed } from './useSettledFeed'
@@ -17,11 +18,24 @@ import { type Settled, useSettledFeed } from './useSettledFeed'
 type FeedDocumentProps = {
   active: boolean
   activeEvidenceId: string | null
+  compactionStartedAt: string | null
+  compactionPercentage: number | null
+  compactionTokens: string | null
   feed: SessionFeed
   isRunning: boolean
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
+
+function compactionMarker(
+  startedAt: string | null,
+  percentage: number | null,
+  tokens: string | null,
+) {
+  return startedAt === null ? null : (
+    <CompactionMarker percentage={percentage} startedAt={startedAt} tokens={tokens} />
+  )
+}
 
 function useToolGroups() {
   const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
@@ -41,6 +55,9 @@ function useToolGroups() {
 export function FeedDocument({
   active,
   activeEvidenceId,
+  compactionStartedAt,
+  compactionPercentage,
+  compactionTokens,
   feed,
   isRunning,
   onOpenEvidence,
@@ -101,6 +118,7 @@ export function FeedDocument({
           ))}
         </div>
         {content}
+        {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
       </div>
     </div>
   )
