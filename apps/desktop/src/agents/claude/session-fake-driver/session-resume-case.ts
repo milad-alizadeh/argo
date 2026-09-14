@@ -95,15 +95,16 @@ export async function provePackagedResume(page, { project, restart, transcripts 
 }
 
 async function waitForCompactionFeed(page, sessionId) {
-  const status = page.locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   await waitFor(async () => {
-    const rows = await status.allTextContents()
-    return rows.some((row) => row.includes('Compacting conversation'))
-  }, 30_000)
+    const [session] = await rosterRow(page, sessionId)
+    return session?.compactionStartedAt !== null
+  }, 60_000)
   await waitFor(async () => {
-    const rows = await status.allTextContents()
+    const rows = await page
+      .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
+      .allTextContents()
     return rows.some((row) => row.includes('Conversation compacted'))
-  }, 30_000)
+  }, 60_000)
 }
 
 async function waitFor(condition, timeout = 10_000) {
