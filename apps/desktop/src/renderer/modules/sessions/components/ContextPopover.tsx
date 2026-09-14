@@ -28,6 +28,7 @@ function ContextDetails({
   usedTokens: number
 }) {
   const [threshold, setThreshold] = useState(160_000)
+  const [thresholdInput, setThresholdInput] = useState('160000')
   const zone = contextZone(percentage)
   return (
     <>
@@ -84,9 +85,11 @@ function ContextDetails({
           className="h-1.5 w-full cursor-pointer accent-foreground"
           max="95"
           min="40"
-          onChange={(event) =>
-            setThreshold(Math.round((200_000 * Number(event.target.value)) / 100))
-          }
+          onChange={(event) => {
+            const nextThreshold = Math.round((200_000 * Number(event.target.value)) / 100)
+            setThreshold(nextThreshold)
+            setThresholdInput(String(nextThreshold))
+          }}
           step="5"
           type="range"
           value={Math.round((threshold / 200_000) * 100)}
@@ -97,10 +100,20 @@ function ContextDetails({
             <input
               aria-label="Auto-compact threshold tokens"
               className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
-              onChange={(event) => setThreshold(Number(event.target.value) || threshold)}
+              max="190000"
+              min="80000"
+              onBlur={() => {
+                const nextThreshold = Math.min(
+                  190_000,
+                  Math.max(80_000, Number(thresholdInput) || threshold),
+                )
+                setThreshold(nextThreshold)
+                setThresholdInput(String(nextThreshold))
+              }}
+              onChange={(event) => setThresholdInput(event.target.value)}
               step="1000"
               type="number"
-              value={threshold}
+              value={thresholdInput}
             />
             <span className="shrink-0 text-muted-foreground">tokens</span>
           </span>
@@ -122,6 +135,9 @@ export function ContextPopover({
   usedTokens: number
 }) {
   const value = `${Math.round(usedTokens / 1000)}k / 200k · ${percentage}%`
+  const accessibleName = compact
+    ? `Context ${Math.round(usedTokens / 1000)}k tokens of 200k tokens, ${percentage}%`
+    : 'Context details'
   const zone = contextZone(percentage)
   return (
     <Popover>
@@ -129,13 +145,13 @@ export function ContextPopover({
         render={
           compact ? (
             <Button
-              aria-label={`Context ${value}`}
-              className="gap-1.5 px-2 type-label font-medium"
+              aria-label={accessibleName}
+              className="gap-1.5 px-2 type-label font-medium text-foreground"
               size="sm"
               variant="ghost"
             />
           ) : (
-            <Button aria-label={`Context ${value}`} size="icon-sm" variant="ghost" />
+            <Button aria-label={accessibleName} size="icon-sm" variant="ghost" />
           )
         }
       >
@@ -163,8 +179,9 @@ export function ContextPopover({
                 strokeDasharray={`${percentage} 100`}
               />
             </svg>
-            <span>Context</span>
-            <span className="tabular-nums text-muted-foreground">{value}</span>
+            <span>
+              Context <span className="tabular-nums text-muted-foreground">{value}</span>
+            </span>
           </>
         ) : (
           <Info />

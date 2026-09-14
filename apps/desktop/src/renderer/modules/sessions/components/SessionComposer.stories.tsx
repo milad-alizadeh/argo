@@ -125,7 +125,7 @@ function CompactingComposerStory() {
   const [compacting, setCompacting] = useState(false)
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-none flex-col p-8 [--size-session-column:72rem]">
+    <div className="mx-auto flex h-dvh w-full max-w-none flex-col p-8">
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
@@ -339,6 +339,7 @@ export const PlainText: Story = {
 }
 
 export const CompactionStarts: Story = {
+  parameters: { frame: 'w-full' },
   render: () => <CompactingComposerStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -346,7 +347,7 @@ export const CompactionStarts: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
     const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
     await expect(interrupt).toHaveFocus()
-    await expect(canvas.getByText('Compacting conversation')).toBeVisible()
+    await expect(canvas.getByText('Compacting conversation…')).toBeVisible()
     await expect(canvas.getByText('22%')).toBeVisible()
   },
 }
