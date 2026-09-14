@@ -4,19 +4,14 @@ import type { NavigateFunction } from 'react-router'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
-import { COMPOSER_FOCUS_STATE, type SessionComposerProps } from '../components/SessionComposer'
+import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
-import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { sessionComposerProps } from './sessionComposerProps'
+import { useComposerSend } from './useComposerSend'
 import type { Failure } from './useSessionComposer-actions'
-import {
-  sendMessage,
-  startNewSession,
-  useCompact,
-  useInterrupt,
-} from './useSessionComposer-actions'
+import { useCompact, useInterrupt } from './useSessionComposer-actions'
 import { useSessionMutations } from './useSessionMutations'
 import type { useSessions } from './useSessions'
 
@@ -75,31 +70,18 @@ export function useSessionComposer({
   const isCompacting =
     (roster?.sessions.find(({ id }) => id === selectedSessionId)?.compactionStartedAt ?? null) !==
     null
-  const onSend = useCallback(
-    async (prompt: string, setup: TurnSetup | null) => {
-      if (selectedSessionId !== null) {
-        const since =
-          roster?.sessions.find(({ id }) => id === selectedSessionId)?.turnStartedAt ?? null
-        return sendMessage(
-          { send, prompt, setup, sessionId: selectedSessionId, setFailure },
-          () => {
-            if (setup !== null) watchTurn(selectedSessionId, setup, since)
-            // A Send can resume the Session (ADR-0026), so its posture may have changed.
-            return invalidateSessionRoster(queryClient)
-          },
-        )
-      }
-      return startNewSession(
-        { cli, cockpit, prompt, setup, start, setFailure },
-        (sessionId) => {
-          if (setup !== null) watchTurn(sessionId, setup, null)
-          return invalidateSessionRoster(queryClient)
-        },
-        (sessionId) => navigate(`/sessions/${sessionId}`, { state: COMPOSER_FOCUS_STATE }),
-      )
-    },
-    [cli, cockpit, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
-  )
+  const onSend = useComposerSend({
+    cli,
+    cockpit,
+    navigate,
+    queryClient,
+    roster,
+    selectedSessionId,
+    send,
+    setFailure,
+    start,
+    watchTurn,
+  })
   return {
     failure:
       failure?.sessionId === selectedSessionId

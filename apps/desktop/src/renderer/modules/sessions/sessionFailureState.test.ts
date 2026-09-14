@@ -1,9 +1,13 @@
 import { expect, test } from 'bun:test'
 
-import { sessionError } from '@/core/sessions/contract'
+import { driveSessionError } from '@/core/sessions/session-error'
 import { sessionFailureState } from './sessionFailureState'
 
 test('reads a Session held elsewhere as unavailable rather than an error, for both CLIs', () => {
-  expect(sessionFailureState(sessionError('held-elsewhere', null).code)).toBe('unavailable')
-  expect(sessionFailureState(sessionError('codex-held-elsewhere', null).code)).toBe('unavailable')
+  expect(sessionFailureState(driveSessionError('held-elsewhere', 'claude', null).code)).toBe(
+    'unavailable',
+  )
+  expect(sessionFailureState(driveSessionError('held-elsewhere', 'codex', null).code)).toBe(
+    'unavailable',
+  )
 })

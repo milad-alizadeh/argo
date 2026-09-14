@@ -5,7 +5,6 @@ export function sessionFailureState(code: SessionErrorCode) {
     case 'access-denied':
     case 'cli-unavailable':
     case 'held-elsewhere':
-    case 'codex-held-elsewhere':
     case 'missing-session':
     case 'not-resumable':
     case 'transcripts-unavailable':
@@ -16,6 +15,7 @@ export function sessionFailureState(code: SessionErrorCode) {
     case 'invalid-response':
     case 'launch-failed':
     case 'not-drivable':
+    case 'stale-permission':
     case 'unsupported-version':
       return 'error'
   }

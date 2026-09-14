@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
-import { SessionContractError } from '../session-contract-error'
 import type { SessionCli } from '../harness/harnesses'
+import { SessionContractError } from '../session-contract-error'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from './useSessionMutations'
 
@@ -100,7 +100,11 @@ export async function startNewSession(
 ) {
   const { cli, cockpit, prompt, setup, start, setFailure } = request
   if (cockpit.project === null) {
-    setFailure({ sessionId: null, message: 'Select a Project before starting a Session.', code: null })
+    setFailure({
+      sessionId: null,
+      message: 'Select a Project before starting a Session.',
+      code: null,
+    })
     return false
   }
   try {
