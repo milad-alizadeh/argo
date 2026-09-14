@@ -15,9 +15,10 @@ export async function proveSessionShell(page) {
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
   await page.getByRole('button', { name: 'Open Session inspector' }).click()
   await page.waitForFunction(
-    () =>
+    (inspectorWidth) =>
       document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ===
-      INSPECTOR_WIDTH,
+      inspectorWidth,
+    INSPECTOR_WIDTH,
   )
   assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
   await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
