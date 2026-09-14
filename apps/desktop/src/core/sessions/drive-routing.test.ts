@@ -52,6 +52,8 @@ function fakeCodexDriver() {
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
+      pendingQuestion: () => null,
+      decideQuestion: () => true,
       close: () => {},
     },
   }
