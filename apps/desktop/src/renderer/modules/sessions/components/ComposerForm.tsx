@@ -114,6 +114,7 @@ export function ComposerForm({
           <ComposerToolbar
             attachments={attachments}
             draft={draft}
+            editorRef={editorRef}
             harness={harness}
             interruptRef={interruptRef}
             isRunning={isRunning}

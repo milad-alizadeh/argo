@@ -34,13 +34,14 @@ type SessionContext = {
   attachments: AttachmentsStore
 }
 
-// The multi-file chooser for attachments, opened over the same window every other Session dialog
-// opens over. Cancelling is not a failure: it hands back no paths, the same as choosing none.
+// The multi-file/folder chooser for attachments, opened over the same window every other Session
+// dialog opens over. Cancelling is not a failure: it hands back no paths, the same as choosing
+// none. A chosen folder attaches the same way a file does, as an `@path` reference (#1845).
 async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
   const chosen = await dialog.showOpenDialog(window, {
-    title: 'Attach Files',
+    title: 'Attach Files & Folders',
     buttonLabel: 'Attach',
-    properties: ['openFile', 'multiSelections'],
+    properties: ['openFile', 'openDirectory', 'multiSelections'],
   })
   return chosen.canceled ? [] : chosen.filePaths
 }

@@ -11,10 +11,12 @@ import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
-// The Attach button lives inside the "Add context" menu, matching the composer prototype.
+// The Attach action lives inside the "Add context" menu, matching the composer prototype.
 async function attachViaMenu(canvas: ReturnType<typeof within>) {
   await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-  await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Attachment' }))
+  await userEvent.click(
+    await within(document.body).findByRole('menuitem', { name: 'Files & folders' }),
+  )
 }
 
 const FRAME = 'mx-auto max-w-4xl p-8'
@@ -871,6 +873,18 @@ export const AttachViaButton: Story = {
     await attachViaMenu(canvas)
     await expect(await canvas.findByText('notes')).toBeVisible()
     await expect(canvas.getByText('MD file')).toBeVisible()
+  },
+}
+
+export const SkillsMenuOpensCommandAutocomplete: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
+    await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Skills' }))
+
+    await expect(await canvas.findByRole('listbox', { name: 'References' })).toBeVisible()
+    await expect(canvas.getByRole('option', { name: /Implement/ })).toBeVisible()
   },
 }
 
