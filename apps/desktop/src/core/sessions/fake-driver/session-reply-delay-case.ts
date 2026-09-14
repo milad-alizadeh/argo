@@ -10,6 +10,8 @@ import { chooseHarness, openNewSessionByClick, rosterIds } from './session-gestu
 const WAITING_PROMPT = 'Hold this reply while the packaged app waits.'
 const DUPLICATE_PROMPT = 'Send this exactly once while the fake CLI waits.'
 
+type BeginRequest = { page: Page; transcripts: string; prompt: string; sends: number }
+
 async function send(page: Page, prompt: string, times: number) {
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
@@ -31,7 +33,7 @@ async function fakeHasReplied(transcripts: string, prompt: string) {
   return records.some((record) => record.includes(`Fake Claude read: ${prompt}`))
 }
 
-async function begin(page: Page, transcripts: string, prompt: string, sends: number) {
+async function begin({ page, transcripts, prompt, sends }: BeginRequest) {
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
@@ -44,16 +46,19 @@ async function begin(page: Page, transcripts: string, prompt: string, sends: num
 }
 
 export async function proveReplyWait(page: Page, transcripts: string) {
-  await begin(page, transcripts, WAITING_PROMPT, 1)
+  await begin({ page, transcripts, prompt: WAITING_PROMPT, sends: 1 })
   await waitForReply(page, WAITING_PROMPT)
 }
 
 export async function proveDuplicateSend(page: Page, transcripts: string) {
-  const known = await begin(page, transcripts, DUPLICATE_PROMPT, 5)
+  const known = await begin({ page, transcripts, prompt: DUPLICATE_PROMPT, sends: 5 })
   await waitForReply(page, DUPLICATE_PROMPT)
   const created = (await rosterIds(page)).filter((id) => !known.includes(id))
   assert.equal(created.length, 1)
-  const transcript = await readFile(path.join(fakeClaudeFolder(transcripts), `${created[0]}.jsonl`), 'utf8')
+  const transcript = await readFile(
+    path.join(fakeClaudeFolder(transcripts), `${created[0]}.jsonl`),
+    'utf8',
+  )
   const turns = transcript.split('\n').filter((line) => line.includes('"type":"user"'))
   assert.equal(turns.length, 1)
 }

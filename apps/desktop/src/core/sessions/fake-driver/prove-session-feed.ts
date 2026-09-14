@@ -121,7 +121,9 @@ try {
   harness = delayed
   page = await delayed.launch()
   await ran(['session-reply-wait'], () => proveReplyWait(page, delayed.fixture.claudeTranscripts))
-  await ran(['session-duplicate-send'], () => proveDuplicateSend(page, delayed.fixture.claudeTranscripts))
+  await ran(['session-duplicate-send'], () =>
+    proveDuplicateSend(page, delayed.fixture.claudeTranscripts),
+  )
   await assertShippedFusesIntact()
   console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
 } finally {

@@ -18,7 +18,10 @@ const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
 // Launches the packaged app against the fixture's fake CLIs, then restarts it in place so
 // roster/resume proof cases can exercise a fresh process without losing the fixture root.
-export async function createPackagedSessionHarness(root: string, options: { replyDelayMs?: number } = {}) {
+export async function createPackagedSessionHarness(
+  root: string,
+  options: { replyDelayMs?: number } = {},
+) {
   const fixture = await prepare(root)
   const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const fakeCodex = await writeFakeCodex(root)
