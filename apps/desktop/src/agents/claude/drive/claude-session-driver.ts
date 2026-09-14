@@ -1,3 +1,4 @@
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
@@ -19,6 +20,11 @@ export type ClaudeSessionDriver = {
   orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
   decidePermission: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  decideQuestion: (
+    sessionId: string,
+    questionId: string,
+    answers: ClaudeQuestionAnswer[],
+  ) => Promise<boolean>
   close: () => void
 }
 
@@ -51,6 +57,22 @@ function startSession(
   const session = channel.open({ sessionId, ...request, sessionFlags: ['--session-id', sessionId] })
   channel.write(session, request).catch(() => {})
   return sessionId
+}
+
+async function decideQuestion(
+  context: {
+    options: DriverOptions
+    channel: ReturnType<typeof channelActions>
+    sessions: Map<string, ManagedSession>
+  },
+  request: { sessionId: string; questionId: string; answers: ClaudeQuestionAnswer[] },
+): Promise<boolean> {
+  const session = context.sessions.get(request.sessionId)
+  if (!session) return false
+  const pending = await context.options.pendingQuestion(request.sessionId)
+  if (pending === null || pending.id !== request.questionId) return false
+  await context.channel.answer(session, request.answers)
+  return true
 }
 
 function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
@@ -118,6 +140,8 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),
+    decideQuestion: (sessionId, questionId, answers) =>
+      decideQuestion({ options, channel, sessions }, { sessionId, questionId, answers }),
     close() {
       channel.close()
       closeSessions(options, sessions)

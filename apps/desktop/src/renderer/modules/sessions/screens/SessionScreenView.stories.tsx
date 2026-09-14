@@ -10,7 +10,8 @@ import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionRosterRow } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
-import { SessionScreenView, SessionShell } from './SessionScreenView'
+import { SessionScreenView } from './SessionScreenView'
+import { SessionShell } from './SessionShell'
 
 const SESSION_ROSTER = [
   sessionRosterRow({
@@ -135,6 +136,9 @@ function ReviewScreen() {
         inspector={<SessionWorkInspector session={session} />}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
+        onAnswerQuestion={() => {}}
+        answeringQuestionId={null}
+        questionFailure={() => null}
         selectedSessionId={selectedSessionId}
       />
     </CockpitShell>

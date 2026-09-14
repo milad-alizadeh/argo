@@ -26,6 +26,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
       input: { command: 'bun test' },
     }),
     decidePermission: () => true,
+    decideQuestion: async () => true,
     close: () => {},
   })
 }

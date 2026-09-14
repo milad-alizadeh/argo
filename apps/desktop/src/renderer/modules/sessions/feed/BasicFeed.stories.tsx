@@ -293,6 +293,9 @@ function StreamingFeed() {
           isRunning={false}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
+          onAnswerQuestion={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
         />
       </div>
     </div>

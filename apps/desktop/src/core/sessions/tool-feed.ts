@@ -1,8 +1,16 @@
+import { z } from 'zod'
+import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
 import type { ToolCall } from './transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
+type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = { content: string | null; failed: boolean }
+
+const ASK_TOOL = 'AskUserQuestion'
+const claudeQuestionCallInputSchema = z.strictObject({
+  questions: z.array(claudeQuestionSchema).min(1),
+})
 
 const TOOL_DETAILS = {
   Bash: (call: ToolCall) => ({
@@ -71,8 +79,26 @@ function toolRow(call: ToolCall, results: Map<string, ToolResult>): ToolRow {
   }
 }
 
-export function toolRows(calls: ToolCall[], results: Map<string, ToolResult>): ToolRow[] {
-  return calls.map((call) => toolRow(call, results))
+// `AskUserQuestion`'s own input carries the structured question verbatim, so the row draws it
+// directly rather than summarising it into a label the way every other tool call is described.
+function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null {
+  const parsed = claudeQuestionCallInputSchema.safeParse(call.input)
+  if (!parsed.success) return null
+  return {
+    shape: 'ask',
+    id: call.id,
+    questions: parsed.data.questions,
+    answer: results.get(call.id)?.content ?? null,
+  }
+}
+
+function feedRow(call: ToolCall, results: Map<string, ToolResult>): SessionFeedRow {
+  if (call.name === ASK_TOOL) return askRow(call, results) ?? toolRow(call, results)
+  return toolRow(call, results)
+}
+
+export function toolRows(calls: ToolCall[], results: Map<string, ToolResult>): SessionFeedRow[] {
+  return calls.map((call) => feedRow(call, results))
 }
 
 function countLabel(verb: string, noun: string, count: number) {

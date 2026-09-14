@@ -1,4 +1,5 @@
 import { createDomainClient } from '../contract/domain'
+import type { ClaudeQuestionAnswer } from './claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -33,6 +34,11 @@ export type SessionClient = {
     permissionId: string
     decision: 'allow' | 'deny'
   }): Promise<SessionAcceptedReply>
+  decideSessionQuestion(request: {
+    sessionId: string
+    questionId: string
+    answers: ClaudeQuestionAnswer[]
+  }): Promise<SessionAcceptedReply>
   listSessions(): Promise<SessionListReply>
   listArchivedSessions(request: {
     cursor: string | null
@@ -58,6 +64,7 @@ export function createSessionClient(
     compactSession: (request) => client.compact(request),
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
+    decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: () => client.list(),
     listArchivedSessions: (request) => client.archiveList(request),
     renameSession: (request) => client.rename(request),
