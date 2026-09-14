@@ -33,7 +33,7 @@ function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; per
                   style={{ width: `${percentage}%` }}
                 />
                 <span
-                  className="absolute inset-y-[-2px] w-0.5 bg-foreground"
+                  className="absolute -inset-y-(--spacing-hair) w-0.5 bg-foreground"
                   style={{ left: `${WORKING_TARGET_PERCENTAGE}%` }}
                 />
               </button>

@@ -43,7 +43,9 @@ export function FeedEvidencePrototype({ evidence }: { evidence: FeedPrototypeEvi
         {items.map((item) => (
           <InspectorSection key={item.id} evidence={item} />
         ))}
-        {showsToolSequence && <div aria-hidden="true" className="h-[calc(100%-3rem)]" />}
+        {showsToolSequence && (
+          <div aria-hidden="true" className="h-[calc(100%-var(--size-feed-scroll-spacer))]" />
+        )}
       </div>
     </section>
   )

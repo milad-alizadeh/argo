@@ -32,6 +32,8 @@
   --spacing-snug: 12px;
   --spacing-wide: 20px;
   --radius-row: 6px;
+  --size-border: 1px;
+  --size-focus-ring: 3px;
   --size-pane-head: 46px;
   --size-composer-unavailable: 48px;
   --size-session-roster-max: 460px;
@@ -62,6 +64,16 @@
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
   --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --size-session-menu: 23rem;
+  --size-session-popover: 26rem;
+  --size-composer-suggestions: 30rem;
+  --size-composer-attachment-strip: 42rem;
+  --inset-composer-attachment-strip: 9rem;
+  --size-context-label-column: 6.5rem;
+  --inset-lightbox-margin-y: 6rem;
+  --inset-lightbox-margin-x: 4rem;
+  --size-feed-scroll-spacer: 3rem;
+  --inset-slider-thumb-lift: -5px;
   --size-state-dot: 6px;
   --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
   --size-subagent-dot: 4px;
@@ -177,6 +189,10 @@
   );
   --size-traffic-light: 12px;
   --inset-traffic-light-control: 18px;
+  --inset-concierge-highlight: 12%;
+  --position-concierge-highlight-x: 35%;
+  --position-concierge-highlight-y: 30%;
+  --gradient-concierge-highlight-fade: 35%;
   --color-traffic-light-close: #ff5f57;
   --color-traffic-light-minimize: #febc2e;
   --color-traffic-light-zoom: #28c840;
@@ -222,6 +238,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* A provider label's tint: how far its border and its fill lean toward the label's own colour.
+     Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
+  --ticket-label-border-mix: 45%;
+  --ticket-label-fill-mix: 18%;
   /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
   --size-ticket-key: 40px;
   --size-ticket-key-long: 64px;
