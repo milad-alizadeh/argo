@@ -91,6 +91,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         roster: codexSessionDriver.roster,
         orphans: codexSessionDriver.ownership.orphans,
         liveMessages: codexSessionDriver.liveMessages,
+        pendingQuestion: codexSessionDriver.pendingQuestion,
         rename: (request) => renameCodexSession(request, codexSessionDriver),
       }),
     ]),

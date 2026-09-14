@@ -1,11 +1,13 @@
 import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
 import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
 import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { QuestionAnswer } from '../../../core/sessions/question'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'
 import type { LiveMessage, LiveMessages } from './live-messages'
 import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
+import { codexAnswersFor, type PendingCodexQuestion } from './question-protocol'
 import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
 import { beginSession, startTurn } from './turn-lifecycle'
@@ -31,12 +33,22 @@ export type CodexSessionDriver = {
   roster: () => SessionRosterRow[]
   ownership: Pick<NonNullable<ManagedSessionOptions['ownership']>, 'orphans'>
   liveMessages: (sessionId: string) => LiveMessage[]
+  pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
+  decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
 }
 
 export type CodexSessionDrive = Pick<
   CodexSessionDriver,
-  'start' | 'send' | 'interrupt' | 'rename' | 'roster' | 'liveMessages' | 'close'
+  | 'start'
+  | 'send'
+  | 'interrupt'
+  | 'rename'
+  | 'roster'
+  | 'liveMessages'
+  | 'pendingQuestion'
+  | 'decideQuestion'
+  | 'close'
 >
 
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
@@ -77,6 +89,16 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     roster: () => managedRoster(sessions),
     ownership: { orphans: () => options.ownership?.orphans() ?? new Set() },
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
+    pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
+    decideQuestion(sessionId, questionId, answers) {
+      const session = held(sessionId)
+      if (session === undefined || session.pendingQuestion === null) return false
+      const pending = session.pendingQuestion
+      if (pending.itemId !== questionId) return false
+      session.channel.respond(pending.requestId, codexAnswersFor(pending, answers))
+      session.pendingQuestion = null
+      return true
+    },
     close() {
       for (const [sessionId, session] of sessions) {
         options.ownership?.release(sessionId)
