@@ -82,7 +82,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 }
 
 async function proveArchiveOrderAndFocus(page, mutations, withParent) {
-  await page.locator('details summary').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
   await page.locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]').waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()
@@ -98,8 +98,8 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   )
   // The active list polls; the archived list is read on demand (#1593), so a live mutation only
   // reaches it once the reader asks again — closing and reopening the section is that ask.
-  await page.locator('details summary').click()
-  await page.locator('details summary').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
   await page.locator('nav[aria-label="Archived"] button[data-session-id="askPending"]').waitFor()
   const archivedAfter = await readRosterIds(page, 'Archived')
   assert.deepEqual(

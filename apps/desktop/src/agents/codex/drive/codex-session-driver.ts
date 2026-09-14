@@ -1,16 +1,20 @@
+import {
+  CODEX_OPENING_SETUP,
+  type CodexTurnSetup,
+  codexTurnSettings,
+} from '@/core/sessions/codex-contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'
-import { codexLaunchEnvironment } from './launch-environment'
-import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
-import { readStartedTurn, readThreadId } from './protocol'
-import { codexNotificationRecorder } from './record-notification'
+import type { LiveMessage, LiveMessages } from './live-messages'
+import { readStartedTurn } from './protocol'
 import { readRename } from './rename-protocol'
+import { beginManagedSession } from './start-session'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
-type DriverOptions = {
+export type DriverOptions = {
   findExecutable: () => string | null
   now: () => Date
   openChannel: (executable: string, options: SpawnOptions) => CodexChannel
@@ -30,8 +34,8 @@ export type { LiveMessage }
 export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
-  start: (request: { cwd: string; prompt: string }) => Promise<string>
-  send: (sessionId: string, text: string) => Promise<void>
+  start: (request: { cwd: string; prompt: string; setup?: CodexTurnSetup }) => Promise<string>
+  send: (sessionId: string, text: string, setup?: CodexTurnSetup) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
@@ -39,56 +43,27 @@ export type CodexSessionDriver = {
   close: () => void
 }
 
-type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
-type SessionRegistry = {
+type Turn = (request: {
+  channel: CodexChannel
+  threadId: string
+  prompt: string
+  setup: CodexTurnSetup
+}) => Promise<void>
+export type SessionRegistry = {
   renameWaiters: Map<string, (title: string) => void>
   sessions: Map<string, ManagedSession>
   turn: Turn
 }
 
-async function beginManagedSession(
-  options: DriverOptions,
-  registry: SessionRegistry,
-  { cwd, prompt }: { cwd: string; prompt: string },
-): Promise<string> {
-  const { renameWaiters, sessions, turn } = registry
-  const executable = options.findExecutable()
-  if (!executable) throw new CodexSessionDriverError('cli-unavailable')
-  let channel: CodexChannel
-  try {
-    channel = options.openChannel(executable, { cwd, env: codexLaunchEnvironment() })
-  } catch {
-    throw new CodexSessionDriverError('launch-failed')
-  }
-  let threadId: string | null = null
-  try {
-    await channel.request(
-      'initialize',
-      {
-        clientInfo: { name: 'argo', title: 'Argo', version: '1' },
-        capabilities: { experimentalApi: false, requestAttestation: false },
-      },
-      (value) => value,
-    )
-    channel.notify('initialized')
-    const startedThreadId = await channel.request('thread/start', { cwd }, readThreadId)
-    threadId = startedThreadId
-    const started = { channel, cwd, prompt, startedAt: options.now().toISOString() }
-    const messages = createLiveMessages(startedThreadId)
-    sessions.set(startedThreadId, { ...started, turnId: null, status: 'running', messages })
-    channel.onExit(() => {
-      const session = sessions.get(startedThreadId)
-      if (session) session.status = 'ended'
-    })
-    channel.onNotification(codexNotificationRecorder(startedThreadId, sessions, renameWaiters))
-    await turn(channel, startedThreadId, prompt)
-    return startedThreadId
-  } catch (error) {
-    channel.close()
-    if (threadId !== null) sessions.delete(threadId)
-    if (error instanceof CodexSessionDriverError) throw error
-    throw new CodexSessionDriverError('launch-failed')
-  }
+function rosterOf(sessions: Map<string, ManagedSession>) {
+  return [...sessions.entries()].map(([id, session]) =>
+    managedRow(id, {
+      ...session,
+      cli: 'codex',
+      setup: { model: null, effort: null, mode: null },
+      title: session.title,
+    }),
+  )
 }
 
 export function createCodexSessionDriver(options: DriverOptions): CodexSessionDriver {
@@ -101,12 +76,16 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
     return session
   }
 
-  async function turn(channel: CodexChannel, threadId: string, prompt: string) {
+  async function turn({ channel, threadId, prompt, setup }: Parameters<Turn>[0]) {
     const previous = sessions.get(threadId)
     previous?.messages.keepOnly(previous.turnId)
     const started = await channel.request(
       'turn/start',
-      { threadId, input: [{ type: 'text', text: prompt, text_elements: [] }] },
+      {
+        threadId,
+        input: [{ type: 'text', text: prompt, text_elements: [] }],
+        ...codexTurnSettings(setup),
+      },
       readStartedTurn,
     )
     const session = sessions.get(threadId)
@@ -115,9 +94,14 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
 
   return {
     start: (request) => beginManagedSession(options, { renameWaiters, sessions, turn }, request),
-    async send(sessionId, text) {
+    async send(sessionId, text, setup) {
       const session = heldSession(sessionId)
-      await turn(session.channel, sessionId, text)
+      await turn({
+        channel: session.channel,
+        threadId: sessionId,
+        prompt: text,
+        setup: setup ?? CODEX_OPENING_SETUP,
+      })
     },
     async interrupt(sessionId) {
       const session = heldSession(sessionId)
@@ -134,15 +118,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
       await session.channel.request('thread/name/set', { threadId: sessionId, name }, readRename)
       return accepted
     },
-    roster: () =>
-      [...sessions.entries()].map(([id, session]) =>
-        managedRow(id, {
-          ...session,
-          cli: 'codex',
-          setup: { model: null, effort: null, mode: null },
-          title: session.title,
-        }),
-      ),
+    roster: () => rosterOf(sessions),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     close() {
       for (const session of sessions.values()) session.channel.close()

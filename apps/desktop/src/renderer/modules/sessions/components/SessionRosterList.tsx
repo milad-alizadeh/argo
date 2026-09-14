@@ -39,8 +39,8 @@ export function SessionRosterList({
   tabStop,
 }: Props) {
   return (
-    <nav aria-label={label}>
-      <ul className="flex flex-col gap-1 px-3" onKeyDown={moveFocus}>
+    <nav aria-label={label} className="min-w-0">
+      <ul className="flex min-w-0 flex-col gap-1 px-3" onKeyDown={moveFocus}>
         {items.map((session) => {
           const title = renamedTitles[session.id]
           const renamed =

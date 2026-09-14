@@ -1,19 +1,23 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
-import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
+import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
+import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { BasicFeed } from '../feed/BasicFeed'
-import type { HarnessControl, SessionCli } from '../harness/harnesses'
-import { useArchivedSessions } from '../hooks/useArchivedSessions'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
+import { SESSION_SPLIT } from './session-screen-layout'
+import { sessionHarness, sessionHasWork } from './sessionScreenState'
+import { useComposerFadeTop } from './useComposerFadeTop'
+import { useSelectedSession } from './useSelectedSession'
+
+import './session-screen.css'
 
 type SessionShellProps = {
   composer: ReactNode
@@ -27,25 +31,8 @@ type SessionShellProps = {
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
-}
-
-const SESSION_SPLIT = {
-  inspector: '--size-session-inspector',
-  inspectorMin: '--size-session-inspector-min',
-  workspaceMin: '--size-session-workspace-min',
-}
-
-// The active Roster never carries an archived Session (#1593): a direct open of one (a restored
-// route, a stored selection) asks the reader for its row by id instead of finding it in the
-// Roster's own list.
-function useSelectedSession(
-  selectedSessionId: string | null,
-  roster: ReturnType<typeof useSessions>['roster'],
-) {
-  const activeSession = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
-  const archiveRestoreId = activeSession === null ? selectedSessionId : null
-  const { restored } = useArchivedSessions(archiveRestoreId !== null, archiveRestoreId)
-  return activeSession ?? restored
+  defaultInspectorCollapsed?: boolean
+  inspectorReveal?: string | null
 }
 
 export function SessionScreenView() {
@@ -60,10 +47,7 @@ export function SessionScreenView() {
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
-  const harness: HarnessControl =
-    selectedSessionId === null
-      ? { cli: lastHarness, onChange: chooseHarness }
-      : { cli: sessionCliOf(session) }
+  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const cli = harness.cli
   const composer = useSessionComposer({
     cli,
@@ -74,6 +58,7 @@ export function SessionScreenView() {
     selectedSessionId,
   })
   const permission = useSessionPermission(selectedSessionId)
+  const hasSessionWork = sessionHasWork(session)
   return (
     <SessionShell
       feed={feed}
@@ -95,19 +80,15 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionFacts session={session} />
+          <SessionWorkInspector session={session} />
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )
       }
+      defaultInspectorCollapsed={!hasSessionWork}
+      inspectorReveal={evidence?.id}
     />
   )
-}
-
-// The Roster stores an open `cli` string (ADR-0021: an adapter registers, shared code doesn't
-// enumerate); this is the one seam that narrows it back to the closed `SessionCli` union.
-function sessionCliOf(session: { cli: string } | null): SessionCli {
-  return session?.cli === 'codex' ? 'codex' : 'claude'
 }
 
 export function SessionShell({
@@ -122,7 +103,13 @@ export function SessionShell({
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
+  defaultInspectorCollapsed = false,
+  inspectorReveal = null,
 }: SessionShellProps) {
+  const composerElement = useRef<HTMLElement>(null)
+  const workspaceElement = useRef<HTMLElement>(null)
+  const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
+
   return (
     <main
       data-component="SessionShell"
@@ -130,14 +117,23 @@ export function SessionShell({
     >
       <InspectorSplit
         inspector={inspector}
+        defaultCollapsed={defaultInspectorCollapsed}
         noun="Session"
+        reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
         workspace={
-          <section aria-label="Session workspace" className="flex h-full min-h-0 flex-col">
+          <section
+            aria-label="Session workspace"
+            className="relative flex h-full min-h-0 flex-col"
+            ref={workspaceElement}
+          >
             <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
-            <section aria-label="Session feed" className="min-h-0 flex-1 overflow-hidden">
+            <section
+              aria-label="Session feed"
+              className="session-screen__feed min-h-0 flex-1 overflow-hidden"
+            >
               <BasicFeed
                 activeEvidenceId={activeEvidenceId}
                 compactionStartedAt={compactionStartedAt}
@@ -150,14 +146,19 @@ export function SessionShell({
                 onOpenEvidence={onOpenEvidence}
               />
             </section>
-            <section
-              aria-label="Session composer"
-              className="relative isolate shrink-0 bg-background"
-            >
+            {fadeTop === null ? null : (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+                data-component="SessionComposerFade"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
+                style={{ top: `${fadeTop}px` }}
               />
+            )}
+            <section
+              aria-label="Session composer"
+              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+              ref={composerElement}
+            >
               {composer}
             </section>
           </section>

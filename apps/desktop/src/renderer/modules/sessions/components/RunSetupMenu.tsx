@@ -6,7 +6,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/
 import { HarnessLogo } from '../harness/HarnessLogo'
 import { HarnessTabs } from '../harness/HarnessTabs'
 import { HARNESSES, type HarnessControl } from '../harness/harnesses'
-import { choiceLabel, type TurnSetup, type TurnSetupChoices } from '../turn-setup/turn-setup'
+import {
+  choiceLabel,
+  effortChoices,
+  type TurnSetup,
+  type TurnSetupChoices,
+} from '../turn-setup/turn-setup'
 import { EffortSlider } from './EffortSlider'
 
 export type TurnSetupControlProps = {
@@ -102,7 +107,16 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                 name={name}
                 value={model.value}
                 checked={active}
-                onChange={() => onChange({ ...value, model: model.value })}
+                onChange={() => {
+                  const efforts = effortChoices(choices, model.value)
+                  onChange({
+                    ...value,
+                    model: model.value,
+                    effort: efforts.some((effort) => effort.value === value.effort)
+                      ? value.effort
+                      : (efforts[0]?.value ?? value.effort),
+                  })
+                }}
                 className="sr-only"
               />
               <span className="min-w-0">

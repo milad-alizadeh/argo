@@ -2,17 +2,19 @@ import type { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '../../projects/hooks/useProjects'
-import { COMPOSER_FOCUS_STATE } from '../components/SessionComposer'
+import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
+import type { ComposerIdentity } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
 import { sendMessage, startNewSession } from './useSessionComposer-actions'
 import type { useSessionMutations } from './useSessionMutations'
 
-function sendToSelected(request: {
+// Exported for direct testing: the send-routing decision itself needs no React to prove.
+export function sendToSelected(request: {
   queryClient: ReturnType<typeof useQueryClient>
   roster: SessionsListed | null
   selectedSessionId: string
@@ -32,7 +34,7 @@ function sendToSelected(request: {
   })
 }
 
-function sendToNewSession(request: {
+export function sendToNewSession(request: {
   cli: SessionCli
   cockpit: Cockpit
   navigate: NavigateFunction
@@ -62,7 +64,7 @@ export function useComposerSend(request: {
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
   roster: SessionsListed | null
-  selectedSessionId: string | null
+  identity: ComposerIdentity
   send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
@@ -74,7 +76,7 @@ export function useComposerSend(request: {
     navigate,
     queryClient,
     roster,
-    selectedSessionId,
+    identity,
     send,
     setFailure,
     start,
@@ -82,11 +84,11 @@ export function useComposerSend(request: {
   } = request
   return useCallback(
     async (prompt: string, setup: TurnSetup | null) => {
-      if (selectedSessionId !== null) {
+      if (identity.kind === 'session') {
         return sendToSelected({
           queryClient,
           roster,
-          selectedSessionId,
+          selectedSessionId: identity.sessionId,
           send,
           setFailure,
           prompt,
@@ -107,17 +109,6 @@ export function useComposerSend(request: {
         watchTurn,
       })
     },
-    [
-      cli,
-      cockpit,
-      navigate,
-      queryClient,
-      roster,
-      selectedSessionId,
-      send,
-      setFailure,
-      start,
-      watchTurn,
-    ],
+    [cli, cockpit, navigate, queryClient, roster, identity, send, setFailure, start, watchTurn],
   )
 }

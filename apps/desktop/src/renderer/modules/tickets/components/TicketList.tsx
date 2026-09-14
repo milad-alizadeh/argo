@@ -114,7 +114,7 @@ export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListPr
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   const rails = treeRails(rows)
   return (
-    <section aria-label="Backlog" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label="Backlog" className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
       <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
       <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
@@ -128,10 +128,10 @@ export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListPr
       ) : null}
       <ul
         aria-busy={backlog.searching}
-        className="grid min-h-0 flex-1 content-start gap-px overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset) aria-busy:opacity-60"
+        className="grid min-h-0 min-w-0 flex-1 grid-cols-1 content-start gap-px overflow-x-hidden overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset) aria-busy:opacity-60"
       >
         {rows.map((row, index) => (
-          <li key={row.ticket.key}>
+          <li className="min-w-0" key={row.ticket.key}>
             <TicketRow
               rails={rails[index] ?? []}
               folded={folded.has(row.ticket.key)}

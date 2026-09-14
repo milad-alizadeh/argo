@@ -46,18 +46,19 @@ export async function provePackagedRosterSelection(page) {
 }
 
 async function proveArchivedRestart(page, restart) {
-  await page.locator('summary').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
   await page.locator('nav[aria-label="Archived"] button').click()
   await page.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   const archived = await restart()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   // Restoring the selected archived Session opens the section on its own, but only once the
   // reader's request for that row resolves, so this waits rather than reading the count once.
-  await archived.locator('details[open]').waitFor()
+  await archived
+    .locator('.roster__archived [data-slot="collapsible-trigger"][aria-expanded="true"]')
+    .waitFor()
   await archived
     .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
     .waitFor()
-  assert.equal(await archived.locator('details[open]').count(), 1)
   assert.equal(
     await archived
       .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')

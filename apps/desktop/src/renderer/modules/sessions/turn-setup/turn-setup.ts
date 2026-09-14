@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/core/sessions/models'
+import { type ComposerIdentity, composerIdentityKey } from '../hooks/composerIdentity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({
@@ -17,6 +18,7 @@ export type SetupChoice = {
   label: string
   detail?: string
   reads: (reading: string) => boolean
+  efforts?: readonly string[]
 }
 export type ModeChoice = SetupChoice & { detail: string; icon: LucideIcon }
 
@@ -33,8 +35,17 @@ export type TurnSetupChoices = {
 const FIELDS = ['model', 'effort', 'mode'] as const
 type SetupField = (typeof FIELDS)[number]
 
-function fieldChoices(choices: TurnSetupChoices, field: SetupField): SetupChoice[] {
-  return { model: choices.models, effort: choices.efforts, mode: choices.modes }[field]
+function fieldChoices(choices: TurnSetupChoices, field: SetupField, model?: string): SetupChoice[] {
+  if (field !== 'effort' || model === undefined)
+    return { model: choices.models, effort: choices.efforts, mode: choices.modes }[field]
+  const supported = choices.models.find((choice) => choice.value === model)?.efforts
+  return supported === undefined
+    ? choices.efforts
+    : choices.efforts.filter((choice) => supported.includes(choice.value))
+}
+
+export function effortChoices(choices: TurnSetupChoices, model: string) {
+  return fieldChoices(choices, 'effort', model)
 }
 
 function choiceRead(choices: TurnSetupChoices, field: SetupField, reading: string | null) {
@@ -59,11 +70,37 @@ export function supportedSetup(
   setup: TurnSetup,
   fallback: TurnSetup,
 ): TurnSetup {
+  const model = fieldChoices(choices, 'model').some((choice) => choice.value === setup.model)
+    ? setup.model
+    : fallback.model
   const keep = (field: SetupField) =>
-    fieldChoices(choices, field).some((choice) => choice.value === setup[field])
+    fieldChoices(choices, field, field === 'effort' ? model : undefined).some(
+      (choice) => choice.value === setup[field],
+    )
       ? setup[field]
       : fallback[field]
-  return { model: keep('model'), effort: keep('effort'), mode: keep('mode') }
+  return { model, effort: keep('effort'), mode: keep('mode') }
+}
+
+// What a composer shows: an explicit choice wins; a draft with none falls to the remembered
+// Model and Effort; a Session with none reads what its roster row last settled on.
+export function resolvedTurnSetup(
+  choices: TurnSetupChoices,
+  request: {
+    identity: ComposerIdentity
+    chosen: Map<string, TurnSetup>
+    rows: readonly { id: string; setup: SessionSetup }[]
+    remembered: Partial<Pick<TurnSetup, 'model' | 'effort'>>
+  },
+): TurnSetup {
+  const { identity, chosen, rows, remembered } = request
+  const explicit = chosen.get(composerIdentityKey(identity))
+  if (explicit !== undefined) return explicit
+  const row =
+    identity.kind === 'session' ? rows.find(({ id }) => id === identity.sessionId) : undefined
+  return row === undefined
+    ? supportedSetup(choices, { ...choices.opening, ...remembered }, choices.opening)
+    : setupFromReading(choices, row.setup)
 }
 
 // Model and Effort land only with a reply, so a Turn is judged once it replied or stopped.

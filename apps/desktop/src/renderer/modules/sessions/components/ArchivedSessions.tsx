@@ -1,5 +1,10 @@
-import { Loader2, TriangleAlert } from 'lucide-react'
+import { ChevronRight, Loader2, TriangleAlert } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/renderer/components/ui/collapsible'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { useArchivedSessions } from '../hooks/useArchivedSessions'
 import { sessionFailureState } from '../sessionFailureState'
@@ -68,13 +73,19 @@ export function ArchivedSessions({
       : [restored, ...sessions]
 
   return (
-    <details
-      className="border-t border-border/60 py-3"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+    <Collapsible
+      className="roster__archived border-t border-border/60 py-3"
+      onOpenChange={setOpen}
       open={open}
     >
-      <summary className="cursor-pointer px-4 text-sm">Archived</summary>
-      <div className="pt-2">
+      <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-4 py-1 text-left type-body text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+        <ChevronRight
+          aria-hidden="true"
+          className="size-(--size-icon-inline) shrink-0 transition-transform group-data-[panel-open]:rotate-90"
+        />
+        <span>Archived</span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-2">
         {isLoading ? (
           <div aria-label="Reading archived Sessions" className="px-4 py-2" role="status">
             <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
@@ -101,7 +112,7 @@ export function ArchivedSessions({
             <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
           </div>
         ) : null}
-      </div>
-    </details>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

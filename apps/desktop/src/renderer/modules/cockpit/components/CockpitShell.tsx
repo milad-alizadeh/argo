@@ -50,7 +50,7 @@ export function CockpitShell({
   children,
 }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
-  const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
+  const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')
   const sidebarMaximumWidth = readCssSize('--size-cockpit-sidebar-max')
   const contentMinimumWidth = readCssSize('--size-cockpit-content-min')
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
@@ -69,7 +69,7 @@ export function CockpitShell({
 
   const toggleSidebar = () => {
     if (isSidebarCollapsed) {
-      sidebarPanelRef.current?.resize(sidebarDefaultWidth)
+      sidebarPanelRef.current?.resize(sidebarMinimumWidth)
       setIsSidebarCollapsed(false)
       setShouldFocusSidebarToggle(true)
       return
@@ -108,8 +108,8 @@ export function CockpitShell({
           id="cockpit-sidebar"
           collapsible
           collapsedSize={0}
-          defaultSize={sidebarDefaultWidth}
-          minSize={sidebarDefaultWidth}
+          defaultSize={sidebarMinimumWidth}
+          minSize={sidebarMinimumWidth}
           maxSize={sidebarMaximumWidth}
           panelRef={sidebarPanelRef}
         >

@@ -74,15 +74,15 @@ type Story = StoryObj<typeof ArchivedSessions>
 export const Collapsed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const disclosure = canvas.getByText('Archived')
-    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    const disclosure = canvas.getByRole('button', { name: 'Archived' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
   },
 }
 
 export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('Archived'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await waitFor(() => expect(canvas.getByText('No archived Sessions')).toBeInTheDocument())
   },
 }
@@ -91,7 +91,7 @@ export const Loading: Story = {
   beforeEach: () => withArchiveHost(() => new Promise(() => {})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('Archived'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await expect(
       canvas.getByRole('status', { name: 'Reading archived Sessions' }),
     ).toBeInTheDocument()
@@ -102,7 +102,7 @@ export const Loaded: Story = {
   beforeEach: () => withArchiveHost(async () => reply({ sessions: [archivedSession] })),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('Archived'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await waitFor(async () =>
       expect(
         canvas.getByRole('button', { name: /Read the archived transcript/ }),
@@ -123,7 +123,7 @@ export const LoadsFurtherPagesWithoutDuplicating: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('Archived'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await waitFor(async () => {
       const rows = canvas.getAllByRole('button').filter((button) => button.dataset.sessionId)
       await expect(rows).toHaveLength(2)
@@ -141,7 +141,7 @@ export const Failure: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('Archived'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await waitFor(async () => {
       const alert = canvas.getByRole('alert')
       await expect(alert).toHaveTextContent('Unable to load archived Sessions')
@@ -164,7 +164,10 @@ export const Restored: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(async () => {
-      await expect(canvas.getByText('Archived').closest('details')).toHaveAttribute('open')
+      await expect(canvas.getByRole('button', { name: 'Archived' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
     })
   },
 }

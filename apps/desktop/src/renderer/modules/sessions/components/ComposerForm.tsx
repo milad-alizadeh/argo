@@ -13,9 +13,8 @@ import { SessionContextBar } from './SessionContextBar'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
-// The column the composer card sits in; a message about the composer shares it, so it is never wider.
-export const COMPOSER_COLUMN =
-  'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
+// The composer card's column; attached secondary surfaces inset from its edges.
+export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
 export function ComposerForm({
   draft,
@@ -64,7 +63,7 @@ export function ComposerForm({
   }, [isCompacting])
   return (
     <form
-      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
+      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
@@ -78,7 +77,8 @@ export function ComposerForm({
       />
       <div className="relative">
         <div
-          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+          data-component="ComposerCard"
+          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
         >
           <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
             <SessionPlanPopover plan={plan} />
@@ -86,6 +86,7 @@ export function ComposerForm({
           <div className="relative min-w-0 flex-1">
             <ComposerEditor
               key={sessionId}
+              cli={harness?.cli ?? null}
               draft={draft}
               editorRef={editorRef}
               focusOnMount={focusOnMount}
@@ -120,7 +121,7 @@ export function ComposerForm({
             </div>
           </div>
         </div>
-        <div className="absolute inset-x-0 top-full z-0 -mt-2">
+        <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
           <SessionContextBar
             contextTokens={contextTokens}
             harness={harness?.cli}

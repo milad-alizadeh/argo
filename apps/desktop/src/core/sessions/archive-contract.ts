@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { sessionRosterRowSchema } from './models'
+import { sessionErrorSchema } from './session-error'
 
 // A page of the reader's Archived Sessions, read on demand rather than every poll (#1593): the
 // active list never carries one of these rows. `cursor` is opaque and echoed back to ask for the
@@ -26,3 +27,9 @@ export const sessionArchiveListedSchema = z.strictObject({
   restored: sessionRosterRowSchema.nullable(),
 })
 export type SessionArchiveListed = z.infer<typeof sessionArchiveListedSchema>
+
+export const sessionArchiveListReplySchema = z.union([
+  sessionArchiveListedSchema,
+  sessionErrorSchema,
+])
+export type SessionArchiveListReply = z.infer<typeof sessionArchiveListReplySchema>
