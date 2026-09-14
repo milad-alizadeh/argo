@@ -68,6 +68,9 @@ function FeedRowContent({
   questionFailure,
 }: Omit<FeedRowProps, 'height'>) {
   switch (row.shape) {
+    // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
+    // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
+    // shared `ToolRow` type, which `tool-group.calls` still uses.
     case 'tool':
       return <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
     case 'tool-group':

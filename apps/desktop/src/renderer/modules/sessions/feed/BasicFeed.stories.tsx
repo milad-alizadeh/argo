@@ -221,16 +221,17 @@ const toolFeed = {
     {
       shape: 'tool-group' as const,
       id: 'tool-group:one:two',
-      label: 'Ran 1 command · Edited 1 file',
+      label: 'Ran a command, edited a file',
       calls: [
         {
           shape: 'tool' as const,
           id: 'one',
           kind: 'command' as const,
-          label: 'Ran bun test composer',
+          label: 'Ran a command',
           detail: null,
           status: 'succeeded' as const,
           evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
+          text: 'bun test composer',
         },
         {
           shape: 'tool' as const,
@@ -240,6 +241,7 @@ const toolFeed = {
           detail: '+2 −1',
           status: 'failed' as const,
           evidence: { kind: 'diff' as const, title: 'Composer.tsx', source: '-old\n+new' },
+          text: null,
         },
       ],
     },
@@ -250,10 +252,19 @@ export const GroupedToolCalls: Story = {
   args: { feed: toolFeed, selectedSessionId: 'tools' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
     await userEvent.click(group)
-    const call = await canvas.findByRole('button', { name: /Ran bun test composer/ })
+    const commandText = await canvas.findByText((_content, node) => {
+      const isMatch = node?.textContent === 'bun test composer'
+      const descendantHasMatch = Array.from(node?.querySelectorAll('*') ?? []).some(
+        (descendant) => descendant.textContent === 'bun test composer',
+      )
+      const isMeasurementClone = node?.closest('[aria-hidden="true"]') !== null
+      return isMatch && !descendantHasMatch && !isMeasurementClone
+    })
+    const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
+    await expect(commandText).toBeVisible()
     await expect(call).toHaveClass('type-body')
   },
 }

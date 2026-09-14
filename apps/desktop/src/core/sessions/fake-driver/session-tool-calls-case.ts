@@ -15,5 +15,5 @@ export async function proveToolCalls(page) {
   )
   const group = reply.rows[1]
   assert.equal(group?.shape, 'tool-group')
-  assert.equal(group?.label, 'Ran 1 command · Edited 1 file')
+  assert.equal(group?.label, 'Ran a command, edited a file')
 }

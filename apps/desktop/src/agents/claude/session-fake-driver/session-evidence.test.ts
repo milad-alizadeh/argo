@@ -13,7 +13,7 @@ function assertToolRows(reply) {
   assert.equal(reply.type, 'session.feed.read')
   assert.deepEqual(
     reply.rows.map((row) => row.shape),
-    ['tool-group', 'prose', 'tool'],
+    ['tool-group', 'prose', 'tool-group'],
   )
   assert.equal(
     reply.rows.some((row) => row.shape === 'source'),
@@ -21,7 +21,7 @@ function assertToolRows(reply) {
   )
   const [group] = reply.rows
   assert.equal(group.shape, 'tool-group')
-  assert.equal(group.label, 'Ran 1 command · Read 1 file · Edited 1 file')
+  assert.equal(group.label, 'Ran a command, edited a file, read a file')
   assert.deepEqual(
     group.calls.map(({ label, detail, status }) => ({ label, detail, status })),
     [
@@ -31,8 +31,10 @@ function assertToolRows(reply) {
     ],
   )
   assert.equal(reply.rows[1]?.shape, 'prose')
-  const unknown = reply.rows[2]
-  assert.equal(unknown?.shape, 'tool')
+  const unknownGroup = reply.rows[2]
+  assert.equal(unknownGroup?.shape, 'tool-group')
+  assert.equal(unknownGroup?.label, 'Called a tool')
+  const [unknown] = unknownGroup?.calls ?? []
   assert.equal(unknown?.label, 'Called an unclassified tool')
 }
 

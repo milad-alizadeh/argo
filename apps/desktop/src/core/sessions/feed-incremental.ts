@@ -16,7 +16,8 @@ import {
   updatedResults,
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
-import { groupToolRuns, type ToolResult } from './tool-feed'
+import type { ToolResult } from './tool-feed'
+import { groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
   chainId: string
