@@ -10,6 +10,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
+  SESSION_FAKE_REPLY_DELAY_MS_ENV,
 } from '../proof-protocol'
 import { prepare } from './session-feed-fixture'
 
@@ -17,7 +18,7 @@ const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
 // Launches the packaged app against the fixture's fake CLIs, then restarts it in place so
 // roster/resume proof cases can exercise a fresh process without losing the fixture root.
-export async function createPackagedSessionHarness(root: string) {
+export async function createPackagedSessionHarness(root: string, options: { replyDelayMs?: number } = {}) {
   const fixture = await prepare(root)
   const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const fakeCodex = await writeFakeCodex(root)
@@ -33,6 +34,7 @@ export async function createPackagedSessionHarness(root: string) {
         [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
         [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
         [SESSION_CODEX_EXECUTABLE_ENV]: fakeCodex,
+        [SESSION_FAKE_REPLY_DELAY_MS_ENV]: String(options.replyDelayMs ?? 0),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
