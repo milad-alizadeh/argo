@@ -1,5 +1,5 @@
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow, useToolGroups } from './drawn-row'
 import { FeedRow } from './FeedRow'
