@@ -38,6 +38,19 @@ export const MeterAndLabels: Story = {
     await expect(canvas.getByLabelText(/Dumb zone/)).toBeVisible()
     await expect(canvas.getByText('Compact')).toBeVisible()
     await expect(canvas.getByText('Handoff')).toBeVisible()
+    const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
+    const handoff = canvas
+      .getAllByLabelText('Handoff Session')
+      .find((button) => button.getBoundingClientRect().width > 0)
+    const actions = handoff?.parentElement
+    if (bar === null || actions === null || actions === undefined)
+      throw new Error('The visible context bar actions are absent.')
+
+    const barStyle = getComputedStyle(bar)
+    expect(bar.getBoundingClientRect().right - actions.getBoundingClientRect().right).toBeCloseTo(
+      Number.parseFloat(barStyle.paddingRight) + Number.parseFloat(barStyle.borderRightWidth),
+      1,
+    )
   },
 }
 

@@ -117,7 +117,7 @@ export function SessionContextBar({
           <GitFork />
         </Button>
       </div>
-      <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
+      <div className="ml-auto hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
         <Button
           aria-label="Compact context"
           disabled={!canCompact || isCompacting}
