@@ -73,6 +73,11 @@
   --size-queue-row: 44px;
   --size-composer-field: 80px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
+  --spacing-session-composer-bottom: calc(
+    var(--spacing-shell-region) *
+    2 +
+    var(--spacing-shell-inset)
+  );
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;

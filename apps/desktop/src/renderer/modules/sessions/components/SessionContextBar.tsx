@@ -22,7 +22,7 @@ function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; per
       <Tooltip>
         <TooltipTrigger
           render={
-            <span className="relative hidden min-w-28 flex-1 @[50rem]:block">
+            <span className="relative hidden min-w-28 flex-1 @[40rem]:block">
               <button
                 aria-label={description}
                 className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
@@ -64,11 +64,11 @@ export function SessionContextBar({
   const usedTokenSummary = `${Math.round(usedTokens / 1000)}k`
 
   return (
-    <div className="@container relative z-0 mx-(--spacing-shell-gutter) -mt-2 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-lg shadow-foreground/10 @[50rem]:gap-3 @[50rem]:px-4">
-      <div className="shrink-0 border-r border-border/60 pr-2 @[50rem]:pr-4">
+    <div className="@container relative z-0 mx-(--spacing-shell-gutter) -mt-2 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-lg shadow-foreground/10 @[40rem]:gap-3 @[40rem]:px-4">
+      <div className="shrink-0 border-r border-border/60 pr-2 @[40rem]:pr-4">
         <UsagePopover harness={harness ?? 'codex'} />
       </div>
-      <div className="shrink-0 @[50rem]:hidden">
+      <div className="shrink-0 @[40rem]:hidden">
         <ContextPopover
           compact
           harness={harness ?? 'codex'}
@@ -77,13 +77,13 @@ export function SessionContextBar({
         />
       </div>
       <div
-        className={`hidden shrink-0 items-center gap-1.5 type-label font-medium @[50rem]:flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}
+        className={`hidden shrink-0 items-center gap-1.5 type-label font-medium @[40rem]:flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}
       >
         <Layers3 className="size-(--size-icon-inline)" />
         Context
       </div>
       <ContextMeter contextAlert={contextAlert} percentage={percentage} />
-      <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[50rem]:flex">
+      <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
         <span className="font-medium text-foreground">{usedTokenSummary}</span>
         <span className="text-muted-foreground"> / 200k</span>
         <span className="font-medium">· {percentage}%</span>
@@ -93,7 +93,7 @@ export function SessionContextBar({
           usedTokens={usedTokens}
         />
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[50rem]:hidden">
+      <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[23rem]:hidden">
         <Button
           aria-label="Compact context"
           disabled={!canCompact || isCompacting}
@@ -114,7 +114,7 @@ export function SessionContextBar({
           <GitFork />
         </Button>
       </div>
-      <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[50rem]:flex">
+      <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
         <Button
           aria-label="Compact context"
           disabled={!canCompact || isCompacting}

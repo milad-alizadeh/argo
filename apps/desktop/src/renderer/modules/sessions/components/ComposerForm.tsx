@@ -64,7 +64,7 @@ export function ComposerForm({
   }, [isCompacting])
   return (
     <form
-      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
+      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
