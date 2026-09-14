@@ -296,7 +296,7 @@ export const ToolGroupTogglesWithNoLag: Story = {
     await waitFor(() => expect(Number.parseFloat(row()?.style.height)).toBe(measuredHeight()))
     const collapsedHeight = Number.parseFloat(row().style.height)
 
-    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
     await userEvent.click(group)
     // Open is instant: the panel's own final size is known before its fade-and-slide plays.
     await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
@@ -356,6 +356,7 @@ function ToolGroupDuringFeedUpdate() {
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
+          onRetryFeed={() => {}}
         />
       </div>
     </div>
@@ -382,7 +383,7 @@ export const ToolGroupExpandDuringFeedUpdate: Story = {
     const collapsedHeight = Number.parseFloat(row().style.height)
 
     await userEvent.click(canvas.getByRole('button', { name: 'Receive reply' }))
-    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
     await userEvent.click(group)
 
     await waitFor(() => expect(drawnRow(canvasElement, 'tools-update-reply')).toBeDefined())
