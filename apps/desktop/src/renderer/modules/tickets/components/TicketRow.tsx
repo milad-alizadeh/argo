@@ -1,4 +1,5 @@
 import { Ban, ChevronRight } from 'lucide-react'
+import type { CSSProperties } from 'react'
 
 import type { Ticket, TicketStatus } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'
@@ -10,6 +11,10 @@ import { StatusMenu } from './StatusMenu'
 import { TicketLabel } from './TicketLabel'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
+type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
+const treeAnchor: TreeAnchorStyle = {
+  '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2)',
+}
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
 
@@ -74,7 +79,7 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
     <button
       aria-expanded={!folded}
       aria-label={`${folded ? 'Expand' : 'Collapse'} ${key}`}
-      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-center justify-center self-stretch rounded-row text-faint hover:text-foreground"
+      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-2 text-faint hover:text-foreground"
       onClick={onToggle}
       type="button"
     >
@@ -103,44 +108,51 @@ type TicketRowProps = {
 
 // The row selects wherever it is pressed but on its status and its chevron: the select button's
 // overlay covers the row, and those two sit above it. The overlay draws the button's ring, so the
-// keyboard cursor outlines the whole row. The key column is one width, so every title
-// starts on one line and a child indents from it.
+// keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
 export function TicketRow(props: TicketRowProps) {
   const { row, rails, presentation, statuses, selected, folded, now } = props
   const { onSelect, onToggle, onChangeStatus } = props
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
-    <div className="relative flex items-center gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
+    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} shrink-0 font-mono type-meta text-faint`}
+        className={`${presentation.keyColumn} mt-2 shrink-0 font-mono type-meta text-faint`}
       >
         {ticket.key}
       </span>
-      <StatusMenu
-        named={false}
-        noun={presentation.statusNoun}
-        onChange={onChangeStatus}
-        status={ticket.status}
-        statuses={statuses}
-      />
-      <span className="flex shrink-0 self-stretch">
+      <span className="mt-1 shrink-0">
+        <StatusMenu
+          named={false}
+          noun={presentation.statusNoun}
+          onChange={onChangeStatus}
+          status={ticket.status}
+          statuses={statuses}
+        />
+      </span>
+      <span className="flex shrink-0 self-stretch" style={treeAnchor}>
         <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
       <button
         aria-current={selected ? 'true' : undefined}
-        className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+        className="@container flex min-w-0 flex-1 flex-wrap items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none @[22rem]:flex-nowrap after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
         onClick={onSelect}
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>
-        <span className="min-w-0 flex-1 truncate type-body">{ticket.title}</span>
-        <Labels labels={ticket.labels} />
-        <Marks ticket={ticket} />
+        <span className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate">
+          {ticket.title}
+        </span>
+        <span className="order-2 mt-[calc((var(--text-body--line-height)-var(--size-icon-meta))_/_2)] self-start @[22rem]:order-3 @[22rem]:mt-0 @[22rem]:self-auto">
+          <Marks ticket={ticket} />
+        </span>
+        <span className="order-3 flex min-w-0 basis-full @[22rem]:order-2 @[22rem]:basis-auto">
+          <Labels labels={ticket.labels} />
+        </span>
         <time
-          className="w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums"
+          className="order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
           dateTime={ticket.createdAt}
         >
           <span aria-hidden="true">{age.short}</span>

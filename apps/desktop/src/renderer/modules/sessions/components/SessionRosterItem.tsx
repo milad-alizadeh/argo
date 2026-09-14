@@ -51,19 +51,22 @@ function SessionMetadata({ session }: { session: Session }) {
     session.plan?.state === 'available'
       ? `${session.plan.entries.filter((entry) => entry.status === 'completed').length}/${session.plan.entries.length} steps`
       : null
+  const details = [
+    session.cli,
+    completed,
+    session.plan?.state === 'malformed' ? 'Plan unreadable' : null,
+    session.pullRequest === null ? null : `PR #${session.pullRequest.number}`,
+  ].filter(Boolean)
   return (
-    <span className="flex items-center gap-1 truncate font-mono text-meta text-faint">
+    <span className="flex min-w-0 items-center gap-1 font-mono text-meta text-faint">
       {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
-      <span>{session.cli}</span>
-      {completed === null ? null : <span>{completed}</span>}
-      {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
+      <span className="min-w-0 flex-1 truncate">{details.join(' · ')}</span>
       {session.delegations.length > 0 ? (
-        <span className="inline-flex">
+        <span className="inline-flex shrink-0">
           <Bot aria-hidden="true" className="size-3" />
           <span className="sr-only">{session.delegations.length} subagents</span>
         </span>
       ) : null}
-      {session.pullRequest !== null ? <span>PR #{session.pullRequest.number}</span> : null}
     </span>
   )
 }
@@ -88,7 +91,7 @@ export function SessionRosterItem({
   tabIndex: number
 }) {
   return (
-    <li>
+    <li className="min-w-0">
       <ContextMenu>
         <ContextMenuTrigger
           render={

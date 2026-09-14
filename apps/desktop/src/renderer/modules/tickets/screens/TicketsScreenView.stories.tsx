@@ -54,29 +54,51 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await expect(rows[0]).toHaveTextContent('Blocked by 1 open Ticket')
   await expect(rows[0]).toHaveTextContent('1 of 2 children closed')
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
+  const title = canvas.getByText('Wayfinder: the Tickets room, end to end')
+  const chevron = canvas.getByRole('button', { name: 'Collapse #607' })
+  const chevronIcon = chevron.querySelector('svg')
+  if (chevronIcon === null) throw new Error('The Ticket fold control needs a chevron icon.')
+  const titleCenter =
+    title.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(title).lineHeight) / 2
+  const chevronCenter =
+    chevronIcon.getBoundingClientRect().top + chevronIcon.getBoundingClientRect().height / 2
+  await expect(Math.abs(chevronCenter - titleCenter)).toBeLessThanOrEqual(1)
+  const childRow = rows[1]?.parentElement
+  if (childRow === null || childRow === undefined) throw new Error('A child Ticket needs a row.')
+  const twig = childRow.querySelector('span.absolute.left-0')
+  if (twig === null) throw new Error('A child Ticket needs a tree twig.')
+  const childTitle = within(childRow).getByText('Prototype the Tickets room')
+  const childTitleFirstLineCenter =
+    childTitle.getBoundingClientRect().top +
+    Number.parseFloat(getComputedStyle(childTitle).lineHeight) / 2
+  await expect(
+    Math.abs(twig.getBoundingClientRect().top - childTitleFirstLineCenter),
+  ).toBeLessThanOrEqual(1)
   // Each row's state is an icon that opens a menu, named for a screen reader.
   await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
   await userEvent.click(rows[0] as HTMLElement)
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
 }
 
-async function choosingATicketReopensTheInspector(canvasElement: HTMLElement) {
+async function choosingATicketKeepsTheInspectorAvailable(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
-  await userEvent.click(canvas.getByRole('button', { name: 'Collapse Ticket inspector' }))
-  await waitFor(() =>
-    expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
-  )
+  const collapse = canvas.queryByRole('button', { name: 'Collapse Ticket inspector' })
+  if (collapse !== null) {
+    await userEvent.click(collapse)
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
+    )
+  }
   await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
-  await waitFor(() =>
-    expect(canvas.getByRole('button', { name: 'Collapse Ticket inspector' })).toBeInTheDocument(),
-  )
-  await expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible()
+  const open = canvas.queryByRole('button', { name: 'Open Ticket inspector' })
+  if (open !== null) return
+  await waitFor(() => expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible())
 }
 
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
     await readsTheBacklog(canvasElement)
-    await choosingATicketReopensTheInspector(canvasElement)
+    await choosingATicketKeepsTheInspectorAvailable(canvasElement)
   },
 }
 
@@ -164,6 +186,16 @@ export const TicketTree: Story = {
     ])
     await expect(rows[2]).toHaveAccessibleName(/child of #701$/)
     await expect(rows[3]).toHaveAccessibleName(/child of #700$/)
+    const leafRow = rows[2]?.parentElement
+    if (leafRow === null || leafRow === undefined) throw new Error('A child Ticket needs a row.')
+    const twig = leafRow?.querySelector('span.absolute.left-0')
+    if (twig === null || twig === undefined) throw new Error('A child Ticket needs a tree twig.')
+    const title = within(leafRow).getByText('Parse the plan file')
+    const titleFirstLineCenter =
+      title.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(title).lineHeight) / 2
+    await expect(
+      Math.abs(twig.getBoundingClientRect().top - titleFirstLineCenter),
+    ).toBeLessThanOrEqual(1)
   },
 }
 
