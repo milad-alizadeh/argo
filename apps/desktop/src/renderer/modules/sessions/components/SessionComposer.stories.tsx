@@ -11,12 +11,11 @@ import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
-// The Attach action lives inside the "Add context" menu, matching the composer prototype.
+// Files and folders stay on the native attachment path, reached through the shared picker.
 async function attachViaMenu(canvas: ReturnType<typeof within>) {
   await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-  await userEvent.click(
-    await within(document.body).findByRole('menuitem', { name: 'Files & folders' }),
-  )
+  const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
+  await userEvent.click(within(picker).getByRole('button', { name: 'Files & folders' }))
 }
 
 // The send chord spelled once, so the stories that only need a draft sent do not each restate it.
@@ -933,15 +932,40 @@ export const AttachViaButton: Story = {
   },
 }
 
-export const SkillsMenuOpensCommandAutocomplete: Story = {
+export const SharedContextPicker: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-    await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Skills' }))
+    const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
+    await expect(within(picker).getByRole('textbox', { name: 'Search context' })).toHaveFocus()
+    await expect(within(picker).getByText('ENG-42')).toBeVisible()
+    await expect(within(picker).getByText('Blocked')).toBeVisible()
+    await expect(within(picker).queryByText('ENG-9')).toBeNull()
+    await expect(within(picker).getByRole('button', { name: /Goals.*Coming soon/ })).toBeDisabled()
 
-    await expect(await canvas.findByRole('listbox', { name: 'References' })).toBeVisible()
-    await expect(canvas.getByRole('option', { name: /Implement/ })).toBeVisible()
+    await userEvent.click(within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }))
+    await expect(canvas.getByText(/ENG-42 Keep the Composer draft/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove ENG-42' }))
+    await expect(canvas.queryByText(/ENG-42 Keep the Composer draft/)).toBeNull()
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), '@')
+    const keyboardPicker = await within(document.body).findByRole('dialog', {
+      name: 'Context picker',
+    })
+    const search = within(keyboardPicker).getByRole('textbox', { name: 'Search context' })
+    await expect(search).toHaveFocus()
+    await userEvent.type(search, 'ENG-9')
+    await expect(within(keyboardPicker).getByText('ENG-9')).toBeVisible()
+    await expect(within(keyboardPicker).getByText('Terminal · Done')).toBeVisible()
+    await expect(within(keyboardPicker).queryByText('Blocked')).toBeNull()
+
+    await userEvent.click(
+      within(keyboardPicker).getByRole('button', { name: /ENG-9.*Store the refresh token/ }),
+    )
+    await expect(canvas.getByText(/ENG-9 Store the refresh token/)).toBeVisible()
+    await expect(canvas.getByLabelText('Message')).toHaveFocus()
   },
 }
 

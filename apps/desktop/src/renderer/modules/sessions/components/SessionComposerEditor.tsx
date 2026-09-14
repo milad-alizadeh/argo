@@ -25,6 +25,7 @@ import { ComposerReferenceMenuPlugin } from './ComposerReferenceMenuPlugin'
 import { ComposerReferenceNode } from './ComposerReferenceNode'
 import { ComposerReferencePlugin } from './ComposerReferencePlugin'
 import { referenceMenu } from './composer-reference-menu'
+import { OpenContextPickerPlugin } from './OpenContextPickerPlugin'
 import {
   composerNodes,
   composerTransformers,
@@ -94,6 +95,7 @@ export function ComposerEditor({
   editorRef,
   focusOnMount,
   onChange,
+  onOpenContextPicker,
   onSend,
 }: {
   cli?: SessionCli | null
@@ -101,6 +103,7 @@ export function ComposerEditor({
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   onChange: (text: string) => void
+  onOpenContextPicker: () => void
   onSend: () => void
 }) {
   const focusCameFromPointer = useRef(false)
@@ -156,6 +159,7 @@ export function ComposerEditor({
       <MarkdownPastePlugin />
       <EditorRefPlugin editorRef={editorRef} />
       <FocusOnMountPlugin enabled={focusOnMount} />
+      <OpenContextPickerPlugin onOpen={onOpenContextPicker} />
       <SendOnEnterPlugin onSend={onSend} />
       <ComposerReferenceMenuPlugin cli={cli} draft={draft} />
     </LexicalComposer>

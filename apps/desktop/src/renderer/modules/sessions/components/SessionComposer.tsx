@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
 import { ComposerForm } from './ComposerForm'
@@ -39,10 +40,12 @@ export function SessionComposer({
   harness = null,
   setup = null,
 }: SessionComposerProps) {
+  const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
   return (
     <ComposerForm
       attachments={state.attachments}
+      contextPickerOpen={contextPickerOpen}
       contextTokens={contextTokens}
       disabled={disabled}
       draft={state.draft}
@@ -53,6 +56,7 @@ export function SessionComposer({
       isHandingOff={isHandingOff}
       isRunning={isRunning}
       onAttach={() => void state.attachFiles()}
+      onAddTicket={state.addTicket}
       onChange={state.changeDraft}
       onCompact={onCompact}
       onDropFiles={state.dropFiles}
@@ -61,6 +65,7 @@ export function SessionComposer({
       onInterrupt={onInterrupt}
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}
+      onRemoveTicket={state.removeTicket}
       onReorder={state.reorderPendingTurn}
       onSend={() => {
         if (!disabled) void state.send()
@@ -69,6 +74,8 @@ export function SessionComposer({
       plan={plan}
       sessionId={sessionId}
       setup={setup}
+      tickets={state.tickets}
+      onContextPickerOpenChange={setContextPickerOpen}
     />
   )
 }

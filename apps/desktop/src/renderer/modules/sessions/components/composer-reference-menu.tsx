@@ -20,22 +20,22 @@ export const composerPlaceholder = (
 )
 
 export function activeReference(text: string) {
-  const match = text.match(/(^|\s)([/@])([^\s]*)$/)
+  const match = text.match(/(^|\s)(\/)([^\s]*)$/)
   if (match === null) return null
   const trigger = match[2]
-  if (trigger !== '/' && trigger !== '@') return null
+  if (trigger !== '/') return null
   return {
     leading: match[1] ?? '',
     query: match[3] ?? '',
     source: match[0],
-    trigger: trigger as '/' | '@',
+    trigger: '/',
   }
 }
 
 export function referenceMenu(draft: string) {
   const active = activeReference(draft)
   if (active === null) return null
-  const choices = referenceSuggestions(active.trigger, active.query)
+  const choices = referenceSuggestions(active.trigger as '/', active.query)
   return choices.length === 0 ? null : choices
 }
 

@@ -3,7 +3,7 @@ import { type RefObject, useEffect, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
-import type { ComposerAttachment } from '../state/useComposerStore'
+import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerCard } from './ComposerCard'
 import { PendingTurns } from './PendingTurns'
 import type { TurnSetupControlProps } from './RunSetupMenu'
@@ -26,6 +26,8 @@ function useFocusInterruptOnCompactStart(isCompacting: boolean) {
 
 type ComposerFormProps = {
   attachments: ComposerAttachment[]
+  tickets: ComposerTicketContext[]
+  contextPickerOpen: boolean
   disabled?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
@@ -33,6 +35,8 @@ type ComposerFormProps = {
   contextTokens: number | null | undefined
   isCompacting: boolean
   onAttach: () => void
+  onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
+  onContextPickerOpenChange: (open: boolean) => void
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
@@ -43,6 +47,7 @@ type ComposerFormProps = {
   onInterrupt?: () => Promise<boolean>
   onRemove: (id: string) => void
   onRemoveAttachment: (id: string) => void
+  onRemoveTicket: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
   onSend: () => void
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
@@ -54,6 +59,8 @@ type ComposerFormProps = {
 
 export function ComposerForm({
   attachments,
+  tickets,
+  contextPickerOpen,
   disabled = false,
   draft,
   editorRef,
@@ -61,6 +68,8 @@ export function ComposerForm({
   contextTokens,
   isCompacting,
   onAttach,
+  onAddTicket,
+  onContextPickerOpenChange,
   isHandingOff,
   onCompact,
   onHandoff,
@@ -71,6 +80,7 @@ export function ComposerForm({
   onInterrupt,
   onRemove,
   onRemoveAttachment,
+  onRemoveTicket,
   onReorder,
   onSend,
   pendingTurns,
@@ -96,6 +106,7 @@ export function ComposerForm({
       />
       <ComposerCard
         attachments={attachments}
+        contextPickerOpen={contextPickerOpen}
         contextTokens={contextTokens}
         disabled={disabled}
         draft={draft}
@@ -107,16 +118,20 @@ export function ComposerForm({
         isHandingOff={isHandingOff}
         isRunning={isRunning}
         onAttach={onAttach}
+        onAddTicket={onAddTicket}
         onChange={onChange}
         onCompact={onCompact}
         onDropFiles={onDropFiles}
         onHandoff={onHandoff}
         onInterrupt={onInterrupt}
         onRemoveAttachment={onRemoveAttachment}
+        onRemoveTicket={onRemoveTicket}
         onSend={onSend}
         plan={plan}
         sessionId={sessionId}
         setup={setup}
+        tickets={tickets}
+        onContextPickerOpenChange={onContextPickerOpenChange}
       />
     </form>
   )

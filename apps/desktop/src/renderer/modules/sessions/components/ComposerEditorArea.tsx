@@ -3,30 +3,36 @@ import type { RefObject } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import type { SessionCli } from '../harness/harnesses'
-import type { ComposerAttachment } from '../state/useComposerStore'
+import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerAttachments } from './ComposerAttachments'
 import { ComposerEditor } from './SessionComposerEditor'
 import { SessionPlanPopover } from './SessionPlanPopover'
 
 export function ComposerEditorArea({
   attachments,
+  tickets,
   cli,
   draft,
   editorRef,
   focusOnMount,
   onChange,
   onRemoveAttachment,
+  onRemoveTicket,
+  onOpenContextPicker,
   onSend,
   plan,
   sessionId,
 }: {
   attachments: ComposerAttachment[]
+  tickets: ComposerTicketContext[]
   cli: SessionCli | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   onChange: (text: string) => void
   onRemoveAttachment: (id: string) => void
+  onRemoveTicket: (id: string) => void
+  onOpenContextPicker: () => void
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
@@ -36,7 +42,12 @@ export function ComposerEditorArea({
       <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
         <SessionPlanPopover plan={plan} />
       </div>
-      <ComposerAttachments attachments={attachments} onRemove={onRemoveAttachment} />
+      <ComposerAttachments
+        attachments={attachments}
+        onRemove={onRemoveAttachment}
+        onRemoveTicket={onRemoveTicket}
+        tickets={tickets}
+      />
       <div className="relative min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
@@ -45,6 +56,7 @@ export function ComposerEditorArea({
           editorRef={editorRef}
           focusOnMount={focusOnMount}
           onChange={onChange}
+          onOpenContextPicker={onOpenContextPicker}
           onSend={onSend}
         />
       </div>
