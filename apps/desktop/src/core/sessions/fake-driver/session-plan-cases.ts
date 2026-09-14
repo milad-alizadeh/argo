@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
+import { openArchivedSessionByClick } from './session-gestures'
 
 export async function proveSessionPlan(page, update) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions/plannedWork'
-  })
+  await openArchivedSessionByClick(page, 'plannedWork')
   const plan = page.getByRole('button', { name: 'Open task plan' })
   await plan.click()
   await page.getByRole('list', { name: 'Task plan' }).waitFor()

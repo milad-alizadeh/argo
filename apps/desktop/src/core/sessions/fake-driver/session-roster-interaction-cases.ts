@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
+import { deselectSession, openArchivedSessionByClick, openSessionByClick } from './session-gestures'
 import { readRosterIds } from './session-roster-facts'
 
 async function proveRetiredSelection(page, restart) {
+  // No affordance writes the remembered selection directly, and this case needs it pointing at a
+  // Session the next launch retires.
   await page.evaluate(() => window.localStorage.setItem('argo.selected-session-id', 'resumeChild'))
   const retired = await restart()
   await retired.waitForFunction(() => window.location.hash === '#/sessions/resumeParent')
@@ -24,9 +27,7 @@ async function proveFreshOrder(page, previousOrder) {
 }
 
 export async function provePackagedRosterSelection(page) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions'
-  })
+  await deselectSession(page)
   const first = page.locator('nav[aria-label="Sessions"] button').first()
   await first.waitFor()
   const sessionId = await first.getAttribute('data-session-id')
@@ -46,9 +47,7 @@ export async function provePackagedRosterSelection(page) {
 }
 
 async function proveArchivedRestart(page, restart) {
-  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
-  await page.locator('nav[aria-label="Archived"] button').click()
-  await page.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
+  await openArchivedSessionByClick(page, 'plannedWork')
   const archived = await restart()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   // Restoring the selected archived Session opens the section on its own, but only once the
@@ -69,13 +68,8 @@ async function proveArchivedRestart(page, restart) {
 }
 
 export async function provePackagedRosterRestart(page, { remove, restart, updateRoster }) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions'
-  })
-  const selected = page.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]')
-  await selected.waitFor()
-  await selected.click()
-  await page.waitForFunction(() => window.location.hash === '#/sessions/prose')
+  await deselectSession(page)
+  await openSessionByClick(page, 'prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   const rosterFacts = await readRosterIds(page)
 
@@ -98,8 +92,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
 
   const archived = await proveArchivedRestart(updated, restart)
 
-  await archived.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]').click()
-  await archived.waitForFunction(() => window.location.hash === '#/sessions/prose')
+  await openSessionByClick(archived, 'prose')
   await remove()
   const missing = await restart()
   await missing.waitForFunction(() => window.location.hash === '#/sessions')
