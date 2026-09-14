@@ -20,6 +20,7 @@ export function TicketDeck({ backlog }: TicketDeckProps) {
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   return (
     <InspectorSplit
+      defaultInspectorSize="50%"
       inspector={
         <TicketDetail
           listed={listed}
