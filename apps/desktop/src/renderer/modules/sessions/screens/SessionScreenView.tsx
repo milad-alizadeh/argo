@@ -152,10 +152,15 @@ export function SessionShell({
             >
               <div
                 aria-hidden="true"
-                data-component="SessionComposerFade"
-                className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
-                style={{ height: fadeHeight === null ? 0 : `${fadeHeight}px` }}
-              />
+                data-component="SessionComposerBackdrop"
+                className="pointer-events-none absolute inset-x-0 top-0 z-10 h-screen bg-background"
+              >
+                <div
+                  data-component="SessionComposerFade"
+                  className="absolute inset-x-0 top-0 bg-[image:var(--gradient-session-composer-fade)]"
+                  style={{ height: fadeHeight === null ? 0 : `${fadeHeight}px` }}
+                />
+              </div>
               <div className="relative z-20">{composer}</div>
             </section>
           </section>

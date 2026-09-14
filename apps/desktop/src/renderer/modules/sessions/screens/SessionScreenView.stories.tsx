@@ -210,8 +210,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
   const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
+  const backdrop = composer.querySelector<HTMLElement>('[data-component="SessionComposerBackdrop"]')
   const fade = composer.querySelector<HTMLElement>('[data-component="SessionComposerFade"]')
-  if (card === null || contextBar === null || fade === null)
+  if (card === null || contextBar === null || backdrop === null || fade === null)
     throw new Error('The attached composer surfaces are absent.')
 
   const gutter = Number.parseFloat(
@@ -231,6 +232,12 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
     contextBar.getBoundingClientRect().bottom,
     1,
+  )
+  expect(backdrop.getBoundingClientRect().bottom).toBeGreaterThan(
+    contextBar.getBoundingClientRect().bottom,
+  )
+  expect(getComputedStyle(backdrop).backgroundColor).toBe(
+    getComputedStyle(canvasElement).backgroundColor,
   )
 }
 
