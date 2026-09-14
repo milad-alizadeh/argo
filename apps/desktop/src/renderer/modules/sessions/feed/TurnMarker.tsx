@@ -22,7 +22,7 @@ export function TurnMarker({ phase, startedAt }: TurnMarkerView) {
     return () => window.clearInterval(timer)
   }, [])
   return (
-    <Marker className="py-2 type-body" role="status">
+    <Marker aria-label={PHASE_LABEL[phase]} className="py-2 type-body" role="status">
       <MarkerIcon>
         <LoaderCircle className="animate-spin" />
       </MarkerIcon>
