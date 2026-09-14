@@ -7,6 +7,7 @@ import { provePackagedResume } from '../../../agents/claude/session-fake-driver/
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { createPackagedSessionHarness } from './packaged-session-harness'
+import { proveSessionDiagram } from './session-diagram-case'
 import { appendProse, growCodexTranscript, removeProse, streamProse } from './session-feed-fixture'
 import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
@@ -58,6 +59,8 @@ try {
       append: appendProse,
     }),
   )
+  const diagramFixture = { transcripts: fixture.claudeTranscripts, append: appendProse }
+  await ran(['session-diagram'], () => proveSessionDiagram(page, diagramFixture))
   await ran(['session-plan'], () =>
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )

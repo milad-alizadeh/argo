@@ -1,4 +1,5 @@
 import { createDomainClient } from '../contract/domain'
+import type { SessionAttachmentInput } from './attachments-contract'
 import type { ClaudeQuestionAnswer } from './claude-contract'
 import {
   type SessionAcceptedReply,
@@ -20,11 +21,13 @@ export type SessionClient = {
     cwd: string
     prompt: string
     setup?: unknown
+    attachments?: SessionAttachmentInput[]
   }): Promise<SessionStartReply>
   sendSession(request: {
     sessionId: string
     prompt: string
     setup?: unknown
+    attachments?: SessionAttachmentInput[]
   }): Promise<SessionAcceptedReply>
   interruptSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   compactSession(request: { sessionId: string }): Promise<SessionAcceptedReply>

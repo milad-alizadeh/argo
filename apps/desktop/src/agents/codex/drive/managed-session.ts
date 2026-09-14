@@ -5,6 +5,7 @@ import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { CodexOwnershipLedger } from './ownership-ledger'
+import type { PendingCodexQuestion } from './question-protocol'
 import { codexNotificationRecorder } from './record-notification'
 
 export type ManagedSession = {
@@ -16,6 +17,7 @@ export type ManagedSession = {
   status: SessionRosterRow['status']
   messages: LiveMessages
   title?: { text: string; source: 'custom' }
+  pendingQuestion: PendingCodexQuestion | null
 }
 
 export type ManagedSessionOptions = {
@@ -71,6 +73,7 @@ export function rememberManagedSession(options: {
     turnId: null,
     status: 'running',
     messages,
+    pendingQuestion: null,
   })
   driver.ownership?.bind(sessionId, cwd)
   channel.onExit(() => {

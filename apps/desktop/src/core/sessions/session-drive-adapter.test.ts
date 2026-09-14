@@ -39,6 +39,8 @@ function fakeCodexAdapter(): SessionDriveAdapter {
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
+    pendingQuestion: () => null,
+    decideQuestion: () => true,
     close: () => {},
   })
 }

@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
-
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
+import { sessionAttachmentInputSchema } from '@/core/sessions/attachments-contract'
 import { type TurnSetup, turnSetupSchema } from '../turn-setup/turn-setup'
+import type { Send } from './useSend'
 
 // A stored Turn can lack a setup, and then it sends with the composer's current one.
-export type PendingTurn = { id: string; text: string; setup?: TurnSetup }
+export type PendingTurn = {
+  id: string
+  text: string
+  setup?: TurnSetup
+  attachments: SessionAttachmentInput[]
+}
 
 const QUEUE_STORAGE_KEY = 'argo.session-composer-queues'
-const pendingTurnSchema = z.strictObject({
-  id: z.string().uuid(),
-  text: z.string().min(1),
-  setup: turnSetupSchema.optional(),
-})
+const pendingTurnSchema = z
+  .strictObject({
+    id: z.string().uuid(),
+    text: z.string(),
+    setup: turnSetupSchema.optional(),
+    attachments: z.array(sessionAttachmentInputSchema).default([]),
+  })
+  .refine(({ text, attachments }) => text.trim().length > 0 || attachments.length > 0)
 const queuesSchema = z.record(z.string(), z.array(pendingTurnSchema))
 
 function restoredQueues(): Map<string, PendingTurn[]> {
@@ -35,7 +45,7 @@ export function usePendingTurns({
   sessionId,
 }: {
   isRunning: boolean
-  onSend: (text: string, setup: TurnSetup | undefined) => Promise<boolean>
+  onSend: Send
   sessionId: string
 }) {
   const [queues, setQueues] = useState(restoredQueues)
@@ -58,8 +68,8 @@ export function usePendingTurns({
   )
 
   const addPendingTurn = useCallback(
-    (text: string, setup: TurnSetup | undefined) =>
-      updateQueue((turns) => [...turns, { id: crypto.randomUUID(), text, setup }]),
+    (text: string, setup: TurnSetup | undefined, attachments: SessionAttachmentInput[]) =>
+      updateQueue((turns) => [...turns, { id: crypto.randomUUID(), text, setup, attachments }]),
     [updateQueue],
   )
 
@@ -90,7 +100,7 @@ export function usePendingTurns({
     wasRunning.current = isRunning
     const nextTurn = pendingTurns[0]
     if (!becameIdle || !nextTurn) return
-    void onSend(nextTurn.text, nextTurn.setup).then((sent) => {
+    void onSend(nextTurn.text, nextTurn.setup ?? null, nextTurn.attachments).then((sent) => {
       if (sent) removePendingTurn(nextTurn.id)
     })
   }, [isRunning, onSend, pendingTurns, removePendingTurn])
