@@ -25,9 +25,7 @@ function ownerOfEachUuid(files: TranscriptFile[]): Map<string, string> {
   const owners = new Map<string, string>()
   for (const file of files) {
     for (const record of file.records) {
-      if (record.kind === 'message' || record.kind === 'trace') {
-        owners.set(record.uuid, file.sessionId)
-      }
+      if ('uuid' in record) owners.set(record.uuid, file.sessionId)
     }
   }
   return owners

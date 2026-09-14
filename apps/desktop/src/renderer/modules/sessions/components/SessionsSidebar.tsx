@@ -1,5 +1,5 @@
 import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
@@ -9,6 +9,7 @@ import type { SessionError, SessionId, SessionsListed } from '../types'
 import { ArchivedSessions } from './ArchivedSessions'
 import { RenameDialog } from './RenameDialog'
 import { SessionRosterList } from './SessionRosterList'
+import { useRosterFocus } from './useRosterFocus'
 
 function rosterState(
   roster: SessionsListed | null,
@@ -111,13 +112,13 @@ export function SessionsSidebarContent({
   onNew = () => {},
   onRename = async (_session, name) => name,
 }: SessionsSidebarContentProps) {
-  const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)
+  const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
   const [renamedTitles, setRenamedTitles] = useState<Record<string, string>>({})
   const sessions = roster?.sessions ?? []
   const visible = sessions.filter((session) => !session.archived)
   const archived = sessions.filter((session) => session.archived)
-  const tabStop = focusedSessionId ?? selectedSessionId ?? visible[0]?.id ?? null
+  const { setFocusedSessionId, tabStop } = useRosterFocus(sidebar, visible, selectedSessionId)
   const state = rosterState(roster, rosterError, visible.length)
   const rosterRequestId = roster?.requestId
 
@@ -130,6 +131,7 @@ export function SessionsSidebarContent({
       aria-label="Sessions sidebar"
       className="flex h-full min-h-0 flex-col bg-sidebar"
       data-state={state}
+      ref={sidebar}
     >
       <SessionsSidebarHeader onNew={onNew} />
       {rosterError ? (
