@@ -1,12 +1,6 @@
 import { useCallback, useState } from 'react'
-import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import type {
-  SessionError,
-  SessionEvidence,
-  SessionFeed,
-  SessionFeedRow,
-  SessionId,
-} from '../types'
+import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
+import type { FeedQuestionHandlers } from './FeedDocument'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { keptDocument } from './kept-document'
 import { Standing } from './Standing'
@@ -52,12 +46,7 @@ export function BasicFeed({
   posture?: 'managed' | 'external' | null
   selectedSessionId: SessionId | null
   turnMarker?: TurnMarkerView | null
-  onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
-  stallTimeoutMs?: number
-}) {
+} & FeedQuestionHandlers) {
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
   // (#2102) never gets a kept document, so `current` stays null forever without this.

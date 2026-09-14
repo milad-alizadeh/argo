@@ -10,6 +10,15 @@ import { TurnMarker } from './TurnMarker'
 import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
 
+// Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
+export type FeedQuestionHandlers = {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
+  stallTimeoutMs?: number
+}
+
 type FeedDocumentProps = {
   active: boolean
   activeEvidenceId: string | null
@@ -23,12 +32,7 @@ type FeedDocumentProps = {
   isRunning: boolean
   posture: 'managed' | 'external' | null
   turnMarker: TurnMarkerView | null
-  onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
-  stallTimeoutMs?: number
-}
+} & FeedQuestionHandlers
 
 function compactionMarker(
   startedAt: string | null,

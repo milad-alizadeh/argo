@@ -11,6 +11,14 @@
     "roster": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."
   },
+  "stalled": {
+    "title": "Could not load this Session",
+    "description": {
+      "managed": "Argo tried to load the history for this Session, but the load did not finish.",
+      "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
+    },
+    "retry": "Retry"
+  },
   "feedLabel": "Session Feed",
   "composerRegionLabel": "Session composer",
   "historyLabel": "Session history",
