@@ -20,16 +20,23 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
   return {
     cli: 'codex',
     turnSetupSchema: codexTurnSetupSchema,
-    async start({ cwd, prompt, setup }) {
+    async start({ cwd, prompt, setup, attachments }) {
       try {
-        return { sessionId: await driver.start({ cwd, prompt, setup: setup as CodexTurnSetup }) }
+        return {
+          sessionId: await driver.start({
+            attachments,
+            cwd,
+            prompt,
+            setup: setup as CodexTurnSetup,
+          }),
+        }
       } catch (error) {
         return failureOf(error, 'launch-failed')
       }
     },
-    async send({ sessionId, prompt, setup }) {
+    async send({ sessionId, prompt, setup, attachments }) {
       try {
-        await driver.send(sessionId, prompt, setup as CodexTurnSetup)
+        await driver.send({ sessionId, text: prompt, setup: setup as CodexTurnSetup, attachments })
         return { ok: true }
       } catch (error) {
         console.error('Argo could not send to Codex Session', sessionId, error)

@@ -29,7 +29,11 @@ test('follows a managed Session through Turn statuses and process exit', async (
     now: () => new Date('2026-09-13T15:17:11.000Z'),
     openChannel: () => channel,
   })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const sessionId = await driver.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+  })
   const notify = notifications[0]
   assert.ok(notify)
   const notifyStatus = (status: { type: 'active'; activeFlags: string[] } | { type: 'idle' }) =>
@@ -48,7 +52,12 @@ test('follows a managed Session through Turn statuses and process exit', async (
   await driver.interrupt(sessionId)
   assert.equal(requests.includes('turn/interrupt'), false)
 
-  await driver.send(sessionId, 'Inspect the next test.')
+  await driver.send({
+    sessionId,
+    text: 'Inspect the next test.',
+    setup: undefined,
+    attachments: [],
+  })
   notifyStatus({ type: 'active', activeFlags: [] })
   assertRosterStatus('running')
 
