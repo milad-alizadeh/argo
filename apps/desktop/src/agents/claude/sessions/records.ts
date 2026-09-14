@@ -13,12 +13,8 @@ import { commandSource } from './command-source'
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
 
-const HEADLESS_ENTRYPOINTS = ['sdk-cli']
-
 function readEntry(value: unknown): SessionEntry {
-  return typeof value === 'string' && HEADLESS_ENTRYPOINTS.includes(value)
-    ? 'headless'
-    : 'interactive'
+  return value === 'sdk-cli' ? 'headless' : 'interactive'
 }
 
 function readUsage(value: unknown) {
@@ -107,11 +103,12 @@ function readMark(record: Record<string, unknown>): TranscriptRecord | null {
     }
   }
   if (record.subtype === 'compact_boundary' && typeof record.uuid === 'string') {
-    return { kind: 'compaction', uuid: record.uuid }
+    return typeof record.timestamp === 'string'
+      ? { kind: 'compaction', uuid: record.uuid, timestamp: record.timestamp }
+      : { kind: 'compaction', uuid: record.uuid }
   }
   return null
 }
-
 export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let value: unknown

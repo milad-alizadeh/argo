@@ -68,7 +68,12 @@ export const ChoosesModelAndEffort: Story = {
     if (!effortScale) throw new Error('Effort scale is missing.')
     await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
     await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('claude sonnet xhigh')
-    await expect(page().queryByRole('tablist', { name: 'Harness' })).toBeNull()
+    const harnesses = page().getByRole('tablist', { name: 'Harness' })
+    for (const label of ['Claude Code', 'Codex']) {
+      const tab = within(harnesses).getByRole('tab', { name: label })
+      await expect(tab).toHaveAttribute('aria-disabled', 'true')
+      await expect(tab).toHaveAttribute('tabindex', '-1')
+    }
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull())

@@ -7,6 +7,8 @@ import {
   ContextMenuLabel,
   ContextMenuTrigger,
 } from '@/renderer/components/ui/context-menu'
+import { HarnessLogo } from '../harness/HarnessLogo'
+import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
 
@@ -19,6 +21,23 @@ const STATUS_MARKS: Record<Session['status'], string> = {
   starting: 'bg-active shadow-state-glow',
   stopped: 'bg-danger',
   unknown: 'bg-transparent shadow-state-outline',
+}
+
+// The dot beside a Session carries its status as colour; this is that same fact in words, for a
+// reader the dot's colour never reaches (apps/desktop/AGENTS.md "Accessible names").
+const STATUS_LABELS: Record<Session['status'], string> = {
+  asking: 'Asking',
+  ended: 'Ended',
+  idle: 'Idle',
+  permission: 'Waiting on permission',
+  running: 'Running',
+  starting: 'Starting',
+  stopped: 'Stopped',
+  unknown: 'Unknown',
+}
+
+function knownCli(cli: string): cli is SessionCli {
+  return (SESSION_CLIS as readonly string[]).includes(cli)
 }
 
 function activitySummary(session: Session): string {
@@ -39,6 +58,7 @@ function SessionMetadata({ session }: { session: Session }) {
   ].filter(Boolean)
   return (
     <span className="flex min-w-0 items-center gap-1 font-mono text-meta text-faint">
+      {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
       <span className="min-w-0 flex-1 truncate">{details.join(' · ')}</span>
       {session.delegations.length > 0 ? (
         <span className="inline-flex shrink-0">
@@ -88,6 +108,7 @@ export function SessionRosterItem({
                   aria-hidden="true"
                   className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
                 />
+                <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">
                     <SessionReferenceText text={sessionName(session)} />

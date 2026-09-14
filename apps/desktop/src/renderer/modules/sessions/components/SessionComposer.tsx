@@ -14,8 +14,11 @@ import { type PendingTurn, usePendingTurns } from './usePendingTurns'
 export const COMPOSER_FOCUS_STATE = 'focus-composer'
 
 export type SessionComposerProps = {
+  contextTokens?: number | null
   focusOnMount?: boolean
+  isCompacting?: boolean
   isRunning?: boolean
+  onCompact?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
@@ -66,8 +69,11 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
 }
 
 export function SessionComposer({
+  contextTokens,
   focusOnMount = false,
+  isCompacting = false,
   isRunning = false,
+  onCompact,
   onInterrupt,
   sessionId,
   onSend,
@@ -102,8 +108,11 @@ export function SessionComposer({
       draft={draft}
       editorRef={editorRef}
       focusOnMount={focusOnMount}
+      contextTokens={contextTokens}
+      isCompacting={isCompacting}
       isRunning={isRunning}
       onChange={changeDraft}
+      onCompact={onCompact}
       onEdit={(turn) => {
         restorePendingTurn(turn, editorRef, changeDraft)
         restoreSetup(turn, setup)

@@ -98,6 +98,8 @@ export const Discovered: Story = {
     await expect(canvas.getByRole('button', { name: 'New Session' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'Find a Session' })).toBeDisabled()
     const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await expect(row).toHaveAccessibleName(/Idle/)
+    await expect(row.querySelector('svg')).not.toBeNull()
     await userEvent.click(row)
     await expect(args.onSelect).toHaveBeenCalledWith('prose')
     await expect(row).toHaveAttribute('aria-current', 'page')

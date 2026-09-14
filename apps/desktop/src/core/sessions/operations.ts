@@ -1,25 +1,23 @@
 import {
-  claudeSessionInterruptRequestSchema,
-  claudeSessionPermissionDecisionRequestSchema,
-  claudeSessionPermissionReplySchema,
-  claudeSessionPermissionRequestSchema,
-  claudeSessionSendReplySchema,
-  claudeSessionSendRequestSchema,
-  claudeSessionStartReplySchema,
-  claudeSessionStartRequestSchema,
-  codexSessionInterruptRequestSchema,
-  codexSessionSendReplySchema,
-  codexSessionSendRequestSchema,
-  codexSessionStartReplySchema,
-  codexSessionStartRequestSchema,
+  sessionAcceptedReplySchema,
+  sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
+  sessionInterruptRequestSchema,
   sessionListReplySchema,
   sessionListRequestSchema,
+  sessionPermissionDecisionRequestSchema,
+  sessionPermissionReplySchema,
+  sessionPermissionRequestSchema,
   sessionRenameReplySchema,
   sessionRenameRequestSchema,
+  sessionSendRequestSchema,
+  sessionStartReplySchema,
+  sessionStartRequestSchema,
 } from './contract'
 
+// One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
+// sessionId, routed by the Session's owner.
 export const SESSION_OPERATIONS = {
   list: {
     name: 'session.list',
@@ -39,52 +37,40 @@ export const SESSION_OPERATIONS = {
     request: sessionRenameRequestSchema,
     reply: sessionRenameReplySchema,
   },
-  startClaude: {
-    name: 'session.claude.start',
-    channel: 'argo:session:claude:start',
-    request: claudeSessionStartRequestSchema,
-    reply: claudeSessionStartReplySchema,
+  start: {
+    name: 'session.start',
+    channel: 'argo:session:start',
+    request: sessionStartRequestSchema,
+    reply: sessionStartReplySchema,
   },
-  sendClaude: {
-    name: 'session.claude.send',
-    channel: 'argo:session:claude:send',
-    request: claudeSessionSendRequestSchema,
-    reply: claudeSessionSendReplySchema,
+  send: {
+    name: 'session.send',
+    channel: 'argo:session:send',
+    request: sessionSendRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
-  interruptClaude: {
-    name: 'session.claude.interrupt',
-    channel: 'argo:session:claude:interrupt',
-    request: claudeSessionInterruptRequestSchema,
-    reply: claudeSessionSendReplySchema,
+  interrupt: {
+    name: 'session.interrupt',
+    channel: 'argo:session:interrupt',
+    request: sessionInterruptRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
-  readClaudePermission: {
-    name: 'session.claude.permission',
-    channel: 'argo:session:claude:permission',
-    request: claudeSessionPermissionRequestSchema,
-    reply: claudeSessionPermissionReplySchema,
+  compact: {
+    name: 'session.compact',
+    channel: 'argo:session:compact',
+    request: sessionCompactRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
-  decideClaudePermission: {
-    name: 'session.claude.permission.decide',
-    channel: 'argo:session:claude:permission:decide',
-    request: claudeSessionPermissionDecisionRequestSchema,
-    reply: claudeSessionSendReplySchema,
+  readPermission: {
+    name: 'session.permission',
+    channel: 'argo:session:permission',
+    request: sessionPermissionRequestSchema,
+    reply: sessionPermissionReplySchema,
   },
-  startCodex: {
-    name: 'session.codex.start',
-    channel: 'argo:session:codex:start',
-    request: codexSessionStartRequestSchema,
-    reply: codexSessionStartReplySchema,
-  },
-  sendCodex: {
-    name: 'session.codex.send',
-    channel: 'argo:session:codex:send',
-    request: codexSessionSendRequestSchema,
-    reply: codexSessionSendReplySchema,
-  },
-  interruptCodex: {
-    name: 'session.codex.interrupt',
-    channel: 'argo:session:codex:interrupt',
-    request: codexSessionInterruptRequestSchema,
-    reply: codexSessionSendReplySchema,
+  decidePermission: {
+    name: 'session.permission.decide',
+    channel: 'argo:session:permission:decide',
+    request: sessionPermissionDecisionRequestSchema,
+    reply: sessionAcceptedReplySchema,
   },
 } as const

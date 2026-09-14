@@ -30,6 +30,9 @@ export type DriverOptions = {
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
+  compactionStartedAt: string | null
+  compactionPercentage: number | null
+  compactionTokens: string | null
   cwd: string
   messages: LiveMessages
   process: ClaudeProcess

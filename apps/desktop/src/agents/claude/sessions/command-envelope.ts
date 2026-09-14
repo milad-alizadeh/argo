@@ -32,6 +32,19 @@ export function readCommandEnvelope(
           text: output,
         }
   }
+  // A background task's delivery is not the person's own words: it is the CLI handing back a
+  // summary, with the task's full JSON result attached for the model, not the reader.
+  if (text.startsWith('<task-notification>')) {
+    const summary = tagged('summary', text)
+    return summary === null
+      ? null
+      : {
+          kind: 'command-output',
+          uuid: message.uuid,
+          timestamp: message.timestamp,
+          text: summary,
+        }
+  }
   if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return null
   const name = tagged('command-name', text)
   if (name === null) return null

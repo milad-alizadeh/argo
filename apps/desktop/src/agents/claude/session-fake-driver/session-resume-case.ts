@@ -44,14 +44,15 @@ async function sendFromComposer(page, text) {
 export async function provePackagedResume(page, { project, restart, transcripts }) {
   const started = await page.evaluate(
     (cwd) =>
-      window.argo.startClaudeSession({
+      window.argo.startSession({
+        cli: 'claude',
         cwd,
         prompt: 'Open the resume proof.',
         setup: { model: 'opus', effort: 'medium', mode: 'manual' },
       }),
     project,
   )
-  assert.equal(started.type, 'session.claude.started')
+  assert.equal(started.type, 'session.started')
   const sessionId = started.sessionId
   const transcript = path.join(transcripts, 'fake-claude', `${sessionId}.jsonl`)
   await page.waitForFunction(
@@ -72,6 +73,9 @@ export async function provePackagedResume(page, { project, restart, transcripts 
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
   await history.getByText('Fake Claude read: Carry on after the restart.').waitFor()
+  await relaunched.getByRole('button', { name: 'Compact context' }).click()
+  await waitForCompactionFeed(relaunched, sessionId)
+  await history.getByText('Conversation compacted').waitFor()
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ posture }) => posture),
@@ -89,6 +93,19 @@ export async function provePackagedResume(page, { project, restart, transcripts 
     .waitFor()
   assert.equal(await composer.textContent(), 'Take this one over.')
   return relaunched
+}
+
+async function waitForCompactionFeed(page, sessionId) {
+  await waitFor(async () => {
+    const [session] = await rosterRow(page, sessionId)
+    return session?.compactionStartedAt !== null
+  }, 60_000)
+  await waitFor(async () => {
+    const rows = await page
+      .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
+      .allTextContents()
+    return rows.some((row) => row.includes('Conversation compacted'))
+  }, 60_000)
 }
 
 async function waitFor(condition, timeout = 10_000) {

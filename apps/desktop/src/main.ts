@@ -3,10 +3,12 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
+import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
-import { renameCodexSession } from './agents/codex/drive/drive-session'
+import { renameCodexSession } from './agents/codex/drive/rename-session'
+import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
 import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
@@ -69,6 +71,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         transcripts: claudeTranscriptsRoot(home),
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
+        completeCompaction: claudeSessionDriver.completeCompaction,
         orphans: claudeSessionDriver.orphans,
         liveMessages: claudeSessionDriver.liveMessages,
         rename: (request) => renameClaudeSession(request, claudeSessionDriver),
@@ -79,10 +82,10 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         rename: (request) => renameCodexSession(request, codexSessionDriver),
       }),
     ]),
-    driver: claudeSessionDriver,
-    starter: claudeSessionDriver,
-    codexDriver: codexSessionDriver,
-    codexStarter: codexSessionDriver,
+    adapters: {
+      claude: createClaudeDriveAdapter(claudeSessionDriver),
+      codex: createCodexDriveAdapter(codexSessionDriver),
+    },
     rendererURL,
   })
   attachAppearanceBridge(window, { userData, rendererURL })

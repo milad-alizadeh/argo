@@ -97,7 +97,7 @@ test('reports Codex as unavailable rather than throwing an unrelated error', asy
 
   await assert.rejects(
     driver.start({ cwd: '/projects/argo', prompt: 'Inspect the failing test.' }),
-    (error) => error instanceof CodexSessionDriverError && error.code === 'codex-cli-unavailable',
+    (error) => error instanceof CodexSessionDriverError && error.code === 'cli-unavailable',
   )
 })
 

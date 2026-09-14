@@ -48,11 +48,13 @@ export type TranscriptRecord =
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
-  | { kind: 'trace'; uuid: string }
+  // `subagent` is Codex-only: true when the thread was spawned by another agent rather than
+  // opened by a person, so discovery can drop the whole file rather than name it by its uuid.
+  | { kind: 'trace'; uuid: string; subagent?: boolean }
   // The CLI's `pr-link` record: a pull request this Session opened or was pointed at.
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   // The CLI's `compact_boundary` system record: the point where history was condensed.
-  | { kind: 'compaction'; uuid: string }
+  | { kind: 'compaction'; uuid: string; timestamp?: string }
   | { kind: 'unreadable'; line: string }
 
 export type TranscriptFile = {

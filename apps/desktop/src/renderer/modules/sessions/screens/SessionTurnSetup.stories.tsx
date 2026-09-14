@@ -33,12 +33,12 @@ function managedSession(reply: SessionSetup, sent: unknown[]) {
         filesRead: 1,
         filesUnreadable: 0,
       }),
-    sendClaudeSession: (request: { sessionId: string }) => {
+    sendSession: (request: { sessionId: string }) => {
       sent.push(request)
       Object.assign(row, { turnStartedAt: NEXT_TURN, setup: reply })
       return Promise.resolve({
         version: 1 as const,
-        type: 'session.claude.accepted' as const,
+        type: 'session.accepted' as const,
         requestId: 'turn-setup-send',
         sessionId: request.sessionId,
       })

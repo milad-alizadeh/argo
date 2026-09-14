@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
+import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
 import { SessionFacts } from '../components/SessionScreenDetails'
@@ -61,6 +62,9 @@ const SESSION_ROSTER = [
     spentTokens: 2_900,
   }),
 ] satisfies Session[]
+
+const SESSION_HISTORY_LABEL = 'Session history'
+const SCROLL_HISTORY_TO_START_LABEL = 'Scroll Session history to start'
 
 function feedFor(sessionId: string) {
   return {
@@ -137,8 +141,30 @@ function ReviewScreen() {
   )
 }
 
+function ScrollableReviewScreen() {
+  const scrollHistoryToStart = () => {
+    document
+      .querySelector<HTMLElement>(`[aria-label="${SESSION_HISTORY_LABEL}"]`)
+      ?.scrollTo({ top: 0 })
+  }
+
+  return (
+    <div className="relative h-full">
+      <ReviewScreen />
+      <Button
+        className="absolute top-2 left-2 z-10"
+        type="button"
+        variant="secondary"
+        onClick={scrollHistoryToStart}
+      >
+        {SCROLL_HISTORY_TO_START_LABEL}
+      </Button>
+    </div>
+  )
+}
+
 function expectTranscriptRowsDoNotOverlap(canvasElement: HTMLElement) {
-  const sessionHistory = within(canvasElement).getByLabelText('Session history')
+  const sessionHistory = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const promptRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-request"]')
   const responseRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-response"]')
   if (promptRow === null || responseRow === null)
@@ -152,6 +178,21 @@ function expectSessionsSidebarIsOpen(canvasElement: HTMLElement) {
   expect(
     within(canvasElement).getByLabelText('Sessions sidebar').getBoundingClientRect().width,
   ).toBeGreaterThan(0)
+}
+
+async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTMLElement) {
+  const composer = within(canvasElement).getByLabelText('Session composer')
+  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
+  const before = composer.getBoundingClientRect()
+
+  expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
+  expect(history.scrollTop).toBeGreaterThan(0)
+  await userEvent.click(
+    within(canvasElement).getByRole('button', { name: SCROLL_HISTORY_TO_START_LABEL }),
+  )
+
+  expect(history.scrollTop).toBe(0)
+  expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
 const meta: Meta<typeof SessionScreenView> = {
@@ -181,7 +222,7 @@ export const Open: Story = {
       canvas.getByRole('button', { name: /Finish Session composer review/ }),
     ).toHaveAttribute('aria-current', 'page')
     await waitFor(() =>
-      expect(canvas.getByLabelText('Session history')).toHaveAttribute(
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
         'composer-review',
       ),
@@ -197,5 +238,18 @@ export const Open: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
     expectSessionsSidebarIsOpen(canvasElement)
+  },
+}
+
+export const ComposerStaysFixed: Story = {
+  render: () => <ScrollableReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
   },
 }

@@ -10,7 +10,7 @@ type SessionScreenDetailsProps = {
     ReturnType<typeof import('../hooks/useSessionComposer').useSessionComposer>,
     'failure' | 'props'
   >
-  permission: ReturnType<typeof import('../hooks/useClaudePermission').useClaudePermission>
+  permission: ReturnType<typeof import('../hooks/useSessionPermission').useSessionPermission>
   session: SessionRosterRow | null
   harness: HarnessControl
 }
@@ -28,7 +28,12 @@ export function SessionComposerArea({
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
       ) : null}
-      <SessionComposer {...composer.props} plan={session?.plan ?? null} harness={harness} />
+      <SessionComposer
+        {...composer.props}
+        contextTokens={session?.contextTokens}
+        harness={harness}
+        plan={session?.plan ?? null}
+      />
     </>
   )
 }
