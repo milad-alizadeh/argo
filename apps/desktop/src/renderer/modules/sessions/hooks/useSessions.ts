@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
+import { mergeAppendedFeed } from '@/core/sessions/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -80,6 +81,10 @@ function useFeedQuery(
       switch (reply.type) {
         case 'session.feed.read':
           return reply
+        // The server only sends this once it has seen this exact revision back from us, which
+        // means the cached read it was built from is the one still in the query cache.
+        case 'session.feed.appended':
+          return mergeAppendedFeed(cached, reply)
         case 'session.feed.unchanged':
           return cached ?? null
         case 'session.error':

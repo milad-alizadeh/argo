@@ -3,10 +3,23 @@
 import { createHash } from 'node:crypto'
 
 import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './contract'
-import { feedReply, type HeldFeed, keepFeed, stableChain, unchangedReply } from './feed-cache'
+import {
+  appendedReply,
+  feedReply,
+  type HeldFeed,
+  keepFeed,
+  stableChain,
+  unchangedReply,
+} from './feed-cache'
+import { type FeedProjectionState, projectFeedIncrementally } from './feed-incremental'
 import type { SessionSource } from './session-source'
 
-type FeedContext = { source: SessionSource; feeds: Map<string, HeldFeed>; managed: boolean }
+type FeedContext = {
+  source: SessionSource
+  feeds: Map<string, HeldFeed>
+  projections: Map<string, FeedProjectionState>
+  managed: boolean
+}
 
 function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
@@ -27,7 +40,7 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, managed } = context
+  const { source, feeds, projections, managed } = context
   const held = feeds.get(value.sessionId)
   // The chain a resume belongs to can gain a file the held record never knew about (a Session
   // Argo never started, resumed for the first time): the file the held record already tracks
@@ -40,10 +53,14 @@ export async function readOwnedFeed(
   }
   const { chain, stamps } = stable
   if (held !== undefined && held.stamps === stamps) {
-    keepFeed(feeds, value.sessionId, held)
+    keepFeed({ feeds, projections }, value.sessionId, held)
     return value.revision === held.revision ? unchangedReply(value, held) : feedReply(value, held)
   }
-  const rows = source.projectFeed(chain)
+  const { rows, previouslyFrozenCount, state } = projectFeedIncrementally(
+    chain,
+    projections.get(value.sessionId),
+  )
+  projections.set(value.sessionId, state)
   const revision = feedRevision(chain.id, stamps)
   const next = {
     chainId: chain.id,
@@ -52,7 +69,10 @@ export async function readOwnedFeed(
     revision,
     stamps,
   }
-  keepFeed(feeds, value.sessionId, next)
+  keepFeed({ feeds, projections }, value.sessionId, next)
+  if (held !== undefined && value.revision === held.revision && previouslyFrozenCount > 0) {
+    return appendedReply(value, next, previouslyFrozenCount)
+  }
   return feedReply(value, next)
 }
 

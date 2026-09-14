@@ -14,6 +14,7 @@ import {
   sessionRenameRequestSchema,
 } from './contract'
 import type { HeldFeed } from './feed-cache'
+import type { FeedProjectionState } from './feed-incremental'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { readFeedWithOverlay } from './read-owned-feed'
@@ -108,6 +109,7 @@ async function archiveListReply(sources: SessionSource[], value: unknown) {
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
 export function createSessionReader(sources: SessionSource[]): SessionReader {
   const feeds = new Map<string, HeldFeed>()
+  const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
 
   return {
@@ -137,7 +139,10 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
         const owner = await ownership.ownerFor(parsed.data.sessionId)
         if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
         const managed = ownership.managed(owner, parsed.data.sessionId)
-        return await readFeedWithOverlay({ source: owner, feeds, managed }, parsed.data)
+        return await readFeedWithOverlay(
+          { source: owner, feeds, projections, managed },
+          parsed.data,
+        )
       } catch (error) {
         return sessionError(readFailure(error), parsed.data.requestId)
       }

@@ -34,13 +34,13 @@ function holdsMessage(file: TranscriptFile): boolean {
   return file.records.some((record) => record.kind === 'message')
 }
 
-type ReadFile = (file: TranscriptPath, options: { keep: boolean }) => Promise<TranscriptFile | null>
+type ReadFile = (file: TranscriptPath) => Promise<TranscriptFile | null>
 
 function createFileReader(source: TranscriptDiscoverySource): ReadFile {
   const readRecords = createTranscriptRecordReader(source.parse)
-  return async (file, options) => {
+  return async (file) => {
     try {
-      const records = await readRecords(file.path, options)
+      const records = await readRecords(file.path)
       return transcriptFileFrom(file.path, {
         fileName: file.name,
         records: source.normalizeRecords?.(records) ?? records,
@@ -72,7 +72,7 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
         files.push(held.file)
         continue
       }
-      const read = await readFile(candidate, { keep: false })
+      const read = await readFile(candidate)
       if (read === null) {
         unreadable += 1
         continue
@@ -107,9 +107,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     const chain = chains.find((candidate) => candidate.id === currentId)
     if (chain === undefined) return null
     const read = await Promise.all(
-      chain.files.map((file) =>
-        readFile({ path: file.path, name: `${file.sessionId}.jsonl` }, { keep: true }),
-      ),
+      chain.files.map((file) => readFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
     )
     return { ...chain, files: read.filter((file): file is TranscriptFile => file !== null) }
   }

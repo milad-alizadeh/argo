@@ -11,6 +11,7 @@ import {
   appendHalfCodexTranscript,
   fed,
   feedRequest,
+  rowsOf,
   tempRoot,
   writeCodexTranscript,
 } from './reader-test-helpers'
@@ -81,7 +82,10 @@ test('reads the Feed again once the CLI that was writing it stops', async (conte
   writing = false
   const settled = await fed(reader, feedRequest(SESSION, 'feed-2', raced.revision))
 
-  assert.equal(settled.type, 'session.feed.read', 'a racing read was cached as the whole Feed')
+  assert.ok(
+    settled.type === 'session.feed.read' || settled.type === 'session.feed.appended',
+    'a racing read was cached as the whole Feed',
+  )
   assert.notEqual(settled.revision, raced.revision)
 })
 
@@ -100,17 +104,17 @@ test('draws nothing for a half-written last record, and the record once it is wh
   const finish = await appendHalfCodexTranscript(record)
   const torn = await fed(reader, feedRequest(SESSION))
   assert.equal(torn.type, 'session.feed.read')
-  assert.deepEqual(torn.type === 'session.feed.read' && torn.rows.map((row) => row.shape), [
-    'prose',
-  ])
+  assert.deepEqual(
+    rowsOf(torn).map((row) => row.shape),
+    ['prose'],
+  )
 
   await finish()
   const whole = await fed(reader, feedRequest(SESSION, 'feed-2', torn.revision))
-  assert.equal(whole.type, 'session.feed.read')
-  assert.deepEqual(whole.type === 'session.feed.read' && whole.rows.map((row) => row.shape), [
-    'prose',
-    'prose',
-  ])
+  assert.deepEqual(
+    rowsOf(whole, torn).map((row) => row.shape),
+    ['prose', 'prose'],
+  )
 })
 
 // A streaming CLI finishes one record and starts the next between any two reads, so every read

@@ -85,10 +85,12 @@ function hold(held: Map<string, HeldTranscript>, filePath: string, transcript: H
 }
 
 // A transcript a CLI is still writing grows by appends, so a held file is read from where the last
-// read stopped rather than parsed whole again (#2127). `keep` holds a file not held yet.
+// read stopped rather than parsed whole again (#2127). Every read holds its end point, so a Roster
+// pass that reads a file first leaves the Feed's later read of the same file able to resume too
+// (#2145) — `HELD_FILE_LIMIT`'s LRU eviction is what bounds the memory this costs.
 export function createTranscriptRecordReader(parse: TranscriptParser) {
   const held = new Map<string, HeldTranscript>()
-  return async function readRecords(filePath: string, { keep }: { keep: boolean }) {
+  return async function readRecords(filePath: string) {
     const handle = await open(filePath, 'r')
     try {
       const { ino, size } = await handle.stat()
@@ -99,7 +101,7 @@ export function createTranscriptRecordReader(parse: TranscriptParser) {
         const record = parse(line)
         if (record !== null) records.push(record)
       })
-      if (keep || prior !== undefined) hold(held, filePath, { ...point, inode: ino, records })
+      hold(held, filePath, { ...point, inode: ino, records })
       return [...records, ...finishedTail(parse, unfinished)]
     } finally {
       await handle.close()
