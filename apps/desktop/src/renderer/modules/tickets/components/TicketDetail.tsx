@@ -20,6 +20,7 @@ const STATES = {
 } as const
 
 const stateIcon = 'size-(--size-icon-meta) shrink-0'
+const blockedIcon = `${stateIcon} text-danger`
 
 type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) => void }
 
@@ -125,7 +126,7 @@ function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps)
     return (
       <TicketDetailSection
         title="Blocked by"
-        icon={<Ban aria-hidden="true" className={stateIcon} />}
+        icon={<Ban aria-hidden="true" className={blockedIcon} />}
       >
         <p className="type-meta text-muted-foreground">
           {SOURCE_PRESENTATION[provider].noDependencies}
@@ -137,7 +138,7 @@ function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps)
   return (
     <TicketDetailSection
       title={`Blocked by · ${blockedBy.length}`}
-      icon={<Ban aria-hidden="true" className={stateIcon} />}
+      icon={<Ban aria-hidden="true" className={blockedIcon} />}
     >
       <Links links={blockedBy} {...navigation} />
     </TicketDetailSection>

@@ -42,9 +42,11 @@ export const Default: Story = {
         .querySelector('svg'),
     ).not.toBeNull()
     const dependencies = within(article).getByRole('region', { name: 'Blocked by · 2' })
-    await expect(
-      within(dependencies).getByRole('heading', { name: 'Blocked by · 2' }).querySelector('svg'),
-    ).not.toBeNull()
+    const blockedIcon = within(dependencies)
+      .getByRole('heading', { name: 'Blocked by · 2' })
+      .querySelector('svg')
+    if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
+    await expect(blockedIcon).toHaveClass('text-danger')
     await expect(children).toHaveTextContent('ClosedTicket read path#388')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
     await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))

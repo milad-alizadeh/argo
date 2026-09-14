@@ -53,7 +53,7 @@ export const LongTitleWithLabels: Story = {
     const progress = within(list).getByText('1/2')
     const blocked = list.querySelector('svg.lucide-ban')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
-    await expect(blocked).not.toHaveClass('text-danger')
+    await expect(blocked.parentElement).toHaveClass('text-danger')
     for (const label of longTicket.labels) {
       const badge = within(list).getByText(label.name)
       await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
