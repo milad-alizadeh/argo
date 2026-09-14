@@ -10,13 +10,13 @@ import type { CodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 
 const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', import.meta.url))
 
-export function driverBackedByFixture(options?: { ownership?: CodexOwnershipLedger }) {
+export function driverBackedByFixture(driverOptions: { ownership?: CodexOwnershipLedger; env?: Record<string, string> } = {}) {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
     now: () => new Date(),
-    ownership: options?.ownership,
+    ownership: driverOptions.ownership,
     openChannel: (executable, options) => {
-      const child = spawn(executable, [fixture], { cwd: options.cwd, env: options.env })
+      const child = spawn(executable, [fixture], { cwd: options.cwd, env: { ...options.env, ...driverOptions.env } })
       child.stderr.on('data', () => {})
       return openCodexChannel({
         stdout: child.stdout,

@@ -1,4 +1,5 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { CODEX_OPENING_SETUP, type CodexTurnSetup, codexTurnSettings } from '@/core/sessions/codex-contract'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'
@@ -18,8 +19,8 @@ export type { LiveMessage }
 export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
-  start: (request: { cwd: string; prompt: string }) => Promise<string>
-  send: (sessionId: string, text: string) => Promise<void>
+  start: (request: { cwd: string; prompt: string; setup?: CodexTurnSetup }) => Promise<string>
+  send: (sessionId: string, text: string, setup?: CodexTurnSetup) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
@@ -34,7 +35,7 @@ async function beginSession(options: {
   driver: ManagedSessionOptions
   sessions: Map<string, ManagedSession>
   renameWaiters: Map<string, (title: string) => void>
-  request: { cwd: string; prompt: string }
+  request: { cwd: string; prompt: string; setup?: CodexTurnSetup }
 }) {
   const { driver, renameWaiters, request, sessions } = options
   const channel = await openManagedChannel(driver, request.cwd)
@@ -49,7 +50,7 @@ async function beginSession(options: {
       sessionId,
       sessions,
     })
-    await startTurn({ channel, prompt: request.prompt, sessionId, sessions })
+    await startTurn({ channel, prompt: request.prompt, sessionId, sessions, setup: request.setup ?? CODEX_OPENING_SETUP })
     return sessionId
   } catch (error) {
     channel.close()
@@ -67,13 +68,14 @@ async function startTurn(options: {
   sessions: Map<string, ManagedSession>
   sessionId: string
   prompt: string
+  setup: CodexTurnSetup
 }) {
   const { channel, prompt, sessionId, sessions } = options
   const previous = sessions.get(sessionId)
   previous?.messages.keepOnly(previous.turnId)
   const started = await channel.request(
     'turn/start',
-    { threadId: sessionId, input: [{ type: 'text', text: prompt, text_elements: [] }] },
+    { threadId: sessionId, input: [{ type: 'text', text: prompt, text_elements: [] }], ...codexTurnSettings(setup) },
     readStartedTurn,
   )
   const session = sessions.get(sessionId)
@@ -88,9 +90,9 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
 
   return {
     start: (request) => beginSession({ driver: options, renameWaiters, request, sessions }),
-    async send(sessionId, text) {
+    async send(sessionId, text, setup) {
       const session = await channelFor(sessionId)
-      await startTurn({ channel: session.channel, prompt: text, sessionId, sessions })
+      await startTurn({ channel: session.channel, prompt: text, sessionId, sessions, setup: setup ?? CODEX_OPENING_SETUP })
     },
     async interrupt(sessionId) {
       const session = held(sessionId)

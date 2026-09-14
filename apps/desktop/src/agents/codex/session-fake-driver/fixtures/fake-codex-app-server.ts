@@ -9,6 +9,7 @@ import path from 'node:path'
 import { createInterface } from 'node:readline'
 
 let threadCounter = 0
+const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 
 function recordTurn(threadId: string, text: string) {
   const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
@@ -63,6 +64,7 @@ lines.on('line', (line) => {
       const input = Array.isArray(params.input) ? params.input : []
       const text = typeof input[0]?.text === 'string' ? input[0].text : ''
       if (typeof threadId === 'string') recordTurn(threadId, text)
+      if (echoFile) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
       const turnId = `fake-turn-${threadCounter}-${Date.now()}`
       send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
       send({

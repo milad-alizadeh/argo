@@ -20,6 +20,7 @@ import {
   SEND_MESSAGE_COMMAND,
   shortcut,
 } from '@/core/commands/shortcuts'
+import type { SessionCli } from '../harness/harnesses'
 import { ComposerReferenceMenuPlugin } from './ComposerReferenceMenuPlugin'
 import { ComposerReferenceNode } from './ComposerReferenceNode'
 import { ComposerReferencePlugin } from './ComposerReferencePlugin'
@@ -88,12 +89,14 @@ function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {
 }
 
 export function ComposerEditor({
+  cli = null,
   draft,
   editorRef,
   focusOnMount,
   onChange,
   onSend,
 }: {
+  cli?: SessionCli | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -148,13 +151,13 @@ export function ComposerEditor({
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
-      <ComposerReferencePlugin />
+      <ComposerReferencePlugin cli={cli} />
       <HorizontalRulePlugin />
       <MarkdownPastePlugin />
       <EditorRefPlugin editorRef={editorRef} />
       <FocusOnMountPlugin enabled={focusOnMount} />
       <SendOnEnterPlugin onSend={onSend} />
-      <ComposerReferenceMenuPlugin draft={draft} />
+      <ComposerReferenceMenuPlugin cli={cli} draft={draft} />
     </LexicalComposer>
   )
 }
