@@ -16,6 +16,9 @@ export type ManagedSession = {
   turnId: string | null
   status: SessionRosterRow['status']
   messages: LiveMessages
+  // Set only from a `thread/compact/start` this driver itself issued; Codex reports completion by
+  // item, not by a progress percentage (#2123), so there is no compactionPercentage/Tokens to hold.
+  compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
   pendingQuestion: PendingCodexQuestion | null
 }
@@ -74,6 +77,7 @@ export function rememberManagedSession(options: {
     turnId: null,
     status: 'running',
     messages,
+    compactionStartedAt: null,
     pendingQuestion: null,
   })
   driver.ownership?.bind(sessionId)
@@ -92,6 +96,8 @@ export function managedRoster(sessions: Map<string, ManagedSession>): SessionRos
       cli: 'codex',
       setup: { model: null, effort: null, mode: null },
       title: session.title,
+      compactionPercentage: null,
+      compactionTokens: null,
     }),
   )
 }

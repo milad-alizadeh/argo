@@ -66,6 +66,18 @@ function completeTurn(threadId: unknown, turnId: string, text: string) {
   })
 }
 
+function completeCompaction(threadId: unknown) {
+  send({
+    method: 'item/completed',
+    params: {
+      threadId,
+      turnId: `fake-compact-turn-${threadCounter}`,
+      completedAtMs: Date.now(),
+      item: { id: `fake-compaction-${threadCounter}-${Date.now()}`, type: 'contextCompaction' },
+    },
+  })
+}
+
 function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
   const params = message.params ?? {}
   const threadId = params.threadId
@@ -110,6 +122,12 @@ function handleRequest(message: {
     case 'turn/interrupt':
       send({ id: message.id, result: {} })
       return
+    case 'thread/compact/start': {
+      const threadId = message.params?.threadId
+      send({ id: message.id, result: {} })
+      setTimeout(() => completeCompaction(threadId), 10)
+      return
+    }
     case 'thread/name/set': {
       const params = message.params ?? {}
       send({ id: message.id, result: {} })

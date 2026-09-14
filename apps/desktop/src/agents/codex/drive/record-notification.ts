@@ -1,5 +1,6 @@
 import type { SessionRosterRow } from '../../../core/sessions/models'
 import { rollupSessionStatus } from '../../../core/sessions/session-status-rollup'
+import { readCompletedCompaction } from './compact-protocol'
 import type { LiveMessages } from './live-messages'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
@@ -10,6 +11,7 @@ import { readUpdatedThreadName } from './rename-protocol'
 type HeldSession = {
   messages: LiveMessages
   status: SessionRosterRow['status']
+  compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
   pendingQuestion: PendingCodexQuestion | null
 }
@@ -57,7 +59,10 @@ export function recordCodexNotification({
       kind: 'codex',
       reading: { kind: 'turn-failed' },
     })
+    return false
   }
+  const compacted = readCompletedCompaction(message)
+  if (compacted?.threadId === sessionId) session.compactionStartedAt = null
   return false
 }
 

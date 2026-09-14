@@ -11,6 +11,7 @@ function fakeDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
     start: async () => sessionId,
     send: async () => {},
     interrupt: async () => {},
+    compact: async () => {},
     ...overrides,
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
@@ -126,9 +127,28 @@ test('interrupts only the selected managed Codex Session', async () => {
   assert.deepEqual(interrupted, [sessionId])
 })
 
-test('refuses compaction, which Codex does not support yet', async () => {
-  const adapter = createCodexDriveAdapter(fakeDriver())
-  assert.deepEqual(await adapter.compact({ sessionId }), { error: 'not-drivable' })
+test('compacts only the selected managed Codex Session', async () => {
+  const compacted: string[] = []
+  const adapter = createCodexDriveAdapter(
+    fakeDriver({ compact: async (id) => void compacted.push(id) }),
+  )
+
+  const result = await adapter.compact({ sessionId })
+  assert.deepEqual(result, { ok: true })
+  assert.deepEqual(compacted, [sessionId])
+})
+
+test('does not accept a compact Codex could not be given', async () => {
+  const adapter = createCodexDriveAdapter(
+    fakeDriver({
+      compact: async () => {
+        throw new Error('Codex Session is no longer running.')
+      },
+    }),
+  )
+
+  const result = await adapter.compact({ sessionId })
+  assert.deepEqual(result, { error: 'not-drivable' })
 })
 
 test('reads no pending Permission, since Codex Permissions are #1841', async () => {
