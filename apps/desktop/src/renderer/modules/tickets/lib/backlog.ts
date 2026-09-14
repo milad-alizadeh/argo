@@ -88,6 +88,3 @@ export const openBlockers = (ticket: Ticket): number =>
 
 export const closedChildren = (ticket: Ticket): number =>
   ticket.children.filter((child) => child.state === 'closed').length
-
-export const count = (total: number, noun: string, plural = `${noun}s`): string =>
-  `${total} ${total === 1 ? noun : plural}`

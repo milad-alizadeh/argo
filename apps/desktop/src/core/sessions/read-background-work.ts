@@ -9,7 +9,7 @@ import {
 import { readFailure, versionFailure } from './read-request'
 import type { SessionSource } from './session-source'
 
-type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
+export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
 
 // A Subagent's Feed is read through the same path as a Session's: the owner answers with the
 // Subagent's chain in place of its own, and nothing else about the read changes. A driver's live

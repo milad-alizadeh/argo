@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { type AccountSummary, accountError } from '@/core/accounts/contract'
+import { i18n } from '../../../i18n/config'
 import { ada, octocat } from '../../tickets/components/ticket-fixtures'
 import { AccountsPanel, type AccountsPanelProps } from './AccountsDialog'
 
@@ -240,6 +241,51 @@ export const ListFailed: Story = {
   args: { listing: listing([]), listError: accountError('sign-in-expired', 'request-1') },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText(SIGN_IN_EXPIRED_TEXT)).toBeInTheDocument()
+  },
+}
+
+// The disconnect question counts the Connections it would stop, so both plural forms are drawn.
+export const DisconnectManyConnections: Story = {
+  args: {
+    listing: listing([
+      {
+        ...octocat,
+        connections: [
+          { projectId: 'argo', projectName: 'argo', label: 'octocat/hello-world' },
+          { projectId: 'atlas', projectName: 'atlas', label: 'octocat/atlas' },
+        ],
+      },
+    ]),
+  },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
+    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
+    await expect(row).toHaveTextContent(
+      'Disconnect octocat? Its 2 repositories stop reading Tickets until you connect it again.',
+    )
+  },
+}
+
+// A language with no catalog of its own falls back to English, so the stub proves the switch: the
+// one key it holds is drawn from the stub and the rest stay English (#2130).
+const STUB_LANGUAGE = 'zz'
+const STUB_EMPTY = 'STUB no Account'
+
+export const StubLanguage: Story = {
+  args: { listing: listing([]) },
+  beforeEach: async () => {
+    i18n.addResourceBundle(STUB_LANGUAGE, 'accounts', { list: { empty: STUB_EMPTY } })
+    await i18n.changeLanguage(STUB_LANGUAGE)
+    return async () => {
+      i18n.removeResourceBundle(STUB_LANGUAGE, 'accounts')
+      await i18n.changeLanguage('en')
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(STUB_EMPTY)).toBeInTheDocument()
+    // Untranslated copy still reads in English rather than showing its key.
+    await expect(canvas.getByRole('button', { name: 'Connect a GitHub Account' })).toBeEnabled()
   },
 }
 

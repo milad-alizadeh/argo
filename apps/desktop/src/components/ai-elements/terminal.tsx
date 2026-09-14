@@ -1,6 +1,7 @@
 import Ansi from 'ansi-to-react'
 import { CheckIcon, CopyIcon, TerminalIcon } from 'lucide-react'
 import React, { type HTMLAttributes, useCallback, useContext, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 
@@ -42,6 +43,7 @@ export function TerminalTitle({
 }
 
 export function TerminalCopyButton() {
+  const { t } = useTranslation()
   const { output } = useContext(TerminalContext)
   const [copied, setCopied] = useState(false)
   const copy = useCallback(async () => {
@@ -55,7 +57,7 @@ export function TerminalCopyButton() {
       type="button"
       size="icon"
       variant="ghost"
-      aria-label="Copy terminal output"
+      aria-label={t('terminal.copy')}
       className="size-7 shrink-0 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
       onClick={copy}
     >

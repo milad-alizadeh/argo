@@ -1,7 +1,9 @@
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
+import { platformText } from '../i18n/platform'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
+  type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveListRequest,
   type SessionDelegationUsageReply,
@@ -14,6 +16,8 @@ import {
   type SessionRenameRequest,
   type SessionShellOutputReply,
   type SessionShellOutputRequest,
+  type SessionTicketConnectRequest,
+  type SessionTicketDisconnectRequest,
   sessionError,
 } from './contract'
 import {
@@ -37,6 +41,8 @@ export type SessionReader = {
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
   readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
+  connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
+  disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
 }
 
@@ -51,8 +57,8 @@ type SessionContext = {
 // none. A chosen folder attaches the same way a file does, as an `@path` reference (#1845).
 async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
   const chosen = await dialog.showOpenDialog(window, {
-    title: 'Attach Files & Folders',
-    buttonLabel: 'Attach',
+    title: platformText('dialog.attachFiles.title'),
+    buttonLabel: platformText('dialog.attachFiles.confirm'),
     properties: ['openFile', 'openDirectory', 'multiSelections'],
   })
   return chosen.canceled ? [] : chosen.filePaths
@@ -84,6 +90,8 @@ export function attachSessionBridge(
       shellOutput: (request, context) => context.reader.readShellOutput(request),
       delegationUsage: (request, context) => context.reader.readDelegationUsage(request),
       rename: (request, context) => context.reader.renameSession(request),
+      connectTicket: (request, context) => context.reader.connectTicket(request),
+      disconnectTicket: (request, context) => context.reader.disconnectTicket(request),
       start: (request, context) => startSession(request, context.adapters),
       send: (request, context) => sendSession(request, ownerContext(context)),
       interrupt: (request, context) => interruptSession(request, ownerContext(context)),

@@ -7,7 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { sendSession, startSession } from '@/core/sessions/drive.ts'
+import { compactSession, sendSession, startSession } from '@/core/sessions/drive.ts'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 import { createCodexSessionReader } from '../sessions/read-sessions.ts'
 import { driverBackedByFixture } from './fixture-driver.ts'
@@ -98,6 +98,44 @@ test('a Codex Turn carries the shared editor markdown to the transport verbatim'
     const lines = readFileSync(echoFile, 'utf8').trim().split('\n')
     assert.equal(lines.length, 1)
     assert.equal(JSON.parse(lines[0] ?? ''), prompt)
+  } finally {
+    driver.close()
+  }
+})
+
+test('compacting a Codex Session over the real transport clears once the item completes', async () => {
+  const driver = driverBackedByFixture()
+  const adapters = { codex: createCodexDriveAdapter(driver) }
+  try {
+    const startReply = await startSession(
+      {
+        version: 1,
+        type: 'session.start',
+        requestId: 'start-4',
+        cli: 'codex',
+        cwd: process.cwd(),
+        prompt: 'Inspect the failing test.',
+      },
+      adapters,
+    )
+    assert.equal(startReply.type, 'session.started')
+    const sessionId = startReply.type === 'session.started' ? startReply.sessionId : ''
+
+    const compactReply = await compactSession(
+      { version: 1, type: 'session.compact', requestId: 'compact-1', sessionId },
+      { adapters, ownerCliFor: async () => 'codex' },
+    )
+    assert.equal(compactReply.type, 'session.accepted')
+    assert.equal(
+      driver.roster().find((session) => session.id === sessionId)?.compactionStartedAt !== null,
+      true,
+    )
+
+    // The fixture's contextCompaction item/completed notification arrives asynchronously.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const row = driver.roster().find((session) => session.id === sessionId)
+    assert.equal(row?.compactionStartedAt, null)
   } finally {
     driver.close()
   }

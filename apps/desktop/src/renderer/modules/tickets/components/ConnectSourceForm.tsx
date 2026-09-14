@@ -1,5 +1,6 @@
 import { Plug } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/core/accounts/contract'
 import type { TicketScope } from '@/core/tickets/contract'
 
@@ -28,9 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select'
+import { contractText } from '../../../i18n/contract-text'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
-import { SOURCE_PRESENTATION } from '../lib/sources'
+import { providerPresentation } from '../../accounts/lib/providers'
+import { sourcePresentation } from '../lib/sources'
 import { offered, type SourceDiscovery, SourceField } from './SourceField'
 
 export type ConnectTarget = { accountId: string; scope: string }
@@ -49,19 +51,18 @@ export type ConnectSourceFormProps = {
 }
 
 function NoAccount({ onConnectAccount }: { onConnectAccount: () => void }) {
+  const { t } = useTranslation('tickets')
   return (
     <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Plug aria-hidden="true" />
         </EmptyMedia>
-        <EmptyTitle>Connect an Account to read Tickets</EmptyTitle>
-        <EmptyDescription>
-          A Project reads its Tickets through a connected GitHub or Linear Account.
-        </EmptyDescription>
+        <EmptyTitle>{t('connect.form.noAccount.title')}</EmptyTitle>
+        <EmptyDescription>{t('connect.form.noAccount.description')}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button onClick={onConnectAccount}>Connect an Account</Button>
+        <Button onClick={onConnectAccount}>{t('connect.form.noAccount.connect')}</Button>
       </EmptyContent>
     </Empty>
   )
@@ -79,6 +80,7 @@ export function ConnectSourceForm({
   onConnectSource,
   onConnectAccount,
 }: ConnectSourceFormProps) {
+  const { t } = useTranslation('tickets')
   const [scope, setScope] = useState<TicketScope | null>(null)
   const [missingScope, setMissingScope] = useState(false)
   const connected = accounts.filter((account) => account.state === 'connected')
@@ -89,31 +91,37 @@ export function ConnectSourceForm({
     setMissingScope(scope === null)
     if (scope !== null) onConnectSource({ accountId: chosen.id, scope: scope.scope })
   }
-  const noun = PROVIDER_PRESENTATION[chosen.provider].scope.one
+  const noun = providerPresentation(chosen.provider).scope.one
   const choices = connected.map((account) => ({
     value: account.id,
-    label: `${PROVIDER_PRESENTATION[account.provider].name} · ${account.login}`,
+    label: `${providerPresentation(account.provider).name} · ${account.login}`,
   }))
-  const problem = error?.message ?? (missingScope ? `Choose a ${noun}.` : null)
+  const problem = ((): string | null => {
+    if (error) return contractText(error)
+    if (missingScope) return t('connect.form.missingScope', { noun })
+    return null
+  })()
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
       <Card className="w-full max-w-md">
-        <form aria-label="Connect a Ticket source" className="contents" onSubmit={submit}>
+        <form aria-label={t('connect.form.label')} className="contents" onSubmit={submit}>
           <CardHeader>
             <CardTitle>
               <h2 className="type-heading">
-                Connect {projectName} to a {noun}
+                {t('connect.form.heading', { project: projectName, noun })}
               </h2>
             </CardTitle>
             <CardDescription>
-              Argo reads this {noun}'s open {SOURCE_PRESENTATION[chosen.provider].items} as the
-              Project's Tickets.
+              {t('connect.form.description', {
+                noun,
+                items: sourcePresentation(chosen.provider).items,
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="connect-account">Account</FieldLabel>
+                <FieldLabel htmlFor="connect-account">{t('connect.form.account')}</FieldLabel>
                 <Select
                   items={choices}
                   onValueChange={(next) => {
@@ -152,7 +160,7 @@ export function ConnectSourceForm({
           </CardContent>
           <CardFooter className="justify-end">
             <Button disabled={pending || offered(sources).length === 0} type="submit">
-              {pending ? `Checking the ${noun}…` : `Connect ${noun}`}
+              {pending ? t('connect.form.checking', { noun }) : t('connect.form.submit', { noun })}
             </Button>
           </CardFooter>
         </form>

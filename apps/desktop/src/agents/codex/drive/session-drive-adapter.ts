@@ -52,8 +52,14 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
         return failureOf(error, 'not-drivable')
       }
     },
-    async compact() {
-      return { error: 'not-drivable' }
+    async compact({ sessionId }) {
+      try {
+        await driver.compact(sessionId)
+        return { ok: true }
+      } catch (error) {
+        console.error('Argo could not compact Codex Session', sessionId, error)
+        return failureOf(error, 'not-drivable')
+      }
     },
     async handoff() {
       return { error: 'not-drivable' }

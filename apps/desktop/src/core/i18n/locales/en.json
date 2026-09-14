@@ -1,0 +1,34 @@
+{
+  "shortcut": {
+    "project": {
+      "register": "Open Project…"
+    },
+    "navigate": {
+      "sessions": "Sessions",
+      "tickets": "Tickets",
+      "atlas": "Atlas"
+    },
+    "roster": {
+      "next": "Next Session",
+      "previous": "Previous Session",
+      "first": "First Session",
+      "last": "Last Session"
+    },
+    "composer": {
+      "send": "Send message"
+    }
+  },
+  "menu": {
+    "file": "File"
+  },
+  "dialog": {
+    "openProject": {
+      "title": "Open Project",
+      "confirm": "Open"
+    },
+    "attachFiles": {
+      "title": "Attach Files & Folders",
+      "confirm": "Attach"
+    }
+  }
+}

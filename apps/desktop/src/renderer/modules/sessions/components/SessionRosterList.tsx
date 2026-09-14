@@ -7,6 +7,9 @@ type Props = {
   label: string
   onFocus: (sessionId: SessionId) => void
   onRename: (session: Session) => void
+  onOpenTicket: (session: Session) => void
+  onLinkTicket: (session: Session) => void
+  onUnlinkTicket: (session: Session) => void
   onSelect: (sessionId: SessionId) => void
   renamedTitles: Record<string, string>
   selectedSessionId: SessionId | null
@@ -33,6 +36,9 @@ export function SessionRosterList({
   label,
   onFocus,
   onRename,
+  onOpenTicket,
+  onLinkTicket,
+  onUnlinkTicket,
   onSelect,
   renamedTitles,
   selectedSessionId,
@@ -52,6 +58,9 @@ export function SessionRosterList({
               key={session.id}
               onFocus={() => onFocus(session.id)}
               onRename={() => onRename(renamed)}
+              onOpenTicket={() => onOpenTicket(renamed)}
+              onLinkTicket={() => onLinkTicket(renamed)}
+              onUnlinkTicket={() => onUnlinkTicket(renamed)}
               onSelect={() => onSelect(session.id)}
               selected={session.id === selectedSessionId}
               session={renamed}

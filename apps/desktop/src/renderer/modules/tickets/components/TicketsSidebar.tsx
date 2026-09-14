@@ -1,10 +1,11 @@
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ConnectionSummary } from '@/core/tickets/contract'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import { SignInNotice, type SignInNoticeProps } from '../../accounts/components/SignInNotice'
 import { useAccounts, useDismissNotice } from '../../accounts/hooks/useAccounts'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
 import { useConnection, useTicketList } from '../hooks/useTickets'
@@ -24,6 +25,7 @@ type AccountFootProps = Pick<TicketsSidebarContentProps, 'connection' | 'onManag
 
 // The foot names the Account this Project reads through; with no Connection it opens the Accounts.
 function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
+  const { t } = useTranslation('tickets')
   return (
     <footer className="shrink-0 border-t border-border/60 p-(--spacing-shell-item)">
       <button
@@ -33,10 +35,13 @@ function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
       >
         {connection ? (
           <ConnectionStatusMark state={connection.state}>
-            {PROVIDER_PRESENTATION[connection.provider].name} · {connection.login ?? 'no Account'}
+            {t('sidebar.readThrough', {
+              name: providerPresentation(connection.provider).name,
+              login: connection.login ?? t('sidebar.noAccount'),
+            })}
           </ConnectionStatusMark>
         ) : (
-          <span className="min-w-0 flex-1 truncate">Accounts</span>
+          <span className="min-w-0 flex-1 truncate">{t('sidebar.accounts')}</span>
         )}
       </button>
     </footer>
@@ -49,25 +54,26 @@ export function TicketsSidebarContent({
   notice,
   onManageAccounts,
 }: TicketsSidebarContentProps) {
+  const { t } = useTranslation('tickets')
   const sidebar = useRef<HTMLElement>(null)
   // Dismissing the notice removes the control that dismissed it.
   useFocusRescue(sidebar, notice === null)
   return (
     <aside
-      aria-label="Tickets sidebar"
+      aria-label={t('sidebar.label')}
       className="flex h-full min-h-0 flex-col bg-sidebar"
       ref={sidebar}
     >
       <TicketsSidebarHeader connection={connection} />
       <nav
-        aria-label="Ticket views"
+        aria-label={t('sidebar.views')}
         className="min-h-0 flex-1 overflow-y-auto p-(--spacing-shell-item)"
       >
         <div
           aria-current="page"
           className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
         >
-          <span className="flex-1">All open</span>
+          <span className="flex-1">{t('sidebar.allOpen')}</span>
           {openCount === null ? null : (
             <span className="font-mono type-meta text-faint">{openCount}</span>
           )}

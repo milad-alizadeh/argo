@@ -1,10 +1,10 @@
 import 'i18next'
 
-import type sessions from '../modules/sessions/locales/en.json'
+import type { CATALOGS, DEFAULT_NAMESPACE } from './catalogs'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
-    defaultNS: 'sessions'
-    resources: { sessions: typeof sessions }
+    defaultNS: typeof DEFAULT_NAMESPACE
+    resources: typeof CATALOGS
   }
 }

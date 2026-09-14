@@ -20,6 +20,8 @@ const meta: Meta<typeof TicketDetail> = {
   // #609 is in the backlog and opens; the closed #388 and #12 are not, so they stay text.
   args: {
     listed: new Set(['#609']),
+    linkedSessions: [],
+    onOpenSession: fn(),
     onSelect: fn(),
     provider: 'github',
     statuses: STATUSES.github,

@@ -1,5 +1,6 @@
 import { TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/core/accounts/contract'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
@@ -10,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../../components/ui/dialog'
+import { useContractText } from '../../../i18n/contract-text'
 import { firstControl, useFocusRescue } from '../../../lib/focus-rescue'
 import type { ContractFailure } from '../../../lib/query-client'
 import { type AccountListing, useAccounts, useDisconnect } from '../hooks/useAccounts'
@@ -28,10 +30,11 @@ export type AccountsPanelProps = {
 }
 
 function Failure({ error }: { error: ContractFailure }) {
+  const contractText = useContractText()
   return (
     <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
       <TriangleAlert aria-hidden="true" />
-      <AlertDescription>{error.message}</AlertDescription>
+      <AlertDescription>{contractText(error)}</AlertDescription>
     </Alert>
   )
 }
@@ -44,6 +47,7 @@ export function AccountsPanel({
   disconnectError,
   onDisconnect,
 }: AccountsPanelProps) {
+  const { t } = useTranslation('accounts')
   const panel = useRef<HTMLDivElement>(null)
   const accounts = listing?.accounts ?? []
   // A disconnected row takes its focused control with it.
@@ -53,15 +57,15 @@ export function AccountsPanel({
       {listError ? <Failure error={listError} /> : null}
       {listing === null && listError === null ? (
         <p className="type-meta text-muted-foreground" role="status">
-          Reading Accounts…
+          {t('list.reading')}
         </p>
       ) : null}
       {listing && accounts.length === 0 ? (
-        <p className="type-body text-muted-foreground">No Account is connected.</p>
+        <p className="type-body text-muted-foreground">{t('list.empty')}</p>
       ) : null}
       {accounts.length > 0 ? (
         <ul
-          aria-label="Accounts"
+          aria-label={t('list.label')}
           className="grid divide-y divide-border/60 rounded-lg border border-border/60"
         >
           {accounts.map((account) => (
@@ -95,6 +99,7 @@ function returnFocus(opener: Element | null): HTMLElement | true {
 
 // Closing the dialog abandons a sign-in in progress, so no code outlives the screen that showed it.
 export function AccountsDialog() {
+  const { t } = useTranslation('accounts')
   const { open, opener, setOpen } = useAccountsDialog()
   const accounts = useAccounts()
   const { connected, ...signIn } = useSignIn()
@@ -110,11 +115,8 @@ export function AccountsDialog() {
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md" finalFocus={() => returnFocus(opener)}>
         <DialogHeader>
-          <DialogTitle>Accounts</DialogTitle>
-          <DialogDescription>
-            Argo reads Tickets through these Accounts. Each GitHub or Linear identity is its own
-            Account.
-          </DialogDescription>
+          <DialogTitle>{t('dialog.title')}</DialogTitle>
+          <DialogDescription>{t('dialog.description')}</DialogDescription>
         </DialogHeader>
         <AccountsPanel
           disconnectError={disconnect.error}

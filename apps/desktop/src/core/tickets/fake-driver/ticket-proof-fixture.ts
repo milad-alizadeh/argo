@@ -64,7 +64,9 @@ export async function prepare(root: string): Promise<TicketFixture> {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
+  const noSessions = path.join(root, 'no-sessions')
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await mkdir(noSessions, { recursive: true })
   await writeFile(
     path.join(userData, 'portable-v1', 'projects.json'),
     JSON.stringify({
@@ -77,7 +79,7 @@ export async function prepare(root: string): Promise<TicketFixture> {
   serveRepositories(github)
   const linear = await startFakeLinear()
   serveTeams(linear)
-  return { application, userData, noSessions: path.join(root, 'no-sessions'), github, linear }
+  return { application, userData, noSessions, github, linear }
 }
 
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.

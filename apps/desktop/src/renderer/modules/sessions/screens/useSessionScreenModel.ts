@@ -12,6 +12,7 @@ import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../hooks/useSessionWork'
 import { useComposerStore } from '../state/useComposerStore'
+import { readableSessionId } from '../state/useSessionCreationStore'
 import type { SessionEvidence } from '../types'
 import { sessionHarness } from './sessionScreenState'
 import { useSelectedSession } from './useSelectedSession'
@@ -55,8 +56,10 @@ export function useSessionScreenModel() {
     roster,
     selectedSessionId,
   })
-  const permission = useSessionPermission(selectedSessionId)
-  const question = useSessionQuestion(selectedSessionId)
+  // A Session that only exists as an optimistic Roster row has no backend record to poll yet
+  // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
+  const permission = useSessionPermission(readableSessionId(selectedSessionId))
+  const question = useSessionQuestion(readableSessionId(selectedSessionId))
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
   const delegation =
     session?.delegations.find((candidate) => candidate.id === work.delegationId) ?? null

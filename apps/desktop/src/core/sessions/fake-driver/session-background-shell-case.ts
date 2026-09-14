@@ -40,4 +40,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   const finished = page.getByRole('group', { name: 'Finished' })
   await finished.waitFor()
   await finished.getByRole('menuitem', { name: /npm run watch/ }).waitFor()
+  // Closed again, or the open menu's backdrop takes the next case's clicks.
+  await page.keyboard.press('Escape')
+  await finished.waitFor({ state: 'hidden' })
 }

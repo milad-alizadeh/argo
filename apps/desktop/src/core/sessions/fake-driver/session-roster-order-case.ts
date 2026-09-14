@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { openSessionByClick } from './session-gestures'
 import { readRosterIds } from './session-roster-facts'
 
 async function waitForActiveSessions(page, expected) {
@@ -41,9 +42,7 @@ async function proveVisibleNames(page) {
 }
 
 async function proveUpdatedRowsStayPut(page, mutations) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions/prose'
-  })
+  await openSessionByClick(page, 'prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   const before = await readRosterIds(page)
   const focused = page.locator('nav[aria-label="Sessions"] button').nth(1)

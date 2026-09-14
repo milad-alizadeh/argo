@@ -7,11 +7,12 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isRecord } from '@/boundary'
 import type { SessionChain } from '@/core/sessions/chains'
-import type { TranscriptFile } from '@/core/sessions/transcript'
-import { readTranscriptLines } from '@/core/sessions/transcript-lines'
-import { readTranscriptFile } from './transcript-file'
+import { type TranscriptFile, transcriptFileFrom } from '@/core/sessions/transcript'
+import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
+import { parseTranscriptLine } from './records'
 
 const META = '.meta.json'
+const readRecords = createTranscriptRecordReader(parseTranscriptLine)
 
 // The call id one Subagent's meta file names, or null where the file is unreadable or names none.
 async function callOf(metaPath: string): Promise<string | null> {
@@ -51,9 +52,9 @@ function asOwnThread(file: TranscriptFile): TranscriptFile {
 }
 
 async function readSubagentFile(filePath: string): Promise<TranscriptFile | null> {
-  const lines = await readTranscriptLines(filePath).catch(() => null)
-  if (lines === null) return null
-  return asOwnThread(readTranscriptFile(filePath, { fileName: path.basename(filePath), lines }))
+  const records = await readRecords(filePath, { keep: false }).catch(() => null)
+  if (records === null) return null
+  return asOwnThread(transcriptFileFrom(filePath, { fileName: path.basename(filePath), records }))
 }
 
 // One Subagent's transcript as a chain of its own, so the Feed the reader already projects for a

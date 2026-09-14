@@ -58,6 +58,14 @@ export type SessionClient = {
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
+  connectSessionTicket(request: {
+    sessionId: string
+    projectId: string
+    key: string
+    title: string
+    state: 'open' | 'closed'
+  }): Promise<SessionAcceptedReply>
+  disconnectSessionTicket(request: { sessionId: string }): Promise<SessionAcceptedReply>
   chooseSessionAttachments(): Promise<SessionChooseAttachmentsReply>
   statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
 }
@@ -80,6 +88,8 @@ export function createSessionClient(
     readShellOutput: (request) => client.shellOutput(request),
     readDelegationUsage: (request) => client.delegationUsage(request),
     renameSession: (request) => client.rename(request),
+    connectSessionTicket: (request) => client.connectTicket(request),
+    disconnectSessionTicket: (request) => client.disconnectTicket(request),
     chooseSessionAttachments: () => client.chooseAttachments(),
     statSessionAttachments: (request) => client.statAttachments(request),
     async readSessionFeed(request) {

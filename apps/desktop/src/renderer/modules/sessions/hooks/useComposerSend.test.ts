@@ -1,11 +1,24 @@
-import { expect, test } from 'bun:test'
+import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 
 import type { ProjectSummary } from '@/core/projects/messages'
+import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import { sendToNewSession, sendToSelected } from './useComposerSend'
 
 const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
 const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
+const COCKPIT = {
+  status: 'selected' as const,
+  project: PROJECT,
+  projects: [PROJECT],
+  message: null,
+  code: null,
+  busy: false,
+}
+
+beforeEach(() => {
+  useSessionCreationStore.setState({ pending: null })
+})
 
 function fakeMutation<Args, Reply>(reply: (args: Args) => Promise<Reply>) {
   const calls: Args[] = []
@@ -32,10 +45,13 @@ test('a Send with a selected Session sends to it', async () => {
     setFailure: () => {},
     prompt: 'hello',
     setup: SETUP,
+    attachments: [],
     watchTurn: (...args) => watched.push(args),
   })
   expect(sent).toBe(true)
-  expect(send.calls).toEqual([{ prompt: 'hello', sessionId: 'session-1', setup: SETUP }])
+  expect(send.calls).toEqual([
+    { prompt: 'hello', sessionId: 'session-1', setup: SETUP, attachments: [] },
+  ])
   expect(watched).toEqual([['session-1', SETUP, null]])
 })
 
@@ -48,14 +64,8 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
   const navigated: unknown[] = []
   const sent = await sendToNewSession({
     cli: 'claude',
-    cockpit: {
-      status: 'selected',
-      project: PROJECT,
-      projects: [PROJECT],
-      message: null,
-      code: null,
-      busy: false,
-    },
+    cockpit: COCKPIT,
+    identity: { kind: 'draft', projectId: PROJECT.id },
     navigate: (...args) => {
       navigated.push(args)
       return undefined as never
@@ -66,9 +76,12 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
     start: start as never,
     prompt: 'hello',
     setup: SETUP,
+    attachments: [],
     watchTurn: () => {},
   })
   expect(sent).toBe(true)
-  expect(start.calls).toEqual([{ cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP }])
-  expect(navigated).toEqual([['/sessions/session-new', { state: 'focus-composer' }]])
+  expect(start.calls).toEqual([
+    { cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
+  ])
+  expect(navigated).toEqual([['/sessions/session-new', { replace: true, state: 'focus-composer' }]])
 })

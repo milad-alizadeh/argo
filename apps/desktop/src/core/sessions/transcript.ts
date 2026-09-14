@@ -136,6 +136,13 @@ export function readTranscriptFile(
     const record = parse(line)
     if (record !== null) records.push(record)
   }
+  return transcriptFileFrom(path, { fileName, records })
+}
+
+export function transcriptFileFrom(
+  path: string,
+  { fileName, records }: { fileName: string; records: TranscriptRecord[] },
+): TranscriptFile {
   const message = firstOf(records, 'message')
   return {
     path,

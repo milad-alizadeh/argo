@@ -14,8 +14,10 @@ import {
 } from 'lucide-react'
 import type { Provider } from '@/core/accounts/contract'
 import type { ConnectionSummary, TicketErrorCode } from '@/core/tickets/contract'
+import { i18n } from '../../../i18n/config'
+import { contractText } from '../../../i18n/contract-text'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 
@@ -54,7 +56,9 @@ const RECONNECTABLE = new Set<string>([
 
 // Reconnecting opens the Accounts, named for the provider when the failure has one.
 const reconnectLabel = (provider: Provider | null) =>
-  provider ? `Reconnect ${PROVIDER_PRESENTATION[provider].name}` : 'Open Accounts'
+  provider
+    ? i18n.t('tickets:problem.reconnect', { name: providerPresentation(provider).name })
+    : i18n.t('tickets:problem.openAccounts')
 
 export type Recovery = { onRetry: () => void; onReconnect: () => void; provider: Provider | null }
 
@@ -64,12 +68,16 @@ export function failureProblem(
   { onRetry, onReconnect, provider }: Recovery,
 ): TicketProblemProps {
   const reconnectable = RECONNECTABLE.has(error.code)
-  const retry = { label: 'Try again', onClick: onRetry, primary: !reconnectable }
+  const retry = {
+    label: i18n.t('tickets:problem.tryAgain'),
+    onClick: onRetry,
+    primary: !reconnectable,
+  }
   const reconnect = { label: reconnectLabel(provider), onClick: onReconnect, primary: true }
   return {
     icon: FAILURE_ICONS[error.code as TicketErrorCode] ?? TriangleAlert,
     title,
-    description: error.message,
+    description: contractText(error),
     alert: true,
     actions: reconnectable ? [retry, reconnect] : [retry],
   }
@@ -84,26 +92,19 @@ export const isConnectionProblem = (
 
 type Named = { login: string; name: string; scope: string }
 
+const CONNECTION_ICONS: Record<Problem, LucideIcon> = {
+  'account-missing': Unplug,
+  'account-expired': TimerOff,
+  'account-revoked': KeyRound,
+  'account-unreadable': LockKeyhole,
+}
+
 // The Connection stays when its Account goes, so reconnecting the same identity brings it back.
-const CONNECTION_PROBLEMS: Record<Problem, { icon: LucideIcon; title: (named: Named) => string }> =
-  {
-    'account-missing': {
-      icon: Unplug,
-      title: ({ name, scope }) => `The ${name} Account for this ${scope} is disconnected`,
-    },
-    'account-expired': {
-      icon: TimerOff,
-      title: ({ login }) => `The sign-in for ${login} expired`,
-    },
-    'account-revoked': {
-      icon: KeyRound,
-      title: ({ login, name }) => `${name} no longer accepts ${login}`,
-    },
-    'account-unreadable': {
-      icon: LockKeyhole,
-      title: ({ login }) => `Argo cannot read the sign-in for ${login}`,
-    },
-  }
+// i18next ignores an interpolation value a key's text doesn't reference, so every state can pass
+// the same full `named` regardless of which fields its own title actually uses.
+function connectionTitle(state: Problem, named: Named): string {
+  return i18n.t(`tickets:problem.connection.${state}.title`, named)
+}
 
 type ConnectionRecovery = { onReconnect: () => void; onDisconnectSource: () => void }
 
@@ -111,16 +112,25 @@ export function connectionProblem(
   connection: TroubledConnection,
   { onReconnect, onDisconnectSource }: ConnectionRecovery,
 ): TicketProblemProps {
-  const { icon, title } = CONNECTION_PROBLEMS[connection.state]
-  const { name, scope } = PROVIDER_PRESENTATION[connection.provider]
+  const { state } = connection
+  const { name, scope } = providerPresentation(connection.provider)
+  const named: Named = {
+    login: connection.login ?? i18n.t('tickets:problem.noAccount'),
+    name,
+    scope: scope.one,
+  }
   return {
-    icon,
-    title: title({ login: connection.login ?? 'this Account', name, scope: scope.one }),
-    description: `Reconnect it to read ${connection.label} again.`,
+    icon: CONNECTION_ICONS[state],
+    title: connectionTitle(state, named),
+    description: i18n.t('tickets:problem.reconnectDescription', { label: connection.label }),
     alert: false,
     actions: [
       { label: reconnectLabel(connection.provider), onClick: onReconnect, primary: true },
-      { label: `Disconnect ${scope.one}`, onClick: onDisconnectSource, primary: false },
+      {
+        label: i18n.t('tickets:problem.disconnect', { scope: scope.one }),
+        onClick: onDisconnectSource,
+        primary: false,
+      },
     ],
   }
 }

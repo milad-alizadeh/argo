@@ -2,6 +2,7 @@
 // where it fires, because a chord written in the menu and again on an element drifts silently.
 // `shortcuts.test.mjs` proves the table holds no chord twice and that the built menu takes every
 // accelerator from it.
+import { platformText, type ShortcutLabelKey } from '../i18n/platform'
 
 // The working surfaces of the cockpit, in sidebar order. The Project is not one of them: it is the
 // window's subject, and the surfaces are what a reader does inside it.
@@ -31,29 +32,62 @@ export const SEND_MESSAGE_COMMAND = 'composer.send'
 export const COMMAND_CHANNEL = 'argo:command'
 
 export type ShortcutScope = 'menu' | 'window' | 'element'
-export type Shortcut = { command: string; label: string; chord: string; scope: ShortcutScope }
+// `labelKey` names the word in the `platform` catalog rather than holding it, so the menu the main
+// process builds and the shortcut list the renderer draws say the same thing (#2130).
+export type Shortcut = {
+  command: string
+  labelKey: ShortcutLabelKey
+  chord: string
+  scope: ShortcutScope
+}
 
 export const navigateCommand = (destination: Destination): string =>
   `navigate.${destination.toLowerCase()}`
 
+const DESTINATION_LABEL_KEYS: Record<Destination, ShortcutLabelKey> = {
+  Sessions: 'shortcut.navigate.sessions',
+  Tickets: 'shortcut.navigate.tickets',
+  Atlas: 'shortcut.navigate.atlas',
+}
+
 export const SHORTCUTS: readonly Shortcut[] = [
   {
     command: REGISTER_PROJECT_COMMAND,
-    label: 'Open Project…',
+    labelKey: 'shortcut.project.register',
     chord: 'CmdOrCtrl+O',
     scope: 'menu',
   },
   ...DESTINATIONS.map((destination, index) => ({
     command: navigateCommand(destination),
-    label: destination,
+    labelKey: DESTINATION_LABEL_KEYS[destination],
     chord: `CmdOrCtrl+${index + 1}`,
     scope: 'window' as const,
   })),
-  { command: ROSTER_MOVES.next, label: 'Next Session', chord: 'ArrowDown', scope: 'element' },
-  { command: ROSTER_MOVES.previous, label: 'Previous Session', chord: 'ArrowUp', scope: 'element' },
-  { command: ROSTER_MOVES.first, label: 'First Session', chord: 'Home', scope: 'element' },
-  { command: ROSTER_MOVES.last, label: 'Last Session', chord: 'End', scope: 'element' },
-  { command: SEND_MESSAGE_COMMAND, label: 'Send message', chord: 'Enter', scope: 'element' },
+  {
+    command: ROSTER_MOVES.next,
+    labelKey: 'shortcut.roster.next',
+    chord: 'ArrowDown',
+    scope: 'element',
+  },
+  {
+    command: ROSTER_MOVES.previous,
+    labelKey: 'shortcut.roster.previous',
+    chord: 'ArrowUp',
+    scope: 'element',
+  },
+  {
+    command: ROSTER_MOVES.first,
+    labelKey: 'shortcut.roster.first',
+    chord: 'Home',
+    scope: 'element',
+  },
+  { command: ROSTER_MOVES.last, labelKey: 'shortcut.roster.last', chord: 'End', scope: 'element' },
+  {
+    command: SEND_MESSAGE_COMMAND,
+    labelKey: 'shortcut.composer.send',
+    chord: 'Enter',
+    scope: 'element',
+  },
 ]
 
 // The template is plain data so that the table's rule can be proved without Electron. `src/menu.ts`
@@ -77,8 +111,10 @@ export function menuTemplate(): MenuEntry[] {
   return [
     { role: 'appMenu' },
     {
-      label: 'File',
-      submenu: [{ label: open.label, accelerator: open.chord, command: open.command }],
+      label: platformText('menu.file'),
+      submenu: [
+        { label: platformText(open.labelKey), accelerator: open.chord, command: open.command },
+      ],
     },
     { role: 'editMenu' },
     { role: 'viewMenu' },

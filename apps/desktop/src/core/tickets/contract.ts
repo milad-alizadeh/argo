@@ -24,6 +24,17 @@ export type {
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25
 
+// Every state a Connection's Account can leave it in, `ready` included. The renderer's i18n
+// catalog is keyed by this same set (#2130), so a state added here fails its parity test until
+// the catalog answers for it too.
+export const CONNECTION_STATES = [
+  'ready',
+  'account-missing',
+  'account-expired',
+  'account-revoked',
+  'account-unreadable',
+] as const
+
 // The Account a Connection names may since have been disconnected, left to expire, revoked or left
 // unreadable, and the Connection says so rather than disappearing: reconnecting the same identity
 // brings it back. `scope` is the provider's id for the source and `label` what a person reads.
@@ -33,13 +44,7 @@ const connectionSummary = z.strictObject({
   login: displayName.nullable(),
   scope: identifier,
   label: z.string(),
-  state: z.enum([
-    'ready',
-    'account-missing',
-    'account-expired',
-    'account-revoked',
-    'account-unreadable',
-  ]),
+  state: z.enum(CONNECTION_STATES),
 })
 
 const project = { projectId: identifier }
