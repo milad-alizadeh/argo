@@ -76,13 +76,9 @@ export function hardCodedText(input, file, changedLines) {
 }
 
 function changedProductionLines() {
-  const base = execFileSync('git', ['merge-base', 'HEAD', 'origin/main'], {
-    cwd: repositoryRoot,
-    encoding: 'utf8',
-  }).trim()
   const diff = execFileSync(
     'git',
-    ['diff', '--unified=0', '--no-color', base, '--', rendererRoot],
+    ['diff', '--unified=0', '--no-color', 'origin/main', '--', rendererRoot],
     {
       cwd: repositoryRoot,
       encoding: 'utf8',
