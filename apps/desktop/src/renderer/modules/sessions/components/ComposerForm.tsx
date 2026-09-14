@@ -14,6 +14,18 @@ import type { usePendingTurns } from './usePendingTurns'
 // The composer card's column; attached secondary surfaces inset from its edges.
 export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
+// Compacting steals focus onto Interrupt the moment it starts, so a keyboard user lands on the
+// one control that matters without having to tab there.
+function useFocusInterruptOnCompactStart(isCompacting: boolean) {
+  const interruptRef = useRef<HTMLButtonElement>(null)
+  const wasCompacting = useRef(isCompacting)
+  useEffect(() => {
+    if (isCompacting && !wasCompacting.current) interruptRef.current?.focus()
+    wasCompacting.current = isCompacting
+  }, [isCompacting])
+  return interruptRef
+}
+
 export function ComposerForm({
   attachments,
   draft,
@@ -61,12 +73,7 @@ export function ComposerForm({
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
 }) {
-  const interruptRef = useRef<HTMLButtonElement>(null)
-  const wasCompacting = useRef(isCompacting)
-  useEffect(() => {
-    if (isCompacting && !wasCompacting.current) interruptRef.current?.focus()
-    wasCompacting.current = isCompacting
-  }, [isCompacting])
+  const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
   return (
     <form
       className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
