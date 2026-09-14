@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -10,6 +11,11 @@ import {
   sessionFeedQueryKey,
   sessionRosterQueryKey,
 } from '../session-queries'
+import {
+  mergeOptimisticRow,
+  readableSessionId,
+  useSessionCreationStore,
+} from '../state/useSessionCreationStore'
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
 
 let rosterOrder: SessionId[] = []
@@ -31,9 +37,8 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-export function useSessions(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const roster = useQuery<SessionsListed, SessionContractError>({
+function useRosterQuery(selectedSessionId: SessionId | null) {
+  return useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
     staleTime: Infinity,
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
@@ -50,20 +55,26 @@ export function useSessions(selectedSessionId: SessionId | null) {
       }
     },
   })
-  const feed = useQuery<SessionFeed | null, SessionContractError>({
+}
+
+// A Session that only exists as an optimistic Roster row has no backend record to read a feed
+// for yet (#2109); the backend is asked only once the id is a real one.
+function useFeedQuery(
+  feedSessionId: SessionId | null,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return useQuery<SessionFeed | null, SessionContractError>({
     queryKey:
-      selectedSessionId === null
-        ? ['sessions', 'feed', null]
-        : sessionFeedQueryKey(selectedSessionId),
-    enabled: selectedSessionId !== null,
+      feedSessionId === null ? ['sessions', 'feed', null] : sessionFeedQueryKey(feedSessionId),
+    enabled: feedSessionId !== null,
     refetchInterval: SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
-      if (selectedSessionId === null) return null
-      const key = sessionFeedQueryKey(selectedSessionId)
+      if (feedSessionId === null) return null
+      const key = sessionFeedQueryKey(feedSessionId)
       const cached = queryClient.getQueryData<SessionFeed>(key)
       const reply = await window.argo.readSessionFeed({
-        sessionId: selectedSessionId,
+        sessionId: feedSessionId,
         revision: cached?.revision ?? null,
       })
       switch (reply.type) {
@@ -78,9 +89,30 @@ export function useSessions(selectedSessionId: SessionId | null) {
       }
     },
   })
+}
+
+export function useSessions(selectedSessionId: SessionId | null) {
+  const queryClient = useQueryClient()
+  const roster = useRosterQuery(selectedSessionId)
+  const feedSessionId = readableSessionId(selectedSessionId)
+  const feed = useFeedQuery(feedSessionId, queryClient)
+
+  const pending = useSessionCreationStore((state) => state.pending)
+  const rosterData = roster.error === null ? (roster.data ?? null) : null
+  const mergedRoster = useMemo(() => {
+    if (rosterData === null) return null
+    return { ...rosterData, sessions: mergeOptimisticRow(rosterData.sessions, pending) }
+  }, [rosterData, pending])
+
+  // The reader reported the real Session for itself: the synthetic row has done its job.
+  useEffect(() => {
+    if (pending?.stage !== 'reconciling') return
+    if (rosterData?.sessions.some((session) => session.id === pending.id) !== true) return
+    useSessionCreationStore.getState().confirmed(pending.id)
+  }, [pending, rosterData])
 
   return {
-    roster: roster.error === null ? (roster.data ?? null) : null,
+    roster: mergedRoster,
     rosterError: roster.error,
     // A poll racing the transcript another live process is actively writing can fail once and
     // recover on the next, whether or not a prior read already landed: the first open of an

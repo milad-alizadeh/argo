@@ -12,8 +12,9 @@ import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
 import type { ComposerIdentity } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
-import { sendMessage, startNewSession } from './useSessionComposer-actions'
+import { sendMessage } from './useSessionComposer-actions'
 import type { useSessionMutations } from './useSessionMutations'
+import { startNewSession } from './useStartNewSession'
 
 // Exported for direct testing: the send-routing decision itself needs no React to prove.
 export function sendToSelected(request: {
@@ -52,6 +53,7 @@ export function sendToSelected(request: {
 export function sendToNewSession(request: {
   cli: SessionCli
   cockpit: Cockpit
+  identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
   send: ReturnType<typeof useSessionMutations>['send']
@@ -65,6 +67,7 @@ export function sendToNewSession(request: {
   const {
     cli,
     cockpit,
+    identity,
     navigate,
     queryClient,
     setFailure,
@@ -75,12 +78,16 @@ export function sendToNewSession(request: {
     watchTurn,
   } = request
   return startNewSession(
-    { cli, cockpit, prompt, setup, attachments, start, setFailure },
-    (sessionId) => {
-      if (setup !== null) watchTurn(sessionId, setup, null)
-      return invalidateSessionRoster(queryClient)
+    { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
+    {
+      afterStart: (sessionId) => {
+        if (setup !== null) watchTurn(sessionId, setup, null)
+        return invalidateSessionRoster(queryClient)
+      },
+      onStarted: (sessionId) =>
+        navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE }),
+      onFailed: () => navigate('/sessions/new', { replace: true }),
     },
-    (sessionId) => navigate(`/sessions/${sessionId}`, { state: COMPOSER_FOCUS_STATE }),
   )
 }
 
@@ -126,6 +133,7 @@ export function useComposerSend(request: {
       return sendToNewSession({
         cli,
         cockpit,
+        identity,
         navigate,
         queryClient,
         send,

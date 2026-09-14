@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { currentSessionId } from '@/core/sessions/models'
+import { useProjects } from '../../projects/hooks/useProjects'
+import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessions } from '../hooks/useSessions'
+import { useComposerStore } from '../state/useComposerStore'
+import { newSessionTarget, useSessionCreationStore } from '../state/useSessionCreationStore'
 import type { SessionId } from '../types'
 import { SessionsSidebarContent } from './SessionsSidebar'
 
@@ -10,6 +14,9 @@ const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
+  const [cockpit] = useProjects()
+  const lastHarness = useComposerStore(({ harness }) => harness)
+  const pending = useSessionCreationStore(({ pending }) => pending)
   const { roster, rosterError } = useSessions(null)
   useEffect(() => {
     if (sessionId !== undefined || roster === null || rosterError !== null) return
@@ -25,13 +32,25 @@ export function SessionsSidebar() {
 
   return (
     <SessionsSidebarContent
-      onNew={() => navigate('/sessions/new')}
+      onNew={() => {
+        const target = newSessionTarget(lastHarness, cockpit.project?.path ?? null)
+        if (target === null) {
+          navigate('/sessions/new')
+          return
+        }
+        navigate(`/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
+      }}
       onRename={async (session, name) => {
         const reply = await window.argo.renameSession({ sessionId: session.id, name })
         if (reply.type === 'session.renamed') return reply.title
         throw new Error(reply.message)
       }}
       onSelect={(selectedSessionId: SessionId) => {
+        // Picking a different row abandons an un-sent draft rather than leaving it a ghost row
+        // nobody will ever send (#2109).
+        if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
+          useSessionCreationStore.getState().abandon(pending.id)
+        }
         window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
         navigate(`/sessions/${selectedSessionId}`)
       }}

@@ -6,6 +6,7 @@ import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
 import { useComposerSend } from './useComposerSend'
@@ -38,6 +39,27 @@ function managedSessionIsRunning(
   )
 }
 
+function useComposerIdentity(selectedSessionId: string | null, cockpit: Cockpit) {
+  const pending = useSessionCreationStore((state) => state.pending)
+  const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
+  return composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pendingSessionId)
+}
+
+function useHandoffState(request: {
+  roster: SessionComposerOptions['roster']
+  sessionId: string | null
+  handoff: ReturnType<typeof useSessionMutations>['handoff']
+  setFailure: (failure: Failure | null) => void
+}) {
+  const { roster, sessionId, handoff, setFailure } = request
+  const selectedRow = roster?.sessions.find(({ id }) => id === sessionId) ?? null
+  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
+  const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
+  const onHandoff = useHandoff(handoff, sessionId, setFailure)
+  useHandoffCompletion({ isHandingOff, selectedRow, selectedSessionId: sessionId, setFailure })
+  return { isCompacting, isHandingOff, onHandoff }
+}
+
 export function useSessionComposer({
   cli,
   cockpit,
@@ -53,7 +75,7 @@ export function useSessionComposer({
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const { compact, handoff, interrupt, send, start } = useSessionMutations()
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
+  const identity = useComposerIdentity(selectedSessionId, cockpit)
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
     cli,
@@ -64,14 +86,10 @@ export function useSessionComposer({
   })
   const onCompact = useCompactWithInvalidate({ compact, sessionId, setFailure, queryClient })
   const onInterrupt = useInterrupt(interrupt, sessionId, setFailure)
-  const selectedRow = roster?.sessions.find(({ id }) => id === sessionId) ?? null
-  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
-  const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
-  const onHandoff = useHandoff(handoff, sessionId, setFailure)
-  useHandoffCompletion({
-    isHandingOff,
-    selectedRow,
-    selectedSessionId: sessionId,
+  const { isCompacting, isHandingOff, onHandoff } = useHandoffState({
+    roster,
+    sessionId,
+    handoff,
     setFailure,
   })
   const onSend = useComposerSend({
