@@ -16,9 +16,10 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
     send: async () => {},
     interrupt: () => {},
     rename: async () => 'Renamed.',
+    handoff: async () => {},
+    completeHandoffs: () => {},
     liveMessages: () => [],
     roster: () => [],
-    orphans: () => new Set(),
     pendingPermission: () => ({
       id: 'permission-1',
       sessionId: 'session-1',
@@ -26,6 +27,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
       input: { command: 'bun test' },
     }),
     decidePermission: () => true,
+    isLockedElsewhere: () => false,
     decideQuestion: async () => true,
     close: () => {},
   })
@@ -36,9 +38,12 @@ function fakeCodexAdapter(): SessionDriveAdapter {
     start: async () => 'session-1',
     send: async () => {},
     interrupt: async () => {},
+    compact: async () => {},
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
+    pendingQuestion: () => null,
+    decideQuestion: () => true,
     close: () => {},
   })
 }

@@ -86,13 +86,10 @@ test('a managed Session with no transcript yet appears in the Roster with the `m
   )
 })
 
-test('an orphaned Claude Session still reads `orphaned`', async (context) => {
+test('a Claude Session Argo does not currently drive still reads `external`', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
-  const reader = createClaudeSessionReader({
-    transcripts: root,
-    orphans: () => new Set(['externalBasic']),
-  })
+  const reader = createClaudeSessionReader({ transcripts: root })
 
   const reply = await listed(reader)
-  assert.equal(rowOf(reply, 'externalBasic')?.posture, 'orphaned')
+  assert.equal(rowOf(reply, 'externalBasic')?.posture, 'external')
 })

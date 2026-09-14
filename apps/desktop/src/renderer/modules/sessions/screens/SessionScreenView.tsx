@@ -3,14 +3,19 @@ import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
+import {
+  SessionComposerArea,
+  SessionHandoffFacts,
+  SessionWorkInspector,
+} from '../components/SessionScreenDetails'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import { readableSessionId } from '../state/useSessionCreationStore'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
 import { useSelectedSession } from './useSelectedSession'
@@ -33,7 +38,7 @@ function useSessionScreenModel() {
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
-  const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
+  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,
@@ -43,12 +48,16 @@ function useSessionScreenModel() {
     roster,
     selectedSessionId,
   })
-  const permission = useSessionPermission(selectedSessionId)
-  const question = useSessionQuestion(selectedSessionId)
+  // A Session that only exists as an optimistic Roster row has no backend record to poll yet
+  // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
+  const permission = useSessionPermission(readableSessionId(selectedSessionId))
+  const question = useSessionQuestion(readableSessionId(selectedSessionId))
   return {
     selectedSessionId,
     feed,
     feedError,
+    roster,
+    navigate,
     session,
     evidence,
     setEvidence,
@@ -64,6 +73,8 @@ export function SessionScreenView() {
     selectedSessionId,
     feed,
     feedError,
+    roster,
+    navigate,
     session,
     evidence,
     setEvidence,
@@ -80,6 +91,9 @@ export function SessionScreenView() {
       compactionStartedAt={session?.compactionStartedAt ?? null}
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
+      handoffStartedAt={session?.handoffStartedAt ?? null}
+      handoffTo={session?.handoffTo ?? null}
+      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
@@ -100,7 +114,10 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionWorkInspector session={session} />
+          <>
+            <SessionWorkInspector session={session} />
+            <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
+          </>
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )

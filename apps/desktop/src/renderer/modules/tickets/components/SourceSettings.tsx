@@ -1,5 +1,6 @@
 import { BookMarked, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ConnectionSummary } from '@/core/tickets/contract'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
@@ -13,9 +14,10 @@ import {
   ItemTitle,
 } from '../../../components/ui/item'
 import { Spinner } from '../../../components/ui/spinner'
+import { useContractText } from '../../../i18n/contract-text'
 import { useFocusRescue } from '../../../lib/focus-rescue'
 import type { ContractFailure } from '../../../lib/query-client'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { ConnectionStatusMark } from './ConnectionStatusMark'
 
 export type SourceSettingsProps = {
@@ -30,6 +32,7 @@ export type SourceSettingsProps = {
 const mediaTile = 'size-8 rounded-md bg-muted text-muted-foreground'
 
 function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSettingsProps) {
+  const { t } = useTranslation('tickets')
   if (connection === undefined) {
     return (
       <Item role="status" variant="outline">
@@ -37,9 +40,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
           <Spinner aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemDescription className="type-meta">
-            Reading the connected Ticket source…
-          </ItemDescription>
+          <ItemDescription className="type-meta">{t('settings.loading')}</ItemDescription>
         </ItemContent>
       </Item>
     )
@@ -51,25 +52,23 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
           <BookMarked aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle className="type-label">No Ticket source connected</ItemTitle>
-          <ItemDescription className="type-meta">
-            Connect a GitHub repository or a Linear team.
-          </ItemDescription>
+          <ItemTitle className="type-label">{t('settings.none.title')}</ItemTitle>
+          <ItemDescription className="type-meta">{t('settings.none.description')}</ItemDescription>
         </ItemContent>
         <ItemActions>
           <Button
-            aria-label="Connect a Ticket source"
+            aria-label={t('settings.none.connectLabel')}
             className="type-label"
             onClick={onConnect}
             size="sm"
           >
-            Connect
+            {t('settings.none.connect')}
           </Button>
         </ItemActions>
       </Item>
     )
   }
-  const { name, scope } = PROVIDER_PRESENTATION[connection.provider]
+  const { name, scope } = providerPresentation(connection.provider)
   return (
     <Item variant="outline">
       <ItemMedia className={mediaTile} variant="icon">
@@ -79,20 +78,23 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
         <ItemTitle className="type-label max-w-full truncate">{connection.label}</ItemTitle>
         <ItemDescription className="type-meta flex items-center gap-(--spacing-shell-icon)">
           <ConnectionStatusMark state={connection.state}>
-            Read through {name} · {connection.login ?? 'a disconnected Account'}
+            {t('settings.readThrough', {
+              name,
+              login: connection.login ?? t('settings.noAccount'),
+            })}
           </ConnectionStatusMark>
         </ItemDescription>
       </ItemContent>
       <ItemActions>
         <Button
-          aria-label={`Disconnect ${scope.one}`}
+          aria-label={t('settings.disconnect', { scope: scope.one })}
           className="type-label"
           disabled={disconnecting}
           onClick={onDisconnect}
           size="sm"
           variant="outline"
         >
-          Disconnect
+          {t('settings.disconnectButton')}
         </Button>
       </ItemActions>
     </Item>
@@ -101,22 +103,26 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
 
 // The one GitHub repository or Linear team a Project reads its Tickets from (CONTEXT.md · Connection).
 export function SourceSettings(props: SourceSettingsProps) {
+  const { t } = useTranslation('tickets')
+  const contractText = useContractText()
   const section = useRef<HTMLElement>(null)
   // Disconnecting removes the control that did it.
   useFocusRescue(section, props.connection === null)
   return (
-    <section aria-label="Ticket source" className="grid gap-(--spacing-shell-item)" ref={section}>
+    <section
+      aria-label={t('settings.sourceLabel')}
+      className="grid gap-(--spacing-shell-item)"
+      ref={section}
+    >
       <div className="grid gap-(--spacing-shell-tight)">
-        <h3 className="type-label">Tickets</h3>
-        <p className="type-meta text-muted-foreground">
-          Argo reads a Project's Tickets from one GitHub repository or Linear team.
-        </p>
+        <h3 className="type-label">{t('settings.heading')}</h3>
+        <p className="type-meta text-muted-foreground">{t('settings.description')}</p>
       </div>
       <Source {...props} />
       {props.error ? (
         <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
           <TriangleAlert aria-hidden="true" />
-          <AlertDescription>{props.error.message}</AlertDescription>
+          <AlertDescription>{contractText(props.error)}</AlertDescription>
         </Alert>
       ) : null}
     </section>

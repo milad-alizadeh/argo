@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import type { CodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 
-test('follows a managed Session through Turn statuses and process exit', async () => {
+function fakeLifecycleChannel() {
   const requests: string[] = []
   const notifications: Array<(message: never) => void> = []
   const exits: Array<() => void> = []
@@ -24,12 +24,22 @@ test('follows a managed Session through Turn statuses and process exit', async (
     onExit: (listener) => exits.push(listener),
     close: () => {},
   }
+  return { channel, requests, notifications, exits }
+}
+
+test('follows a managed Session through Turn statuses and process exit', async () => {
+  const { channel, requests, notifications, exits } = fakeLifecycleChannel()
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => new Date('2026-09-13T15:17:11.000Z'),
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const sessionId = await driver.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+  })
   const notify = notifications[0]
   assert.ok(notify)
   const notifyStatus = (status: { type: 'active'; activeFlags: string[] } | { type: 'idle' }) =>
@@ -48,7 +58,12 @@ test('follows a managed Session through Turn statuses and process exit', async (
   await driver.interrupt(sessionId)
   assert.equal(requests.includes('turn/interrupt'), false)
 
-  await driver.send(sessionId, 'Inspect the next test.')
+  await driver.send({
+    sessionId,
+    text: 'Inspect the next test.',
+    setup: undefined,
+    attachments: [],
+  })
   notifyStatus({ type: 'active', activeFlags: [] })
   assertRosterStatus('running')
 

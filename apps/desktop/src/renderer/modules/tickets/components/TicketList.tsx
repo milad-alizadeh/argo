@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next'
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-
+import { useTranslation } from 'react-i18next'
 import {
   Empty,
   EmptyDescription,
@@ -10,9 +11,9 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { useToastManager } from '../../../components/ui/toast'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
-import { type Backlog, backlogRows, count, treeRails, unfoldedRows } from '../lib/backlog'
-import { SOURCE_PRESENTATION } from '../lib/sources'
+import { providerPresentation } from '../../accounts/lib/providers'
+import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
+import { sourcePresentation } from '../lib/sources'
 import { TicketRow } from './TicketRow'
 
 export type TicketListProps = {
@@ -23,12 +24,15 @@ export type TicketListProps = {
   now: number
 }
 
-function tally({ tickets, query, total, hasMore, searching, provider }: Backlog): string {
-  if (searching) return `Searching ${PROVIDER_PRESENTATION[provider].name}…`
-  if (query !== '') return count(total ?? tickets.length, 'match', 'matches')
+function tally(
+  t: TFunction<'tickets'>,
+  { tickets, query, total, hasMore, searching, provider }: Backlog,
+): string {
+  if (searching) return t('backlog.searching', { provider: providerPresentation(provider).name })
+  if (query !== '') return t('backlog.match', { count: total ?? tickets.length })
   return hasMore
-    ? `All open · ${tickets.length}+ Tickets`
-    : `All open · ${count(tickets.length, 'Ticket')}`
+    ? t('backlog.allOpenMore', { count: tickets.length })
+    : t('backlog.allOpen', { count: tickets.length })
 }
 
 // A page the provider failed to send is a passing fault: a toast offers the retry, the rows read stay.
@@ -53,6 +57,7 @@ function useLoadMoreFailure({ loadMoreError, loadingMore, onRetryLoadMore }: Bac
 // Reading the next page starts a screen before the end; keyed by the rows read, it observes
 // afresh after each page, so an end still in view reads again.
 function NextPage({ backlog }: { backlog: Backlog }) {
+  const { t } = useTranslation('tickets')
   const mark = useRef<HTMLLIElement>(null)
   const load = useRef(backlog.onLoadMore)
   load.current = backlog.onLoadMore
@@ -73,24 +78,29 @@ function NextPage({ backlog }: { backlog: Backlog }) {
   if (!hasMore) return null
   return (
     <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
-      {loadingMore ? <Spinner aria-label="Reading more Tickets" className="text-faint" /> : null}
+      {loadingMore ? (
+        <Spinner aria-label={t('backlog.loadingMore')} className="text-faint" />
+      ) : null}
     </li>
   )
 }
 
 function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
-  const { name, scope } = PROVIDER_PRESENTATION[provider]
+  const { t } = useTranslation('tickets')
+  const { name, scope } = providerPresentation(provider)
   return (
     <Empty className="flex-none border-0">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           {query === '' ? <TicketMark aria-hidden="true" /> : <SearchX aria-hidden="true" />}
         </EmptyMedia>
-        <EmptyTitle>{query === '' ? 'No open Tickets' : 'No open Tickets match'}</EmptyTitle>
+        <EmptyTitle>
+          {query === '' ? t('backlog.empty.title') : t('backlog.empty.titleFiltered')}
+        </EmptyTitle>
         <EmptyDescription>
           {query === ''
-            ? `This ${scope.one} has no open Tickets.`
-            : `${name} found nothing for “${query}”.`}
+            ? t('backlog.empty.description', { scope: scope.one })
+            : t('backlog.empty.descriptionFiltered', { provider: name, query })}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -110,17 +120,18 @@ function useFolds() {
 }
 
 export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListProps) {
+  const { t } = useTranslation('tickets')
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   const rails = treeRails(rows)
   return (
-    <section aria-label="Backlog" className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <section aria-label={t('backlog.label')} className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
       <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
       <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
-        <h2 className="type-heading">Backlog</h2>
+        <h2 className="type-heading">{t('backlog.label')}</h2>
         <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
-          {tally(backlog)}
+          {tally(t, backlog)}
         </p>
       </header>
       {backlog.tickets.length === 0 ? (
@@ -139,7 +150,7 @@ export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListPr
               onChangeStatus={(status) => backlog.onChangeStatus(row.ticket.key, status)}
               onSelect={() => onSelect(row.ticket.key)}
               onToggle={() => toggle(row.ticket.key)}
-              presentation={SOURCE_PRESENTATION[backlog.provider]}
+              presentation={sourcePresentation(backlog.provider)}
               row={row}
               selected={row.ticket.key === selectedKey}
               statuses={backlog.statuses}

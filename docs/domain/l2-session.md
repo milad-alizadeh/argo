@@ -3,24 +3,30 @@
 - **Session** — the observation unit: one **logical resume-chain**, keyed by a stable chain id
   (one-or-more transcript files stitched by `leafUuid`, or — where a relocation left no shared
   record — by the origin `session_id` they all name, #735). The only stored classification is
-  **`managed | external`** — no kinds (ADR-0013). `managed` = Argo spawned it, owns the PTY,
-  companion plugin loaded → drivable + carries CONVENTION-tier facts. `external` = discovered
-  from transcripts, read-only, no PTY. **All sessions are observed** (transcript-tailing is the
-  floor); managed is *external + PTY steering + CONVENTION channel* layered on top. v1 ranks
-  external lower (read-only awareness), ships managed-first.
+  **`managed | external`** — no kinds (ADR-0013), and no third posture. `managed` = Argo holds a
+  live channel to it right now (PTY for Claude, app-server thread for Codex), companion plugin
+  loaded → drivable + carries CONVENTION-tier facts. `external` = discovered from transcripts,
+  read-only, no live channel. **All sessions are observed** (transcript-tailing is the floor);
+  managed is *external + a live channel + CONVENTION channel* layered on top. v1 ranks external
+  lower (read-only awareness), ships managed-first.
 
-  **A PTY is not durable across an Argo restart; a Session is** (ADR-0026). The PTY/steering
-  channel dies with the owning process and cannot be re-adopted, so a `managed` session whose owner
-  is gone demotes to **orphaned** — read-only *now*, because there is no live channel. It is not
-  read-only forever: a Session is a resume-chain, and `claude --resume` continues one in a fresh
-  process, so the channel is **re-opened rather than re-adopted**. The next Turn sent to an
-  orphaned Session resumes it and it is `managed` again; CONVENTION comes back with the plugin the
-  resume loads. Selecting it only opens its Feed and composer.
-  Orphaned is a third posture of the `managed | external` axis, not a fourth stored kind.
+  **A live channel is not durable across an Argo restart; a Session is** (ADR-0026, ADR-0040).
+  The PTY/app-server channel dies with the owning process and cannot be re-adopted, so a `managed`
+  Session whose owner is gone reads **`external`** — the same posture as one Argo never drove, and
+  read-only *now* only because there is no live channel. It is not read-only forever: a Session is
+  a resume-chain, and `claude --resume` (or a fresh Codex thread) continues one in a new process,
+  so the channel is **re-opened rather than re-adopted**. The next Turn sent to it resumes it and
+  it is `managed` again; CONVENTION comes back with the plugin the resume loads. Selecting it only
+  opens its Feed and composer.
 
-  Telling `orphaned` from `external` after a relaunch needs a durable record of past ownership —
-  Session id and the window Argo held it for, per-machine and never committed. That record is not
-  a roster: the roster is still rebuilt from the transcripts every launch (ADR-0004, ADR-0008).
+  **Origin never gates a resume** (ADR-0040): whether Argo started a Session plays no part in
+  whether it can be resumed. What decides is a live-channel fact only the machine can hold — a
+  per-machine, never-committed ledger of which Session id a running window currently holds a
+  channel for, graded **`resumable | held-here | held-elsewhere`** at drive time. `held-elsewhere`
+  is the one case Send refuses: another live window on this machine holds the channel, so the
+  Roster marks it locked and its composer is hidden. Everything else resumes. That ledger is not
+  a roster and never promotes a Session to a stored third posture: the roster is still rebuilt
+  from the transcripts every launch (ADR-0004, ADR-0008).
 
   A Session **is the root Agent** (`parentId: null`). Key attributes: **`cli`**
   (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of
@@ -99,8 +105,8 @@
     and the exit is the one thing about it Argo witnesses first-hand. The process table is asked
     about no managed row, and could not answer for one honestly — it joins on a working directory,
     which two agents in one worktree share and neither owns, and it is corroborated by a record
-    write that a long tool call leaves untouched past the recency window. `orphaned` and `external`
-    have no such process to ask about, so both stay on what the machine can be observed to say.
+    write that a long tool call leaves untouched past the recency window. `external` has no such
+    process to ask about, so it stays on what the machine can be observed to say.
 
     That claim ends where Argo can WITNESS it ending, never on a clock: **the record growing at
     all** — the CLI has spoken, so what the Session is doing is the record's to say from then on —

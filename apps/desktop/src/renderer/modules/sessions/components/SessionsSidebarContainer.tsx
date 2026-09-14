@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { currentSessionId } from '@/core/sessions/models'
+import { useProjects } from '../../projects/hooks/useProjects'
 import { useSelectedProject } from '../../projects/hooks/useSelectedProject'
+import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessions } from '../hooks/useSessions'
 import { useSessionTicketLink } from '../hooks/useSessionTicketLink'
+import { useComposerStore } from '../state/useComposerStore'
+import { newSessionTarget, useSessionCreationStore } from '../state/useSessionCreationStore'
 import type { Session, SessionId } from '../types'
 import { SessionsSidebarContent } from './SessionsSidebar'
 import { SessionTicketLinkDialog } from './SessionTicketLinkDialog'
@@ -13,6 +17,9 @@ const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
+  const [cockpit] = useProjects()
+  const lastHarness = useComposerStore(({ harness }) => harness)
+  const pending = useSessionCreationStore(({ pending }) => pending)
   const { roster, rosterError } = useSessions(null)
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
@@ -33,7 +40,14 @@ export function SessionsSidebar() {
     <>
       <SessionsSidebarContent
         onLinkTicket={setLinkTarget}
-        onNew={() => navigate('/sessions/new')}
+        onNew={() => {
+          const target = newSessionTarget(lastHarness, cockpit.project?.path ?? null)
+          if (target === null) {
+            navigate('/sessions/new')
+            return
+          }
+          navigate(`/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
+        }}
         onOpenTicket={(session) => {
           if (session.ticket !== null) navigate(`/tickets/${session.ticket.key}`)
         }}
@@ -43,6 +57,11 @@ export function SessionsSidebar() {
           throw new Error(reply.message)
         }}
         onSelect={(selectedSessionId: SessionId) => {
+          // Picking a different row abandons an un-sent draft rather than leaving it a ghost row
+          // nobody will ever send (#2109).
+          if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
+            useSessionCreationStore.getState().abandon(pending.id)
+          }
           window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
           navigate(`/sessions/${selectedSessionId}`)
         }}

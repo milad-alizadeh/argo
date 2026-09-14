@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
-import { SOURCE_PRESENTATION } from '../lib/sources'
+import { sourcePresentation } from '../lib/sources'
 import { StatusMenu } from './StatusMenu'
 import { TicketLabel } from './TicketLabel'
 import { PriorityMark } from './TicketStatus'
@@ -28,7 +29,8 @@ export type Editing = {
 export type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
 
 export function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesProps) {
-  const noun = SOURCE_PRESENTATION[provider].statusNoun
+  const { t } = useTranslation('tickets')
+  const noun = sourcePresentation(provider).statusNoun
   return (
     <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
       <Property name={noun}>
@@ -41,19 +43,19 @@ export function Properties({ ticket, provider, statuses, onChangeStatus }: Prope
         />
       </Property>
       {ticket.priority ? (
-        <Property name="Priority">
+        <Property name={t('detail.priority')}>
           <PriorityMark priority={ticket.priority} />
         </Property>
       ) : null}
       {ticket.type ? (
-        <Property name="Type">
+        <Property name={t('detail.type')}>
           <Badge className="type-meta" variant="secondary">
             {ticket.type}
           </Badge>
         </Property>
       ) : null}
       {ticket.labels.length > 0 ? (
-        <Property name="Labels">
+        <Property name={t('detail.labels')}>
           {ticket.labels.map((label) => (
             <TicketLabel key={label.name} label={label} />
           ))}

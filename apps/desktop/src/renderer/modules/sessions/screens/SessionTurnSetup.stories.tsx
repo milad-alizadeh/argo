@@ -98,7 +98,7 @@ async function sendWithMaxEffort(canvasElement: HTMLElement) {
 
   await userEvent.click(canvas.getByLabelText('Message'))
   await userEvent.type(canvas.getByLabelText('Message'), 'Think hard about the driver.')
-  await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+  await userEvent.keyboard('{Enter}')
   return trigger
 }
 

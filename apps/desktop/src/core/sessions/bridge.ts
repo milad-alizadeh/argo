@@ -1,5 +1,6 @@
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
+import { platformText } from '../i18n/platform'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
   type SessionAcceptedReply,
@@ -19,6 +20,7 @@ import {
   compactSession,
   decideSessionPermission,
   decideSessionQuestion,
+  handoffSession,
   interruptSession,
   type OwnerContext,
   readSessionPermission,
@@ -49,8 +51,8 @@ type SessionContext = {
 // none. A chosen folder attaches the same way a file does, as an `@path` reference (#1845).
 async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
   const chosen = await dialog.showOpenDialog(window, {
-    title: 'Attach Files & Folders',
-    buttonLabel: 'Attach',
+    title: platformText('dialog.attachFiles.title'),
+    buttonLabel: platformText('dialog.attachFiles.confirm'),
     properties: ['openFile', 'openDirectory', 'multiSelections'],
   })
   return chosen.canceled ? [] : chosen.filePaths
@@ -86,6 +88,7 @@ export function attachSessionBridge(
       send: (request, context) => sendSession(request, ownerContext(context)),
       interrupt: (request, context) => interruptSession(request, ownerContext(context)),
       compact: (request, context) => compactSession(request, ownerContext(context)),
+      handoff: (request, context) => handoffSession(request, ownerContext(context)),
       readPermission: (request, context) => readSessionPermission(request, ownerContext(context)),
       decidePermission: (request, context) =>
         decideSessionPermission(request, ownerContext(context)),

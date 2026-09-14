@@ -1,7 +1,7 @@
 // Shared fixtures for the reader.test.ts suite (#2025): temp roots and hand-written transcripts
 // for the real Claude and Codex adapters, plus request builders and typed reply readers.
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
@@ -29,8 +29,23 @@ export async function writeClaudeTranscript({ root, sessionId, text, updatedAt }
   )
 }
 
+function codexDay(root: string) {
+  return path.join(root, '2026', '09', '13')
+}
+
+function codexMessage(text: string, updatedAt: string, id = 'm') {
+  return `${JSON.stringify({
+    timestamp: updatedAt,
+    type: 'event_msg',
+    payload: {
+      type: 'agent_message',
+      item: { type: 'AgentMessage', id, content: [{ type: 'text', text }] },
+    },
+  })}\n`
+}
+
 export async function writeCodexTranscript({ root, sessionId, text, updatedAt }: TranscriptLine) {
-  const day = path.join(root, '2026', '09', '13')
+  const day = codexDay(root)
   await mkdir(day, { recursive: true })
   await writeFile(
     path.join(day, `${sessionId}.jsonl`),
@@ -38,15 +53,34 @@ export async function writeCodexTranscript({ root, sessionId, text, updatedAt }:
       timestamp: updatedAt,
       type: 'session_meta',
       payload: { id: sessionId },
-    })}\n${JSON.stringify({
-      timestamp: updatedAt,
-      type: 'event_msg',
-      payload: {
-        type: 'agent_message',
-        item: { type: 'AgentMessage', id: 'm', content: [{ type: 'text', text }] },
-      },
-    })}\n`,
+    })}\n${codexMessage(text, updatedAt)}`,
   )
+}
+
+// Each appended record needs an id of its own, or the Feed reads two of them as one Message.
+let appended = 0
+
+function codexRecord({ root, sessionId, text, updatedAt }: TranscriptLine) {
+  appended += 1
+  return {
+    file: path.join(codexDay(root), `${sessionId}.jsonl`),
+    record: codexMessage(text, updatedAt, `m-${appended}`),
+  }
+}
+
+// The CLI adding to a transcript the reader is already watching.
+export async function appendCodexTranscript(line: TranscriptLine) {
+  const { file, record } = codexRecord(line)
+  await appendFile(file, record)
+}
+
+// The same append caught halfway: half the record and no closing newline, which is what a read
+// racing the write sees. The returned function writes the rest of the same bytes.
+export async function appendHalfCodexTranscript(line: TranscriptLine) {
+  const { file, record } = codexRecord(line)
+  const cut = Math.floor(record.length / 2)
+  await appendFile(file, record.slice(0, cut))
+  return () => appendFile(file, record.slice(cut))
 }
 
 export function listing(requestId = 'list-1') {

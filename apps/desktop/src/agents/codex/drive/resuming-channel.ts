@@ -5,7 +5,18 @@ import {
   openManagedChannel,
   rememberManagedSession,
 } from './managed-session'
+import type { CodexOwnershipStanding } from './ownership-ledger'
 import { readThreadId } from './protocol'
+
+function refuseUnlessResumable(standing: CodexOwnershipStanding) {
+  switch (standing) {
+    case 'held-elsewhere':
+      throw new CodexSessionDriverError('held-elsewhere')
+    case 'resumable':
+    case 'held-here':
+      return
+  }
+}
 
 export function createResumingChannel(options: {
   driver: ManagedSessionOptions
@@ -16,8 +27,10 @@ export function createResumingChannel(options: {
   const pending = new Map<string, Promise<ManagedSession>>()
 
   async function resume(sessionId: string) {
-    const target = driver.ownership?.resumeTarget(sessionId)
-    if (!target) throw new CodexSessionDriverError('not-drivable')
+    const standing = driver.ownership?.standing(sessionId) ?? 'resumable'
+    refuseUnlessResumable(standing)
+    const target = await driver.resumeTarget(sessionId)
+    if (!target) throw new CodexSessionDriverError('missing-session')
     const channel = await openManagedChannel(driver, target.cwd)
     try {
       const resumedId = await channel.request(

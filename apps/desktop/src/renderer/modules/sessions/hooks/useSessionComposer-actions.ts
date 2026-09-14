@@ -1,8 +1,9 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { SessionErrorCode } from '@/core/sessions/contract'
-import type { Cockpit } from '../../projects/hooks/useProjects'
-import type { SessionCli } from '../harness/harnesses'
 import { SessionContractError } from '../session-contract-error'
+import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from './useSessionMutations'
 
@@ -60,19 +61,35 @@ export function useCompact(
   }, [compact, sessionId, setFailure])
 }
 
+// Compacting changes the Session's context token count, which the roster reads too.
+export function useCompactWithInvalidate(request: {
+  compact: ReturnType<typeof useSessionMutations>['compact']
+  sessionId: string | null
+  setFailure: (failure: Failure | null) => void
+  queryClient: QueryClient
+}) {
+  const compactSession = useCompact(request.compact, request.sessionId, request.setFailure)
+  return useCallback(async () => {
+    const compacted = await compactSession()
+    if (compacted) await invalidateSessionRoster(request.queryClient)
+    return compacted
+  }, [compactSession, request.queryClient])
+}
+
 export async function sendMessage(
   request: {
     send: ReturnType<typeof useSessionMutations>['send']
     prompt: string
     setup: TurnSetup | null
+    attachments: SessionAttachmentInput[]
     sessionId: string
     setFailure: (failure: Failure | null) => void
   },
   afterSend: () => Promise<void>,
 ) {
-  const { send, prompt, setup, sessionId, setFailure } = request
+  const { send, prompt, setup, attachments, sessionId, setFailure } = request
   try {
-    await send.mutateAsync({ prompt, sessionId, setup })
+    await send.mutateAsync({ prompt, sessionId, setup, attachments })
     setFailure(null)
   } catch (error) {
     setFailure({
@@ -84,41 +101,4 @@ export async function sendMessage(
   }
   await afterSend()
   return true
-}
-
-export async function startNewSession(
-  request: {
-    cli: SessionCli
-    cockpit: Cockpit
-    prompt: string
-    setup: TurnSetup | null
-    start: ReturnType<typeof useSessionMutations>['start']
-    setFailure: (failure: Failure | null) => void
-  },
-  afterStart: (sessionId: string) => Promise<void>,
-  onStarted: (sessionId: string) => void,
-) {
-  const { cli, cockpit, prompt, setup, start, setFailure } = request
-  if (cockpit.project === null) {
-    setFailure({
-      sessionId: null,
-      message: 'Select a Project before starting a Session.',
-      code: null,
-    })
-    return false
-  }
-  try {
-    const reply = await start.mutateAsync({ cli, cwd: cockpit.project.path, prompt, setup })
-    setFailure(null)
-    await afterStart(reply.sessionId)
-    onStarted(reply.sessionId)
-    return true
-  } catch (error) {
-    setFailure({
-      sessionId: null,
-      message: messageFrom(error, 'Argo could not start this Session.'),
-      code: codeFrom(error),
-    })
-    return false
-  }
 }

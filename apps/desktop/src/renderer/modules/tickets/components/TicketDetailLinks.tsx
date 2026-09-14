@@ -1,8 +1,14 @@
 import { Ban, CircleCheck, CircleDot } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketLink } from '@/core/tickets/contract'
-import { SOURCE_PRESENTATION } from '../lib/sources'
+import type { Ticket, TicketLink, TicketState } from '@/core/tickets/contract'
+import { sourcePresentation } from '../lib/sources'
 import { TicketDetailSection } from './TicketDetailSection'
+
+const STATE_ICONS: Record<TicketState, { Icon: typeof CircleDot; tone: string }> = {
+  open: { Icon: CircleDot, tone: 'text-active' },
+  closed: { Icon: CircleCheck, tone: 'text-muted-foreground' },
+}
 
 export const stateIcon = 'size-(--size-icon-meta) shrink-0'
 const blockedIcon = `${stateIcon} text-danger`
@@ -12,17 +18,13 @@ export type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) 
 export const linkRow =
   'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
 
-const STATES = {
-  open: { label: 'Open', Icon: CircleDot, tone: 'text-active' },
-  closed: { label: 'Closed', Icon: CircleCheck, tone: 'text-muted-foreground' },
-} as const
-
 function LinkContent({ link }: { link: TicketLink }) {
-  const { label, Icon, tone } = STATES[link.state]
+  const { t } = useTranslation('tickets')
+  const { Icon, tone } = STATE_ICONS[link.state]
   return (
     <>
       <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{t(`detail.state.${link.state}`)}</span>
       <span className="min-w-0 flex-1 truncate type-body">{link.title}</span>
       <span className="shrink-0 font-mono type-meta text-faint">{link.key}</span>
     </>
@@ -56,14 +58,15 @@ export function Links({ links, listed, onSelect }: { links: readonly TicketLink[
 export type DependenciesProps = { blockedBy: Ticket['blockedBy']; provider: Provider } & Navigation
 
 export function Dependencies({ blockedBy, provider, ...navigation }: DependenciesProps) {
+  const { t } = useTranslation('tickets')
   if (blockedBy === null) {
     return (
       <TicketDetailSection
         icon={<Ban aria-hidden="true" className={blockedIcon} />}
-        title="Blocked by"
+        title={t('detail.blockedBy')}
       >
         <p className="type-meta text-muted-foreground">
-          {SOURCE_PRESENTATION[provider].noDependencies}
+          {sourcePresentation(provider).noDependencies}
         </p>
       </TicketDetailSection>
     )
@@ -72,7 +75,7 @@ export function Dependencies({ blockedBy, provider, ...navigation }: Dependencie
   return (
     <TicketDetailSection
       icon={<Ban aria-hidden="true" className={blockedIcon} />}
-      title={`Blocked by · ${blockedBy.length}`}
+      title={t('detail.blockedByCount', { count: blockedBy.length })}
     >
       <Links links={blockedBy} {...navigation} />
     </TicketDetailSection>

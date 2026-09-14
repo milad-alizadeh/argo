@@ -40,7 +40,13 @@ function readFailure(error: unknown) {
 
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
-    return await source.discoverSessions()
+    const discovery = await source.discoverSessions()
+    const isLockedElsewhere = source.isLockedElsewhere
+    if (isLockedElsewhere === undefined) return discovery
+    return {
+      ...discovery,
+      rows: discovery.rows.map((row) => ({ ...row, locked: isLockedElsewhere(row.id) })),
+    }
   } catch (error) {
     return { error: sessionError(readFailure(error), requestId) }
   }

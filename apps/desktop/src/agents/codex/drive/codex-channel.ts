@@ -16,7 +16,12 @@ export type CodexChannel = {
     params: RequestParams[Method],
     decode: (value: unknown) => Result,
   ) => Promise<Result>
-  onNotification: (listener: (message: WireMessage) => void) => void
+  // Answers a still-open server->client request (`item/tool/requestUserInput`, #1841) by its own
+  // request ID, so a listener that claims one can reply without the channel auto-refusing it.
+  respond: (id: RequestID, result: unknown) => void
+  // A listener returns `true` when it has claimed a server request and answered (or will answer)
+  // it itself; the channel auto-refuses only a request no listener claims.
+  onNotification: (listener: (message: WireMessage) => boolean | undefined) => void
   onExit: (listener: () => void) => void
   close: () => void
 }
@@ -28,7 +33,7 @@ type PendingRequests = Map<
 
 type ChannelState = {
   pending: PendingRequests
-  notificationListeners: Array<(message: WireMessage) => void>
+  notificationListeners: Array<(message: WireMessage) => boolean | undefined>
   exitListeners: Array<() => void>
 }
 
@@ -49,8 +54,11 @@ function handleLine(process: CodexProcess, state: ChannelState, line: string) {
     return
   }
   if ('method' in message) {
-    if (message.id !== undefined) refuse(process, message.id, message.method)
-    for (const listener of state.notificationListeners) listener(message)
+    let claimed = false
+    for (const listener of state.notificationListeners) {
+      if (listener(message) === true) claimed = true
+    }
+    if (message.id !== undefined && !claimed) refuse(process, message.id, message.method)
     return
   }
   const waiting = state.pending.get(message.id)
@@ -72,9 +80,10 @@ function wireInbound(process: CodexProcess, state: ChannelState) {
 }
 
 // ADR-0024: the cockpit owns one `codex app-server` process per managed Session and speaks
-// newline-delimited JSON-RPC over its stdio pipes. A server->client request this adapter has no
-// answer for is refused rather than left open, because an unanswered approval holds the Turn for
-// ever (openai/codex#11816) and #1839's slice does not build the approval UI yet (#1841 does).
+// newline-delimited JSON-RPC over its stdio pipes. A server->client request no listener claims is
+// refused rather than left open, because an unanswered approval holds the Turn forever
+// (openai/codex#11816); `item/tool/requestUserInput` is claimed and answered for real (#1841),
+// while approval requests still go unclaimed and so are still refused (#549).
 export function openCodexChannel(process: CodexProcess): CodexChannel {
   let sequence = 0
   const state: ChannelState = { pending: new Map(), notificationListeners: [], exitListeners: [] }
@@ -105,6 +114,9 @@ export function openCodexChannel(process: CodexProcess): CodexChannel {
         })
         send({ id, method, params })
       })
+    },
+    respond(id, result) {
+      process.write(`${JSON.stringify({ id, result })}\n`)
     },
     onNotification(listener) {
       notificationListeners.push(listener)

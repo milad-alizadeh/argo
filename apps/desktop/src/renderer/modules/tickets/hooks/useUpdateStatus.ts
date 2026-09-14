@@ -4,6 +4,7 @@ import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@t
 import type { TicketUpdated } from '@/core/tickets/contract'
 import { closureOf, type TicketStatus } from '@/core/tickets/ticket'
 import { useToastManager } from '../../../components/ui/toast'
+import { useContractText } from '../../../i18n/contract-text'
 import { type ContractFailure, settle } from '../../../lib/query-client'
 import { listKey, onRefused, type TicketPages } from './useTickets'
 
@@ -32,6 +33,7 @@ type Snapshot = [QueryKey, TicketPages | undefined][]
 export function useUpdateStatus() {
   const client = useQueryClient()
   const { add } = useToastManager()
+  const contractText = useContractText()
   return useMutation<TicketUpdated, ContractFailure, StatusChange, Snapshot>({
     mutationFn: ({ projectId, key, status }) =>
       settle(window.argo.updateStatus({ projectId, key, statusId: status.id })),
@@ -45,7 +47,7 @@ export function useUpdateStatus() {
     onError: (failure, { projectId }, snapshot) => {
       for (const [queryKey, data] of snapshot ?? []) client.setQueryData(queryKey, data)
       onRefused(client, projectId, failure)
-      add({ title: failure.message, type: 'error', priority: 'high' })
+      add({ title: contractText(failure), type: 'error', priority: 'high' })
     },
   })
 }

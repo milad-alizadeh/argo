@@ -1,7 +1,9 @@
 // The Tickets screen's one reading of state: the selected Project, its Connection, the Accounts and
 // the Tickets, resolved into the single view the screen draws.
 import type { UseQueryResult } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { useNavigate, useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/core/accounts/contract'
 import type { ProjectSummary } from '@/core/projects/messages'
 import type { ConnectionSummary, TicketStatus } from '@/core/tickets/contract'
@@ -50,14 +52,19 @@ const failure = (
   }),
 })
 
+type Unconnected = {
+  project: ProjectSummary
+  accounts: UseQueryResult<AccountListing, ContractFailure>
+  form: ConnectForm
+}
+
 function unconnectedView(
-  project: ProjectSummary,
-  accounts: UseQueryResult<AccountListing, ContractFailure>,
-  form: ConnectForm,
+  t: TFunction<'tickets'>,
+  { project, accounts, form }: Unconnected,
 ): TicketsView {
-  if (accounts.isPending) return loading('Reading Accounts')
+  if (accounts.isPending) return loading(t('loading.accounts'))
   if (accounts.error) {
-    return failure('Unable to read Accounts', accounts.error, {
+    return failure(t('failure.accounts'), accounts.error, {
       onRetry: accounts.refetch,
       provider: null,
     })
@@ -83,15 +90,18 @@ type Connected = {
   onOpenSession: (id: string) => void
 }
 
-function connectedView({
-  projectId,
-  connection,
-  onDisconnectSource,
-  selectedKey,
-  onSelect,
-  onOpenSession,
-  ...listing
-}: Connected): TicketsView {
+function connectedView(
+  t: TFunction<'tickets'>,
+  {
+    projectId,
+    connection,
+    onDisconnectSource,
+    selectedKey,
+    onSelect,
+    onOpenSession,
+    ...listing
+  }: Connected,
+): TicketsView {
   if (isConnectionProblem(connection)) {
     return {
       kind: 'problem',
@@ -99,9 +109,9 @@ function connectedView({
     }
   }
   const { list } = listing
-  if (list.isPending) return loading('Reading Tickets')
+  if (list.isPending) return loading(t('loading.tickets'))
   if (list.error && !list.isFetchNextPageError) {
-    return failure('Unable to read Tickets', list.error, {
+    return failure(t('failure.tickets'), list.error, {
       onRetry: list.refetch,
       provider: connection.provider,
     })
@@ -117,6 +127,7 @@ function connectedView({
 }
 
 export function useTicketsView(): TicketsScreenProps {
+  const { t } = useTranslation('tickets')
   const project = useSelectedProject()
   const projectId = project?.id ?? null
   const accounts = useAccounts()
@@ -131,16 +142,16 @@ export function useTicketsView(): TicketsScreenProps {
 
   function view(): TicketsView {
     if (!project) return { kind: 'no-project' }
-    if (connection.isPending) return loading('Reading the connected Ticket source')
+    if (connection.isPending) return loading(t('loading.connection'))
     if (connection.error) {
-      return failure('Unable to read the connected Ticket source', connection.error, {
+      return failure(t('failure.connection'), connection.error, {
         onRetry: connection.refetch,
         provider: null,
       })
     }
-    if (connection.data === null) return unconnectedView(project, accounts, form)
+    if (connection.data === null) return unconnectedView(t, { project, accounts, form })
     const projectId = project.id
-    return connectedView({
+    return connectedView(t, {
       projectId,
       connection: connection.data,
       list,

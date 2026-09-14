@@ -4,6 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/core/accounts/contract'
 import type { TicketScope } from '@/core/tickets/contract'
+import { useContractText } from '../../../i18n/contract-text'
 import type { ContractFailure } from '../../../lib/query-client'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
 import type { ConnectSourceFormProps } from '../components/ConnectSourceForm'
@@ -18,11 +19,14 @@ function chosenAccount(accounts: readonly AccountSummary[] | undefined, picked: 
   return (connected.find((account) => account.id === picked) ?? connected[0])?.id ?? null
 }
 
-function discovery(sources: UseQueryResult<TicketScope[], ContractFailure>): SourceDiscovery {
+function discovery(
+  sources: UseQueryResult<TicketScope[], ContractFailure>,
+  contractText: (failure: ContractFailure) => string,
+): SourceDiscovery {
   if (sources.isPending) return { state: 'loading' }
   if (sources.error) {
     const onRetry = () => void sources.refetch()
-    return { state: 'failed', message: sources.error.message, onRetry }
+    return { state: 'failed', message: contractText(sources.error), onRetry }
   }
   return { state: 'listed', scopes: sources.data }
 }
@@ -37,9 +41,10 @@ export function useConnectForm(
   const accountId = chosenAccount(accounts, picked)
   const sources = useSources(projectId, open ? accountId : null)
   const connectSource = useConnectSource()
+  const contractText = useContractText()
   return {
     accountId,
-    sources: discovery(sources),
+    sources: discovery(sources, contractText),
     onSelectAccount: setPicked,
     pending: connectSource.isPending,
     error: connectSource.variables?.projectId === projectId ? connectSource.error : null,

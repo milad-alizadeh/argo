@@ -1,8 +1,9 @@
 import { ExternalLink, GitFork } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket } from '@/core/tickets/contract'
-import { PROVIDER_PRESENTATION } from '../../accounts/lib/providers'
+import { providerPresentation } from '../../accounts/lib/providers'
 import { FeedMarkdown } from '../../sessions/feed/content/FeedMarkdown'
 import type { LinkedSession } from '../hooks/useLinkedSessions'
 import { closedChildren } from '../lib/backlog'
@@ -15,6 +16,7 @@ import { TicketDetailSection } from './TicketDetailSection'
 const keyText = 'font-mono type-meta'
 
 function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
+  const { t } = useTranslation('tickets')
   if (ticket.url === null) {
     return (
       <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
@@ -24,7 +26,10 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   }
   return (
     <a
-      aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
+      aria-label={t('detail.openInProvider', {
+        key: ticket.key,
+        provider: providerPresentation(provider).name,
+      })}
       className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
       href={ticket.url}
       rel="noreferrer"
@@ -49,6 +54,7 @@ export type TicketDetailProps = {
   Editing
 
 export function TicketDetail(props: TicketDetailProps) {
+  const { t } = useTranslation('tickets')
   const {
     ticket,
     provider,
@@ -62,7 +68,10 @@ export function TicketDetail(props: TicketDetailProps) {
   const { children } = ticket
   const body = ticket.body?.trim()
   return (
-    <article aria-label={`Ticket ${ticket.key}`} className="min-h-0 flex-1 overflow-y-auto">
+    <article
+      aria-label={t('detail.articleLabel', { key: ticket.key })}
+      className="min-h-0 flex-1 overflow-y-auto"
+    >
       <header className="border-b border-border/60">
         <div className={measure}>
           <div className="grid min-w-0 gap-(--spacing-shell-tight)">
@@ -81,12 +90,15 @@ export function TicketDetail(props: TicketDetailProps) {
         {body ? (
           <FeedMarkdown text={body} />
         ) : (
-          <p className="type-body text-muted-foreground">No description.</p>
+          <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
         )}
         {children.length > 0 ? (
           <TicketDetailSection
             icon={<GitFork aria-hidden="true" className={stateIcon} />}
-            title={`Children · ${closedChildren(ticket)} of ${children.length} closed`}
+            title={t('detail.childrenCount', {
+              closed: closedChildren(ticket),
+              count: children.length,
+            })}
           >
             <Links links={children} {...navigation} />
           </TicketDetailSection>
