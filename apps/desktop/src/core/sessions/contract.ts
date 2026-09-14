@@ -8,6 +8,7 @@ import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
 import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
+export * from './attachments-contract'
 export * from './claude-contract'
 export * from './rename-contract'
 export * from './session-error'

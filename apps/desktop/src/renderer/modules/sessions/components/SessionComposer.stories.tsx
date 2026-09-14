@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
@@ -294,6 +294,44 @@ function SetupComposerStory({
       <output data-testid="sent-messages">{sent.join(' · ')}</output>
     </>
   )
+}
+
+// Stands in for the native chooser, the drop handler's path resolution and the send-time
+// readability check, all otherwise reached only through the Electron context bridge.
+function mockAttachmentsHost({
+  chosenPaths = [],
+  readablePaths,
+}: {
+  chosenPaths?: string[]
+  readablePaths?: (paths: string[]) => string[]
+} = {}) {
+  const before = window.argo
+  window.argo = {
+    ...before,
+    chooseSessionAttachments: async () => ({
+      version: 1,
+      type: 'session.attachments.chosen',
+      requestId: 'storybook-attachments-choose',
+      paths: chosenPaths,
+    }),
+    statSessionAttachments: async ({ paths }) => {
+      const readable = new Set(readablePaths ? readablePaths(paths) : paths)
+      return {
+        version: 1,
+        type: 'session.attachments.statted',
+        requestId: 'storybook-attachments-stat',
+        files: paths.map((path) => ({ path, readable: readable.has(path) })),
+      }
+    },
+    pathForFile: (file) => `/dropped/${file.name}`,
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
+function fileDataTransfer(names: string[]) {
+  return { files: names.map((name) => new File(['content'], name)) }
 }
 
 async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
@@ -716,6 +754,101 @@ export const SendsTheChosenSetup: Story = {
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
       'Plan the migration. (sonnet medium plan)',
     )
+  },
+}
+
+export const AttachViaButton: Story = {
+  beforeEach: () => mockAttachmentsHost({ chosenPaths: ['/repo/notes.md'] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await expect(await canvas.findByText('notes')).toBeVisible()
+    await expect(canvas.getByText('MD file')).toBeVisible()
+  },
+}
+
+export const ImageAttachmentShowsAPreview: Story = {
+  beforeEach: () =>
+    mockAttachmentsHost({ chosenPaths: ['/repo/notes.md', '/repo/screenshot.png'] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await canvas.findByText('notes')
+    await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///repo/screenshot.png')
+    await expect(canvas.getByText('MD file')).toBeVisible()
+  },
+}
+
+export const RemovingAnAttachmentKeepsTheDraft: Story = {
+  beforeEach: () => mockAttachmentsHost({ chosenPaths: ['/repo/notes.md'] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Half a thought.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await canvas.findByText('notes')
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove notes' }))
+
+    await expect(canvas.queryByText('notes')).toBeNull()
+    await expect(composer).toHaveTextContent('Half a thought.')
+  },
+}
+
+export const AttachmentSurvivesASessionSwitch: Story = {
+  beforeEach: () => mockAttachmentsHost({ chosenPaths: ['/repo/notes.md'] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await canvas.findByText('notes')
+    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
+    await expect(canvas.queryByText('notes')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Session one' }))
+    await expect(await canvas.findByText('notes')).toBeVisible()
+  },
+}
+
+export const DragAndDropAttaches: Story = {
+  beforeEach: () => mockAttachmentsHost(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    const dropTarget = composer.closest('form')?.querySelector('.rounded-xl')
+
+    if (!dropTarget) throw new Error('Composer card is missing.')
+    fireEvent.drop(dropTarget, { dataTransfer: fileDataTransfer(['diagram.jpg']) })
+
+    await expect(await canvas.findByText('diagram')).toBeVisible()
+    await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///dropped/diagram.jpg')
+  },
+}
+
+export const FailedAttachmentStaysAfterSend: Story = {
+  beforeEach: () =>
+    mockAttachmentsHost({
+      chosenPaths: ['/repo/notes.md', '/repo/gone.md'],
+      readablePaths: (paths) => paths.filter((path) => path !== '/repo/gone.md'),
+    }),
+  render: () => <ComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'Review these.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Attach files' }))
+    await canvas.findByText('notes')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+
+    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+      'Review these.\n\n@/repo/notes.md',
+    )
+    await expect(await canvas.findByText('Not found')).toBeVisible()
+    await expect(canvas.getByText('gone')).toBeVisible()
   },
 }
 

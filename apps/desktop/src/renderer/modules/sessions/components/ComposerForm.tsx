@@ -1,16 +1,14 @@
 import type { LexicalEditor } from 'lexical'
-import { ArrowUp, Square } from 'lucide-react'
-import { type RefObject, useEffect, useRef } from 'react'
+import { type DragEvent, type RefObject, useEffect, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
-import { Button } from '../../../components/ui/button'
 import type { HarnessControl } from '../harness/harnesses'
-import { ModeMenu } from './ModeMenu'
+import type { ComposerAttachment } from '../state/useComposerStore'
+import { ComposerEditorArea } from './ComposerEditorArea'
+import { ComposerToolbar } from './ComposerToolbar'
 import { PendingTurns } from './PendingTurns'
-import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
-import { ComposerEditor } from './SessionComposerEditor'
+import type { TurnSetupControlProps } from './RunSetupMenu'
 import { SessionContextBar } from './SessionContextBar'
-import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
 // The column the composer card sits in; a message about the composer shares it, so it is never wider.
@@ -18,17 +16,21 @@ export const COMPOSER_COLUMN =
   'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
 
 export function ComposerForm({
+  attachments,
   draft,
   editorRef,
   focusOnMount,
   contextTokens,
   isCompacting,
+  onAttach,
   onCompact,
   isRunning,
   onChange,
+  onDropFiles,
   onEdit,
   onInterrupt,
   onRemove,
+  onRemoveAttachment,
   onReorder,
   onSend,
   pendingTurns,
@@ -37,17 +39,21 @@ export function ComposerForm({
   harness,
   setup,
 }: {
+  attachments: ComposerAttachment[]
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   contextTokens: number | null | undefined
   isCompacting: boolean
+  onAttach: () => void
   onCompact?: () => Promise<boolean>
   isRunning: boolean
   onChange: (text: string) => void
+  onDropFiles: (files: FileList) => void
   onEdit: (turn: (typeof pendingTurns)[number]) => void
   onInterrupt?: () => Promise<boolean>
   onRemove: (id: string) => void
+  onRemoveAttachment: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
   onSend: () => void
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
@@ -77,49 +83,37 @@ export function ComposerForm({
         onReorder={onReorder}
       />
       <div className="relative">
-        <div
+        <fieldset
+          aria-label="Message composer"
           className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+          onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
+          onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
+            event.preventDefault()
+            if (event.dataTransfer.files.length > 0) onDropFiles(event.dataTransfer.files)
+          }}
         >
-          <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
-            <SessionPlanPopover plan={plan} />
-          </div>
-          <div className="relative min-w-0 flex-1">
-            <ComposerEditor
-              key={sessionId}
-              draft={draft}
-              editorRef={editorRef}
-              focusOnMount={focusOnMount}
-              onChange={onChange}
-              onSend={onSend}
-            />
-          </div>
-          <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
-            {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
-            <div className="ml-auto flex items-center gap-1">
-              {setup ? <ModeMenu {...setup} /> : null}
-              {isRunning ? (
-                <Button
-                  aria-label="Interrupt"
-                  onClick={() => void onInterrupt?.()}
-                  ref={interruptRef}
-                  size="icon-sm"
-                  type="button"
-                >
-                  <Square fill="currentColor" />
-                </Button>
-              ) : (
-                <Button
-                  aria-label="Send message"
-                  disabled={!draft.trim()}
-                  size="icon-sm"
-                  type="submit"
-                >
-                  <ArrowUp />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+          <ComposerEditorArea
+            attachments={attachments}
+            draft={draft}
+            editorRef={editorRef}
+            focusOnMount={focusOnMount}
+            onChange={onChange}
+            onRemoveAttachment={onRemoveAttachment}
+            onSend={onSend}
+            plan={plan}
+            sessionId={sessionId}
+          />
+          <ComposerToolbar
+            attachments={attachments}
+            draft={draft}
+            harness={harness}
+            interruptRef={interruptRef}
+            isRunning={isRunning}
+            onAttach={onAttach}
+            onInterrupt={onInterrupt}
+            setup={setup}
+          />
+        </fieldset>
         <div className="absolute inset-x-0 top-full z-0 -mt-2">
           <SessionContextBar
             contextTokens={contextTokens}
