@@ -1,5 +1,5 @@
-import type { SessionRosterRow } from '@/core/sessions/models'
-import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
+import type { SessionRosterRow } from '../../../core/sessions/models'
+import { rollupSessionStatus } from '../../../core/sessions/session-status-rollup'
 import type { LiveMessages } from './live-messages'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'

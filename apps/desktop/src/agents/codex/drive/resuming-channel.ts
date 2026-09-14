@@ -17,7 +17,7 @@ export function createResumingChannel(options: {
 
   async function resume(sessionId: string) {
     const target = driver.ownership?.resumeTarget(sessionId)
-    if (!target) throw new CodexSessionDriverError('not-resumable')
+    if (!target) throw new CodexSessionDriverError('not-drivable')
     const channel = await openManagedChannel(driver, target.cwd)
     try {
       const resumedId = await channel.request(

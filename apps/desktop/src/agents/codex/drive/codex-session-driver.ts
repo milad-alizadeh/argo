@@ -2,8 +2,8 @@ import {
   CODEX_OPENING_SETUP,
   type CodexTurnSetup,
   codexTurnSettings,
-} from '@/core/sessions/codex-contract'
-import type { SessionRosterRow } from '@/core/sessions/models'
+} from '../../../core/sessions/codex-contract'
+import type { SessionRosterRow } from '../../../core/sessions/models'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { readInterrupt } from './interrupt-protocol'

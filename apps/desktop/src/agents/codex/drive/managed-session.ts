@@ -1,5 +1,5 @@
-import { managedRow } from '@/core/sessions/managed-row'
-import type { SessionRosterRow } from '@/core/sessions/models'
+import { managedRow } from '../../../core/sessions/managed-row'
+import type { SessionRosterRow } from '../../../core/sessions/models'
 import type { CodexChannel } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'

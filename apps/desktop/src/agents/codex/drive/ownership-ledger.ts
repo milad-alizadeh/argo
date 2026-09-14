@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { isRecord } from '@/boundary'
-import { readDocumentSync, writeDocumentSync } from '@/core/storage/portable-file'
+import { isRecord } from '../../../boundary'
+import { readDocumentSync, writeDocumentSync } from '../../../core/storage/portable-file'
 
 const ownerSchema = z.strictObject({
   pid: z.number().int().positive(),
