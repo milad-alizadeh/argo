@@ -35,6 +35,7 @@ import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
 import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
+import { proveSessionQuestion } from './session-question-case'
 import { proveContract } from './session-roster-contract-case'
 import {
   provePackagedRosterRestart,
@@ -97,6 +98,7 @@ try {
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
   await ran(['session-tool-calls'], () => proveToolCalls(page))
+  await ran(['session-question'], () => proveSessionQuestion(page))
   await ran(['session-feed-reader-anchor'], () =>
     proveLiveFeed(page, {
       transcripts: fixture.claudeTranscripts,

@@ -51,5 +51,15 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
       }
       return { ok: true }
     },
+    async decideQuestion({ sessionId, questionId, answers }) {
+      try {
+        if (!(await driver.decideQuestion(sessionId, questionId, answers))) {
+          return { error: 'stale-question' }
+        }
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
+    },
   }
 }

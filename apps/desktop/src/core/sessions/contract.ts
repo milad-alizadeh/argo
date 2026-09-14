@@ -9,6 +9,7 @@ import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
 export * from './claude-contract'
+export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
 

@@ -1,19 +1,11 @@
-import { Inbox } from 'lucide-react'
-import { type ReactNode, useCallback, useRef, useState } from 'react'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '../../../components/ui/empty'
-import { Spinner } from '../../../components/ui/spinner'
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionFeed, SessionFeedRow } from '../types'
-import { AnchoredFeed } from './AnchoredFeed'
 import { CompactionMarker } from './CompactionMarker'
+import { useDrawnRow, useToolGroups } from './drawn-row'
 import { FeedRow } from './FeedRow'
-import { type Reveal, useReveals } from './reveal'
-import { type Settled, useSettledFeed } from './useSettledFeed'
+import { feedContent } from './feed-content'
+import { useReveals } from './reveal'
+import { useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
   active: boolean
@@ -24,8 +16,10 @@ type FeedDocumentProps = {
   feed: SessionFeed
   isRunning: boolean
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
 }
-type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 
 function compactionMarker(
   startedAt: string | null,
@@ -35,19 +29,6 @@ function compactionMarker(
   return startedAt === null ? null : (
     <CompactionMarker percentage={percentage} startedAt={startedAt} tokens={tokens} />
   )
-}
-
-function useToolGroups() {
-  const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
-  const onOpenToolGroup = (id: string, open: boolean) => {
-    setOpenToolGroups((previous) => {
-      const next = new Set(previous)
-      if (open) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-  return { onOpenToolGroup, openToolGroups }
 }
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
@@ -61,6 +42,9 @@ export function FeedDocument({
   feed,
   isRunning,
   onOpenEvidence,
+  onAnswerQuestion,
+  answeringQuestionId,
+  questionFailure,
 }: FeedDocumentProps) {
   const { onOpenToolGroup, openToolGroups } = useToolGroups()
   const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
@@ -71,28 +55,16 @@ export function FeedDocument({
     rows: feed.rows,
   })
   const revealsFor = useReveals()
-  const openEvidence = useRef(onOpenEvidence)
-  openEvidence.current = onOpenEvidence
-  const toolGroups = useRef<ReadonlySet<string>>(openToolGroups)
-  toolGroups.current = openToolGroups
-  const evidence = useRef(activeEvidenceId)
-  evidence.current = activeEvidenceId
-  const openToolGroup = useRef(onOpenToolGroup)
-  openToolGroup.current = onOpenToolGroup
-  // One component for the life of the deck: a new one each render would remount every row and
-  // replay its reveal.
-  const DrawnRow = useCallback(
-    (props: DrawnRowProps) => (
-      <FeedRow
-        {...props}
-        activeEvidenceId={evidence.current}
-        onOpenEvidence={(row) => openEvidence.current(row)}
-        onOpenToolGroup={openToolGroup.current}
-        openToolGroups={toolGroups.current}
-      />
-    ),
-    [],
-  )
+  const DrawnRow = useDrawnRow({
+    sessionId: feed.sessionId,
+    activeEvidenceId,
+    onOpenEvidence,
+    openToolGroups,
+    onOpenToolGroup,
+    onAnswerQuestion,
+    answeringQuestionId,
+    questionFailure,
+  })
   const content = feedContent({ settled, isRunning, DrawnRow, revealsFor })
 
   return (
@@ -111,8 +83,11 @@ export function FeedDocument({
               key={row.id}
               activeEvidenceId={activeEvidenceId}
               onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={openToolGroup.current}
+              onOpenToolGroup={onOpenToolGroup}
               openToolGroups={openToolGroups}
+              onAnswerQuestion={() => {}}
+              answeringQuestionId={null}
+              questionFailure={() => null}
               row={row}
             />
           ))}
@@ -121,48 +96,5 @@ export function FeedDocument({
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
       </div>
     </div>
-  )
-}
-
-function feedContent({
-  settled,
-  isRunning,
-  DrawnRow,
-  revealsFor,
-}: {
-  settled: ReturnType<typeof useSettledFeed>['settled']
-  isRunning: boolean
-  DrawnRow: (props: DrawnRowProps) => ReactNode
-  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
-}) {
-  if (settled === null) return isRunning ? <RunningFeed /> : null
-  if (settled.rows.length === 0 && isRunning) return <RunningFeed />
-  if (settled.rows.length === 0)
-    return (
-      <Empty className="h-full border-0">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Inbox aria-hidden="true" />
-          </EmptyMedia>
-          <EmptyTitle>No messages</EmptyTitle>
-          <EmptyDescription>This Session has no messages to show.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    )
-  return (
-    <AnchoredFeed
-      rows={settled.rows}
-      settled={settled}
-      FeedRow={DrawnRow}
-      revealsFor={revealsFor}
-    />
-  )
-}
-
-function RunningFeed() {
-  return (
-    <section className="grid h-full place-items-center" data-state="running">
-      <Spinner className="size-6" />
-    </section>
   )
 }

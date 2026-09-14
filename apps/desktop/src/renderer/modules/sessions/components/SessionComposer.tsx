@@ -15,6 +15,7 @@ export const COMPOSER_FOCUS_STATE = 'focus-composer'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
+  disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
   isRunning?: boolean
@@ -70,6 +71,7 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
 
 export function SessionComposer({
   contextTokens,
+  disabled = false,
   focusOnMount = false,
   isCompacting = false,
   isRunning = false,
@@ -93,7 +95,7 @@ export function SessionComposer({
     sessionId,
   })
   const send = useCallback(async () => {
-    if (!draft.trim()) return
+    if (!draft.trim() || disabled) return
     if (isRunning) {
       addPendingTurn(draft, setup?.value)
       clearDraft()
@@ -101,10 +103,11 @@ export function SessionComposer({
     }
     const editor = editorRef.current
     if (await onSend(draft, setup?.value ?? null)) clearDraft(editor)
-  }, [addPendingTurn, clearDraft, draft, isRunning, onSend, setup?.value])
+  }, [addPendingTurn, clearDraft, disabled, draft, isRunning, onSend, setup?.value])
   return (
     <ComposerForm
       harness={harness}
+      disabled={disabled}
       draft={draft}
       editorRef={editorRef}
       focusOnMount={focusOnMount}

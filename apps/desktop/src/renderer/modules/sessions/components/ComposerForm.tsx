@@ -18,6 +18,7 @@ export const COMPOSER_COLUMN =
   'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
 
 export function ComposerForm({
+  disabled = false,
   draft,
   editorRef,
   focusOnMount,
@@ -37,6 +38,7 @@ export function ComposerForm({
   harness,
   setup,
 }: {
+  disabled?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -78,7 +80,7 @@ export function ComposerForm({
       />
       <div className="relative">
         <div
-          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+          className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
         >
           <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
             <SessionPlanPopover plan={plan} />
@@ -110,7 +112,7 @@ export function ComposerForm({
               ) : (
                 <Button
                   aria-label="Send message"
-                  disabled={!draft.trim()}
+                  disabled={!draft.trim() || disabled}
                   size="icon-sm"
                   type="submit"
                 >

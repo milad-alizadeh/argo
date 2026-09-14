@@ -9,6 +9,7 @@ import {
   sessionPermissionDecisionRequestSchema,
   sessionPermissionReplySchema,
   sessionPermissionRequestSchema,
+  sessionQuestionDecisionRequestSchema,
   sessionRenameReplySchema,
   sessionRenameRequestSchema,
   sessionSendRequestSchema,
@@ -71,6 +72,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.permission.decide',
     channel: 'argo:session:permission:decide',
     request: sessionPermissionDecisionRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  decideQuestion: {
+    name: 'session.question.decide',
+    channel: 'argo:session:question:decide',
+    request: sessionQuestionDecisionRequestSchema,
     reply: sessionAcceptedReplySchema,
   },
 } as const
