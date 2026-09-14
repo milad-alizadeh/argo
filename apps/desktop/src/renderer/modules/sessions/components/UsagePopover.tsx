@@ -40,8 +40,9 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
         }
       >
         <CircleGauge />
-        <span>Usage</span>
-        <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>
+        <span className="inline-flex items-center gap-1">
+          Usage <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>
+        </span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
