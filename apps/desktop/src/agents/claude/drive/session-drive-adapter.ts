@@ -1,10 +1,31 @@
-import { type ClaudeTurnSetup, claudeTurnSetupSchema } from '@/core/sessions/contract'
+import {
+  type ClaudePermission,
+  type ClaudeTurnSetup,
+  claudeTurnSetupSchema,
+} from '@/core/sessions/contract'
+import type { Permission, PermissionDecision } from '@/core/sessions/permission'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
   return { error: error instanceof ClaudeSessionDriverError ? error.code : fallback }
+}
+
+// Claude's own vocabulary, mapped onto the shared Permission at this adapter's boundary: nothing
+// outside this directory reads `toolName`/`input`.
+function toPermission({ id, sessionId, toolName, input }: ClaudePermission): Permission {
+  return { id, sessionId, description: `${toolName} ${JSON.stringify(input)}` }
+}
+
+// Claude's hook answers only `allow` or `deny` (ADR-0024): a session-scoped allow has no session
+// to stand on here, and a cancel has no Turn-interrupt meaning for a PreToolUse hook, so both
+// collapse to the decision they read closest to.
+const CLAUDE_DECISIONS: Record<PermissionDecision, 'allow' | 'deny'> = {
+  allow: 'allow',
+  deny: 'deny',
+  allowForSession: 'allow',
+  cancel: 'deny',
 }
 
 export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDriveAdapter {
@@ -43,13 +64,24 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
       }
     },
     async readPermission({ sessionId }) {
-      return { permission: driver.pendingPermission(sessionId) }
+      const permission = driver.pendingPermission(sessionId)
+      return { permission: permission === null ? null : toPermission(permission) }
     },
     async decidePermission({ sessionId, permissionId, decision }) {
-      if (!driver.decidePermission(sessionId, permissionId, decision)) {
+      if (!driver.decidePermission(sessionId, permissionId, CLAUDE_DECISIONS[decision])) {
         return { error: 'stale-permission' }
       }
       return { ok: true }
+    },
+    async decideQuestion({ sessionId, questionId, answers }) {
+      try {
+        if (!(await driver.decideQuestion(sessionId, questionId, answers))) {
+          return { error: 'stale-question' }
+        }
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
     },
   }
 }

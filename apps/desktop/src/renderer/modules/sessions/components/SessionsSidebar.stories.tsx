@@ -144,6 +144,76 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const RosterStructure: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          activity: { tool: 'Bash', target: 'RTK_DISABLED=1 gh pr checks 2062 --watch' },
+          status: 'running',
+          turnStartedAt: '2026-09-14T03:30:00Z',
+          plan: {
+            state: 'available',
+            entries: [
+              { content: 'Inspect the roster', position: 0, status: 'completed' },
+              { content: 'Match the layout', position: 1, status: 'in_progress' },
+            ],
+          },
+          pullRequest: { number: 2062, repository: 'argo', url: 'https://example.com/pull/2062' },
+          title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
+    await expect(canvas.getByText('#2062')).toBeVisible()
+    await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
+    const timing = canvas.getByTitle(/^Running /)
+    await expect(timing).toBeVisible()
+    await expect(timing.parentElement?.firstElementChild).toBe(timing)
+    await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
+  },
+}
+
+// The dot beside a blocked Session is already `bg-warn` for both statuses; the badge is what
+// names which one it is (#2088).
+export const PendingBadges: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        session,
+        {
+          ...session,
+          id: 'wants-answer',
+          status: 'asking',
+          title: { text: 'A question is waiting', source: 'first-prompt' },
+        },
+        {
+          ...session,
+          id: 'wants-permission',
+          status: 'permission',
+          title: { text: 'A tool call is waiting', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const wantsAnswer = canvas.getByRole('button', { name: /A question is waiting/ })
+    await expect(within(wantsAnswer).getByText('Answer')).toBeVisible()
+    const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
+    await expect(within(wantsPermission).getByText('Permission Approval')).toBeVisible()
+    const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await expect(within(idle).queryByText('Answer')).toBeNull()
+    await expect(within(idle).queryByText('Permission Approval')).toBeNull()
+  },
+}
+
 export const NarrowSidebarWithLongSessionName: Story = {
   args: {
     roster: {
@@ -235,24 +305,37 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
-export const AllArchived: Story = {
-  args: {
-    roster: {
-      ...listed,
-      sessions: listed.sessions.map((session) => ({
-        ...session,
-        archived: true,
-      })),
-    },
+// The active Roster never carries an archived Session (#1593): Archive states live in
+// ArchivedSessions.stories.tsx, which drives window.argo.listArchivedSessions directly.
+export const WithArchive: Story = {
+  beforeEach: () => {
+    const before = window.argo
+    window.argo = {
+      ...before,
+      listArchivedSessions: () =>
+        Promise.resolve({
+          version: 1,
+          type: 'session.archive.listed',
+          requestId: 'storybook-archive',
+          sessions: [{ ...session, id: 'archived-session', archived: true }],
+          nextCursor: null,
+          restored: null,
+        }),
+    }
+    return () => {
+      window.argo = before
+    }
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByText('Archived 2')
-    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    const disclosure = canvas.getByRole('button', { name: 'Archived' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
-    await expect(disclosure.closest('details')).toHaveAttribute('open')
-    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    const archived = within(canvas.getByRole('navigation', { name: 'Archived' }))
+    await expect(
+      archived.getByRole('button', { name: /Read the Session transcript/ }),
+    ).toBeVisible()
   },
 }
 

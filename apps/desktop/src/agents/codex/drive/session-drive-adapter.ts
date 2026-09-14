@@ -1,6 +1,6 @@
 import { type CodexTurnSetup, codexTurnSetupSchema } from '@/core/sessions/codex-contract'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
-import type { CodexSessionDriver } from './codex-session-driver'
+import type { CodexSessionDrive } from './codex-session-driver'
 import { CodexSessionDriverError } from './codex-session-error'
 
 // `codex app-server` refuses a thread already active in another process (its own client or the
@@ -16,7 +16,7 @@ function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailur
   return { error: fallback }
 }
 
-export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriveAdapter {
+export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
   return {
     cli: 'codex',
     turnSetupSchema: codexTurnSetupSchema,
@@ -55,6 +55,11 @@ export function createCodexDriveAdapter(driver: CodexSessionDriver): SessionDriv
     },
     async decidePermission() {
       return { error: 'stale-permission' }
+    },
+    // Codex Questions are #1841, still out of scope: there is never a pending Question to read,
+    // and a decision always answers that it is no longer waiting.
+    async decideQuestion() {
+      return { error: 'stale-question' }
     },
   }
 }

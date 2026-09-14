@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
+import { claudeQuestionSchema } from './claude-contract'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)
@@ -49,6 +50,15 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     source: z.string(),
   }),
   z.strictObject({ shape: z.literal('unreadable'), id: identifierSchema }),
+  z.strictObject({
+    shape: z.literal('ask'),
+    // The `AskUserQuestion` tool call id, so a decision names exactly the call it answers.
+    id: identifierSchema,
+    questions: z.array(claudeQuestionSchema).min(1),
+    // The CLI's own answered-questions text, verbatim; null while the call is still pending.
+    // Nothing here is summarised — a row that cannot show the CLI's own words shows none.
+    answer: z.string().nullable(),
+  }),
 ])
 export type SessionFeedRow = z.infer<typeof sessionFeedRowSchema>
 

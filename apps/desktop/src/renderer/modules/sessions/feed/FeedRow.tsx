@@ -1,7 +1,9 @@
 import { useRef } from 'react'
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
+import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
 
@@ -13,6 +15,9 @@ export type FeedRowProps = {
   openToolGroups: ReadonlySet<string>
   onOpenToolGroup: (id: string, open: boolean) => void
   onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
 }
 
 export function FeedRow({
@@ -23,6 +28,9 @@ export function FeedRow({
   onOpenEvidence,
   openToolGroups,
   onOpenToolGroup,
+  onAnswerQuestion,
+  answeringQuestionId,
+  questionFailure,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
   useRevealAnimation(element, reveal)
@@ -40,6 +48,9 @@ export function FeedRow({
         activeEvidenceId={activeEvidenceId}
         onOpenToolGroup={onOpenToolGroup}
         openToolGroups={openToolGroups}
+        onAnswerQuestion={onAnswerQuestion}
+        answeringQuestionId={answeringQuestionId}
+        questionFailure={questionFailure}
         row={row}
       />
     </article>
@@ -52,6 +63,9 @@ function FeedRowContent({
   activeEvidenceId,
   openToolGroups,
   onOpenToolGroup,
+  onAnswerQuestion,
+  answeringQuestionId,
+  questionFailure,
 }: Omit<FeedRowProps, 'height'>) {
   switch (row.shape) {
     case 'tool':
@@ -77,6 +91,15 @@ function FeedRowContent({
           />
         )
       return <FeedPrompt text={row.text} />
+    case 'ask':
+      return (
+        <FeedQuestion
+          row={row}
+          answering={answeringQuestionId === row.id}
+          failure={questionFailure(row.id)}
+          onAnswer={onAnswerQuestion}
+        />
+      )
     default:
       return feedRowContent(row)
   }
@@ -99,7 +122,9 @@ function FeedPrompt({ text }: { text: string }) {
   )
 }
 
-function feedRowContent(row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' }>) {
+function feedRowContent(
+  row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' | 'ask' }>,
+) {
   switch (row.shape) {
     case 'thought':
       return <PlainText text={row.text} />

@@ -1,0 +1,3 @@
+.session-screen__feed .feed__content {
+  padding-bottom: var(--spacing-session-feed-composer-inset);
+}

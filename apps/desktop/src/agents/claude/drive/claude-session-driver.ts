@@ -1,6 +1,8 @@
+import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
@@ -18,6 +20,11 @@ export type ClaudeSessionDriver = {
   orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
   decidePermission: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  decideQuestion: (
+    sessionId: string,
+    questionId: string,
+    answers: ClaudeQuestionAnswer[],
+  ) => Promise<boolean>
   close: () => void
 }
 
@@ -52,12 +59,33 @@ function startSession(
   return sessionId
 }
 
+async function decideQuestion(
+  context: {
+    options: DriverOptions
+    channel: ReturnType<typeof channelActions>
+    sessions: Map<string, ManagedSession>
+  },
+  request: { sessionId: string; questionId: string; answers: ClaudeQuestionAnswer[] },
+): Promise<boolean> {
+  const session = context.sessions.get(request.sessionId)
+  if (!session) return false
+  const pending = await context.options.pendingQuestion(request.sessionId)
+  if (pending === null || pending.id !== request.questionId) return false
+  await context.channel.answer(session, request.answers)
+  return true
+}
+
 function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
   return [...sessions.entries()].map(([id, session]) =>
     managedRow(id, {
       ...session,
       cli: 'claude',
-      status: options.gate.pending(id) === null ? 'running' : 'permission',
+      // No transcript floor participates in a live managed reading, so `unknown` — the honest
+      // "nothing observed" floor — leaves the gate's own signal standing unopposed.
+      status: rollupSessionStatus('unknown', 'managed', {
+        kind: 'claude',
+        pendingPermission: options.gate.pending(id) !== null,
+      }),
       setup: session.applied,
       title: session.title,
     }),
@@ -112,6 +140,8 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),
+    decideQuestion: (sessionId, questionId, answers) =>
+      decideQuestion({ options, channel, sessions }, { sessionId, questionId, answers }),
     close() {
       channel.close()
       closeSessions(options, sessions)

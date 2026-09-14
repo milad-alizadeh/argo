@@ -1,5 +1,9 @@
 import {
   sessionAcceptedReplySchema,
+  sessionArchiveListReplySchema,
+  sessionArchiveListRequestSchema,
+  sessionChooseAttachmentsReplySchema,
+  sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
@@ -9,11 +13,14 @@ import {
   sessionPermissionDecisionRequestSchema,
   sessionPermissionReplySchema,
   sessionPermissionRequestSchema,
+  sessionQuestionDecisionRequestSchema,
   sessionRenameReplySchema,
   sessionRenameRequestSchema,
   sessionSendRequestSchema,
   sessionStartReplySchema,
   sessionStartRequestSchema,
+  sessionStatAttachmentsReplySchema,
+  sessionStatAttachmentsRequestSchema,
 } from './contract'
 
 // One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
@@ -24,6 +31,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:list',
     request: sessionListRequestSchema,
     reply: sessionListReplySchema,
+  },
+  archiveList: {
+    name: 'session.archive.list',
+    channel: 'argo:session:archive:list',
+    request: sessionArchiveListRequestSchema,
+    reply: sessionArchiveListReplySchema,
   },
   feed: {
     name: 'session.feed',
@@ -72,5 +85,23 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:permission:decide',
     request: sessionPermissionDecisionRequestSchema,
     reply: sessionAcceptedReplySchema,
+  },
+  decideQuestion: {
+    name: 'session.question.decide',
+    channel: 'argo:session:question:decide',
+    request: sessionQuestionDecisionRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  chooseAttachments: {
+    name: 'session.attachments.choose',
+    channel: 'argo:session:attachments:choose',
+    request: sessionChooseAttachmentsRequestSchema,
+    reply: sessionChooseAttachmentsReplySchema,
+  },
+  statAttachments: {
+    name: 'session.attachments.stat',
+    channel: 'argo:session:attachments:stat',
+    request: sessionStatAttachmentsRequestSchema,
+    reply: sessionStatAttachmentsReplySchema,
   },
 } as const

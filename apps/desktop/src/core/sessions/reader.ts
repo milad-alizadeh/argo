@@ -7,6 +7,7 @@ import type { SessionReader } from './bridge'
 import {
   driveSessionError,
   isDriveCli,
+  sessionArchiveListRequestSchema,
   sessionError,
   sessionFeedRequestSchema,
   sessionListRequestSchema,
@@ -74,6 +75,28 @@ function createOwnerResolver(sources: SessionSource[]) {
   }
 }
 
+async function archiveListReply(sources: SessionSource[], value: unknown) {
+  if (versionFailure(value)) return sessionError('unsupported-version', null)
+  const parsed = sessionArchiveListRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', null)
+  const source = sources.find((candidate) => candidate.discoverArchivedSessions !== undefined)
+  const page =
+    source?.discoverArchivedSessions === undefined
+      ? { rows: [], nextCursor: null, restored: null }
+      : await source.discoverArchivedSessions({
+          cursor: parsed.data.cursor,
+          restoreId: parsed.data.restoreId,
+        })
+  return {
+    version: 1 as const,
+    type: 'session.archive.listed' as const,
+    requestId: parsed.data.requestId,
+    sessions: page.rows,
+    nextCursor: page.nextCursor,
+    restored: page.restored,
+  }
+}
+
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
 // driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
@@ -99,6 +122,7 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
       }
       return reply
     },
+    archiveList: (value) => archiveListReply(sources, value),
     async readSessionFeed(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       const parsed = sessionFeedRequestSchema.safeParse(value)

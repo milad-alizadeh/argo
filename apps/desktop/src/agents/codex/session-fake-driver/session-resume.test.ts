@@ -1,0 +1,39 @@
+import assert from 'node:assert/strict'
+import { mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { test } from 'node:test'
+
+import { createCodexOwnershipLedger } from '../drive/ownership-ledger.ts'
+import { driverBackedByFixture } from './fixture-driver.ts'
+
+test('resumes an orphaned Codex Session in its recorded workspace before accepting its next Turn', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-resume-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const ledger = path.join(root, 'codex-session-ownership.json')
+  const first = driverBackedByFixture({
+    ownership: createCodexOwnershipLedger({
+      path: ledger,
+      owner: { pid: 1, registry: 'first-window' },
+      isAlive: () => true,
+    }),
+  })
+  const sessionId = await first.start({ cwd: process.cwd(), prompt: 'Open the resume proof.' })
+  first.close()
+
+  const resumed = driverBackedByFixture({
+    ownership: createCodexOwnershipLedger({
+      path: ledger,
+      owner: { pid: 2, registry: 'second-window' },
+      isAlive: () => false,
+    }),
+  })
+  context.after(() => resumed.close())
+
+  await resumed.send(sessionId, 'Carry on after the restart.')
+
+  assert.deepEqual(
+    resumed.roster().map(({ id, cwd, posture }) => ({ id, cwd, posture })),
+    [{ id: sessionId, cwd: process.cwd(), posture: 'managed' }],
+  )
+})

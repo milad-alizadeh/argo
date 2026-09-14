@@ -3,12 +3,16 @@
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import { claudePermissionSchema } from './claude-contract'
 import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { permissionSchema } from './permission'
 import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
+export * from './archive-contract'
+export * from './attachments-contract'
 export * from './claude-contract'
+export * from './permission'
+export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
 
@@ -139,7 +143,7 @@ export const sessionPermissionReadSchema = z.strictObject({
   type: z.literal('session.permission.read'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
-  permission: claudePermissionSchema.nullable(),
+  permission: permissionSchema.nullable(),
 })
 export type SessionPermissionRead = z.infer<typeof sessionPermissionReadSchema>
 
