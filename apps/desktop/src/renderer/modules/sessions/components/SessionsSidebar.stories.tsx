@@ -295,7 +295,10 @@ export const WithArchive: Story = {
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
-    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+    const archived = within(canvas.getByRole('navigation', { name: 'Archived' }))
+    await expect(
+      archived.getByRole('button', { name: /Read the Session transcript/ }),
+    ).toBeVisible()
   },
 }
 
