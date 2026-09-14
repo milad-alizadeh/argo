@@ -1,10 +1,11 @@
 import { Ban, ChevronRight } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { Ticket, TicketStatus } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'
 import { TreeRails, TreeStem, TreeTwig } from '../../../components/TreeLines'
-import { type BacklogRow, closedChildren, count, openBlockers } from '../lib/backlog'
+import { type BacklogRow, closedChildren, openBlockers } from '../lib/backlog'
 import type { SourcePresentation } from '../lib/sources'
 import { ChildProgress } from './ChildProgress'
 import { StatusMenu } from './StatusMenu'
@@ -20,6 +21,7 @@ const SHOWN_LABELS = 2
 
 // The blocked mark and the children tally each carry their fact in text for a screen reader.
 function Marks({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation('tickets')
   const blockers = openBlockers(ticket)
   const children = ticket.children.length
   if (blockers === 0 && children === 0) return null
@@ -28,7 +30,7 @@ function Marks({ ticket }: { ticket: Ticket }) {
       {blockers > 0 ? (
         <span className="flex items-center gap-(--spacing-shell-tight) text-danger">
           <Ban aria-hidden="true" className={markIcon} />
-          <span className="sr-only">Blocked by {count(blockers, 'open Ticket')}</span>
+          <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
         </span>
       ) : null}
       {children > 0 ? (
@@ -38,7 +40,7 @@ function Marks({ ticket }: { ticket: Ticket }) {
             {closedChildren(ticket)}/{children}
           </span>
           <span className="sr-only">
-            {closedChildren(ticket)} of {count(children, 'child', 'children')} closed
+            {t('row.childrenClosed', { closed: closedChildren(ticket), count: children })}
           </span>
         </span>
       ) : null}
@@ -47,6 +49,7 @@ function Marks({ ticket }: { ticket: Ticket }) {
 }
 
 function Labels({ labels }: { labels: Ticket['labels'] }) {
+  const { t } = useTranslation('tickets')
   if (labels.length === 0) return null
   const hidden = labels.length - SHOWN_LABELS
   return (
@@ -57,7 +60,7 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
       {hidden > 0 ? (
         <span className="type-meta text-faint">
           <span aria-hidden="true">+{hidden}</span>
-          <span className="sr-only">and {count(hidden, 'more label')}</span>
+          <span className="sr-only">{t('row.moreLabels', { count: hidden })}</span>
         </span>
       ) : null}
     </span>
@@ -67,6 +70,7 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
 // A parent's chevron folds the rows drawn under it. A row with none keeps the chevron's width, so
 // every title at one depth starts on one line.
 function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' | 'onToggle'>) {
+  const { t } = useTranslation('tickets')
   if (!row.nested) {
     return (
       <span aria-hidden="true" className="relative w-(--size-icon-control) shrink-0 self-stretch">
@@ -78,7 +82,7 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
   return (
     <button
       aria-expanded={!folded}
-      aria-label={`${folded ? 'Expand' : 'Collapse'} ${key}`}
+      aria-label={folded ? t('row.expand', { key }) : t('row.collapse', { key })}
       className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-2 text-faint hover:text-foreground"
       onClick={onToggle}
       type="button"
@@ -110,6 +114,7 @@ type TicketRowProps = {
 // overlay covers the row, and those two sit above it. The overlay draws the button's ring, so the
 // keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
 export function TicketRow(props: TicketRowProps) {
+  const { t } = useTranslation('tickets')
   const { row, rails, presentation, statuses, selected, folded, now } = props
   const { onSelect, onToggle, onChangeStatus } = props
   const { ticket, parent } = row
@@ -158,7 +163,7 @@ export function TicketRow(props: TicketRowProps) {
           <span aria-hidden="true">{age.short}</span>
           <span className="sr-only">{age.long}</span>
         </time>
-        {parent === null ? null : <span className="sr-only">, child of {parent}</span>}
+        {parent === null ? null : <span className="sr-only">{t('row.childOf', { parent })}</span>}
       </button>
     </div>
   )
