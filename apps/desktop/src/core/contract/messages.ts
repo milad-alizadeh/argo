@@ -1,7 +1,7 @@
 // The message shape every versioned channel shares: version 1, a named type, a request ID, the
 // channel's own fields, and errors whose text comes only from the channel's own table.
 import { z } from 'zod'
-import { identifierSchema, isRecord, requestIdentifier } from '../../boundary'
+import { identifierSchema, isRecord } from '../../boundary'
 
 // The renderer's CSP refuses eval, and zod's `new Function` probe is reported as a violation even
 // though zod swallows the throw.
@@ -73,42 +73,4 @@ export function errorFactory<Type extends string, Code extends string>(
     code,
     message: table[code],
   })
-}
-
-// One routing rule for every channel: a lookup keyed by the action, so an unknown one falls off
-// the end as `invalid-request` rather than reaching a handler.
-export function createRouter<Context, Reply>(
-  handlers: Record<string, (request: unknown, context: Context) => Promise<Reply> | Reply>,
-  refuse: (code: 'invalid-request' | 'unsupported-version', requestId: string | null) => Reply,
-) {
-  return (request: unknown, context: Context): Promise<Reply> | Reply => {
-    const requestId = requestIdentifier(request)
-    if (isOtherVersion(request)) return refuse('unsupported-version', requestId)
-    const action = isRecord(request) ? request.type : undefined
-    const handler =
-      typeof action === 'string' && Object.hasOwn(handlers, action) && handlers[action]
-    return handler ? handler(request, context) : refuse('invalid-request', requestId)
-  }
-}
-
-// The renderer's whole trust boundary for one channel: an unrecognised reply, or one answering
-// another request, becomes `invalid-response` rather than reaching a component.
-export function createSender<Failure>(
-  invoke: (request: unknown) => Promise<unknown>,
-  fail: (code: 'invalid-response' | 'connection-lost', requestId: string | null) => Failure,
-) {
-  return async <T extends { requestId: string | null }>(
-    request: unknown,
-    accept: (reply: unknown) => reply is T,
-  ): Promise<T | Failure> => {
-    const requestId = requestIdentifier(request)
-    let reply: unknown
-    try {
-      reply = await invoke(request)
-    } catch {
-      return fail('connection-lost', requestId)
-    }
-    if (!accept(reply) || reply.requestId !== requestId) return fail('invalid-response', requestId)
-    return reply
-  }
 }

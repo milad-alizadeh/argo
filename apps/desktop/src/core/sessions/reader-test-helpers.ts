@@ -50,7 +50,7 @@ export async function writeCodexTranscript({ root, sessionId, text, updatedAt }:
 }
 
 export function listing(requestId = 'list-1') {
-  return { version: 1, type: 'session.list', requestId }
+  return { version: 1, type: 'session.list', requestId } as const
 }
 
 export function feedRequest(
@@ -58,7 +58,7 @@ export function feedRequest(
   requestId = 'feed-1',
   revision: string | null = null,
 ) {
-  return { version: 1, type: 'session.feed', requestId, sessionId, revision }
+  return { version: 1, type: 'session.feed', requestId, sessionId, revision } as const
 }
 
 export async function listed(reader: ReturnType<typeof createSessionReader>, requestId?: string) {

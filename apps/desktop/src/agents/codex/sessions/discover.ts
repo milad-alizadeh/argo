@@ -4,6 +4,7 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { parseCodexTranscriptLine } from './records'
 
 export type Discovery = TranscriptDiscovery
@@ -25,6 +26,16 @@ function sessionIdFileName(fileName: string) {
   return sessionId === undefined ? fileName : `${sessionId}.jsonl`
 }
 
+function withoutDuplicateMessages(records: TranscriptRecord[]): TranscriptRecord[] {
+  const messageIds = new Set<string>()
+  return records.filter((record) => {
+    if (record.kind !== 'message') return true
+    if (messageIds.has(record.uuid)) return false
+    messageIds.add(record.uuid)
+    return true
+  })
+}
+
 async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
   const years = await directories(root)
   const months = (await Promise.all(years.map(directories))).flat()
@@ -36,6 +47,7 @@ const reader = createTranscriptDiscoverer({
   cli: 'codex',
   transcriptPaths,
   parse: parseCodexTranscriptLine,
+  normalizeRecords: withoutDuplicateMessages,
 })
 
 export const { discoverSessions, readSessionFiles } = reader

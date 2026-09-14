@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict'
-
-async function readRosterFacts(page) {
-  return page
-    .locator('nav[aria-label="Sessions"] button')
-    .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-session-id')))
-}
+import { readRosterIds } from './session-roster-facts'
 
 async function proveRetiredSelection(page, restart) {
   await page.evaluate(() => window.localStorage.setItem('argo.selected-session-id', 'resumeChild'))
   const retired = await restart()
   await retired.waitForFunction(() => window.location.hash === '#/sessions/resumeParent')
   await retired.waitForSelector('.feed__viewport[data-session="resumeParent"] [data-feed-row]')
+}
+
+async function proveFreshOrder(page, previousOrder) {
+  const refreshedOrder = await readRosterIds(page)
+  assert.deepEqual(refreshedOrder.slice(0, 2), ['replacementParent', 'prose'])
+  assert.deepEqual(
+    refreshedOrder.slice(2),
+    previousOrder.filter((sessionId) => sessionId !== 'replacementParent' && sessionId !== 'prose'),
+  )
 }
 
 export async function provePackagedRosterSelection(page) {
@@ -44,12 +48,12 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await selected.click()
   await page.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  const rosterFacts = await readRosterFacts(page)
+  const rosterFacts = await readRosterIds(page)
 
   const relaunched = await restart()
   await relaunched.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await relaunched.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  assert.deepEqual(await readRosterFacts(relaunched), rosterFacts)
+  await proveFreshOrder(relaunched, rosterFacts)
   assert.equal(
     await relaunched
       .locator('nav[aria-label="Sessions"] button[data-session-id="prose"]')
@@ -61,7 +65,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   const updated = await restart()
   await updated.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  assert.equal((await readRosterFacts(updated))[0], 'rollout-codexParent')
+  assert.equal((await readRosterIds(updated))[0], 'rollout-codexParent')
 
   await updated.locator('summary').click()
   await updated.locator('nav[aria-label="Archived"] button').click()

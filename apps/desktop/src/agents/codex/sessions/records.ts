@@ -1,15 +1,20 @@
 import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 
-type Prose = { shape: 'prose'; text: string }
-
-function textBlocks(value: unknown, type: string): Prose[] {
-  if (!Array.isArray(value)) return []
-  return value.flatMap((block) =>
-    isRecord(block) && block.type === type && typeof block.text === 'string'
-      ? [{ shape: 'prose' as const, text: block.text }]
-      : [],
-  )
+function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
+  if (!Array.isArray(value)) return null
+  return value.map((block) => {
+    if (
+      isRecord(block) &&
+      typeof block.type === 'string' &&
+      proseTypes.includes(block.type) &&
+      typeof block.text === 'string'
+    ) {
+      return { shape: 'prose', text: block.text }
+    }
+    const label = isRecord(block) && typeof block.type === 'string' ? block.type : 'unfamiliar'
+    return { shape: 'source', label, source: JSON.stringify(block, null, 2) ?? String(block) }
+  })
 }
 
 function messageRecord(
@@ -18,7 +23,7 @@ function messageRecord(
     uuid: string
     role: 'user' | 'assistant'
     originSessionId: string | null
-    blocks: Prose[]
+    blocks: ContentBlock[]
   },
 ): TranscriptRecord {
   return {
@@ -53,11 +58,13 @@ function itemMessage(
   if (item?.type === 'UserMessage') role = 'user'
   if (item?.type === 'AgentMessage') role = 'assistant'
   if (item === null || role === null || typeof item.id !== 'string') return null
+  const blocks = messageBlocks(item.content, ['text', 'Text'])
+  if (blocks === null) return null
   return messageRecord(record, {
     uuid: item.id,
     role,
     originSessionId: typeof payload.thread_id === 'string' ? payload.thread_id : null,
-    blocks: textBlocks(item.content, 'text'),
+    blocks,
   })
 }
 
@@ -77,6 +84,7 @@ function promptMessage(
 }
 
 function event(record: Record<string, unknown>, payload: Record<string, unknown>) {
+  if (payload.type === 'item_completed') return itemMessage(record, payload)
   if (payload.type !== 'user_message' && payload.type !== 'agent_message') return null
   if (isRecord(payload.item)) return itemMessage(record, payload)
   // The bare `agent_message` event repeats the assistant `response_item`, which carries the id.
@@ -92,11 +100,13 @@ function responseMessage(
 ): TranscriptRecord | null {
   if (payload.type !== 'message' || payload.role !== 'assistant') return null
   if (typeof payload.id !== 'string') return null
+  const blocks = messageBlocks(payload.content, ['output_text'])
+  if (blocks === null) return null
   return messageRecord(record, {
     uuid: payload.id,
     role: 'assistant',
     originSessionId: null,
-    blocks: textBlocks(payload.content, 'output_text'),
+    blocks,
   })
 }
 

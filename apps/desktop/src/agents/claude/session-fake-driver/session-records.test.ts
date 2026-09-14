@@ -66,6 +66,30 @@ test('keeps the opening prompt past the blocks the Roster pass drops', async () 
   )
 })
 
+test('reads slash commands as the words the person typed', async () => {
+  const file = await fixtureFile('harnessNoise')
+  const prompts = file.records
+    .filter((record) => record.kind === 'message' && record.role === 'user')
+    .flatMap((record) => record.blocks)
+    .filter((block) => block.shape === 'prose')
+    .map((block) => block.text)
+
+  assert.deepEqual(prompts, [
+    '/effort',
+    '/implement 318 open storybook while you do it',
+    'Quote <local-command-caveat>this markup</local-command-caveat> exactly.',
+  ])
+})
+
+test('keeps local command output out of the prompt path', async () => {
+  const file = await fixtureFile('harnessNoise')
+  const commandOutput = file.records.find(
+    (record) => record.kind === 'command-output' && record.uuid === 'u-stdout',
+  )
+  assert.equal(commandOutput?.text, 'Set effort level to medium')
+  assert.equal(file.openingPrompt, '/effort')
+})
+
 test('skips bookkeeping records and reads a resume link', () => {
   assert.equal(parseTranscriptLine('{"type":"mode","mode":"default"}'), null)
   assert.equal(parseTranscriptLine('   '), null)
@@ -94,4 +118,32 @@ test('reads a pull-request link, a compaction and an interrupt', () => {
 test('refuses a message record with no identity', () => {
   const line = '{"type":"user","message":{"role":"user","content":"no uuid"}}'
   assert.deepEqual(parseTranscriptLine(line), { kind: 'unreadable', line })
+})
+
+test('reads a sent command as its visible source text', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'command-1',
+    message: {
+      role: 'user',
+      content:
+        '<command-name>/implement</command-name>\n<command-message>implement</command-message>\n<command-args>1847</command-args>',
+    },
+  })
+  const record = parseTranscriptLine(line)
+  assert.deepEqual(record.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: '/implement 1847' },
+  ])
+})
+
+test('does not expose incomplete command tags', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'command-2',
+    message: { role: 'user', content: '<command-message>implement</command-message>' },
+  })
+  const record = parseTranscriptLine(line)
+  assert.deepEqual(record.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: 'implement' },
+  ])
 })

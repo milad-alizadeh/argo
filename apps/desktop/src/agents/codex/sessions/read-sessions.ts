@@ -38,15 +38,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   return {
     cli: 'codex',
     discoverSessions: async () =>
-      mergeManagedRoster(
-        await discoverSessions(root),
-        options?.roster?.() ?? [],
-        (observed, managed) => ({
-          ...observed,
-          posture: managed.posture,
-          status: managed.status,
-        }),
-      ),
+      mergeManagedRoster(await discoverSessions(root), options?.roster?.() ?? []),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,

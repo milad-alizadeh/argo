@@ -94,6 +94,8 @@ function feedRowContent(row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-gro
       return <FeedPrompt text={row.text} />
     case 'thought':
       return <PlainText text={row.text} />
+    case 'command-output':
+      return <PlainText text={row.text} />
     case 'source':
       return <p>{row.label}</p>
     case 'marker':

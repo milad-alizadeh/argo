@@ -7,6 +7,8 @@ import type {
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
+import { readCommandEnvelope } from './command-envelope'
+import { commandSource } from './command-source'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
@@ -38,14 +40,18 @@ function readUsage(value: unknown) {
 
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
+  const content =
+    role === 'user' && typeof message.content === 'string'
+      ? commandSource(message.content)
+      : message.content
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
   // names the Session, and plenty of real records carry no copy of it. Requiring one would drop a
   // whole history as unreadable over a field nothing reads.
   if (typeof record.uuid !== 'string') return null
   const parsed: TranscriptMessage = {
-    toolCalls: readToolCalls(message.content),
-    toolResults: readToolResults(message.content),
-    answeredCalls: readToolResults(message.content).map((result) => result.callId),
+    toolCalls: readToolCalls(content),
+    toolResults: readToolResults(content),
+    answeredCalls: readToolResults(content).map((result) => result.callId),
     kind: 'message',
     uuid: record.uuid,
     parentUuid: typeof record.parentUuid === 'string' ? record.parentUuid : null,
@@ -63,9 +69,17 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     effort: typeof record.effort === 'string' ? record.effort : null,
     mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
-    blocks: readBlocks(message.content),
+    blocks: readBlocks(content),
   }
   return parsed
+}
+
+function readUserMessage(record: Record<string, unknown>): TranscriptRecord | null {
+  if (typeof record.uuid !== 'string') return null
+  if (record.isMeta === true) return { kind: 'trace', uuid: record.uuid }
+  const read = readMessage(record, 'user')
+  if (read === null) return null
+  return readCommandEnvelope(record, read) ?? read
 }
 
 function readTitle(record: Record<string, unknown>): TranscriptRecord | null {
@@ -107,8 +121,11 @@ export function parseTranscriptLine(line: string): TranscriptRecord | null {
     return { kind: 'unreadable', line }
   }
   if (!isRecord(value)) return { kind: 'unreadable', line }
-  if (value.type === 'user' || value.type === 'assistant') {
-    return readMessage(value, value.type) ?? { kind: 'unreadable', line }
+  if (value.type === 'user') {
+    return readUserMessage(value) ?? { kind: 'unreadable', line }
+  }
+  if (value.type === 'assistant') {
+    return readMessage(value, 'assistant') ?? { kind: 'unreadable', line }
   }
   if (value.type === 'last-prompt' && typeof value.leafUuid === 'string') {
     return { kind: 'link', leafUuid: value.leafUuid }

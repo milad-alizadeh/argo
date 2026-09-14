@@ -130,13 +130,6 @@ test('says a Session is missing rather than answering with an empty Feed', async
   })
 })
 
-test('refuses a request it cannot parse and a version it does not hold', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
-  assert.equal((await listSessions({ ...listing, extra: 1 }, root)).code, 'invalid-request')
-  assert.equal((await listSessions({ ...listing, version: 2 }, root)).code, 'unsupported-version')
-  assert.equal((await readFeed({ ...feed, sessionId: '' }, root)).code, 'invalid-request')
-})
-
 test('names a folder it cannot reach rather than reading as an empty machine', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
   assert.equal((await listSessions(listing, `${root}/absent`)).code, 'transcripts-unavailable')

@@ -37,19 +37,22 @@ export function managedRow(
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
-// discovery sweep alone can miss it, or hold a stale posture for one it has already found.
+// discovery sweep alone can miss it, or hold a stale posture for one it has already found. `running`
+// is not reachable from the transcript's own external reading (status.ts), which floors an open or
+// ambiguous Turn at `unknown` — so a managed row disambiguates only there, and its `permission`
+// status always wins since nothing external can produce it. A definite external reading (`idle`,
+// `asking`, `stopped`) is never overridden by the managed row's `running` just because it is held.
 export function mergeManagedRoster(
   discovered: TranscriptDiscovery,
   managed: SessionRosterRow[],
-  reconcile = (observed: SessionRosterRow, held: SessionRosterRow) => ({
-    ...observed,
-    posture: held.posture,
-  }),
 ): TranscriptDiscovery {
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
-    return held === undefined ? session : reconcile(session, held)
+    if (held === undefined) return session
+    const status =
+      held.status === 'permission' || session.status === 'unknown' ? held.status : session.status
+    return { ...session, posture: held.posture, status }
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),

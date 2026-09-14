@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRosterRow } from '../session-fixtures'
 import type { SessionError, SessionsListed } from '../types'
 import { SessionsSidebarContent, type SessionsSidebarContentProps } from './SessionsSidebar'
@@ -53,6 +54,16 @@ function RoutedRoster(args: SessionsSidebarContentProps) {
   )
 }
 
+function FocusRecoveryRoster(args: SessionsSidebarContentProps) {
+  const [roster, setRoster] = useState(listed)
+  useEffect(() => {
+    const removeFocusedSession = () => setRoster({ ...listed, sessions: [session] })
+    window.addEventListener('story:remove-focused-session', removeFocusedSession)
+    return () => window.removeEventListener('story:remove-focused-session', removeFocusedSession)
+  }, [])
+  return <SessionsSidebarContent {...args} roster={roster} />
+}
+
 const meta: Meta<typeof SessionsSidebarContent> = {
   title: 'Sessions/Roster',
   component: SessionsSidebarContent,
@@ -96,6 +107,36 @@ export const Discovered: Story = {
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       '/sessions/second-session',
     )
+  },
+}
+
+export const CommandTitledSession: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [{ ...session, title: { text: '/implement 1847', source: 'first-prompt' } }],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
+  },
+}
+
+export const FocusRecovery: Story = {
+  render: (args) => <FocusRecoveryRoster {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const removed = canvas.getByRole('button', { name: /A second Session/ })
+    removed.focus()
+    await expect(removed).toHaveFocus()
+    window.dispatchEvent(new Event('story:remove-focused-session'))
+    const survivor = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await waitFor(async () => {
+      await expect(survivor).toHaveFocus()
+      await expect(survivor).toHaveAttribute('tabindex', '0')
+    })
   },
 }
 
