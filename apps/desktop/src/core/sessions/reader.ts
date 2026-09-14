@@ -5,6 +5,8 @@
 import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import {
+  driveSessionError,
+  isDriveCli,
   sessionError,
   sessionFeedRequestSchema,
   sessionListRequestSchema,
@@ -80,6 +82,10 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
   const ownership = createOwnerResolver(sources)
 
   return {
+    async ownerCliFor(sessionId) {
+      const owner = await ownership.ownerFor(sessionId)
+      return owner?.cli
+    },
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       const parsed = sessionListRequestSchema.safeParse(value)
@@ -112,7 +118,10 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
       if (!parsed.success) return sessionError('invalid-request', null)
       const owner = await ownership.ownerFor(parsed.data.sessionId)
       if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-      if (owner.rename === undefined) return sessionError('not-drivable', parsed.data.requestId)
+      if (owner.rename === undefined) {
+        const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
+        return driveSessionError('not-drivable', cli, parsed.data.requestId)
+      }
       return owner.rename(parsed.data)
     },
   }

@@ -1,6 +1,6 @@
-import { SESSION_ERRORS } from '@/core/sessions/session-error'
+import { driveSessionError, sessionError } from '@/core/sessions/session-error'
 
-type DriverErrorCode =
+export type DriverErrorCode =
   | 'cli-unavailable'
   | 'launch-failed'
   | 'not-drivable'
@@ -8,8 +8,14 @@ type DriverErrorCode =
   | 'held-elsewhere'
   | 'missing-session'
 
+function messageFor(code: DriverErrorCode): string {
+  return code === 'missing-session'
+    ? sessionError(code, null).message
+    : driveSessionError(code, 'claude', null).message
+}
+
 export class ClaudeSessionDriverError extends Error {
   constructor(readonly code: DriverErrorCode) {
-    super(SESSION_ERRORS[code])
+    super(messageFor(code))
   }
 }

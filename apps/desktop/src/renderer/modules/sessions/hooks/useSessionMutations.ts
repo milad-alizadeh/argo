@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 
-import { type ClaudeSessionStarted, claudeTurnSetupSchema } from '@/core/sessions/contract'
+import type { SessionStarted } from '@/core/sessions/contract'
+import type { SessionCli } from '../harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -8,20 +9,16 @@ import {
 } from '../session-contract-error'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 
-type ClaudeTurn = { prompt: string; setup: TurnSetup | null }
+type Turn = { prompt: string; setup: TurnSetup | null }
 
-function claudeSetup(setup: TurnSetup | null) {
-  const parsed = claudeTurnSetupSchema.safeParse(setup)
-  if (!parsed.success) throw new Error('Choose a Model, Effort and Mode Claude Code supports.')
-  return parsed.data
-}
-
-function useCompact() {
-  return useMutation<void, SessionContractError, string>({
+// One mutation hook for every CLI (#2030): each adapter validates its own Turn-setup shape at
+// its own boundary, so this hook passes `setup` through rather than choosing a schema for it.
+export function useSessionMutations() {
+  const compact = useMutation<void, SessionContractError, string>({
     mutationFn: async (sessionId: string) => {
-      const reply = await window.argo.compactClaudeSession({ sessionId })
+      const reply = await window.argo.compactSession({ sessionId })
       switch (reply.type) {
-        case 'session.claude.accepted':
+        case 'session.accepted':
           return
         case 'session.error':
           return throwSessionContractError(reply)
@@ -30,17 +27,11 @@ function useCompact() {
       }
     },
   })
-}
-
-export function useClaudeSessionMutations() {
-  const compact = useCompact()
   const interrupt = useMutation<void, SessionContractError, string>({
     mutationFn: async (sessionId: string) => {
-      const reply = await window.argo.interruptClaudeSession({
-        sessionId,
-      })
+      const reply = await window.argo.interruptSession({ sessionId })
       switch (reply.type) {
-        case 'session.claude.accepted':
+        case 'session.accepted':
           return
         case 'session.error':
           return throwSessionContractError(reply)
@@ -49,15 +40,11 @@ export function useClaudeSessionMutations() {
       }
     },
   })
-  const send = useMutation<void, SessionContractError, ClaudeTurn & { sessionId: string }>({
+  const send = useMutation<void, SessionContractError, Turn & { sessionId: string }>({
     mutationFn: async ({ prompt, sessionId, setup }) => {
-      const reply = await window.argo.sendClaudeSession({
-        sessionId,
-        prompt,
-        setup: claudeSetup(setup),
-      })
+      const reply = await window.argo.sendSession({ sessionId, prompt, setup: setup ?? undefined })
       switch (reply.type) {
-        case 'session.claude.accepted':
+        case 'session.accepted':
           return
         case 'session.error':
           return throwSessionContractError(reply)
@@ -67,18 +54,14 @@ export function useClaudeSessionMutations() {
     },
   })
   const start = useMutation<
-    ClaudeSessionStarted,
+    SessionStarted,
     SessionContractError,
-    ClaudeTurn & { cwd: string }
+    Turn & { cli: SessionCli; cwd: string }
   >({
-    mutationFn: async ({ cwd, prompt, setup }) => {
-      const reply = await window.argo.startClaudeSession({
-        cwd,
-        prompt,
-        setup: claudeSetup(setup),
-      })
+    mutationFn: async ({ cli, cwd, prompt, setup }) => {
+      const reply = await window.argo.startSession({ cli, cwd, prompt, setup: setup ?? undefined })
       switch (reply.type) {
-        case 'session.claude.started':
+        case 'session.started':
           return reply
         case 'session.error':
           return throwSessionContractError(reply)

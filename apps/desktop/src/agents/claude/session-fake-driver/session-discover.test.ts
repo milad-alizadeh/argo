@@ -126,6 +126,7 @@ test('says a Session is missing rather than answering with an empty Feed', async
     type: 'session.error',
     requestId: 'feed-1',
     code: 'missing-session',
+    cli: null,
     message: 'Argo cannot find this Session.',
   })
 })

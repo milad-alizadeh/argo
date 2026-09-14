@@ -65,13 +65,11 @@ function sessionClient(state: StartState) {
       filesRead: state.prompts.length,
       filesUnreadable: 0,
     }),
-    startClaudeSession: async ({
-      prompt,
-    }: Parameters<typeof window.argo.startClaudeSession>[0]) => {
+    startSession: async ({ prompt }: Parameters<typeof window.argo.startSession>[0]) => {
       state.prompts.push(prompt)
       return {
         version: 1 as const,
-        type: 'session.claude.started' as const,
+        type: 'session.started' as const,
         requestId: 'start-session',
         sessionId: SESSION_ID,
       }

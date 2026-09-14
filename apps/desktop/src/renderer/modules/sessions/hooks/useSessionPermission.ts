@@ -8,7 +8,7 @@ import {
 } from '../session-contract-error'
 import { invalidateSessionRoster, sessionPermissionQueryKey } from '../session-queries'
 
-export function useClaudePermission(sessionId: string | null) {
+export function useSessionPermission(sessionId: string | null) {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const permission = useQuery<ClaudePermission | null, SessionContractError>({
@@ -19,9 +19,9 @@ export function useClaudePermission(sessionId: string | null) {
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return null
-      const reply = await window.argo.readClaudePermission({ sessionId })
+      const reply = await window.argo.readSessionPermission({ sessionId })
       switch (reply.type) {
-        case 'session.claude.permission.read':
+        case 'session.permission.read':
           return reply.permission
         case 'session.error':
           return throwSessionContractError(reply)
@@ -60,13 +60,13 @@ function usePermissionDecision() {
       decision: 'allow' | 'deny'
       permission: ClaudePermission
     }) => {
-      const reply = await window.argo.decideClaudePermission({
+      const reply = await window.argo.decideSessionPermission({
         sessionId: permission.sessionId,
         permissionId: permission.id,
         decision,
       })
       switch (reply.type) {
-        case 'session.claude.accepted':
+        case 'session.accepted':
           return
         case 'session.error':
           return throwSessionContractError(reply)
