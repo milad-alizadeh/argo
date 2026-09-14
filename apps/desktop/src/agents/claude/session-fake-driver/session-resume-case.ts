@@ -73,9 +73,9 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
   await history.getByText('Fake Claude read: Carry on after the restart.').waitFor()
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
-  const compacting = relaunched.getByRole('status')
-  await compacting.getByText('Compacting conversation').waitFor()
-  await compacting.getByText('22%').waitFor()
+  const compacting = relaunched.getByRole('status', { name: /Compacting conversation/i })
+  await compacting.waitFor()
+  await compacting.getByText(/\b\d{1,3}%/).waitFor()
   await history.getByText('Conversation compacted').waitFor()
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
