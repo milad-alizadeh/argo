@@ -11,8 +11,6 @@ import {
   message,
 } from '../contract/messages'
 
-export const ACCOUNT_CHANNEL = 'argo:account'
-
 export const PROVIDERS = ['github', 'linear'] as const
 export const provider = z.enum(PROVIDERS)
 // A person's name for display: a GitHub login, or a Linear name, which can hold spaces.
@@ -40,13 +38,18 @@ const listing = {
   notice: z.boolean(),
   providers: z.array(provider),
 }
-const listed = message('account.listed', listing)
+export const accountListedSchema = message('account.listed', listing)
 
-const connectRequest = message('account.connect', { provider })
+export const accountConnectRequestSchema = message('account.connect', { provider })
+export const accountListRequestSchema = message('account.list', {})
+export const accountVerifyRequestSchema = message('account.verify', {})
+export const accountAwaitRequestSchema = message('account.await', {})
+export const accountCancelRequestSchema = message('account.cancel', {})
+export const accountDismissNoticeRequestSchema = message('account.dismiss-notice', {})
 
 // What the person needs to finish signing in. GitHub's is the code typed on its page; Linear's page
 // needs nothing typed. The device code and the authorization URL stay in the main process.
-const challenge = z.discriminatedUnion('provider', [
+export const accountChallengeSchema = z.discriminatedUnion('provider', [
   message('account.challenge', {
     provider: z.literal('github'),
     userCode: identifier,
@@ -57,30 +60,30 @@ const challenge = z.discriminatedUnion('provider', [
 ])
 
 // `renewed` is a sign-in as an identity already connected: one Account, with a fresh grant.
-const connected = message('account.connected', {
+export const accountConnectedSchema = message('account.connected', {
   ...listing,
   accountId: identifier,
   outcome: z.enum(['added', 'renewed']),
 }).refine((reply) => reply.accounts.some((account) => account.id === reply.accountId))
 
-const disconnectRequest = message('account.disconnect', { accountId: identifier })
-
-type Action<Type extends string> = { version: 1; type: Type; requestId: string }
+export const accountDisconnectRequestSchema = message('account.disconnect', {
+  accountId: identifier,
+})
 
 export type AccountSummary = z.infer<typeof accountSummary>
 export type AccountConnection = AccountSummary['connections'][number]
 export type AccountState = AccountSummary['state']
 export type Provider = z.infer<typeof provider>
-export type AccountListRequest = Action<'account.list'>
-export type AccountConnectRequest = z.infer<typeof connectRequest>
-export type AccountVerifyRequest = Action<'account.verify'>
-export type AccountAwaitRequest = Action<'account.await'>
-export type AccountCancelRequest = Action<'account.cancel'>
-export type AccountDismissNoticeRequest = Action<'account.dismiss-notice'>
-export type AccountDisconnectRequest = z.infer<typeof disconnectRequest>
-export type AccountListed = z.infer<typeof listed>
-export type AccountChallenge = z.infer<typeof challenge>
-export type AccountConnected = z.infer<typeof connected>
+export type AccountListRequest = z.infer<typeof accountListRequestSchema>
+export type AccountConnectRequest = z.infer<typeof accountConnectRequestSchema>
+export type AccountVerifyRequest = z.infer<typeof accountVerifyRequestSchema>
+export type AccountAwaitRequest = z.infer<typeof accountAwaitRequestSchema>
+export type AccountCancelRequest = z.infer<typeof accountCancelRequestSchema>
+export type AccountDismissNoticeRequest = z.infer<typeof accountDismissNoticeRequestSchema>
+export type AccountDisconnectRequest = z.infer<typeof accountDisconnectRequestSchema>
+export type AccountListed = z.infer<typeof accountListedSchema>
+export type AccountChallenge = z.infer<typeof accountChallengeSchema>
+export type AccountConnected = z.infer<typeof accountConnectedSchema>
 
 export const ACCOUNT_ERRORS = {
   'access-denied': 'Argo cannot manage Accounts for this window.',
@@ -114,13 +117,8 @@ export type AccountChallengeReply = AccountChallenge | AccountError
 export type AccountConnectReply = AccountConnected | AccountError
 
 export const accountError = errorFactory('account.error', ACCOUNT_ERRORS)
-const accountErrorSchema = errorSchema('account.error', ACCOUNT_ERRORS)
+export const accountErrorSchema = errorSchema('account.error', ACCOUNT_ERRORS)
 
-// An action with no fields beyond the shared three.
-export const isAccountAction = <Type extends string>(type: Type) => guard(message(type, {}))
-export const isAccountConnectRequest = guard(connectRequest)
-export const isAccountDisconnectRequest = guard(disconnectRequest)
-export const isAccountError = guard(accountErrorSchema)
-export const isAccountListReply = guard(z.union([listed, accountErrorSchema]))
-export const isAccountChallengeReply = guard(z.union([challenge, accountErrorSchema]))
-export const isAccountConnectReply = guard(z.union([connected, accountErrorSchema]))
+export const isAccountListReply = guard(z.union([accountListedSchema, accountErrorSchema]))
+export const isAccountChallengeReply = guard(z.union([accountChallengeSchema, accountErrorSchema]))
+export const isAccountConnectReply = guard(z.union([accountConnectedSchema, accountErrorSchema]))

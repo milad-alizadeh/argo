@@ -18,7 +18,6 @@ import type {
   TicketScope,
 } from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import { connectSourceRequest, discoverRequest, listRequest, projectRequest } from '../lib/requests'
 
 const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.
@@ -43,9 +42,7 @@ export function useConnection(projectId: string | null) {
   return useQuery<ConnectionSummary | null, ContractFailure>({
     queryKey: connectionKey(projectId),
     queryFn: projectId
-      ? async () =>
-          (await settle(window.argo.readConnection(projectRequest('ticket.connection', projectId))))
-            .connection
+      ? async () => (await settle(window.argo.readConnection({ projectId }))).connection
       : skipToken,
   })
 }
@@ -63,7 +60,7 @@ export function useTicketList(
     queryKey: listKey(projectId, query),
     queryFn: ready
       ? ({ pageParam }) =>
-          settle(window.argo.listTickets(listRequest(projectId, query, pageParam))).catch(
+          settle(window.argo.listTickets({ projectId, query, cursor: pageParam })).catch(
             (failure: ContractFailure) => {
               onRefused(client, projectId, failure)
               throw failure
@@ -84,7 +81,7 @@ export function useSources(projectId: string | null, accountId: string | null) {
     queryFn:
       projectId && accountId
         ? () =>
-            settle(window.argo.discoverSources(discoverRequest(projectId, accountId))).then(
+            settle(window.argo.discoverSources({ projectId, accountId })).then(
               (reply) => reply.scopes,
               (failure: ContractFailure) => {
                 onRefused(client, projectId, failure)
@@ -114,11 +111,9 @@ function useConnectionAction<Input extends { projectId: string }>(
 export type ConnectInput = { projectId: string; accountId: string; scope: string }
 
 export const useConnectSource = () =>
-  useConnectionAction(({ projectId, ...target }: ConnectInput) =>
-    window.argo.connectSource(connectSourceRequest(projectId, target)),
-  )
+  useConnectionAction((input: ConnectInput) => window.argo.connectSource(input))
 
 export const useDisconnectSource = () =>
   useConnectionAction(({ projectId }: { projectId: string }) =>
-    window.argo.disconnectSource(projectRequest('ticket.disconnect', projectId)),
+    window.argo.disconnectSource({ projectId }),
   )

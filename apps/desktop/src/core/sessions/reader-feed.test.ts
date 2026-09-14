@@ -107,12 +107,12 @@ test('refuses a request it cannot parse and a version it does not hold', async (
   ])
 
   const badVersion = sessionListReplySchema.parse(
-    await reader.listSessions({ ...listing(), version: 2 }),
+    await reader.listSessions({ ...listing(), version: 2 } as never),
   )
   assert.equal(badVersion.type === 'session.error' && badVersion.code, 'unsupported-version')
 
   const badShape = sessionListReplySchema.parse(
-    await reader.listSessions({ ...listing(), extra: 1 }),
+    await reader.listSessions({ ...listing(), extra: 1 } as never),
   )
   assert.equal(badShape.type === 'session.error' && badShape.code, 'invalid-request')
 

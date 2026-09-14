@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AccountChallenge, AccountConnected, Provider } from '@/core/accounts/contract'
 import { type ContractFailure, settle } from '../../../lib/query-client'
-import { accountAction } from '../lib/requests'
 import { storeListing } from './useAccounts'
 
 export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
@@ -23,16 +22,15 @@ export type SignIn = {
 export function useSignIn(): SignIn {
   const client = useQueryClient()
   const wait = useMutation<AccountConnected, ContractFailure>({
-    mutationFn: () => settle(window.argo.awaitAccount(accountAction('account.await'))),
+    mutationFn: () => settle(window.argo.awaitAccount()),
     onSuccess: (reply) => storeListing(client, reply),
   })
   const verify = useMutation<AccountChallenge, ContractFailure>({
-    mutationFn: () => settle(window.argo.verifyAccount(accountAction('account.verify'))),
+    mutationFn: () => settle(window.argo.verifyAccount()),
   })
   // Linear has no code to show first, so its consent page opens as soon as it is asked for.
   const connect = useMutation<AccountChallenge, ContractFailure, Provider>({
-    mutationFn: (provider) =>
-      settle(window.argo.connectAccount({ ...accountAction('account.connect'), provider })),
+    mutationFn: (provider) => settle(window.argo.connectAccount({ provider })),
     onSuccess: (challenge) => {
       wait.mutate()
       if (challenge.provider === 'linear') verify.mutate()
@@ -72,7 +70,7 @@ export function useSignIn(): SignIn {
     cancel: () => {
       const pending = connect.isPending || challenge !== null
       clear()
-      if (pending) void window.argo.cancelAccount(accountAction('account.cancel'))
+      if (pending) void window.argo.cancelAccount()
     },
   }
 }

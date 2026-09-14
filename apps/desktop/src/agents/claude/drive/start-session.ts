@@ -1,9 +1,5 @@
-import { requestIdentifier } from '@/boundary'
-import {
-  type ClaudeSessionStartReply,
-  claudeSessionStartRequestSchema,
-  sessionError,
-} from '@/core/sessions/contract'
+import type { ClaudeSessionStartReply, ClaudeSessionStartRequest } from '@/core/sessions/contract'
+import { sessionError } from '@/core/sessions/contract'
 
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
@@ -11,13 +7,9 @@ import { ClaudeSessionDriverError } from './driver-error'
 export type ClaudeSessionStarter = Pick<ClaudeSessionDriver, 'start'>
 
 export function startClaudeSession(
-  value: unknown,
+  request: ClaudeSessionStartRequest,
   starter: ClaudeSessionStarter,
 ): ClaudeSessionStartReply {
-  const requestId = requestIdentifier(value)
-  const parsed = claudeSessionStartRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', requestId)
-  const request = parsed.data
   try {
     return {
       version: 1,

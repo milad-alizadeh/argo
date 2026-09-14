@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
-import { driveClaudeSession } from '../drive/drive-session.ts'
+import {
+  compactClaudeSession,
+  interruptClaudeSession,
+  sendClaudeSession,
+} from '../drive/drive-session.ts'
 import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
@@ -17,7 +21,7 @@ const sendRequest = {
 
 test('sends a subsequent Turn at its chosen setup to the selected managed Claude Session', async () => {
   const sent: [string, ClaudeTurnRequest][] = []
-  const reply = await driveClaudeSession(sendRequest, {
+  const reply = await sendClaudeSession(sendRequest, {
     interrupt: () => {},
     send: async (receivedSessionId, turn) => {
       sent.push([receivedSessionId, turn])
@@ -42,7 +46,7 @@ test('sends a subsequent Turn at its chosen setup to the selected managed Claude
 })
 
 test('does not accept a Turn Claude could not be given', async () => {
-  const reply = await driveClaudeSession(sendRequest, {
+  const reply = await sendClaudeSession(sendRequest, {
     interrupt: () => {},
     send: async () => {
       throw new Error('Claude Session is no longer running.')
@@ -53,19 +57,9 @@ test('does not accept a Turn Claude could not be given', async () => {
   assert.equal(reply.code, 'not-drivable')
 })
 
-test('refuses a Turn whose setup names a Mode Claude does not offer', async () => {
-  const reply = await driveClaudeSession(
-    { ...sendRequest, setup: { ...sendRequest.setup, mode: 'yolo' } },
-    { interrupt: () => {}, send: async () => {} },
-  )
-
-  assert.equal(reply.type, 'session.error')
-  assert.equal(reply.code, 'invalid-request')
-})
-
 test('interrupts only the selected managed Claude Session', async () => {
   const interrupted: string[] = []
-  const reply = await driveClaudeSession(
+  const reply = await interruptClaudeSession(
     { version: 1, type: 'session.claude.interrupt', requestId: 'stop-1', sessionId },
     { interrupt: (receivedSessionId) => interrupted.push(receivedSessionId), send: async () => {} },
   )
@@ -77,7 +71,7 @@ test('interrupts only the selected managed Claude Session', async () => {
 
 test('starts compaction only for the selected managed Claude Session', async () => {
   const compacted: string[] = []
-  const reply = await driveClaudeSession(
+  const reply = await compactClaudeSession(
     { version: 1, type: 'session.claude.compact', requestId: 'compact-1', sessionId },
     {
       compact: async (receivedSessionId) => compacted.push(receivedSessionId),
@@ -98,7 +92,7 @@ for (const code of [
   'launch-failed',
 ] as const) {
   test(`answers a Turn the driver refuses as ${code} with that reason`, async () => {
-    const reply = await driveClaudeSession(sendRequest, {
+    const reply = await sendClaudeSession(sendRequest, {
       interrupt: () => {},
       send: async () => {
         throw new ClaudeSessionDriverError(code)

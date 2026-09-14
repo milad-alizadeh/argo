@@ -1,56 +1,56 @@
-// The renderer's Ticket operations, each reply parsed and matched to its request and Project
-// before a component sees it.
 import { requestIdentifier } from '../../boundary'
-import { createSender } from '../contract/messages'
+import { createDomainClient } from '../contract/domain'
 import {
-  isTicketConnectedReply,
-  isTicketDiscoverReply,
-  isTicketListReply,
-  isTicketUpdateReply,
   type TicketConnectedReply,
-  type TicketConnectionRequest,
-  type TicketConnectRequest,
-  type TicketDisconnectRequest,
   type TicketDiscoverReply,
-  type TicketDiscoverRequest,
-  type TicketError,
   type TicketListReply,
-  type TicketListRequest,
   type TicketUpdateReply,
-  type TicketUpdateRequest,
   ticketError,
 } from './contract'
+import { TICKET_OPERATIONS } from './operations'
 
 export type TicketClient = {
-  readConnection(request: TicketConnectionRequest): Promise<TicketConnectedReply>
-  connectSource(request: TicketConnectRequest): Promise<TicketConnectedReply>
-  disconnectSource(request: TicketDisconnectRequest): Promise<TicketConnectedReply>
-  listTickets(request: TicketListRequest): Promise<TicketListReply>
-  discoverSources(request: TicketDiscoverRequest): Promise<TicketDiscoverReply>
-  updateStatus(request: TicketUpdateRequest): Promise<TicketUpdateReply>
+  readConnection(request: { projectId: string }): Promise<TicketConnectedReply>
+  connectSource(request: {
+    projectId: string
+    accountId: string
+    scope: string
+  }): Promise<TicketConnectedReply>
+  disconnectSource(request: { projectId: string }): Promise<TicketConnectedReply>
+  listTickets(request: {
+    projectId: string
+    query: string
+    cursor: string | null
+  }): Promise<TicketListReply>
+  discoverSources(request: { projectId: string; accountId: string }): Promise<TicketDiscoverReply>
+  updateStatus(request: {
+    projectId: string
+    key: string
+    statusId: string
+  }): Promise<TicketUpdateReply>
 }
 
-export function createTicketClient(invoke: (request: unknown) => Promise<unknown>): TicketClient {
-  const send = createSender<TicketError>(invoke, ticketError)
-  // A reply about another Project is refused, not drawn on this one.
+export function createTicketClient(
+  invoke: (channel: string, request: unknown) => Promise<unknown>,
+): TicketClient {
+  const client = createDomainClient(TICKET_OPERATIONS, invoke, ticketError)
+
   async function forProject<
     T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply | TicketUpdateReply,
-  >(
-    request: { projectId: string },
-    accept: (value: unknown) => value is T,
-  ): Promise<T | TicketError> {
-    const reply = await send(request, accept)
-    if (reply.type !== 'ticket.error' && reply.projectId !== request.projectId) {
-      return ticketError('invalid-response', requestIdentifier(request))
+  >(request: { projectId: string }, reply: Promise<T>): Promise<T> {
+    const resolved = await reply
+    if (resolved.type !== 'ticket.error' && resolved.projectId !== request.projectId) {
+      return ticketError('invalid-response', requestIdentifier(resolved)) as T
     }
-    return reply
+    return resolved
   }
+
   return {
-    readConnection: (request) => forProject(request, isTicketConnectedReply),
-    connectSource: (request) => forProject(request, isTicketConnectedReply),
-    disconnectSource: (request) => forProject(request, isTicketConnectedReply),
-    listTickets: (request) => forProject(request, isTicketListReply),
-    discoverSources: (request) => forProject(request, isTicketDiscoverReply),
-    updateStatus: (request) => forProject(request, isTicketUpdateReply),
+    readConnection: (request) => forProject(request, client.connection(request)),
+    connectSource: (request) => forProject(request, client.connect(request)),
+    disconnectSource: (request) => forProject(request, client.disconnect(request)),
+    listTickets: (request) => forProject(request, client.list(request)),
+    discoverSources: (request) => forProject(request, client.discover(request)),
+    updateStatus: (request) => forProject(request, client.update(request)),
   }
 }

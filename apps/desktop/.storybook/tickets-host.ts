@@ -5,11 +5,11 @@ import type { TicketClient } from '../src/core/tickets/client'
 // No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.
 export const ticketsHost: Pick<AccountClient, 'listAccounts'> &
   Pick<TicketClient, 'readConnection'> = {
-  listAccounts: (request) =>
+  listAccounts: () =>
     Promise.resolve({
       version: 1,
       type: 'account.listed',
-      requestId: request.requestId,
+      requestId: 'story',
       accounts: [],
       notice: false,
       providers: [...PROVIDERS],
@@ -18,7 +18,7 @@ export const ticketsHost: Pick<AccountClient, 'listAccounts'> &
     Promise.resolve({
       version: 1,
       type: 'ticket.connected',
-      requestId: request.requestId,
+      requestId: 'story',
       projectId: request.projectId,
       connection: null,
     }),
