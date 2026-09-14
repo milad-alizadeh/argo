@@ -179,6 +179,41 @@ export const RosterStructure: Story = {
   },
 }
 
+// The dot beside a blocked Session is already `bg-warn` for both statuses; the badge is what
+// names which one it is (#2088).
+export const PendingBadges: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        session,
+        {
+          ...session,
+          id: 'wants-answer',
+          status: 'asking',
+          title: { text: 'A question is waiting', source: 'first-prompt' },
+        },
+        {
+          ...session,
+          id: 'wants-permission',
+          status: 'permission',
+          title: { text: 'A tool call is waiting', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const wantsAnswer = canvas.getByRole('button', { name: /A question is waiting/ })
+    await expect(within(wantsAnswer).getByText('Answer')).toBeVisible()
+    const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
+    await expect(within(wantsPermission).getByText('Permission Approval')).toBeVisible()
+    const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await expect(within(idle).queryByText('Answer')).toBeNull()
+    await expect(within(idle).queryByText('Permission Approval')).toBeNull()
+  },
+}
+
 export const NarrowSidebarWithLongSessionName: Story = {
   args: {
     roster: {
