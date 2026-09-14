@@ -1,5 +1,4 @@
-import { Bot, Ticket } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Badge } from '@/renderer/components/ui/badge'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -13,7 +12,7 @@ import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesse
 import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
-import { sessionTiming } from './session-timing'
+import { SessionMetadata } from './SessionRosterMetadata'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -43,87 +42,26 @@ function knownCli(cli: string): cli is SessionCli {
   return (SESSION_CLIS as readonly string[]).includes(cli)
 }
 
+// The two blocking statuses the dot already colours `bg-warn` for, named so a reader can tell
+// which one without opening the Session (#2088). Every other status shows no badge.
+const BLOCKED_BADGE_LABELS: Partial<Record<Session['status'], string>> = {
+  asking: 'Answer',
+  permission: 'Permission Approval',
+}
+
+function SessionBlockedBadge({ session }: { session: Session }) {
+  const label = BLOCKED_BADGE_LABELS[session.status]
+  if (label === undefined) return null
+  return (
+    <Badge className="border-warn/40 text-warn" variant="outline">
+      {label}
+    </Badge>
+  )
+}
+
 function activitySummary(session: Session): string {
   if (session.activity === null) return session.status
   return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
-}
-
-function planStepTone(session: Session, step: number) {
-  if (session.plan?.state !== 'available') return 'bg-border'
-  const completed = session.plan.entries.filter((entry) => entry.status === 'completed').length
-  if (step < completed) {
-    return session.status === 'running' ? 'bg-foreground/70' : 'bg-muted-foreground/50'
-  }
-  if (step === completed && session.status === 'running') return 'bg-foreground'
-  return 'bg-border'
-}
-
-function SessionPlanBar({ session }: { session: Session }) {
-  if (session.plan?.state !== 'available') return null
-  const completed = session.plan.entries.filter((entry) => entry.status === 'completed').length
-  return (
-    <span
-      aria-label={`${completed} of ${session.plan.entries.length} steps completed`}
-      className="flex h-(--size-plan-bar) w-16 shrink-0 gap-px"
-      role="img"
-    >
-      {session.plan.entries.map((entry, step) => (
-        <span
-          className={`min-w-0 flex-1 rounded-full ${planStepTone(session, step)}`}
-          key={entry.position}
-        />
-      ))}
-    </span>
-  )
-}
-
-type SessionTimingValue = NonNullable<ReturnType<typeof sessionTiming>>
-
-function SessionTiming({ timing }: { timing: SessionTimingValue }) {
-  return (
-    <time
-      className="inline-flex shrink-0 tabular-nums"
-      dateTime={timing.dateTime}
-      title={timing.label}
-    >
-      {timing.text}
-    </time>
-  )
-}
-
-function SessionMetadata({ session }: { session: Session }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [])
-  const timing = sessionTiming(session, now)
-  const hasMetadata =
-    session.plan?.state === 'available' ||
-    session.plan?.state === 'malformed' ||
-    session.delegations.length > 0 ||
-    session.pullRequest !== null ||
-    timing !== null
-  if (!hasMetadata) return null
-  return (
-    <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
-      <SessionPlanBar session={session} />
-      {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
-      {session.delegations.length > 0 ? (
-        <span className="inline-flex items-center gap-1">
-          <Bot aria-hidden="true" />
-          <span>{session.delegations.length}</span>
-        </span>
-      ) : null}
-      {session.pullRequest !== null ? (
-        <span className="inline-flex items-center gap-1">
-          <Ticket aria-hidden="true" />
-          <span>#{session.pullRequest.number}</span>
-        </span>
-      ) : null}
-      {timing === null ? null : <SessionTiming timing={timing} />}
-    </span>
-  )
 }
 
 function sessionName(session: Session): string {
@@ -168,14 +106,17 @@ export function SessionRosterItem({
                 </span>
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate type-heading font-medium text-foreground">
-                    <PromptText
-                      interactiveLinks={false}
-                      renderText={(value) => (
-                        <SessionReferenceText cli={sessionCliOf(session)} text={value} />
-                      )}
-                      text={sessionName(session)}
-                    />
+                  <span className="flex items-center gap-2">
+                    <span className="block min-w-0 truncate type-heading font-medium text-foreground">
+                      <PromptText
+                        interactiveLinks={false}
+                        renderText={(value) => (
+                          <SessionReferenceText cli={sessionCliOf(session)} text={value} />
+                        )}
+                        text={sessionName(session)}
+                      />
+                    </span>
+                    <SessionBlockedBadge session={session} />
                   </span>
                   <span className="mt-0.5 block truncate type-meta text-faint">
                     {activitySummary(session)}
