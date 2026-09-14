@@ -147,6 +147,40 @@ export const FormattedProse: Story = {
   },
 }
 
+const taskNotificationFeed = {
+  ...feed,
+  chainId: 'task-notification',
+  revision: 'task-notification-one',
+  sessionId: 'task-notification',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'task-notification-prompt',
+      role: 'user' as const,
+      text: 'Kick off the consolidation pass.',
+    },
+    {
+      shape: 'command-output' as const,
+      id: 'task-notification-summary',
+      text: 'Agent "Consolidate stories" finished',
+    },
+  ],
+} satisfies SessionFeed
+
+// A background task's delivery shows only its summary line, not the raw <task-notification>
+// envelope or its embedded JSON result (#2054).
+export const TaskNotification: Story = {
+  args: { feed: taskNotificationFeed, selectedSessionId: 'task-notification' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getByText('Agent "Consolidate stories" finished')).toBeInTheDocument(),
+    )
+    await expect(canvas.queryByText(/task-notification/)).toBeNull()
+    await expect(canvas.queryByText(/"files"/)).toBeNull()
+  },
+}
+
 const toolFeed = {
   ...feed,
   chainId: 'tools',
