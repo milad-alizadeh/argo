@@ -15,6 +15,7 @@ import type { SessionFeedRow } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
 import { useComposerFadeTop } from './useComposerFadeTop'
+import { useSelectedSession } from './useSelectedSession'
 
 import './session-screen.css'
 
@@ -33,6 +34,7 @@ type SessionShellProps = {
   defaultInspectorCollapsed?: boolean
   inspectorReveal?: string | null
 }
+
 export function SessionScreenView() {
   const { sessionId } = useParams()
   const location = useLocation()
@@ -43,7 +45,7 @@ export function SessionScreenView() {
   const { feed, feedError, roster } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
-  const session = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const cli = harness.cli

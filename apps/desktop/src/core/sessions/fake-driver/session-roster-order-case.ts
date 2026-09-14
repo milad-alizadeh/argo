@@ -89,12 +89,6 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   await mutations.archive('askPending', true)
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
-  await page.locator('nav[aria-label="Archived"] button[data-session-id="askPending"]').waitFor()
-  const archivedAfter = await readRosterIds(page, 'Archived')
-  assert.deepEqual(
-    archivedAfter.filter((sessionId) => sessionId !== 'askPending'),
-    archivedBefore,
-  )
   assert.equal(await page.locator('nav[aria-label="Sessions"] button[tabindex="0"]').count(), 1)
   assert.equal(
     active.includes(
@@ -102,9 +96,23 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
     ),
     true,
   )
+  // The active list polls; the archived list is read on demand (#1593), so a live mutation only
+  // reaches it once the reader asks again — closing and reopening the section is that ask.
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
+  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
+  await page.locator('nav[aria-label="Archived"] button[data-session-id="askPending"]').waitFor()
+  const archivedAfter = await readRosterIds(page, 'Archived')
+  assert.deepEqual(
+    archivedAfter.filter((sessionId) => sessionId !== 'askPending'),
+    archivedBefore,
+  )
+  // Archiving dropped askPending from the roster's remembered order (see `keepRosterOrder` in
+  // useSessions.ts), so restoring it reintroduces it as an unrecognised row: it lands at the end,
+  // the same place a newly discovered Session lands above.
   await mutations.archive('askPending', false)
-  await waitForActiveSessions(page, withParent)
-  assert.deepEqual(await readRosterIds(page), withParent)
+  const restored = [...active, 'askPending']
+  await waitForActiveSessions(page, restored)
+  assert.deepEqual(await readRosterIds(page), restored)
 }
 
 export async function proveStableRosterPolling(page, mutations) {

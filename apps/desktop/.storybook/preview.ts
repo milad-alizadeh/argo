@@ -56,6 +56,15 @@ host.argo = {
       sessionId: request.sessionId,
       permission: null,
     }),
+  listArchivedSessions: () =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.archive.listed',
+      requestId: 'storybook-archive',
+      sessions: [],
+      nextCursor: null,
+      restored: null,
+    }),
   ...storybookProjectBridge,
   ...ticketsHost,
   zoomFactor: () => 1,
