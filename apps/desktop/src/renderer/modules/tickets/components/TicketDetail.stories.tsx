@@ -36,6 +36,15 @@ export const Default: Story = {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     // A linked Ticket's state is an icon, and its word stays in the text.
     const children = within(article).getByRole('region', { name: 'Children · 1 of 2 closed' })
+    await expect(
+      within(children)
+        .getByRole('heading', { name: 'Children · 1 of 2 closed' })
+        .querySelector('svg'),
+    ).not.toBeNull()
+    const dependencies = within(article).getByRole('region', { name: 'Blocked by · 2' })
+    await expect(
+      within(dependencies).getByRole('heading', { name: 'Blocked by · 2' }).querySelector('svg'),
+    ).not.toBeNull()
     await expect(children).toHaveTextContent('ClosedTicket read path#388')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
     await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))
