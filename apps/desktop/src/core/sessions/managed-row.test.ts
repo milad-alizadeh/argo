@@ -115,6 +115,7 @@ test('keeps the current held fields when reconciling a managed row', () => {
     ...observed,
     posture: held.posture,
     title: held.title,
+    locked: undefined,
     compactionStartedAt: held.compactionStartedAt,
     compactionPercentage: held.compactionPercentage,
     compactionTokens: held.compactionTokens,

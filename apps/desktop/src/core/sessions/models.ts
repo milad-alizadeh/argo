@@ -11,7 +11,7 @@ export {
   unreadableRowHeight,
 } from './feed-rows'
 
-export const SESSION_POSTURES = ['managed', 'external', 'orphaned'] as const
+export const SESSION_POSTURES = ['managed', 'external'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
 export const SESSION_ENTRIES = ['interactive', 'headless'] as const
 export const sessionEntrySchema = z.enum(SESSION_ENTRIES)
@@ -109,6 +109,10 @@ export const sessionRosterRowSchema = z.strictObject({
   entry: sessionEntrySchema,
   cwd: z.string().nullable(),
   branch: z.string().nullable(),
+  // Another live Argo window on this machine holds this Session's channel now, so Send is refused
+  // and the Roster marks it read-only (ADR-0040, CONTEXT.md L2 · Session). Absent where no source
+  // reports live-channel ownership, which reads the same as `false`.
+  locked: z.boolean().optional(),
   updatedAt: z.string().nullable(),
   unreadableLines: z.number(),
   originUnread: z.boolean(),

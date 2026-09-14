@@ -41,9 +41,9 @@ export function claudeSessionSource(roots: {
   // its fresh Session before this pass's roster is built, so the edge below finds it immediately.
   completeHandoffs?: () => void
   handoffEdges?: (sessionId: string) => { to: string | null; from: string | null }
-  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  isLockedElsewhere?: (sessionId: string) => boolean
 }): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
@@ -53,14 +53,9 @@ export function claudeSessionSource(roots: {
     discoverSessions: async () => {
       roots.completeHandoffs?.()
       const discovered = await discoverSessions(roots.transcripts, roots.archive)
-      // ADR-0026: a Session an Argo held and no running window holds now reads orphaned.
-      const orphans = roots.orphans?.() ?? new Set()
-      const graded = discovered.rows.map(
-        (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
-      )
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-      const merged = mergeManagedRoster({ ...discovered, rows: graded }, managed)
+      const merged = mergeManagedRoster(discovered, managed)
       const handoffEdges = roots.handoffEdges
       if (handoffEdges === undefined) return merged
       return {
@@ -74,6 +69,7 @@ export function claudeSessionSource(roots: {
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     projectFeed,
     managedSessions: roots.managedSessions,
+    isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,
     discoverArchivedSessions:
       archiveRoot === undefined
@@ -94,9 +90,9 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
-  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  isLockedElsewhere?: (sessionId: string) => boolean
 }): SessionReader {
   return createSessionReader([claudeSessionSource(roots)])
 }

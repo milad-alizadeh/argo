@@ -36,6 +36,7 @@ function fakeChannel(): CodexChannel & {
     },
     onNotification: (listener) => notifications.push(listener as never),
     onExit: () => {},
+    respond: () => {},
     close: () => {},
   }
 }
@@ -46,6 +47,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: (executable, options) => {
       assert.equal(executable, '/usr/local/bin/codex')
       environments.push(options.env)
@@ -95,6 +97,7 @@ test('reports Codex as unavailable rather than throwing an unrelated error', asy
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => fakeChannel(),
   })
 
@@ -116,6 +119,7 @@ test('a Session whose opening Turn fails to start leaves no phantom Roster row',
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
 

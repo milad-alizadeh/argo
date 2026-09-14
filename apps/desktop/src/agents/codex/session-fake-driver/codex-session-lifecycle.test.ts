@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import type { CodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 
-test('follows a managed Session through Turn statuses and process exit', async () => {
+function fakeLifecycleChannel() {
   const requests: string[] = []
   const notifications: Array<(message: never) => void> = []
   const exits: Array<() => void> = []
@@ -24,9 +24,15 @@ test('follows a managed Session through Turn statuses and process exit', async (
     onExit: (listener) => exits.push(listener),
     close: () => {},
   }
+  return { channel, requests, notifications, exits }
+}
+
+test('follows a managed Session through Turn statuses and process exit', async () => {
+  const { channel, requests, notifications, exits } = fakeLifecycleChannel()
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => new Date('2026-09-13T15:17:11.000Z'),
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
   const sessionId = await driver.start({

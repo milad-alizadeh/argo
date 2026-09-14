@@ -16,6 +16,7 @@ function fakeDriver(overrides: Partial<Parameters<typeof createClaudeDriveAdapte
     interrupt: () => {},
     pendingPermission: () => null,
     decidePermission: () => true,
+    isLockedElsewhere: () => false,
     ...overrides,
   } as Parameters<typeof createClaudeDriveAdapter>[0]
 }
@@ -75,7 +76,7 @@ test('sends a subsequent Turn to the selected managed Claude Session', async () 
 })
 
 for (const code of [
-  'not-resumable',
+  'not-drivable',
   'held-elsewhere',
   'missing-session',
   'launch-failed',

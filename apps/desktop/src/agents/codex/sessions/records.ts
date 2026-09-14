@@ -124,7 +124,12 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
   if (record.type === 'event_msg') return event(record, payload)
   if (record.type === 'response_item') return responseMessage(record, payload)
   if (record.type === 'session_meta' && typeof payload.id === 'string') {
-    return { kind: 'trace', uuid: payload.id, subagent: payload.thread_source === 'subagent' }
+    return {
+      kind: 'trace',
+      uuid: payload.id,
+      subagent: payload.thread_source === 'subagent',
+      cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
+    }
   }
   return null
 }

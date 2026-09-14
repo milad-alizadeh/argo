@@ -11,12 +11,12 @@ import { discoverSessions, readSessionFiles } from './discover'
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
   roster?: () => SessionRosterRow[]
-  orphans?: () => ReadonlySet<string>
   liveMessages?: (sessionId: string) => LiveMessage[]
   // Codex has no persisted transcript record of a still-open question (unlike Claude's
   // `AskUserQuestion` tool call, #1841): the Feed's `ask` row exists only while this returns one.
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  isLockedElsewhere?: (sessionId: string) => boolean
 }
 
 // A streamed message takes the row id the rollout's own message will get (`feed.ts`), so the
@@ -70,15 +70,12 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     cli: 'codex',
     discoverSessions: async () => {
       const discovered = await discoverSessions(root)
-      const orphans = options?.orphans?.() ?? new Set()
-      const rows = discovered.rows.map((row) =>
-        orphans.has(row.id) ? { ...row, posture: 'orphaned' as const } : row,
-      )
-      return mergeManagedRoster({ ...discovered, rows }, options?.roster?.() ?? [])
+      return mergeManagedRoster(discovered, options?.roster?.() ?? [])
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     projectFeed,
     managedSessions: options?.roster,
+    isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,
     overlayFor,
   }

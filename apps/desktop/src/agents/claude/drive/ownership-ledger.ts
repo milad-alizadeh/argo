@@ -1,5 +1,7 @@
-// ADR-0026: which Sessions an Argo has held, and whether one holds each now. Per machine, never
-// committed, and not a roster: no titles, no order and no content, only the owner of each id.
+// Whether an Argo window currently holds a Session's PTY. Per machine, never committed, and not a
+// roster: no titles, no order and no content, only the owner of each id. Origin does not matter:
+// a Session this Argo never started grades the same as one it released, because nothing about
+// who first spawned a process bears on whether Argo can open a channel to it now.
 import { z } from 'zod'
 import { isRecord } from '@/boundary'
 import { readDocumentSync, writeDocumentSync } from '@/core/storage/portable-file'
@@ -14,13 +16,14 @@ const ledgerSchema = z.record(z.string(), z.strictObject({ owner: ownerSchema.nu
 type Owner = z.infer<typeof ownerSchema>
 type Ledger = z.infer<typeof ledgerSchema>
 
-export type OwnershipStanding = 'never-owned' | 'orphaned' | 'held-here' | 'held-elsewhere'
+// `held-elsewhere` is the only refusal: another live Argo window holds the PTY. Every other
+// Session, whatever its history, is `resumable`.
+export type OwnershipStanding = 'resumable' | 'held-here' | 'held-elsewhere'
 
 export type OwnershipLedger = {
   bind: (sessionId: string) => void
   release: (sessionId: string) => void
   standing: (sessionId: string) => OwnershipStanding
-  orphans: () => ReadonlySet<string>
 }
 
 function readLedger(file: string): Ledger {
@@ -48,22 +51,15 @@ export function createOwnershipLedger(options: {
   // The file wins: another window may have resumed a Session this one let go.
   const entries = (): Ledger => ({ ...mine, ...readLedger(options.path) })
   const grade = (entry: Ledger[string] | undefined): OwnershipStanding => {
-    if (entry === undefined) return 'never-owned'
-    if (entry.owner === null) return 'orphaned'
+    if (entry === undefined || entry.owner === null) return 'resumable'
     if (entry.owner.pid === options.owner.pid && entry.owner.registry === options.owner.registry)
       return 'held-here'
-    return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'orphaned'
+    return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'resumable'
   }
   return {
     bind: (sessionId) => write(sessionId, options.owner),
     release: (sessionId) => write(sessionId, null),
     standing: (sessionId) => grade(entries()[sessionId]),
-    orphans: () =>
-      new Set(
-        Object.entries(entries())
-          .filter(([, entry]) => grade(entry) === 'orphaned')
-          .map(([sessionId]) => sessionId),
-      ),
   }
 }
 

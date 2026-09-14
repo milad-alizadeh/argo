@@ -25,7 +25,11 @@ function recordTurn(threadId: string, text: string) {
   appendFileSync(
     transcript,
     `${[
-      { timestamp: new Date().toISOString(), type: 'session_meta', payload: { id: threadId } },
+      {
+        timestamp: new Date().toISOString(),
+        type: 'session_meta',
+        payload: { id: threadId, cwd: process.cwd() },
+      },
       {
         timestamp: new Date().toISOString(),
         type: 'event_msg',

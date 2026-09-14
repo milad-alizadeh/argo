@@ -31,8 +31,8 @@ export type CodexSessionDriver = {
   interrupt: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
-  ownership: Pick<NonNullable<ManagedSessionOptions['ownership']>, 'orphans'>
   liveMessages: (sessionId: string) => LiveMessage[]
+  isLockedElsewhere: (sessionId: string) => boolean
   pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
   decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
@@ -87,8 +87,8 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       return accepted
     },
     roster: () => managedRoster(sessions),
-    ownership: { orphans: () => options.ownership?.orphans() ?? new Set() },
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
+    isLockedElsewhere: (sessionId) => options.ownership?.standing(sessionId) === 'held-elsewhere',
     pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
     decideQuestion(sessionId, questionId, answers) {
       const session = held(sessionId)

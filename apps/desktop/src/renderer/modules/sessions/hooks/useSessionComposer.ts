@@ -8,7 +8,6 @@ import type { SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
-import { sessionComposerProps } from './sessionComposerProps'
 import { useComposerSend } from './useComposerSend'
 import { useHandoff, useHandoffCompletion } from './useHandoffActions'
 import type { Failure } from './useSessionComposer-actions'
@@ -48,6 +47,7 @@ export function useSessionComposer({
   selectedSessionId,
 }: SessionComposerOptions): {
   failure: { message: string; code: SessionErrorCode | null } | null
+  retry: () => void
   props: Omit<SessionComposerProps, 'plan' | 'harness'>
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
@@ -86,22 +86,22 @@ export function useSessionComposer({
     start,
     watchTurn,
   })
+  const compactable = cli === 'claude' && identity.kind === 'session'
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
-    props: sessionComposerProps({
-      cli,
+    retry: () => setFailure(null),
+    props: {
       isRunning: managedSessionIsRunning(roster, sessionId),
       focusOnMount,
       isCompacting,
       isHandingOff,
-      onCompact,
-      onHandoff,
+      onCompact: compactable ? onCompact : undefined,
+      onHandoff: compactable ? onHandoff : undefined,
       onInterrupt,
       onSend,
       sessionId: composerIdentityKey(identity),
       setup: control,
-      identity,
-    }),
+    },
   }
 }

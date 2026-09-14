@@ -43,11 +43,11 @@ export function recordCodexNotification({
   }
   // No transcript floor participates in a live managed reading, so `unknown` — the honest
   // "nothing observed" floor — leaves the protocol's own signal standing unopposed.
-  const status = readThreadStatus(message)
-  if (status?.threadId === sessionId) {
+  const thread = readThreadStatus(message)
+  if (thread?.threadId === sessionId) {
     session.status = rollupSessionStatus('unknown', 'managed', {
       kind: 'codex',
-      reading: { kind: 'thread', status: status.status },
+      reading: { kind: 'thread', status: thread.status },
     })
     return false
   }

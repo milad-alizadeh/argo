@@ -59,11 +59,9 @@ export type ManagedSession = TurnTarget & {
 
 function refuseUnlessResumable(standing: OwnershipStanding) {
   switch (standing) {
-    case 'never-owned':
-      throw new ClaudeSessionDriverError('not-resumable')
     case 'held-elsewhere':
       throw new ClaudeSessionDriverError('held-elsewhere')
-    case 'orphaned':
+    case 'resumable':
     case 'held-here':
       return
   }

@@ -38,9 +38,7 @@ export function feedReply(value: SessionFeedRequest, held: HeldFeed) {
   }
 }
 
-export async function cachedReply(value: SessionFeedRequest, held: HeldFeed | undefined) {
-  if (held === undefined || (await chainStamps(held.paths)) !== held.stamps) return null
-  if (value.revision !== held.revision) return feedReply(value, held)
+export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
   return {
     version: 1 as const,
     type: 'session.feed.unchanged' as const,
@@ -53,8 +51,8 @@ export async function cachedReply(value: SessionFeedRequest, held: HeldFeed | un
 
 // A Session its CLI is still writing never gives two stat readings that agree, so the wait for a
 // quiet chain is bounded. Past the bound the last read is kept and stamped as of before it: those
-// stamps are older than the file, and cover the files the chain held before it, so `cachedReply`
-// reads the entry as stale either way. The next poll then reads again, rather than this one
+// stamps are older than the file, and cover the files the chain held before it, so the next
+// poll's fresh `stableChain` call reads it as stale and reads again, rather than this one
 // re-parsing a growing transcript until the heap is gone (#2095).
 const SETTLING_READS = 4
 

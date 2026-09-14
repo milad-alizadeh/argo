@@ -38,8 +38,8 @@ export async function provePackagedCodexResume(
   )
 
   const relaunched = await restart()
-  const [orphaned] = await rosterRow(relaunched, sessionId)
-  assert.equal(orphaned?.posture, 'orphaned')
+  const [reread] = await rosterRow(relaunched, sessionId)
+  assert.equal(reread?.posture, 'external')
   await relaunched
     .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
     .click()
@@ -47,7 +47,17 @@ export async function provePackagedCodexResume(
   await history.getByText('Open the Codex resume proof.').waitFor()
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
-  await history.getByText('Carry on after the restart.').waitFor()
+  await history
+    .getByText('Carry on after the restart.')
+    .waitFor()
+    .catch(async (error) => {
+      const rows = await history.locator('[data-feed-row]').allTextContents()
+      const alerted = await relaunched.locator('[role="alert"]').allTextContents()
+      const [row] = await rosterRow(relaunched, sessionId)
+      throw new Error(
+        `${error.message}\nFeed rows: ${JSON.stringify(rows)}\nAlerts: ${JSON.stringify(alerted)}\nRoster row: ${JSON.stringify(row)}`,
+      )
+    })
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),

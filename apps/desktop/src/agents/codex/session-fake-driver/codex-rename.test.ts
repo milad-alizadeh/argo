@@ -32,6 +32,7 @@ test('renames a Codex Session through thread/name/set and accepts its native not
   const driver = createCodexSessionDriver({
     findExecutable: () => 'codex',
     now: () => new Date(),
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
   const sessionId = await driver.start({

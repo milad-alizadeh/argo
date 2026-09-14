@@ -1,6 +1,8 @@
+import { Lock } from 'lucide-react'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { Button } from '../../../components/ui/button'
 import type { HarnessControl } from '../harness/harnesses'
 import type { SessionRoster } from '../hooks/useSessions'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
@@ -8,14 +10,14 @@ import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
 
 // Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
-// way to the alert instead of sitting under it (#2053). Every other failure code (`not-resumable`
-// among them) keeps its draft in a still-active composer, as before.
+// way to the lock card instead of sitting under it (#2053, #2092). Every other failure code keeps
+// its draft in a still-active composer, as before.
 const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere'])
 
 type SessionScreenDetailsProps = {
   composer: Pick<
     ReturnType<typeof import('../hooks/useSessionComposer').useSessionComposer>,
-    'failure' | 'props'
+    'failure' | 'props' | 'retry'
   >
   permission: ReturnType<typeof import('../hooks/useSessionPermission').useSessionPermission>
   questionPending: boolean
@@ -31,7 +33,7 @@ export function SessionComposerArea({
   harness,
 }: SessionScreenDetailsProps) {
   if (composer.failure?.code && OPEN_ELSEWHERE.has(composer.failure.code)) {
-    return <Failure message={composer.failure.message} />
+    return <OpenElsewhere onRetry={composer.retry} />
   }
   return (
     <>
@@ -147,6 +149,24 @@ function Failure({ message }: { message: string }) {
     <div className={`${COMPOSER_COLUMN} mt-3`}>
       <Alert variant="destructive">
         <AlertDescription>{message}</AlertDescription>
+      </Alert>
+    </div>
+  )
+}
+
+// One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9).
+function OpenElsewhere({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-bottom)`}>
+      <Alert>
+        <Lock aria-hidden />
+        <AlertTitle>This session is open in another app</AlertTitle>
+        <AlertDescription>Close it there to continue it in Argo.</AlertDescription>
+        <AlertAction>
+          <Button onClick={onRetry} size="sm" variant="outline">
+            Retry
+          </Button>
+        </AlertAction>
       </Alert>
     </div>
   )

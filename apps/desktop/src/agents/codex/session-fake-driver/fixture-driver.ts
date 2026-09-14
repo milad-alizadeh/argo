@@ -14,12 +14,17 @@ const fixturePath = import.meta.url.endsWith('.mjs')
 const fixture = fileURLToPath(new URL(fixturePath, import.meta.url))
 
 export function driverBackedByFixture(
-  driverOptions: { ownership?: CodexOwnershipLedger; env?: Record<string, string> } = {},
+  driverOptions: {
+    ownership?: CodexOwnershipLedger
+    env?: Record<string, string>
+    resumeTarget?: (sessionId: string) => Promise<{ cwd: string } | null>
+  } = {},
 ) {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
     now: () => new Date(),
     ownership: driverOptions.ownership,
+    resumeTarget: driverOptions.resumeTarget ?? (async () => null),
     openChannel: (executable, options) => {
       const child = spawn(executable, [fixture], {
         cwd: options.cwd,
