@@ -54,6 +54,7 @@ const SURFACE = [
   'readSessionPermission',
   'registerProject',
   'relocateProject',
+  'renameSession',
   'sendSession',
   'setAppearance',
   'startSession',

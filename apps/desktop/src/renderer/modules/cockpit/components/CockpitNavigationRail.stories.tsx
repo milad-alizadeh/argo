@@ -21,18 +21,12 @@ const meta: Meta<typeof CockpitNavigationRail> = {
 export default meta
 type Story = StoryObj<typeof CockpitNavigationRail>
 
-export const Sessions: Story = {
+export const Navigation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const sessions = canvas.getByRole('button', { name: 'Sessions' })
 
     await expect(sessions.querySelector('svg.lucide-messages-square')).not.toBeNull()
-  },
-}
-
-export const Destinations: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
 
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
     await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute(

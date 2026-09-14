@@ -308,7 +308,7 @@ export const DraftOutlivesItsComposer: Story = {
   },
 }
 
-export const EnterSendsWithoutANewLine: Story = {
+export const EnterAddsANewLine: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -317,25 +317,25 @@ export const EnterSendsWithoutANewLine: Story = {
     await userEvent.click(composer)
     await userEvent.keyboard('Send this once.')
     await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('Then this.')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
-    await expect(composer.innerText).toBe('Send this once.')
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
+    await expect(composer.innerText).toBe('Send this once.\n\nThen this.')
   },
 }
 
-export const ShiftEnterAddsALine: Story = {
+export const ShiftEnterSends: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.keyboard('First line')
+    await userEvent.keyboard('Send this once.')
     await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
-    await userEvent.keyboard('Second line')
 
-    await expect(composer.innerText).toBe('First line\nSecond line')
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(composer.innerText).toBe('Send this once.')
   },
 }
 
@@ -367,61 +367,80 @@ export const RichFormatting: Story = {
   },
 }
 
-function markdownShortcutStory(
-  type: (composer: HTMLElement) => Promise<unknown>,
-  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>,
-): Story {
-  return {
-    play: async ({ canvasElement }) => {
-      const canvas = within(canvasElement)
-      const composer = canvas.getByLabelText('Message')
+const MARKDOWN_SHORTCUTS: Array<{
+  sessionId: string
+  type: (composer: HTMLElement) => Promise<unknown>
+  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>
+}> = [
+  {
+    sessionId: 'markdown-heading',
+    type: (composer) => userEvent.type(composer, '# Heading'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-list',
+    type: (composer) => userEvent.type(composer, '- First list item'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('list')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-quote',
+    type: (composer) => userEvent.type(composer, '> Quoted detail'),
+    assert: async (canvas, composer) => {
+      await expect(canvas.getByText('Quoted detail')).toBeVisible()
+      await expect(composer.querySelector('blockquote')).not.toBeNull()
+    },
+  },
+  {
+    sessionId: 'markdown-inline-code',
+    type: (composer) => userEvent.type(composer, '`inline code`'),
+    assert: async (canvas) => {
+      await expect(canvas.getByText('inline code')).toBeVisible()
+    },
+  },
+  {
+    sessionId: 'markdown-code-block',
+    type: async (composer) => {
+      await userEvent.type(composer, '``')
+      await userEvent.keyboard('`')
+      await userEvent.type(composer, 'const result = true')
+    },
+    assert: async (_canvas, composer) => {
+      await expect(composer.querySelector(':scope > code')).not.toBeNull()
+    },
+  },
+]
 
+// Each shortcut gets its own composer instance: a shared editor can't be reset to a plain
+// paragraph between a list, a blockquote and a code block without racing Lexical's own state.
+function MarkdownShortcutsStory() {
+  return (
+    <>
+      {MARKDOWN_SHORTCUTS.map(({ sessionId }) => (
+        <SessionComposer key={sessionId} onSend={async () => true} sessionId={sessionId} />
+      ))}
+    </>
+  )
+}
+
+export const MarkdownShortcuts: Story = {
+  render: () => <MarkdownShortcutsStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composers = canvas.getAllByLabelText('Message')
+
+    for (const [index, { type, assert }] of MARKDOWN_SHORTCUTS.entries()) {
+      const composer = composers[index]
+      if (!composer) throw new Error(`Expected a composer for shortcut ${index}`)
       await userEvent.click(composer)
       await type(composer)
       await assert(canvas, composer)
-    },
-  }
+    }
+  },
 }
-
-export const MarkdownHeadingShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '# Heading'),
-  async (canvas) => {
-    await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
-  },
-)
-
-export const MarkdownListShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '- First list item'),
-  async (canvas) => {
-    await expect(canvas.getByRole('list')).toBeVisible()
-  },
-)
-
-export const MarkdownQuoteShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '> Quoted detail'),
-  async (canvas, composer) => {
-    await expect(canvas.getByText('Quoted detail')).toBeVisible()
-    await expect(composer.querySelector('blockquote')).not.toBeNull()
-  },
-)
-
-export const MarkdownInlineCodeShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '`inline code`'),
-  async (canvas) => {
-    await expect(canvas.getByText('inline code')).toBeVisible()
-  },
-)
-
-export const MarkdownCodeBlockShortcut: Story = markdownShortcutStory(
-  async (composer) => {
-    await userEvent.type(composer, '``')
-    await userEvent.keyboard('`')
-    await userEvent.type(composer, 'const result = true')
-  },
-  async (_canvas, composer) => {
-    await expect(composer.querySelector(':scope > code')).not.toBeNull()
-  },
-)
 
 export const ManagedTurn: Story = {
   render: () => <ManagedComposerStory />,
@@ -487,7 +506,7 @@ export const NewSessionChoosesCli: Story = {
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await expect(canvas.getByTestId('started-session')).toHaveTextContent(
       'codex: Fix the flaky test.',
     )
@@ -501,7 +520,7 @@ export const SendFinishesInAnotherSession: Story = {
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Sent from session one.')
-    await userEvent.keyboard('{Control>}{Enter}{/Control}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Drafted in session two.')
@@ -518,7 +537,7 @@ export const QueuedTurn: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Run the focused checks after this Turn.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
 
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Run the focused checks after this Turn.',
@@ -526,7 +545,7 @@ export const QueuedTurn: Story = {
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent('')
     await userEvent.click(composer)
     await userEvent.type(composer, 'Then prepare the release notes.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await expect(canvas.getAllByRole('listitem')[1]).toHaveClass(
       'session-page__queued-message--enter',
     )
@@ -567,7 +586,7 @@ export const FailedQueuedTurn: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Keep this pending when Claude rejects it.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Keep this pending when Claude rejects it.',
@@ -595,7 +614,7 @@ export const SendsTheChosenSetup: Story = {
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Plan the migration.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
       'Plan the migration. (sonnet medium plan)',
     )
@@ -613,7 +632,7 @@ export const QueuedTurnKeepsItsSetup: Story = {
     await chooseMode(canvasElement, /Plan/)
     await userEvent.click(composer)
     await userEvent.type(composer, 'Plan the release.')
-    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await chooseMode(canvasElement, /Accept edits/)
     await expect(mode).toHaveTextContent('Accept edits')
 

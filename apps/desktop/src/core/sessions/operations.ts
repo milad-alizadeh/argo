@@ -8,6 +8,8 @@ import {
   sessionPermissionDecisionRequestSchema,
   sessionPermissionReplySchema,
   sessionPermissionRequestSchema,
+  sessionRenameReplySchema,
+  sessionRenameRequestSchema,
   sessionSendRequestSchema,
   sessionStartReplySchema,
   sessionStartRequestSchema,
@@ -27,6 +29,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed',
     request: sessionFeedRequestSchema,
     reply: sessionFeedReplySchema,
+  },
+  rename: {
+    name: 'session.rename',
+    channel: 'argo:session:rename',
+    request: sessionRenameRequestSchema,
+    reply: sessionRenameReplySchema,
   },
   start: {
     name: 'session.start',

@@ -12,6 +12,7 @@ const session = sessionRosterRow({
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
+  delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
 }) satisfies SessionsListed['sessions'][number]
 
 const listed = {
@@ -78,6 +79,7 @@ const meta: Meta<typeof SessionsSidebarContent> = {
     ),
   ],
   args: {
+    onRename: fn(async (_session, name) => name),
     onSelect: fn(),
     roster: listed,
     rosterError: null,
@@ -107,6 +109,36 @@ export const Discovered: Story = {
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       '/sessions/second-session',
     )
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
+    await userEvent.click(rename)
+    const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
+    const input = within(dialog).getByRole('textbox', { name: 'Name' })
+    await expect(input).toHaveValue('Read the Session transcript')
+    await userEvent.clear(input)
+    await userEvent.type(input, '  Keep the roster stable\n')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('button', { name: /Keep the roster stable/ })).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+      '/sessions/second-session',
+    )
+    await expect(
+      canvas.getAllByRole('button').filter((button) => button.dataset.sessionId),
+    ).toHaveLength(2)
+  },
+}
+
+export const CommandTitledSession: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [{ ...session, title: { text: '/implement 1847', source: 'first-prompt' } }],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
   },
 }
 
@@ -144,6 +176,27 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
+export const AllArchived: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: listed.sessions.map((session) => ({
+        ...session,
+        archived: true,
+      })),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
+    const disclosure = canvas.getByText('Archived 2')
+    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    await userEvent.click(disclosure)
+    await expect(disclosure.closest('details')).toHaveAttribute('open')
+    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+  },
+}
+
 export const Failure: Story = {
   args: { roster: null, rosterError: readFailure },
   play: async ({ canvasElement }) => {

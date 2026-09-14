@@ -3,11 +3,13 @@ import { test } from 'node:test'
 import {
   DESTINATIONS,
   matchesChord,
+  matchesShortcut,
   menuAccelerators,
   menuTemplate,
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
   ROSTER_MOVES,
+  SEND_MESSAGE_COMMAND,
   SHORTCUTS,
 } from './shortcuts'
 
@@ -60,6 +62,11 @@ test('the Roster movement chords fire on one element', () => {
     const found = SHORTCUTS.find((entry) => entry.command === command)
     assert.equal(found?.scope, 'element')
   }
+})
+
+test('the composer sends only with Shift+Enter', () => {
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter')), false)
+  assert.equal(matchesShortcut(SEND_MESSAGE_COMMAND, pressed('Enter', { shift: true })), true)
 })
 
 test('a plain chord refuses a modifier', () => {

@@ -2,15 +2,12 @@ import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
+import { readInterrupt } from './interrupt-protocol'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
-import {
-  readCompletedTurn,
-  readInterrupt,
-  readStartedTurn,
-  readThreadId,
-  readThreadStatus,
-} from './protocol'
+import { readStartedTurn, readThreadId } from './protocol'
+import { codexNotificationRecorder } from './record-notification'
+import { readRename } from './rename-protocol'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
@@ -26,6 +23,7 @@ type ManagedSession = {
   turnId: string | null
   status: SessionRosterRow['status']
   messages: LiveMessages
+  title?: { text: string; source: 'custom' }
 }
 
 export type { LiveMessage }
@@ -35,20 +33,25 @@ export type CodexSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => Promise<string>
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
+  rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
   liveMessages: (sessionId: string) => LiveMessage[]
   close: () => void
 }
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
-type SessionRegistry = { sessions: Map<string, ManagedSession>; turn: Turn }
+type SessionRegistry = {
+  renameWaiters: Map<string, (title: string) => void>
+  sessions: Map<string, ManagedSession>
+  turn: Turn
+}
 
 async function beginManagedSession(
   options: DriverOptions,
   registry: SessionRegistry,
   { cwd, prompt }: { cwd: string; prompt: string },
 ): Promise<string> {
-  const { sessions, turn } = registry
+  const { renameWaiters, sessions, turn } = registry
   const executable = options.findExecutable()
   if (!executable) throw new CodexSessionDriverError('cli-unavailable')
   let channel: CodexChannel
@@ -77,19 +80,7 @@ async function beginManagedSession(
       const session = sessions.get(startedThreadId)
       if (session) session.status = 'ended'
     })
-    channel.onNotification((message) => {
-      if (messages.record(message)) return
-      const threadStatus = readThreadStatus(message)
-      if (threadStatus?.threadId === startedThreadId) {
-        const session = sessions.get(startedThreadId)
-        if (session) session.status = threadStatus.status
-        return
-      }
-      const completed = readCompletedTurn(message)
-      if (completed?.threadId !== startedThreadId) return
-      const session = sessions.get(startedThreadId)
-      if (session && completed.turn.status === 'failed') session.status = 'unknown'
-    })
+    channel.onNotification(codexNotificationRecorder(startedThreadId, sessions, renameWaiters))
     await turn(channel, startedThreadId, prompt)
     return startedThreadId
   } catch (error) {
@@ -102,6 +93,7 @@ async function beginManagedSession(
 
 export function createCodexSessionDriver(options: DriverOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
+  const renameWaiters = new Map<string, (title: string) => void>()
 
   function heldSession(sessionId: string): ManagedSession {
     const session = sessions.get(sessionId)
@@ -122,7 +114,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   }
 
   return {
-    start: (request) => beginManagedSession(options, { sessions, turn }, request),
+    start: (request) => beginManagedSession(options, { renameWaiters, sessions, turn }, request),
     async send(sessionId, text) {
       const session = heldSession(sessionId)
       await turn(session.channel, sessionId, text)
@@ -136,12 +128,19 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
         readInterrupt,
       )
     },
+    async rename(sessionId, name) {
+      const session = heldSession(sessionId)
+      const accepted = new Promise<string>((resolve) => renameWaiters.set(sessionId, resolve))
+      await session.channel.request('thread/name/set', { threadId: sessionId, name }, readRename)
+      return accepted
+    },
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
         managedRow(id, {
           ...session,
           cli: 'codex',
           setup: { model: null, effort: null, mode: null },
+          title: session.title,
         }),
       ),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],

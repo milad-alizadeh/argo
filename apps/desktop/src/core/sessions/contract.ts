@@ -5,9 +5,11 @@ import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { claudePermissionSchema } from './claude-contract'
 import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
 
 export * from './claude-contract'
+export * from './rename-contract'
 export * from './session-error'
 
 export const sessionListRequestSchema = z.strictObject({
@@ -155,12 +157,14 @@ export const sessionPermissionReplySchema = z.union([
   sessionPermissionReadSchema,
   sessionErrorSchema,
 ])
+export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
 
 export type SessionListReply = z.infer<typeof sessionListReplySchema>
 export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
 export type SessionStartReply = z.infer<typeof sessionStartReplySchema>
 export type SessionAcceptedReply = z.infer<typeof sessionAcceptedReplySchema>
 export type SessionPermissionReply = z.infer<typeof sessionPermissionReplySchema>
+export type SessionRenameReply = z.infer<typeof sessionRenameReplySchema>
 
 // This table is the Session IPC contract. Adding an operation means adding its four wire facts
 // here and one handler; clients and bridges select this entry rather than maintaining a second

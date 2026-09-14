@@ -2,10 +2,12 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
+import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
@@ -71,8 +73,13 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         managedSessions: claudeSessionDriver.roster,
         orphans: claudeSessionDriver.orphans,
         liveMessages: claudeSessionDriver.liveMessages,
+        rename: (request) => renameClaudeSession(request, claudeSessionDriver),
       }),
-      codexSessionSource(codexTranscriptsRoot(home), codexSessionDriver),
+      codexSessionSource(codexTranscriptsRoot(home), {
+        roster: codexSessionDriver.roster,
+        liveMessages: codexSessionDriver.liveMessages,
+        rename: (request) => renameCodexSession(request, codexSessionDriver),
+      }),
     ]),
     adapters: {
       claude: createClaudeDriveAdapter(claudeSessionDriver),

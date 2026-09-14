@@ -5,6 +5,8 @@ import {
   type SessionFeedRequest,
   type SessionListReply,
   type SessionListRequest,
+  type SessionRenameReply,
+  type SessionRenameRequest,
   sessionError,
 } from './contract'
 import {
@@ -20,6 +22,7 @@ import type { SessionDriveAdapters } from './session-drive-adapter'
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
 }
 
@@ -42,6 +45,7 @@ export function attachSessionBridge(
     handlers: {
       list: (request, context) => context.reader.listSessions(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
+      rename: (request, context) => context.reader.renameSession(request),
       start: (request, context) => startSession(request, context.adapters),
       send: (request, context) =>
         sendSession(request, context.adapters, context.reader.ownerCliFor),

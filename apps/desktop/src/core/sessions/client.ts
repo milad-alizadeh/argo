@@ -4,6 +4,7 @@ import {
   type SessionFeedReply,
   type SessionListReply,
   type SessionPermissionReply,
+  type SessionRenameReply,
   type SessionStartReply,
   sessionError,
 } from './contract'
@@ -33,6 +34,7 @@ export type SessionClient = {
     sessionId: string
     revision: string | null
   }): Promise<SessionFeedReply>
+  renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
 }
 
 export function createSessionClient(
@@ -46,6 +48,7 @@ export function createSessionClient(
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
     listSessions: () => client.list(),
+    renameSession: (request) => client.rename(request),
     async readSessionFeed(request) {
       const reply = await client.feed(request)
       // A Feed that answers for a different Session would draw one Session's history under

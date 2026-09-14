@@ -27,6 +27,7 @@ function fakeClaudeDriver() {
       interrupt: () => {},
       pendingPermission: () => null,
       decidePermission: () => true,
+      rename: async () => 'Renamed.',
       liveMessages: () => [],
       roster: () => [],
       orphans: () => new Set<string>(),
@@ -45,6 +46,7 @@ function fakeCodexDriver() {
         sent.push({ sessionId, prompt })
       },
       interrupt: async () => {},
+      rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
       close: () => {},
