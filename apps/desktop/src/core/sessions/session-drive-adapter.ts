@@ -12,10 +12,16 @@ export type SessionDriveAdapter = {
   // A duck-typed Zod schema: lets Claude plug in its Turn-setup vocabulary and Codex refuse any
   // Turn setup at all (#1885 is out of scope), without the router knowing either shape.
   turnSetupSchema: { safeParse: (value: unknown) => { success: boolean } }
-  start(request: { cwd: string; prompt: string; setup: unknown }): Promise<
-    { sessionId: string } | DriveFailure
-  >
-  send(request: { sessionId: string; prompt: string; setup: unknown }): Promise<DriveOk | DriveFailure>
+  start(request: {
+    cwd: string
+    prompt: string
+    setup: unknown
+  }): Promise<{ sessionId: string } | DriveFailure>
+  send(request: {
+    sessionId: string
+    prompt: string
+    setup: unknown
+  }): Promise<DriveOk | DriveFailure>
   interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   readPermission(request: { sessionId: string }): Promise<{ permission: ClaudePermission | null }>
   decidePermission(request: {

@@ -1,4 +1,4 @@
-import { claudeTurnSetupSchema, type ClaudeTurnSetup } from '@/core/sessions/contract'
+import { type ClaudeTurnSetup, claudeTurnSetupSchema } from '@/core/sessions/contract'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'

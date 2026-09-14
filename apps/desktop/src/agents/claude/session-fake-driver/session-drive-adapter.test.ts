@@ -64,7 +64,12 @@ test('sends a subsequent Turn to the selected managed Claude Session', async () 
   assert.deepEqual(sent, [[sessionId, { prompt: 'Continue with the tests.', setup }]])
 })
 
-for (const code of ['not-resumable', 'held-elsewhere', 'missing-session', 'launch-failed'] as const) {
+for (const code of [
+  'not-resumable',
+  'held-elsewhere',
+  'missing-session',
+  'launch-failed',
+] as const) {
   test(`answers a Turn the driver refuses as ${code} with that reason`, async () => {
     const adapter = createClaudeDriveAdapter(
       fakeDriver({

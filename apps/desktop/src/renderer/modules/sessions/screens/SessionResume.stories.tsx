@@ -2,10 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import {
-  type DriveSessionErrorCode,
-  driveSessionError,
-} from '@/core/sessions/contract'
+import { type DriveSessionErrorCode, driveSessionError } from '@/core/sessions/contract'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionsSidebar } from '../components/SessionsSidebar'
 import { sessionRosterRow } from '../session-fixtures'

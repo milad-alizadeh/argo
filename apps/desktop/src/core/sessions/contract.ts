@@ -143,7 +143,9 @@ export const sessionPermissionDecisionRequestSchema = z.strictObject({
   permissionId: identifierSchema,
   decision: z.enum(['allow', 'deny']),
 })
-export type SessionPermissionDecisionRequest = z.infer<typeof sessionPermissionDecisionRequestSchema>
+export type SessionPermissionDecisionRequest = z.infer<
+  typeof sessionPermissionDecisionRequestSchema
+>
 
 export const sessionListReplySchema = z.union([sessionsListedSchema, sessionErrorSchema])
 export const sessionFeedReplySchema = z.union([

@@ -1,9 +1,9 @@
 // The one shared drive router (ADR-0024, #2030). `start` routes by the request's named CLI;
 // every other drive operation routes by the Session's owner, resolved through the reader's own
 // owner lookup (#2025/#2026) rather than a second lookup shared code would have to maintain.
-import { isDriveCli } from './session-error'
-import type { DriveFailureCode, SessionDriveAdapters } from './session-drive-adapter'
+
 import {
+  driveSessionError,
   type SessionAcceptedReply,
   type SessionInterruptRequest,
   type SessionPermissionDecisionRequest,
@@ -12,9 +12,10 @@ import {
   type SessionSendRequest,
   type SessionStartReply,
   type SessionStartRequest,
-  driveSessionError,
   sessionError,
 } from './contract'
+import type { DriveFailureCode, SessionDriveAdapters } from './session-drive-adapter'
+import { isDriveCli } from './session-error'
 
 function driveFailureReply(cli: string, failure: DriveFailureCode, requestId: string) {
   if (failure === 'missing-session') return sessionError('missing-session', requestId)
@@ -41,9 +42,18 @@ export async function startSession(
   if (!adapter.turnSetupSchema.safeParse(request.setup).success) {
     return sessionError('invalid-request', request.requestId)
   }
-  const result = await adapter.start({ cwd: request.cwd, prompt: request.prompt, setup: request.setup })
+  const result = await adapter.start({
+    cwd: request.cwd,
+    prompt: request.prompt,
+    setup: request.setup,
+  })
   if ('error' in result) return driveFailureReply(request.cli, result.error, request.requestId)
-  return { version: 1, type: 'session.started', requestId: request.requestId, sessionId: result.sessionId }
+  return {
+    version: 1,
+    type: 'session.started',
+    requestId: request.requestId,
+    sessionId: result.sessionId,
+  }
 }
 
 export async function sendSession(
@@ -62,7 +72,12 @@ export async function sendSession(
     setup: request.setup,
   })
   if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return { version: 1, type: 'session.accepted', requestId: request.requestId, sessionId: request.sessionId }
+  return {
+    version: 1,
+    type: 'session.accepted',
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+  }
 }
 
 export async function interruptSession(
@@ -74,7 +89,12 @@ export async function interruptSession(
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await owned.adapter.interrupt({ sessionId: request.sessionId })
   if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return { version: 1, type: 'session.accepted', requestId: request.requestId, sessionId: request.sessionId }
+  return {
+    version: 1,
+    type: 'session.accepted',
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+  }
 }
 
 export async function readSessionPermission(
@@ -107,5 +127,10 @@ export async function decideSessionPermission(
     decision: request.decision,
   })
   if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return { version: 1, type: 'session.accepted', requestId: request.requestId, sessionId: request.sessionId }
+  return {
+    version: 1,
+    type: 'session.accepted',
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+  }
 }

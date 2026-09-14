@@ -62,10 +62,10 @@ export const sessionErrorSchema = z
     version: z.literal(1),
     type: z.literal('session.error'),
     requestId: identifierSchema.nullable(),
-    code: z.enum([
-      ...Object.keys(SHARED_SESSION_ERRORS),
-      ...Object.keys(DRIVE_SESSION_ERRORS),
-    ] as [SessionErrorCode, ...SessionErrorCode[]]),
+    code: z.enum([...Object.keys(SHARED_SESSION_ERRORS), ...Object.keys(DRIVE_SESSION_ERRORS)] as [
+      SessionErrorCode,
+      ...SessionErrorCode[],
+    ]),
     // The CLI a drive failure names; absent for a shared, CLI-agnostic code (nullish so a caller
     // that predates this field still parses as one).
     cli: z.string().nullish(),
@@ -81,7 +81,14 @@ export const sessionErrorSchema = z
 export type SessionError = z.infer<typeof sessionErrorSchema>
 
 export function sessionError(code: SharedSessionErrorCode, requestId: string | null): SessionError {
-  return { version: 1, type: 'session.error', requestId, code, cli: null, message: SHARED_SESSION_ERRORS[code] }
+  return {
+    version: 1,
+    type: 'session.error',
+    requestId,
+    code,
+    cli: null,
+    message: SHARED_SESSION_ERRORS[code],
+  }
 }
 
 // One failure kind for every CLI; the CLI it names picks the message (#2030).
@@ -90,7 +97,14 @@ export function driveSessionError(
   cli: DriveCli,
   requestId: string | null,
 ): SessionError {
-  return { version: 1, type: 'session.error', requestId, code, cli, message: DRIVE_SESSION_ERRORS[code][cli] }
+  return {
+    version: 1,
+    type: 'session.error',
+    requestId,
+    code,
+    cli,
+    message: DRIVE_SESSION_ERRORS[code][cli],
+  }
 }
 
 export function isSessionError(value: unknown): value is SessionError {

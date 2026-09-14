@@ -10,8 +10,8 @@ import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { sendSession } from './drive'
 import { managedRow } from './managed-row'
 import { createSessionReader } from './reader'
-import type { SessionDriveAdapters } from './session-drive-adapter'
 import { tempRoot } from './reader-test-helpers'
+import type { SessionDriveAdapters } from './session-drive-adapter'
 
 const setup = { model: null, effort: null, mode: null } as const
 
@@ -54,10 +54,8 @@ function fakeCodexDriver() {
   }
 }
 
-test('routes a send to only the adapter that owns the Session, with a Claude and a Codex Session open at once', async (context) => {
-  const claude = fakeClaudeDriver()
-  const codex = fakeCodexDriver()
-  const reader = createSessionReader([
+async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot>[0]) {
+  return createSessionReader([
     claudeSessionSource({
       transcripts: await tempRoot(context),
       managedSessions: () => [
@@ -84,6 +82,12 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       ],
     }),
   ])
+}
+
+test('routes a send to only the adapter that owns the Session, with a Claude and a Codex Session open at once', async (context) => {
+  const claude = fakeClaudeDriver()
+  const codex = fakeCodexDriver()
+  const reader = await readerWithBothManagedSessions(context)
   const adapters: SessionDriveAdapters = {
     claude: createClaudeDriveAdapter(claude.driver),
     codex: createCodexDriveAdapter(codex.driver),
@@ -102,7 +106,13 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
     reader.ownerCliFor,
   )
   const codexReply = await sendSession(
-    { version: 1, type: 'session.send', requestId: 'send-codex', sessionId: 'codex-1', prompt: 'To Codex.' },
+    {
+      version: 1,
+      type: 'session.send',
+      requestId: 'send-codex',
+      sessionId: 'codex-1',
+      prompt: 'To Codex.',
+    },
     adapters,
     reader.ownerCliFor,
   )
