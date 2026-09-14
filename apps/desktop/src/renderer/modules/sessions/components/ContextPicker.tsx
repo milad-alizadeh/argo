@@ -1,94 +1,58 @@
-import { Ban, File, Folder, GitBranch, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import type { ComposerTicketContext } from '../state/useComposerStore'
+import { ContextPickerContents, type TicketChoice } from './ContextPickerContents'
 import { useContextPickerFocus } from './useContextPickerFocus'
 
-type TicketChoice = Omit<ComposerTicketContext, 'id'>
+type TicketTextKey =
+  | 'composer.contextPicker.ticket.sharedPicker'
+  | 'composer.contextPicker.ticket.composerSync'
+  | 'composer.contextPicker.ticket.refreshToken'
+  | 'composer.contextPicker.ticket.ticketsPrototype'
+  | 'composer.contextPicker.ticket.open'
+  | 'composer.contextPicker.ticket.inProgress'
+  | 'composer.contextPicker.ticket.done'
+  | 'composer.contextPicker.ticket.closed'
+type TicketFixture = Omit<TicketChoice, 'status' | 'title'> & {
+  statusKey: TicketTextKey
+  titleKey: TicketTextKey
+}
 
-const TICKETS: readonly TicketChoice[] = [
+const TICKETS: readonly TicketFixture[] = [
   {
     provider: 'github',
     key: '#2150',
-    title: 'Add a shared context picker to the Session composer',
-    status: 'Open',
+    titleKey: 'composer.contextPicker.ticket.sharedPicker',
+    statusKey: 'composer.contextPicker.ticket.open',
     terminal: false,
     blocked: false,
   },
   {
     provider: 'linear',
     key: 'ENG-42',
-    title: 'Keep the Composer draft in sync',
-    status: 'In Progress',
+    titleKey: 'composer.contextPicker.ticket.composerSync',
+    statusKey: 'composer.contextPicker.ticket.inProgress',
     terminal: false,
     blocked: true,
   },
   {
     provider: 'linear',
     key: 'ENG-9',
-    title: 'Store the refresh token',
-    status: 'Done',
+    titleKey: 'composer.contextPicker.ticket.refreshToken',
+    statusKey: 'composer.contextPicker.ticket.done',
     terminal: true,
     blocked: null,
   },
   {
     provider: 'github',
     key: '#609',
-    title: 'Prototype the Tickets room',
-    status: 'Closed',
+    titleKey: 'composer.contextPicker.ticket.ticketsPrototype',
+    statusKey: 'composer.contextPicker.ticket.closed',
     terminal: true,
     blocked: false,
   },
 ]
-
-function ProviderLogo({ provider }: { provider: TicketChoice['provider'] }) {
-  return provider === 'github' ? (
-    <GitBranch aria-hidden="true" className="size-4 shrink-0" />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-primary font-bold text-primary-foreground type-meta"
-    >
-      L
-    </span>
-  )
-}
-
-function TicketResult({
-  onSelect,
-  ticket,
-}: {
-  onSelect: (ticket: TicketChoice) => void
-  ticket: TicketChoice
-}) {
-  return (
-    <button
-      className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-      onClick={() => onSelect(ticket)}
-      type="button"
-    >
-      <ProviderLogo provider={ticket.provider} />
-      <span className="sr-only">{ticket.provider === 'github' ? 'GitHub' : 'Linear'} </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-(--spacing-shell-tight) type-label">
-          <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
-          <span className="truncate">{ticket.title}</span>
-        </span>
-        <span
-          className={ticket.terminal ? 'type-meta text-danger' : 'type-meta text-muted-foreground'}
-        >
-          {ticket.terminal ? `Terminal · ${ticket.status}` : ticket.status}
-        </span>
-      </span>
-      {ticket.blocked ? (
-        <span className="flex shrink-0 items-center gap-1 text-danger type-meta">
-          <Ban aria-hidden="true" className="size-3.5" />
-          <span>Blocked</span>
-        </span>
-      ) : null}
-    </button>
-  )
-}
 
 export function ContextPicker({
   onAttach,
@@ -99,16 +63,24 @@ export function ContextPicker({
   onClose: () => void
   onSelectTicket: (ticket: TicketChoice) => void
 }) {
+  const { t } = useTranslation('sessions')
   const [query, setQuery] = useState('')
   const focus = useContextPickerFocus(onClose)
+  const tickets = TICKETS.map(({ statusKey, titleKey, ...ticket }) => ({
+    ...ticket,
+    status: t(statusKey),
+    title: t(titleKey),
+  }))
   const shownTickets = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    if (normalized === '') return TICKETS.filter((ticket) => !ticket.terminal)
-    return TICKETS.filter(({ key, title }) => `${key} ${title}`.toLowerCase().includes(normalized))
-  }, [query])
+    if (normalized === '') return tickets.filter((ticket) => !ticket.terminal)
+    return tickets.filter(({ key, title }) => `${key} ${title}`.toLowerCase().includes(normalized))
+  }, [query, tickets])
+  const providerLabel = (provider: TicketChoice['provider']) =>
+    t(`composer.contextPicker.provider.${provider}`)
   return (
     <div
-      aria-label="Context picker"
+      aria-label={t('composer.contextPicker.label')}
       aria-modal="true"
       className="absolute bottom-full left-0 z-40 mb-2 w-full max-w-lg rounded-xl border bg-card p-(--spacing-shell-item) shadow-xl"
       onKeyDown={focus.onKeyDown}
@@ -118,15 +90,15 @@ export function ContextPicker({
       <div className="mb-(--spacing-shell-item) flex items-center gap-(--spacing-shell-item)">
         <Search aria-hidden="true" className="size-4 text-muted-foreground" />
         <input
-          aria-label="Search context"
+          aria-label={t('composer.contextPicker.search')}
           className="min-w-0 flex-1 bg-transparent type-body outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search Tickets"
+          placeholder={t('composer.contextPicker.searchPlaceholder')}
           ref={focus.searchRef}
           value={query}
         />
         <button
-          aria-label="Close context picker"
+          aria-label={t('composer.contextPicker.close')}
           className="rounded-sm p-1 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
           onClick={onClose}
           type="button"
@@ -134,37 +106,12 @@ export function ContextPicker({
           <X className="size-4" />
         </button>
       </div>
-      <div className="border-t pt-(--spacing-shell-item)">
-        <button
-          className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-          onClick={onAttach}
-          type="button"
-        >
-          <File aria-hidden="true" className="size-4" />
-          <Folder aria-hidden="true" className="-ml-2 size-4" />
-          <span className="type-label">Files & folders</span>
-        </button>
-      </div>
-      <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
-        <p className="px-(--spacing-shell-inset) type-meta text-muted-foreground">Tickets</p>
-        {shownTickets.map((ticket) => (
-          <TicketResult
-            key={`${ticket.provider}-${ticket.key}`}
-            onSelect={onSelectTicket}
-            ticket={ticket}
-          />
-        ))}
-      </div>
-      <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
-        <button
-          aria-disabled="true"
-          className="flex w-full cursor-not-allowed items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left text-muted-foreground type-label"
-          disabled
-          type="button"
-        >
-          Goals <span className="type-meta">Coming soon</span>
-        </button>
-      </div>
+      <ContextPickerContents
+        onAttach={onAttach}
+        onSelectTicket={onSelectTicket}
+        providerLabel={providerLabel}
+        tickets={shownTickets}
+      />
     </div>
   )
 }
