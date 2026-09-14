@@ -10,6 +10,10 @@ export const APPEARANCES = ['system', 'light', 'dark'] as const
 export const appearanceSchema = z.enum(APPEARANCES)
 export type Appearance = z.infer<typeof appearanceSchema>
 
+// The stored file. Another portable client may hold fields this build does not own, and a write
+// must not delete them (docs/portable-integration-contracts.md).
+export const appearanceDocumentSchema = z.object({ appearance: appearanceSchema }).passthrough()
+
 // `dark` is the resolved answer: what the window actually draws once System has asked the
 // operating system. The renderer needs both, because the control shows the choice and the page
 // shows the resolution. This is also the push channel's shape, which carries no request id.

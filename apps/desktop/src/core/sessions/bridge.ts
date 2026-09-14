@@ -18,6 +18,8 @@ import {
   type SessionFeedRequest,
   type SessionListReply,
   type SessionListRequest,
+  type SessionRenameReply,
+  type SessionRenameRequest,
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
@@ -25,6 +27,7 @@ import { SESSION_OPERATIONS } from './operations'
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
 }
 
 type SessionContext = {
@@ -49,6 +52,7 @@ export function attachSessionBridge(
     handlers: {
       list: (request, context) => context.reader.listSessions(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
+      rename: (request, context) => context.reader.renameSession(request),
       startClaude: (request, context) => startClaudeSession(request, context.starter),
       sendClaude: (request, context) => sendClaudeSession(request, context.driver),
       interruptClaude: (request, context) => interruptClaudeSession(request, context.driver),

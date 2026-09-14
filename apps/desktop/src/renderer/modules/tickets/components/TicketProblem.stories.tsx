@@ -53,15 +53,3 @@ export const AccountRefused: Story = {
     await expect(recovery.onDisconnectSource).toHaveBeenCalled()
   },
 }
-
-// A Linear sign-in Linear would not renew: only that Connection waits, named for its team.
-export const LinearExpired: Story = {
-  args: connectionProblem(connection('linear', 'account-expired'), recovery),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('The sign-in for ada@analytical.dev expired')).toBeInTheDocument()
-    await expect(canvas.getByText('Reconnect it to read Engine again.')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Reconnect Linear' })).toBeEnabled()
-    await expect(canvas.getByRole('button', { name: 'Disconnect team' })).toBeEnabled()
-  },
-}

@@ -3,6 +3,7 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle.
 import type { SessionChain } from './chains'
+import type { SessionRenameReply, SessionRenameRequest } from './contract'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionFeedRow, SessionRosterRow } from './models'
 
@@ -22,4 +23,5 @@ export type SessionSource = {
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
   managedSessions?: () => SessionRosterRow[]
   overlayFor?: (sessionId: string) => FeedOverlay | null
+  rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }
