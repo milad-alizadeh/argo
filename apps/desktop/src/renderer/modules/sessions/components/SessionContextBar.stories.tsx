@@ -57,7 +57,9 @@ export const PercentageAndIcons: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.getByText('74%')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: /Context 148k tokens/ })).toHaveAccessibleName(
+      /74%/,
+    )
     await expect(canvas.queryByText('Compact')).toBeNull()
     await expect(canvas.queryByText('Handoff')).toBeNull()
   },
