@@ -103,8 +103,7 @@ type TicketRowProps = {
 
 // The row selects wherever it is pressed but on its status and its chevron: the select button's
 // overlay covers the row, and those two sit above it. The overlay draws the button's ring, so the
-// keyboard cursor outlines the whole row. The key column is one width, so every title
-// starts on one line and a child indents from it.
+// keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
 export function TicketRow(props: TicketRowProps) {
   const { row, rails, presentation, statuses, selected, folded, now } = props
   const { onSelect, onToggle, onChangeStatus } = props
@@ -131,16 +130,22 @@ export function TicketRow(props: TicketRowProps) {
       </span>
       <button
         aria-current={selected ? 'true' : undefined}
-        className="@container flex min-w-0 flex-1 items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+        className="@container flex min-w-0 flex-1 flex-wrap items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none @[22rem]:flex-nowrap after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
         onClick={onSelect}
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>
-        <span className="min-w-0 flex-1 truncate type-body">{ticket.title}</span>
-        <Labels labels={ticket.labels} />
-        <Marks ticket={ticket} />
+        <span className="order-1 min-w-0 basis-full line-clamp-2 type-body @[22rem]:basis-auto @[22rem]:flex-1 @[22rem]:line-clamp-none @[22rem]:truncate">
+          {ticket.title}
+        </span>
+        <span className="order-2 flex min-w-0 basis-full @[22rem]:basis-auto">
+          <Labels labels={ticket.labels} />
+        </span>
+        <span className="order-3">
+          <Marks ticket={ticket} />
+        </span>
         <time
-          className="hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
+          className="order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
           dateTime={ticket.createdAt}
         >
           <span aria-hidden="true">{age.short}</span>

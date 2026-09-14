@@ -52,9 +52,11 @@ export const LongTitleWithLabels: Story = {
     for (const label of longTicket.labels) {
       const badge = within(list).getByText(label.name)
       await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
+      await expect(badge.getBoundingClientRect().top).toBeGreaterThan(
+        title.getBoundingClientRect().top,
+      )
     }
-    await expect(title.clientWidth).toBeGreaterThan(0)
-    await expect(title.scrollWidth).toBeGreaterThan(title.clientWidth)
+    await expect(title.clientHeight).toBeGreaterThan(20)
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
   },
 }
