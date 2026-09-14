@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionContextBar } from './SessionContextBar'
 
@@ -38,7 +38,7 @@ export const MeterAndLabels: Story = {
     await expect(canvas.getByLabelText(/Dumb zone/)).toBeVisible()
     const context = canvas.getByRole('button', { name: 'Context 74%' })
     await userEvent.click(context)
-    await expect(within(document.body).getByText('Context window')).toBeVisible()
+    await waitFor(() => expect(within(document.body).getByText('Context window')).toBeVisible())
     await expect(canvas.getByText('Compact')).toBeVisible()
     await expect(canvas.getByText('Handoff')).toBeVisible()
     const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
