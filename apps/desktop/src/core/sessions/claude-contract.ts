@@ -55,6 +55,14 @@ export const claudeSessionInterruptRequestSchema = z.strictObject({
 })
 export type ClaudeSessionInterruptRequest = z.infer<typeof claudeSessionInterruptRequestSchema>
 
+export const claudeSessionCompactRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.claude.compact'),
+  requestId: identifierSchema,
+  sessionId: identifierSchema,
+})
+export type ClaudeSessionCompactRequest = z.infer<typeof claudeSessionCompactRequestSchema>
+
 export const claudeSessionAcceptedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.claude.accepted'),

@@ -6,6 +6,8 @@ import path from 'node:path'
 import process from 'node:process'
 
 const ESCAPE = String.fromCharCode(27)
+const COMPACTION_DELAY = 10_000
+const COMPACT = /\/compact[\r\n]/
 // Argo's bracketed paste, then its carriage return, which the line discipline turns into a
 // newline when it arrives before this process has switched the terminal to raw mode.
 const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
@@ -41,6 +43,14 @@ function write(type: 'user' | 'assistant', message: Record<string, unknown>) {
   parentUuid = uuid
 }
 
+function compact() {
+  const uuid = randomUUID()
+  appendFileSync(
+    transcript,
+    `${JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid, timestamp: new Date().toISOString() })}\n`,
+  )
+}
+
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
@@ -48,6 +58,11 @@ process.stdin.setEncoding('utf8')
 process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {
   pending += chunk
+  if (COMPACT.test(pending)) {
+    pending = pending.replace(COMPACT, '')
+    process.stdout.write('Compacting conversation… (0m 00s · ↓ 10.1k tokens) 22%\r\n')
+    setTimeout(compact, COMPACTION_DELAY)
+  }
   for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
     pending = pending.slice(turn.index + turn[0].length)
     const text = turn[1] ?? ''

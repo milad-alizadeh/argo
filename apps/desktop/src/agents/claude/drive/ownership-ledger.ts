@@ -1,8 +1,8 @@
 // ADR-0026: which Sessions an Argo has held, and whether one holds each now. Per machine, never
 // committed, and not a roster: no titles, no order and no content, only the owner of each id.
-import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
 import { isRecord } from '@/boundary'
+import { readDocumentSync, writeDocumentSync } from '@/core/storage/portable-file'
 
 const ownerSchema = z.strictObject({
   pid: z.number().int().positive(),
@@ -24,12 +24,10 @@ export type OwnershipLedger = {
 }
 
 function readLedger(file: string): Ledger {
-  try {
-    const parsed = ledgerSchema.safeParse(JSON.parse(readFileSync(file, 'utf8')))
-    return parsed.success ? parsed.data : {}
-  } catch {
-    return {}
-  }
+  const read = readDocumentSync(file)
+  if (!read.ok) return {}
+  const parsed = ledgerSchema.safeParse(read.document)
+  return parsed.success ? parsed.data : {}
 }
 
 // The pid alone is not an owner: one Argo process runs a registry per window, and on the pid
@@ -43,14 +41,9 @@ export function createOwnershipLedger(options: {
   const mine: Ledger = {}
   const write = (sessionId: string, owner: Owner | null) => {
     mine[sessionId] = { owner }
-    try {
-      writeFileSync(
-        options.path,
-        JSON.stringify({ ...readLedger(options.path), [sessionId]: { owner } }),
-      )
-    } catch {
-      // ADR-0026: grading stays right until quit, and the next launch reads this Session external.
-    }
+    // ADR-0026: a failed save costs only the next launch, which reads this Session as external.
+    // `mine` above already holds the claim for this one, whatever the disk says.
+    writeDocumentSync(options.path, { ...readLedger(options.path), [sessionId]: { owner } })
   }
   // The file wins: another window may have resumed a Session this one let go.
   const entries = (): Ledger => ({ ...mine, ...readLedger(options.path) })

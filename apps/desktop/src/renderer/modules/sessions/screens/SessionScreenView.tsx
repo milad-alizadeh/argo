@@ -19,6 +19,9 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
@@ -61,6 +64,9 @@ export function SessionScreenView() {
     <SessionShell
       feed={feed}
       feedError={feedError}
+      compactionStartedAt={session?.compactionStartedAt ?? null}
+      compactionPercentage={session?.compactionPercentage ?? null}
+      compactionTokens={session?.compactionTokens ?? null}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
@@ -95,6 +101,9 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
   isRunning,
   selectedSessionId,
   activeEvidenceId,
@@ -117,6 +126,9 @@ export function SessionShell({
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed
                 activeEvidenceId={activeEvidenceId}
+                compactionStartedAt={compactionStartedAt}
+                compactionPercentage={compactionPercentage}
+                compactionTokens={compactionTokens}
                 feed={feed}
                 failure={feedError}
                 isRunning={isRunning}

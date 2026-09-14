@@ -18,6 +18,7 @@ import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
   interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
+  compactClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionSendReply>
   sendClaudeSession(request: {
     sessionId: string
     prompt: string
@@ -51,6 +52,7 @@ export function createSessionClient(
   const client = createDomainClient(SESSION_OPERATIONS, invoke, sessionError)
   return {
     interruptClaudeSession: (request) => client.interruptClaude(request),
+    compactClaudeSession: (request) => client.compactClaude(request),
     sendClaudeSession: (request) => client.sendClaude(request),
     startClaudeSession: (request) => client.startClaude(request),
     readClaudePermission: (request) => client.readClaudePermission(request),
