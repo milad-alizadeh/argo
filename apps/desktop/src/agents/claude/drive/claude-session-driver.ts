@@ -1,6 +1,7 @@
 import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
@@ -57,7 +58,10 @@ function roster(options: DriverOptions, sessions: Map<string, ManagedSession>) {
     managedRow(id, {
       ...session,
       cli: 'claude',
-      status: options.gate.pending(id) === null ? 'running' : 'permission',
+      status: rollupSessionStatus('unknown', 'managed', {
+        cli: 'claude',
+        pendingPermission: options.gate.pending(id) !== null,
+      }),
       setup: session.applied,
       title: session.title,
     }),

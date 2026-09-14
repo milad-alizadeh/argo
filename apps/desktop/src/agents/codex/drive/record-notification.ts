@@ -1,4 +1,5 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { LiveMessages } from './live-messages'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
@@ -31,12 +32,18 @@ export function recordCodexNotification({
   }
   const status = readThreadStatus(message)
   if (status?.threadId === sessionId) {
-    session.status = status.status
+    session.status = rollupSessionStatus('unknown', 'managed', {
+      cli: 'codex',
+      reading: { kind: 'thread', status: status.status },
+    })
     return
   }
   const completed = readCompletedTurn(message)
   if (completed?.threadId === sessionId && completed.turn.status === 'failed') {
-    session.status = 'unknown'
+    session.status = rollupSessionStatus('unknown', 'managed', {
+      cli: 'codex',
+      reading: { kind: 'turn-failed' },
+    })
   }
 }
 

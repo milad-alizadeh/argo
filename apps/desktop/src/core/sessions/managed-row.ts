@@ -1,5 +1,6 @@
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionRosterRow, SessionTitle } from './models'
+import { rollupSessionStatus } from './session-status-rollup'
 
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
 export function managedRow(
@@ -50,11 +51,9 @@ export function managedRow(
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
-// discovery sweep alone can miss it, or hold a stale posture for one it has already found. `running`
-// is not reachable from the transcript's own external reading (status.ts), which floors an open or
-// ambiguous Turn at `unknown` — so a managed row disambiguates only there, and its `permission`
-// status always wins since nothing external can produce it. A definite external reading (`idle`,
-// `asking`, `stopped`) is never overridden by the managed row's `running` just because it is held.
+// discovery sweep alone can miss it, or hold a stale posture for one it has already found. The
+// tie-break between the discovered floor and the held row's own status is `session-status-rollup.ts`'s
+// job, not this module's.
 export function mergeManagedRoster(
   discovered: TranscriptDiscovery,
   managed: SessionRosterRow[],
@@ -71,8 +70,7 @@ export function mergeManagedRoster(
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
     if (held === undefined) return session
-    const status =
-      held.status === 'permission' || session.status === 'unknown' ? held.status : session.status
+    const status = rollupSessionStatus(session.status, held.posture, held.status)
     return reconcile({ ...session, posture: held.posture, status }, held)
   })
   const unobserved = managed.filter(
