@@ -152,6 +152,8 @@ export const RosterStructure: Story = {
         {
           ...session,
           activity: { tool: 'Bash', target: 'RTK_DISABLED=1 gh pr checks 2062 --watch' },
+          status: 'running',
+          turnStartedAt: '2026-09-14T03:30:00Z',
           plan: {
             state: 'available',
             entries: [
@@ -171,6 +173,7 @@ export const RosterStructure: Story = {
     await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
     await expect(canvas.getByText('#2062')).toBeVisible()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
+    await expect(canvas.getByText(/^Running /)).toBeVisible()
   },
 }
 

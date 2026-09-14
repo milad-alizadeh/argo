@@ -12,8 +12,9 @@ import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
+import { SESSION_SPLIT } from './session-screen-layout'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
-import { useComposerFadeHeight } from './useComposerFadeHeight'
+import { useComposerFadeTop } from './useComposerFadeTop'
 
 import './session-screen.css'
 
@@ -32,13 +33,6 @@ type SessionShellProps = {
   defaultInspectorCollapsed?: boolean
   inspectorReveal?: string | null
 }
-
-const SESSION_SPLIT = {
-  inspector: '--size-session-inspector',
-  inspectorMin: '--size-session-inspector-min',
-  workspaceMin: '--size-session-workspace-min',
-}
-
 export function SessionScreenView() {
   const { sessionId } = useParams()
   const location = useLocation()
@@ -94,7 +88,6 @@ export function SessionScreenView() {
     />
   )
 }
-
 export function SessionShell({
   composer,
   inspector,
@@ -111,7 +104,8 @@ export function SessionShell({
   inspectorReveal = null,
 }: SessionShellProps) {
   const composerElement = useRef<HTMLElement>(null)
-  const fadeHeight = useComposerFadeHeight(composerElement)
+  const workspaceElement = useRef<HTMLElement>(null)
+  const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
 
   return (
     <main
@@ -125,7 +119,11 @@ export function SessionShell({
         reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
         workspace={
-          <section aria-label="Session workspace" className="relative flex h-full min-h-0 flex-col">
+          <section
+            aria-label="Session workspace"
+            className="relative flex h-full min-h-0 flex-col"
+            ref={workspaceElement}
+          >
             <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
@@ -145,23 +143,20 @@ export function SessionShell({
                 onOpenEvidence={onOpenEvidence}
               />
             </section>
-            <section
-              aria-label="Session composer"
-              className="absolute inset-x-0 bottom-0 z-10 isolate px-(--spacing-shell-inset)"
-              ref={composerElement}
-            >
+            {fadeTop === null ? null : (
               <div
                 aria-hidden="true"
-                data-component="SessionComposerBackdrop"
-                className="pointer-events-none absolute inset-x-0 top-0 z-10 h-screen bg-background"
-              >
-                <div
-                  data-component="SessionComposerFade"
-                  className="absolute inset-x-0 top-0 bg-[image:var(--gradient-session-composer-fade)]"
-                  style={{ height: fadeHeight === null ? 0 : `${fadeHeight}px` }}
-                />
-              </div>
-              <div className="relative z-20">{composer}</div>
+                data-component="SessionComposerFade"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
+                style={{ top: `${fadeTop}px` }}
+              />
+            )}
+            <section
+              aria-label="Session composer"
+              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+              ref={composerElement}
+            >
+              {composer}
             </section>
           </section>
         }

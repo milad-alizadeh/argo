@@ -1,4 +1,5 @@
-import { Bot, GitFork } from 'lucide-react'
+import { Bot, Ticket } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -11,6 +12,7 @@ import { HarnessLogo } from '../harness/HarnessLogo'
 import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
 import type { Session } from '../types'
 import { SessionReferenceText } from './SessionReference'
+import { sessionTiming } from './session-timing'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -93,11 +95,26 @@ function SessionMetadata({ session }: { session: Session }) {
       ) : null}
       {session.pullRequest !== null ? (
         <span className="inline-flex items-center gap-1">
-          <GitFork aria-hidden="true" />
+          <Ticket aria-hidden="true" />
           <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}
     </span>
+  )
+}
+
+function SessionTiming({ session }: { session: Session }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const timing = sessionTiming(session, now)
+  if (timing === null) return null
+  return (
+    <time className="shrink-0 tabular-nums" dateTime={timing.dateTime}>
+      {timing.text}
+    </time>
   )
 }
 
@@ -146,8 +163,9 @@ export function SessionRosterItem({
                   <span className="block truncate type-heading font-medium text-foreground">
                     <SessionReferenceText text={sessionName(session)} />
                   </span>
-                  <span className="mt-0.5 flex min-w-0 truncate type-meta text-faint">
-                    {activitySummary(session)}
+                  <span className="mt-0.5 flex min-w-0 items-center gap-2 type-meta text-faint">
+                    <span className="min-w-0 flex-1 truncate">{activitySummary(session)}</span>
+                    <SessionTiming session={session} />
                   </span>
                   <SessionMetadata session={session} />
                 </span>
