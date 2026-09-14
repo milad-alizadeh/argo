@@ -74,7 +74,10 @@ async function proveComposerMemory(page) {
   await page.reload()
   await page.waitForFunction(
     (selector) =>
-      document.querySelector(selector)?.getAttribute('aria-label') === 'Choose run setup: Codex',
+      document
+        .querySelector(selector)
+        ?.getAttribute('aria-label')
+        ?.startsWith('Choose run setup: Codex,') === true,
     RUN_SETUP,
     { timeout: 10_000 },
   )
