@@ -106,7 +106,6 @@ export function SessionShell({
   defaultInspectorCollapsed = false,
   inspectorReveal = null,
 }: SessionShellProps) {
-  const { t } = useTranslation('sessions')
   const composerElement = useRef<HTMLElement>(null)
   const workspaceElement = useRef<HTMLElement>(null)
   const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
