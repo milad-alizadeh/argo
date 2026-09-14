@@ -45,6 +45,7 @@ export type TranscriptMessage = {
 
 export type TranscriptRecord =
   | TranscriptMessage
+  | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   | { kind: 'trace'; uuid: string }

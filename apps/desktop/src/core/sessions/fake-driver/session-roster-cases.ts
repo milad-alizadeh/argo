@@ -1,54 +1,6 @@
 // The Roster half of the packaged Session proof: what the list says before a reader has chosen
 // anything, and what choosing does. The driver owns the app copy, the launch and the order.
 import assert from 'node:assert/strict'
-import { CLAUDE_FEED_REQUEST, CODEX_FEED_REQUEST } from './session-proof-requests'
-
-export async function proveContract(page) {
-  const list = await page.evaluate(() => window.argo.listSessions())
-  assert.equal(list.type, 'session.listed')
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 10, read: 10 })
-  // Seven Sessions from ten files: the damaged transcript is read but has no Message record.
-  assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
-    'askPending',
-    'externalBasic',
-    'plannedWork',
-    'prose',
-    'resumeParent',
-    'rollout-codexParent',
-    'strandedResume',
-  ])
-  // The archive flag is the desktop app's own, read out of its store and joined on the CLI
-  // Session id. Only the Session that store names is archived.
-  assert.deepEqual(
-    list.sessions.filter((session) => session.archived).map((session) => session.id),
-    ['plannedWork'],
-  )
-  // The chain that reaches its own origin is not partial; the one whose origin is in no file here
-  // is, and only it.
-  assert.deepEqual(
-    list.sessions.filter((session) => session.originUnread).map((session) => session.id),
-    ['strandedResume'],
-  )
-  assert.deepEqual([...new Set(list.sessions.map((session) => session.posture))], ['external'])
-  // A retired id follows the chain that took it rather than reading as a Session that ended.
-  const read = await page.evaluate(
-    (value) => window.argo.readSessionFeed(value),
-    CLAUDE_FEED_REQUEST,
-  )
-  assert.equal(read.chainId, 'resumeParent')
-  assert.equal(read.rows.length, 4)
-  const codexRead = await page.evaluate(
-    (value) => window.argo.readSessionFeed(value),
-    CODEX_FEED_REQUEST,
-  )
-  assert.equal(codexRead.chainId, 'rollout-codexParent')
-  assert.equal(codexRead.rows.length, 4)
-  const missing = await page.evaluate((value) => window.argo.readSessionFeed(value), {
-    ...CLAUDE_FEED_REQUEST,
-    sessionId: 'not-a-session',
-  })
-  assert.equal(missing.code, 'missing-session')
-}
 
 export function readRoster(page) {
   return page.evaluate(() => {

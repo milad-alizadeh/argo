@@ -56,6 +56,7 @@ export function launch(
     findExecutable?: () => string | null
     spawnFails?: boolean
     gate?: ClaudePermissionGate
+    mintSessionId?: () => string
   } = {},
 ) {
   const spawned: Spawned[] = []
@@ -70,7 +71,7 @@ export function launch(
   const pluginRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-claude-plugins-'))
   const driver = createClaudeSessionDriver({
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
-    mintSessionId: () => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c',
+    mintSessionId: options.mintSessionId ?? (() => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'),
     now: () => STARTED_AT,
     schedule: (callback) => callback(),
     ledger,

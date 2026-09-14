@@ -82,14 +82,28 @@ test('draws a finished message once, from the rollout, under the id it streamed 
     file,
     line({
       timestamp: '2026-09-13T14:51:49.000Z',
-      type: 'response_item',
+      type: 'event_msg',
       payload: {
-        type: 'message',
-        id: 'msg-1',
-        role: 'assistant',
-        content: [{ type: 'output_text', text: 'Ducks glide.' }],
+        type: 'item_completed',
+        thread_id: SESSION,
+        turn_id: 'turn-1',
+        item: {
+          type: 'AgentMessage',
+          id: 'msg-1',
+          content: [{ type: 'Text', text: 'Ducks glide.' }],
+        },
       },
-    }),
+    }) +
+      line({
+        timestamp: '2026-09-13T14:51:49.000Z',
+        type: 'response_item',
+        payload: {
+          type: 'message',
+          id: 'msg-1',
+          role: 'assistant',
+          content: [{ type: 'output_text', text: 'Ducks glide.' }],
+        },
+      }),
   )
   const ahead = new Date(Date.now() + 2000)
   await utimes(file, ahead, ahead)

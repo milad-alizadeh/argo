@@ -1,5 +1,5 @@
 import { GripVertical, Route } from 'lucide-react'
-import { type RefObject, useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { PendingTurnActions } from './PendingTurnActions'
 import type { PendingTurn } from './usePendingTurns'
@@ -18,6 +18,12 @@ function queuedMessageClassName(
   return 'session-page__queued-message cursor-grab active:cursor-grabbing'
 }
 
+function restoreFocusAfterRemoval(listRef: RefObject<HTMLUListElement | null>) {
+  const nextControl = listRef.current?.querySelector<HTMLButtonElement>('button')
+  if (nextControl) nextControl.focus()
+  else document.querySelector<HTMLButtonElement>('[aria-label="Message"]')?.focus()
+}
+
 function useQueueAnimations(
   turns: PendingTurn[],
   onRemove: (id: string) => void,
@@ -27,6 +33,7 @@ function useQueueAnimations(
   const exitTimerRef = useRef<number | null>(null)
   const [enteringTurnId, setEnteringTurnId] = useState<string | null>(null)
   const [exitingTurnId, setExitingTurnId] = useState<string | null>(null)
+  const [restoreFocus, setRestoreFocus] = useState(false)
 
   useEffect(() => {
     const enteringTurn = turns.find((turn) => !knownTurnIdsRef.current.has(turn.id))
@@ -44,17 +51,19 @@ function useQueueAnimations(
     [],
   )
 
+  useLayoutEffect(() => {
+    if (!restoreFocus) return
+    restoreFocusAfterRemoval(listRef)
+    setRestoreFocus(false)
+  }, [listRef, restoreFocus])
+
   const removeTurn = (id: string) => {
     if (exitingTurnId) return
     setExitingTurnId(id)
     exitTimerRef.current = window.setTimeout(() => {
       onRemove(id)
       setExitingTurnId(null)
-      window.requestAnimationFrame(() => {
-        const nextControl = listRef.current?.querySelector<HTMLButtonElement>('button')
-        if (nextControl) nextControl.focus()
-        else document.querySelector<HTMLButtonElement>('[aria-label="Message"]')?.focus()
-      })
+      setRestoreFocus(true)
     }, 280)
   }
 

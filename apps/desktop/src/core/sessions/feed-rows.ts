@@ -39,6 +39,7 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     text: z.string(),
   }),
   z.strictObject({ shape: z.literal('thought'), id: identifierSchema, text: z.string() }),
+  z.strictObject({ shape: z.literal('command-output'), id: identifierSchema, text: z.string() }),
   z.strictObject({ shape: z.literal('marker'), id: identifierSchema, marker: feedMarkerSchema }),
   z.strictObject({
     shape: z.literal('source'),

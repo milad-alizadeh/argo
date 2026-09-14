@@ -27,6 +27,8 @@ export const FIXTURES = [
   'plannedWork',
   // Names a Model, Effort and Mode the composer has to state.
   'setupAnswered',
+  // Current Claude harness records: the first visible name must be the reconstructed command.
+  'harnessNoise',
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 

@@ -1,4 +1,5 @@
-import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
+import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
+import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
@@ -46,11 +47,7 @@ function restorePendingTurn(
   onChange: (text: string) => void,
 ) {
   onChange(turn.text)
-  editorRef.current?.update(() =>
-    $getRoot()
-      .clear()
-      .append($createParagraphNode().append($createTextNode(turn.text))),
-  )
+  editorRef.current?.update(() => $convertFromMarkdownString(turn.text, TRANSFORMERS))
   window.requestAnimationFrame(() => editorRef.current?.focus())
 }
 

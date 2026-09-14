@@ -37,7 +37,7 @@ async function sendFromComposer(page, text) {
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(text)
-  await page.keyboard.press('Enter')
+  await page.keyboard.press('Shift+Enter')
   return composer
 }
 
