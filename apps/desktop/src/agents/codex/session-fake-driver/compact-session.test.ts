@@ -12,9 +12,14 @@ test('compacts a Codex Session and clears its compaction once Codex reports the 
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const sessionId = await driver.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+  })
 
   await driver.compact(sessionId)
 
@@ -56,9 +61,14 @@ test('leaves a Codex Session usable when its compact request fails', async () =>
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => channel,
   })
-  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
+  const sessionId = await driver.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+  })
 
   await assert.rejects(driver.compact(sessionId))
 
@@ -72,6 +82,7 @@ test('refuses to compact a Session Argo no longer holds', async () => {
   const driver = createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
+    resumeTarget: async () => null,
     openChannel: () => fakeChannel(),
   })
 

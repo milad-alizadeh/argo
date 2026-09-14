@@ -29,6 +29,7 @@ export function fakeChannel(): CodexChannel & {
     },
     onNotification: (listener) => notifications.push(listener as never),
     onExit: () => {},
+    respond: () => {},
     close: () => {},
   }
 }
