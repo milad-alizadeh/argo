@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
+import { createWriteQueue } from '../storage/portable-file'
 import { projectError } from './contract'
 import { listProjects } from './list-projects'
 import { openProject } from './open-project'
@@ -26,6 +27,7 @@ export function attachProjectBridge(
   const store: ProjectStore = {
     registryPath: path.join(storage.userData, 'portable-v1', 'projects.json'),
     chooseFolder: () => chooseFolder(window),
+    exclusive: createWriteQueue(),
   }
   registerDomainHandlers({
     window,
