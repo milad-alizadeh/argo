@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionClient } from '@/core/sessions/client.ts'
-import { claudeSessionStartRequestSchema } from '@/core/sessions/contract.ts'
+import { sessionStartRequestSchema } from '@/core/sessions/contract.ts'
 import { SESSION_OPERATIONS } from '@/core/sessions/operations.ts'
 
 const feed = {
@@ -90,26 +90,28 @@ test('passes an error reply through as itself', async () => {
   assert.deepEqual({ ...reply, requestId: undefined }, { ...error, requestId: undefined })
 })
 
-test('starts a managed Claude Session through the named Session action', async () => {
+test('starts a managed Session through the named Session action', async () => {
   const request = {
+    cli: 'claude',
     cwd: '/projects/argo',
     prompt: 'Inspect the failing test.',
     setup: { model: 'opus', effort: 'max', mode: 'plan' },
   } as const
   const reply = {
     version: 1,
-    type: 'session.claude.started',
+    type: 'session.started',
     sessionId: 'managed-1',
   }
   const client = createSessionClient(async (channel, received) => {
-    assert.equal(channel, SESSION_OPERATIONS.startClaude.channel)
-    const parsed = claudeSessionStartRequestSchema.parse(received)
+    assert.equal(channel, SESSION_OPERATIONS.start.channel)
+    const parsed = sessionStartRequestSchema.parse(received)
+    assert.equal(parsed.cli, request.cli)
     assert.equal(parsed.cwd, request.cwd)
     assert.equal(parsed.prompt, request.prompt)
     assert.deepEqual(parsed.setup, request.setup)
     return { ...reply, requestId: parsed.requestId }
   })
 
-  const result = await client.startClaudeSession(request)
+  const result = await client.startSession(request)
   assert.deepEqual({ ...result, requestId: undefined }, { ...reply, requestId: undefined })
 })

@@ -1,0 +1,28 @@
+// One shape every CLI's drive adapter fills in (ADR-0024, #2030). Shared code calls only this
+// port; it never branches on which CLI it is talking to.
+import type { ClaudePermission } from './claude-contract'
+import type { DriveSessionErrorCode } from './session-error'
+
+export type DriveFailureCode = DriveSessionErrorCode | 'missing-session'
+export type DriveFailure = { error: DriveFailureCode }
+export type DriveOk = { ok: true }
+
+export type SessionDriveAdapter = {
+  cli: string
+  // A duck-typed Zod schema: lets Claude plug in its Turn-setup vocabulary and Codex refuse any
+  // Turn setup at all (#1885 is out of scope), without the router knowing either shape.
+  turnSetupSchema: { safeParse: (value: unknown) => { success: boolean } }
+  start(request: { cwd: string; prompt: string; setup: unknown }): Promise<
+    { sessionId: string } | DriveFailure
+  >
+  send(request: { sessionId: string; prompt: string; setup: unknown }): Promise<DriveOk | DriveFailure>
+  interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
+  readPermission(request: { sessionId: string }): Promise<{ permission: ClaudePermission | null }>
+  decidePermission(request: {
+    sessionId: string
+    permissionId: string
+    decision: 'allow' | 'deny'
+  }): Promise<DriveOk | DriveFailure>
+}
+
+export type SessionDriveAdapters = Record<string, SessionDriveAdapter>

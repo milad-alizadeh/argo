@@ -10,7 +10,7 @@ type SessionScreenDetailsProps = {
     ReturnType<typeof import('../hooks/useSessionComposer').useSessionComposer>,
     'failure' | 'props'
   >
-  permission: ReturnType<typeof import('../hooks/useClaudePermission').useClaudePermission>
+  permission: ReturnType<typeof import('../hooks/useSessionPermission').useSessionPermission>
   session: SessionRosterRow | null
   harness: HarnessControl
 }

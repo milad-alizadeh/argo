@@ -8,8 +8,7 @@ import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
-import { useClaudeSessionMutations } from './useClaudeSessionMutations'
-import { useCodexSessionMutations } from './useCodexSessionMutations'
+import { useSessionMutations } from './useSessionMutations'
 import type { useSessions } from './useSessions'
 
 const NO_ROWS: SessionRosterRow[] = []
@@ -38,13 +37,6 @@ function managedSessionIsRunning(
   )
 }
 
-// A CLI's own hook owns its IPC calls (ADR-0021); this is the one seam that picks between them,
-// so the composer it hands back never has to know which CLI it is driving.
-function useMutationsFor(cli: SessionCli) {
-  const mutationsByCli = { claude: useClaudeSessionMutations(), codex: useCodexSessionMutations() }
-  return mutationsByCli[cli]
-}
-
 export function useSessionComposer({
   cli,
   cockpit,
@@ -58,7 +50,7 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { interrupt, send, start } = useMutationsFor(cli)
+  const { interrupt, send, start } = useSessionMutations()
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
   const { control, watchTurn } = useTurnSetup({
     cli,
@@ -87,7 +79,7 @@ export function useSessionComposer({
         return false
       }
       try {
-        const reply = await start.mutateAsync({ cwd: cockpit.project.path, prompt, setup })
+        const reply = await start.mutateAsync({ cli, cwd: cockpit.project.path, prompt, setup })
         setFailure(null)
         if (setup !== null) watchTurn(reply.sessionId, setup, null)
         await invalidateSessionRoster(queryClient)
@@ -117,7 +109,7 @@ export function useSessionComposer({
 }
 
 function useInterrupt(
-  interrupt: ReturnType<typeof useMutationsFor>['interrupt'],
+  interrupt: ReturnType<typeof useSessionMutations>['interrupt'],
   sessionId: string | null,
   setFailure: (failure: Failure | null) => void,
 ) {
@@ -138,7 +130,7 @@ function useInterrupt(
 
 async function sendMessage(
   request: {
-    send: ReturnType<typeof useMutationsFor>['send']
+    send: ReturnType<typeof useSessionMutations>['send']
     prompt: string
     setup: TurnSetup | null
     sessionId: string

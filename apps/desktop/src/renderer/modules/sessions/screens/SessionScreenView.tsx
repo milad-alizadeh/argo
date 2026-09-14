@@ -8,8 +8,8 @@ import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector
 import { SessionComposerArea, SessionFacts } from '../components/SessionScreenDetails'
 import { BasicFeed } from '../feed/BasicFeed'
 import type { HarnessControl, SessionCli } from '../harness/harnesses'
-import { useClaudePermission } from '../hooks/useClaudePermission'
 import { useSessionComposer } from '../hooks/useSessionComposer'
+import { useSessionPermission } from '../hooks/useSessionPermission'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
@@ -56,7 +56,7 @@ export function SessionScreenView() {
     roster,
     selectedSessionId,
   })
-  const permission = useClaudePermission(selectedSessionId)
+  const permission = useSessionPermission(selectedSessionId)
   return (
     <SessionShell
       feed={feed}

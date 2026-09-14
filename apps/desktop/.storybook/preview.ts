@@ -48,10 +48,10 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
-  readClaudePermission: (request: { requestId: string; sessionId: string }) =>
+  readSessionPermission: (request: { requestId: string; sessionId: string }) =>
     Promise.resolve({
       version: 1,
-      type: 'session.claude.permission.read',
+      type: 'session.permission.read',
       requestId: request.requestId,
       sessionId: request.sessionId,
       permission: null,

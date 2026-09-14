@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { type SessionErrorCode, sessionError } from '@/core/sessions/contract'
+import {
+  type DriveSessionErrorCode,
+  driveSessionError,
+} from '@/core/sessions/contract'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionsSidebar } from '../components/SessionsSidebar'
 import { sessionRosterRow } from '../session-fixtures'
@@ -20,7 +23,7 @@ const orphaned = sessionRosterRow({
 
 // The bridge a restarted Argo answers with: the Roster lists the orphaned Session, and a Send
 // either resumes it into a live managed channel or is refused with the reason.
-function restartedHost(refusal: SessionErrorCode | null) {
+function restartedHost(refusal: DriveSessionErrorCode | null) {
   let resumed = false
   const before = window.argo
   window.argo = {
@@ -34,10 +37,10 @@ function restartedHost(refusal: SessionErrorCode | null) {
       filesRead: 1,
       filesUnreadable: 0,
     }),
-    sendClaudeSession: async ({ sessionId }) => {
-      if (refusal !== null) return sessionError(refusal, 'storybook-send')
+    sendSession: async ({ sessionId }) => {
+      if (refusal !== null) return driveSessionError(refusal, 'claude', 'storybook-send')
       resumed = true
-      return { version: 1, type: 'session.claude.accepted', requestId: 'storybook-send', sessionId }
+      return { version: 1, type: 'session.accepted', requestId: 'storybook-send', sessionId }
     },
   }
   return () => {
@@ -90,7 +93,7 @@ export const ResumesOnSend: Story = {
 }
 
 // Every refusal draws the same alert with a different message, so one code stands for all of them.
-const REFUSAL: SessionErrorCode = 'held-elsewhere'
+const REFUSAL: DriveSessionErrorCode = 'held-elsewhere'
 
 export const RefusedSend: Story = {
   beforeEach: () => restartedHost(REFUSAL),
@@ -98,7 +101,9 @@ export const RefusedSend: Story = {
     const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
 
     await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(REFUSAL, null).message),
+      expect(canvas.getByRole('alert')).toHaveTextContent(
+        driveSessionError(REFUSAL, 'claude', null).message,
+      ),
     )
     await expect(composer).toHaveTextContent('Carry on with the fix.')
     await expect(composer).toHaveFocus()

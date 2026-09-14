@@ -50,12 +50,12 @@ async function beginManagedSession(
 ): Promise<string> {
   const { sessions, turn } = registry
   const executable = options.findExecutable()
-  if (!executable) throw new CodexSessionDriverError('codex-cli-unavailable')
+  if (!executable) throw new CodexSessionDriverError('cli-unavailable')
   let channel: CodexChannel
   try {
     channel = options.openChannel(executable, { cwd, env: codexLaunchEnvironment() })
   } catch {
-    throw new CodexSessionDriverError('codex-launch-failed')
+    throw new CodexSessionDriverError('launch-failed')
   }
   let threadId: string | null = null
   try {
@@ -96,7 +96,7 @@ async function beginManagedSession(
     channel.close()
     if (threadId !== null) sessions.delete(threadId)
     if (error instanceof CodexSessionDriverError) throw error
-    throw new CodexSessionDriverError('codex-launch-failed')
+    throw new CodexSessionDriverError('launch-failed')
   }
 }
 

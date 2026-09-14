@@ -77,6 +77,10 @@ export function createSessionReader(sources: SessionSource[]): SessionReader {
   }
 
   return {
+    async ownerCliFor(sessionId) {
+      const owner = await ownerFor(sessionId)
+      return owner?.cli
+    },
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       const parsed = sessionListRequestSchema.safeParse(value)
