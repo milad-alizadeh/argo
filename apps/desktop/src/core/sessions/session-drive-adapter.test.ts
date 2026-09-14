@@ -16,6 +16,8 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
     send: async () => {},
     interrupt: () => {},
     rename: async () => 'Renamed.',
+    handoff: async () => {},
+    completeHandoffs: () => {},
     liveMessages: () => [],
     roster: () => [],
     orphans: () => new Set(),
@@ -39,6 +41,8 @@ function fakeCodexAdapter(): SessionDriveAdapter {
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
+    pendingQuestion: () => null,
+    decideQuestion: () => true,
     close: () => {},
   })
 }

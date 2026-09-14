@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
-import type { SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
@@ -14,7 +14,7 @@ export type FeedRowProps = {
   activeEvidenceId: string | null
   openToolGroups: ReadonlySet<string>
   onOpenToolGroup: (id: string, open: boolean) => void
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
@@ -80,6 +80,17 @@ function FeedRowContent({
           open={openToolGroups.has(row.id)}
         />
       )
+    case 'prose':
+      if (row.role === 'assistant')
+        return (
+          <FeedMarkdown
+            activeEvidenceId={activeEvidenceId}
+            onOpenEvidence={onOpenEvidence}
+            rowId={row.id}
+            text={row.text}
+          />
+        )
+      return <FeedPrompt text={row.text} />
     case 'ask':
       return (
         <FeedQuestion
@@ -111,11 +122,10 @@ function FeedPrompt({ text }: { text: string }) {
   )
 }
 
-function feedRowContent(row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'ask' }>) {
+function feedRowContent(
+  row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' | 'ask' }>,
+) {
   switch (row.shape) {
-    case 'prose':
-      if (row.role === 'assistant') return <FeedMarkdown text={row.text} />
-      return <FeedPrompt text={row.text} />
     case 'thought':
       return <PlainText text={row.text} />
     case 'command-output':
