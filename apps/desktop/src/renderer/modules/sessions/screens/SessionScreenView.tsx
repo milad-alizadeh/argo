@@ -114,7 +114,7 @@ export function SessionShell({
             <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
               <span className="flex-1" />
             </header>
-            <section aria-label="Session feed" className="min-h-0 flex-1">
+            <section aria-label="Session feed" className="min-h-0 flex-1 overflow-hidden">
               <BasicFeed
                 activeEvidenceId={activeEvidenceId}
                 feed={feed}
