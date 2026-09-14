@@ -3,7 +3,7 @@
 // same resume-chain. A Session Argo never started resumes the same way: origin does not decide
 // whether Argo can open a channel to a transcript it can read.
 import assert from 'node:assert/strict'
-import { chmod, readFile, writeFile } from 'node:fs/promises'
+import { chmod, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fixturePath } from '../../../core/sessions/fake-driver/session-fixture-files'
@@ -94,7 +94,16 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
   await sendFromComposer(relaunched, 'Take this one over.')
   const externalHistory = relaunched.getByRole('region', { name: 'Session history' })
-  await externalHistory.getByText('Fake Claude read: Take this one over.').waitFor()
+  await externalHistory
+    .getByText('Fake Claude read: Take this one over.')
+    .waitFor()
+    .catch(async (error) => {
+      // A refused resume (`held-elsewhere`, or any other Turn failure) swaps the composer for an
+      // Alert rather than throwing here, so the plain timeout above names nothing useful: read
+      // what actually rendered before failing.
+      const alerted = await relaunched.locator('[role="alert"]').allTextContents()
+      throw new Error(`${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}`)
+    })
   return relaunched
 }
 
@@ -114,6 +123,12 @@ async function waitForCompactionFeed(page, sessionId) {
 async function replaceInFile(file, search, replacement) {
   const before = await readFile(file, 'utf8')
   await writeFile(file, before.split(search).join(replacement))
+  // The transcript summariser caches a file by path and mtime; a coarse filesystem clock can
+  // leave this write's mtime tied with the read that happened before it, so the resume that
+  // follows would see the stale, pre-patch content. Setting the mtime into the near future rules
+  // that tie out rather than hoping the clock ticked.
+  const future = new Date(Date.now() + 60_000)
+  await utimes(file, future, future)
 }
 
 async function waitFor(condition, timeout = 10_000) {
