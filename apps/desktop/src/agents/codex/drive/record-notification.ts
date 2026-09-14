@@ -1,4 +1,5 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { LiveMessages } from './live-messages'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
@@ -29,14 +30,22 @@ export function recordCodexNotification({
     acceptTitle(renamed.title)
     return
   }
+  // No transcript floor participates in a live managed reading, so `unknown` — the honest
+  // "nothing observed" floor — leaves the protocol's own signal standing unopposed.
   const status = readThreadStatus(message)
   if (status?.threadId === sessionId) {
-    session.status = status.status
+    session.status = rollupSessionStatus('unknown', 'managed', {
+      kind: 'codex',
+      reading: { kind: 'thread', status: status.status },
+    })
     return
   }
   const completed = readCompletedTurn(message)
   if (completed?.threadId === sessionId && completed.turn.status === 'failed') {
-    session.status = 'unknown'
+    session.status = rollupSessionStatus('unknown', 'managed', {
+      kind: 'codex',
+      reading: { kind: 'turn-failed' },
+    })
   }
 }
 
