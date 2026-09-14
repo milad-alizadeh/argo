@@ -4,7 +4,6 @@ import type { ReactNode } from 'react'
 import type { Provider } from '@/core/accounts/contract'
 import type { Ticket, TicketLink, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
-import { buttonVariants } from '../../../components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -185,13 +184,13 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   return (
     <a
       aria-label={`Open ${ticket.key} in ${PROVIDER_PRESENTATION[provider].name}`}
-      className={`${buttonVariants({ size: 'xs', variant: 'ghost' })} ${keyText} justify-self-start shrink-0 text-muted-foreground`}
+      className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
       href={ticket.url}
       rel="noreferrer"
       target="_blank"
     >
       {ticket.key}
-      <ExternalLink aria-hidden="true" data-icon="inline-end" />
+      <ExternalLink aria-hidden="true" className="size-(--size-icon-meta) shrink-0" />
     </a>
   )
 }

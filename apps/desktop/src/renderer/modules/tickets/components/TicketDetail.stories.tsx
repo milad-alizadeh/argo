@@ -45,6 +45,7 @@ export const Default: Story = {
       'href',
       'https://github.com/octocat/hello-world/issues/607',
     )
+    await expect(ticketLink).not.toHaveClass('group/button')
     const title = within(article).getByRole('heading', { name: wayfinder.title })
     const linkBounds = ticketLink.getBoundingClientRect()
     const titleBounds = title.getBoundingClientRect()
