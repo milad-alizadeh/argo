@@ -163,7 +163,8 @@ type StateProps = {
   setState: (state: ComposerState) => void
 }
 
-const SECONDARY_COMPOSER_WIDTH = 'w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]'
+const SECONDARY_COMPOSER_WIDTH =
+  'w-[calc(100%-var(--spacing-shell-section))] max-w-[calc(var(--size-session-column)-var(--spacing-shell-section))]'
 
 function IconLabel({
   icon,
@@ -441,7 +442,7 @@ function ConciergeOrb() {
       aria-hidden="true"
       className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))]"
     >
-      <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
+      <span className="absolute inset-(--inset-concierge-highlight) rounded-full bg-[radial-gradient(circle_at_var(--position-concierge-highlight-x)_var(--position-concierge-highlight-y),var(--background),transparent_var(--gradient-concierge-highlight-fade)),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
     </span>
   )
 }
@@ -1207,7 +1208,11 @@ function RunSetupMenu({ state, setState }: StateProps) {
         </span>
         <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
+      <DropdownMenuContent
+        align="start"
+        side="top"
+        className="w-(--size-session-menu) overflow-hidden p-0"
+      >
         <div className="border-b p-2">
           <div
             className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
@@ -1291,7 +1296,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
               style={{
                 background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${(effortIndex / Math.max(1, definition.efforts.length - 1)) * 100}%, var(--muted) ${(effortIndex / Math.max(1, definition.efforts.length - 1)) * 100}%, var(--muted) 100%)`,
               }}
-              className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground"
+              className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-(--inset-slider-thumb-lift) [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground"
             />
             <div className="relative mt-2 h-4 type-meta text-muted-foreground">
               {definition.efforts.map((effort, index) => (
@@ -1357,7 +1362,7 @@ function PermissionMenu({ state, setState }: StateProps) {
         <span className="hidden @[36rem]:inline">{state.permission}</span>
         <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
+      <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">
             {definition.label} permissions
@@ -1448,7 +1453,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
       className={`w-full overflow-hidden transition-[height] duration-standard ease-emphasized will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}
     >
       <div>
-        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) select-none p-(--spacing-composer-attachment-gutter)">
+        <AttachmentGroup className="w-(--size-composer-attachment-strip) max-w-[calc(100%-var(--inset-composer-attachment-strip))] flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) select-none p-(--spacing-composer-attachment-gutter)">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -1507,7 +1512,7 @@ function ComposerAutocomplete({
   if (suggestions.length === 0) return null
   const isCommand = draft.match(/(^|\s)\/[^\s]*$/)
   return (
-    <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-card shadow-xl">
+    <div className="absolute bottom-full left-0 z-40 mb-2 w-(--size-composer-suggestions) overflow-hidden rounded-xl border bg-card shadow-xl">
       <div className="flex items-center border-b px-3 py-2">
         <span className="type-meta font-medium text-muted-foreground">
           {isCommand ? 'Skills and commands' : 'Files, folders, and skills'}
@@ -1658,7 +1663,7 @@ function ContextPopover({
   return (
     <Popover>
       <PopoverTrigger render={trigger}>{triggerContent}</PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
+      <PopoverContent align="end" side="top" className="w-(--size-session-popover) gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
           <PopoverDescription className="type-prose">
@@ -1718,7 +1723,7 @@ function ContextPopover({
               {claudeComposition.map((item) => (
                 <div
                   key={item.label}
-                  className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2"
+                  className="grid grid-cols-[var(--size-context-label-column)_1fr_var(--size-control)] items-center gap-2"
                 >
                   <span className="text-muted-foreground">{item.label}</span>
                   <Progress value={item.percentage} className="h-1.5" />
@@ -1815,7 +1820,7 @@ function ContextSurface({
               className={`absolute inset-y-0 left-0 ${zone.fill}`}
               style={{ width: `${percentage}%` }}
             />
-            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+            <div className="absolute -inset-y-(--spacing-hair) w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
         <div className="shrink-0 type-meta tabular-nums">
@@ -1868,7 +1873,7 @@ function ContextSurface({
                       style={{ width: `${percentage}%` }}
                     />
                     <span
-                      className="absolute inset-y-[-2px] w-0.5 bg-foreground"
+                      className="absolute -inset-y-(--spacing-hair) w-0.5 bg-foreground"
                       style={{ left: '20%' }}
                     />
                   </button>
@@ -1962,7 +1967,7 @@ function ContextSurface({
               className={`absolute inset-y-0 left-0 ${zone.fill}`}
               style={{ width: `${percentage}%` }}
             />
-            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+            <div className="absolute -inset-y-(--spacing-hair) w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
         <div className="shrink-0 text-right type-meta tabular-nums">
@@ -2092,7 +2097,7 @@ function QueuePreview({
   }
   const shell = {
     attached:
-      'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted px-3 pb-4 pt-2.5 shadow-sm',
+      'relative z-0 mx-auto -mb-2 w-[calc(100%-var(--spacing-shell-section))] max-w-[calc(var(--size-session-column)-var(--spacing-shell-section))] rounded-t-xl border bg-muted px-3 pb-4 pt-2.5 shadow-sm',
     inline: 'mr-72 flex border-b bg-muted px-3 py-2',
     floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-card px-3 py-2 shadow-sm',
     integrated: '',
@@ -2145,7 +2150,7 @@ function TaskPlanPopover() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]"
+            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium shadow-control"
             aria-label="Open task plan"
           />
         }
@@ -2568,7 +2573,7 @@ export function ComposerPrototype() {
                           </div>
                         </div>
                         <div
-                          className={`composer-queue-stack pointer-events-auto relative z-0 mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}
+                          className={`composer-queue-stack pointer-events-auto relative z-0 mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-surface [&_button]:!font-normal [&_span]:!font-normal`}
                         >
                           <QueuePreview
                             messages={queuedMessages}
@@ -2584,7 +2589,7 @@ export function ComposerPrototype() {
                       </div>
                       <AnimatedHeight>
                         <form
-                          className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none"
+                          className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-surface [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none"
                           onSubmit={(event) => {
                             event.preventDefault()
                             send()
@@ -2592,7 +2597,7 @@ export function ComposerPrototype() {
                         >
                           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
                           <InputGroup
-                            className={`relative z-20 overflow-hidden rounded-xl !bg-card shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}
+                            className={`relative z-20 overflow-hidden rounded-xl !bg-card shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-(--size-focus-ring) [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}
                           >
                             <div className="absolute top-4 right-4 z-20">
                               <TaskPlanPopover />
@@ -2652,7 +2657,7 @@ export function ComposerPrototype() {
                         </form>
                       </AnimatedHeight>
                       <div
-                        className={`relative z-0 mx-auto -mt-2 ${SECONDARY_COMPOSER_WIDTH} [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}
+                        className={`relative z-0 mx-auto -mt-2 ${SECONDARY_COMPOSER_WIDTH} [&>*]:!px-4 [&>*]:!shadow-surface [&_button]:!font-normal [&_span]:!font-normal`}
                       >
                         <ContextSurface state={state} layout="attached" />
                       </div>

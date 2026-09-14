@@ -73,7 +73,7 @@ function LightboxContent({
         width={image.previewSize?.width}
         height={image.previewSize?.height}
         alt={image.alt}
-        className="relative z-10 max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-cover"
+        className="relative z-10 max-h-[calc(100dvh-var(--inset-lightbox-margin-y))] max-w-[calc(100dvw-var(--inset-lightbox-margin-x))] rounded-lg object-cover"
       />
     </DialogContent>
   )

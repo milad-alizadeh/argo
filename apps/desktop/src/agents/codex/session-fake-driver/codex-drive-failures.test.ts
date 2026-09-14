@@ -19,8 +19,7 @@ test('driving a Session Codex never launched reports a drivable failure, not a s
       sessionId: 'never-started',
       prompt: 'x',
     },
-    adapters,
-    ownerCliFor,
+    { adapters, ownerCliFor },
   )
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.code, 'not-drivable')

@@ -10,7 +10,9 @@ const REVEAL_MIN_MS = 250
 const REVEAL_MAX_MS = 1200
 // The soft lower edge of the uncovered text, so lines fade in rather than appear at a cut.
 const REVEAL_EDGE_PX = 24
-const REVEAL_MASK = `linear-gradient(to bottom, #000 calc(100% - ${REVEAL_EDGE_PX}px), transparent)`
+// The mask's own colour is achromatic: only its alpha selects what's revealed, independent of
+// the appearance, so it stays a CSS keyword rather than an app colour token.
+const REVEAL_MASK = `linear-gradient(to bottom, black calc(100% - ${REVEAL_EDGE_PX}px), transparent)`
 
 export type Reveal = { fromPx: number; toPx: number; durationMs: number }
 

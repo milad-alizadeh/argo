@@ -18,6 +18,7 @@ type SessionScreenDetailsProps = {
     'failure' | 'props'
   >
   permission: ReturnType<typeof import('../hooks/useSessionPermission').useSessionPermission>
+  questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl
 }
@@ -25,6 +26,7 @@ type SessionScreenDetailsProps = {
 export function SessionComposerArea({
   composer,
   permission,
+  questionPending,
   session,
   harness,
 }: SessionScreenDetailsProps) {
@@ -41,6 +43,7 @@ export function SessionComposerArea({
       <SessionComposer
         {...composer.props}
         contextTokens={session?.contextTokens}
+        disabled={questionPending}
         harness={harness}
         plan={session?.plan ?? null}
       />

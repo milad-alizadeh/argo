@@ -8,6 +8,7 @@ import { useSessionComposerState } from './useSessionComposerState'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
+  disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
   isHandingOff?: boolean
@@ -24,6 +25,7 @@ export type SessionComposerProps = {
 
 export function SessionComposer({
   contextTokens,
+  disabled = false,
   focusOnMount = false,
   isCompacting = false,
   isHandingOff = false,
@@ -42,6 +44,7 @@ export function SessionComposer({
     <ComposerForm
       attachments={state.attachments}
       contextTokens={contextTokens}
+      disabled={disabled}
       draft={state.draft}
       editorRef={state.editorRef}
       focusOnMount={focusOnMount}
@@ -59,7 +62,9 @@ export function SessionComposer({
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}
       onReorder={state.reorderPendingTurn}
-      onSend={() => void state.send()}
+      onSend={() => {
+        if (!disabled) void state.send()
+      }}
       pendingTurns={state.pendingTurns}
       plan={plan}
       sessionId={sessionId}

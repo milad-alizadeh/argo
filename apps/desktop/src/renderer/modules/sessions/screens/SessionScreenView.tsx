@@ -1,7 +1,6 @@
-import { type ReactNode, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
 import {
@@ -10,52 +9,38 @@ import {
   SessionWorkInspector,
 } from '../components/SessionScreenDetails'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { BasicFeed } from '../feed/BasicFeed'
 import { useSessionComposer } from '../hooks/useSessionComposer'
 import { useSessionPermission } from '../hooks/useSessionPermission'
+import { useSessionQuestion } from '../hooks/useSessionQuestion'
 import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
-import type { SessionFeedRow } from '../types'
-import { SESSION_SPLIT } from './session-screen-layout'
+import type { SessionFeed, SessionFeedRow } from '../types'
+import { SessionShell } from './SessionShell'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
-import { useComposerFadeTop } from './useComposerFadeTop'
 import { useSelectedSession } from './useSelectedSession'
 
-import './session-screen.css'
-
-type SessionShellProps = {
-  composer: ReactNode
-  inspector: ReactNode
-  feed: ReturnType<typeof useSessions>['feed']
-  feedError: ReturnType<typeof useSessions>['feedError']
-  compactionStartedAt?: string | null
-  compactionPercentage?: number | null
-  compactionTokens?: string | null
-  handoffStartedAt?: string | null
-  isRunning: boolean
-  selectedSessionId: string | null
-  activeEvidenceId: string | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
-  defaultInspectorCollapsed?: boolean
-  inspectorReveal?: string | null
+// An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
+function pendingQuestionId(feed: SessionFeed | null): string | null {
+  const row = feed?.rows.find((row) => row.shape === 'ask' && row.answer === null)
+  return row?.id ?? null
 }
 
-export function SessionScreenView() {
+// A screen is a thin container: it resolves state here, and SessionScreenView hands a pure
+// render surface the result.
+function useSessionScreenModel() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
-  const newSession = sessionId === 'new'
-  const selectedSessionId = newSession ? null : (sessionId ?? null)
+  const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { feed, feedError, roster } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<Extract<SessionFeedRow, { shape: 'tool' }> | null>(null)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  const cli = harness.cli
   const composer = useSessionComposer({
-    cli,
+    cli: harness.cli,
     cockpit,
     focusOnMount: location.state === COMPOSER_FOCUS_STATE,
     navigate,
@@ -63,6 +48,38 @@ export function SessionScreenView() {
     selectedSessionId,
   })
   const permission = useSessionPermission(selectedSessionId)
+  const question = useSessionQuestion(selectedSessionId)
+  return {
+    selectedSessionId,
+    feed,
+    feedError,
+    roster,
+    navigate,
+    session,
+    evidence,
+    setEvidence,
+    harness,
+    composer,
+    permission,
+    question,
+  }
+}
+
+export function SessionScreenView() {
+  const {
+    selectedSessionId,
+    feed,
+    feedError,
+    roster,
+    navigate,
+    session,
+    evidence,
+    setEvidence,
+    harness,
+    composer,
+    permission,
+    question,
+  } = useSessionScreenModel()
   const hasSessionWork = sessionHasWork(session)
   return (
     <SessionShell
@@ -76,10 +93,16 @@ export function SessionScreenView() {
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
       onOpenEvidence={setEvidence}
+      onAnswerQuestion={(_sessionId, questionId, answers) =>
+        void question.decide(questionId, answers)
+      }
+      answeringQuestionId={question.answeringId}
+      questionFailure={question.failureFor}
       composer={
         <SessionComposerArea
           composer={composer}
           permission={permission}
+          questionPending={pendingQuestionId(feed) !== null}
           session={session}
           harness={harness}
         />
@@ -97,84 +120,5 @@ export function SessionScreenView() {
       defaultInspectorCollapsed={!hasSessionWork}
       inspectorReveal={evidence?.id}
     />
-  )
-}
-
-export function SessionShell({
-  composer,
-  inspector,
-  feed,
-  feedError,
-  compactionStartedAt = null,
-  compactionPercentage = null,
-  compactionTokens = null,
-  handoffStartedAt = null,
-  isRunning,
-  selectedSessionId,
-  activeEvidenceId,
-  onOpenEvidence,
-  defaultInspectorCollapsed = false,
-  inspectorReveal = null,
-}: SessionShellProps) {
-  const composerElement = useRef<HTMLElement>(null)
-  const workspaceElement = useRef<HTMLElement>(null)
-  const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
-
-  return (
-    <main
-      data-component="SessionShell"
-      className="relative h-full min-h-0 overflow-hidden bg-background"
-    >
-      <InspectorSplit
-        inspector={inspector}
-        defaultCollapsed={defaultInspectorCollapsed}
-        noun="Session"
-        reveal={inspectorReveal}
-        sizes={SESSION_SPLIT}
-        workspace={
-          <section
-            aria-label="Session workspace"
-            className="relative flex h-full min-h-0 flex-col"
-            ref={workspaceElement}
-          >
-            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-(--spacing-shell-gutter)">
-              <span className="flex-1" />
-            </header>
-            <section
-              aria-label="Session feed"
-              className="session-screen__feed min-h-0 flex-1 overflow-hidden"
-            >
-              <BasicFeed
-                activeEvidenceId={activeEvidenceId}
-                compactionStartedAt={compactionStartedAt}
-                compactionPercentage={compactionPercentage}
-                compactionTokens={compactionTokens}
-                handoffStartedAt={handoffStartedAt}
-                feed={feed}
-                failure={feedError}
-                isRunning={isRunning}
-                selectedSessionId={selectedSessionId}
-                onOpenEvidence={onOpenEvidence}
-              />
-            </section>
-            {fadeTop === null ? null : (
-              <div
-                aria-hidden="true"
-                data-component="SessionComposerFade"
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
-                style={{ top: `${fadeTop}px` }}
-              />
-            )}
-            <section
-              aria-label="Session composer"
-              className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
-              ref={composerElement}
-            >
-              {composer}
-            </section>
-          </section>
-        }
-      />
-    </main>
   )
 }

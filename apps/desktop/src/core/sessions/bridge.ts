@@ -15,8 +15,10 @@ import {
 import {
   compactSession,
   decideSessionPermission,
+  decideSessionQuestion,
   handoffSession,
   interruptSession,
+  type OwnerContext,
   readSessionPermission,
   sendSession,
   startSession,
@@ -50,6 +52,10 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
   return chosen.canceled ? [] : chosen.filePaths
 }
 
+function ownerContext(context: SessionContext): OwnerContext {
+  return { adapters: context.adapters, ownerCliFor: context.reader.ownerCliFor }
+}
+
 // The same renderer authority the Project bridge asserts: the main frame of this window, on the
 // renderer URL this app loaded. A page that navigated away holds no Session.
 export function attachSessionBridge(
@@ -71,18 +77,14 @@ export function attachSessionBridge(
       feed: (request, context) => context.reader.readSessionFeed(request),
       rename: (request, context) => context.reader.renameSession(request),
       start: (request, context) => startSession(request, context.adapters),
-      send: (request, context) =>
-        sendSession(request, context.adapters, context.reader.ownerCliFor),
-      interrupt: (request, context) =>
-        interruptSession(request, context.adapters, context.reader.ownerCliFor),
-      compact: (request, context) =>
-        compactSession(request, context.adapters, context.reader.ownerCliFor),
-      handoff: (request, context) =>
-        handoffSession(request, context.adapters, context.reader.ownerCliFor),
-      readPermission: (request, context) =>
-        readSessionPermission(request, context.adapters, context.reader.ownerCliFor),
+      send: (request, context) => sendSession(request, ownerContext(context)),
+      interrupt: (request, context) => interruptSession(request, ownerContext(context)),
+      compact: (request, context) => compactSession(request, ownerContext(context)),
+      handoff: (request, context) => handoffSession(request, ownerContext(context)),
+      readPermission: (request, context) => readSessionPermission(request, ownerContext(context)),
       decidePermission: (request, context) =>
-        decideSessionPermission(request, context.adapters, context.reader.ownerCliFor),
+        decideSessionPermission(request, ownerContext(context)),
+      decideQuestion: (request, context) => decideSessionQuestion(request, ownerContext(context)),
       chooseAttachments: (request, context) => chooseAttachments(request, context.attachments),
       statAttachments: (request) => statAttachments(request),
     },

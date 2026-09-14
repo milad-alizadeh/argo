@@ -5,7 +5,7 @@ import type { TicketLabel as Label } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
 
 const TINTED =
-  'border-[color-mix(in_oklab,var(--ticket-label)_45%,transparent)] bg-[color-mix(in_oklab,var(--ticket-label)_18%,transparent)] text-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-lean),var(--foreground))]'
+  'border-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-border-mix),transparent)] bg-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-fill-mix),transparent)] text-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-lean),var(--foreground))]'
 
 export function TicketLabel({ label }: { label: Label }) {
   if (!label.color)

@@ -10,13 +10,58 @@ import {
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
   type SessionPermissionRequest,
+  type SessionQuestionDecisionRequest,
   type SessionSendRequest,
   type SessionStartReply,
   type SessionStartRequest,
   sessionError,
 } from './contract'
-import { driveFailureReply, ownedAcceptedReply, ownedAdapter } from './owned-drive-action'
-import type { SessionDriveAdapters } from './session-drive-adapter'
+import type {
+  DriveFailureCode,
+  SessionDriveAdapter,
+  SessionDriveAdapters,
+} from './session-drive-adapter'
+import { driveSessionError, isDriveCli } from './session-error'
+
+export type OwnerContext = {
+  adapters: SessionDriveAdapters
+  ownerCliFor: (sessionId: string) => Promise<string | undefined>
+}
+type Owned = { adapter: SessionDriveAdapter; cli: string }
+
+function driveFailureReply(cli: string, failure: DriveFailureCode, requestId: string) {
+  if (failure === 'missing-session') return sessionError('missing-session', requestId)
+  return driveSessionError(failure, isDriveCli(cli) ? cli : 'claude', requestId)
+}
+
+async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<Owned | undefined> {
+  const cli = await context.ownerCliFor(sessionId)
+  if (cli === undefined) return undefined
+  const adapter = context.adapters[cli]
+  return adapter === undefined ? undefined : { adapter, cli }
+}
+
+// Every drive operation but `start` runs against the Session's own owner, then reports either the
+// shared `accepted` reply or the failure the adapter named — one shape the operations below share
+// rather than each repeating the owner lookup and the error mapping.
+async function ownedAccepted<T>(
+  context: OwnerContext,
+  request: { sessionId: string; requestId: string },
+  run: (owned: Owned) => Promise<{ error: DriveFailureCode } | T>,
+): Promise<SessionAcceptedReply> {
+  const owned = await ownedAdapter(context, request.sessionId)
+  if (owned === undefined) return sessionError('missing-session', request.requestId)
+  const result = await run(owned)
+  if (result !== null && typeof result === 'object' && 'error' in result) {
+    return driveFailureReply(owned.cli, result.error, request.requestId)
+  }
+  return {
+    version: 1,
+    type: 'session.accepted',
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+  }
+}
 
 export async function startSession(
   request: SessionStartRequest,
@@ -43,73 +88,54 @@ export async function startSession(
 
 export async function sendSession(
   request: SessionSendRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
-  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
+  const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   if (!owned.adapter.turnSetupSchema.safeParse(request.setup).success) {
     return sessionError('invalid-request', request.requestId)
   }
-  const result = await owned.adapter.send({
-    sessionId: request.sessionId,
-    prompt: request.prompt,
-    setup: request.setup,
-  })
-  if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return {
-    version: 1,
-    type: 'session.accepted',
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-  }
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.send({
+      sessionId: request.sessionId,
+      prompt: request.prompt,
+      setup: request.setup,
+    }),
+  )
 }
 
-export async function interruptSession(
+export function interruptSession(
   request: SessionInterruptRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
-  return ownedAcceptedReply({
-    adapters,
-    ownerCliFor,
-    request,
-    act: (adapter) => adapter.interrupt({ sessionId: request.sessionId }),
-  })
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.interrupt({ sessionId: request.sessionId }),
+  )
 }
 
-export async function compactSession(
+export function compactSession(
   request: SessionCompactRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
-  return ownedAcceptedReply({
-    adapters,
-    ownerCliFor,
-    request,
-    act: (adapter) => adapter.compact({ sessionId: request.sessionId }),
-  })
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.compact({ sessionId: request.sessionId }),
+  )
 }
 
 export async function handoffSession(
   request: SessionHandoffRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
-  return ownedAcceptedReply({
-    adapters,
-    ownerCliFor,
-    request,
-    act: (adapter) => adapter.handoff({ sessionId: request.sessionId }),
-  })
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.handoff({ sessionId: request.sessionId }),
+  )
 }
 
 export async function readSessionPermission(
   request: SessionPermissionRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionPermissionReply> {
-  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
+  const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const { permission } = await owned.adapter.readPermission({ sessionId: request.sessionId })
   return {
@@ -121,20 +147,28 @@ export async function readSessionPermission(
   }
 }
 
-export async function decideSessionPermission(
+export function decideSessionPermission(
   request: SessionPermissionDecisionRequest,
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+  context: OwnerContext,
 ): Promise<SessionAcceptedReply> {
-  return ownedAcceptedReply({
-    adapters,
-    ownerCliFor,
-    request,
-    act: (adapter) =>
-      adapter.decidePermission({
-        sessionId: request.sessionId,
-        permissionId: request.permissionId,
-        decision: request.decision,
-      }),
-  })
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.decidePermission({
+      sessionId: request.sessionId,
+      permissionId: request.permissionId,
+      decision: request.decision,
+    }),
+  )
+}
+
+export function decideSessionQuestion(
+  request: SessionQuestionDecisionRequest,
+  context: OwnerContext,
+): Promise<SessionAcceptedReply> {
+  return ownedAccepted(context, request, (owned) =>
+    owned.adapter.decideQuestion({
+      sessionId: request.sessionId,
+      questionId: request.questionId,
+      answers: request.answers,
+    }),
+  )
 }

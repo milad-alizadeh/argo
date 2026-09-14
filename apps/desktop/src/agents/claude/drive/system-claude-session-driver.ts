@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { claudePendingQuestion } from '../sessions/pending-question'
 import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
 import { createHandoffLedger } from './handoff-ledger'
@@ -43,6 +44,7 @@ export function createSystemClaudeSessionDriver(paths: {
     handoffRoot: paths.handoffBriefs,
     readHandoffBrief,
     handoffLedger,
+    pendingQuestion: (sessionId) => claudePendingQuestion(paths.transcripts, sessionId),
     schedule: (callback, milliseconds) => {
       setTimeout(callback, milliseconds)
     },

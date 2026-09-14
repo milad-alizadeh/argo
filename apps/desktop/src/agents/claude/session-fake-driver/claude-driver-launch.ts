@@ -60,6 +60,7 @@ export function launch(
   options: {
     registry?: string
     resumeTarget?: (sessionId: string) => Promise<ResumeTarget | null>
+    pendingQuestion?: (sessionId: string) => Promise<{ id: string } | null>
     findExecutable?: () => string | null
     spawnFails?: boolean
     gate?: ClaudePermissionGate
@@ -92,6 +93,7 @@ export function launch(
     ledger,
     resumeTarget:
       options.resumeTarget ?? (async () => ({ cwd: '/projects/argo', tipId: 'tip-session' })),
+    pendingQuestion: options.pendingQuestion ?? (async () => null),
     spawn: (command, commandArguments, spawnOptions) => {
       if (options.spawnFails) throw new Error('spawn failed')
       const { cwd, env: environment } = spawnOptions

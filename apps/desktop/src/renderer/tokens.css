@@ -59,6 +59,11 @@
   --spacing-snug: 12px;
   --spacing-wide: 20px;
   --radius-row: 6px;
+  /* Every bordered surface draws this width; naming it keeps a calc from restating the literal. */
+  --size-border: 1px;
+  /* The ring shadcn's own `focus-visible` utilities draw; named so a hand-built control matches it
+     without repeating shadcn's own arbitrary value. */
+  --size-focus-ring: 3px;
   /* The height of a pane head, the Roster's and the Feed's alike, so the two heads meet on one
      line across the handle between them. */
   --size-pane-head: 46px;
@@ -95,6 +100,25 @@
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
   --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
+  --size-session-menu: 23rem;
+  /* A wider popover carrying prose and a meter: context and usage. */
+  --size-session-popover: 26rem;
+  /* The composer's file/skill autocomplete popover. */
+  --size-composer-suggestions: 30rem;
+  /* The attachment strip's own width and how far it insets from its container's edges. */
+  --size-composer-attachment-strip: 42rem;
+  --inset-composer-attachment-strip: 9rem;
+  /* The label column of a context-composition row (Conversation, System prompt, …); the trailing
+     value column reuses --size-control, the same width a control column takes everywhere else. */
+  --size-context-label-column: 6.5rem;
+  /* How far the fullscreen image lightbox insets from the viewport on each axis. */
+  --inset-lightbox-margin-y: 6rem;
+  --inset-lightbox-margin-x: 4rem;
+  /* Trailing space reserved so the last evidence item can scroll clear of the tool-sequence strip. */
+  --size-feed-scroll-spacer: 3rem;
+  /* Centres a range input's thumb over its 1.5px track: half the thumb's own height, up. */
+  --inset-slider-thumb-lift: -5px;
   /* The state dot sits on the title's optical centre: half of what the title's line box has left
      over once the dot is in it. Derived, never nudged, so it follows the type scale. */
   --size-state-dot: 6px;
@@ -224,6 +248,11 @@
   );
   --size-traffic-light: 12px;
   --inset-traffic-light-control: 18px;
+  /* ConciergeOrb's decorative highlight: a fixed flourish, not a themed surface. */
+  --inset-concierge-highlight: 12%;
+  --position-concierge-highlight-x: 35%;
+  --position-concierge-highlight-y: 30%;
+  --gradient-concierge-highlight-fade: 35%;
   --color-traffic-light-close: #ff5f57;
   --color-traffic-light-minimize: #febc2e;
   --color-traffic-light-zoom: #28c840;
@@ -269,6 +298,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* A provider label's tint: how far its border and its fill lean toward the label's own colour.
+     Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
+  --ticket-label-border-mix: 45%;
+  --ticket-label-fill-mix: 18%;
   /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
   --size-ticket-key: 40px;
   --size-ticket-key-long: 64px;

@@ -13,6 +13,7 @@ export * from './attachments-contract'
 export * from './claude-contract'
 export * from './handoff-contract'
 export * from './permission'
+export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
 
