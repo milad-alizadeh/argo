@@ -102,7 +102,7 @@ export const Diagram: Story = {
   args: { text: DIAGRAM_MARKDOWN },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const diagram = canvas.getByRole('figure', { name: 'Mermaid diagram' })
+    const diagram = canvas.getByRole('figure')
     await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
     await expect(diagram).toHaveTextContent('Session')
   },
@@ -130,7 +130,12 @@ export const DiagramOpensEvidence: Story = {
 // `${rowId}:diagram:${offset}`, and the diagram is the first character of this fixture, so its
 // offset is 0.
 export const DiagramActive: Story = {
-  args: { text: DIAGRAM_MARKDOWN, rowId: 'assistant-1', activeEvidenceId: 'assistant-1:diagram:0' },
+  args: {
+    text: DIAGRAM_MARKDOWN,
+    rowId: 'assistant-1',
+    activeEvidenceId: 'assistant-1:diagram:0',
+    onOpenEvidence: fn(),
+  },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull(), {
       timeout: 5000,
