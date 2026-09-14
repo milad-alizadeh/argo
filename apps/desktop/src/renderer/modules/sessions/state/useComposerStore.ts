@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
 
@@ -52,6 +52,17 @@ function updateAttachments(
     return others
   }
   return { ...attachments, [composerKey]: updated }
+}
+
+// A test runs this module with no `localStorage`, and the default storage says so on every write.
+// The drafts are the window's to keep, so a run without one keeps them for its own length.
+const composerStorage: Storage = globalThis.localStorage ?? {
+  length: 0,
+  clear: () => {},
+  getItem: () => null,
+  key: () => null,
+  removeItem: () => {},
+  setItem: () => {},
 }
 
 export const useComposerStore = create<ComposerState>()(
@@ -107,6 +118,7 @@ export const useComposerStore = create<ComposerState>()(
     }),
     {
       name: 'argo.composer',
+      storage: createJSONStorage(() => composerStorage),
       partialize: ({ harness, drafts, attachments }) => ({ harness, drafts, attachments }),
       merge: (stored, current) => ({ ...current, ...storedSchema.safeParse(stored).data }),
     },

@@ -176,7 +176,7 @@ export const ReturnStartsOnceAndShowsRunningUntilTheFirstEvent: Story = {
   beforeEach: returnHost.beforeEach,
   play: async ({ canvasElement }) => {
     const { canvas } = await writePrompt(canvasElement, returnHost.state)
-    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await userEvent.keyboard('{Enter}')
     await expectStartedOnce(canvasElement, returnHost.state.prompts)
 
     await waitFor(() => expect(returnHost.state.feedReads).toBeGreaterThan(0))

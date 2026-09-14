@@ -1,11 +1,18 @@
 # 0026 · A resume-chain can be resumed; orphaned is not the end of a Session
 
-Status: accepted · 2026-08-11 · amended 2026-09-13 by #1842 (the trigger is the next Turn)
+Status: accepted · 2026-08-11 · amended 2026-09-13 by #1842 (the trigger is the next Turn) ·
+amended 2026-09-14 by #2092, superseded in part by ADR-0040 (origin does not gate a resume)
 
 Supersedes one clause of `docs/domain/l2-session.md`: *"the PTY/steering channel dies with the
 owning process and cannot be re-adopted, so a `managed` session whose owner is gone demotes to
 **orphaned** — observation-only, steering unrecoverable."* The first half stands. The second is
 withdrawn. Binding on #10 and on `SessionOwnership`.
+
+**ADR-0040 withdraws this ADR's `never-owned` standing and its "`external` Sessions are still not
+resumable" consequence below**: origin (whether Argo started a Session) no longer grades
+resumability at all. What follows is kept for the reasoning that still holds — a live channel is
+not durable, a Session is, and the ledger only ever answers "who holds this Session's channel
+right now."
 
 ## Context
 
@@ -88,8 +95,9 @@ flag) adopts nothing at all.
 
 - **A resume replays the chain's context, so it costs tokens and time.** The first Turn sent is
   where that is spent, so a selection made only to read the Feed costs nothing.
-- **`external` Sessions are still not resumable.** One Argo never started belongs to whoever did,
-  and taking it over is a separate decision.
+- ~~**`external` Sessions are still not resumable.** One Argo never started belongs to whoever
+  did, and taking it over is a separate decision.~~ Withdrawn by ADR-0040: origin does not decide
+  resumability, only current live-channel ownership does.
 - **Codex is out.** One CLI is what the app can honestly launch (ADR-0024).
 - **A resume continues the chain's LATEST link, not its root.** The Session's own id is the root's,
   and resuming that would fork the chain where its first continuation left. The tip's transcript

@@ -1,7 +1,9 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { NavigateFunction } from 'react-router'
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
+import type { Send } from '../components/useSend'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
@@ -22,16 +24,29 @@ export function sendToSelected(request: {
   setFailure: (failure: Failure | null) => void
   prompt: string
   setup: TurnSetup | null
+  attachments: SessionAttachmentInput[]
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }) {
-  const { queryClient, roster, selectedSessionId, send, setFailure, prompt, setup, watchTurn } =
-    request
+  const {
+    queryClient,
+    roster,
+    selectedSessionId,
+    send,
+    setFailure,
+    prompt,
+    setup,
+    attachments,
+    watchTurn,
+  } = request
   const since = roster?.sessions.find(({ id }) => id === selectedSessionId)?.turnStartedAt ?? null
-  return sendMessage({ send, prompt, setup, sessionId: selectedSessionId, setFailure }, () => {
-    if (setup !== null) watchTurn(selectedSessionId, setup, since)
-    // A Send can resume the Session (ADR-0026), so its posture may have changed.
-    return invalidateSessionRoster(queryClient)
-  })
+  return sendMessage(
+    { send, prompt, setup, attachments, sessionId: selectedSessionId, setFailure },
+    () => {
+      if (setup !== null) watchTurn(selectedSessionId, setup, since)
+      // A Send can resume the Session (ADR-0026), so its posture may have changed.
+      return invalidateSessionRoster(queryClient)
+    },
+  )
 }
 
 export function sendToNewSession(request: {
@@ -45,12 +60,24 @@ export function sendToNewSession(request: {
   start: ReturnType<typeof useSessionMutations>['start']
   prompt: string
   setup: TurnSetup | null
+  attachments: SessionAttachmentInput[]
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }) {
-  const { cli, cockpit, identity, navigate, queryClient, setFailure, start, prompt, setup, watchTurn } =
-    request
+  const {
+    cli,
+    cockpit,
+    identity,
+    navigate,
+    queryClient,
+    setFailure,
+    start,
+    prompt,
+    setup,
+    attachments,
+    watchTurn,
+  } = request
   return startNewSession(
-    { cli, cockpit, identity, prompt, setup, start, setFailure },
+    { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
     (sessionId) => {
       if (setup !== null) watchTurn(sessionId, setup, null)
       return invalidateSessionRoster(queryClient)
@@ -71,7 +98,7 @@ export function useComposerSend(request: {
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
-}) {
+}): Send {
   const {
     cli,
     cockpit,
@@ -85,7 +112,7 @@ export function useComposerSend(request: {
     watchTurn,
   } = request
   return useCallback(
-    async (prompt: string, setup: TurnSetup | null) => {
+    async (prompt, setup, attachments) => {
       if (identity.kind === 'session') {
         return sendToSelected({
           queryClient,
@@ -95,6 +122,7 @@ export function useComposerSend(request: {
           setFailure,
           prompt,
           setup,
+          attachments,
           watchTurn,
         })
       }
@@ -109,6 +137,7 @@ export function useComposerSend(request: {
         start,
         prompt,
         setup,
+        attachments,
         watchTurn,
       })
     },

@@ -1,8 +1,11 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionCli } from '../harness/harnesses'
 import { SessionContractError } from '../session-contract-error'
+import { invalidateSessionRoster } from '../session-queries'
 import { useSessionCreationStore } from '../state/useSessionCreationStore'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { ComposerIdentity } from './composerIdentity'
@@ -62,19 +65,35 @@ export function useCompact(
   }, [compact, sessionId, setFailure])
 }
 
+// Compacting changes the Session's context token count, which the roster reads too.
+export function useCompactWithInvalidate(request: {
+  compact: ReturnType<typeof useSessionMutations>['compact']
+  sessionId: string | null
+  setFailure: (failure: Failure | null) => void
+  queryClient: QueryClient
+}) {
+  const compactSession = useCompact(request.compact, request.sessionId, request.setFailure)
+  return useCallback(async () => {
+    const compacted = await compactSession()
+    if (compacted) await invalidateSessionRoster(request.queryClient)
+    return compacted
+  }, [compactSession, request.queryClient])
+}
+
 export async function sendMessage(
   request: {
     send: ReturnType<typeof useSessionMutations>['send']
     prompt: string
     setup: TurnSetup | null
+    attachments: SessionAttachmentInput[]
     sessionId: string
     setFailure: (failure: Failure | null) => void
   },
   afterSend: () => Promise<void>,
 ) {
-  const { send, prompt, setup, sessionId, setFailure } = request
+  const { send, prompt, setup, attachments, sessionId, setFailure } = request
   try {
-    await send.mutateAsync({ prompt, sessionId, setup })
+    await send.mutateAsync({ prompt, sessionId, setup, attachments })
     setFailure(null)
   } catch (error) {
     setFailure({
@@ -95,6 +114,7 @@ export async function startNewSession(
     identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
     prompt: string
     setup: TurnSetup | null
+    attachments: SessionAttachmentInput[]
     start: ReturnType<typeof useSessionMutations>['start']
     setFailure: (failure: Failure | null) => void
   },
@@ -102,7 +122,7 @@ export async function startNewSession(
   onStarted: (sessionId: string) => void,
   onFailed: () => void,
 ) {
-  const { cli, cockpit, identity, prompt, setup, start, setFailure } = request
+  const { cli, cockpit, identity, prompt, setup, attachments, start, setFailure } = request
   if (cockpit.project === null) {
     setFailure({
       sessionId: null,
@@ -121,7 +141,13 @@ export async function startNewSession(
   // contract is one user action produces at most one new Session, not which mechanism enforces it.
   if (!creation.startSubmission(pending.id)) return false
   try {
-    const reply = await start.mutateAsync({ cli, cwd: cockpit.project.path, prompt, setup })
+    const reply = await start.mutateAsync({
+      cli,
+      cwd: cockpit.project.path,
+      prompt,
+      setup,
+      attachments,
+    })
     creation.resolved(pending.id, reply.sessionId)
     setFailure(null)
     await afterStart(reply.sessionId)

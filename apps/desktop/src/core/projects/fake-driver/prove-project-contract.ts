@@ -45,6 +45,7 @@ const SURFACE = [
   'dismissAccountNotice',
   'getAppearance',
   'getCodexAutoCompactLimit',
+  'handoffSession',
   'interruptSession',
   'listAccounts',
   'listArchivedSessions',

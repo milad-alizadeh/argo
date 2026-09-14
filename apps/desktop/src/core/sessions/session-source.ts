@@ -32,6 +32,9 @@ export type SessionSource = {
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
   managedSessions?: () => SessionRosterRow[]
+  // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
+  // Absent where the CLI keeps no ownership ledger, which the reader reads as never locked.
+  isLockedElsewhere?: (sessionId: string) => boolean
   overlayFor?: (sessionId: string) => FeedOverlay | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   // Absent where the CLI has no archive concept of its own (Codex, today): the reader then

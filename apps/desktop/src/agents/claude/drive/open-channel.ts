@@ -25,6 +25,36 @@ function launchEnvironment(): NodeJS.ProcessEnv {
   return environment
 }
 
+function wireProcess(wiring: {
+  options: DriverOptions
+  sessions: Map<string, ManagedSession>
+  sessionId: string
+  session: ManagedSession
+  frame: ReturnType<typeof firstFrame>
+}) {
+  const { options, sessions, sessionId, session, frame } = wiring
+  session.process.onData?.((data) => {
+    session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
+    if (session.compactionStartedAt !== null) {
+      const progress = compactionProgress(session.screen)
+      if (progress !== null) {
+        session.compactionPercentage = progress.percentage
+        session.compactionTokens = progress.tokens
+      }
+    }
+    frame.see(session.screen)
+  })
+  options.ledger.bind(sessionId)
+  session.process.onExit?.(() => {
+    session.ended = true
+    // A later channel for the same Session is not this one's to close.
+    if (sessions.get(sessionId) !== session) return
+    session.close()
+    sessions.delete(sessionId)
+    options.ledger.release(sessionId)
+  })
+}
+
 export function openChannel(
   options: DriverOptions,
   sessions: Map<string, ManagedSession>,
@@ -56,6 +86,9 @@ export function openChannel(
     compactionStartedAt: null,
     compactionPercentage: null,
     compactionTokens: null,
+    handoffStartedAt: null,
+    handoffBriefPath: null,
+    handoffFailure: null,
     cwd: seed.cwd,
     ended: false,
     messages,
@@ -66,25 +99,6 @@ export function openChannel(
     startedAt: options.now().toISOString(),
   }
   sessions.set(seed.sessionId, session)
-  process.onData?.((data) => {
-    session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
-    if (session.compactionStartedAt !== null) {
-      const progress = compactionProgress(session.screen)
-      if (progress !== null) {
-        session.compactionPercentage = progress.percentage
-        session.compactionTokens = progress.tokens
-      }
-    }
-    frame.see(session.screen)
-  })
-  options.ledger.bind(seed.sessionId)
-  process.onExit?.(() => {
-    session.ended = true
-    // A later channel for the same Session is not this one's to close.
-    if (sessions.get(seed.sessionId) !== session) return
-    session.close()
-    sessions.delete(seed.sessionId)
-    options.ledger.release(seed.sessionId)
-  })
+  wireProcess({ options, sessions, sessionId: seed.sessionId, session, frame })
   return session
 }

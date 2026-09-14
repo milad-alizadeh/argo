@@ -7,7 +7,7 @@ import { test } from 'node:test'
 import { createCodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 import { driverBackedByFixture } from './fixture-driver.ts'
 
-test('resumes an orphaned Codex Session in its recorded workspace before accepting its next Turn', async (context) => {
+test('resumes a Codex Session Argo held before restart in its recorded workspace before accepting its next Turn', async (context) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-resume-'))
   context.after(() => rm(root, { recursive: true, force: true }))
   const ledger = path.join(root, 'codex-session-ownership.json')
@@ -18,7 +18,11 @@ test('resumes an orphaned Codex Session in its recorded workspace before accepti
       isAlive: () => true,
     }),
   })
-  const sessionId = await first.start({ cwd: process.cwd(), prompt: 'Open the resume proof.' })
+  const sessionId = await first.start({
+    attachments: [],
+    cwd: process.cwd(),
+    prompt: 'Open the resume proof.',
+  })
   first.close()
 
   const resumed = driverBackedByFixture({
@@ -27,10 +31,16 @@ test('resumes an orphaned Codex Session in its recorded workspace before accepti
       owner: { pid: 2, registry: 'second-window' },
       isAlive: () => false,
     }),
+    resumeTarget: async () => ({ cwd: process.cwd() }),
   })
   context.after(() => resumed.close())
 
-  await resumed.send(sessionId, 'Carry on after the restart.')
+  await resumed.send({
+    sessionId,
+    text: 'Carry on after the restart.',
+    setup: undefined,
+    attachments: [],
+  })
 
   assert.deepEqual(
     resumed.roster().map(({ id, cwd, posture }) => ({ id, cwd, posture })),

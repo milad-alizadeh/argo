@@ -11,6 +11,7 @@ function fakeDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
     start: async () => sessionId,
     send: async () => {},
     interrupt: async () => {},
+    compact: async () => {},
     ...overrides,
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
@@ -37,7 +38,7 @@ test('accepts the Codex Turn setup the adapter declares', () => {
 })
 
 test('starts a Codex Session', async () => {
-  const started: Array<{ cwd: string; prompt: string }> = []
+  const started: Array<{ attachments: unknown[]; cwd: string; prompt: string }> = []
   const adapter = createCodexDriveAdapter(
     fakeDriver({
       start: async (request) => {
@@ -48,9 +49,16 @@ test('starts a Codex Session', async () => {
   )
 
   const setup = { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' } as const
-  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'Inspect the test.', setup })
+  const result = await adapter.start({
+    attachments: [],
+    cwd: '/projects/argo',
+    prompt: 'Inspect the test.',
+    setup,
+  })
   assert.deepEqual(result, { sessionId })
-  assert.deepEqual(started, [{ cwd: '/projects/argo', prompt: 'Inspect the test.', setup }])
+  assert.deepEqual(started, [
+    { attachments: [], cwd: '/projects/argo', prompt: 'Inspect the test.', setup },
+  ])
 })
 
 test('reports a Codex launch failure by its named code', async () => {
@@ -62,17 +70,18 @@ test('reports a Codex launch failure by its named code', async () => {
     }),
   )
 
-  const result = await adapter.start({ cwd: '/projects/argo', prompt: 'x' })
+  const result = await adapter.start({ attachments: [], cwd: '/projects/argo', prompt: 'x' })
   assert.deepEqual(result, { error: 'cli-unavailable' })
 })
 
 test('sends a Turn to the selected managed Codex Session', async () => {
   const sent: Array<[string, string]> = []
   const adapter = createCodexDriveAdapter(
-    fakeDriver({ send: async (id, text) => void sent.push([id, text]) }),
+    fakeDriver({ send: async ({ sessionId, text }) => void sent.push([sessionId, text]) }),
   )
 
   const result = await adapter.send({
+    attachments: [],
     sessionId,
     prompt: 'Continue.',
     setup: { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' },
@@ -90,7 +99,7 @@ test('does not accept a Turn Codex could not be given', async () => {
     }),
   )
 
-  const result = await adapter.send({ sessionId, prompt: 'x', setup: undefined })
+  const result = await adapter.send({ attachments: [], sessionId, prompt: 'x', setup: undefined })
   assert.deepEqual(result, { error: 'not-drivable' })
 })
 
@@ -103,7 +112,7 @@ test('reports a Codex Session another app already holds active, by the refusal i
     }),
   )
 
-  const result = await adapter.send({ sessionId, prompt: 'x', setup: undefined })
+  const result = await adapter.send({ attachments: [], sessionId, prompt: 'x', setup: undefined })
   assert.deepEqual(result, { error: 'held-elsewhere' })
 })
 
@@ -118,9 +127,28 @@ test('interrupts only the selected managed Codex Session', async () => {
   assert.deepEqual(interrupted, [sessionId])
 })
 
-test('refuses compaction, which Codex does not support yet', async () => {
-  const adapter = createCodexDriveAdapter(fakeDriver())
-  assert.deepEqual(await adapter.compact({ sessionId }), { error: 'not-drivable' })
+test('compacts only the selected managed Codex Session', async () => {
+  const compacted: string[] = []
+  const adapter = createCodexDriveAdapter(
+    fakeDriver({ compact: async (id) => void compacted.push(id) }),
+  )
+
+  const result = await adapter.compact({ sessionId })
+  assert.deepEqual(result, { ok: true })
+  assert.deepEqual(compacted, [sessionId])
+})
+
+test('does not accept a compact Codex could not be given', async () => {
+  const adapter = createCodexDriveAdapter(
+    fakeDriver({
+      compact: async () => {
+        throw new Error('Codex Session is no longer running.')
+      },
+    }),
+  )
+
+  const result = await adapter.compact({ sessionId })
+  assert.deepEqual(result, { error: 'not-drivable' })
 })
 
 test('reads no pending Permission, since Codex Permissions are #1841', async () => {

@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict'
+import { deselectSession } from './session-gestures'
 
 const INSPECTOR_WIDTH = 248
 
 // The shell comes before Session data. This proof reads the shipped route so its geometry and pane
 // controls cannot be green because an old Roster or Feed happened to render.
 export async function proveSessionShell(page) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions'
-  })
+  await deselectSession(page)
   await page.waitForSelector('[data-component="SessionShell"]')
 
   const inspector = page.locator('aside[aria-label="Session inspector"]')

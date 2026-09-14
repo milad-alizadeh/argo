@@ -37,7 +37,7 @@
   is indistinguishable from a hook simply going, so both stay silent under the degrade-down rule.
   **Survives no restart**, for the reason a Standing allow does not — the gate that would have
   observed it dies with the PTY, so an Argo restarting under a live CLI records nothing and the
-  Session demotes to orphaned instead.
+  Session reads `external` instead.
 - **Gate** — **Argo's own** policy on automating *Delivery* steps (create-PR, merge,
   push-after-PR), each `ask | auto`. Argo-owned automation, **not** an agent prompt — a
   different actor and axis from Permission.
