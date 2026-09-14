@@ -258,6 +258,125 @@ export const GroupedToolCalls: Story = {
   },
 }
 
+const toolLagFeed = {
+  ...toolFeed,
+  chainId: 'tools-lag',
+  revision: 'tools-lag-one',
+  sessionId: 'tools-lag',
+  rows: toolFeed.rows.map((row) => ({ ...row, id: 'tool-group:lag' })),
+} satisfies SessionFeed
+
+// A group's own drawn height must always match its panel's real size, on the very tick a toggle
+// settles: a frame where the panel already shows its open content while the row still carries its
+// old, smaller pixel height is the overlapping-render artifact #2104 reproduces. Base UI holds a
+// closing panel at its expanded size for the length of its own close animation, so the row's
+// height rightly does too, and only drops once that animation actually finishes.
+export const ToolGroupTogglesWithNoLag: Story = {
+  args: { feed: toolLagFeed, selectedSessionId: 'tools-lag' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const groupId = 'tool-group:lag'
+    const row = () => drawnRow(canvasElement, groupId) as HTMLElement
+    const measuredHeight = () =>
+      canvasElement
+        .querySelector(`.feed__measured [data-feed-row="${groupId}"]`)
+        ?.getBoundingClientRect().height
+
+    await waitFor(() => expect(Number.parseFloat(row()?.style.height)).toBe(measuredHeight()))
+    const collapsedHeight = Number.parseFloat(row().style.height)
+
+    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    await userEvent.click(group)
+    // Open is instant: the panel's own final size is known before its fade-and-slide plays.
+    await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
+    await expect(Number.parseFloat(row().style.height)).toBeGreaterThan(collapsedHeight)
+    const openHeight = Number.parseFloat(row().style.height)
+
+    await userEvent.click(group)
+    // Close never clips: the row stays at the open height while the panel visibly slides away.
+    // The hidden measured copy is not a witness here — `content-visibility: hidden` skips running
+    // its close animation entirely, so it jumps straight to its final collapsed size while the
+    // real, visible panel is still genuinely animating; only the drawn row's own height matters.
+    await expect(Number.parseFloat(row().style.height)).toBe(openHeight)
+    // …and settles to the collapsed height once that animation actually finishes, with no
+    // further pass required to notice.
+    await waitFor(() => expect(Number.parseFloat(row().style.height)).toBe(collapsedHeight))
+    await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
+  },
+}
+
+const toolUpdateFeed = {
+  ...toolFeed,
+  chainId: 'tools-update',
+  revision: 'tools-update-one',
+  sessionId: 'tools-update',
+  rows: toolFeed.rows.map((row) => ({ ...row, id: 'tool-group:update' })),
+} satisfies SessionFeed
+
+const toolUpdateReply = {
+  ...toolUpdateFeed,
+  revision: 'tools-update-two',
+  rows: [
+    ...toolUpdateFeed.rows,
+    { shape: 'prose', id: 'tools-update-reply', role: 'assistant', text: 'Ready for review.' },
+  ],
+} satisfies SessionFeed
+
+function ToolGroupDuringFeedUpdate() {
+  const [current, setCurrent] = useState<SessionFeed>(toolUpdateFeed)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(toolUpdateReply)}>
+        Receive reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          isRunning={false}
+          selectedSessionId="tools-update"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onAnswerQuestion={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+        />
+      </div>
+    </div>
+  )
+}
+
+// The riskier of the two repro paths #2104 names: a real content update lands (a new reply row,
+// its own full settle pass behind the warm-up) the same tick a reader expands an unrelated group.
+// The group's own toggle carries no content change, so it must still read instant off the
+// relayout path rather than being swept into the reply's pass and left showing a stale height
+// until that pass completes.
+export const ToolGroupExpandDuringFeedUpdate: Story = {
+  render: () => <ToolGroupDuringFeedUpdate />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const groupId = 'tool-group:update'
+    const row = () => drawnRow(canvasElement, groupId) as HTMLElement
+    const measuredHeight = () =>
+      canvasElement
+        .querySelector(`.feed__measured [data-feed-row="${groupId}"]`)
+        ?.getBoundingClientRect().height
+
+    await waitFor(() => expect(Number.parseFloat(row()?.style.height)).toBe(measuredHeight()))
+    const collapsedHeight = Number.parseFloat(row().style.height)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive reply' }))
+    const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
+    await userEvent.click(group)
+
+    await waitFor(() => expect(drawnRow(canvasElement, 'tools-update-reply')).toBeDefined())
+    await expect(Number.parseFloat(row().style.height)).toBe(measuredHeight())
+    await expect(Number.parseFloat(row().style.height)).toBeGreaterThan(collapsedHeight)
+    await expect(drawnRows(canvasElement).filter((drawn) => drawn.dataset.feedRow === groupId)).toHaveLength(1)
+  },
+}
+
 const streamingFeed = {
   ...feed,
   sessionId: 'streaming',

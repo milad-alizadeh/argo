@@ -70,6 +70,7 @@ export function FeedDocument({
     active,
     sessionId: feed.sessionId,
     revision: layoutRevision,
+    contentRevision: feed.revision,
     rows: feed.rows,
   })
   const revealsFor = useReveals()
