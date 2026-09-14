@@ -41,7 +41,7 @@ export function ComposerEditorArea({
         <SessionPlanPopover plan={plan} />
       </div>
       <ComposerAttachments attachments={attachments} onRemove={onRemoveAttachment} />
-      <div className="min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
           cli={cli}

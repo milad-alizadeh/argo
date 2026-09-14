@@ -994,6 +994,11 @@ export const ImageAttachmentShowsAPreview: Story = {
     await canvas.findByText('notes')
     await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///repo/screenshot.png')
     await expect(canvas.getByText('MD file')).toBeVisible()
+    const attachmentGroup = canvasElement.querySelector('[data-slot="attachment-group"]')
+    if (attachmentGroup === null) throw new Error('Attachment group did not render')
+    await expect(attachmentGroup.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      canvas.getByLabelText('Message').getBoundingClientRect().top,
+    )
   },
 }
 
