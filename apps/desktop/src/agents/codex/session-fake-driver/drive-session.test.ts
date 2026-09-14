@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { interruptCodexSession, sendCodexSession } from '../drive/drive-session.ts'
+import {
+  interruptCodexSession,
+  renameCodexSession,
+  sendCodexSession,
+} from '../drive/drive-session.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
 
@@ -60,4 +64,33 @@ test('reports a Codex Session that is no longer drivable', async () => {
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.code, 'codex-not-drivable')
   assert.equal(reply.requestId, 'send-2')
+})
+
+test('renames the selected managed Codex Session with its accepted native title', async () => {
+  const reply = await renameCodexSession(
+    {
+      version: 1,
+      type: 'session.rename',
+      requestId: 'rename-1',
+      sessionId,
+      name: 'Investigate the roster',
+    },
+    {
+      async interrupt() {},
+      async rename(receivedSessionId, name) {
+        assert.equal(receivedSessionId, sessionId)
+        assert.equal(name, 'Investigate the roster')
+        return 'Investigate the roster'
+      },
+      async send() {},
+    },
+  )
+
+  assert.deepEqual(reply, {
+    version: 1,
+    type: 'session.renamed',
+    requestId: 'rename-1',
+    sessionId,
+    title: 'Investigate the roster',
+  })
 })

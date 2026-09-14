@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { ticketError } from '@/core/tickets/contract'
 import { SourceSettings } from './SourceSettings'
 import { connection } from './ticket-fixtures'
 
@@ -51,5 +52,23 @@ export const NotConnected: Story = {
     await expect(canvas.getByText('No Ticket source connected')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Connect a Ticket source' }))
     await expect(args.onConnect).toHaveBeenCalled()
+  },
+}
+
+export const Loading: Story = {
+  args: { connection: undefined },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('Reading the connected Ticket source…'),
+    ).toBeInTheDocument()
+  },
+}
+
+export const LoadFailed: Story = {
+  args: { connection: null, error: ticketError('not-connected', 'request-1') },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('This Project has no connected Ticket source.'),
+    ).toBeInTheDocument()
   },
 }
