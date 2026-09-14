@@ -1,4 +1,5 @@
 import type { Session } from '../types'
+import { SessionReferenceText } from './SessionReference'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -62,7 +63,9 @@ export function SessionRosterItem({
             className={`mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full ${STATUS_MARKS[session.status]}`}
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium">{sessionName(session)}</span>
+            <span className="block truncate font-medium">
+              <SessionReferenceText text={sessionName(session)} />
+            </span>
             <span className="block truncate text-meta text-faint">{activitySummary(session)}</span>
             <span className="block truncate font-mono text-meta text-faint">
               {sessionMetadata(session).join(' · ')}

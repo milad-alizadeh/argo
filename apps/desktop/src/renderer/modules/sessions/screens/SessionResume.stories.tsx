@@ -73,7 +73,7 @@ async function sendDraft(canvasElement: HTMLElement, draft: string) {
   const composer = canvas.getByLabelText('Message')
   await userEvent.click(composer)
   await userEvent.type(composer, draft)
-  await userEvent.keyboard('{Enter}')
+  await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
   return { canvas, composer }
 }
 
