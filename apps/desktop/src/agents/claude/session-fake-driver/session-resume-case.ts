@@ -7,6 +7,11 @@ import { chmod, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fixturePath } from '../../../core/sessions/fake-driver/session-fixture-files'
+import {
+  createSessionByClick,
+  openSessionByClick,
+} from '../../../core/sessions/fake-driver/session-gestures'
+import { fakeClaudeFolder } from './fake-claude-transcripts'
 
 // The proof always starts in `apps/desktop`, as the fixture files note.
 const FAKE_CLAUDE = path.join(
@@ -44,31 +49,17 @@ async function sendFromComposer(page, text) {
 }
 
 export async function provePackagedResume(page, { project, restart, transcripts }) {
-  const started = await page.evaluate(
-    (cwd) =>
-      window.argo.startSession({
-        cli: 'claude',
-        cwd,
-        prompt: 'Open the resume proof.',
-        setup: { model: 'opus', effort: 'medium', mode: 'manual' },
-      }),
-    project,
-  )
-  assert.equal(started.type, 'session.started')
-  const sessionId = started.sessionId
-  const transcript = path.join(transcripts, 'fake-claude', `${sessionId}.jsonl`)
-  await page.waitForFunction(
-    async (id) => (await window.argo.listSessions()).sessions?.some((row) => row.id === id),
-    sessionId,
-  )
+  const sessionId = await createSessionByClick(page, {
+    cli: 'claude',
+    prompt: 'Open the resume proof.',
+  })
+  const transcript = path.join(fakeClaudeFolder(transcripts), `${sessionId}.jsonl`)
   await waitFor(async () => (await readFile(transcript, 'utf8').catch(() => '')).includes('Fake'))
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
-  await relaunched
-    .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
-    .click()
+  await openSessionByClick(relaunched, sessionId)
   await relaunched.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   const history = relaunched.getByRole('region', { name: 'Session history' })
   await history.getByText('Fake Claude read: Open the resume proof.').waitFor()
@@ -88,9 +79,7 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   // resumes a real process, so it needs a directory that exists on this machine.
   await replaceInFile(fixturePath(transcripts, 'externalBasic'), '/Users/x/proj', project)
 
-  await relaunched
-    .locator('nav[aria-label="Sessions"] button[data-session-id="externalBasic"]')
-    .click()
+  await openSessionByClick(relaunched, 'externalBasic')
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
   await sendFromComposer(relaunched, 'Take this one over.')
   const externalHistory = relaunched.getByRole('region', { name: 'Session history' })

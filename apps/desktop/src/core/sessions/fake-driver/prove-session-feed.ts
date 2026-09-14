@@ -7,6 +7,7 @@ import { provePackagedResume } from '../../../agents/claude/session-fake-driver/
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { createPackagedSessionHarness } from './packaged-session-harness'
+import { proveSessionCreatedByClick } from './session-create-case'
 import { proveSessionDiagram } from './session-diagram-case'
 import { appendProse, growCodexTranscript, removeProse, streamProse } from './session-feed-fixture'
 import { proveFormattedFeed } from './session-formatted-feed-case'
@@ -84,6 +85,10 @@ try {
       updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
     }),
   )
+  // Before the resume cases, for the reason session-create-case.ts records.
+  await ran(['session-created-by-click'], () =>
+    proveSessionCreatedByClick(page, fixture.claudeTranscripts),
+  )
   await ran(['session-claude-resume'], async () => {
     page = await provePackagedResume(page, {
       project: fixture.project,
@@ -92,7 +97,7 @@ try {
     })
   })
   await ran(['session-codex-resume'], async () => {
-    page = await provePackagedCodexResume(page, { project: fixture.project, restart })
+    page = await provePackagedCodexResume(page, { restart })
   })
   await assertShippedFusesIntact()
   console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))

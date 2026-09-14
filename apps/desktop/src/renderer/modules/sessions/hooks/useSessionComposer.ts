@@ -86,7 +86,7 @@ export function useSessionComposer({
     start,
     watchTurn,
   })
-  const compactable = cli === 'claude' && identity.kind === 'session'
+  const handoffable = cli === 'claude' && identity.kind === 'session'
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
@@ -96,8 +96,8 @@ export function useSessionComposer({
       focusOnMount,
       isCompacting,
       isHandingOff,
-      onCompact: compactable ? onCompact : undefined,
-      onHandoff: compactable ? onHandoff : undefined,
+      onCompact: identity.kind === 'session' ? onCompact : undefined,
+      onHandoff: handoffable ? onHandoff : undefined,
       onInterrupt,
       onSend,
       sessionId: composerIdentityKey(identity),

@@ -4,6 +4,7 @@ import type { SessionRosterRow } from '../../../core/sessions/models'
 import type { QuestionAnswer } from '../../../core/sessions/question'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
+import { compactCodexSession } from './compact-session'
 import { readInterrupt } from './interrupt-protocol'
 import type { LiveMessage, LiveMessages } from './live-messages'
 import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
@@ -29,6 +30,7 @@ export type CodexSessionDriver = {
     attachments: SessionAttachmentInput[]
   }) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
+  compact: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
   liveMessages: (sessionId: string) => LiveMessage[]
@@ -43,6 +45,7 @@ export type CodexSessionDrive = Pick<
   | 'start'
   | 'send'
   | 'interrupt'
+  | 'compact'
   | 'rename'
   | 'roster'
   | 'liveMessages'
@@ -79,6 +82,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
         readInterrupt,
       )
     },
+    compact: (sessionId) => compactCodexSession(sessions, options.now, sessionId),
     async rename(sessionId, name) {
       const session = held(sessionId)
       if (!session) throw new Error('Codex Session is no longer running.')

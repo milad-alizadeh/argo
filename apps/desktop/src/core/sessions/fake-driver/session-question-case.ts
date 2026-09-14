@@ -1,10 +1,5 @@
 import assert from 'node:assert/strict'
-
-async function openSession(page, sessionId) {
-  await page.evaluate((id) => {
-    window.location.hash = `#/sessions/${id}`
-  }, sessionId)
-}
+import { openSessionByClick } from './session-gestures'
 
 // A pending `AskUserQuestion` draws as a Feed row (#1840), and the composer stays a plain text
 // box that simply cannot send while it waits — never becoming the answer UI itself.
@@ -16,7 +11,7 @@ async function openSession(page, sessionId) {
 // `AskUserQuestion` itself. The success path is proved live, PTY keys included, at the driver
 // level (`claude-question-driver.test.ts`, `question-answer.test.ts`).
 export async function proveSessionQuestion(page) {
-  await openSession(page, 'askPending')
+  await openSessionByClick(page, 'askPending')
   const history = page.getByRole('region', { name: 'Session history' })
   await history.getByText('Which ink?').waitFor()
   await history.getByRole('radio', { name: /Black/ }).waitFor()
