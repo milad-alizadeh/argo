@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import { useState } from 'react'
-import type { ClaudeQuestion, ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
+import type { Question, QuestionAnswer } from '@/core/sessions/question'
 import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
 import {
   Questionnaire,
@@ -24,11 +24,7 @@ function toggle(values: string[], value: string): string[] {
 
 // A free-text answer overrides any option ticked for the same question — the row's own "Or write
 // another answer" field and its choices name the same one answer, never both at once.
-function answerFor(
-  question: ClaudeQuestion,
-  selected: string[],
-  text: string,
-): ClaudeQuestionAnswer {
+function answerFor(question: Question, selected: string[], text: string): QuestionAnswer {
   if (text.trim()) return { kind: 'text', index: question.options.length + 1, text: text.trim() }
   const indices = selected
     .map((label) => question.options.findIndex((option) => option.label === label) + 1)
@@ -47,7 +43,7 @@ function QuestionField({
   onText,
 }: {
   index: number
-  question: ClaudeQuestion
+  question: Question
   selected: string[]
   text: string
   disabled: boolean
@@ -102,7 +98,7 @@ export function FeedQuestion({
   row: AskRow
   answering: boolean
   failure: string | null
-  onAnswer: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswer: (questionId: string, answers: QuestionAnswer[]) => void
 }) {
   const [selections, setSelections] = useState<Record<number, string[]>>({})
   const [texts, setTexts] = useState<Record<number, string>>({})
@@ -113,6 +109,17 @@ export function FeedQuestion({
         <Check className="!size-(--size-icon-inline)" />
         {row.answer}
       </div>
+    )
+  }
+
+  if (row.unsupported !== null) {
+    return (
+      <Alert
+        className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
+        data-component="FeedQuestion"
+      >
+        <AlertDescription>{row.unsupported}</AlertDescription>
+      </Alert>
     )
   }
 

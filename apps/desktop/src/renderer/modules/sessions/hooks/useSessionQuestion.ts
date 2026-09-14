@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
+import type { QuestionAnswer } from '@/core/sessions/question'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -14,7 +14,7 @@ export function useSessionQuestion(sessionId: string | null) {
   const [failure, setFailure] = useState<{ questionId: string; message: string } | null>(null)
   const queryClient = useQueryClient()
   const decision = useQuestionDecision(sessionId)
-  const decide = async (questionId: string, answers: ClaudeQuestionAnswer[]) => {
+  const decide = async (questionId: string, answers: QuestionAnswer[]) => {
     try {
       await decision.mutateAsync({ questionId, answers })
       setFailure(null)
@@ -39,22 +39,20 @@ export function useSessionQuestion(sessionId: string | null) {
 }
 
 function useQuestionDecision(sessionId: string | null) {
-  return useMutation<
-    void,
-    SessionContractError,
-    { questionId: string; answers: ClaudeQuestionAnswer[] }
-  >({
-    mutationFn: async ({ questionId, answers }) => {
-      if (sessionId === null) throw new Error('No Session selected.')
-      const reply = await window.argo.decideSessionQuestion({ sessionId, questionId, answers })
-      switch (reply.type) {
-        case 'session.accepted':
-          return
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
+  return useMutation<void, SessionContractError, { questionId: string; answers: QuestionAnswer[] }>(
+    {
+      mutationFn: async ({ questionId, answers }) => {
+        if (sessionId === null) throw new Error('No Session selected.')
+        const reply = await window.argo.decideSessionQuestion({ sessionId, questionId, answers })
+        switch (reply.type) {
+          case 'session.accepted':
+            return
+          case 'session.error':
+            return throwSessionContractError(reply)
+          default:
+            return throwUnexpectedSessionReply(reply)
+        }
+      },
     },
-  })
+  )
 }

@@ -18,7 +18,11 @@ test('resumes an orphaned Codex Session in its recorded workspace before accepti
       isAlive: () => true,
     }),
   })
-  const sessionId = await first.start({ cwd: process.cwd(), prompt: 'Open the resume proof.' })
+  const sessionId = await first.start({
+    attachments: [],
+    cwd: process.cwd(),
+    prompt: 'Open the resume proof.',
+  })
   first.close()
 
   const resumed = driverBackedByFixture({
@@ -30,7 +34,12 @@ test('resumes an orphaned Codex Session in its recorded workspace before accepti
   })
   context.after(() => resumed.close())
 
-  await resumed.send(sessionId, 'Carry on after the restart.')
+  await resumed.send({
+    sessionId,
+    text: 'Carry on after the restart.',
+    setup: undefined,
+    attachments: [],
+  })
 
   assert.deepEqual(
     resumed.roster().map(({ id, cwd, posture }) => ({ id, cwd, posture })),

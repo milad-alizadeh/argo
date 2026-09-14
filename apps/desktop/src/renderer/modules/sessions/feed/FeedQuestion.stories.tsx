@@ -9,6 +9,7 @@ const singleSelect: AskRow = {
   shape: 'ask',
   id: 'ask-single',
   answer: null,
+  unsupported: null,
   questions: [
     {
       question: 'Which ink should the plotter load?',
@@ -26,6 +27,7 @@ const multiSelect: AskRow = {
   shape: 'ask',
   id: 'ask-multi',
   answer: null,
+  unsupported: null,
   questions: [
     {
       question: 'Which checks should the release gate run?',
@@ -141,6 +143,23 @@ export const Failed: Story = {
     await expect(
       within(canvasElement).getByText('Argo could not send this answer.'),
     ).toBeInTheDocument()
+  },
+}
+
+export const Unsupported: Story = {
+  args: {
+    row: {
+      ...singleSelect,
+      unsupported: 'This question asks for a secret value, which Argo cannot show or submit.',
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByText('This question asks for a secret value, which Argo cannot show or submit.'),
+    ).toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: 'Send answer' })).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('radio')).not.toBeInTheDocument()
   },
 }
 
