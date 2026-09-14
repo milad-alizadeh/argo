@@ -11,45 +11,51 @@ const SEAM_BYTES = 64
 const HELD_FILE_LIMIT = 12
 const NEWLINE = 0x0a
 
-type HeldTranscript = { inode: number; end: number; seam: Buffer; records: TranscriptRecord[] }
+// Where parsing stopped: the byte after the last full line, and the bytes just before it.
+type ReadPoint = { end: number; seam: Buffer }
 
-type Consumed = { end: number; seam: Buffer; unfinished: Buffer }
+type HeldTranscript = ReadPoint & { inode: number; records: TranscriptRecord[] }
 
 function withoutReturn(line: string) {
   return line.endsWith('\r') ? line.slice(0, -1) : line
 }
 
+function seamAfter(seam: Buffer, lines: Buffer) {
+  return Buffer.from(Buffer.concat([seam, lines.subarray(-SEAM_BYTES)]).subarray(-SEAM_BYTES))
+}
+
 async function readLines(
   handle: FileHandle,
-  span: { end: number; seam: Buffer; to: number },
+  span: ReadPoint & { to: number },
   onLine: (line: string) => void,
-): Promise<Consumed> {
-  const { to } = span
-  let { end, seam } = span
-  let position = end
-  let pending = Buffer.alloc(0)
-  while (position < to) {
-    const chunk = Buffer.allocUnsafe(Math.min(CHUNK_BYTES, to - position))
+): Promise<ReadPoint & { unfinished: Buffer }> {
+  let point: ReadPoint = { end: span.end, seam: span.seam }
+  let position = span.end
+  let pending: Buffer[] = []
+  while (position < span.to) {
+    const chunk = Buffer.allocUnsafe(Math.min(CHUNK_BYTES, span.to - position))
     const { bytesRead } = await handle.read(chunk, 0, chunk.length, position)
     if (bytesRead === 0) break
     position += bytesRead
-    const bytes = Buffer.concat([pending, chunk.subarray(0, bytesRead)])
-    const last = bytes.lastIndexOf(NEWLINE)
+    const read = chunk.subarray(0, bytesRead)
+    const last = read.lastIndexOf(NEWLINE)
     if (last === -1) {
-      pending = bytes
+      pending.push(read)
       continue
     }
-    for (const line of bytes.subarray(0, last).toString('utf8').split('\n')) {
+    const lines = Buffer.concat([...pending, read.subarray(0, last + 1)])
+    for (const line of lines.subarray(0, -1).toString('utf8').split('\n')) {
       onLine(withoutReturn(line))
     }
-    seam = Buffer.from(bytes.subarray(Math.max(0, last + 1 - SEAM_BYTES), last + 1))
-    pending = Buffer.from(bytes.subarray(last + 1))
-    end = position - pending.length
+    point = { end: point.end + lines.length, seam: seamAfter(point.seam, lines) }
+    pending = [Buffer.from(read.subarray(last + 1))]
   }
-  return { end, seam, unfinished: pending }
+  return { ...point, unfinished: Buffer.concat(pending) }
 }
 
-// Where to resume: the held end, if the file is the same one and still holds the bytes before it.
+// Where to resume: the held end, if the file is the same one, no shorter, and still holds the seam.
+// An edit further back than the seam, in place and without shrinking the file, goes unseen: the
+// CLIs only append.
 async function resumeFrom(
   handle: FileHandle,
   held: HeldTranscript | undefined,
@@ -89,15 +95,12 @@ export function createTranscriptRecordReader(parse: TranscriptParser) {
       const prior = held.get(filePath)
       const start = await resumeFrom(handle, prior, { ino, size })
       const { records } = start
-      const consumed = await readLines(handle, { ...start, to: size }, (line) => {
+      const { unfinished, ...point } = await readLines(handle, { ...start, to: size }, (line) => {
         const record = parse(line)
         if (record !== null) records.push(record)
       })
-      if (keep || prior !== undefined) {
-        hold(held, filePath, { inode: ino, end: consumed.end, seam: consumed.seam, records })
-      }
-      const tail = finishedTail(parse, consumed.unfinished)
-      return tail.length === 0 ? records : [...records, ...tail]
+      if (keep || prior !== undefined) hold(held, filePath, { ...point, inode: ino, records })
+      return [...records, ...finishedTail(parse, unfinished)]
     } finally {
       await handle.close()
     }
