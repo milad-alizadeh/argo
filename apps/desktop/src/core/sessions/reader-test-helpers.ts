@@ -5,6 +5,7 @@ import { appendFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
+import { mergeAppendedFeed } from './feed-contract'
 import type { createSessionReader } from './reader'
 
 export async function tempRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
@@ -121,4 +122,17 @@ export async function fed(
   request: ReturnType<typeof feedRequest>,
 ) {
   return sessionFeedReplySchema.parse(await reader.readSessionFeed(request))
+}
+
+// The renderer never sees `appended` on its own: it merges the reply against the rows it already
+// held for `previous`'s revision. Tests that only care what a poll draws use this rather than the
+// reply's own shape, which depends on how much of the last poll's projection froze.
+export function rowsOf(
+  reply: Awaited<ReturnType<typeof fed>>,
+  previous?: Awaited<ReturnType<typeof fed>>,
+) {
+  if (reply.type === 'session.feed.read') return reply.rows
+  if (reply.type !== 'session.feed.appended') return assert.fail(`unexpected reply: ${reply.type}`)
+  const cached = previous?.type === 'session.feed.read' ? previous : null
+  return mergeAppendedFeed(cached, reply).rows
 }

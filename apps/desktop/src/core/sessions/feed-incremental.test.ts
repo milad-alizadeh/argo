@@ -1,0 +1,142 @@
+// The incremental projector must not rerun `rowsOfRecord` over records a previous poll already
+// turned into rows (#2145): a row freezes once nothing later in the chain can still change it, and
+// a frozen row is the very same object a later poll returns, never rebuilt equal-but-new.
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import type { SessionChain } from './chains'
+import { projectFeed } from './feed'
+import { projectFeedIncrementally } from './feed-incremental'
+import type { TranscriptMessage, TranscriptRecord } from './transcript'
+
+function message(overrides: Partial<TranscriptMessage> & { uuid: string }): TranscriptMessage {
+  return {
+    kind: 'message',
+    parentUuid: null,
+    originSessionId: null,
+    role: 'assistant',
+    sidechain: false,
+    cwd: null,
+    branch: null,
+    timestamp: null,
+    entry: 'interactive',
+    stopReason: null,
+    model: null,
+    effort: null,
+    mode: null,
+    blocks: [],
+    toolCalls: [],
+    toolResults: [],
+    answeredCalls: [],
+    usage: null,
+    ...overrides,
+  }
+}
+
+function prose(uuid: string, text: string): TranscriptMessage {
+  return message({ uuid, blocks: [{ shape: 'prose', text }] })
+}
+
+function toolCall(uuid: string, callId: string, name: string): TranscriptMessage {
+  return message({
+    uuid,
+    blocks: [{ shape: 'tool', callId }],
+    toolCalls: [{ id: callId, name, input: {} }],
+  })
+}
+
+function toolResult(uuid: string, callId: string, content: string): TranscriptMessage {
+  return message({ uuid, toolResults: [{ callId, content, failed: false }] })
+}
+
+function chainOf(id: string, records: TranscriptRecord[]): SessionChain {
+  return {
+    id,
+    retiredIds: [],
+    originUnread: false,
+    files: [
+      {
+        path: `${id}.jsonl`,
+        sessionId: id,
+        resumedFrom: null,
+        originSessionId: null,
+        openedAt: '',
+        openingPrompt: null,
+        records,
+        unreadableLines: 0,
+      },
+    ],
+  }
+}
+
+test('draws the same rows a from-scratch projection draws, poll after poll', () => {
+  const records: TranscriptRecord[] = [prose('a', 'First.')]
+  let state: ReturnType<typeof projectFeedIncrementally>['state'] | undefined
+  for (const record of [
+    prose('b', 'Second.'),
+    toolCall('c', 'call-1', 'Bash'),
+    toolResult('d', 'call-1', 'ok'),
+  ]) {
+    records.push(record)
+    const chain = chainOf('s', [...records])
+    const result = projectFeedIncrementally(chain, state)
+    state = result.state
+    assert.deepEqual(result.rows, projectFeed(chain))
+  }
+})
+
+test('a Tool Call with no result yet stays open, and freezes once resolved and no longer trailing', () => {
+  const first = chainOf('s', [prose('a', 'First.'), toolCall('b', 'call-1', 'Bash')])
+  const { state: afterCall, previouslyFrozenCount: initial } = projectFeedIncrementally(
+    first,
+    undefined,
+  )
+  assert.equal(initial, 0)
+  // The prose row is safe; the Tool Call is not, since nothing has resolved it yet.
+  assert.equal(afterCall.frozenRows.length, 1)
+
+  const second = chainOf('s', [
+    ...(first.files[0]?.records ?? []),
+    toolResult('c', 'call-1', 'done'),
+  ])
+  const {
+    rows: rowsAfterResult,
+    state: afterResult,
+    previouslyFrozenCount: afterResultFrozen,
+  } = projectFeedIncrementally(second, afterCall)
+  assert.equal(afterResultFrozen, 1)
+  assert.deepEqual(rowsAfterResult, projectFeed(second))
+  // Resolved, but still the trailing row: a later poll's new Tool Call could still join its group.
+  assert.equal(afterResult.frozenRows.length, 1)
+
+  const third = chainOf('s', [...(second.files[0]?.records ?? []), prose('d', 'Third.')])
+  const {
+    rows,
+    state: afterProse,
+    previouslyFrozenCount,
+  } = projectFeedIncrementally(third, afterResult)
+  assert.equal(previouslyFrozenCount, 1)
+  assert.deepEqual(rows, projectFeed(third))
+  // A later, non-Tool row proves the group is closed, so it freezes now.
+  assert.equal(afterProse.frozenRows.length, 3)
+})
+
+test('a frozen row is the same object a later poll returns, not rebuilt', () => {
+  const chain = chainOf('s', [prose('a', 'First.'), prose('b', 'Second.')])
+  const { rows: firstRows, state } = projectFeedIncrementally(chain, undefined)
+
+  const grown = chainOf('s', [...(chain.files[0]?.records ?? []), prose('c', 'Third.')])
+  const { rows: secondRows } = projectFeedIncrementally(grown, state)
+
+  assert.equal(secondRows[0], firstRows[0])
+  assert.equal(secondRows[1], firstRows[1])
+})
+
+test('a file rewritten in place resets rather than misreading the old cursor as still valid', () => {
+  const chain = chainOf('s', [prose('a', 'First.')])
+  const { state } = projectFeedIncrementally(chain, undefined)
+
+  const rewritten = chainOf('s', [prose('a2', 'Rewritten.')])
+  const { rows } = projectFeedIncrementally(rewritten, state)
+
+  assert.deepEqual(rows, projectFeed(rewritten))
+})

@@ -16,6 +16,7 @@ import {
   sessionRenameRequestSchema,
 } from './contract'
 import type { HeldFeed } from './feed-cache'
+import type { FeedProjectionState } from './feed-incremental'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { archiveListReply } from './read-archive-list'
@@ -101,6 +102,7 @@ export function createSessionReader(
   ticketLinks: SessionTicketLinkStore = createInMemorySessionTicketLinkStore(),
 ): SessionReader {
   const feeds = new Map<string, HeldFeed>()
+  const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
 
   return {
@@ -142,11 +144,12 @@ export function createSessionReader(
         if (delegationId !== null) {
           const source = delegationSource(owner, delegationId)
           const key = `${sessionId}#${delegationId}`
-          return await readOwnedFeed({ source, feeds, managed: false, key }, parsed.data)
+          const context = { source, feeds, projections, managed: false, key }
+          return await readOwnedFeed(context, parsed.data)
         }
         const managed = ownership.managed(owner, sessionId)
         return await readFeedWithOverlay(
-          { source: owner, feeds, managed, key: sessionId },
+          { source: owner, feeds, projections, managed, key: sessionId },
           parsed.data,
         )
       } catch (error) {
