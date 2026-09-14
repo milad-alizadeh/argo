@@ -75,6 +75,15 @@ export const UnknownLanguage: Story = {
   },
 }
 
+export const GuessedLanguage: Story = {
+  args: { source: SAMPLE_TYPESCRIPT, language: undefined },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('TypeScript')).toBeInTheDocument()
+    await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
+  },
+}
+
 export const CopyFromKeyboard: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()

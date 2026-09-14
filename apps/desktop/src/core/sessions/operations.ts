@@ -1,4 +1,5 @@
 import {
+  claudeSessionCompactRequestSchema,
   claudeSessionInterruptRequestSchema,
   claudeSessionPermissionDecisionRequestSchema,
   claudeSessionPermissionReplySchema,
@@ -16,6 +17,8 @@ import {
   sessionFeedRequestSchema,
   sessionListReplySchema,
   sessionListRequestSchema,
+  sessionRenameReplySchema,
+  sessionRenameRequestSchema,
 } from './contract'
 
 export const SESSION_OPERATIONS = {
@@ -30,6 +33,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed',
     request: sessionFeedRequestSchema,
     reply: sessionFeedReplySchema,
+  },
+  rename: {
+    name: 'session.rename',
+    channel: 'argo:session:rename',
+    request: sessionRenameRequestSchema,
+    reply: sessionRenameReplySchema,
   },
   startClaude: {
     name: 'session.claude.start',
@@ -47,6 +56,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.claude.interrupt',
     channel: 'argo:session:claude:interrupt',
     request: claudeSessionInterruptRequestSchema,
+    reply: claudeSessionSendReplySchema,
+  },
+  compactClaude: {
+    name: 'session.claude.compact',
+    channel: 'argo:session:claude:compact',
+    request: claudeSessionCompactRequestSchema,
     reply: claudeSessionSendReplySchema,
   },
   readClaudePermission: {

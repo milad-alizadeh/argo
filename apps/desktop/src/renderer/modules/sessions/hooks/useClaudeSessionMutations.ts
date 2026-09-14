@@ -16,7 +16,24 @@ function claudeSetup(setup: TurnSetup | null) {
   return parsed.data
 }
 
+function useCompact() {
+  return useMutation<void, SessionContractError, string>({
+    mutationFn: async (sessionId: string) => {
+      const reply = await window.argo.compactClaudeSession({ sessionId })
+      switch (reply.type) {
+        case 'session.claude.accepted':
+          return
+        case 'session.error':
+          return throwSessionContractError(reply)
+        default:
+          return throwUnexpectedSessionReply(reply)
+      }
+    },
+  })
+}
+
 export function useClaudeSessionMutations() {
+  const compact = useCompact()
   const interrupt = useMutation<void, SessionContractError, string>({
     mutationFn: async (sessionId: string) => {
       const reply = await window.argo.interruptClaudeSession({
@@ -71,5 +88,5 @@ export function useClaudeSessionMutations() {
     },
   })
 
-  return { interrupt, send, start }
+  return { compact, interrupt, send, start }
 }

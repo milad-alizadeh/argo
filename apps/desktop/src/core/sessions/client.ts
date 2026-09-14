@@ -11,12 +11,14 @@ import {
   type CodexSessionStartReply,
   type SessionFeedReply,
   type SessionListReply,
+  type SessionRenameReply,
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
   interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
+  compactClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionSendReply>
   sendClaudeSession(request: {
     sessionId: string
     prompt: string
@@ -41,6 +43,7 @@ export type SessionClient = {
     sessionId: string
     revision: string | null
   }): Promise<SessionFeedReply>
+  renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
 }
 
 export function createSessionClient(
@@ -49,6 +52,7 @@ export function createSessionClient(
   const client = createDomainClient(SESSION_OPERATIONS, invoke, sessionError)
   return {
     interruptClaudeSession: (request) => client.interruptClaude(request),
+    compactClaudeSession: (request) => client.compactClaude(request),
     sendClaudeSession: (request) => client.sendClaude(request),
     startClaudeSession: (request) => client.startClaude(request),
     readClaudePermission: (request) => client.readClaudePermission(request),
@@ -57,6 +61,7 @@ export function createSessionClient(
     sendCodexSession: (request) => client.sendCodex(request),
     startCodexSession: (request) => client.startCodex(request),
     listSessions: () => client.list(),
+    renameSession: (request) => client.rename(request),
     async readSessionFeed(request) {
       const reply = await client.feed(request)
       // A Feed that answers for a different Session would draw one Session's history under
