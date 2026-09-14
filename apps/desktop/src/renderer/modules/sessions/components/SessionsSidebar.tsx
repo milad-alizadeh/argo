@@ -21,7 +21,7 @@ function rosterState(
   rosterError: SessionError | null,
   count: number,
 ) {
-  if (rosterError !== null) return sessionFailureState(rosterError)
+  if (rosterError !== null) return sessionFailureState(rosterError.code)
   if (roster === null) return 'loading'
   return count === 0 ? 'empty' : 'ready'
 }

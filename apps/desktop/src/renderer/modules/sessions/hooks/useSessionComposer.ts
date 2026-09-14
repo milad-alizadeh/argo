@@ -1,10 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
+import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import { COMPOSER_FOCUS_STATE, type SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { SessionContractError } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
@@ -15,7 +17,8 @@ import type { useSessions } from './useSessions'
 const NO_ROWS: SessionRosterRow[] = []
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.
-type Failure = { sessionId: string | null; message: string }
+// `code` is null for a failure with no Session error code (a client-side refusal, for example).
+type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }
 
 type SessionComposerOptions = {
   cli: SessionCli
@@ -53,7 +56,7 @@ export function useSessionComposer({
   roster,
   selectedSessionId,
 }: SessionComposerOptions): {
-  failure: string | null
+  failure: { message: string; code: SessionErrorCode | null } | null
   props: Omit<SessionComposerProps, 'plan' | 'harness'>
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
@@ -65,7 +68,7 @@ export function useSessionComposer({
     choices: HARNESSES[cli].setup,
     composerKey,
     rows: roster?.sessions ?? NO_ROWS,
-    onRefusal: setFailure,
+    onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
   })
   const onInterrupt = useInterrupt(interrupt, selectedSessionId, setFailure)
   const onSend = useCallback(
@@ -83,7 +86,11 @@ export function useSessionComposer({
         )
       }
       if (cockpit.project === null) {
-        setFailure({ sessionId: null, message: 'Select a Project before starting a Session.' })
+        setFailure({
+          sessionId: null,
+          message: 'Select a Project before starting a Session.',
+          code: null,
+        })
         return false
       }
       try {
@@ -97,14 +104,16 @@ export function useSessionComposer({
         setFailure({
           sessionId: null,
           message: messageFrom(error, 'Argo could not start this Session.'),
+          code: codeFrom(error),
         })
         return false
       }
     },
     [cockpit.project, navigate, queryClient, roster, selectedSessionId, send, start, watchTurn],
   )
+  const active = failure?.sessionId === selectedSessionId ? failure : null
   return {
-    failure: failure?.sessionId === selectedSessionId ? failure.message : null,
+    failure: active === null ? null : { message: active.message, code: active.code },
     props: {
       isRunning: managedSessionIsRunning(roster, selectedSessionId),
       focusOnMount,
@@ -130,6 +139,7 @@ function useInterrupt(
       setFailure({
         sessionId,
         message: messageFrom(error, 'Argo could not interrupt this Session.'),
+        code: codeFrom(error),
       })
       return false
     }
@@ -151,7 +161,11 @@ async function sendMessage(
     await send.mutateAsync({ prompt, sessionId, setup })
     setFailure(null)
   } catch (error) {
-    setFailure({ sessionId, message: messageFrom(error, 'Argo could not send this message.') })
+    setFailure({
+      sessionId,
+      message: messageFrom(error, 'Argo could not send this message.'),
+      code: codeFrom(error),
+    })
     return false
   }
   await afterSend()
@@ -160,4 +174,8 @@ async function sendMessage(
 
 function messageFrom(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
+}
+
+function codeFrom(error: unknown): SessionErrorCode | null {
+  return error instanceof SessionContractError ? error.code : null
 }

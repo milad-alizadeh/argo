@@ -14,11 +14,12 @@ export const SESSION_ERRORS = {
   'launch-failed': 'Argo could not start Claude Code.',
   'not-drivable': 'Argo no longer holds this Claude Session.',
   'not-resumable': 'Argo did not start this Claude Session, so it cannot send to it.',
-  'held-elsewhere': 'Another Argo window is driving this Claude Session.',
+  'held-elsewhere': 'This Claude Session is open in another app. Close it there to resume it here.',
   'stale-permission': 'This Claude permission is no longer waiting.',
   'codex-cli-unavailable': 'Codex is not available. Run codex doctor to repair it.',
   'codex-launch-failed': 'Argo could not start Codex.',
   'codex-not-drivable': 'Argo no longer holds this Codex Session.',
+  'codex-held-elsewhere': 'This Codex Session is open in another app. Close it there to resume it here.',
 } as const
 
 export type SessionErrorCode = keyof typeof SESSION_ERRORS

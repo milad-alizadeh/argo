@@ -10,6 +10,17 @@ type CodexSessionDrive = {
   send: (sessionId: string, prompt: string) => Promise<void>
 }
 
+// `codex app-server` refuses a thread already active in another process (its own client or the
+// standalone Codex app) with a JSON-RPC error naming that fact; every other refusal reads
+// `codex-not-drivable`. The exact wording still needs a live repro against a held Session (#2053)
+// to replace this heuristic with the real one.
+const ACTIVE_ELSEWHERE = /already active|in use|held by|another (client|session|instance)/i
+
+function codexErrorCode(error: unknown): 'codex-held-elsewhere' | 'codex-not-drivable' {
+  const message = error instanceof Error ? error.message : ''
+  return ACTIVE_ELSEWHERE.test(message) ? 'codex-held-elsewhere' : 'codex-not-drivable'
+}
+
 export async function sendCodexSession(
   request: CodexSessionSendRequest,
   driver: CodexSessionDrive,
@@ -22,8 +33,9 @@ export async function sendCodexSession(
       requestId: request.requestId,
       sessionId: request.sessionId,
     }
-  } catch {
-    return sessionError('codex-not-drivable', request.requestId)
+  } catch (error) {
+    console.error('Argo could not send to Codex Session', request.sessionId, error)
+    return sessionError(codexErrorCode(error), request.requestId)
   }
 }
 
@@ -39,7 +51,8 @@ export async function interruptCodexSession(
       requestId: request.requestId,
       sessionId: request.sessionId,
     }
-  } catch {
-    return sessionError('codex-not-drivable', request.requestId)
+  } catch (error) {
+    console.error('Argo could not interrupt Codex Session', request.sessionId, error)
+    return sessionError(codexErrorCode(error), request.requestId)
   }
 }

@@ -80,8 +80,12 @@ export function useSessions(selectedSessionId: SessionId | null) {
   return {
     roster: roster.error === null ? (roster.data ?? null) : null,
     rosterError: roster.error,
-    feed: feed.error === null ? (feed.data ?? null) : null,
-    feedError: feed.error,
+    // A poll racing the transcript another live process is actively writing can fail once and
+    // recover on the next; a Session already read stays on screen through that one miss. A
+    // second failure in a row is no longer a race, so it still replaces the screen (#2053).
+    // `failureCount` is consecutive failed fetches and resets to 0 on the next success.
+    feed: feed.data ?? null,
+    feedError: feed.data === undefined || feed.failureCount > 1 ? feed.error : null,
     reread: () => invalidateSessionRoster(queryClient),
   }
 }

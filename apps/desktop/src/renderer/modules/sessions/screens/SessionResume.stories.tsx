@@ -92,16 +92,17 @@ export const ResumesOnSend: Story = {
 // Every refusal draws the same alert with a different message, so one code stands for all of them.
 const REFUSAL: SessionErrorCode = 'held-elsewhere'
 
+// A Session open in another app cannot take a Turn: the refusal replaces the composer with a
+// footer alert rather than sitting above it (#2053).
 export const RefusedSend: Story = {
   beforeEach: () => restartedHost(REFUSAL),
   play: async ({ canvasElement }) => {
-    const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
+    const { canvas } = await sendDraft(canvasElement, 'Carry on with the fix.')
 
     await waitFor(() =>
       expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(REFUSAL, null).message),
     )
-    await expect(composer).toHaveTextContent('Carry on with the fix.')
-    await expect(composer).toHaveFocus()
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
   },
 }

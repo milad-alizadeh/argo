@@ -1,6 +1,7 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import type { HarnessControl } from '../harness/harnesses'
+import { sessionFailureState } from '../sessionFailureState'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
@@ -21,9 +22,14 @@ export function SessionComposerArea({
   session,
   harness,
 }: SessionScreenDetailsProps) {
+  // A Session open in another app cannot take a Turn here, so the composer that would try gives
+  // way to the alert that explains why, rather than sitting under it (#2053).
+  if (composer.failure?.code && sessionFailureState(composer.failure.code) === 'unavailable') {
+    return <Failure message={composer.failure.message} />
+  }
   return (
     <>
-      {composer.failure ? <Failure message={composer.failure} /> : null}
+      {composer.failure ? <Failure message={composer.failure.message} /> : null}
       {permission.failure ? <Failure message={permission.failure} /> : null}
       {permission.permission ? (
         <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />

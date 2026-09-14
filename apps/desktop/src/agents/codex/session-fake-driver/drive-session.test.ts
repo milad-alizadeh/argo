@@ -61,3 +61,19 @@ test('reports a Codex Session that is no longer drivable', async () => {
   assert.equal(reply.code, 'codex-not-drivable')
   assert.equal(reply.requestId, 'send-2')
 })
+
+test('reports a Codex Session another app already holds active, by the refusal it names', async () => {
+  const reply = await sendCodexSession(
+    { version: 1, type: 'session.codex.send', requestId: 'send-3', sessionId, prompt: 'Continue.' },
+    {
+      async interrupt() {},
+      async send() {
+        throw new Error('thread is already active in another session')
+      },
+    },
+  )
+
+  assert.equal(reply.type, 'session.error')
+  assert.equal(reply.code, 'codex-held-elsewhere')
+  assert.equal(reply.requestId, 'send-3')
+})

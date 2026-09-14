@@ -21,7 +21,7 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
     return (
       <section
         className="grid h-full place-items-center p-6"
-        data-state={sessionFailureState(failure)}
+        data-state={sessionFailureState(failure.code)}
       >
         <Alert className="max-w-sm" variant="destructive">
           <TriangleAlert aria-hidden="true" />
