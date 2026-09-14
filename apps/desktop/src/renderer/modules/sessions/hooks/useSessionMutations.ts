@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { SessionAcceptedReply, SessionStarted } from '@/core/sessions/contract'
 import type { SessionCli } from '../harness/harnesses'
 import {
@@ -9,7 +10,18 @@ import {
 } from '../session-contract-error'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 
-type Turn = { prompt: string; setup: TurnSetup | null }
+type Turn = { prompt: string; setup: TurnSetup | null; attachments: SessionAttachmentInput[] }
+
+function acceptedOrThrow(reply: SessionAcceptedReply) {
+  switch (reply.type) {
+    case 'session.accepted':
+      return
+    case 'session.error':
+      return throwSessionContractError(reply)
+    default:
+      return throwUnexpectedSessionReply(reply)
+  }
+}
 
 // A `sessionId`-only IPC call that answers with `session.accepted`: compact, handoff and
 // interrupt all take this shape, so they share one mutation body.
@@ -36,25 +48,29 @@ export function useSessionMutations() {
   const handoff = useAcceptedMutation((sessionId) => window.argo.handoffSession({ sessionId }))
   const interrupt = useAcceptedMutation((sessionId) => window.argo.interruptSession({ sessionId }))
   const send = useMutation<void, SessionContractError, Turn & { sessionId: string }>({
-    mutationFn: async ({ prompt, sessionId, setup }) => {
-      const reply = await window.argo.sendSession({ sessionId, prompt, setup: setup ?? undefined })
-      switch (reply.type) {
-        case 'session.accepted':
-          return
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
+    mutationFn: async ({ prompt, sessionId, setup, attachments }) =>
+      acceptedOrThrow(
+        await window.argo.sendSession({
+          sessionId,
+          prompt,
+          setup: setup ?? undefined,
+          attachments,
+        }),
+      ),
   })
   const start = useMutation<
     SessionStarted,
     SessionContractError,
     Turn & { cli: SessionCli; cwd: string }
   >({
-    mutationFn: async ({ cli, cwd, prompt, setup }) => {
-      const reply = await window.argo.startSession({ cli, cwd, prompt, setup: setup ?? undefined })
+    mutationFn: async ({ cli, cwd, prompt, setup, attachments }) => {
+      const reply = await window.argo.startSession({
+        cli,
+        cwd,
+        prompt,
+        setup: setup ?? undefined,
+        attachments,
+      })
       switch (reply.type) {
         case 'session.started':
           return reply

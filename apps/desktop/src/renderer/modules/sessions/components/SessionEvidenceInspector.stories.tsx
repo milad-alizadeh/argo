@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 
 import { SessionEvidenceInspector } from './SessionEvidenceInspector'
+
+const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
 
 const command = {
   shape: 'tool' as const,
@@ -58,5 +60,23 @@ export const Unavailable: Story = {
   args: { evidence: { ...command, id: 'missing', evidence: null } },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('Recorded evidence is unavailable.')).toBeVisible()
+  },
+}
+
+export const Diagram: Story = {
+  args: {
+    evidence: {
+      shape: 'diagram' as const,
+      id: 'diagram',
+      title: 'Diagram',
+      source: DIAGRAM_SOURCE,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByText('Diagram')).toHaveLength(2)
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
+      timeout: 5000,
+    })
   },
 }

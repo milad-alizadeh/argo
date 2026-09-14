@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { Cockpit } from '../../projects/hooks/useProjects'
 import type { SessionCli } from '../harness/harnesses'
@@ -82,14 +83,15 @@ export async function sendMessage(
     send: ReturnType<typeof useSessionMutations>['send']
     prompt: string
     setup: TurnSetup | null
+    attachments: SessionAttachmentInput[]
     sessionId: string
     setFailure: (failure: Failure | null) => void
   },
   afterSend: () => Promise<void>,
 ) {
-  const { send, prompt, setup, sessionId, setFailure } = request
+  const { send, prompt, setup, attachments, sessionId, setFailure } = request
   try {
-    await send.mutateAsync({ prompt, sessionId, setup })
+    await send.mutateAsync({ prompt, sessionId, setup, attachments })
     setFailure(null)
   } catch (error) {
     setFailure({
@@ -109,13 +111,14 @@ export async function startNewSession(
     cockpit: Cockpit
     prompt: string
     setup: TurnSetup | null
+    attachments: SessionAttachmentInput[]
     start: ReturnType<typeof useSessionMutations>['start']
     setFailure: (failure: Failure | null) => void
   },
   afterStart: (sessionId: string) => Promise<void>,
   onStarted: (sessionId: string) => void,
 ) {
-  const { cli, cockpit, prompt, setup, start, setFailure } = request
+  const { cli, cockpit, prompt, setup, attachments, start, setFailure } = request
   if (cockpit.project === null) {
     setFailure({
       sessionId: null,
@@ -125,7 +128,13 @@ export async function startNewSession(
     return false
   }
   try {
-    const reply = await start.mutateAsync({ cli, cwd: cockpit.project.path, prompt, setup })
+    const reply = await start.mutateAsync({
+      cli,
+      cwd: cockpit.project.path,
+      prompt,
+      setup,
+      attachments,
+    })
     setFailure(null)
     await afterStart(reply.sessionId)
     onStarted(reply.sessionId)

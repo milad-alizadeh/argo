@@ -1,5 +1,5 @@
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import type { SessionFeed, SessionFeedRow } from '../types'
+import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow, useToolGroups } from './drawn-row'
 import { FeedRow } from './FeedRow'
@@ -17,7 +17,7 @@ type FeedDocumentProps = {
   handoffStartedAt: string | null
   feed: SessionFeed
   isRunning: boolean
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null

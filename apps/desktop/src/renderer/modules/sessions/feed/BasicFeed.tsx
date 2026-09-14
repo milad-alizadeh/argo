@@ -11,7 +11,7 @@ import {
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../sessionFailureState'
-import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
 import { readKeptSessionLimit } from './kept-documents'
 
@@ -121,7 +121,7 @@ export function BasicFeed({
   failure: SessionError | null
   isRunning: boolean
   selectedSessionId: SessionId | null
-  onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
+  onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null

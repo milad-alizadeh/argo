@@ -3,7 +3,7 @@
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
+import { sessionAttachmentInputSchema } from './attachments-contract'
 import { permissionSchema } from './permission'
 import { sessionRenamedSchema } from './rename-contract'
 import { sessionErrorSchema } from './session-error'
@@ -11,82 +11,27 @@ import { sessionErrorSchema } from './session-error'
 export * from './archive-contract'
 export * from './attachments-contract'
 export * from './claude-contract'
+export * from './feed-contract'
 export * from './handoff-contract'
 export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
 
-export const sessionListRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.list'),
-  requestId: identifierSchema,
-})
-export type SessionListRequest = z.infer<typeof sessionListRequestSchema>
-export const sessionFeedRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.feed'),
-  requestId: identifierSchema,
-  sessionId: identifierSchema,
-  // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
-  // a reloaded or evicted deck without rows to draw.
-  revision: z.string().nullable(),
-})
-export type SessionFeedRequest = z.infer<typeof sessionFeedRequestSchema>
-
-export const sessionsListedSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.listed'),
-  requestId: identifierSchema,
-  sessions: z.array(sessionRosterRowSchema),
-  // What the pass reached, stated rather than implied. A Roster that read 200 of 1,055 files
-  // says so; one that silently showed 200 rows would read as the whole machine.
-  filesFound: z.number(),
-  filesRead: z.number(),
-  filesUnreadable: z.number(),
-})
-export type SessionsListed = z.infer<typeof sessionsListedSchema>
-
-export const sessionFeedReadSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.feed.read'),
-  requestId: identifierSchema,
-  // The id that was ASKED for, echoed so the caller can prove the reply is its own.
-  sessionId: identifierSchema,
-  // The Session that answered. A retired id follows the chain that took it, so this is not always
-  // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
-  // is here so a caller can tell that the two differ, and it is what the proofs assert against.
-  chainId: identifierSchema,
-  // A main-process token for the exact projected document this reply carries. A different
-  // revision must be measured before its rows enter the viewport, even when ids stay the same.
-  revision: z.string(),
-  rows: z.array(sessionFeedRowSchema),
-})
-export type SessionFeedRead = z.infer<typeof sessionFeedReadSchema>
-
-// The selected chain's file stamps did not move, so the main process returns this compact reply
-// instead of copying an unchanged whole document over IPC on every observation pass.
-export const sessionFeedUnchangedSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.feed.unchanged'),
-  requestId: identifierSchema,
-  sessionId: identifierSchema,
-  chainId: identifierSchema,
-  revision: z.string(),
-})
-export type SessionFeedUnchanged = z.infer<typeof sessionFeedUnchangedSchema>
-
 // One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.
-export const sessionStartRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.start'),
-  requestId: identifierSchema,
-  cli: z.string().min(1),
-  cwd: z.string().min(1),
-  prompt: z.string().refine((value) => value.trim().length > 0),
-  setup: z.unknown().optional(),
-})
+export const sessionStartRequestSchema = z
+  .strictObject({
+    version: z.literal(1),
+    type: z.literal('session.start'),
+    requestId: identifierSchema,
+    cli: z.string().min(1),
+    cwd: z.string().min(1),
+    prompt: z.string(),
+    setup: z.unknown().optional(),
+    attachments: z.array(sessionAttachmentInputSchema).optional(),
+  })
+  .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
 export type SessionStartRequest = z.infer<typeof sessionStartRequestSchema>
 
 export const sessionStartedSchema = z.strictObject({
@@ -97,14 +42,17 @@ export const sessionStartedSchema = z.strictObject({
 })
 export type SessionStarted = z.infer<typeof sessionStartedSchema>
 
-export const sessionSendRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('session.send'),
-  requestId: identifierSchema,
-  sessionId: identifierSchema,
-  prompt: z.string().refine((value) => value.trim().length > 0),
-  setup: z.unknown().optional(),
-})
+export const sessionSendRequestSchema = z
+  .strictObject({
+    version: z.literal(1),
+    type: z.literal('session.send'),
+    requestId: identifierSchema,
+    sessionId: identifierSchema,
+    prompt: z.string(),
+    setup: z.unknown().optional(),
+    attachments: z.array(sessionAttachmentInputSchema).optional(),
+  })
+  .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
 export type SessionSendRequest = z.infer<typeof sessionSendRequestSchema>
 
 export const sessionInterruptRequestSchema = z.strictObject({
@@ -160,12 +108,6 @@ export type SessionPermissionDecisionRequest = z.infer<
   typeof sessionPermissionDecisionRequestSchema
 >
 
-export const sessionListReplySchema = z.union([sessionsListedSchema, sessionErrorSchema])
-export const sessionFeedReplySchema = z.union([
-  sessionFeedReadSchema,
-  sessionFeedUnchangedSchema,
-  sessionErrorSchema,
-])
 export const sessionStartReplySchema = z.union([sessionStartedSchema, sessionErrorSchema])
 export const sessionAcceptedReplySchema = z.union([sessionAcceptedSchema, sessionErrorSchema])
 export const sessionPermissionReplySchema = z.union([
@@ -174,8 +116,6 @@ export const sessionPermissionReplySchema = z.union([
 ])
 export const sessionRenameReplySchema = z.union([sessionRenamedSchema, sessionErrorSchema])
 
-export type SessionListReply = z.infer<typeof sessionListReplySchema>
-export type SessionFeedReply = z.infer<typeof sessionFeedReplySchema>
 export type SessionStartReply = z.infer<typeof sessionStartReplySchema>
 export type SessionAcceptedReply = z.infer<typeof sessionAcceptedReplySchema>
 export type SessionPermissionReply = z.infer<typeof sessionPermissionReplySchema>

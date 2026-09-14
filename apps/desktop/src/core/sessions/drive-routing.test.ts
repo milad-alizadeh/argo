@@ -47,8 +47,8 @@ function fakeCodexDriver() {
     sent,
     driver: {
       start: async () => 'codex-1',
-      send: async (sessionId: string, prompt: string) => {
-        sent.push({ sessionId, prompt })
+      send: async ({ sessionId, text }: { sessionId: string; text: string }) => {
+        sent.push({ sessionId, prompt: text })
       },
       interrupt: async () => {},
       rename: async () => 'Renamed.',

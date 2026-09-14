@@ -74,6 +74,7 @@ export async function startSession(
     cwd: request.cwd,
     prompt: request.prompt,
     setup: request.setup,
+    attachments: request.attachments ?? [],
   })
   if ('error' in result) return driveFailureReply(request.cli, result.error, request.requestId)
   return {
@@ -98,6 +99,7 @@ export async function sendSession(
       sessionId: request.sessionId,
       prompt: request.prompt,
       setup: request.setup,
+      attachments: request.attachments ?? [],
     }),
   )
 }
