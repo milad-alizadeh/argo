@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { InspectorSplit } from '../../../components/InspectorSplit'
@@ -13,6 +13,7 @@ import { useSessions } from '../hooks/useSessions'
 import { useComposerStore } from '../state/useComposerStore'
 import type { SessionFeedRow } from '../types'
 import { sessionHarness, sessionHasWork } from './sessionScreenState'
+import { useComposerFadeHeight } from './useComposerFadeHeight'
 
 import './session-screen.css'
 
@@ -109,6 +110,9 @@ export function SessionShell({
   defaultInspectorCollapsed = false,
   inspectorReveal = null,
 }: SessionShellProps) {
+  const composerElement = useRef<HTMLElement>(null)
+  const fadeHeight = useComposerFadeHeight(composerElement)
+
   return (
     <main
       data-component="SessionShell"
@@ -144,13 +148,15 @@ export function SessionShell({
             <section
               aria-label="Session composer"
               className="absolute inset-x-0 bottom-0 z-10 isolate px-(--spacing-shell-inset)"
+              ref={composerElement}
             >
               <div
                 aria-hidden="true"
                 data-component="SessionComposerFade"
-                className="pointer-events-none absolute inset-x-0 bottom-1/2 h-(--size-session-composer-fade) bg-[image:var(--gradient-session-composer-fade)]"
+                className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
+                style={{ height: fadeHeight === null ? 0 : `${fadeHeight}px` }}
               />
-              {composer}
+              <div className="relative z-20">{composer}</div>
             </section>
           </section>
         }

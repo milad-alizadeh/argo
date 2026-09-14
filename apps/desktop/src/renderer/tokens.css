@@ -275,7 +275,6 @@
   --text-ticket-title: var(--text-base, 1rem);
   --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
   --size-ticket-workspace-min: 320px;
-  --size-session-composer-fade: calc(var(--spacing-shell-region) * 2);
   --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
   --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
   --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);

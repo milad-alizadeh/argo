@@ -227,8 +227,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
+  expect(fade.getBoundingClientRect().top).toBeCloseTo(composerBounds.top, 1)
   expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
-    composerBounds.top + composerBounds.height / 2,
+    contextBar.getBoundingClientRect().bottom,
     1,
   )
 }
