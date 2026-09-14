@@ -15,6 +15,7 @@ import {
 import {
   compactSession,
   decideSessionPermission,
+  handoffSession,
   interruptSession,
   readSessionPermission,
   sendSession,
@@ -76,6 +77,8 @@ export function attachSessionBridge(
         interruptSession(request, context.adapters, context.reader.ownerCliFor),
       compact: (request, context) =>
         compactSession(request, context.adapters, context.reader.ownerCliFor),
+      handoff: (request, context) =>
+        handoffSession(request, context.adapters, context.reader.ownerCliFor),
       readPermission: (request, context) =>
         readSessionPermission(request, context.adapters, context.reader.ownerCliFor),
       decidePermission: (request, context) =>

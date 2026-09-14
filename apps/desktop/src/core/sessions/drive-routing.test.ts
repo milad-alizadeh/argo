@@ -23,6 +23,8 @@ function fakeClaudeDriver() {
       start: () => 'claude-1',
       compact: async (_sessionId: string) => {},
       completeCompaction: () => {},
+      handoff: async (_sessionId: string) => {},
+      completeHandoffs: () => {},
       send: async (sessionId: string, turn: { prompt: string }) => {
         sent.push({ sessionId, prompt: turn.prompt })
       },

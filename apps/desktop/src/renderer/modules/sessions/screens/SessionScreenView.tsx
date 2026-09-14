@@ -4,7 +4,11 @@ import { useLocation, useNavigate, useParams } from 'react-router'
 import { InspectorSplit } from '../../../components/InspectorSplit'
 import { useProjects } from '../../projects/hooks/useProjects'
 import { SessionEvidenceInspector } from '../components/SessionEvidenceInspector'
-import { SessionComposerArea, SessionWorkInspector } from '../components/SessionScreenDetails'
+import {
+  SessionComposerArea,
+  SessionHandoffFacts,
+  SessionWorkInspector,
+} from '../components/SessionScreenDetails'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { BasicFeed } from '../feed/BasicFeed'
 import { useSessionComposer } from '../hooks/useSessionComposer'
@@ -27,6 +31,7 @@ type SessionShellProps = {
   compactionStartedAt?: string | null
   compactionPercentage?: number | null
   compactionTokens?: string | null
+  handoffStartedAt?: string | null
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
@@ -66,6 +71,7 @@ export function SessionScreenView() {
       compactionStartedAt={session?.compactionStartedAt ?? null}
       compactionPercentage={session?.compactionPercentage ?? null}
       compactionTokens={session?.compactionTokens ?? null}
+      handoffStartedAt={session?.handoffStartedAt ?? null}
       isRunning={session?.status === 'running'}
       selectedSessionId={selectedSessionId}
       activeEvidenceId={evidence?.id ?? null}
@@ -80,7 +86,10 @@ export function SessionScreenView() {
       }
       inspector={
         evidence === null ? (
-          <SessionWorkInspector session={session} />
+          <>
+            <SessionWorkInspector session={session} />
+            <SessionHandoffFacts session={session} roster={roster} onNavigate={navigate} />
+          </>
         ) : (
           <SessionEvidenceInspector evidence={evidence} />
         )
@@ -99,6 +108,7 @@ export function SessionShell({
   compactionStartedAt = null,
   compactionPercentage = null,
   compactionTokens = null,
+  handoffStartedAt = null,
   isRunning,
   selectedSessionId,
   activeEvidenceId,
@@ -139,6 +149,7 @@ export function SessionShell({
                 compactionStartedAt={compactionStartedAt}
                 compactionPercentage={compactionPercentage}
                 compactionTokens={compactionTokens}
+                handoffStartedAt={handoffStartedAt}
                 feed={feed}
                 failure={feedError}
                 isRunning={isRunning}

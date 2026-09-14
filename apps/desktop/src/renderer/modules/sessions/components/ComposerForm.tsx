@@ -34,7 +34,9 @@ export function ComposerForm({
   contextTokens,
   isCompacting,
   onAttach,
+  isHandingOff,
   onCompact,
+  onHandoff,
   isRunning,
   onChange,
   onDropFiles,
@@ -57,7 +59,9 @@ export function ComposerForm({
   contextTokens: number | null | undefined
   isCompacting: boolean
   onAttach: () => void
+  isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
+  onHandoff?: () => Promise<boolean>
   isRunning: boolean
   onChange: (text: string) => void
   onDropFiles: (files: FileList) => void
@@ -128,7 +132,9 @@ export function ComposerForm({
             contextTokens={contextTokens}
             harness={harness?.cli}
             isCompacting={isCompacting}
+            isHandingOff={isHandingOff}
             onCompact={onCompact}
+            onHandoff={onHandoff}
           />
         </div>
       </div>

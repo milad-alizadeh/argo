@@ -27,6 +27,7 @@ export type SessionClient = {
   }): Promise<SessionAcceptedReply>
   interruptSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   compactSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
+  handoffSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   readSessionPermission(request: { sessionId: string }): Promise<SessionPermissionReply>
   decideSessionPermission(request: {
     sessionId: string
@@ -56,6 +57,7 @@ export function createSessionClient(
     sendSession: (request) => client.send(request),
     interruptSession: (request) => client.interrupt(request),
     compactSession: (request) => client.compact(request),
+    handoffSession: (request) => client.handoff(request),
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
     listSessions: () => client.list(),

@@ -1,6 +1,7 @@
 import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'
+import type { HandoffLedger } from './handoff-ledger'
 import type { LiveMessages } from './live-messages'
 import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
@@ -27,12 +28,21 @@ export type DriverOptions = {
   extraParts?: (sessionId: string, record: (batch: unknown) => void) => CompanionPart[]
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
+  // Where a handing-off Session's brief lands, and how completeHandoffs reads it back — a sync
+  // read because it runs on the same hot poll path as the ownership ledger (#1945).
+  handoffRoot: string
+  readHandoffBrief: (briefPath: string) => string | null
+  handoffLedger: HandoffLedger
+  handoffPatienceMs?: number
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
   compactionStartedAt: string | null
   compactionPercentage: number | null
   compactionTokens: string | null
+  handoffStartedAt: string | null
+  handoffBriefPath: string | null
+  handoffFailure: string | null
   cwd: string
   messages: LiveMessages
   process: ClaudeProcess

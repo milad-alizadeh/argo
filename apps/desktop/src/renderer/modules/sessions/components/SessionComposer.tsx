@@ -10,8 +10,10 @@ export type SessionComposerProps = {
   contextTokens?: number | null
   focusOnMount?: boolean
   isCompacting?: boolean
+  isHandingOff?: boolean
   isRunning?: boolean
   onCompact?: () => Promise<boolean>
+  onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
@@ -24,8 +26,10 @@ export function SessionComposer({
   contextTokens,
   focusOnMount = false,
   isCompacting = false,
+  isHandingOff = false,
   isRunning = false,
   onCompact,
+  onHandoff,
   onInterrupt,
   sessionId,
   onSend,
@@ -43,12 +47,14 @@ export function SessionComposer({
       focusOnMount={focusOnMount}
       harness={harness}
       isCompacting={isCompacting}
+      isHandingOff={isHandingOff}
       isRunning={isRunning}
       onAttach={() => void state.attachFiles()}
       onChange={state.changeDraft}
       onCompact={onCompact}
       onDropFiles={state.dropFiles}
       onEdit={state.onEdit}
+      onHandoff={onHandoff}
       onInterrupt={onInterrupt}
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}

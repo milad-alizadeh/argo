@@ -11,6 +11,7 @@ import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { composerIdentityKey, composerIdentityOf } from './composerIdentity'
 import { sessionComposerProps } from './sessionComposerProps'
 import { useComposerSend } from './useComposerSend'
+import { useHandoff, useHandoffCompletion } from './useHandoffActions'
 import type { Failure } from './useSessionComposer-actions'
 import { useCompact, useInterrupt } from './useSessionComposer-actions'
 import { useSessionMutations } from './useSessionMutations'
@@ -52,7 +53,7 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { compact, interrupt, send, start } = useSessionMutations()
+  const { compact, handoff, interrupt, send, start } = useSessionMutations()
   const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
@@ -69,8 +70,17 @@ export function useSessionComposer({
     return compacted
   }, [compactSession, queryClient])
   const onInterrupt = useInterrupt(interrupt, sessionId, setFailure)
-  const isCompacting =
-    (roster?.sessions.find(({ id }) => id === sessionId)?.compactionStartedAt ?? null) !== null
+  const selectedRow = roster?.sessions.find(({ id }) => id === sessionId) ?? null
+  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
+  const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
+  const onHandoff = useHandoff(handoff, sessionId, setFailure)
+  useHandoffCompletion({
+    isHandingOff,
+    navigate,
+    selectedRow,
+    selectedSessionId: sessionId,
+    setFailure,
+  })
   const onSend = useComposerSend({
     cli,
     cockpit,
@@ -91,7 +101,9 @@ export function useSessionComposer({
       isRunning: managedSessionIsRunning(roster, sessionId),
       focusOnMount,
       isCompacting,
+      isHandingOff,
       onCompact,
+      onHandoff,
       onInterrupt,
       onSend,
       sessionId: composerIdentityKey(identity),

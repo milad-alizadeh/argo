@@ -7,6 +7,7 @@ import {
   sessionCompactRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
+  sessionHandoffRequestSchema,
   sessionInterruptRequestSchema,
   sessionListReplySchema,
   sessionListRequestSchema,
@@ -71,6 +72,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.compact',
     channel: 'argo:session:compact',
     request: sessionCompactRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  handoff: {
+    name: 'session.handoff',
+    channel: 'argo:session:handoff',
+    request: sessionHandoffRequestSchema,
     reply: sessionAcceptedReplySchema,
   },
   readPermission: {

@@ -8,6 +8,7 @@ import type { ClaudeTurnSetup } from '@/core/sessions/contract.ts'
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import type { ResumeTarget } from '../drive/drive-channel.ts'
+import { createHandoffLedger, type HandoffLedger } from '../drive/handoff-ledger.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
 
@@ -30,6 +31,12 @@ export async function ledgerFile(context: TestContext) {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-driver-'))
   context.after(() => rm(folder, { recursive: true, force: true }))
   return path.join(folder, 'claude-session-ownership.json')
+}
+
+export async function handoffLedgerFile(context: TestContext) {
+  const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-handoffs-'))
+  context.after(() => rm(folder, { recursive: true, force: true }))
+  return path.join(folder, 'claude-session-handoffs.json')
 }
 
 // A gate that never raises a Permission, for a test with nothing to say about Permission behavior.
@@ -57,6 +64,11 @@ export function launch(
     spawnFails?: boolean
     gate?: ClaudePermissionGate
     mintSessionId?: () => string
+    now?: () => Date
+    handoffRoot?: string
+    handoffLedger?: HandoffLedger
+    readHandoffBrief?: (briefPath: string) => string | null
+    handoffPatienceMs?: number
   } = {},
 ) {
   const spawned: Spawned[] = []
@@ -68,11 +80,14 @@ export function launch(
     owner: { pid: process.pid, registry: options.registry ?? 'window-a' },
     isAlive: (pid) => pid === process.pid,
   })
+  const handoffLedger =
+    options.handoffLedger ??
+    createHandoffLedger({ path: path.join(path.dirname(file), 'claude-session-handoffs.json') })
   const pluginRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-claude-plugins-'))
   const driver = createClaudeSessionDriver({
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
     mintSessionId: options.mintSessionId ?? (() => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'),
-    now: () => STARTED_AT,
+    now: options.now ?? (() => STARTED_AT),
     schedule: (callback) => callback(),
     ledger,
     resumeTarget:
@@ -90,10 +105,14 @@ export function launch(
       displays.set(sessionId, record)
       return []
     },
+    handoffRoot: options.handoffRoot ?? '/handoffs',
+    handoffLedger,
+    readHandoffBrief: options.readHandoffBrief ?? (() => null),
+    handoffPatienceMs: options.handoffPatienceMs,
   })
   const state: Launch = { spawned, exit: (index) => exits[index]?.() }
   const display = (sessionId: string, batch: unknown) => displays.get(sessionId)?.(batch)
-  return { driver, ledger, display, pluginRoot, ...state }
+  return { driver, ledger, handoffLedger, display, pluginRoot, ...state }
 }
 
 // A Session a previous launch started and released when it quit.
@@ -127,8 +146,11 @@ function terminal(writes: string[]) {
 }
 
 // A started Session whose opening Turn has gone out, with its writes cleared.
-export async function startedSession(context: TestContext) {
-  const launched = launch(await ledgerFile(context))
+export async function startedSession(
+  context: TestContext,
+  options: Parameters<typeof launch>[1] = {},
+) {
+  const launched = launch(await ledgerFile(context), options)
   const sessionId = launched.driver.start({
     cwd: '/projects/argo',
     prompt: 'Start.',

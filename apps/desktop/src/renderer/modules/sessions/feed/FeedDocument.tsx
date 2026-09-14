@@ -12,6 +12,7 @@ import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { CompactionMarker } from './CompactionMarker'
 import { FeedRow } from './FeedRow'
+import { HandoffMarker } from './HandoffMarker'
 import { type Reveal, useReveals } from './reveal'
 import { type Settled, useSettledFeed } from './useSettledFeed'
 
@@ -21,6 +22,7 @@ type FeedDocumentProps = {
   compactionStartedAt: string | null
   compactionPercentage: number | null
   compactionTokens: string | null
+  handoffStartedAt: string | null
   feed: SessionFeed
   isRunning: boolean
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
@@ -58,6 +60,7 @@ export function FeedDocument({
   compactionStartedAt,
   compactionPercentage,
   compactionTokens,
+  handoffStartedAt,
   feed,
   isRunning,
   onOpenEvidence,
@@ -119,6 +122,7 @@ export function FeedDocument({
         </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
+        {handoffStartedAt === null ? null : <HandoffMarker />}
       </div>
     </div>
   )

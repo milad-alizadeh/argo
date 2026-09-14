@@ -24,6 +24,7 @@ export type SessionDriveAdapter = {
   }): Promise<DriveOk | DriveFailure>
   interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   compact(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
+  handoff(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   readPermission(request: { sessionId: string }): Promise<{ permission: Permission | null }>
   decidePermission(request: {
     sessionId: string

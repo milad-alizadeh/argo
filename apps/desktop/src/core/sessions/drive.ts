@@ -3,9 +3,9 @@
 // owner lookup (#2025/#2026) rather than a second lookup shared code would have to maintain.
 
 import {
-  driveSessionError,
   type SessionAcceptedReply,
   type SessionCompactRequest,
+  type SessionHandoffRequest,
   type SessionInterruptRequest,
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
@@ -15,24 +15,8 @@ import {
   type SessionStartRequest,
   sessionError,
 } from './contract'
-import type { DriveFailureCode, SessionDriveAdapters } from './session-drive-adapter'
-import { isDriveCli } from './session-error'
-
-function driveFailureReply(cli: string, failure: DriveFailureCode, requestId: string) {
-  if (failure === 'missing-session') return sessionError('missing-session', requestId)
-  return driveSessionError(failure, isDriveCli(cli) ? cli : 'claude', requestId)
-}
-
-async function ownedAdapter(
-  adapters: SessionDriveAdapters,
-  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
-  sessionId: string,
-) {
-  const cli = await ownerCliFor(sessionId)
-  if (cli === undefined) return undefined
-  const adapter = adapters[cli]
-  return adapter === undefined ? undefined : { adapter, cli }
-}
+import { driveFailureReply, ownedAcceptedReply, ownedAdapter } from './owned-drive-action'
+import type { SessionDriveAdapters } from './session-drive-adapter'
 
 export async function startSession(
   request: SessionStartRequest,
@@ -86,16 +70,12 @@ export async function interruptSession(
   adapters: SessionDriveAdapters,
   ownerCliFor: (sessionId: string) => Promise<string | undefined>,
 ): Promise<SessionAcceptedReply> {
-  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
-  if (owned === undefined) return sessionError('missing-session', request.requestId)
-  const result = await owned.adapter.interrupt({ sessionId: request.sessionId })
-  if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return {
-    version: 1,
-    type: 'session.accepted',
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-  }
+  return ownedAcceptedReply({
+    adapters,
+    ownerCliFor,
+    request,
+    act: (adapter) => adapter.interrupt({ sessionId: request.sessionId }),
+  })
 }
 
 export async function compactSession(
@@ -103,16 +83,25 @@ export async function compactSession(
   adapters: SessionDriveAdapters,
   ownerCliFor: (sessionId: string) => Promise<string | undefined>,
 ): Promise<SessionAcceptedReply> {
-  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
-  if (owned === undefined) return sessionError('missing-session', request.requestId)
-  const result = await owned.adapter.compact({ sessionId: request.sessionId })
-  if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return {
-    version: 1,
-    type: 'session.accepted',
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-  }
+  return ownedAcceptedReply({
+    adapters,
+    ownerCliFor,
+    request,
+    act: (adapter) => adapter.compact({ sessionId: request.sessionId }),
+  })
+}
+
+export async function handoffSession(
+  request: SessionHandoffRequest,
+  adapters: SessionDriveAdapters,
+  ownerCliFor: (sessionId: string) => Promise<string | undefined>,
+): Promise<SessionAcceptedReply> {
+  return ownedAcceptedReply({
+    adapters,
+    ownerCliFor,
+    request,
+    act: (adapter) => adapter.handoff({ sessionId: request.sessionId }),
+  })
 }
 
 export async function readSessionPermission(
@@ -137,18 +126,15 @@ export async function decideSessionPermission(
   adapters: SessionDriveAdapters,
   ownerCliFor: (sessionId: string) => Promise<string | undefined>,
 ): Promise<SessionAcceptedReply> {
-  const owned = await ownedAdapter(adapters, ownerCliFor, request.sessionId)
-  if (owned === undefined) return sessionError('missing-session', request.requestId)
-  const result = await owned.adapter.decidePermission({
-    sessionId: request.sessionId,
-    permissionId: request.permissionId,
-    decision: request.decision,
+  return ownedAcceptedReply({
+    adapters,
+    ownerCliFor,
+    request,
+    act: (adapter) =>
+      adapter.decidePermission({
+        sessionId: request.sessionId,
+        permissionId: request.permissionId,
+        decision: request.decision,
+      }),
   })
-  if ('error' in result) return driveFailureReply(owned.cli, result.error, request.requestId)
-  return {
-    version: 1,
-    type: 'session.accepted',
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-  }
 }

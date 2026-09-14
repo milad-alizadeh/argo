@@ -5,12 +5,17 @@ import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
+import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
 import type { LiveMessage } from './live-messages'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
   compact: (sessionId: string) => Promise<void>
   completeCompaction: (sessionId: string, completedAt: string) => void
+  handoff: (sessionId: string) => Promise<void>
+  // Runs on every roster read (the same hot poll path as the ownership ledger): spawns the fresh
+  // Session once a handing-off Session's brief arrives, or gives up past the patience limit.
+  completeHandoffs: () => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
   rename: (sessionId: string, name: string) => Promise<string>
@@ -98,11 +103,18 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
         return
       clearCompaction(session)
     },
+    handoff(sessionId) {
+      return startHandoff(options, sessions, sessionId)
+    },
+    completeHandoffs() {
+      completeHandoffs({ options, startSession, channel, sessions })
+    },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
       session.messages.retire()
       clearCompaction(session)
+      clearHandoff(session)
       session.process.write(INTERRUPT)
     },
     async rename(sessionId, name) {
