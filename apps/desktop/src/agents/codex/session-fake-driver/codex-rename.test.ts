@@ -17,6 +17,12 @@ test('renames a Codex Session through thread/name/set and accepts its native not
       calls.push({ method, params })
       if (method === 'thread/start') return decode({ thread: { id: 'thread-1' } })
       if (method === 'turn/start') return decode({ turn: { id: 'turn-1', status: 'inProgress' } })
+      if (method === 'thread/name/set') {
+        listeners[0]?.({
+          method: 'thread/name/updated',
+          params: { threadId: params.threadId, threadName: 'Confirmed by Codex' },
+        } as never)
+      }
       return decode({})
     },
     onNotification: (listener) => listeners.push(listener as never),
@@ -29,11 +35,7 @@ test('renames a Codex Session through thread/name/set and accepts its native not
     openChannel: () => channel,
   })
   const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Inspect the test.' })
-  await driver.rename(sessionId, 'Keep the roster stable')
-  listeners[0]?.({
-    method: 'thread/name/updated',
-    params: { threadId: sessionId, threadName: 'Confirmed by Codex' },
-  } as never)
+  assert.equal(await driver.rename(sessionId, 'Keep the roster stable'), 'Confirmed by Codex')
   assert.deepEqual(calls.at(-1), {
     method: 'thread/name/set',
     params: { threadId: sessionId, name: 'Keep the roster stable' },

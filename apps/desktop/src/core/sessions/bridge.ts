@@ -11,8 +11,6 @@ import {
 } from '../../agents/claude/drive/start-session'
 import type { CodexSessionDriver } from '../../agents/codex/drive/codex-session-driver'
 import { interruptCodexSession, sendCodexSession } from '../../agents/codex/drive/drive-session'
-import { renameCodexSession } from '../../agents/codex/drive/drive-session'
-import { renameClaudeSession } from '../../agents/claude/drive/rename-session'
 import { type CodexSessionStarter, startCodexSession } from '../../agents/codex/drive/start-session'
 import { registerDomainHandlers } from '../contract/domain'
 import {
@@ -20,6 +18,8 @@ import {
   type SessionFeedRequest,
   type SessionListReply,
   type SessionListRequest,
+  type SessionRenameReply,
+  type SessionRenameRequest,
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
@@ -27,6 +27,7 @@ import { SESSION_OPERATIONS } from './operations'
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
 }
 
 type SessionContext = {
@@ -51,10 +52,7 @@ export function attachSessionBridge(
     handlers: {
       list: (request, context) => context.reader.listSessions(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
-      async rename(request, context) {
-        const claude = await renameClaudeSession(request, context.driver)
-        return claude.type === 'session.renamed' ? claude : renameCodexSession(request, context.codexDriver)
-      },
+      rename: (request, context) => context.reader.renameSession(request),
       startClaude: (request, context) => startClaudeSession(request, context.starter),
       sendClaude: (request, context) => sendClaudeSession(request, context.driver),
       interruptClaude: (request, context) => interruptClaudeSession(request, context.driver),

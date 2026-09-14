@@ -4,7 +4,7 @@ import { identifierSchema } from '../../boundary'
 function safeName(name: string): boolean {
   return [...name].every((character) => {
     const code = character.codePointAt(0) ?? 0
-    return code > 31 && code !== 127
+    return code > 31 && (code < 127 || code > 159)
   })
 }
 

@@ -14,7 +14,10 @@ import type { Session } from '../types'
 export function normalizeSessionName(value: string): string {
   return [...value]
     .map((character) =>
-      (character.codePointAt(0) ?? 0) < 32 || character.codePointAt(0) === 127 ? ' ' : character,
+      (character.codePointAt(0) ?? 0) < 32 ||
+      ((character.codePointAt(0) ?? 0) >= 127 && (character.codePointAt(0) ?? 0) <= 159)
+        ? ' '
+        : character,
     )
     .join('')
     .trim()

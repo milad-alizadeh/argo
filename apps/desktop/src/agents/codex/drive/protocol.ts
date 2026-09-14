@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
-
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.
@@ -31,19 +30,19 @@ function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-function record(value: unknown, label: string): Record<string, unknown> {
+export function protocolRecord(value: unknown, label: string): Record<string, unknown> {
   assert(object(value), `${label} must be an object`)
   return value
 }
 
-function string(value: unknown, label: string): string {
+export function protocolString(value: unknown, label: string): string {
   assert(typeof value === 'string', `${label} must be a string`)
   return value
 }
 
 export function readMessage(line: string): WireMessage {
   const parsed: unknown = JSON.parse(line)
-  const message = record(parsed, 'Protocol envelope')
+  const message = protocolRecord(parsed, 'Protocol envelope')
   let id: RequestID | undefined
   if (Object.hasOwn(message, 'id')) {
     assert(
@@ -53,9 +52,9 @@ export function readMessage(line: string): WireMessage {
     id = message.id
   }
   if (Object.hasOwn(message, 'method')) {
-    const method = string(message.method, 'Protocol method')
+    const method = protocolString(message.method, 'Protocol method')
     assert(method.length > 0, 'Invalid protocol method')
-    const params = record(message.params, 'Protocol notification/request params')
+    const params = protocolRecord(message.params, 'Protocol notification/request params')
     assert(
       !Object.hasOwn(message, 'result') && !Object.hasOwn(message, 'error'),
       'Mixed protocol envelope',
@@ -69,7 +68,7 @@ export function readMessage(line: string): WireMessage {
     'Response needs exactly one result or error',
   )
   if (hasResult) return { ...message, id, result: message.result }
-  const error = record(message.error, 'Protocol error')
+  const error = protocolRecord(message.error, 'Protocol error')
   assert(
     typeof error.code === 'number' && Number.isInteger(error.code),
     'Protocol error is missing its numeric code',
@@ -77,17 +76,21 @@ export function readMessage(line: string): WireMessage {
   return {
     ...message,
     id,
-    error: { ...error, code: error.code, message: string(error.message, 'Protocol error message') },
+    error: {
+      ...error,
+      code: error.code,
+      message: protocolString(error.message, 'Protocol error message'),
+    },
   }
 }
 
 export function readThreadId(value: unknown): string {
-  const thread = record(record(value, 'Thread result').thread, 'Thread')
-  return string(thread.id, 'Thread ID')
+  const thread = protocolRecord(protocolRecord(value, 'Thread result').thread, 'Thread')
+  return protocolString(thread.id, 'Thread ID')
 }
 
 function readTurn(value: unknown): Turn {
-  const turn = record(value, 'Turn')
+  const turn = protocolRecord(value, 'Turn')
   const status = turn.status
   assert(
     status === 'completed' ||
@@ -96,17 +99,17 @@ function readTurn(value: unknown): Turn {
       status === 'inProgress',
     'Invalid Turn status',
   )
-  return { id: string(turn.id, 'Turn ID'), status, error: turn.error }
+  return { id: protocolString(turn.id, 'Turn ID'), status, error: turn.error }
 }
 
 export function readStartedTurn(value: unknown): Turn {
-  return readTurn(record(value, 'Turn start result').turn)
+  return readTurn(protocolRecord(value, 'Turn start result').turn)
 }
 
 export function readCompletedTurn(message: WireMessage) {
   if (!('method' in message) || message.method !== 'turn/completed') return undefined
   return {
-    threadId: string(message.params.threadId, 'Completed Turn thread ID'),
+    threadId: protocolString(message.params.threadId, 'Completed Turn thread ID'),
     turn: readTurn(message.params.turn),
   }
 }
@@ -115,9 +118,9 @@ export function readThreadStatus(
   message: WireMessage,
 ): { threadId: string; status: SessionRosterRow['status'] } | undefined {
   if (!('method' in message) || message.method !== 'thread/status/changed') return undefined
-  const status = record(message.params.status, 'Thread status')
-  const threadId = string(message.params.threadId, 'Thread status thread ID')
-  switch (string(status.type, 'Thread status type')) {
+  const status = protocolRecord(message.params.status, 'Thread status')
+  const threadId = protocolString(message.params.threadId, 'Thread status thread ID')
+  switch (protocolString(status.type, 'Thread status type')) {
     case 'active':
       assert(
         Array.isArray(status.activeFlags) &&
@@ -141,43 +144,12 @@ export function readThreadStatus(
 
 export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
 
-// A piece of the agent message a Turn is still writing, in order, under the item's id.
 export function readAgentMessageDelta(message: WireMessage): AgentMessageText | undefined {
   if (!('method' in message) || message.method !== 'item/agentMessage/delta') return undefined
   return {
-    threadId: string(message.params.threadId, 'Delta thread ID'),
-    turnId: string(message.params.turnId, 'Delta Turn ID'),
-    itemId: string(message.params.itemId, 'Delta item ID'),
-    text: string(message.params.delta, 'Delta text'),
-  }
-}
-
-// The whole text of an agent message once Codex finishes it. Other item types are not messages.
-export function readCompletedAgentMessage(message: WireMessage): AgentMessageText | undefined {
-  if (!('method' in message) || message.method !== 'item/completed') return undefined
-  const item = record(message.params.item, 'Completed item')
-  if (item.type !== 'agentMessage') return undefined
-  return {
-    threadId: string(message.params.threadId, 'Completed item thread ID'),
-    turnId: string(message.params.turnId, 'Completed item Turn ID'),
-    itemId: string(item.id, 'Completed item ID'),
-    text: string(item.text, 'Completed agent message text'),
-  }
-}
-
-export function readInterrupt(value: unknown): void {
-  const result = record(value, 'Interrupt result')
-  assert.equal(Object.keys(result).length, 0, 'Interrupt response must be empty')
-}
-
-export function readRename(value: unknown): void {
-  record(value, 'Thread rename result')
-}
-
-export function readUpdatedThreadName(message: WireMessage) {
-  if (!('method' in message) || message.method !== 'thread/name/updated') return undefined
-  return {
-    threadId: string(message.params.threadId, 'Updated thread ID'),
-    title: string(message.params.threadName, 'Updated thread name'),
+    threadId: protocolString(message.params.threadId, 'Delta thread ID'),
+    turnId: protocolString(message.params.turnId, 'Delta Turn ID'),
+    itemId: protocolString(message.params.itemId, 'Delta item ID'),
+    text: protocolString(message.params.delta, 'Delta text'),
   }
 }

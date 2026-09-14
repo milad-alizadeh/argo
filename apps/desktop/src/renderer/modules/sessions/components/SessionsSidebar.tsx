@@ -1,20 +1,14 @@
 import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
-
-import { currentSessionId } from '@/core/sessions/models'
+import { useEffect, useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
-import { useSessions } from '../hooks/useSessions'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
 import { ArchivedSessions } from './ArchivedSessions'
-import { SessionRenameDialog } from './SessionRenameDialog'
-import { SessionRosterItem } from './SessionRosterItem'
-
-const SELECTED_SESSION_KEY = 'argo.selected-session-id'
+import { RenameDialog } from './RenameDialog'
+import { SessionRosterList } from './SessionRosterList'
 
 function rosterState(
   roster: SessionsListed | null,
@@ -61,6 +55,45 @@ function SessionsSidebarHeader({ onNew }: { onNew: () => void }) {
   )
 }
 
+function SidebarRows({
+  archived,
+  onFocus,
+  onRename,
+  onSelect,
+  renamedTitles,
+  selectedSessionId,
+  tabStop,
+  visible,
+}: {
+  archived: SessionsListed['sessions']
+  onFocus: (sessionId: SessionId) => void
+  onRename: (session: SessionsListed['sessions'][number]) => void
+  onSelect: (sessionId: SessionId) => void
+  renamedTitles: Record<string, string>
+  selectedSessionId: SessionId | null
+  tabStop: SessionId | null
+  visible: SessionsListed['sessions']
+}) {
+  const list = (items: SessionsListed['sessions'], label: string) => (
+    <SessionRosterList
+      items={items}
+      label={label}
+      onFocus={onFocus}
+      onRename={onRename}
+      onSelect={onSelect}
+      renamedTitles={renamedTitles}
+      selectedSessionId={selectedSessionId}
+      tabStop={tabStop}
+    />
+  )
+  return (
+    <>
+      <div className="min-h-0 flex-1 overflow-y-auto py-3">{list(visible, 'Sessions')}</div>
+      <ArchivedSessions archived={archived} rows={list} selectedSessionId={selectedSessionId} />
+    </>
+  )
+}
+
 export type SessionsSidebarContentProps = {
   onNew?: () => void
   roster: SessionsListed | null
@@ -86,47 +119,11 @@ export function SessionsSidebarContent({
   const archived = sessions.filter((session) => session.archived)
   const tabStop = focusedSessionId ?? selectedSessionId ?? visible[0]?.id ?? null
   const state = rosterState(roster, rosterError, visible.length)
+  const rosterRequestId = roster?.requestId
 
-  const moveFocus = (event: KeyboardEvent<HTMLUListElement>) => {
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
-    const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button')]
-    const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
-    if (current === -1) return
-    event.preventDefault()
-    const nextByKey = {
-      ArrowDown: Math.min(current + 1, buttons.length - 1),
-      ArrowUp: Math.max(current - 1, 0),
-      End: buttons.length - 1,
-      Home: 0,
-    }
-    const next = nextByKey[event.key as keyof typeof nextByKey]
-    buttons[next]?.focus()
-  }
-
-  const rows = (items: typeof sessions, label: string) => (
-    <nav aria-label={label}>
-      <ul className="flex flex-col gap-1 px-3" onKeyDown={moveFocus}>
-        {items.map((session) => {
-          const title = renamedTitles[session.id]
-          const renamed =
-            title === undefined
-              ? session
-              : { ...session, title: { text: title, source: 'custom' as const } }
-          return (
-            <SessionRosterItem
-              key={session.id}
-              onFocus={() => setFocusedSessionId(session.id)}
-              onRename={() => setRenameTarget(renamed)}
-              onSelect={() => onSelect(session.id)}
-              selected={session.id === selectedSessionId}
-              session={renamed}
-              tabIndex={session.id === tabStop ? 0 : -1}
-            />
-          )
-        })}
-      </ul>
-    </nav>
-  )
+  useEffect(() => {
+    setRenamedTitles((titles) => (rosterRequestId === null ? titles : {}))
+  }, [rosterRequestId])
 
   return (
     <aside
@@ -158,53 +155,26 @@ export function SessionsSidebarContent({
           </EmptyHeader>
         </Empty>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto py-3">{rows(visible, 'Sessions')}</div>
-      <ArchivedSessions archived={archived} rows={rows} selectedSessionId={selectedSessionId} />
-      <SessionRenameDialog
-        onOpenChange={(open) => {
-          if (!open) setRenameTarget(null)
-        }}
+      <SidebarRows
+        archived={archived}
+        onFocus={setFocusedSessionId}
+        onRename={setRenameTarget}
+        onSelect={onSelect}
+        renamedTitles={renamedTitles}
+        selectedSessionId={selectedSessionId}
+        tabStop={tabStop}
+        visible={visible}
+      />
+      <RenameDialog
         onRename={async (session, name) => {
           const accepted = await onRename(session, name)
           setRenamedTitles((titles) => ({ ...titles, [session.id]: accepted }))
         }}
         session={renameTarget}
+        setSession={setRenameTarget}
       />
     </aside>
   )
 }
 
-export function SessionsSidebar() {
-  const { sessionId } = useParams()
-  const navigate = useNavigate()
-  const { roster, rosterError } = useSessions(null)
-  useEffect(() => {
-    if (sessionId !== undefined || roster === null || rosterError !== null) return
-    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
-    if (storedId === null) return
-    const restoredId = currentSessionId(roster.sessions, storedId)
-    if (restoredId === null) {
-      window.localStorage.removeItem(SELECTED_SESSION_KEY)
-      return
-    }
-    navigate(`/sessions/${restoredId}`, { replace: true })
-  }, [navigate, roster, rosterError, sessionId])
-
-  return (
-    <SessionsSidebarContent
-      onNew={() => navigate('/sessions/new')}
-      onRename={async (session, name) => {
-        const reply = await window.argo.renameSession({ sessionId: session.id, name })
-        if (reply.type === 'session.renamed') return reply.title
-        throw new Error(reply.message)
-      }}
-      onSelect={(selectedSessionId) => {
-        window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
-        navigate(`/sessions/${selectedSessionId}`)
-      }}
-      roster={roster}
-      rosterError={rosterError}
-      selectedSessionId={sessionId ?? null}
-    />
-  )
-}
+export { SessionsSidebar } from './SessionsSidebarContainer'

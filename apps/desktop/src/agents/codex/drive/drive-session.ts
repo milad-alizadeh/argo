@@ -2,9 +2,10 @@ import type {
   CodexSessionInterruptRequest,
   CodexSessionSendReply,
   CodexSessionSendRequest,
+  SessionRenameReply,
+  SessionRenameRequest,
 } from '@/core/sessions/contract'
 import { sessionError } from '@/core/sessions/contract'
-import { sessionRenameRequestSchema } from '@/core/sessions/contract'
 
 type CodexSessionDrive = {
   interrupt: (sessionId: string) => Promise<void>
@@ -46,13 +47,20 @@ export async function interruptCodexSession(
   }
 }
 
-export async function renameCodexSession(value: unknown, driver: CodexSessionDrive) {
-  const parsed = sessionRenameRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', null)
+export async function renameCodexSession(
+  request: SessionRenameRequest,
+  driver: CodexSessionDrive,
+): Promise<SessionRenameReply> {
   try {
-    const title = await driver.rename(parsed.data.sessionId, parsed.data.name)
-    return { version: 1 as const, type: 'session.renamed' as const, requestId: parsed.data.requestId, sessionId: parsed.data.sessionId, title }
+    const title = await driver.rename(request.sessionId, request.name)
+    return {
+      version: 1,
+      type: 'session.renamed',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      title,
+    }
   } catch {
-    return sessionError('codex-not-drivable', parsed.data.requestId)
+    return sessionError('codex-not-drivable', request.requestId)
   }
 }

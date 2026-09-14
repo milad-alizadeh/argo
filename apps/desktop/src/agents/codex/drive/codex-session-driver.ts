@@ -2,17 +2,12 @@ import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { CodexChannel, CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
+import { readInterrupt } from './interrupt-protocol'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessage, type LiveMessages } from './live-messages'
-import {
-  readCompletedTurn,
-  readInterrupt,
-  readRename,
-  readStartedTurn,
-  readThreadId,
-  readThreadStatus,
-  readUpdatedThreadName,
-} from './protocol'
+import { readStartedTurn, readThreadId } from './protocol'
+import { codexNotificationRecorder } from './record-notification'
+import { readRename } from './rename-protocol'
 
 type SpawnOptions = { cwd: string; env: NodeJS.ProcessEnv }
 type DriverOptions = {
@@ -45,14 +40,18 @@ export type CodexSessionDriver = {
 }
 
 type Turn = (channel: CodexChannel, threadId: string, prompt: string) => Promise<void>
-type SessionRegistry = { sessions: Map<string, ManagedSession>; turn: Turn }
+type SessionRegistry = {
+  renameWaiters: Map<string, (title: string) => void>
+  sessions: Map<string, ManagedSession>
+  turn: Turn
+}
 
 async function beginManagedSession(
   options: DriverOptions,
   registry: SessionRegistry,
   { cwd, prompt }: { cwd: string; prompt: string },
 ): Promise<string> {
-  const { sessions, turn } = registry
+  const { renameWaiters, sessions, turn } = registry
   const executable = options.findExecutable()
   if (!executable) throw new CodexSessionDriverError('codex-cli-unavailable')
   let channel: CodexChannel
@@ -81,25 +80,7 @@ async function beginManagedSession(
       const session = sessions.get(startedThreadId)
       if (session) session.status = 'ended'
     })
-    channel.onNotification((message) => {
-      if (messages.record(message)) return
-      const renamed = readUpdatedThreadName(message)
-      if (renamed?.threadId === startedThreadId) {
-        const session = sessions.get(startedThreadId)
-        if (session) session.title = { text: renamed.title, source: 'custom' }
-        return
-      }
-      const threadStatus = readThreadStatus(message)
-      if (threadStatus?.threadId === startedThreadId) {
-        const session = sessions.get(startedThreadId)
-        if (session) session.status = threadStatus.status
-        return
-      }
-      const completed = readCompletedTurn(message)
-      if (completed?.threadId !== startedThreadId) return
-      const session = sessions.get(startedThreadId)
-      if (session && completed.turn.status === 'failed') session.status = 'unknown'
-    })
+    channel.onNotification(codexNotificationRecorder(startedThreadId, sessions, renameWaiters))
     await turn(channel, startedThreadId, prompt)
     return startedThreadId
   } catch (error) {
@@ -112,6 +93,7 @@ async function beginManagedSession(
 
 export function createCodexSessionDriver(options: DriverOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
+  const renameWaiters = new Map<string, (title: string) => void>()
 
   function heldSession(sessionId: string): ManagedSession {
     const session = sessions.get(sessionId)
@@ -132,7 +114,7 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
   }
 
   return {
-    start: (request) => beginManagedSession(options, { sessions, turn }, request),
+    start: (request) => beginManagedSession(options, { renameWaiters, sessions, turn }, request),
     async send(sessionId, text) {
       const session = heldSession(sessionId)
       await turn(session.channel, sessionId, text)
@@ -148,9 +130,9 @@ export function createCodexSessionDriver(options: DriverOptions): CodexSessionDr
     },
     async rename(sessionId, name) {
       const session = heldSession(sessionId)
+      const accepted = new Promise<string>((resolve) => renameWaiters.set(sessionId, resolve))
       await session.channel.request('thread/name/set', { threadId: sessionId, name }, readRename)
-      session.title = { text: name, source: 'custom' }
-      return name
+      return accepted
     },
     roster: () =>
       [...sessions.entries()].map(([id, session]) =>
