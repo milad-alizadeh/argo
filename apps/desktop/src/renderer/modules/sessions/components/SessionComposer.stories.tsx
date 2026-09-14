@@ -367,61 +367,60 @@ export const RichFormatting: Story = {
   },
 }
 
-function markdownShortcutStory(
-  type: (composer: HTMLElement) => Promise<unknown>,
-  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>,
-): Story {
-  return {
-    play: async ({ canvasElement }) => {
-      const canvas = within(canvasElement)
-      const composer = canvas.getByLabelText('Message')
+const MARKDOWN_SHORTCUTS: Array<{
+  type: (composer: HTMLElement) => Promise<unknown>
+  assert: (canvas: ReturnType<typeof within>, composer: HTMLElement) => Promise<unknown>
+}> = [
+  {
+    type: (composer) => userEvent.type(composer, '# Heading'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
+    },
+  },
+  {
+    type: (composer) => userEvent.type(composer, '- First list item'),
+    assert: async (canvas) => {
+      await expect(canvas.getByRole('list')).toBeVisible()
+    },
+  },
+  {
+    type: (composer) => userEvent.type(composer, '> Quoted detail'),
+    assert: async (canvas, composer) => {
+      await expect(canvas.getByText('Quoted detail')).toBeVisible()
+      await expect(composer.querySelector('blockquote')).not.toBeNull()
+    },
+  },
+  {
+    type: (composer) => userEvent.type(composer, '`inline code`'),
+    assert: async (canvas) => {
+      await expect(canvas.getByText('inline code')).toBeVisible()
+    },
+  },
+  {
+    type: async (composer) => {
+      await userEvent.type(composer, '``')
+      await userEvent.keyboard('`')
+      await userEvent.type(composer, 'const result = true')
+    },
+    assert: async (_canvas, composer) => {
+      await expect(composer.querySelector(':scope > code')).not.toBeNull()
+    },
+  },
+]
 
-      await userEvent.click(composer)
+export const MarkdownShortcuts: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    for (const [index, { type, assert }] of MARKDOWN_SHORTCUTS.entries()) {
+      if (index > 0) await userEvent.keyboard('{Enter}')
       await type(composer)
       await assert(canvas, composer)
-    },
-  }
+    }
+  },
 }
-
-export const MarkdownHeadingShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '# Heading'),
-  async (canvas) => {
-    await expect(canvas.getByRole('heading', { name: 'Heading' })).toBeVisible()
-  },
-)
-
-export const MarkdownListShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '- First list item'),
-  async (canvas) => {
-    await expect(canvas.getByRole('list')).toBeVisible()
-  },
-)
-
-export const MarkdownQuoteShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '> Quoted detail'),
-  async (canvas, composer) => {
-    await expect(canvas.getByText('Quoted detail')).toBeVisible()
-    await expect(composer.querySelector('blockquote')).not.toBeNull()
-  },
-)
-
-export const MarkdownInlineCodeShortcut: Story = markdownShortcutStory(
-  (composer) => userEvent.type(composer, '`inline code`'),
-  async (canvas) => {
-    await expect(canvas.getByText('inline code')).toBeVisible()
-  },
-)
-
-export const MarkdownCodeBlockShortcut: Story = markdownShortcutStory(
-  async (composer) => {
-    await userEvent.type(composer, '``')
-    await userEvent.keyboard('`')
-    await userEvent.type(composer, 'const result = true')
-  },
-  async (_canvas, composer) => {
-    await expect(composer.querySelector(':scope > code')).not.toBeNull()
-  },
-)
 
 export const ManagedTurn: Story = {
   render: () => <ManagedComposerStory />,
