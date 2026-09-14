@@ -193,7 +193,7 @@ export function ContextPopover({
           <Info />
         )}
       </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
+      <PopoverContent align="end" side="top" className="w-(--size-session-popover) gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
           <PopoverDescription className="type-prose">

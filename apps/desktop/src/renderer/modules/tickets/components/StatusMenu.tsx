@@ -20,7 +20,7 @@ export type StatusMenuProps = {
 }
 
 // Pulls the named trigger's icon onto the value column: the xs button's px-2 plus its 1px border.
-const NAMED_INSET = '-ml-[calc(--spacing(2)+1px)]'
+const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
 
 // A Ticket's status as a menu of every status its provider offers.
 export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMenuProps) {

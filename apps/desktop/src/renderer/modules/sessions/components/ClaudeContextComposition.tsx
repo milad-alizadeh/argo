@@ -14,7 +14,10 @@ export function ClaudeContextComposition() {
       <summary className="cursor-pointer font-medium">Loaded context</summary>
       <div className="mt-2 grid gap-2">
         {COMPOSITION.map((item) => (
-          <div className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2" key={item.label}>
+          <div
+            className="grid grid-cols-[var(--size-context-label-column)_1fr_var(--size-control)] items-center gap-2"
+            key={item.label}
+          >
             <span className="text-muted-foreground">{item.label}</span>
             <Progress className="h-1.5" value={item.percentage} />
             <span className="text-right tabular-nums">{item.value}</span>

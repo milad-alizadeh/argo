@@ -31,7 +31,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
         <span className="hidden @[36rem]:inline">{current?.label}</span>
         <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
+      <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">
             {choices.label} permissions
