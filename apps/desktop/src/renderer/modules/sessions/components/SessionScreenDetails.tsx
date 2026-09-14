@@ -6,20 +6,17 @@ import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
 
-// Only these two codes mean "open elsewhere": no Turn here can ever succeed, so the composer
-// gives way to the alert instead of sitting under it (#2053). Every other failure code
-// (`not-resumable` among them) keeps its draft in a still-active composer, as before.
-const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set([
-  'held-elsewhere',
-  'codex-held-elsewhere',
-])
+// Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
+// way to the alert instead of sitting under it (#2053). Every other failure code (`not-resumable`
+// among them) keeps its draft in a still-active composer, as before.
+const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere'])
 
 type SessionScreenDetailsProps = {
   composer: Pick<
     ReturnType<typeof import('../hooks/useSessionComposer').useSessionComposer>,
     'failure' | 'props'
   >
-  permission: ReturnType<typeof import('../hooks/useClaudePermission').useClaudePermission>
+  permission: ReturnType<typeof import('../hooks/useSessionPermission').useSessionPermission>
   session: SessionRosterRow | null
   harness: HarnessControl
 }

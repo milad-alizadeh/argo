@@ -1,5 +1,5 @@
 import type { SessionRenameRequest } from '@/core/sessions/contract'
-import { sessionError } from '@/core/sessions/contract'
+import { driveSessionError, sessionError } from '@/core/sessions/contract'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 
@@ -17,7 +17,9 @@ export async function renameClaudeSession(
       title,
     }
   } catch (error) {
-    const code = error instanceof ClaudeSessionDriverError ? error.code : 'not-drivable'
-    return sessionError(code, request.requestId)
+    if (error instanceof ClaudeSessionDriverError && error.code === 'missing-session') {
+      return sessionError('missing-session', request.requestId)
+    }
+    return driveSessionError('not-drivable', 'claude', request.requestId)
   }
 }

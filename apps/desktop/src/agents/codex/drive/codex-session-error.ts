@@ -1,9 +1,7 @@
+import { driveSessionError } from '@/core/sessions/session-error'
+
 export class CodexSessionDriverError extends Error {
-  constructor(readonly code: 'codex-cli-unavailable' | 'codex-launch-failed') {
-    super(
-      code === 'codex-cli-unavailable'
-        ? 'Codex is not available. Run codex doctor to repair it.'
-        : 'Argo could not start Codex.',
-    )
+  constructor(readonly code: 'cli-unavailable' | 'launch-failed') {
+    super(driveSessionError(code, 'codex', null).message)
   }
 }

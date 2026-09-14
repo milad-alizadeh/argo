@@ -1,43 +1,35 @@
 import { createDomainClient } from '../contract/domain'
 import {
-  type ClaudeSessionInterruptReply,
-  type ClaudeSessionPermissionDecisionReply,
-  type ClaudeSessionPermissionReply,
-  type ClaudeSessionSendReply,
-  type ClaudeSessionStartReply,
-  type ClaudeTurnSetup,
-  type CodexSessionInterruptReply,
-  type CodexSessionSendReply,
-  type CodexSessionStartReply,
+  type SessionAcceptedReply,
   type SessionFeedReply,
   type SessionListReply,
+  type SessionPermissionReply,
   type SessionRenameReply,
+  type SessionStartReply,
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
-  interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
-  compactClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionSendReply>
-  sendClaudeSession(request: {
-    sessionId: string
-    prompt: string
-    setup: ClaudeTurnSetup
-  }): Promise<ClaudeSessionSendReply>
-  startClaudeSession(request: {
+  startSession(request: {
+    cli: string
     cwd: string
     prompt: string
-    setup: ClaudeTurnSetup
-  }): Promise<ClaudeSessionStartReply>
-  readClaudePermission(request: { sessionId: string }): Promise<ClaudeSessionPermissionReply>
-  decideClaudePermission(request: {
+    setup?: unknown
+  }): Promise<SessionStartReply>
+  sendSession(request: {
+    sessionId: string
+    prompt: string
+    setup?: unknown
+  }): Promise<SessionAcceptedReply>
+  interruptSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
+  compactSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
+  readSessionPermission(request: { sessionId: string }): Promise<SessionPermissionReply>
+  decideSessionPermission(request: {
     sessionId: string
     permissionId: string
     decision: 'allow' | 'deny'
-  }): Promise<ClaudeSessionPermissionDecisionReply>
-  interruptCodexSession(request: { sessionId: string }): Promise<CodexSessionInterruptReply>
-  sendCodexSession(request: { sessionId: string; prompt: string }): Promise<CodexSessionSendReply>
-  startCodexSession(request: { cwd: string; prompt: string }): Promise<CodexSessionStartReply>
+  }): Promise<SessionAcceptedReply>
   listSessions(): Promise<SessionListReply>
   readSessionFeed(request: {
     sessionId: string
@@ -51,15 +43,12 @@ export function createSessionClient(
 ): SessionClient {
   const client = createDomainClient(SESSION_OPERATIONS, invoke, sessionError)
   return {
-    interruptClaudeSession: (request) => client.interruptClaude(request),
-    compactClaudeSession: (request) => client.compactClaude(request),
-    sendClaudeSession: (request) => client.sendClaude(request),
-    startClaudeSession: (request) => client.startClaude(request),
-    readClaudePermission: (request) => client.readClaudePermission(request),
-    decideClaudePermission: (request) => client.decideClaudePermission(request),
-    interruptCodexSession: (request) => client.interruptCodex(request),
-    sendCodexSession: (request) => client.sendCodex(request),
-    startCodexSession: (request) => client.startCodex(request),
+    startSession: (request) => client.start(request),
+    sendSession: (request) => client.send(request),
+    interruptSession: (request) => client.interrupt(request),
+    compactSession: (request) => client.compact(request),
+    readSessionPermission: (request) => client.readPermission(request),
+    decideSessionPermission: (request) => client.decidePermission(request),
     listSessions: () => client.list(),
     renameSession: (request) => client.rename(request),
     async readSessionFeed(request) {

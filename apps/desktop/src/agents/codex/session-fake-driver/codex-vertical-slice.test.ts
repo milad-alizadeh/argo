@@ -2,56 +2,33 @@
 // fixture app-server (fixtures/fake-codex-app-server.ts) stands in for `codex app-server`, so this
 // proves the wire framing and the driver together, not just an in-memory fake of `CodexChannel`.
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath } from 'node:url'
 
-import { openCodexChannel } from '../drive/codex-channel.ts'
-import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import { sendCodexSession } from '../drive/drive-session.ts'
-import { startCodexSession } from '../drive/start-session.ts'
+import { sendSession, startSession } from '@/core/sessions/drive.ts'
+import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 import { createCodexSessionReader } from '../sessions/read-sessions.ts'
-
-const fixture = fileURLToPath(new URL('./fixtures/fake-codex-app-server.ts', import.meta.url))
-
-function driverBackedByFixture() {
-  return createCodexSessionDriver({
-    findExecutable: () => process.execPath,
-    now: () => new Date(),
-    openChannel: (executable, options) => {
-      const child = spawn(executable, [fixture], { cwd: options.cwd, env: options.env })
-      child.stderr.on('data', () => {})
-      return openCodexChannel({
-        stdout: child.stdout,
-        write: (line) => child.stdin.write(line),
-        kill: () => child.kill(),
-        onExit: (listener) => {
-          child.on('close', listener)
-          child.on('error', listener)
-        },
-      })
-    },
-  })
-}
+import { driverBackedByFixture } from './fixture-driver.ts'
 
 test('starting a Codex Session over the real transport makes it appear in the shared Roster', async () => {
   const driver = driverBackedByFixture()
+  const adapters = { codex: createCodexDriveAdapter(driver) }
   try {
-    const startReply = await startCodexSession(
+    const startReply = await startSession(
       {
         version: 1,
-        type: 'session.codex.start',
+        type: 'session.start',
         requestId: 'start-1',
+        cli: 'codex',
         cwd: process.cwd(),
         prompt: 'Inspect the failing test.',
       },
-      driver,
+      adapters,
     )
-    assert.equal(startReply.type, 'session.codex.started')
-    const sessionId = startReply.type === 'session.codex.started' ? startReply.sessionId : ''
+    assert.equal(startReply.type, 'session.started')
+    const sessionId = startReply.type === 'session.started' ? startReply.sessionId : ''
 
     const transcripts = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-vertical-slice-'))
     const reader = createCodexSessionReader(transcripts, { roster: driver.roster })
@@ -76,17 +53,18 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     assert.equal(feedReply.type, 'session.feed.read')
     assert.deepEqual(feedReply.rows, [])
 
-    const sendReply = await sendCodexSession(
+    const sendReply = await sendSession(
       {
         version: 1,
-        type: 'session.codex.send',
+        type: 'session.send',
         requestId: 'send-1',
         sessionId,
         prompt: 'Continue with the next Turn.',
       },
-      driver,
+      adapters,
+      async () => 'codex',
     )
-    assert.equal(sendReply.type, 'session.codex.accepted')
+    assert.equal(sendReply.type, 'session.accepted')
   } finally {
     driver.close()
   }
@@ -94,19 +72,21 @@ test('starting a Codex Session over the real transport makes it appear in the sh
 
 test('a Codex transport failure surfaces an honest, visible Session state', async () => {
   const driver = driverBackedByFixture()
+  const adapters = { codex: createCodexDriveAdapter(driver) }
   try {
-    const startReply = await startCodexSession(
+    const startReply = await startSession(
       {
         version: 1,
-        type: 'session.codex.start',
+        type: 'session.start',
         requestId: 'start-2',
+        cli: 'codex',
         cwd: process.cwd(),
         prompt: 'Trigger a FAIL turn.',
       },
-      driver,
+      adapters,
     )
-    assert.equal(startReply.type, 'session.codex.started')
-    const sessionId = startReply.type === 'session.codex.started' ? startReply.sessionId : ''
+    assert.equal(startReply.type, 'session.started')
+    const sessionId = startReply.type === 'session.started' ? startReply.sessionId : ''
 
     // The fixture's turn/completed notification arrives asynchronously; give it a moment.
     await new Promise((resolve) => setTimeout(resolve, 100))
@@ -116,42 +96,4 @@ test('a Codex transport failure surfaces an honest, visible Session state', asyn
   } finally {
     driver.close()
   }
-})
-
-test('driving a Session Codex never launched reports a drivable failure, not a stall', async () => {
-  const driver = driverBackedByFixture()
-  const reply = await sendCodexSession(
-    {
-      version: 1,
-      type: 'session.codex.send',
-      requestId: 'send-2',
-      sessionId: 'never-started',
-      prompt: 'x',
-    },
-    driver,
-  )
-  assert.equal(reply.type, 'session.error')
-  assert.equal(reply.code, 'codex-not-drivable')
-})
-
-test('Codex being unavailable on the machine reports an honest start failure', async () => {
-  const driver = createCodexSessionDriver({
-    findExecutable: () => null,
-    now: () => new Date(),
-    openChannel: () => {
-      throw new Error('unreachable')
-    },
-  })
-  const reply = await startCodexSession(
-    {
-      version: 1,
-      type: 'session.codex.start',
-      requestId: 'start-3',
-      cwd: process.cwd(),
-      prompt: 'Inspect the failing test.',
-    },
-    driver,
-  )
-  assert.equal(reply.type, 'session.error')
-  assert.equal(reply.code, 'codex-cli-unavailable')
 })
