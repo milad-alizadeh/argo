@@ -172,7 +172,9 @@ export const RosterStructure: Story = {
     await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
     await expect(canvas.getByText('#2062')).toBeVisible()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
-    await expect(canvas.getByTitle(/^Running /)).toBeVisible()
+    const timing = canvas.getByTitle(/^Running /)
+    await expect(timing).toBeVisible()
+    await expect(timing.parentElement?.firstElementChild).toBe(timing)
     await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
   },
 }

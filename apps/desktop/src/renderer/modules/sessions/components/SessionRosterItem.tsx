@@ -107,6 +107,7 @@ function SessionMetadata({ session }: { session: Session }) {
   if (!hasMetadata) return null
   return (
     <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
+      {timing === null ? null : <SessionTiming timing={timing} />}
       <SessionPlanBar session={session} />
       {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
       {session.delegations.length > 0 ? (
@@ -121,7 +122,6 @@ function SessionMetadata({ session }: { session: Session }) {
           <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}
-      {timing === null ? null : <SessionTiming timing={timing} />}
     </span>
   )
 }
