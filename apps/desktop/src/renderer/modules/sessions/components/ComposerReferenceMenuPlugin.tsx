@@ -9,6 +9,7 @@ import {
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
 
+import type { SessionCli } from '../harness/harnesses'
 import {
   activeReference,
   ComposerReferenceMenu,
@@ -52,7 +53,13 @@ function useReferenceChoices(draft: string, editor: LexicalEditor) {
   return { choices: dismissedDraft === draft ? null : choices, choose, dismiss, move, selected }
 }
 
-export function ComposerReferenceMenuPlugin({ draft }: { draft: string }) {
+export function ComposerReferenceMenuPlugin({
+  cli = null,
+  draft,
+}: {
+  cli?: SessionCli | null
+  draft: string
+}) {
   const [editor] = useLexicalComposerContext()
   const menu = useReferenceChoices(draft, editor)
   const menuRef = useRef(menu)
@@ -81,6 +88,11 @@ export function ComposerReferenceMenuPlugin({ draft }: { draft: string }) {
   )
   if (menu.choices === null) return null
   return (
-    <ComposerReferenceMenu choices={menu.choices} onChoose={menu.choose} selected={menu.selected} />
+    <ComposerReferenceMenu
+      choices={menu.choices}
+      cli={cli}
+      onChoose={menu.choose}
+      selected={menu.selected}
+    />
   )
 }

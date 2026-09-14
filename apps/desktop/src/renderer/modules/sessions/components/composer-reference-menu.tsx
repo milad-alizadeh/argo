@@ -1,5 +1,9 @@
+import { TriangleAlert } from 'lucide-react'
+import type { SessionCli } from '../harness/harnesses'
 import {
+  cliLabel,
   referenceSuggestions,
+  referenceSupportsCli,
   type SessionReference,
   SessionReferenceIcon,
 } from './SessionReference'
@@ -70,10 +74,12 @@ export function referenceMenuKey({
 
 export function ComposerReferenceMenu({
   choices,
+  cli = null,
   onChoose,
   selected,
 }: {
   choices: readonly ReferenceSuggestion[]
+  cli?: SessionCli | null
   onChoose: (choice: ReferenceSuggestion) => void
   selected: number
 }) {
@@ -84,28 +90,37 @@ export function ComposerReferenceMenu({
       id="composer-references"
       role="listbox"
     >
-      {choices.map((choice, index) => (
-        <button
-          aria-selected={index === selected}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left type-body ${index === selected ? 'bg-muted' : 'hover:bg-muted'}`}
-          data-reference-kind={choice.kind}
-          key={choice.source}
-          id={`composer-reference-${choice.source.slice(1)}`}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => onChoose(choice)}
-          role="option"
-          type="button"
-        >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-card">
-            <SessionReferenceIcon kind={choice.kind} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block type-label font-medium">{choice.label}</span>
-            <span className="block text-meta text-muted-foreground">{choice.detail}</span>
-          </span>
-          <span className="text-meta capitalize text-muted-foreground">{choice.kind}</span>
-        </button>
-      ))}
+      {choices.map((choice, index) => {
+        const unsupported = !referenceSupportsCli(choice, cli)
+        return (
+          <button
+            aria-selected={index === selected}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left type-body ${index === selected ? 'bg-muted' : 'hover:bg-muted'}`}
+            data-reference-kind={choice.kind}
+            key={choice.source}
+            id={`composer-reference-${choice.source.slice(1)}`}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onChoose(choice)}
+            role="option"
+            type="button"
+          >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-card">
+              {unsupported ? (
+                <TriangleAlert aria-hidden="true" className="size-3.5" />
+              ) : (
+                <SessionReferenceIcon kind={choice.kind} />
+              )}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block type-label font-medium">{choice.label}</span>
+              <span className="block text-meta text-muted-foreground">
+                {unsupported ? `Not available for ${cliLabel(cli)}` : choice.detail}
+              </span>
+            </span>
+            <span className="text-meta capitalize text-muted-foreground">{choice.kind}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
