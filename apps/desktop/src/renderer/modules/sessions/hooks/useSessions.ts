@@ -8,7 +8,6 @@ import {
 import {
   invalidateSessionRoster,
   SESSION_REFRESH_MS,
-  sessionFeedQueryKey,
   sessionRosterQueryKey,
 } from '../session-queries'
 import {
@@ -17,6 +16,7 @@ import {
   useSessionCreationStore,
 } from '../state/useSessionCreationStore'
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
+import { sessionFeedQuery } from './sessionFeedQuery'
 
 let rosterOrder: SessionId[] = []
 
@@ -37,10 +37,11 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-function useRosterQuery(selectedSessionId: SessionId | null) {
+function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
   return useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
     staleTime: Infinity,
+    enabled,
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
@@ -57,45 +58,19 @@ function useRosterQuery(selectedSessionId: SessionId | null) {
   })
 }
 
+// The main column always reads the Session's own Feed. A Subagent's Feed is a separate document
+// read beside it, drawn in the inspector, so opening one never takes the Session's away (#1582).
 // A Session that only exists as an optimistic Roster row has no backend record to read a feed
 // for yet (#2109); the backend is asked only once the id is a real one.
-function useFeedQuery(
-  feedSessionId: SessionId | null,
-  queryClient: ReturnType<typeof useQueryClient>,
-) {
-  return useQuery<SessionFeed | null, SessionContractError>({
-    queryKey:
-      feedSessionId === null ? ['sessions', 'feed', null] : sessionFeedQueryKey(feedSessionId),
-    enabled: feedSessionId !== null,
-    refetchInterval: SESSION_REFRESH_MS,
-    retry: false,
-    queryFn: async () => {
-      if (feedSessionId === null) return null
-      const key = sessionFeedQueryKey(feedSessionId)
-      const cached = queryClient.getQueryData<SessionFeed>(key)
-      const reply = await window.argo.readSessionFeed({
-        sessionId: feedSessionId,
-        revision: cached?.revision ?? null,
-      })
-      switch (reply.type) {
-        case 'session.feed.read':
-          return reply
-        case 'session.feed.unchanged':
-          return cached ?? null
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
-  })
-}
-
-export function useSessions(selectedSessionId: SessionId | null) {
+// `rosterEnabled` lets a caller that only sometimes needs the roster (a Ticket's Linked
+// Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
+// roster in for a result it may throw away.
+export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
   const queryClient = useQueryClient()
-  const roster = useRosterQuery(selectedSessionId)
-  const feedSessionId = readableSessionId(selectedSessionId)
-  const feed = useFeedQuery(feedSessionId, queryClient)
+  const roster = useRosterQuery(selectedSessionId, rosterEnabled)
+  const feed = useQuery<SessionFeed | null, SessionContractError>(
+    sessionFeedQuery(queryClient, readableSessionId(selectedSessionId), null),
+  )
 
   const pending = useSessionCreationStore((state) => state.pending)
   const rosterData = roster.error === null ? (roster.data ?? null) : null

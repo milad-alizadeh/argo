@@ -45,6 +45,16 @@ export async function provePackagedCodexResume(page: Page, { restart }: { restar
         `${error.message}\nFeed rows: ${JSON.stringify(rows)}\nAlerts: ${JSON.stringify(alerted)}\nRoster row: ${JSON.stringify(row)}`,
       )
     })
+  // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the roster
+  // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
+  // rather than by the time the message is visible.
+  await relaunched.waitForFunction(async (id) => {
+    const reply = await window.argo.listSessions()
+    return reply.sessions.some(
+      (session: { id: string; posture: string }) =>
+        session.id === id && session.posture === 'managed',
+    )
+  }, sessionId)
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),

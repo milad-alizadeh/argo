@@ -6,7 +6,14 @@ import { type SessionFeedReply, type SessionFeedRequest, sessionError } from './
 import { feedReply, type HeldFeed, keepFeed, stableChain, unchangedReply } from './feed-cache'
 import type { SessionSource } from './session-source'
 
-type FeedContext = { source: SessionSource; feeds: Map<string, HeldFeed>; managed: boolean }
+// `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
+// Feeds are separate documents read from separate files, so they cannot share one entry.
+type FeedContext = {
+  source: SessionSource
+  feeds: Map<string, HeldFeed>
+  managed: boolean
+  key: string
+}
 
 function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
@@ -27,8 +34,8 @@ export async function readOwnedFeed(
   context: FeedContext,
   value: SessionFeedRequest,
 ): Promise<SessionFeedReply> {
-  const { source, feeds, managed } = context
-  const held = feeds.get(value.sessionId)
+  const { source, feeds, managed, key } = context
+  const held = feeds.get(key)
   // The chain a resume belongs to can gain a file the held record never knew about (a Session
   // Argo never started, resumed for the first time): the file the held record already tracks
   // never changes, so statting only those paths would call this Feed unchanged forever. Deriving
@@ -40,7 +47,7 @@ export async function readOwnedFeed(
   }
   const { chain, stamps } = stable
   if (held !== undefined && held.stamps === stamps) {
-    keepFeed(feeds, value.sessionId, held)
+    keepFeed(feeds, key, held)
     return value.revision === held.revision ? unchangedReply(value, held) : feedReply(value, held)
   }
   const rows = source.projectFeed(chain)
@@ -52,7 +59,7 @@ export async function readOwnedFeed(
     revision,
     stamps,
   }
-  keepFeed(feeds, value.sessionId, next)
+  keepFeed(feeds, key, next)
   return feedReply(value, next)
 }
 

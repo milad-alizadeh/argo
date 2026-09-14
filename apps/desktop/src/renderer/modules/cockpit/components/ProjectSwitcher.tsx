@@ -1,5 +1,6 @@
 import { Check, ChevronDown, FolderGit2, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { REGISTER_PROJECT_COMMAND } from '@/core/commands/shortcuts'
 import { Button } from '../../../components/ui/button'
@@ -17,11 +18,12 @@ import { useProjects } from '../../projects/hooks/useProjects'
 import { useCommands } from '../hooks/useCommands'
 
 export function ProjectSwitcher() {
+  const { t } = useTranslation('cockpit')
   const [cockpit, actions] = useProjects()
   useCommands((command) => {
     if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
-  const projectName = cockpit.project?.name ?? 'Select project'
+  const projectName = cockpit.project?.name ?? t('projectSwitcher.placeholder')
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
@@ -31,7 +33,7 @@ export function ProjectSwitcher() {
           disabled={cockpit.busy}
           render={
             <Button
-              aria-label={`Current project: ${projectName}`}
+              aria-label={t('projectSwitcher.current', { name: projectName })}
               variant="ghost"
               size="sm"
               className="gap-(--spacing-shell-tight) px-2 type-body"
@@ -44,11 +46,11 @@ export function ProjectSwitcher() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Switch project</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('projectSwitcher.switchLabel')}</DropdownMenuLabel>
             {cockpit.projects.map((project) => (
               <DropdownMenuItem
                 key={project.id}
-                aria-label={`Switch to ${project.name}`}
+                aria-label={t('projectSwitcher.switchTo', { name: project.name })}
                 onClick={() => actions.select(project.id)}
               >
                 <FolderGit2 />
@@ -58,14 +60,14 @@ export function ProjectSwitcher() {
             ))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem aria-label="Add project" onClick={actions.open}>
+          <DropdownMenuItem aria-label={t('projectSwitcher.add')} onClick={actions.open}>
             <Plus />
-            Add project…
+            {t('projectSwitcher.addEllipsis')}
           </DropdownMenuItem>
           {cockpit.project ? (
             <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
               <Settings />
-              Project settings…
+              {t('projectSwitcher.settings')}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>

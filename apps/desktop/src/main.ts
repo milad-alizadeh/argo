@@ -1,41 +1,14 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
-import { renameClaudeSession } from './agents/claude/drive/rename-session'
-import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
-import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
-import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
-import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
-import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
-import { renameCodexSession } from './agents/codex/drive/rename-session'
-import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
-import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
-import { codexSessionSource } from './agents/codex/sessions/read-sessions'
-import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
-import { createAccountAccess } from './core/accounts/access'
-import { attachAccountBridge } from './core/accounts/bridge'
-import { safeStorageCipher } from './core/accounts/safe-storage'
+import { attachBridges } from './bridges'
 import { windowBackground } from './core/appearance/appearance'
-import {
-  applyStoredAppearance,
-  attachAppearanceBridge,
-  readAppearance,
-} from './core/appearance/bridge'
+import { applyStoredAppearance, readAppearance } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
 import { setPlatformLanguage } from './core/i18n/platform'
-import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
-import { attachWindowNavigation } from './core/security/window-navigation'
-import { attachSessionBridge } from './core/sessions/bridge'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CODEX_EXECUTABLE_ENV,
-} from './core/sessions/proof-protocol'
-import { createSessionReader } from './core/sessions/reader'
-import { attachTicketBridge } from './core/tickets/bridge'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
-import { providerEndpoints } from './providers/endpoints'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -59,65 +32,6 @@ const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
-
-function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
-  const home = app.getPath('home')
-  const claudeSessionDriver = createSystemClaudeSessionDriver({
-    permissions: path.join(userData, 'claude-permission-plugins'),
-    ledger: path.join(userData, 'claude-session-ownership.json'),
-    transcripts: claudeTranscriptsRoot(home),
-    handoffBriefs: path.join(userData, 'claude-session-handoffs'),
-    handoffLedger: path.join(userData, 'claude-session-handoffs.json'),
-    executable: PROOF_ENABLED ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
-  })
-  const codexSessionDriver = createSystemCodexSessionDriver({
-    executable: PROOF_ENABLED ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
-    ownership: path.join(userData, 'codex-session-ownership.json'),
-    transcripts: codexTranscriptsRoot(home),
-  })
-  attachProjectBridge(window, { userData, rendererURL })
-  attachSessionBridge(window, {
-    reader: createSessionReader([
-      claudeSessionSource({
-        transcripts: claudeTranscriptsRoot(home),
-        archive: claudeArchiveRoot(home),
-        managedSessions: claudeSessionDriver.roster,
-        completeCompaction: claudeSessionDriver.completeCompaction,
-        completeHandoffs: claudeSessionDriver.completeHandoffs,
-        handoffEdges: claudeSessionDriver.handoffEdges,
-        liveMessages: claudeSessionDriver.liveMessages,
-        rename: (request) => renameClaudeSession(request, claudeSessionDriver),
-        isLockedElsewhere: claudeSessionDriver.isLockedElsewhere,
-      }),
-      codexSessionSource(codexTranscriptsRoot(home), {
-        roster: codexSessionDriver.roster,
-        liveMessages: codexSessionDriver.liveMessages,
-        pendingQuestion: codexSessionDriver.pendingQuestion,
-        rename: (request) => renameCodexSession(request, codexSessionDriver),
-        isLockedElsewhere: codexSessionDriver.isLockedElsewhere,
-      }),
-    ]),
-    adapters: {
-      claude: createClaudeDriveAdapter(claudeSessionDriver),
-      codex: createCodexDriveAdapter(codexSessionDriver),
-    },
-    rendererURL,
-  })
-  attachAppearanceBridge(window, { userData, rendererURL })
-  attachCodexCompactionBridge(window, { home, rendererURL })
-  const access = createAccountAccess({
-    userData,
-    endpoints: providerEndpoints(PROOF_ENABLED),
-    cipher: safeStorageCipher,
-    openExternal: (url) => shell.openExternal(url),
-  })
-  attachAccountBridge(window, { access, rendererURL })
-  attachTicketBridge(window, { access, rendererURL })
-  app.once('before-quit', () => {
-    claudeSessionDriver.close()
-    codexSessionDriver.close()
-  })
-}
 
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
@@ -144,8 +58,7 @@ function createWindow(): BrowserWindow {
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
-  attachWindowNavigation(window)
-  attachBridges(window, userData, rendererURL)
+  attachBridges(window, { userData, rendererURL, proofEnabled: PROOF_ENABLED })
   installMenu(window)
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

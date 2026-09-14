@@ -23,7 +23,3 @@ export function sessionHarness({
   const isPicking = selectedSessionId === null || isOptimisticSessionId(selectedSessionId)
   return isPicking ? { cli: lastHarness, onChange: chooseHarness } : { cli: sessionCliOf(session) }
 }
-
-export function sessionHasWork(session: Pick<Session, 'delegations' | 'shell'> | null) {
-  return session !== null && (session.delegations.length > 0 || session.shell.length > 0)
-}

@@ -93,6 +93,7 @@ const feedQuery = async () => {
       type: 'session.feed',
       requestId: `feed-${feedReads}`,
       sessionId: SESSION,
+      delegationId: null,
       revision: null,
     })
     if (feedSettledMs === null && reply.type !== 'session.error') {

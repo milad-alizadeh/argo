@@ -1,4 +1,4 @@
-import { Bot, Ticket } from 'lucide-react'
+import { Bot, GitPullRequest, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Session } from '../types'
 import { sessionTiming } from './session-timing'
@@ -58,6 +58,7 @@ export function SessionMetadata({ session }: { session: Session }) {
     session.plan?.state === 'malformed' ||
     session.delegations.length > 0 ||
     session.pullRequest !== null ||
+    session.ticket !== null ||
     timing !== null
   if (!hasMetadata) return null
   return (
@@ -73,8 +74,14 @@ export function SessionMetadata({ session }: { session: Session }) {
       ) : null}
       {session.pullRequest !== null ? (
         <span className="inline-flex items-center gap-1">
-          <Ticket aria-hidden="true" />
+          <GitPullRequest aria-hidden="true" />
           <span>#{session.pullRequest.number}</span>
+        </span>
+      ) : null}
+      {session.ticket !== null ? (
+        <span className="inline-flex items-center gap-1">
+          <Ticket aria-hidden="true" />
+          <span>{session.ticket.key}</span>
         </span>
       ) : null}
     </span>
