@@ -144,6 +144,39 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const RosterStructure: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          activity: { tool: 'Bash', target: 'RTK_DISABLED=1 gh pr checks 2062 --watch' },
+          status: 'running',
+          turnStartedAt: '2026-09-14T03:30:00Z',
+          plan: {
+            state: 'available',
+            entries: [
+              { content: 'Inspect the roster', position: 0, status: 'completed' },
+              { content: 'Match the layout', position: 1, status: 'in_progress' },
+            ],
+          },
+          pullRequest: { number: 2062, repository: 'argo', url: 'https://example.com/pull/2062' },
+          title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
+    await expect(canvas.getByText('#2062')).toBeVisible()
+    await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
+    await expect(canvas.getByTitle(/^Running /)).toBeVisible()
+    await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
+  },
+}
+
 export const NarrowSidebarWithLongSessionName: Story = {
   args: {
     roster: {
@@ -248,10 +281,10 @@ export const AllArchived: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No active Sessions')).toBeInTheDocument()
-    const disclosure = canvas.getByText('Archived 2')
-    await expect(disclosure.closest('details')).not.toHaveAttribute('open')
+    const disclosure = canvas.getByRole('button', { name: 'Archived 2' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
-    await expect(disclosure.closest('details')).toHaveAttribute('open')
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
   },
 }
