@@ -29,6 +29,8 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
   return ordered
 }
 
+export type SessionRoster = SessionsListed | null
+
 export function useSessions(selectedSessionId: SessionId | null) {
   const queryClient = useQueryClient()
   const roster = useQuery<SessionsListed, SessionContractError>({

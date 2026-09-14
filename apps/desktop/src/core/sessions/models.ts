@@ -130,6 +130,16 @@ export const sessionRosterRowSchema = z.strictObject({
   compactionStartedAt: z.string().datetime().nullable().optional(),
   compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
   compactionTokens: z.string().nullable().optional(),
+  // A managed Claude Session is handing off only after Argo typed its `/handoff` command. Cleared
+  // by `completeHandoffs` once the brief arrives (success) or the patience runs out (failure).
+  handoffStartedAt: z.string().datetime().nullable().optional(),
+  // Why the last handoff attempt did not land; cleared by the next attempt or a fresh read.
+  handoffFailure: z.string().nullable().optional(),
+  // The durable handoff ledger's edge for this Session, in either direction — read at every
+  // discovery pass so the relationship survives a restart (ADR-0026: New Session, handoff and
+  // resume are one path with three seeds).
+  handoffTo: identifierSchema.nullable().optional(),
+  handoffFrom: identifierSchema.nullable().optional(),
   setup: sessionSetupSchema,
 })
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>

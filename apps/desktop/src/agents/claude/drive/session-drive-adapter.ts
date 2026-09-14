@@ -73,6 +73,14 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
         return failureOf(error, 'not-drivable')
       }
     },
+    async handoff({ sessionId }) {
+      try {
+        await driver.handoff(sessionId)
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
+    },
     async readPermission({ sessionId }) {
       const permission = driver.pendingPermission(sessionId)
       return { permission: permission === null ? null : toPermission(permission) }
