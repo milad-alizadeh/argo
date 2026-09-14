@@ -96,7 +96,10 @@ test('a real Session id is readable, an optimistic one is not', () => {
 })
 
 function realSessionRow(id: string): SessionRosterRow {
-  return { ...optimisticSessionRow({ stage: 'draft', id, cli: 'claude', cwd: '/argo', submitting: false }), status: 'running' }
+  return {
+    ...optimisticSessionRow({ stage: 'draft', id, cli: 'claude', cwd: '/argo', submitting: false }),
+    status: 'running',
+  }
 }
 
 // The dedup and reconciliation ACs of #2109: no duplicate entry once the real Session shows up,
@@ -108,7 +111,13 @@ test('merges no row onto a real Roster read when nothing is pending', () => {
 
 test('appends the optimistic row once, alongside the real Roster', () => {
   const real = [realSessionRow('session-1')]
-  const pending = { stage: 'draft', id: 'optimistic:1', cli: 'codex', cwd: '/argo', submitting: false } as const
+  const pending = {
+    stage: 'draft',
+    id: 'optimistic:1',
+    cli: 'codex',
+    cwd: '/argo',
+    submitting: false,
+  } as const
   const merged = mergeOptimisticRow(real, pending)
   expect(merged.map((row) => row.id)).toEqual(['session-1', 'optimistic:1'])
 })

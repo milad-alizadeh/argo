@@ -12,8 +12,9 @@ import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
 import type { ComposerIdentity } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
-import { sendMessage, startNewSession } from './useSessionComposer-actions'
+import { sendMessage } from './useSessionComposer-actions'
 import type { useSessionMutations } from './useSessionMutations'
+import { startNewSession } from './useStartNewSession'
 
 // Exported for direct testing: the send-routing decision itself needs no React to prove.
 export function sendToSelected(request: {
@@ -78,12 +79,15 @@ export function sendToNewSession(request: {
   } = request
   return startNewSession(
     { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
-    (sessionId) => {
-      if (setup !== null) watchTurn(sessionId, setup, null)
-      return invalidateSessionRoster(queryClient)
+    {
+      afterStart: (sessionId) => {
+        if (setup !== null) watchTurn(sessionId, setup, null)
+        return invalidateSessionRoster(queryClient)
+      },
+      onStarted: (sessionId) =>
+        navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE }),
+      onFailed: () => navigate('/sessions/new', { replace: true }),
     },
-    (sessionId) => navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE }),
-    () => navigate('/sessions/new', { replace: true }),
   )
 }
 

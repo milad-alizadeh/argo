@@ -37,9 +37,8 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-export function useSessions(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const roster = useQuery<SessionsListed, SessionContractError>({
+function useRosterQuery(selectedSessionId: SessionId | null) {
+  return useQuery<SessionsListed, SessionContractError>({
     queryKey: sessionRosterQueryKey,
     staleTime: Infinity,
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
@@ -56,10 +55,15 @@ export function useSessions(selectedSessionId: SessionId | null) {
       }
     },
   })
-  // A Session that only exists as an optimistic Roster row has no backend record to read a feed
-  // for yet (#2109); the backend is asked only once the id is a real one.
-  const feedSessionId = readableSessionId(selectedSessionId)
-  const feed = useQuery<SessionFeed | null, SessionContractError>({
+}
+
+// A Session that only exists as an optimistic Roster row has no backend record to read a feed
+// for yet (#2109); the backend is asked only once the id is a real one.
+function useFeedQuery(
+  feedSessionId: SessionId | null,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return useQuery<SessionFeed | null, SessionContractError>({
     queryKey:
       feedSessionId === null ? ['sessions', 'feed', null] : sessionFeedQueryKey(feedSessionId),
     enabled: feedSessionId !== null,
@@ -85,6 +89,13 @@ export function useSessions(selectedSessionId: SessionId | null) {
       }
     },
   })
+}
+
+export function useSessions(selectedSessionId: SessionId | null) {
+  const queryClient = useQueryClient()
+  const roster = useRosterQuery(selectedSessionId)
+  const feedSessionId = readableSessionId(selectedSessionId)
+  const feed = useFeedQuery(feedSessionId, queryClient)
 
   const pending = useSessionCreationStore((state) => state.pending)
   const rosterData = roster.error === null ? (roster.data ?? null) : null
