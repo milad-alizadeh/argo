@@ -8,6 +8,7 @@ import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/useTurnSetup'
 import type { SessionsListed } from '../types'
+import type { ComposerIdentity } from './composerIdentity'
 import type { Failure } from './useSessionComposer-actions'
 import { sendMessage, startNewSession } from './useSessionComposer-actions'
 import type { useSessionMutations } from './useSessionMutations'
@@ -62,7 +63,7 @@ export function useComposerSend(request: {
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
   roster: SessionsListed | null
-  selectedSessionId: string | null
+  identity: ComposerIdentity
   send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
@@ -74,7 +75,7 @@ export function useComposerSend(request: {
     navigate,
     queryClient,
     roster,
-    selectedSessionId,
+    identity,
     send,
     setFailure,
     start,
@@ -82,11 +83,11 @@ export function useComposerSend(request: {
   } = request
   return useCallback(
     async (prompt: string, setup: TurnSetup | null) => {
-      if (selectedSessionId !== null) {
+      if (identity.kind === 'session') {
         return sendToSelected({
           queryClient,
           roster,
-          selectedSessionId,
+          selectedSessionId: identity.sessionId,
           send,
           setFailure,
           prompt,
@@ -107,17 +108,6 @@ export function useComposerSend(request: {
         watchTurn,
       })
     },
-    [
-      cli,
-      cockpit,
-      navigate,
-      queryClient,
-      roster,
-      selectedSessionId,
-      send,
-      setFailure,
-      start,
-      watchTurn,
-    ],
+    [cli, cockpit, navigate, queryClient, roster, identity, send, setFailure, start, watchTurn],
   )
 }
