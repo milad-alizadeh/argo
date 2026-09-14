@@ -45,8 +45,14 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
         return failureOf(error, 'not-drivable')
       }
     },
-    async compact() {
-      return { error: 'not-drivable' }
+    async compact({ sessionId }) {
+      try {
+        await driver.compact(sessionId)
+        return { ok: true }
+      } catch (error) {
+        console.error('Argo could not compact Codex Session', sessionId, error)
+        return failureOf(error, 'not-drivable')
+      }
     },
     // Codex Permissions are #1841, still out of scope: there is never a pending Permission to
     // read, and a decision always answers that it is no longer waiting.

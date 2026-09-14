@@ -87,7 +87,6 @@ export function useSessionComposer({
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
     props: sessionComposerProps({
-      cli,
       isRunning: managedSessionIsRunning(roster, sessionId),
       focusOnMount,
       isCompacting,

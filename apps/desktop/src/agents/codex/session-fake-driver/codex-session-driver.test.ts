@@ -3,40 +3,9 @@ import { test } from 'node:test'
 
 import type { CodexChannel } from '../drive/codex-channel.ts'
 import { CodexSessionDriverError, createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import type { RequestParams } from '../drive/protocol.ts'
+import { fakeChannel } from './fake-channel.ts'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
-
-function fakeChannel(): CodexChannel & {
-  calls: Array<{ method: string; params: unknown }>
-  notifications: Array<(message: never) => void>
-} {
-  const calls: Array<{ method: string; params: unknown }> = []
-  const notifications: Array<(message: never) => void> = []
-  let turns = 0
-  return {
-    calls,
-    notifications,
-    notify: () => {},
-    async request<Method extends keyof RequestParams, Result>(
-      method: Method,
-      params: RequestParams[Method],
-      decode: (value: unknown) => Result,
-    ) {
-      calls.push({ method, params })
-      if (method === 'thread/start') return decode({ thread: { id: 'thread-1' } })
-      if (method === 'turn/start') {
-        turns += 1
-        return decode({ turn: { id: `turn-${turns}`, status: 'inProgress' } })
-      }
-      if (method === 'turn/interrupt') return decode({})
-      return decode({})
-    },
-    onNotification: (listener) => notifications.push(listener as never),
-    onExit: () => {},
-    close: () => {},
-  }
-}
 
 test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials', async () => {
   const environments: NodeJS.ProcessEnv[] = []

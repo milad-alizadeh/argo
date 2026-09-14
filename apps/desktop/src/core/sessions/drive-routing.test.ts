@@ -49,6 +49,7 @@ function fakeCodexDriver() {
         sent.push({ sessionId, prompt })
       },
       interrupt: async () => {},
+      compact: async () => {},
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],

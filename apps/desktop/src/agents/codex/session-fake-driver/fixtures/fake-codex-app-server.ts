@@ -56,6 +56,18 @@ function completeTurn(threadId: unknown, turnId: string, text: string) {
   })
 }
 
+function completeCompaction(threadId: unknown) {
+  send({
+    method: 'item/completed',
+    params: {
+      threadId,
+      turnId: `fake-compact-turn-${threadCounter}`,
+      completedAtMs: Date.now(),
+      item: { id: `fake-compaction-${threadCounter}-${Date.now()}`, type: 'contextCompaction' },
+    },
+  })
+}
+
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
   const message = request(line)
@@ -95,6 +107,12 @@ lines.on('line', (line) => {
     case 'turn/interrupt':
       send({ id: message.id, result: {} })
       return
+    case 'thread/compact/start': {
+      const threadId = message.params?.threadId
+      send({ id: message.id, result: {} })
+      setTimeout(() => completeCompaction(threadId), 10)
+      return
+    }
     case 'thread/name/set': {
       const params = message.params ?? {}
       send({ id: message.id, result: {} })

@@ -25,6 +25,7 @@ export type RequestParams = {
   }
   'turn/interrupt': { threadId: string; turnId: string }
   'thread/name/set': { threadId: string; name: string }
+  'thread/compact/start': { threadId: string }
 }
 export type WireMessage =
   | { method: string; params: Record<string, unknown>; id?: RequestID }

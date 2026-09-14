@@ -1,23 +1,14 @@
-import {
-  CODEX_OPENING_SETUP,
-  type CodexTurnSetup,
-  codexTurnSettings,
-} from '../../../core/sessions/codex-contract'
+import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
 import type { SessionRosterRow } from '../../../core/sessions/models'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
+import { compactCodexSession } from './compact-session'
 import { readInterrupt } from './interrupt-protocol'
 import type { LiveMessage, LiveMessages } from './live-messages'
-import {
-  type ManagedSession,
-  type ManagedSessionOptions,
-  managedRoster,
-  openManagedChannel,
-  rememberManagedSession,
-} from './managed-session'
-import { readStartedTurn, readThreadId } from './protocol'
+import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
 import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
+import { beginSession, startTurn } from './start-session'
 
 export type { LiveMessage }
 export { CodexSessionDriverError }
@@ -26,6 +17,7 @@ export type CodexSessionDriver = {
   start: (request: { cwd: string; prompt: string; setup?: CodexTurnSetup }) => Promise<string>
   send: (sessionId: string, text: string, setup?: CodexTurnSetup) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
+  compact: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
   ownership: Pick<NonNullable<ManagedSessionOptions['ownership']>, 'orphans'>
@@ -35,69 +27,8 @@ export type CodexSessionDriver = {
 
 export type CodexSessionDrive = Pick<
   CodexSessionDriver,
-  'start' | 'send' | 'interrupt' | 'rename' | 'roster' | 'liveMessages' | 'close'
+  'start' | 'send' | 'interrupt' | 'compact' | 'rename' | 'roster' | 'liveMessages' | 'close'
 >
-
-async function beginSession(options: {
-  driver: ManagedSessionOptions
-  sessions: Map<string, ManagedSession>
-  renameWaiters: Map<string, (title: string) => void>
-  request: { cwd: string; prompt: string; setup?: CodexTurnSetup }
-}) {
-  const { driver, renameWaiters, request, sessions } = options
-  const channel = await openManagedChannel(driver, request.cwd)
-  let sessionId: string | null = null
-  try {
-    sessionId = await channel.request('thread/start', { cwd: request.cwd }, readThreadId)
-    rememberManagedSession({
-      ...request,
-      channel,
-      driver,
-      renameWaiters,
-      sessionId,
-      sessions,
-    })
-    await startTurn({
-      channel,
-      prompt: request.prompt,
-      sessionId,
-      sessions,
-      setup: request.setup ?? CODEX_OPENING_SETUP,
-    })
-    return sessionId
-  } catch (error) {
-    channel.close()
-    if (sessionId) {
-      sessions.delete(sessionId)
-      driver.ownership?.release(sessionId)
-    }
-    if (error instanceof CodexSessionDriverError) throw error
-    throw new CodexSessionDriverError('launch-failed')
-  }
-}
-
-async function startTurn(options: {
-  channel: ManagedSession['channel']
-  sessions: Map<string, ManagedSession>
-  sessionId: string
-  prompt: string
-  setup: CodexTurnSetup
-}) {
-  const { channel, prompt, sessionId, sessions, setup } = options
-  const previous = sessions.get(sessionId)
-  previous?.messages.keepOnly(previous.turnId)
-  const started = await channel.request(
-    'turn/start',
-    {
-      threadId: sessionId,
-      input: [{ type: 'text', text: prompt, text_elements: [] }],
-      ...codexTurnSettings(setup),
-    },
-    readStartedTurn,
-  )
-  const session = sessions.get(sessionId)
-  if (session) session.turnId = started.id
-}
 
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
@@ -126,6 +57,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
         readInterrupt,
       )
     },
+    compact: (sessionId) => compactCodexSession(sessions, options.now, sessionId),
     async rename(sessionId, name) {
       const session = held(sessionId)
       if (!session) throw new Error('Codex Session is no longer running.')

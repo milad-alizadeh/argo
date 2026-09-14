@@ -36,6 +36,7 @@ function fakeCodexAdapter(): SessionDriveAdapter {
     start: async () => 'session-1',
     send: async () => {},
     interrupt: async () => {},
+    compact: async () => {},
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
