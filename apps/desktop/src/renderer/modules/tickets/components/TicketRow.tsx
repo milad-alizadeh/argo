@@ -26,7 +26,7 @@ function Marks({ ticket }: { ticket: Ticket }) {
   return (
     <span className="flex shrink-0 items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
       {blockers > 0 ? (
-        <span className="flex items-center gap-(--spacing-shell-tight) text-danger">
+        <span className="flex items-center gap-(--spacing-shell-tight)">
           <Ban aria-hidden="true" className={markIcon} />
           <span className="sr-only">Blocked by {count(blockers, 'open Ticket')}</span>
         </span>
