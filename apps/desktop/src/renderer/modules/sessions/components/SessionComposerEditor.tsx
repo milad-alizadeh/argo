@@ -21,9 +21,12 @@ import {
   shortcut,
 } from '@/core/commands/shortcuts'
 import type { SessionCli } from '../harness/harnesses'
+import type { ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerReferenceMenuPlugin } from './ComposerReferenceMenuPlugin'
 import { ComposerReferenceNode } from './ComposerReferenceNode'
 import { ComposerReferencePlugin } from './ComposerReferencePlugin'
+import { ComposerTicketReferenceNode } from './ComposerTicketReferenceNode'
+import { ComposerTicketReferencePlugin } from './ComposerTicketReferencePlugin'
 import { referenceMenu } from './composer-reference-menu'
 import {
   composerNodes,
@@ -90,28 +93,32 @@ function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {
 
 export function ComposerEditor({
   cli = null,
+  contextPickerOpen,
   draft,
   editorRef,
   focusOnMount,
   onChange,
   onSend,
+  tickets,
 }: {
   cli?: SessionCli | null
+  contextPickerOpen: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   onChange: (text: string) => void
   onSend: () => void
+  tickets: ComposerTicketContext[]
 }) {
   const focusCameFromPointer = useRef(false)
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
-  const referencesOpen = referenceMenu(draft) !== null
+  const referencesOpen = !contextPickerOpen && referenceMenu(draft) !== null
   return (
     <LexicalComposer
       initialConfig={{
         editorState: editorState(draft),
         namespace: 'argo-session-composer',
-        nodes: [...composerNodes, ComposerReferenceNode],
+        nodes: [...composerNodes, ComposerReferenceNode, ComposerTicketReferenceNode],
         onError: (error) => {
           throw error
         },
@@ -152,12 +159,13 @@ export function ComposerEditor({
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
       <ComposerReferencePlugin cli={cli} />
+      <ComposerTicketReferencePlugin tickets={tickets} />
       <HorizontalRulePlugin />
       <MarkdownPastePlugin />
       <EditorRefPlugin editorRef={editorRef} />
       <FocusOnMountPlugin enabled={focusOnMount} />
       <SendOnEnterPlugin onSend={onSend} />
-      <ComposerReferenceMenuPlugin cli={cli} draft={draft} />
+      <ComposerReferenceMenuPlugin cli={cli} disabled={contextPickerOpen} draft={draft} />
     </LexicalComposer>
   )
 }

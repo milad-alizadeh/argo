@@ -1,0 +1,70 @@
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { useLexicalTextEntity } from '@lexical/react/useLexicalTextEntity'
+import type { EntityMatch } from '@lexical/text'
+import {
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  COMMAND_PRIORITY_HIGH,
+  KEY_BACKSPACE_COMMAND,
+  type TextNode,
+} from 'lexical'
+import { useEffect } from 'react'
+
+import type { ComposerTicketContext } from '../state/useComposerStore'
+import {
+  $createComposerTicketReferenceNode,
+  ComposerTicketReferenceNode,
+} from './ComposerTicketReferenceNode'
+
+function ticketMatch(text: string, tickets: ComposerTicketContext[]): EntityMatch | null {
+  for (const ticket of tickets) {
+    const start = text.indexOf(ticket.key)
+    const end = start + ticket.key.length
+    if (start < 0) continue
+    if (start > 0 && !/\s/.test(text[start - 1] ?? '')) continue
+    if (end < text.length && !/[\s.,:;!?)]/.test(text[end] ?? '')) continue
+    return { end, start }
+  }
+  return null
+}
+
+function ticketBeforeCursor(node: TextNode, offset: number) {
+  if (node instanceof ComposerTicketReferenceNode && offset === node.getTextContentSize()) {
+    return node
+  }
+  if (offset !== 0) return null
+  const previous = node.getPreviousSibling()
+  return previous instanceof ComposerTicketReferenceNode ? previous : null
+}
+
+export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTicketContext[] }) {
+  const [editor] = useLexicalComposerContext()
+  useLexicalTextEntity(
+    (text) => ticketMatch(text, tickets),
+    ComposerTicketReferenceNode,
+    (textNode: TextNode) => {
+      const ticket = tickets.find(({ key }) => key === textNode.getTextContent())
+      return ticket ? $createComposerTicketReferenceNode(ticket.key, ticket.provider) : textNode
+    },
+  )
+  useEffect(
+    () =>
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        () => {
+          const selection = $getSelection()
+          if (!$isRangeSelection(selection) || !selection.isCollapsed()) return false
+          const node = selection.anchor.getNode()
+          if (!$isTextNode(node)) return false
+          const ticket = ticketBeforeCursor(node, selection.anchor.offset)
+          if (ticket === null) return false
+          ticket.remove()
+          return true
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
+    [editor],
+  )
+  return null
+}

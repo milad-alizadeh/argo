@@ -83,7 +83,6 @@ const CODEX_REFERENCE_DRAFT =
 
 function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
   const [sessionId, setSessionId] = useState('session-one')
-  const [openedTicket, setOpenedTicket] = useState<string | null>(null)
   const [sent, setSent] = useState<string | null>(null)
 
   return (
@@ -102,14 +101,12 @@ function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
           setSent(refs.length > 0 ? `${text} ${refs}`.trim() : text)
           return true
         }}
-        onOpenTicket={setOpenedTicket}
         plan={plan}
         sessionId={sessionId}
       />
       <output className="mt-4 block text-sm" data-testid="sent-message">
         {sent}
       </output>
-      <output data-testid="opened-ticket">{openedTicket}</output>
     </>
   )
 }
@@ -955,11 +952,14 @@ export const SharedContextPicker: Story = {
     await expect(within(picker).getByRole('button', { name: /Goals.*Coming soon/ })).toBeDisabled()
 
     await userEvent.click(within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }))
-    await expect(canvas.getByRole('button', { name: 'Open ENG-42' })).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Open ENG-42' }))
-    await expect(canvas.getByTestId('opened-ticket')).toHaveTextContent('ENG-42')
-    await userEvent.click(canvas.getByRole('button', { name: 'Remove ENG-42' }))
-    await expect(canvas.queryByRole('button', { name: 'Open ENG-42' })).toBeNull()
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).not.toBeNull(),
+    )
+    await expect(canvas.getByLabelText('Message')).toHaveFocus()
+    await userEvent.keyboard('{Backspace}')
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).toBeNull(),
+    )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
     const keyboardPicker = await within(document.body).findByRole('dialog', {
@@ -975,7 +975,9 @@ export const SharedContextPicker: Story = {
     await userEvent.click(
       within(keyboardPicker).getByRole('button', { name: /ENG-9.*Store the refresh token/ }),
     )
-    await expect(canvas.getByRole('button', { name: 'Open ENG-9' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-ticket-key="ENG-9"]')).not.toBeNull(),
+    )
     await expect(canvas.getByLabelText('Message')).toHaveFocus()
   },
 }

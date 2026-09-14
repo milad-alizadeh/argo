@@ -96,3 +96,9 @@
   width: var(--size-icon-control);
   height: var(--size-icon-control);
 }
+
+.composer-inline-context::before {
+  margin-inline-end: var(--spacing-shell-tight);
+  color: var(--muted-foreground);
+  content: attr(data-context-icon);
+}

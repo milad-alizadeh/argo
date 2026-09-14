@@ -23,7 +23,6 @@ type SessionScreenDetailsProps = {
   questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl
-  onNavigate?: (path: string) => void
 }
 
 export function SessionComposerArea({
@@ -32,7 +31,6 @@ export function SessionComposerArea({
   questionPending,
   session,
   harness,
-  onNavigate,
 }: SessionScreenDetailsProps) {
   if (composer.failure?.code && OPEN_ELSEWHERE.has(composer.failure.code)) {
     return <OpenElsewhere onRetry={composer.retry} />
@@ -49,9 +47,6 @@ export function SessionComposerArea({
         contextTokens={session?.contextTokens}
         disabled={questionPending}
         harness={harness}
-        onOpenTicket={
-          onNavigate ? (key) => onNavigate(`/tickets/${encodeURIComponent(key)}`) : undefined
-        }
         plan={session?.plan ?? null}
       />
     </>

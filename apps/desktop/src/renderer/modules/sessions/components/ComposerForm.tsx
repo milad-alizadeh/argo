@@ -37,7 +37,6 @@ type ComposerFormProps = {
   onAttach: () => void
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onContextPickerOpenChange: (open: boolean) => void
-  onOpenTicket?: (key: string) => void
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
@@ -48,7 +47,6 @@ type ComposerFormProps = {
   onInterrupt?: () => Promise<boolean>
   onRemove: (id: string) => void
   onRemoveAttachment: (id: string) => void
-  onRemoveTicket: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
   onSend: () => void
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
@@ -71,7 +69,6 @@ export function ComposerForm({
   onAttach,
   onAddTicket,
   onContextPickerOpenChange,
-  onOpenTicket,
   isHandingOff,
   onCompact,
   onHandoff,
@@ -82,7 +79,6 @@ export function ComposerForm({
   onInterrupt,
   onRemove,
   onRemoveAttachment,
-  onRemoveTicket,
   onReorder,
   onSend,
   pendingTurns,
@@ -122,13 +118,11 @@ export function ComposerForm({
         onAttach={onAttach}
         onAddTicket={onAddTicket}
         onChange={onChange}
-        onOpenTicket={onOpenTicket}
         onCompact={onCompact}
         onDropFiles={onDropFiles}
         onHandoff={onHandoff}
         onInterrupt={onInterrupt}
         onRemoveAttachment={onRemoveAttachment}
-        onRemoveTicket={onRemoveTicket}
         onSend={onSend}
         plan={plan}
         sessionId={sessionId}

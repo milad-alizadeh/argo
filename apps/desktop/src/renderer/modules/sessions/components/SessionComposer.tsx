@@ -17,7 +17,6 @@ export type SessionComposerProps = {
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
-  onOpenTicket?: (key: string) => void
   sessionId: string
   onSend: Send
   plan?: SessionPlan | null
@@ -35,7 +34,6 @@ export function SessionComposer({
   onCompact,
   onHandoff,
   onInterrupt,
-  onOpenTicket,
   sessionId,
   onSend,
   plan = null,
@@ -65,10 +63,8 @@ export function SessionComposer({
       onEdit={state.onEdit}
       onHandoff={onHandoff}
       onInterrupt={onInterrupt}
-      onOpenTicket={onOpenTicket}
       onRemove={state.removePendingTurn}
       onRemoveAttachment={state.removeAttachment}
-      onRemoveTicket={state.removeTicket}
       onReorder={state.reorderPendingTurn}
       onSend={() => {
         if (!disabled) void state.send()

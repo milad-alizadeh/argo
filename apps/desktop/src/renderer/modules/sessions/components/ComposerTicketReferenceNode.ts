@@ -1,0 +1,78 @@
+import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
+import { TextNode } from 'lexical'
+
+import type { ComposerTicketContext } from '../state/useComposerStore'
+
+const providerIcon: Record<ComposerTicketContext['provider'], string> = {
+  github: '/provider-icons/github.svg',
+  linear: '/provider-icons/linear.svg',
+}
+
+function openTicket(ticketKey: string) {
+  window.location.hash = `/tickets/${encodeURIComponent(ticketKey)}`
+}
+
+export class ComposerTicketReferenceNode extends TextNode {
+  __provider: ComposerTicketContext['provider']
+
+  constructor(text: string, provider: ComposerTicketContext['provider'], key?: NodeKey) {
+    super(text, key)
+    this.__provider = provider
+  }
+
+  static getType() {
+    return 'composer-ticket-reference'
+  }
+
+  static clone(node: ComposerTicketReferenceNode) {
+    return new ComposerTicketReferenceNode(node.__text, node.__provider, node.__key)
+  }
+
+  static importJSON(serializedNode: SerializedTextNode) {
+    return $createComposerTicketReferenceNode(serializedNode.text, 'github')
+      .setDetail(serializedNode.detail)
+      .setFormat(serializedNode.format)
+      .setMode(serializedNode.mode)
+      .setStyle(serializedNode.style)
+  }
+
+  createDOM(config: EditorConfig) {
+    const element = super.createDOM(config)
+    const icon = element.ownerDocument.createElement('img')
+    icon.alt = ''
+    icon.className = 'mr-1 inline-block size-3 align-text-bottom dark:invert'
+    icon.contentEditable = 'false'
+    icon.src = providerIcon[this.__provider]
+    element.className =
+      'mx-0.5 cursor-pointer text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground'
+    element.dataset.ticketKey = this.getTextContent()
+    element.setAttribute('role', 'link')
+    element.tabIndex = 0
+    element.prepend(icon)
+    element.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      openTicket(this.getTextContent())
+    })
+    element.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return
+      }
+
+      event.preventDefault()
+      openTicket(this.getTextContent())
+    })
+    return element
+  }
+
+  isTextEntity() {
+    return true
+  }
+}
+
+export function $createComposerTicketReferenceNode(
+  text: string,
+  provider: ComposerTicketContext['provider'],
+) {
+  return new ComposerTicketReferenceNode(text, provider)
+}

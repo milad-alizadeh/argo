@@ -6,7 +6,7 @@ import type { HarnessControl } from '../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerEditorArea } from './ComposerEditorArea'
 import { ComposerToolbar } from './ComposerToolbar'
-import { ContextPicker } from './ContextPicker'
+import { DraftContextPicker } from './DraftContextPicker'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { SessionContextBar } from './SessionContextBar'
 
@@ -28,39 +28,15 @@ type ComposerCardProps = {
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onContextPickerOpenChange: (open: boolean) => void
   onChange: (text: string) => void
-  onOpenTicket?: (key: string) => void
   onCompact?: () => Promise<boolean>
   onDropFiles: (files: FileList) => void
   onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   onRemoveAttachment: (id: string) => void
-  onRemoveTicket: (id: string) => void
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
-}
-
-function DraftContextPicker({
-  onAddTicket,
-  onAttach,
-  onClose,
-}: Pick<ComposerCardProps, 'onAddTicket' | 'onAttach'> & {
-  onClose: () => void
-}) {
-  return (
-    <ContextPicker
-      onAttach={() => {
-        onClose()
-        onAttach()
-      }}
-      onClose={onClose}
-      onSelectTicket={(ticket) => {
-        onAddTicket(ticket)
-        onClose()
-      }}
-    />
-  )
 }
 
 function closeContextPicker(
@@ -90,13 +66,11 @@ export function ComposerCard({
   onAddTicket,
   onContextPickerOpenChange,
   onChange,
-  onOpenTicket,
   onCompact,
   onDropFiles,
   onHandoff,
   onInterrupt,
   onRemoveAttachment,
-  onRemoveTicket,
   onSend,
   plan,
   sessionId,
@@ -116,15 +90,14 @@ export function ComposerCard({
       >
         <ComposerEditorArea
           attachments={attachments}
+          contextPickerOpen={contextPickerOpen}
           tickets={tickets}
           cli={harness?.cli ?? null}
           draft={draft}
           editorRef={editorRef}
           focusOnMount={focusOnMount}
           onChange={onChange}
-          onOpenTicket={onOpenTicket}
           onRemoveAttachment={onRemoveAttachment}
-          onRemoveTicket={onRemoveTicket}
           onSend={onSend}
           plan={plan}
           sessionId={sessionId}
@@ -146,6 +119,7 @@ export function ComposerCard({
           onAddTicket={onAddTicket}
           onAttach={onAttach}
           onClose={() => closeContextPicker(editorRef, onContextPickerOpenChange)}
+          editorRef={editorRef}
         />
       ) : null}
       <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
