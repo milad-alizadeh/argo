@@ -157,7 +157,7 @@ function Failure({ message }: { message: string }) {
 // One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9).
 function OpenElsewhere({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className={`${COMPOSER_COLUMN} mt-3`}>
+    <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-bottom)`}>
       <Alert>
         <Lock aria-hidden />
         <AlertTitle>This session is open in another app</AlertTitle>
