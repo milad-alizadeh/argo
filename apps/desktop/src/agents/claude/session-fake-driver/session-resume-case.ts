@@ -68,7 +68,7 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await history.getByText('Fake Claude read: Carry on after the restart.').waitFor()
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
-  await history.getByText('Conversation compacted').waitFor()
+  await history.getByText('Conversation Compacted').waitFor()
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ posture }) => posture),
@@ -118,7 +118,7 @@ async function waitForCompactionFeed(page, sessionId) {
     const rows = await page
       .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
       .allTextContents()
-    return rows.some((row) => row.includes('Conversation compacted'))
+    return rows.some((row) => row.includes('Conversation Compacted'))
   }, 60_000)
 }
 

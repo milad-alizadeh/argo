@@ -133,7 +133,7 @@ function feedRowContent(
     case 'source':
       return <p>{row.label}</p>
     case 'marker':
-      return <p>{row.marker === 'compacted' ? 'Conversation compacted' : 'Interrupted'}</p>
+      return <p>{row.marker === 'compacted' ? 'Conversation Compacted' : 'Interrupted'}</p>
     case 'unreadable':
       return <p>Part of this transcript is damaged, so Argo cannot show it.</p>
   }

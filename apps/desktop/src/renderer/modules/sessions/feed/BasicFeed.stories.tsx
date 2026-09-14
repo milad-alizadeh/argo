@@ -347,6 +347,42 @@ function preferReducedMotion(): () => void {
   }
 }
 
+const compactedFeed = {
+  ...feed,
+  sessionId: 'compacted',
+  chainId: 'compacted',
+  revision: 'compacted-one',
+  rows: [
+    { shape: 'prose', id: 'compacted-prompt', role: 'user', text: 'Summarise the change.' },
+    { shape: 'marker', id: 'compacted-interrupted', marker: 'interrupted' },
+    { shape: 'marker', id: 'compacted-marker', marker: 'compacted' },
+    { shape: 'prose', id: 'compacted-reply', role: 'assistant', text: 'Done.' },
+  ],
+} satisfies SessionFeed
+
+// A finished compaction leaves a closed marker row, styled like the Feed's other marker rows
+// (e.g. "Interrupted"), not the raw compaction detail; a separate, still-running compaction keeps
+// its own animated marker untouched (#2108).
+export const CompactionMarkers: Story = {
+  args: {
+    feed: compactedFeed,
+    selectedSessionId: 'compacted',
+    compactionStartedAt: '2026-09-14T10:00:00.000Z',
+    compactionPercentage: 40,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(4))
+    const [, interrupted, compacted] = drawnRows(canvasElement)
+    await expect(interrupted).toHaveTextContent('Interrupted')
+    await expect(interrupted).toHaveClass('feed-row--marker')
+    await expect(compacted).toHaveTextContent('Conversation Compacted')
+    await expect(compacted).toHaveClass('feed-row--marker')
+    await expect(canvas.getByText('Compacting conversation…')).toBeInTheDocument()
+    await expect(canvas.getByText('40%')).toBeInTheDocument()
+  },
+}
+
 export const StreamingReplyReducedMotion: Story = {
   render: () => <StreamingFeed />,
   play: async ({ canvasElement }) => {
