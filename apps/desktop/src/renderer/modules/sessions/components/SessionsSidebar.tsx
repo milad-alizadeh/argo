@@ -1,5 +1,5 @@
 import { Inbox, Plus, Search, TriangleAlert } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useState } from 'react'
+import { type KeyboardEvent, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { currentSessionId } from '@/core/sessions/models'
@@ -12,6 +12,7 @@ import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
 import { ArchivedSessions } from './ArchivedSessions'
 import { SessionRosterItem } from './SessionRosterItem'
+import { useRosterFocus } from './useRosterFocus'
 
 const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
@@ -75,11 +76,11 @@ export function SessionsSidebarContent({
   onSelect,
   onNew = () => {},
 }: SessionsSidebarContentProps) {
-  const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)
+  const sidebar = useRef<HTMLElement>(null)
   const sessions = roster?.sessions ?? []
   const visible = sessions.filter((session) => !session.archived)
   const archived = sessions.filter((session) => session.archived)
-  const tabStop = focusedSessionId ?? selectedSessionId ?? visible[0]?.id ?? null
+  const { setFocusedSessionId, tabStop } = useRosterFocus(sidebar, visible, selectedSessionId)
   const state = rosterState(roster, rosterError, visible.length)
 
   const moveFocus = (event: KeyboardEvent<HTMLUListElement>) => {
@@ -122,6 +123,7 @@ export function SessionsSidebarContent({
       aria-label="Sessions sidebar"
       className="flex h-full min-h-0 flex-col bg-sidebar"
       data-state={state}
+      ref={sidebar}
     >
       <SessionsSidebarHeader onNew={onNew} />
       {rosterError ? (

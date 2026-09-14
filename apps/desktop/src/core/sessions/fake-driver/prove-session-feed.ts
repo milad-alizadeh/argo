@@ -35,10 +35,13 @@ import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveLiveFeed } from './session-live-feed-cases'
 import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
+import { proveContract } from './session-roster-contract-case'
 import {
   provePackagedRosterRestart,
   provePackagedRosterSelection,
 } from './session-roster-interaction-cases'
+import { proveStableRosterPolling } from './session-roster-order-case'
+import { rosterOrderMutations } from './session-roster-order-fixture'
 import { proveSessionShell } from './session-shell-cases'
 import { proveToolCalls } from './session-tool-calls-case'
 import { proveTurnSetup } from './session-turn-setup-cases'
@@ -90,6 +93,7 @@ try {
     cases.push(...names)
     return reading
   }
+  await ran(['session-roster-contract'], () => proveContract(page))
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
   await ran(['session-tool-calls'], () => proveToolCalls(page))
@@ -111,6 +115,15 @@ try {
     proveSessionPlan(page, () => updatePlan(fixture.claudeTranscripts)),
   )
   await ran(['session-turn-setup'], () => proveTurnSetup(page))
+  await ran(['session-roster-stable-polling'], () =>
+    proveStableRosterPolling(
+      page,
+      rosterOrderMutations({
+        archive: fixture.archive,
+        transcripts: fixture.claudeTranscripts,
+      }),
+    ),
+  )
   await ran(['session-roster-restart'], () =>
     provePackagedRosterRestart(page, {
       remove: () => removeProse(fixture.claudeTranscripts),

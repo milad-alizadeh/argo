@@ -7,6 +7,7 @@ import type {
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
+import { readCommandEnvelope } from './command-envelope'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
@@ -68,6 +69,14 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   return parsed
 }
 
+function readUserMessage(record: Record<string, unknown>): TranscriptRecord | null {
+  if (typeof record.uuid !== 'string') return null
+  if (record.isMeta === true) return { kind: 'trace', uuid: record.uuid }
+  const read = readMessage(record, 'user')
+  if (read === null) return null
+  return readCommandEnvelope(record, read) ?? read
+}
+
 function readTitle(record: Record<string, unknown>): TranscriptRecord | null {
   if (record.type === 'custom-title' && typeof record.customTitle === 'string') {
     return { kind: 'title', title: record.customTitle, source: 'custom' }
@@ -107,8 +116,11 @@ export function parseTranscriptLine(line: string): TranscriptRecord | null {
     return { kind: 'unreadable', line }
   }
   if (!isRecord(value)) return { kind: 'unreadable', line }
-  if (value.type === 'user' || value.type === 'assistant') {
-    return readMessage(value, value.type) ?? { kind: 'unreadable', line }
+  if (value.type === 'user') {
+    return readUserMessage(value) ?? { kind: 'unreadable', line }
+  }
+  if (value.type === 'assistant') {
+    return readMessage(value, 'assistant') ?? { kind: 'unreadable', line }
   }
   if (value.type === 'last-prompt' && typeof value.leafUuid === 'string') {
     return { kind: 'link', leafUuid: value.leafUuid }
