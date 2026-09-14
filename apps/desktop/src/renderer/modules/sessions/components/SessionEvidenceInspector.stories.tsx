@@ -56,7 +56,7 @@ export const FileDiff: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByText('src/app.ts')).toHaveLength(2)
+    await expect(canvas.getByText('src/app.ts')).toBeVisible()
     await expect(canvas.getByText(/oldValue/)).toBeVisible()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
     await expect(canvas.getAllByText('9')).toHaveLength(2)

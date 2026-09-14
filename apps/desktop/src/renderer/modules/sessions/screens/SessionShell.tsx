@@ -1,4 +1,5 @@
 import { type ReactNode, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { InspectorSplit } from '../../../components/InspectorSplit'
@@ -78,6 +79,7 @@ export function SessionShell({
   defaultInspectorCollapsed = false,
   inspectorReveal = null,
 }: SessionShellProps) {
+  const { t } = useTranslation('sessions')
   const composerElement = useRef<HTMLElement>(null)
   const workspaceElement = useRef<HTMLElement>(null)
   const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
@@ -131,7 +133,7 @@ export function SessionShell({
             </section>
             <ComposerFade top={fadeTop} />
             <section
-              aria-label="Session composer"
+              aria-label={t('composer.label')}
               className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
               ref={composerElement}
             >

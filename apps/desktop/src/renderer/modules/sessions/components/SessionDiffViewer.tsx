@@ -1,3 +1,4 @@
+import { FileText, GitCompareArrows } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -69,31 +70,48 @@ function lineClass(line: DiffLine) {
 function currentFileContent({
   content,
   language,
+  onShowDiff,
   path,
   text,
 }: {
   content: string | null | undefined
   language: ReturnType<typeof detectCodeLanguageFromPath>
+  onShowDiff: () => void
   path: string
-  text: { copyFile: string; unavailable: string; reading: string }
+  text: { copyFile: string; diff: string; unavailable: string; reading: string }
 }) {
-  if (content === undefined)
-    return <p className="p-4 type-meta text-muted-foreground">{text.reading}</p>
-  if (content === null)
-    return <p className="p-4 type-meta text-muted-foreground">{text.unavailable}</p>
+  if (content === undefined || content === null)
+    return (
+      <>
+        <header className="flex shrink-0 items-center justify-between border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
+          <span className="truncate">{path}</span>
+          <Button size="icon" variant="ghost" aria-label={text.diff} onClick={onShowDiff}>
+            <GitCompareArrows className="size-4" />
+          </Button>
+        </header>
+        <p className="p-4 type-meta text-muted-foreground">
+          {content === undefined ? text.reading : text.unavailable}
+        </p>
+      </>
+    )
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-4">
-      <CodeBlock code={content} language={language?.grammar ?? null} className="type-code-content">
-        <CodeBlockHeader className="bg-muted type-meta">
-          <CodeBlockTitle>
-            <CodeBlockFilename>{path}</CodeBlockFilename>
-          </CodeBlockTitle>
-          <CodeBlockActions>
-            <CodeBlockCopyButton aria-label={text.copyFile} className="size-7" />
-          </CodeBlockActions>
-        </CodeBlockHeader>
-      </CodeBlock>
-    </div>
+    <CodeBlock
+      code={content}
+      language={language?.grammar ?? null}
+      className="flex min-h-0 flex-1 rounded-none border-0 type-code-content"
+    >
+      <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3 type-meta">
+        <CodeBlockTitle>
+          <CodeBlockFilename>{path}</CodeBlockFilename>
+        </CodeBlockTitle>
+        <CodeBlockActions>
+          <Button size="icon" variant="ghost" aria-label={text.diff} onClick={onShowDiff}>
+            <GitCompareArrows className="size-4" />
+          </Button>
+          <CodeBlockCopyButton aria-label={text.copyFile} className="size-7" />
+        </CodeBlockActions>
+      </CodeBlockHeader>
+    </CodeBlock>
   )
 }
 
@@ -114,18 +132,14 @@ export function SessionDiffViewer({
   if (view === 'file') {
     return (
       <section className="flex min-h-0 flex-1 flex-col" aria-label={t('diff.currentFile')}>
-        <header className="flex items-center justify-between border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
-          <span className="truncate">{path}</span>
-          <Button size="sm" variant="ghost" onClick={() => setView('diff')}>
-            {t('diff.diff')}
-          </Button>
-        </header>
         {currentFileContent({
           content,
           language,
+          onShowDiff: () => setView('diff'),
           path,
           text: {
             copyFile: t('diff.copyFile'),
+            diff: t('diff.diff'),
             unavailable: t('diff.fileUnavailable'),
             reading: t('diff.readingFile'),
           },
@@ -135,44 +149,40 @@ export function SessionDiffViewer({
   }
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('diff.label')}>
-      <header className="flex items-center justify-between border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
-        <span className="truncate">{path}</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setView('file')
-            if (sessionId === null) return setContent(null)
-            void window.argo
-              .readWorkspaceFile({ sessionId, path })
-              .then((reply) =>
-                setContent(reply.type === 'session.file.read' ? reply.content : null),
-              )
-          }}
-        >
-          {t('diff.currentFile')}
-        </Button>
-      </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
-        <CodeBlock
-          code={source}
-          language={language?.grammar ?? null}
-          className="type-code-content"
-          line={(index) => ({
-            className: lineClass(lines[index] ?? { kind: 'title', oldLine: null, newLine: null }),
-            prefix: lineNumbers(lines[index] ?? { kind: 'title', oldLine: null, newLine: null }),
-          })}
-        >
-          <CodeBlockHeader className="bg-muted type-meta">
-            <CodeBlockTitle>
-              <CodeBlockFilename>{path}</CodeBlockFilename>
-            </CodeBlockTitle>
-            <CodeBlockActions>
-              <CodeBlockCopyButton aria-label={t('diff.copyDiff')} className="size-7" />
-            </CodeBlockActions>
-          </CodeBlockHeader>
-        </CodeBlock>
-      </div>
+      <CodeBlock
+        code={source}
+        language={language?.grammar ?? null}
+        className="flex min-h-0 flex-1 rounded-none border-0 type-code-content"
+        line={(index) => ({
+          className: lineClass(lines[index] ?? { kind: 'title', oldLine: null, newLine: null }),
+          prefix: lineNumbers(lines[index] ?? { kind: 'title', oldLine: null, newLine: null }),
+        })}
+      >
+        <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3 type-meta">
+          <CodeBlockTitle>
+            <CodeBlockFilename>{path}</CodeBlockFilename>
+          </CodeBlockTitle>
+          <CodeBlockActions>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={t('diff.currentFile')}
+              onClick={() => {
+                setView('file')
+                if (sessionId === null) return setContent(null)
+                void window.argo
+                  .readWorkspaceFile({ sessionId, path })
+                  .then((reply) =>
+                    setContent(reply.type === 'session.file.read' ? reply.content : null),
+                  )
+              }}
+            >
+              <FileText className="size-4" />
+            </Button>
+            <CodeBlockCopyButton aria-label={t('diff.copyDiff')} className="size-7" />
+          </CodeBlockActions>
+        </CodeBlockHeader>
+      </CodeBlock>
     </section>
   )
 }
