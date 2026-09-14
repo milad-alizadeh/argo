@@ -9,6 +9,8 @@ import {
   sessionDelegationUsageRequestSchema,
   sessionFeedReplySchema,
   sessionFeedRequestSchema,
+  sessionFileReplySchema,
+  sessionFileRequestSchema,
   sessionHandoffRequestSchema,
   sessionInterruptRequestSchema,
   sessionListReplySchema,
@@ -50,6 +52,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:feed',
     request: sessionFeedRequestSchema,
     reply: sessionFeedReplySchema,
+  },
+  file: {
+    name: 'session.file.read',
+    channel: 'argo:session:file:read',
+    request: sessionFileRequestSchema,
+    reply: sessionFileReplySchema,
   },
   shellOutput: {
     name: 'session.shell.output',

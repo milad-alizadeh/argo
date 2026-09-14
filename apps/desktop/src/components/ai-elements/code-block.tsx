@@ -1,19 +1,9 @@
-import { CheckIcon, CopyIcon } from 'lucide-react'
-import React, {
-  type ComponentProps,
-  type CSSProperties,
-  type HTMLAttributes,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import React, { type CSSProperties, type HTMLAttributes, useEffect, useState } from 'react'
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
 import githubDarkDefault from 'shiki/themes/github-dark-default.mjs'
 import githubLight from 'shiki/themes/github-light.mjs'
-import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 
 const THEMES = { light: 'github-light', dark: 'github-dark-default' } as const
@@ -42,11 +32,21 @@ async function highlight(code: string, language: BundledLanguage): Promise<Token
   )
 }
 
-const CodeBlockContext = React.createContext('')
+export const CodeBlockContext = React.createContext('')
 
 // Plain and highlighted draw the same line boxes and take colour alone from the highlighter, never
 // a font style, so the height measured before highlighting is the height after it (ADR-0035 rule 2).
-function HighlightedCode({ code, language }: { code: string; language: BundledLanguage | null }) {
+type CodeLine = { className?: string; prefix?: React.ReactNode }
+
+function HighlightedCode({
+  code,
+  language,
+  line,
+}: {
+  code: string
+  language: BundledLanguage | null
+  line?: (index: number) => CodeLine | undefined
+}) {
   // One trailing newline ends the fence rather than adding a line to it.
   const text = code.replace(/\n$/, '')
   const lines = text.split('\n')
@@ -70,28 +70,35 @@ function HighlightedCode({ code, language }: { code: string; language: BundledLa
   return (
     <pre className="m-0 overflow-auto p-4 text-sm">
       <code className="font-mono text-sm" data-highlighted={tokens !== null}>
-        {lines.map((line, index) => {
+        {lines.map((lineText, index) => {
           const lineKey = lineOffset
           let tokenOffset = lineOffset
-          lineOffset += line.length + 1
-          const lineTokens = tokens?.[index] ?? [{ content: line }]
+          lineOffset += lineText.length + 1
+          const lineTokens = tokens?.[index] ?? [{ content: lineText }]
+          const decoration = line?.(index)
           return (
-            <span key={lineKey} className="block min-h-[1lh]">
-              {lineTokens.map((token) => {
-                const tokenKey = tokenOffset
-                tokenOffset += token.content.length
-                return (
-                  <span
-                    key={tokenKey}
-                    className="text-(--shiki-light) dark:text-(--shiki-dark)"
-                    style={
-                      { '--shiki-light': token.light, '--shiki-dark': token.dark } as CSSProperties
-                    }
-                  >
-                    {token.content}
-                  </span>
-                )
-              })}
+            <span key={lineKey} className={cn('flex min-h-[1lh]', decoration?.className)}>
+              {decoration?.prefix}
+              <span className="min-w-0 flex-1">
+                {lineTokens.map((token) => {
+                  const tokenKey = tokenOffset
+                  tokenOffset += token.content.length
+                  return (
+                    <span
+                      key={tokenKey}
+                      className="text-(--shiki-light) dark:text-(--shiki-dark)"
+                      style={
+                        {
+                          '--shiki-light': token.light,
+                          '--shiki-dark': token.dark,
+                        } as CSSProperties
+                      }
+                    >
+                      {token.content}
+                    </span>
+                  )
+                })}
+              </span>
             </span>
           )
         })}
@@ -104,9 +111,10 @@ export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string
   // `null` is a language Argo does not know, drawn as plain code.
   language: BundledLanguage | null
+  line?: (index: number) => CodeLine | undefined
 }
 
-export function CodeBlock({ children, className, code, language, ...props }: CodeBlockProps) {
+export function CodeBlock({ children, className, code, language, line, ...props }: CodeBlockProps) {
   return (
     <CodeBlockContext.Provider value={code}>
       <div
@@ -118,7 +126,7 @@ export function CodeBlock({ children, className, code, language, ...props }: Cod
         {...props}
       >
         {children}
-        <HighlightedCode code={code} language={language} />
+        <HighlightedCode code={code} language={language} line={line} />
       </div>
     </CodeBlockContext.Provider>
   )
@@ -146,34 +154,4 @@ export function CodeBlockFilename({ className, ...props }: HTMLAttributes<HTMLSp
 
 export function CodeBlockActions({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('-my-1 -mr-1 flex items-center gap-2', className)} {...props} />
-}
-
-export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & { timeout?: number }
-
-export function CodeBlockCopyButton({
-  children,
-  className,
-  timeout = 2000,
-  ...props
-}: CodeBlockCopyButtonProps) {
-  const code = useContext(CodeBlockContext)
-  const [copied, setCopied] = useState(false)
-  const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(code)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), timeout)
-  }, [code, timeout])
-  const Icon = copied ? CheckIcon : CopyIcon
-  return (
-    <Button
-      type="button"
-      size="icon"
-      variant="ghost"
-      className={cn('shrink-0', className)}
-      onClick={copy}
-      {...props}
-    >
-      {children ?? <Icon className="size-4" />}
-    </Button>
-  )
 }

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
 import type { ToolCall } from './transcript'
+import { unifiedPatch } from './unified-patch'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
@@ -26,7 +27,7 @@ const EVIDENCE_KINDS = { Bash: 'output', Edit: 'diff', Read: 'document' } as con
 
 function filePath(call: ToolCall) {
   if (typeof call.input.file_path !== 'string') return 'file'
-  return call.input.file_path.split('/').filter(Boolean).at(-1) ?? call.input.file_path
+  return call.input.file_path
 }
 
 function toolPresentation(call: ToolCall) {
@@ -55,7 +56,7 @@ function evidence(call: ToolCall, result: ToolResult | undefined): ToolRow['evid
     call.name === 'Edit' &&
     typeof call.input.old_string === 'string' &&
     typeof call.input.new_string === 'string'
-      ? `-${call.input.old_string}\n+${call.input.new_string}`
+      ? unifiedPatch(call.input.old_string, call.input.new_string)
       : (result?.content ?? null)
   if (source === null) return null
   const kind = EVIDENCE_KINDS[call.name as keyof typeof EVIDENCE_KINDS] ?? 'output'
