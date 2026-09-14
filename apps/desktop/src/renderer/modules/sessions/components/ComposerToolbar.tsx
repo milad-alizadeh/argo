@@ -1,5 +1,4 @@
 import { ArrowUp, Plus, Square } from 'lucide-react'
-import type { Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../../components/ui/button'
@@ -44,7 +43,7 @@ export function ComposerToolbar({
   setup: TurnSetupControlProps | null
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
-  interruptRef: Ref<HTMLButtonElement>
+  interruptRef: Parameters<typeof Button>[0]['ref']
 }) {
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
