@@ -5,13 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { writeArchiveStore } from './session-fixture-files'
-import { fixtureRoot } from './session-fixtures'
-
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-
-function listSessions(value: unknown, root: string, archive?: string) {
-  return createClaudeSessionReader({ transcripts: root, archive }).listSessions(value)
-}
+import { fixtureRoot, unscopedListing as listing, listSessions } from './session-fixtures'
 
 // Bulk archive (#2194) writes into the same store the read joins on, changing only `isArchived`
 // and carrying every other key over untouched: `sessionId` here proves the desktop app's own id

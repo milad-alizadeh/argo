@@ -31,7 +31,11 @@ export function SidebarRows({
   tabStop: SessionId | null
   visible: SessionsListed['sessions']
 }) {
-  const activeList = (items: SessionsListed['sessions'], label: string) => (
+  const rosterList = (
+    items: SessionsListed['sessions'],
+    label: string,
+    selection: { selectable: boolean; onToggleSelect: typeof onToggleSelect },
+  ) => (
     <SessionRosterList
       items={items}
       label={label}
@@ -41,34 +45,20 @@ export function SidebarRows({
       onLinkTicket={onLinkTicket}
       onUnlinkTicket={onUnlinkTicket}
       onSelect={onSelect}
-      onToggleSelect={onToggleSelect}
+      onToggleSelect={selection.onToggleSelect}
       renamedTitles={renamedTitles}
-      selectable={true}
-      selectedIds={selectedIds}
+      selectable={selection.selectable}
+      selectedIds={selection.selectable ? selectedIds : EMPTY_ROSTER_SELECTION.ids}
       selectedSessionId={selectedSessionId}
       tabStop={tabStop}
     />
   )
+  const activeList = (items: SessionsListed['sessions'], label: string) =>
+    rosterList(items, label, { selectable: true, onToggleSelect })
   // The Archived section stays the read-only recovery path (#1593): it never grows a checkbox,
   // so it takes the same row component with selection wired off rather than a second one.
-  const archivedList = (items: SessionsListed['sessions'], label: string) => (
-    <SessionRosterList
-      items={items}
-      label={label}
-      onFocus={onFocus}
-      onRename={onRename}
-      onOpenTicket={onOpenTicket}
-      onLinkTicket={onLinkTicket}
-      onUnlinkTicket={onUnlinkTicket}
-      onSelect={onSelect}
-      onToggleSelect={() => {}}
-      renamedTitles={renamedTitles}
-      selectable={false}
-      selectedIds={EMPTY_ROSTER_SELECTION.ids}
-      selectedSessionId={selectedSessionId}
-      tabStop={tabStop}
-    />
-  )
+  const archivedList = (items: SessionsListed['sessions'], label: string) =>
+    rosterList(items, label, { selectable: false, onToggleSelect: () => {} })
   return (
     <>
       <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3">

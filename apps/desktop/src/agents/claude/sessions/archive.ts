@@ -38,16 +38,20 @@ async function filesUnder(directory: string, depth: number): Promise<string[]> {
   return found
 }
 
-async function archivedIdIn(file: string): Promise<string | null> {
+async function jsonRecordIn(file: string): Promise<Record<string, unknown> | null> {
   const text = await readFile(file, 'utf8').catch(() => null)
   if (text === null) return null
-  let value: unknown
   try {
-    value = JSON.parse(text)
+    const value: unknown = JSON.parse(text)
+    return isRecord(value) ? value : null
   } catch {
     return null
   }
-  if (!isRecord(value) || value.isArchived !== true) return null
+}
+
+async function archivedIdIn(file: string): Promise<string | null> {
+  const value = await jsonRecordIn(file)
+  if (value === null || value.isArchived !== true) return null
   return typeof value.cliSessionId === 'string' ? value.cliSessionId : null
 }
 
@@ -63,15 +67,8 @@ export async function readArchivedSessions(root: string): Promise<ReadonlySet<st
 async function cliSessionIdIn(
   file: string,
 ): Promise<{ file: string; cliSessionId: string } | null> {
-  const text = await readFile(file, 'utf8').catch(() => null)
-  if (text === null) return null
-  let value: unknown
-  try {
-    value = JSON.parse(text)
-  } catch {
-    return null
-  }
-  if (!isRecord(value) || typeof value.cliSessionId !== 'string') return null
+  const value = await jsonRecordIn(file)
+  if (value === null || typeof value.cliSessionId !== 'string') return null
   return { file, cliSessionId: value.cliSessionId }
 }
 

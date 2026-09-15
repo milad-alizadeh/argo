@@ -9,6 +9,8 @@
   "subagent": "Subagent",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
+  "noSessionsFound": "No Sessions found",
+  "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
     "roster": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."

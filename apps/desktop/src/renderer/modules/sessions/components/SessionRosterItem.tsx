@@ -1,8 +1,6 @@
-import { Lock } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/renderer/components/ui/badge'
 import { Checkbox } from '@/renderer/components/ui/checkbox'
 import {
   ContextMenu,
@@ -17,9 +15,14 @@ import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesse
 import { PromptText } from '../prompt/PromptText'
 import type { SelectionModifier } from '../state/roster-selection'
 import type { Session } from '../types'
-import { sessionPostureLocksAnswer } from '../types'
 import { SessionReferenceText } from './SessionReference'
 import { SessionMetadata } from './SessionRosterMetadata'
+import {
+  SessionBlockedBadge,
+  SessionLockedMark,
+  STATUS_LABELS,
+  STATUS_MARKS,
+} from './SessionRosterStatus'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -31,73 +34,8 @@ function selectionModifierOf(event: {
   return 'plain'
 }
 
-const STATUS_MARKS: Record<Session['status'], string> = {
-  asking: 'bg-warn',
-  ended: 'bg-danger',
-  idle: 'bg-idle',
-  permission: 'bg-warn',
-  running: 'bg-active shadow-state-glow',
-  starting: 'bg-active shadow-state-glow',
-  stopped: 'bg-danger',
-  unknown: 'bg-transparent shadow-state-outline',
-}
-
-// The dot beside a Session carries its status as colour; this is that same fact in words, for a
-// reader the dot's colour never reaches (apps/desktop/AGENTS.md "Accessible names").
-const STATUS_LABELS: Record<Session['status'], string> = {
-  asking: 'Asking',
-  ended: 'Ended',
-  idle: 'Idle',
-  permission: 'Waiting on permission',
-  running: 'Running',
-  starting: 'Starting',
-  stopped: 'Stopped',
-  unknown: 'Unknown',
-}
-
 function knownCli(cli: string): cli is SessionCli {
   return (SESSION_CLIS as readonly string[]).includes(cli)
-}
-
-// The two blocking statuses the dot already colours `bg-warn` for, named so a reader can tell
-// which one without opening the Session (#2088). Every other status shows no badge.
-const BLOCKED_BADGE_LABELS: Partial<Record<Session['status'], string>> = {
-  asking: 'Answer',
-  permission: 'Permission Approval',
-}
-
-// An `asking` Session whose posture locks the answer affordance (#2205) cannot take an answer
-// here, whatever its transcript shows.
-function unanswerableHere(session: Session): boolean {
-  return session.status === 'asking' && sessionPostureLocksAnswer(session.posture)
-}
-
-function SessionBlockedBadge({ session }: { session: Session }) {
-  if (unanswerableHere(session)) return null
-  const label = BLOCKED_BADGE_LABELS[session.status]
-  if (label === undefined) return null
-  return (
-    <Badge className="border-warn/40 text-warn" size="compact" variant="outline">
-      {label}
-    </Badge>
-  )
-}
-
-// Another live Argo window holds this Session's channel (ADR-0040), or it is asking a question
-// from a PTY Argo never opened (#2205): either way Send is refused, so the fact goes in text
-// beside the title rather than only in a tooltip (apps/desktop/AGENTS.md "Accessible names" — a
-// mark that is not a control).
-const OPEN_ELSEWHERE_MESSAGE =
-  'This session is open in another app. Close it there to continue it in Argo.'
-
-function SessionLockedMark({ session }: { session: Session }) {
-  if (session.locked !== true && !unanswerableHere(session)) return null
-  return (
-    <span className="inline-flex shrink-0 items-center" title={OPEN_ELSEWHERE_MESSAGE}>
-      <Lock aria-hidden className="size-3.5 text-faint" />
-      <span className="sr-only">{OPEN_ELSEWHERE_MESSAGE}</span>
-    </span>
-  )
 }
 
 function activitySummary(session: Session): string | null {
