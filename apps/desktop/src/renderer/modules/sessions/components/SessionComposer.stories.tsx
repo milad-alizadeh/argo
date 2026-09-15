@@ -570,9 +570,7 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
     )
     await expect(menu.getBoundingClientRect().width).toBeCloseTo(card.getBoundingClientRect().width)
     await userEvent.keyboard('{Enter}')
-
-    await userEvent.keyboard(' ')
-    await expect(canvas.queryByRole('option')).toBeNull()
+    await waitFor(() => expect(canvas.queryByRole('option')).toBeNull())
     await userEvent.keyboard('{Enter}')
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read \/implement$/)
   },
@@ -652,17 +650,20 @@ export const CodexDraftRestoresUnsupportedReference: Story = {
   },
 }
 
-export const ReferenceMenuFlagsUnsupportedForCodex: Story = {
+export const AtTicketQueryShowsTicketsForCodex: Story = {
   render: () => <CodexComposerStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, '@argo')
+    await userEvent.type(composer, '@ENG')
 
-    const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
-    await expect(option).toHaveTextContent('Not available for Codex')
+    const picker = await canvas.findByRole('dialog', { name: 'Context picker' })
+    await expect(
+      within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }),
+    ).toBeVisible()
+    await expect(canvas.queryByRole('option')).toBeNull()
   },
 }
 

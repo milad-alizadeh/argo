@@ -92,9 +92,13 @@ export function ContextPickerContents({
         </div>
       ) : null}
       {tickets.length > 0 ? (
-        <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
+        <div
+          className={
+            showDefaultOptions ? 'mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)' : ''
+          }
+        >
           <div className="flex items-center gap-(--spacing-shell-item) px-(--spacing-shell-inset)">
-            <span className="size-4" />
+            <span className="size-3.5" />
             <p className="type-meta text-muted-foreground">{t('composer.contextPicker.tickets')}</p>
           </div>
           {tickets.map((ticket, index) => (

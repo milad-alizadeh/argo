@@ -40,7 +40,7 @@ export class ComposerTicketReferenceNode extends TextNode {
     icon.contentEditable = 'false'
     icon.src = ticketProviderIconSource[this.__provider]
     element.className =
-      'mx-0.5 inline-flex items-center gap-1 align-middle font-semibold text-foreground'
+      'mx-0.5 inline-flex items-center gap-1 align-middle !font-semibold text-foreground type-body'
     element.dataset.ticketKey = this.getTextContent()
     element.setAttribute('role', 'link')
     element.tabIndex = 0

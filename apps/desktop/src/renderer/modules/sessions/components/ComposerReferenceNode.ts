@@ -5,9 +5,9 @@ import { composerReferenceIcon } from './ComposerReferenceIcon'
 import { cliLabel, referenceBySource, referenceSupportsCli } from './SessionReference'
 
 const SUPPORTED_CLASS =
-  'composer-inline-context mx-0.5 cursor-text font-bold text-foreground underline decoration-foreground underline-offset-4'
+  'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text !font-semibold text-foreground type-body'
 const UNSUPPORTED_CLASS =
-  'composer-inline-context mx-0.5 cursor-text text-muted-foreground underline decoration-dashed underline-offset-4'
+  'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text text-muted-foreground type-body'
 
 export class ComposerReferenceNode extends TextNode {
   __cli: SessionCli | null

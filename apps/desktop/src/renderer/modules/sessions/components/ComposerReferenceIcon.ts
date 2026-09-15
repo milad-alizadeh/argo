@@ -30,7 +30,7 @@ const iconPaths: Record<SessionReferenceKind, readonly string[]> = {
 export function composerReferenceIcon(document: Document, kind: SessionReferenceKind) {
   const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   icon.setAttribute('aria-hidden', 'true')
-  icon.setAttribute('class', 'mr-1 inline-block size-3.5 align-text-bottom translate-y-0.5')
+  icon.setAttribute('class', 'size-3.5 shrink-0')
   icon.setAttribute('fill', 'none')
   icon.setAttribute('focusable', 'false')
   icon.setAttribute('stroke', 'currentColor')
