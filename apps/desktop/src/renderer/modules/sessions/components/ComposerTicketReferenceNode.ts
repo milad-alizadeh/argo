@@ -36,7 +36,7 @@ export class ComposerTicketReferenceNode extends TextNode {
     const element = super.createDOM(config)
     const icon = element.ownerDocument.createElement('img')
     icon.alt = ''
-    icon.className = 'mr-1 inline-block size-3 align-middle dark:invert'
+    icon.className = 'mr-1 inline-block size-3.5 align-middle dark:invert'
     icon.contentEditable = 'false'
     icon.src = ticketProviderIconSource[this.__provider]
     element.className =
