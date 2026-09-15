@@ -50,7 +50,7 @@ export function portCollisionError(port, identity) {
   )
 }
 
-export async function assertPortAvailable(port, identity) {
+async function assertPortAvailableOnHost(port, host, identity) {
   await new Promise((resolve, reject) => {
     const server = createServer()
     server.once('error', (error) => {
@@ -60,8 +60,13 @@ export async function assertPortAvailable(port, identity) {
       }
       reject(error)
     })
-    server.listen(port, '127.0.0.1', () => server.close(resolve))
+    server.listen(port, host, () => server.close(resolve))
   })
+}
+
+export async function assertPortAvailable(port, identity) {
+  await assertPortAvailableOnHost(port, '127.0.0.1', identity)
+  await assertPortAvailableOnHost(port, '::1', identity)
 }
 
 export function startControlServer(controlFile, stop) {

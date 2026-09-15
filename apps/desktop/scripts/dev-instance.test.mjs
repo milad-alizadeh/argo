@@ -38,7 +38,7 @@ describe('desktop development instances', () => {
 
   test('rejects an occupied development port', async () => {
     const server = createServer()
-    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+    await new Promise((resolve) => server.listen(0, '::1', resolve))
     const address = server.address()
     if (!address || typeof address === 'string') throw new Error('Test server has no TCP port.')
 
