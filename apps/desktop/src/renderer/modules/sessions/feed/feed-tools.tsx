@@ -138,6 +138,9 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
   const isSoleSkill = soleCall?.kind === 'skill'
+  // While a call in the group still runs, the group names that call rather than its summary.
+  const runningCall = group.calls.findLast((call) => call.status === 'running')
+  const titleCall = runningCall ?? (isSoleSkill ? soleCall : undefined)
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -152,12 +155,12 @@ export function FeedToolGroup({
         </TaskItem>
       ))}
       contentVariant="flush"
-      icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
+      icon={titleCall === undefined ? SquareTerminal : TOOL_ICONS[titleCall.kind]}
       onOpenChange={onOpenChange}
       open={open}
       title={
-        <RunningText running={group.calls.some((call) => call.status === 'running')}>
-          {isSoleSkill ? soleCall.label : group.label}
+        <RunningText running={runningCall !== undefined}>
+          {titleCall?.label ?? group.label}
         </RunningText>
       }
     />
