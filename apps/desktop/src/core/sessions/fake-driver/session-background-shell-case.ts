@@ -18,10 +18,10 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   const history = page.locator('.feed__viewport[data-session="shellRunning"]')
   await history.focus()
   await page.keyboard.press('Home')
-  // Commands render inside closed tool groups. Resolve the exact group from the Feed contract,
-  // then open its mounted trigger before querying the command child. Several groups share the
-  // same visible title, so picking by title alone is not deterministic in the packaged app.
-  const finishedGroupId = await page.evaluate(async () => {
+  // Commands render inline, while a Read opens recorded evidence in the inspector. Resolve the
+  // exact group holding that Read from the Feed contract, then open its mounted trigger. Several
+  // groups share visible titles, so selecting by title alone is not deterministic in the package.
+  const evidenceGroupId = await page.evaluate(async () => {
     const feed = await window.argo.readSessionFeed({
       delegationId: null,
       revision: null,
@@ -29,20 +29,23 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
     })
     if (feed.type !== 'session.feed.read') throw new Error('shellRunning Feed did not load')
     const group = feed.rows.find(
-      (row) => row.shape === 'tool-group' && row.calls.some((call) => call.id === 'sh-call-done'),
+      (row) =>
+        row.shape === 'tool-group' && row.calls.some((call) => call.id === 'sh-call-package'),
     )
     if (group === undefined || group.shape !== 'tool-group')
-      throw new Error('finished shell command group was not returned')
+      throw new Error('shell package-read group was not returned')
     return group.id
   })
-  const finishedGroup = history.locator(`[data-feed-row="${finishedGroupId}"]`)
-  const finishedGroupTrigger = finishedGroup.getByRole('button', { name: 'Ran a command' })
-  await finishedGroupTrigger.waitFor()
-  await finishedGroupTrigger.click()
-  const finishedCommand = finishedGroup.locator('[data-feed-evidence-id="sh-call-done"]')
-  await finishedCommand.waitFor()
-  await finishedCommand.click()
-  await page.getByText('git status --short').last().waitFor()
+  const evidenceGroup = history.locator(`[data-feed-row="${evidenceGroupId}"]`)
+  const evidenceGroupTrigger = evidenceGroup.getByRole('button')
+  await evidenceGroupTrigger.waitFor()
+  await evidenceGroupTrigger.click()
+  const packageRead = evidenceGroup.locator('[data-feed-evidence-id="sh-call-package"]')
+  await packageRead.waitFor()
+  await packageRead.click()
+  assert.equal(await packageRead.getAttribute('aria-current'), 'location')
+  await page.locator('section[aria-label="Command and file inspector"]').waitFor()
+  await page.getByText('apps/desktop/package.json').last().waitFor()
 
   await shellButton.click()
   const running = page.getByRole('menuitem', { name: /npm run watch/ })
@@ -51,6 +54,10 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
 
   const pane = page.locator('section[aria-label="Background Shell"]')
   await pane.waitFor()
+  await page.locator('section[aria-label="Command and file inspector"]').waitFor({ state: 'hidden' })
+  await page.waitForFunction(
+    () => document.querySelector('[data-feed-evidence-id="sh-call-package"]')?.getAttribute('aria-current') === null,
+  )
   await page.getByText('rebuilt in 240ms').waitFor()
   await shellButton.click()
   assert.equal(await running.getAttribute('aria-current'), 'true')
