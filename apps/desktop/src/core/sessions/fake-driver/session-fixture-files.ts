@@ -80,15 +80,16 @@ export async function writeFixtureTree(root, names, options = {}) {
 
 // The Claude desktop app's own Session store, shaped the way that app writes one: a JSON file per
 // Session two directories down, naming the CLI Session in `cliSessionId` and carrying its own
-// `isArchived`. Argo reads the flag and writes nothing back, so a fixture store is all the proof
-// needs to show an archived Session in the Roster's Archived section.
-export async function writeArchiveStore(root, names) {
+// `isArchived`. `archived` defaults to true so a fixture store is all the read-side proof needs;
+// the write-side proof (#2194) passes `archived: false` to give a bulk-archive call an existing,
+// unarchived row to flip.
+export async function writeArchiveStore(root, names, { archived = true } = {}) {
   const inside = path.join(root, 'workspace-one', PROJECT)
   await mkdir(inside, { recursive: true })
   for (const name of names) {
     await writeFile(
       path.join(inside, `local_${name}.json`),
-      `${JSON.stringify({ sessionId: `desktop-${name}`, cliSessionId: name, isArchived: true })}\n`,
+      `${JSON.stringify({ sessionId: `desktop-${name}`, cliSessionId: name, isArchived: archived })}\n`,
     )
   }
   return root

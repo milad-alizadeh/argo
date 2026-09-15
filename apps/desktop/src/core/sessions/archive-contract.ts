@@ -33,3 +33,32 @@ export const sessionArchiveListReplySchema = z.union([
   sessionErrorSchema,
 ])
 export type SessionArchiveListReply = z.infer<typeof sessionArchiveListReplySchema>
+
+// Setting the archive flag for one or more Sessions at once (#2194): `archived: true` archives
+// the named Sessions, `false` restores them. `sessionIds` names the reader's own stable ids, and
+// a Session that flag has no store row for at all comes back in `failed` rather than throwing,
+// so one Session without a writable row never sinks the rest of a bulk action.
+export const sessionArchiveSetRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.archive.set'),
+  requestId: identifierSchema,
+  sessionIds: z.array(identifierSchema).min(1),
+  archived: z.boolean(),
+})
+export type SessionArchiveSetRequest = z.infer<typeof sessionArchiveSetRequestSchema>
+
+export const sessionArchiveAppliedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('session.archive.applied'),
+  requestId: identifierSchema,
+  archived: z.boolean(),
+  applied: z.array(identifierSchema),
+  failed: z.array(identifierSchema),
+})
+export type SessionArchiveApplied = z.infer<typeof sessionArchiveAppliedSchema>
+
+export const sessionArchiveSetReplySchema = z.union([
+  sessionArchiveAppliedSchema,
+  sessionErrorSchema,
+])
+export type SessionArchiveSetReply = z.infer<typeof sessionArchiveSetReplySchema>

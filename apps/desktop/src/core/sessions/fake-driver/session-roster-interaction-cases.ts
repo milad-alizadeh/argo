@@ -52,15 +52,17 @@ async function proveArchivedRestart(page, restart) {
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
   // Restoring the selected archived Session opens the section on its own, but only once the
   // reader's request for that row resolves, so this waits rather than reading the count once.
+  await archived.locator('[data-slot="archived-toggle"][aria-expanded="true"]').waitFor()
   await archived
-    .locator('.roster__archived [data-slot="collapsible-trigger"][aria-expanded="true"]')
-    .waitFor()
-  await archived
-    .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
+    .locator(
+      'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
+    )
     .waitFor()
   assert.equal(
     await archived
-      .locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]')
+      .locator(
+        'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
+      )
       .getAttribute('aria-current'),
     'page',
   )
