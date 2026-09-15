@@ -16,17 +16,20 @@ const statusIcon: Record<string, LucideIcon> = {
 function TicketResult({
   onSelect,
   providerLabel,
+  selected,
   ticket,
 }: {
   onSelect: (ticket: TicketChoice) => void
   providerLabel: (provider: TicketChoice['provider']) => string
+  selected: boolean
   ticket: TicketChoice
 }) {
   const { t } = useTranslation('sessions')
   const StatusIcon = statusIcon[ticket.status] ?? Circle
   return (
     <button
-      className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+      data-selected={selected || undefined}
+      className={`flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${selected ? 'bg-muted' : ''}`}
       data-context-ticket="true"
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => onSelect(ticket)}
@@ -86,11 +89,12 @@ export function ContextPickerContents({
         <p className="px-(--spacing-shell-inset) type-meta text-muted-foreground">
           {t('composer.contextPicker.tickets')}
         </p>
-        {tickets.map((ticket) => (
+        {tickets.map((ticket, index) => (
           <TicketResult
             key={`${ticket.provider}-${ticket.key}`}
             onSelect={onSelectTicket}
             providerLabel={providerLabel}
+            selected={index === 0}
             ticket={ticket}
           />
         ))}
