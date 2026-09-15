@@ -17,7 +17,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/audit-agent-docs/SKILL.md",
-      "computedHash": "2b196ab4abb01151e3132b9736ab50adf717e00f4dd34cb6e994afd9823560af"
+      "computedHash": "f9a871f492f3f3c9d6c75f6544e7829efd4b963bfa3415d822d00f051f615302"
     },
     "brandkit": {
       "source": "Leonxlnx/taste-skill",
@@ -125,7 +125,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
-      "computedHash": "e069e4feabb25f01c5410447e8524470d8fd82a0d0e3e93084c07bbe21a1ace7"
+      "computedHash": "3c9858f588a99f94710abde9bc9ece0aa88f70ad60ad9af788955d3a5477ebe8"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
