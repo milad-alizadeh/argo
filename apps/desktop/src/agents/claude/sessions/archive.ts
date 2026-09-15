@@ -7,10 +7,11 @@
 // file names the CLI Session it belongs to in `cliSessionId` — the id the transcripts are keyed
 // by, so the two readings join on it. `sessionId` in the same file is the desktop app's own id and
 // joins to nothing here.
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 import { isRecord } from '../../../boundary'
+import { readJsonFile } from './json-file'
 
 // `<root>/<workspace>/<project>/local_<uuid>.json`, two levels down. The names are the desktop
 // app's and neither is a fact this reader needs, so the tree is walked rather than addressed.
@@ -32,14 +33,7 @@ async function filesUnder(directory: string, depth: number): Promise<string[]> {
 }
 
 async function archivedIdIn(file: string): Promise<string | null> {
-  const text = await readFile(file, 'utf8').catch(() => null)
-  if (text === null) return null
-  let value: unknown
-  try {
-    value = JSON.parse(text)
-  } catch {
-    return null
-  }
+  const value = await readJsonFile(file)
   if (!isRecord(value) || value.isArchived !== true) return null
   return typeof value.cliSessionId === 'string' ? value.cliSessionId : null
 }

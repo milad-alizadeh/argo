@@ -135,7 +135,7 @@ export function SessionRosterItem({
                 <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
                   {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
                   <span
-                    className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ring-2 ring-sidebar ${STATUS_MARKS[session.status]}`}
+                    className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ring-2 ${selected ? 'ring-selected' : 'ring-sidebar'} ${STATUS_MARKS[session.status]}`}
                   />
                 </span>
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
