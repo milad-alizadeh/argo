@@ -1,6 +1,4 @@
-// A file the Roster reads first must not be parsed whole again when the Feed opens it (#2145):
-// both reads go through the same held cache, so the Feed's read resumes from where the Roster's
-// left off rather than reparsing lines the Roster already turned into records.
+// A selected Feed resumes from its own prior pass rather than parsing its transcript whole again.
 import assert from 'node:assert/strict'
 import { appendFile, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -29,7 +27,7 @@ test('a file read once already held is resumed, not reparsed, on the next read',
   const file = await tempFile(context)
   await writeFile(file, 'first\n')
   const counts = { calls: 0 }
-  const readRecords = createTranscriptRecordReader(countingParser(counts))
+  const { readRecords } = createTranscriptRecordReader(countingParser(counts))
 
   // The Roster's first pass over a file it has never seen.
   await readRecords(file)
@@ -46,7 +44,7 @@ test('a file read for the first time by the Feed still resumes on a later poll',
   const file = await tempFile(context)
   await writeFile(file, 'first\n')
   const counts = { calls: 0 }
-  const readRecords = createTranscriptRecordReader(countingParser(counts))
+  const { readRecords } = createTranscriptRecordReader(countingParser(counts))
 
   await readRecords(file)
   await appendFile(file, 'second\n')
@@ -55,4 +53,25 @@ test('a file read for the first time by the Feed still resumes on a later poll',
   await readRecords(file)
 
   assert.equal(counts.calls, 3)
+})
+
+test('releasing one Session does not discard another selected Feed’s records', async (context) => {
+  const first = await tempFile(context)
+  const second = `${first}.second`
+  await writeFile(first, 'first\n')
+  await writeFile(second, 'second\n')
+  const calls = new Map<string, number>()
+  const { clear, readRecords } = createTranscriptRecordReader((line) => {
+    calls.set(line, (calls.get(line) ?? 0) + 1)
+    return { kind: 'unreadable', line }
+  })
+
+  await readRecords(first)
+  await readRecords(second)
+  clear([first])
+  await appendFile(second, 'second-appended\n')
+  await readRecords(second)
+
+  assert.equal(calls.get('second'), 1)
+  assert.equal(calls.get('second-appended'), 1)
 })

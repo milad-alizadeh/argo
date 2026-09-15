@@ -7,7 +7,7 @@ import {
   sessionFeedCancelRequestSchema,
   sessionFeedRequestSchema,
 } from './contract'
-import type { HeldFeed } from './feed-cache'
+import { disposeFeed, type HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import { createFeedReads, isAbortError } from './feed-reads'
 import { delegationSource, type OwnerFor } from './read-background-work'
@@ -18,6 +18,35 @@ import type { SessionSource } from './session-source'
 type Ownership = {
   ownerFor: OwnerFor
   managed: (source: SessionSource, id: string) => boolean
+}
+
+async function cancelFeed({
+  ownership,
+  feeds,
+  projections,
+  reads,
+  value,
+}: {
+  ownership: Ownership
+  feeds: Map<string, HeldFeed>
+  projections: Map<string, FeedProjectionState>
+  reads: ReturnType<typeof createFeedReads>
+  value: unknown
+}) {
+  if (versionFailure(value)) return sessionError('unsupported-version', null)
+  const parsed = sessionFeedCancelRequestSchema.safeParse(value)
+  if (!parsed.success) return sessionError('invalid-request', null)
+  const { sessionId } = parsed.data
+  reads.cancel(sessionId)
+  disposeFeed({ feeds, projections }, sessionId)
+  const owner = await ownership.ownerFor(sessionId)
+  owner?.disposeFullRecords?.(sessionId)
+  return {
+    version: 1 as const,
+    type: 'session.accepted' as const,
+    requestId: parsed.data.requestId,
+    sessionId,
+  }
 }
 
 export function createFeedReader(
@@ -77,17 +106,7 @@ export function createFeedReader(
         reads.finish(sessionId, controller)
       }
     },
-    async cancelSessionFeed(value: unknown) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionFeedCancelRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
-      reads.cancel(parsed.data.sessionId)
-      return {
-        version: 1 as const,
-        type: 'session.accepted' as const,
-        requestId: parsed.data.requestId,
-        sessionId: parsed.data.sessionId,
-      }
-    },
+    cancelSessionFeed: (value: unknown) =>
+      cancelFeed({ ownership, feeds, projections, reads, value }),
   }
 }

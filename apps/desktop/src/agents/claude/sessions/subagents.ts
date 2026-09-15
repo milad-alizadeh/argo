@@ -12,7 +12,7 @@ import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
 import { parseTranscriptLine } from './records'
 
 const META = '.meta.json'
-const readRecords = createTranscriptRecordReader(parseTranscriptLine)
+const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)
 
 // The call id one Subagent's meta file names, or null where the file is unreadable or names none.
 async function callOf(metaPath: string): Promise<string | null> {

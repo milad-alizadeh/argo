@@ -3,12 +3,12 @@ import { type SessionChain, stitchChains } from './chains'
 import type { SessionRosterRow } from './models'
 import { currentSessionId } from './models'
 import { projectRosterRow } from './roster'
+import { rosterMetadata } from './roster-metadata'
 import {
   type TranscriptFile,
   type TranscriptParser,
   type TranscriptRecord,
   transcriptFileFrom,
-  withoutBlocks,
 } from './transcript'
 import { createTranscriptRecordReader, ROSTER_FILE_LIMIT } from './transcript-lines'
 
@@ -37,7 +37,7 @@ function holdsMessage(file: TranscriptFile): boolean {
 type ReadFile = (file: TranscriptPath) => Promise<TranscriptFile | null>
 
 function createFileReader(source: TranscriptDiscoverySource): ReadFile {
-  const readRecords = createTranscriptRecordReader(source.parse)
+  const { readRecords } = createTranscriptRecordReader(source.parse)
   return async (file) => {
     try {
       const records = await readRecords(file.path)
@@ -77,9 +77,8 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
         unreadable += 1
         continue
       }
-      const file = withoutBlocks(read)
-      summaries.set(candidate.path, { writtenAt: candidate.writtenAt, file })
-      files.push(file)
+      summaries.set(candidate.path, { writtenAt: candidate.writtenAt, file: read })
+      files.push(read)
     }
     const reached = new Set(recent.map((candidate) => candidate.path))
     for (const path of summaries.keys()) if (!reached.has(path)) summaries.delete(path)
@@ -88,8 +87,28 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
 }
 
 export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
-  const readFile = createFileReader(source)
-  const summarise = createTranscriptSummariser(source, readFile)
+  const fullRecords = createTranscriptRecordReader(source.parse)
+  const discardedFullPaths = new Set<string>()
+  const fullPaths = new Map<string, string[]>()
+  const readFullFile: ReadFile = async (file) => {
+    try {
+      const records = await fullRecords.readRecords(file.path)
+      return transcriptFileFrom(file.path, {
+        fileName: file.name,
+        records: source.normalizeRecords?.(records) ?? records,
+      })
+    } catch {
+      return null
+    }
+  }
+  const metadataSource: TranscriptDiscoverySource = {
+    ...source,
+    parse: (line) => {
+      const record = source.parse(line)
+      return record === null ? null : rosterMetadata(record)
+    },
+  }
+  const summarise = createTranscriptSummariser(metadataSource, createFileReader(metadataSource))
 
   async function discoverSessions(root: string): Promise<TranscriptDiscovery> {
     const { found, files, unreadable } = await summarise(root)
@@ -106,11 +125,26 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     const currentId = currentSessionId(chains, sessionId)
     const chain = chains.find((candidate) => candidate.id === currentId)
     if (chain === undefined) return null
+    const paths = chain.files.map((file) => file.path)
+    for (const path of paths) discardedFullPaths.delete(path)
+    for (const file of chain.files) fullPaths.set(file.sessionId, paths)
+    fullPaths.set(chain.id, paths)
     const read = await Promise.all(
-      chain.files.map((file) => readFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
+      chain.files.map((file) => readFullFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
     )
+    if (paths.some((path) => discardedFullPaths.has(path))) fullRecords.clear(paths)
     return { ...chain, files: read.filter((file): file is TranscriptFile => file !== null) }
   }
 
-  return { discoverSessions, readSessionFiles }
+  function clearFullRecords(sessionId: string) {
+    const paths = fullPaths.get(sessionId)
+    if (paths === undefined) return
+    for (const path of paths) discardedFullPaths.add(path)
+    fullRecords.clear(paths)
+    for (const [id, remembered] of fullPaths) {
+      if (remembered === paths) fullPaths.delete(id)
+    }
+  }
+
+  return { clearFullRecords, discoverSessions, readSessionFiles }
 }

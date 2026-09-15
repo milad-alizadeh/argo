@@ -30,6 +30,9 @@ export type SessionSource = {
   cli: string
   discoverSessions: () => Promise<TranscriptDiscovery>
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
+  // The renderer releases a Feed when its Session stops being selected. The adapter then drops
+  // any full transcript records it only retained to incrementally project that selected Feed.
+  disposeFullRecords?: (sessionId: string) => void
   projectFeed: (chain: SessionChain) => SessionFeedRow[]
   managedSessions?: () => SessionRosterRow[]
   // The tail of one background Shell's recorded output, addressed by the call that started it
