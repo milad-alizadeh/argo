@@ -12,6 +12,7 @@ import {
   openSessionByClick,
 } from '../../../core/sessions/fake-driver/session-gestures'
 import { fakeClaudeFolder } from './fake-claude-transcripts'
+import { rosterRow, waitFor } from './session-proof-helpers'
 
 // The proof always starts in `apps/desktop`, as the fixture files note.
 const FAKE_CLAUDE = path.join(
@@ -32,12 +33,6 @@ export async function writeFakeClaude(root, transcripts) {
   )
   await chmod(executable, 0o755)
   return executable
-}
-
-async function rosterRow(page, sessionId) {
-  const reply = await page.evaluate(() => window.argo.listSessions())
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.filter((session) => session.id === sessionId)
 }
 
 async function sendFromComposer(page, text) {
@@ -131,12 +126,4 @@ async function replaceInFile(file, search, replacement) {
   // that tie out rather than hoping the clock ticked.
   const future = new Date(Date.now() + 60_000)
   await utimes(file, future, future)
-}
-
-async function waitFor(condition, timeout = 10_000) {
-  const deadline = Date.now() + timeout
-  while (!(await condition())) {
-    if (Date.now() > deadline) throw new Error('The fake claude never wrote its transcript.')
-    await new Promise((resolve) => setTimeout(resolve, 100))
-  }
 }

@@ -5,9 +5,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { writeArchiveStore } from './session-fixture-files'
-import { fixtureRoot } from './session-fixtures'
+import { fixtureRoot, LATER_TURN } from './session-fixtures'
 
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
+const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 const feed = {
   version: 1,
   type: 'session.feed',
@@ -24,18 +24,6 @@ function listSessions(value: unknown, root: string, archive?: string) {
 function readFeed(value: unknown, root: string) {
   return createClaudeSessionReader({ transcripts: root }).readSessionFeed(value)
 }
-
-const LATER_TURN = `${JSON.stringify({
-  type: 'assistant',
-  uuid: 'e-a-2',
-  parentUuid: 'e-a-1',
-  timestamp: '2026-09-01T08:00:00.000Z',
-  message: {
-    role: 'assistant',
-    stop_reason: 'end_turn',
-    content: [{ type: 'text', text: 'Done.' }],
-  },
-})}\n`
 
 test('discovers Sessions with no Project registration and states what it read', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])

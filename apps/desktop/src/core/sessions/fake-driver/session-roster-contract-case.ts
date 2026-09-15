@@ -17,7 +17,7 @@ async function proveArchivedPage(page) {
 }
 
 export async function proveContract(page) {
-  const list = await page.evaluate(() => window.argo.listSessions())
+  const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
   assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 15, read: 15 })
   // Discovery still reads every transcript file (`filesRead` above), but an archived Session

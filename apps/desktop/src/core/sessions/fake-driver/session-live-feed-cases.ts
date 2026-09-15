@@ -1,6 +1,7 @@
 // The live-update half of the packaged Session proof: the reader's chosen row and tail stay put
 // while a transcript grows, and a kept Session returns without a remounted scroller.
 import assert from 'node:assert/strict'
+import { offsetOf, viewportAnchor, waitForRevision } from './feed-motion-helpers'
 import { openSession } from './session-roster-cases'
 
 type LiveFixture = {
@@ -15,39 +16,12 @@ async function fixedRow(page) {
   const viewport = page.locator('.feed__document[data-active="true"] .feed__viewport')
   await viewport.focus()
   await page.keyboard.press('Home')
-  return page.evaluate(() => {
-    const viewport = document.querySelector('.feed__viewport')
-    const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
-      (candidate) =>
-        candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
-    )
-    return {
-      rows: viewport.querySelectorAll('[data-feed-row]').length,
-      anchor: row.dataset.feedRow,
-      offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
-      revision: document.querySelector('.feed__document[data-active="true"]').dataset.revision,
-    }
-  })
-}
-
-async function offsetOf(page, anchor) {
-  return page.evaluate((id) => {
-    const viewport = document.querySelector('.feed__viewport')
-    const row = viewport.querySelector(`[data-feed-row="${id}"]`)
-    return row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
-  }, anchor)
-}
-
-async function waitForRevision(page, previous) {
-  await page.waitForFunction(
-    (revision) => {
-      return (
-        document.querySelector('.feed__document[data-active="true"]')?.dataset.revision !== revision
-      )
-    },
-    previous,
-    { timeout: LIVE_REVISION_TIMEOUT_MS },
-  )
+  const anchor = await viewportAnchor(page)
+  const meta = await page.evaluate(() => ({
+    rows: document.querySelector('.feed__viewport').querySelectorAll('[data-feed-row]').length,
+    revision: document.querySelector('.feed__document[data-active="true"]').dataset.revision,
+  }))
+  return { ...anchor, ...meta }
 }
 
 async function tailReading(page) {
@@ -80,7 +54,7 @@ async function proveTail(page, fixture: LiveFixture, before) {
     () => document.querySelector('.feed__document[data-active="true"]')?.dataset.revision,
   )
   await fixture.stream(fixture.transcripts, 'A streamed result settled while the reader followed.')
-  await waitForRevision(page, revision)
+  await waitForRevision(page, revision, { timeout: LIVE_REVISION_TIMEOUT_MS })
   const streamed = await tailReading(page)
   assert.equal(streamed.fromTail <= 1, true)
   await fixture.append(
@@ -111,7 +85,7 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
     fixture.transcripts,
     'A streamed result grew this row well above the reader. '.repeat(24),
   )
-  await waitForRevision(page, before.revision)
+  await waitForRevision(page, before.revision, { timeout: LIVE_REVISION_TIMEOUT_MS })
   const streamed = await offsetOf(page, before.anchor)
   assert.equal(Math.abs(streamed - before.offset) <= 1, true)
 

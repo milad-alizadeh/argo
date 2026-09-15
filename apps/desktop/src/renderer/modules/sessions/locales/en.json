@@ -21,6 +21,12 @@
     },
     "retry": "Retry"
   },
+  "question": {
+    "locked": {
+      "title": "This session is open in another app",
+      "description": "Close it there to answer from Argo."
+    }
+  },
   "feedLabel": "Session Feed",
   "feedRegionLabel": "Session feed",
   "workspaceLabel": "Session workspace",

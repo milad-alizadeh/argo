@@ -20,7 +20,7 @@ export function SessionsSidebar() {
   const [cockpit] = useProjects()
   const lastHarness = useComposerStore(({ harness }) => harness)
   const pending = useSessionCreationStore(({ pending }) => pending)
-  const { roster, rosterError } = useSessions(null)
+  const { roster, rosterError } = useSessions(null, true, cockpit.project?.path ?? null)
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)

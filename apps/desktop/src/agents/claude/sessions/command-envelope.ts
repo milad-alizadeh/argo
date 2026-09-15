@@ -154,6 +154,10 @@ export function readCommandEnvelope(
       groupId: identifierTag(text, 'task-id'),
     }
   }
+  // The harness re-delivers the compaction summary as a synthetic user turn so the model can
+  // resume from it; the reader already sees that boundary as the 'compacted' marker row (#2206).
+  if (text.startsWith('This session is being continued from a previous conversation'))
+    return { kind: 'trace', uuid: message.uuid }
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null
   if (prompt === null) return { kind: 'trace', uuid: message.uuid }

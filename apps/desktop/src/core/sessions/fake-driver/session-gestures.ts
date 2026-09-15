@@ -80,7 +80,7 @@ export async function chooseHarness(page: Page, cli: SessionCli) {
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
-  const reply = await page.evaluate(() => window.argo.listSessions())
+  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
   return reply.sessions.map(({ id }: { id: string }) => id)
 }

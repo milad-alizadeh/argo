@@ -116,6 +116,19 @@ test('keeps an exact known tag when it is a person’s message', () => {
   ])
 })
 
+test('hides the compaction continuation preamble instead of showing it as a prompt', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'compaction-summary',
+    message: {
+      role: 'user',
+      content:
+        'This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion...',
+    },
+  })
+  assert.deepEqual(parseTranscriptLine(line), { kind: 'trace', uuid: 'compaction-summary' })
+})
+
 test('keeps an unknown complete envelope as reader prose', () => {
   const line = JSON.stringify({
     type: 'user',

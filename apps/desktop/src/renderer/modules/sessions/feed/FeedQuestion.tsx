@@ -1,7 +1,8 @@
-import { Check } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/core/sessions/question'
-import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import {
   Questionnaire,
   QuestionnaireChoice,
@@ -89,15 +90,31 @@ function QuestionField({
   )
 }
 
+// Argo holds no channel to a Session it did not spawn, so it cannot write an answer into
+// whatever process is actually waiting on this question — a PTY open in another app, most
+// often (#2205). The question stays visible; only the composer disappears.
+function FeedQuestionLocked() {
+  const { t } = useTranslation('sessions')
+  return (
+    <Alert className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`} data-component="FeedQuestion">
+      <Lock aria-hidden />
+      <AlertTitle>{t('question.locked.title')}</AlertTitle>
+      <AlertDescription>{t('question.locked.description')}</AlertDescription>
+    </Alert>
+  )
+}
+
 export function FeedQuestion({
   row,
   answering,
   failure,
+  locked,
   onAnswer,
 }: {
   row: AskRow
   answering: boolean
   failure: string | null
+  locked: boolean
   onAnswer: (questionId: string, answers: QuestionAnswer[]) => void
 }) {
   const [selections, setSelections] = useState<Record<number, string[]>>({})
@@ -111,6 +128,8 @@ export function FeedQuestion({
       </div>
     )
   }
+
+  if (locked) return <FeedQuestionLocked />
 
   if (row.unsupported !== null) {
     return (

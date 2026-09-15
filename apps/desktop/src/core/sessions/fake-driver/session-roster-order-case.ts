@@ -54,7 +54,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
   )
   assert.deepEqual(await readRosterIds(page), before)
   const updated = await page.evaluate(async () => {
-    const reply = await window.argo.listSessions()
+    const reply = await window.argo.listSessions({ projectRoot: null })
     return reply.type === 'session.listed'
       ? reply.sessions.find((session) => session.id === 'prose')
       : null

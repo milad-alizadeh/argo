@@ -36,6 +36,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
       version: 1,
       type: 'session.list',
       requestId: 'list-1',
+      projectRoot: null,
     })) as { type: string; sessions?: Array<{ id: string; status: string }> }
     assert.equal(listing.type, 'session.listed')
     const row = listing.sessions?.find((session) => session.id === sessionId)

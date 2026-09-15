@@ -7,7 +7,12 @@ import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/
 import { managedRow } from '@/core/sessions/managed-row'
 import { createCodexSessionReader } from './read-sessions'
 
-const listing = { version: 1 as const, type: 'session.list' as const, requestId: 'list-1' }
+const listing = {
+  version: 1 as const,
+  type: 'session.list' as const,
+  requestId: 'list-1',
+  projectRoot: null,
+}
 
 function listed(
   reply: Awaited<ReturnType<ReturnType<typeof createCodexSessionReader>['listSessions']>>,

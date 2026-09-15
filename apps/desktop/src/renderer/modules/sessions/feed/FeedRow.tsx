@@ -5,6 +5,7 @@ import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedDelegation } from './FeedDelegation'
 import { FeedEvent } from './FeedEvent'
+import { FeedMarker } from './FeedMarker'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
@@ -19,6 +20,7 @@ export type FeedRowProps = {
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
+  questionLocked: boolean
 }
 
 export function FeedRow({
@@ -30,6 +32,7 @@ export function FeedRow({
   onAnswerQuestion,
   answering,
   questionFailure,
+  questionLocked,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
   useRevealAnimation(element, reveal)
@@ -48,6 +51,7 @@ export function FeedRow({
         onAnswerQuestion={onAnswerQuestion}
         answering={answering}
         questionFailure={questionFailure}
+        questionLocked={questionLocked}
         row={row}
       />
     </article>
@@ -62,6 +66,7 @@ function FeedRowContent({
   onAnswerQuestion,
   answering,
   questionFailure,
+  questionLocked,
 }: FeedRowProps) {
   switch (row.shape) {
     // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
@@ -95,6 +100,7 @@ function FeedRowContent({
           row={row}
           answering={answering}
           failure={questionFailure}
+          locked={questionLocked}
           onAnswer={onAnswerQuestion}
         />
       )
@@ -136,7 +142,7 @@ function feedRowContent(
     case 'source':
       return <p>{row.label}</p>
     case 'marker':
-      return <p>{row.marker === 'compacted' ? 'Conversation compacted' : 'Interrupted'}</p>
+      return <FeedMarker row={row} />
     case 'unreadable':
       return <p>Part of this transcript is damaged, so Argo cannot show it.</p>
   }

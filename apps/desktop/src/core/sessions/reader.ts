@@ -24,6 +24,14 @@ import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
+// A Session belongs to a Project when its cwd is the Project's root or a path under it (a
+// worktree, a monorepo subfolder). `null` means no Project is open, so nothing is filtered out.
+function belongsToProject(cwd: string | null, projectRoot: string | null): boolean {
+  if (projectRoot === null) return true
+  if (cwd === null) return false
+  return cwd === projectRoot || cwd.startsWith(`${projectRoot}/`)
+}
+
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
     const discovery = await source.discoverSessions()
@@ -112,10 +120,13 @@ export function createSessionReader(
       const reply = combineDiscoveries(discovered, parsed.data.requestId)
       if (reply.type !== 'session.listed') return reply
       ownership.rememberDiscoveries(reply.sessions)
+      const scoped = reply.sessions.filter((session) =>
+        belongsToProject(session.cwd, parsed.data.projectRoot),
+      )
       // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
       // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
       const sessions = await Promise.all(
-        reply.sessions.map(async (session) => ({
+        scoped.map(async (session) => ({
           ...session,
           ticket: await ticketLinks.linkFor(session.id),
         })),
