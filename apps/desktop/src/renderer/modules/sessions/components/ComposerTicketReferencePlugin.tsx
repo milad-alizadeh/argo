@@ -43,7 +43,9 @@ function ticketBeforeCursor(node: LexicalNode, offset: number) {
   }
   if (!$isElementNode(node) || offset === 0) return null
   const previous = node.getChildAtIndex(offset - 1)
-  return previous instanceof ComposerTicketReferenceNode ? previous : null
+  if (previous instanceof ComposerTicketReferenceNode) return previous
+  const last = $isElementNode(previous) ? previous.getLastDescendant() : null
+  return last instanceof ComposerTicketReferenceNode ? last : null
 }
 
 export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTicketContext[] }) {
