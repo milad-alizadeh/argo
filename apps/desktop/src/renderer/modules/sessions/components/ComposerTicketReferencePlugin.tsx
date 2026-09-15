@@ -3,10 +3,12 @@ import { useLexicalTextEntity } from '@lexical/react/useLexicalTextEntity'
 import type { EntityMatch } from '@lexical/text'
 import {
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
   KEY_BACKSPACE_COMMAND,
+  type LexicalNode,
   type TextNode,
 } from 'lexical'
 import { useEffect } from 'react'
@@ -29,12 +31,17 @@ function ticketMatch(text: string, tickets: ComposerTicketContext[]): EntityMatc
   return null
 }
 
-function ticketBeforeCursor(node: TextNode, offset: number) {
+function ticketBeforeCursor(node: LexicalNode, offset: number) {
   if (node instanceof ComposerTicketReferenceNode && offset === node.getTextContentSize()) {
     return node
   }
-  if (offset !== 0) return null
-  const previous = node.getPreviousSibling()
+  if ($isTextNode(node)) {
+    if (offset !== 0) return null
+    const previous = node.getPreviousSibling()
+    return previous instanceof ComposerTicketReferenceNode ? previous : null
+  }
+  if (!$isElementNode(node) || offset === 0) return null
+  const previous = node.getChildAtIndex(offset - 1)
   return previous instanceof ComposerTicketReferenceNode ? previous : null
 }
 
@@ -56,7 +63,6 @@ export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTi
           const selection = $getSelection()
           if (!$isRangeSelection(selection) || !selection.isCollapsed()) return false
           const node = selection.anchor.getNode()
-          if (!$isTextNode(node)) return false
           const ticket = ticketBeforeCursor(node, selection.anchor.offset)
           if (ticket === null) return false
           ticket.remove()
