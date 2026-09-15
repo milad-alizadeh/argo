@@ -27,7 +27,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   const firstCommandGroup = history.getByRole('button', { name: 'Ran a command' }).first()
   await firstCommandGroup.waitFor()
   await firstCommandGroup.click()
-  const finishedCommand = page.locator('[data-feed-evidence-id="sh-call-done"]')
+  const finishedCommand = history.locator('[data-feed-evidence-id="sh-call-done"]')
   await finishedCommand.waitFor()
   await finishedCommand.click()
   await page.getByText('git status --short').last().waitFor()
