@@ -1,10 +1,17 @@
-import { Ban, Folder } from 'lucide-react'
+import { Ban, CheckCircle2, Circle, CircleDotDashed, Folder, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
 import { TicketProviderIcon } from './TicketProviderIcon'
 
 export type TicketChoice = Omit<ComposerTicketContext, 'id'>
+
+const statusIcon: Record<string, LucideIcon> = {
+  Closed: CheckCircle2,
+  Done: CheckCircle2,
+  'In Progress': CircleDotDashed,
+  Open: Circle,
+}
 
 function TicketResult({
   onSelect,
@@ -16,6 +23,7 @@ function TicketResult({
   ticket: TicketChoice
 }) {
   const { t } = useTranslation('sessions')
+  const StatusIcon = statusIcon[ticket.status] ?? Circle
   return (
     <button
       className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
@@ -31,11 +39,10 @@ function TicketResult({
           <span className="truncate">{ticket.title}</span>
         </span>
         <span
-          className={ticket.terminal ? 'type-meta text-danger' : 'type-meta text-muted-foreground'}
+          aria-label={ticket.terminal ? t('composer.contextPicker.terminal', { status: ticket.status }) : ticket.status}
+          className={ticket.terminal ? 'text-danger' : 'text-muted-foreground'}
         >
-          {ticket.terminal
-            ? t('composer.contextPicker.terminal', { status: ticket.status })
-            : ticket.status}
+          <StatusIcon aria-hidden="true" className="size-3.5" />
         </span>
       </span>
       {ticket.blocked ? (
