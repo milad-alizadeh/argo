@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
+import { mountFeedRow } from './feed-virtualization'
 
 async function openPackageReadEvidence(page) {
   const history = page.locator('.feed__viewport[data-session="shellRunning"]')
-  await history.focus()
-  await page.keyboard.press('Home')
   const evidenceGroupId = await page.evaluate(async () => {
     const feed = await window.argo.readSessionFeed({
       delegationId: null,
@@ -19,6 +18,7 @@ async function openPackageReadEvidence(page) {
       throw new Error('shell package-read group was not returned')
     return group.id
   })
+  await mountFeedRow(page, { rowId: evidenceGroupId, session: 'shellRunning' })
   const evidenceGroup = history.locator(`[data-feed-row="${evidenceGroupId}"]`)
   const evidenceGroupTrigger = evidenceGroup.getByRole('button')
   await evidenceGroupTrigger.waitFor()

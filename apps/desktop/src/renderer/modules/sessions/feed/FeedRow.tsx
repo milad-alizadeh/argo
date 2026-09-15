@@ -1,46 +1,62 @@
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
-import { FeedDelegation } from './FeedDelegation'
-import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
+import { FeedPrompt, FeedRowFallback } from './feed-row-fallback'
 import { type Reveal, useRevealAnimation } from './reveal'
+import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
   row: SessionFeedRow
   reveal?: Reveal
+  streaming?: boolean
   activeEvidenceId: string | null
   toolGroups: ToolGroupState
+  revealCache: RevealCache
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
+  questionLocked: boolean
 }
 
 export function FeedRow({
   row,
   reveal,
+  streaming = false,
   activeEvidenceId,
   onOpenEvidence,
   toolGroups,
+  revealCache,
   onAnswerQuestion,
   answering,
   questionFailure,
+  questionLocked,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
-  useRevealAnimation(element, reveal)
+  const hasStreamed = useRef(streaming)
+  if (streaming) hasStreamed.current = true
+  const rowReveal = streaming ? undefined : reveal
+  const resume: RevealResume = { rowId: row.id, cache: revealCache }
+  const text = useStreamingText(
+    row.shape === 'prose' && row.role === 'assistant' ? row.text : '',
+    streaming,
+    resume,
+  )
+  useRevealAnimation(element, rowReveal)
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
-      data-revealing={reveal === undefined ? undefined : true}
+      data-revealing={rowReveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
       ref={element}
     >
+      <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
@@ -48,9 +64,21 @@ export function FeedRow({
         onAnswerQuestion={onAnswerQuestion}
         answering={answering}
         questionFailure={questionFailure}
+        questionLocked={questionLocked}
         row={row}
+        streamingText={text}
       />
     </article>
+  )
+}
+
+function StreamingStatus({ hasStreamed, streaming }: { hasStreamed: boolean; streaming: boolean }) {
+  const { t } = useTranslation('sessions')
+  if (!hasStreamed) return null
+  return (
+    <span aria-live="polite" className="sr-only" role="status">
+      {streaming ? t('streaming.responding') : t('streaming.complete')}
+    </span>
   )
 }
 
@@ -62,7 +90,9 @@ function FeedRowContent({
   onAnswerQuestion,
   answering,
   questionFailure,
-}: FeedRowProps) {
+  questionLocked,
+  streamingText,
+}: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & { streamingText: string }) {
   switch (row.shape) {
     // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
     // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
@@ -85,7 +115,7 @@ function FeedRowContent({
             activeEvidenceId={activeEvidenceId}
             onOpenEvidence={onOpenEvidence}
             rowId={row.id}
-            text={row.text}
+            text={streamingText}
           />
         )
       return <FeedPrompt text={row.text} />
@@ -95,49 +125,11 @@ function FeedRowContent({
           row={row}
           answering={answering}
           failure={questionFailure}
+          locked={questionLocked}
           onAnswer={onAnswerQuestion}
         />
       )
     default:
-      return feedRowContent(row)
-  }
-}
-
-function PlainText({ text }: { text: string }) {
-  return <p className="whitespace-pre-wrap break-words">{text}</p>
-}
-
-function FeedPrompt({ text }: { text: string }) {
-  return (
-    <p
-      className="max-w-full rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
-      data-slot="bubble"
-      data-variant="muted"
-    >
-      <span className="sr-only">You</span>
-      <PromptText text={text} />
-    </p>
-  )
-}
-
-function feedRowContent(
-  row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' | 'ask' }>,
-) {
-  switch (row.shape) {
-    case 'thought':
-      return <PlainText text={row.text} />
-    case 'command-output':
-      return <PlainText text={row.text} />
-    case 'event':
-      return <FeedEvent row={row} />
-    case 'delegation':
-    case 'delegation-group':
-      return <FeedDelegation row={row} />
-    case 'source':
-      return <p>{row.label}</p>
-    case 'marker':
-      return <p>{row.marker === 'compacted' ? 'Conversation compacted' : 'Interrupted'}</p>
-    case 'unreadable':
-      return <p>Part of this transcript is damaged, so Argo cannot show it.</p>
+      return <FeedRowFallback row={row} />
   }
 }

@@ -60,10 +60,15 @@ function readTitle(chain: SessionChain): SessionTitle | null {
 }
 
 // The relocated half is the live one, so the merged Session's cwd and branch are the newest
-// link's — read off the last message that carries them rather than off the origin.
-function readPlace(messages: TranscriptMessage[]) {
+// link's — read off the last message that carries them rather than off the origin. Codex writes
+// the cwd on its `session_meta` trace only (#2204).
+function readPlace(chain: SessionChain, messages: TranscriptMessage[]) {
   const located = messages.findLast((message) => message.cwd !== null)
-  return { cwd: located?.cwd ?? null, branch: located?.branch ?? null }
+  const traced = chain.files
+    .flatMap((file) => file.records)
+    .findLast((record) => record.kind === 'trace' && typeof record.cwd === 'string')
+  const tracedCwd = traced?.kind === 'trace' ? (traced.cwd ?? null) : null
+  return { cwd: located?.cwd ?? tracedCwd, branch: located?.branch ?? null }
 }
 
 // A chain is `headless` only where EVERY link is: a resume opened at a terminal continues the
@@ -114,7 +119,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     title: readTitle(chain),
     status: readExternalStatus(messages),
     entry: readChainEntry(messages),
-    ...readPlace(messages),
+    ...readPlace(chain, messages),
     updatedAt:
       stamps.length === 0
         ? null

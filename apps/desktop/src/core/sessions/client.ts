@@ -46,7 +46,7 @@ export type SessionClient = {
     questionId: string
     answers: ClaudeQuestionAnswer[]
   }): Promise<SessionAcceptedReply>
-  listSessions(): Promise<SessionListReply>
+  listSessions(request: { projectRoot: string | null }): Promise<SessionListReply>
   listArchivedSessions(request: {
     cursor: string | null
     restoreId: string | null
@@ -86,7 +86,7 @@ export function createSessionClient(
     readSessionPermission: (request) => client.readPermission(request),
     decideSessionPermission: (request) => client.decidePermission(request),
     decideSessionQuestion: (request) => client.decideQuestion(request),
-    listSessions: () => client.list(),
+    listSessions: (request) => client.list(request),
     listArchivedSessions: (request) => client.archiveList(request),
     readWorkspaceFile: (request) => client.file(request),
     readShellOutput: (request) => client.shellOutput(request),

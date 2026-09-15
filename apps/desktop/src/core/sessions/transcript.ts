@@ -4,7 +4,9 @@ export type ContentBlock =
   | { shape: 'prose'; text: string }
   | { shape: 'thought'; text: string }
   | { shape: 'marker'; marker: FeedMarker }
-  | { shape: 'event'; event: TranscriptEventKind; text: string | null }
+  // `raw` is the protocol update's own untranslated text, shown behind a closed disclosure for
+  // diagnostics; absent for a harness event, which has none worth keeping.
+  | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }
   | { shape: 'tool'; callId: string }
   | { shape: 'source'; label: string; source: string }
 
@@ -69,7 +71,11 @@ export type TranscriptRecord =
   // delivery happened there so adjacent Tool Calls on either side do not become one group.
   | { kind: 'trace'; uuid: string; boundary?: boolean; subagent?: boolean; cwd?: string | null }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
-  | { kind: 'compaction'; uuid: string; timestamp?: string }
+  | { kind: 'compaction'; uuid: string; timestamp?: string; summary?: string }
+  // The harness re-delivers the compaction summary as a separate, later user turn than the
+  // `compact_boundary` it belongs to; `readTranscriptFile` folds it into that record and this
+  // kind never reaches a row on its own (#2206).
+  | { kind: 'compaction-summary'; uuid: string; text: string }
   | {
       kind: 'background-task'
       taskId: string

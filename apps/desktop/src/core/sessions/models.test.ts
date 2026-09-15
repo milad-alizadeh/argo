@@ -40,10 +40,10 @@ test('accepts only complete Roster rows', () => {
 test('accepts only known Feed row shapes', () => {
   for (const [value, accepted] of [
     [{ shape: 'prose', id: 'row-one', role: 'assistant', text: 'Hello' }, true],
-    [{ shape: 'marker', id: 'row-one', marker: 'compacted' }, true],
+    [{ shape: 'marker', id: 'row-one', marker: 'compacted', summary: null }, true],
     [{ shape: 'event', id: 'row-one', event: 'status', text: 'running' }, true],
     [{ shape: 'event', id: 'row-one', event: 'unknown', text: null }, false],
-    [{ shape: 'marker', id: 'row-one', marker: 'other' }, false],
+    [{ shape: 'marker', id: 'row-one', marker: 'other', summary: null }, false],
     [{ shape: 'prose', id: 'row-one', role: 'tool', text: 'Hello' }, false],
   ] as const) {
     assert.equal(sessionFeedRowSchema.safeParse(value).success, accepted)

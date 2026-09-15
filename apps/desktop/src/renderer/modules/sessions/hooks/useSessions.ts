@@ -37,15 +37,19 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 
 export type SessionRoster = SessionsListed | null
 
-function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
+function useRosterQuery(
+  selectedSessionId: SessionId | null,
+  enabled: boolean,
+  projectRoot: string | null,
+) {
   return useQuery<SessionsListed, SessionContractError>({
-    queryKey: sessionRosterQueryKey,
+    queryKey: [...sessionRosterQueryKey, projectRoot],
     staleTime: Infinity,
     enabled,
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
-      const reply = await window.argo.listSessions()
+      const reply = await window.argo.listSessions({ projectRoot })
       switch (reply.type) {
         case 'session.listed':
           return { ...reply, sessions: keepRosterOrder(reply.sessions) }
@@ -65,10 +69,14 @@ function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
 // `rosterEnabled` lets a caller that only sometimes needs the roster (a Ticket's Linked
 // Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
 // roster in for a result it may throw away.
-export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
+export function useSessions(
+  selectedSessionId: SessionId | null,
+  rosterEnabled = true,
+  projectRoot: string | null = null,
+) {
   const queryClient = useQueryClient()
   const selectedFeedId = readableSessionId(selectedSessionId)
-  const roster = useRosterQuery(selectedSessionId, rosterEnabled)
+  const roster = useRosterQuery(selectedSessionId, rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
 

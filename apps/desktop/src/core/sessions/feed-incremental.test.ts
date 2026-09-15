@@ -6,6 +6,7 @@ import { test } from 'node:test'
 import type { SessionChain } from './chains'
 import { projectFeed } from './feed'
 import { projectFeedIncrementally } from './feed-incremental'
+import type { SessionFeedRow } from './models'
 import type { TranscriptMessage, TranscriptRecord } from './transcript'
 
 function message(overrides: Partial<TranscriptMessage> & { uuid: string }): TranscriptMessage {
@@ -139,4 +140,35 @@ test('a file rewritten in place resets rather than misreading the old cursor as 
   const { rows } = projectFeedIncrementally(rewritten, state)
 
   assert.deepEqual(rows, projectFeed(rewritten))
+})
+
+// The full projection merges tool runs across adjacent Turns with nothing rendered between them
+// (#2198, session-feed.test.ts "merges consecutive tool runs..."). The incremental path must reach
+// the same merged group polling one record at a time, not only when it sees the whole chain at once.
+test('merges consecutive tool runs across a poll boundary, the same way a full projection does', () => {
+  const records: TranscriptRecord[] = [prose('a', 'Run the checks.')]
+  let state: ReturnType<typeof projectFeedIncrementally>['state'] | undefined
+  let latestRows: SessionFeedRow[] = []
+  for (const record of [
+    toolCall('b', 'call-1', 'Bash'),
+    toolCall('c', 'call-2', 'Bash'),
+    toolResult('d', 'call-1', 'tests pass'),
+    toolResult('e', 'call-2', 'types pass'),
+    toolCall('f', 'call-3', 'Bash'),
+    toolResult('g', 'call-3', 'formatting passes'),
+  ]) {
+    records.push(record)
+    const chain = chainOf('s', [...records])
+    const result = projectFeedIncrementally(chain, state)
+    state = result.state
+    latestRows = result.rows
+    assert.deepEqual(result.rows, projectFeed(chain))
+  }
+  assert.deepEqual(
+    latestRows.map((row) => row.shape),
+    ['prose', 'tool-group'],
+  )
+  type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
+  const group = latestRows.find((row) => row.shape === 'tool-group') as ToolGroupRow | undefined
+  assert.equal(group?.calls.length, 3)
 })

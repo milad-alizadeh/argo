@@ -3,14 +3,13 @@
 // blank one, and expanding a diagram into the inspector holds the Feed's reading anchor exactly
 // where it was.
 import assert from 'node:assert/strict'
+import { ACTIVE_VIEWPORT } from './feed-selectors'
 
 type DiagramFixture = {
   transcripts: string
   append: (transcripts: string, uuid: string, text: string) => Promise<void>
 }
 
-const ACTIVE_FEED = '.feed__document[data-active="true"]'
-const ACTIVE_VIEWPORT = `${ACTIVE_FEED} .feed__viewport`
 const DIAGRAM_ROW = 'p-diagram'
 const SETTLE_TIMEOUT_MS = 10_000
 // A width change reflows every row and the scroller corrects for it (ADR-0029) on its own

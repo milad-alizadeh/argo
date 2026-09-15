@@ -38,6 +38,26 @@ function useWorkPick(sessionId: string | null, onPick: () => void) {
   }
 }
 
+function useWorkArtifacts(
+  session: ReturnType<typeof useSelectedSession>,
+  selectedSessionId: string | null,
+  work: WorkSelection,
+) {
+  const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
+  const delegation =
+    session?.delegations.find((candidate) => candidate.id === work.delegationId) ?? null
+  return {
+    shell,
+    delegation,
+    delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),
+    delegationTokens: useDelegationUsage(
+      session === null || session.delegations.length === 0 ? null : selectedSessionId,
+      session?.delegations.some((candidate) => !candidate.landed) === true,
+    ),
+    shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
+  }
+}
+
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const location = useLocation()
@@ -46,7 +66,11 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, roster, retryFeed } = useSessions(selectedSessionId)
+  const { feed, feedError, roster, retryFeed } = useSessions(
+    selectedSessionId,
+    true,
+    cockpit.project?.path ?? null,
+  )
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
@@ -63,9 +87,7 @@ export function useSessionScreenModel() {
   // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
   const permission = useSessionPermission(readableSessionId(selectedSessionId))
   const question = useSessionQuestion(readableSessionId(selectedSessionId))
-  const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
-  const delegation =
-    session?.delegations.find((candidate) => candidate.id === work.delegationId) ?? null
+  const artifacts = useWorkArtifacts(session, selectedSessionId, work)
   return {
     selectedSessionId,
     feed,
@@ -83,14 +105,7 @@ export function useSessionScreenModel() {
     work,
     pick,
     workReveal,
-    shell,
-    delegation,
-    delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),
-    delegationTokens: useDelegationUsage(
-      session === null || session.delegations.length === 0 ? null : selectedSessionId,
-      session?.delegations.some((candidate) => !candidate.landed) === true,
-    ),
-    shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
+    ...artifacts,
   }
 }
 

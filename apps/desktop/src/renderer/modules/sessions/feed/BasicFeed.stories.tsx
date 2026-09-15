@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
 
@@ -42,6 +42,7 @@ const meta: Meta<typeof BasicFeed> = {
     feed,
     failure: null,
     isRunning: false,
+    onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },
@@ -254,14 +255,40 @@ const eventFeed = {
   revision: 'events-one',
   sessionId: 'events',
   rows: [
-    { shape: 'event' as const, id: 'event-status', event: 'status' as const, text: 'running' },
-    { shape: 'event' as const, id: 'event-transcript', event: 'transcript' as const, text: null },
-    { shape: 'event' as const, id: 'event-context', event: 'context' as const, text: null },
+    {
+      shape: 'event' as const,
+      id: 'event-status',
+      event: 'status' as const,
+      text: 'running',
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-transcript',
+      event: 'transcript' as const,
+      text: null,
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-context',
+      event: 'context' as const,
+      text: null,
+      raw: null,
+    },
     {
       shape: 'event' as const,
       id: 'event-command',
       event: 'command' as const,
       text: commandReceipt,
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-status-raw',
+      event: 'status' as const,
+      text: 'starting',
+      raw: '<status>starting</status>',
     },
   ],
 } satisfies SessionFeed
@@ -270,14 +297,23 @@ export const ProtocolEvents: Story = {
   args: { feed: eventFeed, selectedSessionId: 'events' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Status updated')).toBeVisible()
+    await expect(canvas.getAllByText('Status updated')).toHaveLength(2)
     await expect(canvas.getByText('running')).toBeVisible()
     await expect(canvas.getByText('Transcript delivered')).toBeVisible()
     await expect(canvas.getByText('System context updated')).toBeVisible()
     await expect(canvas.getByText('Command received')).toBeVisible()
     await expect(canvas.getByText(commandReceipt)).toBeVisible()
     await expect(canvas.queryByText('<status>running</status>')).toBeNull()
-    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(5)
+
+    const rawEvent = canvasElement.querySelector('[data-feed-row="event-status-raw"]')
+    if (rawEvent === null) throw new Error('Expected the raw-protocol event row to render.')
+    const rawEventCanvas = within(rawEvent as HTMLElement)
+    const summary = rawEventCanvas.getByText('Protocol text')
+    const rawText = rawEventCanvas.getByText('<status>starting</status>')
+    await expect(rawText).not.toBeVisible()
+    await userEvent.click(summary)
+    await expect(rawText).toBeVisible()
   },
 }
 
@@ -914,5 +950,188 @@ export const StreamingReplyReducedMotion: Story = {
     } finally {
       restore()
     }
+  },
+}
+
+const streamingText = 'The check ran.'
+const firstChunkText =
+  'The check ran. The reader sees each new word at a steady pace while the response arrives.'
+// Extends `firstChunkText` rather than rewording its tail, so the reveal keeps walking forward
+// from where it left off instead of snapping (`advanceVisibleText` only replays a shared prefix).
+const streamedText = `${firstChunkText} The check passed.`
+
+function streamingAssistantRow(text: string) {
+  return { shape: 'prose' as const, id: 'streaming-text', role: 'assistant' as const, text }
+}
+
+const streamingTextFeed = {
+  ...streamingFeed,
+  revision: 'streaming-text-one',
+  rows: [
+    { shape: 'prose', id: 'streaming-prompt', role: 'user', text: 'Summarise the check.' },
+    streamingAssistantRow(streamingText),
+  ],
+} satisfies SessionFeed
+
+const streamedTextFeed = {
+  ...streamingTextFeed,
+  revision: 'streaming-text-three',
+  rows: [...streamingTextFeed.rows.slice(0, 1), streamingAssistantRow(streamedText)],
+} satisfies SessionFeed
+
+const firstChunkFeed = {
+  ...streamingTextFeed,
+  revision: 'streaming-text-two',
+  rows: [...streamingTextFeed.rows.slice(0, 1), streamingAssistantRow(firstChunkText)],
+} satisfies SessionFeed
+
+function StreamingTextFeed() {
+  const [current, setCurrent] = useState<SessionFeed>(streamingTextFeed)
+  const [running, setRunning] = useState(true)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(firstChunkFeed)}>
+        Receive chunk
+      </button>
+      <button type="button" onClick={() => setCurrent(streamedTextFeed)}>
+        Receive final chunk
+      </button>
+      <button type="button" onClick={() => setRunning(false)}>
+        Complete reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          isRunning={running}
+          selectedSessionId="streaming"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onAnswerQuestion={() => {}}
+          onRetryFeed={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Streaming prose advances independently from the transcript poll: it first trails a new chunk,
+// then reaches it, and completion settles the whole Message without waiting for another frame.
+export const SmoothedStreamingText: Story = {
+  render: () => <StreamingTextFeed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const reply = () => drawnRow(canvasElement, 'streaming-text') as HTMLElement
+    // Not asserted un-revealed first: the opening text is three words, short enough that a
+    // slow CI paint can let the catch-up rate clear it before this line ever runs.
+    await waitFor(() => expect(reply()).toHaveTextContent(streamingText))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Assistant is responding.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive chunk' }))
+    await expect(reply()).not.toHaveAttribute('data-revealing')
+    await waitFor(() => expect(reply()).toHaveTextContent(firstChunkText), { timeout: 3000 })
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive final chunk' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Complete reply' }))
+    await waitFor(() => expect(reply()).toHaveTextContent(streamedText))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Assistant response complete.')
+  },
+}
+
+export const SmoothedStreamingTextReducedMotion: Story = {
+  render: () => <StreamingTextFeed />,
+  play: async ({ canvasElement }) => {
+    const restore = preferReducedMotion()
+    try {
+      const canvas = within(canvasElement)
+      const reply = () => drawnRow(canvasElement, 'streaming-text') as HTMLElement
+      await waitFor(() => expect(reply()).toHaveTextContent(streamingText))
+      await userEvent.click(canvas.getByRole('button', { name: 'Receive chunk' }))
+      await waitFor(() => expect(reply()).toHaveTextContent(firstChunkText))
+    } finally {
+      restore()
+    }
+  },
+}
+
+export const SmoothedStreamingTextSettled: Story = {
+  args: { feed: streamedTextFeed, isRunning: false, selectedSessionId: 'streaming' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
+    )
+  },
+}
+
+const scrollAwayStreamingText = Array.from(
+  { length: 400 },
+  (_unused, index) => `word${index}`,
+).join(' ')
+const scrollAwayFillerRows = Array.from({ length: 120 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `scroll-away-filler-${index}`,
+  role: 'assistant' as const,
+  text: `Filler row ${index + 1} pushes the streaming reply out of the overscan window.`,
+}))
+const scrollAwayFeed = {
+  ...streamingTextFeed,
+  revision: 'scroll-away-one',
+  rows: [
+    { shape: 'prose', id: 'scroll-away-prompt', role: 'user', text: 'Summarise the check.' },
+    ...scrollAwayFillerRows,
+    streamingAssistantRow(scrollAwayStreamingText),
+  ],
+} satisfies SessionFeed
+
+// The virtualizer unmounts a row once it scrolls past the overscan window (#2100): its reveal
+// must resume from where it left off, not restart from empty, when the reader scrolls back. The
+// streaming row is last (`FeedDocument`'s `streamingRowId` only marks the last row streaming), so
+// it starts in view and scrolling to the top is what pushes it out of the overscan window.
+export const StreamingRevealSurvivesScrollAway: Story = {
+  args: { feed: scrollAwayFeed, isRunning: true, selectedSessionId: 'streaming' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    const reply = () => drawnRow(canvasElement, 'streaming-text')
+    await waitFor(() => expect(reply()).toBeDefined())
+    await waitFor(() => {
+      const text = reply()?.textContent ?? ''
+      expect(text.length).toBeGreaterThan(0)
+      expect(text.length).toBeLessThan(scrollAwayStreamingText.length)
+    })
+    const revealedBeforeScroll = reply()?.textContent ?? ''
+
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await waitFor(() => expect(reply()).toBeUndefined())
+
+    history.scrollTop = history.scrollHeight
+    fireEvent.scroll(history)
+    await waitFor(() => expect(reply()).toBeDefined())
+    const revealedAfterScrollBack = reply()?.textContent ?? ''
+    // A reset-to-empty regression would show only the status announcement (~25 characters); this
+    // margin tolerates the catch-up rate's own jitter around the unmount boundary while still
+    // failing if the resume did not happen.
+    await expect(revealedAfterScrollBack.length).toBeGreaterThan(revealedBeforeScroll.length * 0.5)
+  },
+}
+
+const runningToolFeed = {
+  ...streamedTextFeed,
+  revision: 'streaming-text-tool',
+  rows: [
+    ...streamedTextFeed.rows,
+    { shape: 'command-output' as const, id: 'streaming-tool', text: 'Still working.' },
+  ],
+} satisfies SessionFeed
+
+export const RunningToolAfterAssistantReply: Story = {
+  args: { feed: runningToolFeed, isRunning: true, selectedSessionId: 'streaming' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
+    )
+    await expect(drawnRow(canvasElement, 'streaming-tool')).toHaveTextContent('Still working.')
   },
 }
