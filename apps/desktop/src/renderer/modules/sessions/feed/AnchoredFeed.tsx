@@ -3,7 +3,6 @@ import { type ReactNode, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 import type { Reveal } from './reveal'
-import { useFeedRowMeasurement } from './use-feed-row-measurement'
 import { useFeedTailFollow } from './use-feed-tail-follow'
 import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
@@ -39,7 +38,6 @@ export function AnchoredFeed({
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId)
-  const measureRow = useFeedRowMeasurement()
   const virtualizer = useVirtualizer({
     // End anchoring is only correct while the reader is following the tail.
     // While they are reading history, retain their actual reading position as
@@ -53,7 +51,6 @@ export function AnchoredFeed({
     followOnAppend: tailFollow.shouldFollow ? 'smooth' : false,
     getItemKey: (index) => feedRowAt(rows, index).id,
     getScrollElement: () => viewport,
-    measureElement: measureRow,
     onChange: tailFollow.onChange,
     overscan: FEED_OVERSCAN,
     paddingStart: padding.start,

@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -20,7 +20,7 @@ export type FeedRowProps = {
   questionFailure: string | null
 }
 
-export const FeedRow = memo(function FeedRow({
+export function FeedRow({
   row,
   reveal,
   activeEvidenceId,
@@ -51,7 +51,7 @@ export const FeedRow = memo(function FeedRow({
       />
     </article>
   )
-})
+}
 
 function FeedRowContent({
   row,
