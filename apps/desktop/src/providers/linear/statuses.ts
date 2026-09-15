@@ -4,6 +4,7 @@ import { isRecord } from '../../boundary'
 import type { StatusChange, TicketStatus } from '../../core/tickets/ticket'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'
+import { resolvedTarget } from './issue-target'
 
 // More states than a team keeps; a team with more offers the first ones.
 const STATE_LIMIT = 100
@@ -69,15 +70,13 @@ export async function updateIssueStatus(
   { scope, key, statusId }: StatusChange,
 ): Promise<LinearRead<TicketStatus> | { ok: false; failure: Refusal }> {
   const caller = { endpoints, token }
-  const target = await query(caller, TARGET, { key })
-  if (!target.ok) return target
-  const issue = isRecord(target.value.issue) ? target.value.issue : {}
-  const team = isRecord(issue.team) ? issue.team : {}
-  if (typeof issue.id !== 'string' || team.id !== scope)
-    return { ok: false, failure: 'ticket-not-found' }
-  const known = nodes(team.states).some((state) => isRecord(state) && state.id === statusId)
+  const resolved = resolvedTarget(await query(caller, TARGET, { key }), scope)
+  if (!resolved.ok) return resolved
+  const known = nodes(resolved.team.states).some(
+    (state) => isRecord(state) && state.id === statusId,
+  )
   if (!known) return { ok: false, failure: 'status-unknown' }
-  const moved = await query(caller, MOVE, { id: issue.id, state: statusId })
+  const moved = await query(caller, MOVE, { id: resolved.id, state: statusId })
   if (!moved.ok) return moved
   const payload = isRecord(moved.value.issueUpdate) ? moved.value.issueUpdate : {}
   const status =

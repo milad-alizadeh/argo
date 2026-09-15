@@ -52,6 +52,9 @@
     },
     "trigger": "{{noun}}: {{status}}"
   },
+  "priority": {
+    "trigger": "Priority: {{priority}}"
+  },
   "connection": {
     "state": {
       "ready": "Connected",

@@ -3,6 +3,7 @@ import type { AccountAccess } from '../accounts/access'
 import { registerDomainHandlers } from '../contract/domain'
 import { ticketError } from './contract'
 import { TICKET_OPERATIONS } from './operations'
+import { updatePriority } from './priority-service'
 import type { Call } from './read-as'
 import {
   connectSource,
@@ -39,6 +40,11 @@ export function attachTicketBridge(
         listTickets(callFor(access, request), { query: request.query, cursor: request.cursor }),
       update: (request, access) =>
         updateStatus(callFor(access, request), { key: request.key, statusId: request.statusId }),
+      priority: (request, access) =>
+        updatePriority(callFor(access, request), {
+          key: request.key,
+          priorityLevel: request.priorityLevel,
+        }),
     },
     error: ticketError,
   })
