@@ -116,6 +116,7 @@ export function ComposerCard({
       </fieldset>
       {contextPickerOpen ? (
         <DraftContextPicker
+          draft={draft}
           onAddTicket={onAddTicket}
           onAttach={onAttach}
           onClose={() => closeContextPicker(editorRef, onContextPickerOpenChange)}

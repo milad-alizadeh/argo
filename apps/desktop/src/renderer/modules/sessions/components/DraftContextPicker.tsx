@@ -3,19 +3,24 @@ import type { RefObject } from 'react'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
 import { $createComposerTicketReferenceNode } from './ComposerTicketReferenceNode'
+import { activeReference } from './composer-reference-menu'
 import { ContextPicker } from './ContextPicker'
 
 export function DraftContextPicker({
   editorRef,
+  draft,
   onAddTicket,
   onAttach,
   onClose,
 }: {
   editorRef: RefObject<LexicalEditor | null>
+  draft: string
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onAttach: () => void
   onClose: () => void
 }) {
+  const reference = activeReference(draft)
+  const query = reference?.trigger === '@' ? reference.query : ''
   return (
     <ContextPicker
       onAttach={() => {
@@ -23,6 +28,7 @@ export function DraftContextPicker({
         onAttach()
       }}
       onClose={onClose}
+      query={query}
       onSelectTicket={(ticket) => {
         onClose()
         const editor = editorRef.current

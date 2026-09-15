@@ -56,10 +56,12 @@ export function ContextPicker({
   onAttach,
   onClose,
   onSelectTicket,
+  query = '',
 }: {
   onAttach: () => void
   onClose: () => void
   onSelectTicket: (ticket: TicketChoice) => void
+  query?: string
 }) {
   const { t } = useTranslation('sessions')
   const focus = useContextPickerFocus(onClose)
@@ -70,6 +72,11 @@ export function ContextPicker({
   }))
   const providerLabel = (provider: TicketChoice['provider']) =>
     t(`composer.contextPicker.provider.${provider}`)
+  const normalizedQuery = query.trim().toLowerCase()
+  const shownTickets = tickets.filter((ticket) => {
+    if (normalizedQuery === '') return !ticket.terminal
+    return `${ticket.key} ${ticket.title} ${ticket.status}`.toLowerCase().includes(normalizedQuery)
+  })
   return (
     <div
       aria-label={t('composer.contextPicker.label')}
@@ -83,7 +90,7 @@ export function ContextPicker({
         onAttach={onAttach}
         onSelectTicket={onSelectTicket}
         providerLabel={providerLabel}
-        tickets={tickets.filter((ticket) => !ticket.terminal)}
+        tickets={shownTickets}
       />
     </div>
   )
