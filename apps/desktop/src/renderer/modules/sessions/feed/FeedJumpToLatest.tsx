@@ -7,7 +7,15 @@ import {
   TooltipTrigger,
 } from '../../../components/ui/tooltip'
 
-export function FeedJumpToLatest({ label, onClick }: { label: string; onClick: () => void }) {
+export function FeedJumpToLatest({
+  className,
+  label,
+  onClick,
+}: {
+  className?: string
+  label: string
+  onClick: () => void
+}) {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -15,7 +23,7 @@ export function FeedJumpToLatest({ label, onClick }: { label: string; onClick: (
           render={
             <Button
               aria-label={label}
-              className="feed__jump-to-latest"
+              className={`rounded-full ${className ?? ''}`}
               onClick={onClick}
               size="icon"
               type="button"
