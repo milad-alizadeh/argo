@@ -12,6 +12,11 @@ function wordEnds(text: string) {
 // `progress` counts whole words revealed of `text`.
 export type RevealState = { text: string; progress: number }
 
+// Keyed by row id, and owned by the Feed document rather than the row: the virtualizer unmounts
+// a row once it scrolls past the overscan window, and the reveal must resume from here rather
+// than restart from empty when the reader scrolls back (#2100).
+export type RevealCache = Map<string, RevealState>
+
 // `target` is the latest known text; `shown` is what was last drawn, and at what `progress`. A
 // `target` that no longer extends `shown.text` (an edit, not an append) snaps rather than
 // replays, since there is no shared prefix left to walk from.
@@ -36,19 +41,29 @@ function reducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-// The visible text stays in this row rather than the Session: it is a reading aid, not a fact
-// about the Message (CONTEXT.md L3 · Message).
-export function useStreamingText(text: string, streaming: boolean) {
-  const [visibleText, setVisibleText] = useState(streaming ? '' : text)
-  const shown = useRef({
-    text: streaming ? '' : text,
-    progress: streaming ? 0 : wordEnds(text).length,
-  })
+function initialReveal(text: string, streaming: boolean): RevealState {
+  return streaming ? { text: '', progress: 0 } : { text, progress: wordEnds(text).length }
+}
+
+// The visible text is a reading aid, not a fact about the Message (CONTEXT.md L3 · Message), but
+// it survives this row's own remounts through `cache`, keyed by `rowId`.
+export function useStreamingText(
+  text: string,
+  streaming: boolean,
+  rowId: string,
+  cache: RevealCache,
+) {
+  const [visibleText, setVisibleText] = useState(
+    () => (cache.get(rowId) ?? initialReveal(text, streaming)).text,
+  )
+  const shown = useRef(cache.get(rowId) ?? initialReveal(text, streaming))
   const prefersReducedMotion = reducedMotion()
 
   useEffect(() => {
     if (!streaming || prefersReducedMotion) {
-      shown.current = { text, progress: wordEnds(text).length }
+      const settled = { text, progress: wordEnds(text).length }
+      shown.current = settled
+      cache.set(rowId, settled)
       setVisibleText(text)
       return
     }
@@ -60,13 +75,14 @@ export function useStreamingText(text: string, streaming: boolean) {
       const next = advanceVisibleText(shown.current, text, elapsedSeconds)
       if (next.text !== shown.current.text) setVisibleText(next.text)
       shown.current = next
+      cache.set(rowId, next)
       if (next.progress < wordEnds(text).length) frame = window.requestAnimationFrame(draw)
     }
     frame = window.requestAnimationFrame(draw)
     return () => {
       if (frame !== null) window.cancelAnimationFrame(frame)
     }
-  }, [prefersReducedMotion, streaming, text])
+  }, [prefersReducedMotion, streaming, text, rowId, cache])
 
   return !streaming || prefersReducedMotion ? text : visibleText
 }

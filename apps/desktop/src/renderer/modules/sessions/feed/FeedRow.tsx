@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -8,7 +9,7 @@ import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
-import { useStreamingText } from './streaming-text'
+import { type RevealCache, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
@@ -17,6 +18,7 @@ export type FeedRowProps = {
   streaming?: boolean
   activeEvidenceId: string | null
   toolGroups: ToolGroupState
+  revealCache: RevealCache
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answering: boolean
@@ -30,6 +32,7 @@ export function FeedRow({
   activeEvidenceId,
   onOpenEvidence,
   toolGroups,
+  revealCache,
   onAnswerQuestion,
   answering,
   questionFailure,
@@ -41,6 +44,8 @@ export function FeedRow({
   const text = useStreamingText(
     row.shape === 'prose' && row.role === 'assistant' ? row.text : '',
     streaming,
+    row.id,
+    revealCache,
   )
   useRevealAnimation(element, rowReveal)
   return (
@@ -67,10 +72,11 @@ export function FeedRow({
 }
 
 function StreamingStatus({ hasStreamed, streaming }: { hasStreamed: boolean; streaming: boolean }) {
+  const { t } = useTranslation('sessions')
   if (!hasStreamed) return null
   return (
     <span aria-live="polite" className="sr-only" role="status">
-      {streaming ? 'Assistant is responding.' : 'Assistant response complete.'}
+      {streaming ? t('streaming.responding') : t('streaming.complete')}
     </span>
   )
 }
@@ -84,7 +90,7 @@ function FeedRowContent({
   answering,
   questionFailure,
   streamingText,
-}: FeedRowProps & { streamingText: string }) {
+}: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & { streamingText: string }) {
   switch (row.shape) {
     // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
     // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
