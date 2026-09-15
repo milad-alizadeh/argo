@@ -31,25 +31,23 @@ step one: attach an image
 Raw HTML stays text: <script>window.feedHacked = true</script>`
 }
 
-// A long plain turn after the formatted one, so the reader's first visible row sits below it and
-// any growth in the formatted row would push that row down.
+// A long plain turn after the formatted one keeps the formatted turn outside the reader's tail.
 const FOLLOWING_TURN = 'The reader holds this row while the turn above it finishes. '.repeat(120)
 
-// Read on the first frame both new rows are drawn, before anything asynchronous inside them ran.
+// Read the formatted row's first frame before anything asynchronous inside it ran.
 async function firstDrawn(page) {
   const handle = await page.waitForFunction(
     (feed) => {
       const viewport = document.querySelector(`${feed} .feed__viewport`)
       const rows = [...(viewport?.querySelectorAll('[data-feed-row]') ?? [])]
       const formatted = rows.find((row) => row.dataset.feedRow === 'p-formatted:0')
-      const following = rows.find((row) => row.dataset.feedRow === 'p-formatted-after:0')
-      if (formatted === undefined || following === undefined) return null
-      const anchor = rows.find(
-        (row) => row.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
-      )
-      if (anchor === undefined) return null
+      if (
+        formatted === undefined ||
+        formatted.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top
+      ) {
+        return null
+      }
       return {
-        anchor: anchor.dataset.feedRow,
         formatted: formatted.dataset.feedRow,
         highlightedAtDraw: formatted.querySelector('code[data-highlighted="true"]') !== null,
         loadingAtDraw: formatted.querySelectorAll('button[data-state="loading"]').length,
@@ -109,7 +107,6 @@ export async function proveFormattedFeed(page, fixture: FormattedFixture) {
   const drawn = await firstDrawn(page)
   const settled = await settledReading(page, drawn)
 
-  assert.notEqual(drawn.anchor, drawn.formatted)
   assert.equal(settled.fromTail <= 1, true)
   assert.equal(settled.height > 0, true)
   assert.deepEqual(settled.languages, ['typescript', 'plain'])

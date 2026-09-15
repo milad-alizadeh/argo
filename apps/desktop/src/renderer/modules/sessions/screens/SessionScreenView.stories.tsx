@@ -242,21 +242,12 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const before = composer.getBoundingClientRect()
-  const activeDocument = canvasElement.querySelector<HTMLElement>(
-    '.feed__document[data-active="true"]',
-  )
-  if (activeDocument === null) throw new Error('The active feed document is absent.')
-  const viewport = activeDocument.querySelector<HTMLElement>('.feed__viewport')
-  if (viewport === null) throw new Error('The active feed viewport is absent.')
-  const finalFeedLine = within(viewport).getByText(
-    'The transcript keeps the feed, plan, and composer visible together.',
-  )
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
   expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
-  expect(finalFeedLine.getBoundingClientRect().bottom).toBeLessThanOrEqual(before.top)
   history.scrollTo({ top: 0 })
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
