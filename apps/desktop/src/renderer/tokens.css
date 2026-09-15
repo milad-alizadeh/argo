@@ -81,11 +81,17 @@
   --spacing-session-gutter: var(--spacing-shell-gutter);
   --size-queue-row: 44px;
   --size-composer-field: 56px;
+  --size-development-identity-bar: 24px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
   --spacing-session-composer-bottom: calc(
     var(--spacing-shell-region) *
     2 +
     var(--spacing-shell-inset)
+  );
+  --spacing-development-identity-bottom: calc(
+    var(--spacing-session-composer-bottom) -
+    var(--size-development-identity-bar) -
+    var(--spacing-shell-item)
   );
   --size-session-composer-overlay: calc(
     var(--spacing-shell-section) +

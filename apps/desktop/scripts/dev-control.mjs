@@ -27,6 +27,7 @@ export function parseReadyRecord(value) {
 
   return {
     id: text(value.id, 'id'),
+    label: text(value.label, 'label'),
     launcherPid: positiveInteger(value.launcherPid, 'launcherPid'),
     port: positiveInteger(value.port, 'port'),
     debugPort: positiveInteger(value.debugPort, 'debugPort'),

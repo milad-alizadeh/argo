@@ -4,6 +4,7 @@ import type { AppearanceClient } from '../core/appearance/appearance'
 import type { ProjectClient } from '../core/projects/client'
 import type { SessionClient } from '../core/sessions/client'
 import type { TicketClient } from '../core/tickets/client'
+import type { DevelopmentIdentity } from '../development/instance'
 
 declare global {
   interface Window {
@@ -17,6 +18,7 @@ declare global {
         zoomFactor(): number
         pathForFile(file: File): string
         versions: { electron: string; chrome: string }
+        development: DevelopmentIdentity | null
       }
   }
 }

@@ -34,6 +34,10 @@
   "feedRegionLabel": "Session feed",
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",
+  "development": {
+    "label": "Development build",
+    "shortLabel": "Dev"
+  },
   "historyLabel": "Session history",
   "jumpToLatest": "Jump to latest",
   "composer": {

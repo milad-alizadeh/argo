@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan } from '@/core/sessions/models'
+import type { SessionPlan, SessionTicket } from '@/core/sessions/models'
+import type { DevelopmentIdentity } from '@/development/instance'
 import type { HarnessControl } from '../../harness/harnesses'
 import { ComposerForm } from './composer-form'
 import { activeReference } from './references/composer-reference-menu'
@@ -10,6 +11,7 @@ import { useSessionComposerState } from './use-session-composer-state'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
+  developmentIdentity?: DevelopmentIdentity | null
   disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
@@ -24,10 +26,12 @@ export type SessionComposerProps = {
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
+  ticket?: SessionTicket | null
 }
 
 export function SessionComposer({
   contextTokens,
+  developmentIdentity = null,
   disabled = false,
   focusOnMount = false,
   isCompacting = false,
@@ -42,6 +46,7 @@ export function SessionComposer({
   plan = null,
   harness = null,
   setup = null,
+  ticket = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
@@ -54,6 +59,7 @@ export function SessionComposer({
       contextPickerOpen={contextPickerOpen}
       contextTokens={contextTokens}
       disabled={disabled}
+      developmentIdentity={developmentIdentity}
       draft={state.draft}
       editorRef={state.editorRef}
       focusOnMount={focusOnMount}
@@ -81,6 +87,7 @@ export function SessionComposer({
       sessionId={sessionId}
       setup={setup}
       tickets={state.tickets}
+      ticket={ticket}
       onContextPickerOpenChange={setContextPickerOpen}
     />
   )

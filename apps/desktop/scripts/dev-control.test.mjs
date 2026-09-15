@@ -3,12 +3,13 @@ import { parseReadyRecord, processIsRunning } from './dev-control.mjs'
 
 const readyRecord = {
   id: 'ticket-2173-a1b2c3d4',
+  label: '#2173',
   launcherPid: 42,
   port: 45173,
   debugPort: 45174,
   processId: 43,
   state: 'ready',
-  title: 'Argo dev · ticket-2173 · :45173',
+  title: 'Argo dev · #2173 · :45173',
   userData: '/tmp/argo-desktop-dev/ticket-2173/user-data',
   version: 1,
   windowId: 17,

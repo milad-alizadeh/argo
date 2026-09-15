@@ -1,11 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import path from 'node:path'
-import { developmentInstance, developmentReadyRecord } from '../src/development/instance.ts'
+import {
+  developmentIdentity,
+  developmentInstance,
+  developmentReadyRecord,
+} from '../src/development/instance.ts'
 
 const directory = path.join(path.sep, 'tmp', 'argo-desktop-dev', 'ticket-2173')
 const environment = {
   ARGO_DESKTOP_INSTANCE_DIRECTORY: directory,
   ARGO_DESKTOP_INSTANCE_ID: 'ticket-2173-a1b2c3d4',
+  ARGO_DESKTOP_BUILD_LABEL: '#2173',
   ARGO_DESKTOP_LAUNCHER_PID: '42',
   ARGO_DESKTOP_CONTROL_FILE: path.join(directory, 'control.sock'),
   ARGO_DESKTOP_CONTROL_TOKEN: 'control-token',
@@ -23,6 +28,7 @@ describe('development instances', () => {
       controlTokenFile: path.join(directory, 'control-token'),
       controlToken: 'control-token',
       debugPort: 45174,
+      label: '#2173',
       port: 45173,
       readyFile: path.join(directory, 'ready.json'),
       userData: path.join(directory, 'user-data'),
@@ -34,6 +40,16 @@ describe('development instances', () => {
     expect(() => developmentInstance({ ARGO_DESKTOP_DEV_PORT: '45173' })).toThrow(
       'Development launch needs ARGO_DESKTOP_LAUNCHER_PID.',
     )
+  })
+
+  test('exposes only the non-secret renderer identity', () => {
+    expect(developmentIdentity(environment)).toEqual({
+      id: environment.ARGO_DESKTOP_INSTANCE_ID,
+      label: '#2173',
+      title: environment.ARGO_DESKTOP_WINDOW_TITLE,
+      worktree: environment.ARGO_DESKTOP_WORKTREE,
+    })
+    expect(developmentIdentity({ ARGO_DESKTOP_INSTANCE_ID: 'partial' })).toBeNull()
   })
 
   test('refuses a debugging port outside the unprivileged range', () => {
@@ -48,6 +64,7 @@ describe('development instances', () => {
 
     expect(developmentReadyRecord(instance, 17)).toMatchObject({
       id: environment.ARGO_DESKTOP_INSTANCE_ID,
+      label: '#2173',
       launcherPid: 42,
       port: 45173,
       debugPort: 45174,

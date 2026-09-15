@@ -7,6 +7,7 @@ import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 import { createProjectClient } from './core/projects/client'
 import { createSessionClient } from './core/sessions/client'
 import { createTicketClient } from './core/tickets/client'
+import { developmentIdentity } from './development/instance'
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
@@ -45,4 +46,5 @@ contextBridge.exposeInMainWorld('argo', {
     electron: process.versions.electron,
     chrome: process.versions.chrome,
   },
+  development: developmentIdentity(process.env),
 })
