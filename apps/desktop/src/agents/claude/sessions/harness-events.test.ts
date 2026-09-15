@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { transcriptFileFrom } from '@/core/sessions/transcript'
 import { parseTranscriptLine } from './records'
 
 test('reads useful harness deliveries as typed reader events', () => {
@@ -40,6 +41,40 @@ test('reads a realtime delegation input as a command receipt', () => {
   assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
     { shape: 'event', event: 'command', text: 'Reader text' },
   ])
+})
+
+test('uses a command receipt, but not a status event, as a Session opening prompt', () => {
+  const command = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'delegation-opening',
+      userType: 'external',
+      sourceToolAssistantUUID: 'tool-1',
+      message: {
+        role: 'user',
+        content: '<realtime_delegation><input>Reader command</input></realtime_delegation>',
+      },
+    }),
+  )
+  const status = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'status-opening',
+      userType: 'external',
+      sourceToolAssistantUUID: 'tool-1',
+      message: { role: 'user', content: '<status>not a title</status>' },
+    }),
+  )
+  assert.equal(command?.kind, 'message')
+  assert.equal(status?.kind, 'message')
+  if (command?.kind !== 'message' || status?.kind !== 'message') assert.fail('expected messages')
+  assert.equal(
+    transcriptFileFrom('/tmp/session.jsonl', {
+      fileName: 'session.jsonl',
+      records: [status, command],
+    }).openingPrompt,
+    'Reader command',
+  )
 })
 
 test('suppresses a realtime delegation without reader text', () => {
