@@ -1,8 +1,5 @@
-import {
-  FeedGallery,
-  type FeedImageSource,
-  ImageLightbox,
-} from '../../sessions/feed/content/feed-images'
+import { FeedGallery } from '../../sessions/feed/content/feed-images'
+import { type FeedImageSource, ImageLightbox } from '../../sessions/feed/content/image-lightbox'
 import { FEED_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 
 export { FeedMissingImage } from '../../sessions/feed/content/feed-images'

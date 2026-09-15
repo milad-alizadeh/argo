@@ -50,7 +50,7 @@ test('reads a realtime delegation input as Agent activity', () => {
   })
 })
 
-test('does not use delegation or status activity as a Session opening prompt', () => {
+test('opens a voice Session on what the person said, never on status activity', () => {
   const command = parseTranscriptLine(
     JSON.stringify({
       type: 'user',
@@ -80,6 +80,11 @@ test('does not use delegation or status activity as a Session opening prompt', (
       fileName: 'session.jsonl',
       records: [status, command],
     }).openingPrompt,
+    'Reader command',
+  )
+  assert.equal(
+    transcriptFileFrom('/tmp/session.jsonl', { fileName: 'session.jsonl', records: [status] })
+      .openingPrompt,
     null,
   )
 })
