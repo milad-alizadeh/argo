@@ -280,12 +280,12 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
 
-      # Both jobs take Node from `.node-version` (#1800), which is what this job needs anyway: the
+      # Every job takes Node from `.node-version` (#1800), which is what this job needs anyway: the
       # yauzl@2 hang the root override prevents only appears from Node 24.16 (forge#4277), so a
       # gate on an older Node would never see the thing the override is there for.
       #
-      # `save-cache: "true"`: this job's own writer of the `macOS-bun-*` cache. The Linux `check`
-      # job's cache lives under a `Linux-` key, so the two never race for the same entry (#2214).
+      # `save-cache: "true"`: this job's own writer of the `macOS-bun-*` cache. The Linux `gates`
+      # job writes under a `Linux-` key, so the two never race for the same entry (#2214).
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/setup
         with:

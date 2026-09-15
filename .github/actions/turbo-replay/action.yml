@@ -23,7 +23,8 @@ runs:
       env:
         TASK: ${{ inputs.task }}
       run: |
-        summary=$(bun run turbo run "$TASK" --filter=@argo/desktop --dry=json)
-        status=$(jq -r --arg task "$TASK" '.tasks[] | select(.task == $task) | .cache.status' <<< "$summary")
+        status=$(bun run turbo run "$TASK" --filter=@argo/desktop --dry=json |
+          jq -r --arg task "$TASK" '.tasks[] | select(.task == $task) | .cache.status') || status=MISS
+        status=${status:-MISS}
         echo "$TASK: $status"
         echo "status=$status" >> "$GITHUB_OUTPUT"
