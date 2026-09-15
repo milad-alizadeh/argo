@@ -72,8 +72,8 @@ async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
   const window = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1440,
+    height: 900,
     minWidth: WINDOW_MINIMUM_WIDTH,
     ...(DEVELOPMENT_INSTANCE ? { title: DEVELOPMENT_INSTANCE.title } : {}),
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
