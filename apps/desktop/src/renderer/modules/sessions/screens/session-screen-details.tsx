@@ -1,4 +1,5 @@
 import { Lock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { DevelopmentIdentity } from '@/development/instance'
@@ -35,6 +36,8 @@ export function SessionComposerArea({
   session,
   harness,
 }: SessionScreenDetailsProps) {
+  // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
+  if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (composer.failure?.code && OPEN_ELSEWHERE.has(composer.failure.code)) {
     return <OpenElsewhere onRetry={composer.retry} />
   }
@@ -134,19 +137,23 @@ function Failure({ message }: { message: string }) {
   )
 }
 
-// One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9).
-function OpenElsewhere({ onRetry }: { onRetry: () => void }) {
+// One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9). A Roster lock lifts
+// on its own at the next poll, so it offers no Retry.
+function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-bottom)`}>
       <Alert>
         <Lock aria-hidden />
-        <AlertTitle>This session is open in another app</AlertTitle>
-        <AlertDescription>Close it there to continue it in Argo.</AlertDescription>
-        <AlertAction>
-          <Button onClick={onRetry} size="sm" variant="outline">
-            Retry
-          </Button>
-        </AlertAction>
+        <AlertTitle>{t('openElsewhere.title')}</AlertTitle>
+        <AlertDescription>{t('openElsewhere.description')}</AlertDescription>
+        {onRetry === null ? null : (
+          <AlertAction>
+            <Button onClick={onRetry} size="sm" variant="outline">
+              {t('openElsewhere.retry')}
+            </Button>
+          </AlertAction>
+        )}
       </Alert>
     </div>
   )

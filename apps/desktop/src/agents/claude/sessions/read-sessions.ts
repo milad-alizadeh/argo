@@ -10,7 +10,6 @@ import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
-  type Discovery,
   discoverArchivedSessions,
   discoverSessions,
   readSessionFiles,
@@ -18,7 +17,12 @@ import {
 } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
-import { joinLiveProcesses, readLiveProcesses } from './live-processes'
+import {
+  joinLiveProcesses,
+  lockLiveProcesses,
+  type ProcessState,
+  readLiveProcesses,
+} from './live-processes'
 import { readShellOutput } from './shell-output'
 import { readDelegationChain, readDelegationTokens } from './subagents'
 
@@ -48,13 +52,7 @@ function withHandoffEdges(
   })
 }
 
-async function withLiveProcesses(discovery: Discovery, processes: string | undefined) {
-  if (processes === undefined) return discovery
-  return {
-    ...discovery,
-    rows: joinLiveProcesses(discovery.rows, await readLiveProcesses(processes)),
-  }
-}
+const NO_PROCESSES: ReadonlyMap<string, ProcessState> = new Map()
 
 // Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
 // Claude desktop app's own store, which is where the archive flag already lives. `archive` is
@@ -62,7 +60,7 @@ async function withLiveProcesses(discovery: Discovery, processes: string | undef
 export function claudeSessionSource(roots: {
   transcripts: string
   archive?: string
-  // Where each running `claude` names its Session; absent, no external Session reads `running`.
+  // Where each running `claude` names its Session; absent, no external Session reads `running` or locked.
   processes?: string
   managedSessions?: () => SessionRosterRow[]
   // Where the `PreCompact` hook leaves a file for each compaction it sees start (ADR-0041).
@@ -84,14 +82,14 @@ export function claudeSessionSource(roots: {
     cli: 'claude',
     discoverSessions: async () => {
       roots.completeHandoffs?.()
-      const discovered = await withLiveProcesses(
-        await discoverSessions(roots.transcripts, roots.archive),
-        roots.processes,
-      )
+      const live =
+        roots.processes === undefined ? NO_PROCESSES : await readLiveProcesses(roots.processes)
+      const read = await discoverSessions(roots.transcripts, roots.archive)
+      const discovered = { ...read, rows: joinLiveProcesses(read.rows, live) }
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
       const roster = mergeManagedRoster(discovered, managed)
-      const rows = await markCompactingRows(roster.rows, {
+      const rows = await markCompactingRows(lockLiveProcesses(roster.rows, live), {
         folder: roots.compactionStarts,
         readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
         begin: roots.beginCompaction,

@@ -70,6 +70,11 @@ export function readTranscriptFile(
   return transcriptFileFrom(path, { fileName, records })
 }
 
+// The Session id a transcript file's name carries.
+export function sessionIdOfFile(fileName: string) {
+  return fileName.replace(/\.jsonl$/, '')
+}
+
 export function transcriptFileFrom(
   path: string,
   { fileName, records }: { fileName: string; records: TranscriptRecord[] },
@@ -77,7 +82,7 @@ export function transcriptFileFrom(
   const message = firstOf(records, 'message')
   return {
     path,
-    sessionId: fileName.replace(/\.jsonl$/, ''),
+    sessionId: sessionIdOfFile(fileName),
     resumedFrom: firstOf(records, 'link')?.leafUuid ?? null,
     originSessionId: message?.originSessionId ?? null,
     openedAt: earliestTimestamp(records),

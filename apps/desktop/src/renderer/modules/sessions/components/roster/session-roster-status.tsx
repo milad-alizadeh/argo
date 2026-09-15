@@ -52,7 +52,7 @@ export function SessionBlockedBadge({ session }: { session: Session }) {
   )
 }
 
-// Another live Argo window holds this Session's channel (ADR-0040), or it is asking a question
+// Another process runs this Session live (ADR-0040), or it is asking a question
 // from a PTY Argo never opened (#2205): either way Send is refused, so the fact goes in text
 // beside the title rather than only in a tooltip (apps/desktop/AGENTS.md "Accessible names" — a
 // mark that is not a control).
