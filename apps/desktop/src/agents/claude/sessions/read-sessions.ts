@@ -6,7 +6,12 @@ import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
-import { discoverArchivedSessions, discoverSessions, readSessionFiles } from './discover'
+import {
+  clearFullRecords,
+  discoverArchivedSessions,
+  discoverSessions,
+  readSessionFiles,
+} from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
 import { readShellOutput } from './shell-output'
@@ -69,6 +74,7 @@ export function claudeSessionSource(roots: {
       }
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+    disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
     readDelegationFiles: async (sessionId, delegationId) =>

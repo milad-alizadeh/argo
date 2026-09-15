@@ -73,6 +73,13 @@ export function useSessions(selectedSessionId: SessionId | null, rosterEnabled =
     sessionFeedQuery(queryClient, selectedFeedId, null),
   )
 
+  // An already-settled read has no in-flight abort to notify the main process. Release it here
+  // as well, so a Session switch or close drops its Feed rows and measurement state immediately.
+  useEffect(() => {
+    if (selectedFeedId === null) return
+    return () => void window.argo.cancelSessionFeed({ sessionId: selectedFeedId })
+  }, [selectedFeedId])
+
   const pending = useSessionCreationStore((state) => state.pending)
   const rosterData = roster.error === null ? (roster.data ?? null) : null
   const mergedRoster = useMemo(() => {

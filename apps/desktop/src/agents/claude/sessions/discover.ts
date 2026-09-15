@@ -39,7 +39,7 @@ const reader = createTranscriptDiscoverer({
   parse: parseTranscriptLine,
 })
 
-export const { readSessionFiles } = reader
+export const { clearFullRecords, readSessionFiles } = reader
 
 function isArchived(
   row: { id: string; retiredIds: string[] },

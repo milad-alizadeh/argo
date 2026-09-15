@@ -5,7 +5,13 @@ import { test } from 'node:test'
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { createSessionReader } from './reader'
-import { fed, feedRequest, tempRoot, writeCodexTranscript } from './reader-test-helpers'
+import {
+  appendCodexTranscript,
+  fed,
+  feedRequest,
+  tempRoot,
+  writeCodexTranscript,
+} from './reader-test-helpers'
 
 // Switching away from a stalled Session (#2102) sends this instead of letting the settle loop
 // run to its bound with nothing left to draw the answer.
@@ -61,4 +67,40 @@ test('cancelling a Session with no read in flight is a harmless no-op', async (c
   })
   const reply = await fed(reader, feedRequest('nothing-pending'))
   assert.equal(reply.type, 'session.feed.read')
+})
+
+test('releases a settled Feed when its Session stops being selected', async (context) => {
+  const claudeRoot = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  await writeCodexTranscript({
+    root: codexRoot,
+    sessionId: 'released',
+    text: 'First.',
+    updatedAt: '2026-09-13T09:00:00.000Z',
+  })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: claudeRoot }),
+    codexSessionSource(codexRoot),
+  ])
+
+  const first = await fed(reader, feedRequest('released'))
+  assert.equal(first.type, 'session.feed.read')
+  await reader.cancelSessionFeed({
+    version: 1,
+    type: 'session.feed.cancel',
+    requestId: 'cancel-1',
+    sessionId: 'released',
+  })
+  await appendCodexTranscript({
+    root: codexRoot,
+    sessionId: 'released',
+    text: 'Second.',
+    updatedAt: '2026-09-13T09:00:05.000Z',
+  })
+
+  const reread = await fed(
+    reader,
+    feedRequest('released', 'feed-2', first.type === 'session.feed.read' ? first.revision : null),
+  )
+  assert.equal(reread.type, 'session.feed.read')
 })

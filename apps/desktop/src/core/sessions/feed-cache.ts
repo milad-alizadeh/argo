@@ -13,7 +13,7 @@ export type HeldFeed = {
   stamps: string
 }
 
-const KEPT_FEED_LIMIT = 6
+const KEPT_FEED_LIMIT = 1
 
 async function chainStamps(paths: readonly string[]): Promise<string> {
   const watched = [...new Set(paths.flatMap((file) => [file, path.dirname(file)]))]
@@ -107,5 +107,14 @@ export function keepFeed({ feeds, projections }: FeedCaches, key: string, feed: 
     if (oldest === undefined) return
     feeds.delete(oldest)
     projections.delete(oldest)
+  }
+}
+
+export function disposeFeed({ feeds, projections }: FeedCaches, sessionId: string) {
+  for (const key of feeds.keys()) {
+    if (key === sessionId || key.startsWith(`${sessionId}#`)) {
+      feeds.delete(key)
+      projections.delete(key)
+    }
   }
 }
