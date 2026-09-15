@@ -1,5 +1,5 @@
+import type { SessionChain } from '@/core/sessions/chains'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import type { SessionChain } from '../sessions/chains'
 import {
   type CompactionStart,
   readCompactionStarts,
@@ -16,8 +16,8 @@ type CompactionWatch = {
   begin?: (sessionId: string, startedAt: string) => void
 }
 
-// Claude Code writes nothing while it compacts, so the first record after the start ends it: the
-// compact boundary, or a message when the compaction was interrupted.
+// Neither CLI writes anything while it compacts, so the first record after the start ends it: the
+// compaction record, or a message when the compaction was interrupted.
 export function compactionEndedAt(chain: SessionChain | null, startedAt: string, now: number) {
   if (now - Date.parse(startedAt) > COMPACTION_PATIENCE_MS) return new Date(now).toISOString()
   return (chain?.files ?? [])

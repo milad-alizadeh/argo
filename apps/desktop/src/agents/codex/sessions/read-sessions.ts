@@ -4,6 +4,7 @@ import { projectFeed } from '@/core/sessions/feed'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
+import { markCompactingRows } from '../../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
@@ -18,6 +19,8 @@ type ReaderOptions = {
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
+  // Where the `PreCompact` hook leaves a file for each compaction it sees start (ADR-0041).
+  compactionStarts?: string
 }
 
 // A streamed message takes the row id the rollout's own message will get (`feed.ts`), so the
@@ -73,7 +76,12 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     cli: 'codex',
     discoverSessions: async () => {
       const discovered = await discoverSessions(root)
-      return mergeManagedRoster(discovered, options?.roster?.() ?? [])
+      const roster = mergeManagedRoster(discovered, options?.roster?.() ?? [])
+      const rows = await markCompactingRows(roster.rows, {
+        folder: options?.compactionStarts,
+        readChain: (sessionId) => readSessionFiles(root, sessionId),
+      })
+      return { ...roster, rows }
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),

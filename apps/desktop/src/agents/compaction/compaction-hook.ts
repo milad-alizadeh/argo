@@ -1,4 +1,5 @@
-// ADR-0041: Claude Code writes nothing while it compacts, so the file this user-level hook leaves is the only live signal.
+// ADR-0041: neither CLI writes anything while it compacts, so the file this user-level hook leaves is the only live signal.
+// Claude's `settings.json` and Codex's `hooks.json` hold hooks in the same shape, so one installer serves both.
 import { lstat, realpath, stat } from 'node:fs/promises'
 import { isRecord } from '@/boundary'
 import { readDocument, writeDocument } from '@/core/storage/portable-file'

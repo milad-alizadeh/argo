@@ -2,7 +2,6 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import path from 'node:path'
 import { app, type BrowserWindow, shell } from 'electron'
-import { installCompactionHook } from './agents/claude/compaction/compaction-hook'
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
@@ -18,7 +17,12 @@ import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
-import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
+import {
+  codexCompactionStartsRoot,
+  codexHooksPath,
+  codexTranscriptsRoot,
+} from './agents/codex/sessions/roots'
+import { installCompactionHook } from './agents/compaction/compaction-hook'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
 import { safeStorageCipher } from './core/accounts/safe-storage'
@@ -52,16 +56,23 @@ function createSessionDrivers(userData: string, home: string, proofEnabled: bool
   return { claude, codex }
 }
 
-// ADR-0041: installs the `PreCompact` hook every Claude Session runs, and names where it writes.
-function watchCompactions(home: string) {
-  const starts = claudeCompactionStartsRoot(home)
-  installCompactionHook(claudeSettingsPath(home), starts)
+// ADR-0041: adds the `PreCompact` hook to a CLI's user-level hooks, and names where it writes.
+function watchCompactions(cli: string, hooksPath: string, starts: string) {
+  installCompactionHook(hooksPath, starts)
     .then((install) => {
       if (install === 'refused')
-        console.warn('Claude settings could not be read, so compactions stay hidden until they end')
+        console.warn(`${cli} hooks could not be read, so compactions stay hidden until they end`)
     })
-    .catch((error) => console.error('Claude compaction hook failed to install', error))
+    .catch((error) => console.error(`${cli} compaction hook failed to install`, error))
   return starts
+}
+
+// Codex skips a new hook until the person trusts it once in its `/hooks` view.
+function watchAllCompactions(home: string) {
+  return {
+    claude: watchCompactions('Claude', claudeSettingsPath(home), claudeCompactionStartsRoot(home)),
+    codex: watchCompactions('Codex', codexHooksPath(home), codexCompactionStartsRoot(home)),
+  }
 }
 
 function attachSessions(
@@ -71,7 +82,7 @@ function attachSessions(
     home: string
     userData: string
     drivers: ReturnType<typeof createSessionDrivers>
-    compactionStarts?: string
+    compactionStarts?: { claude: string; codex: string }
   },
 ) {
   const { rendererURL, home, userData, drivers, compactionStarts } = request
@@ -86,7 +97,7 @@ function attachSessions(
           transcripts: claudeTranscriptsRoot(home),
           archive: claudeArchiveRoot(home),
           managedSessions: claude.roster,
-          compactionStarts,
+          compactionStarts: compactionStarts?.claude,
           beginCompaction: claude.beginCompaction,
           completeCompaction: claude.completeCompaction,
           completeHandoffs: claude.completeHandoffs,
@@ -101,6 +112,7 @@ function attachSessions(
           pendingQuestion: codex.pendingQuestion,
           rename: (request) => renameCodexSession(request, codex),
           isLockedElsewhere: codex.isLockedElsewhere,
+          compactionStarts: compactionStarts?.codex,
         }),
       ],
       ticketLinks,
@@ -120,8 +132,9 @@ export function attachBridges(
   const { userData, rendererURL, proofEnabled } = request
   const home = app.getPath('home')
   const drivers = createSessionDrivers(userData, home, proofEnabled)
-  // A proof or acceptance run leaves the person's Claude settings and compaction starts alone.
-  const compactionStarts = proofEnabled || request.acceptance ? undefined : watchCompactions(home)
+  // A proof or acceptance run leaves the person's hooks and compaction starts alone.
+  const compactionStarts =
+    proofEnabled || request.acceptance ? undefined : watchAllCompactions(home)
   attachWindowNavigation(window)
   attachProjectBridge(window, { userData, rendererURL })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })

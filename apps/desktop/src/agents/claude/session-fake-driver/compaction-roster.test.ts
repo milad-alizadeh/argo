@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
+import { appendFile, readdir, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { createSessionReader } from '@/core/sessions/reader'
 import { listed, tempRoot, writeClaudeTranscript } from '@/core/sessions/reader-test-helpers'
+import { writeCompactionStart } from '../../compaction/compaction-start-fixture'
 import { claudeSessionSource, createClaudeSessionReader } from '../sessions/read-sessions'
 import { startedSession } from './claude-driver-launch.ts'
 
@@ -24,10 +25,7 @@ async function compactingSession(context: TestContext, startedAt = at(-MINUTE)) 
     text: 'Done.',
     updatedAt: lastTurn.toISOString(),
   })
-  await mkdir(starts, { recursive: true })
-  const start = path.join(starts, '4242.json')
-  await writeFile(start, JSON.stringify({ session_id: SESSION, hook_event_name: 'PreCompact' }))
-  await utimes(start, startedAt, startedAt)
+  await writeCompactionStart(starts, SESSION, startedAt)
   const reader = createClaudeSessionReader({ transcripts, compactionStarts: starts })
   return { transcripts, starts, reader, startedAt }
 }

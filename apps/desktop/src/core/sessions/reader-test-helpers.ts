@@ -75,6 +75,16 @@ export async function appendCodexTranscript(line: TranscriptLine) {
   await appendFile(file, record)
 }
 
+// A record of any other shape the CLI adds to a transcript the reader is already watching.
+export async function appendCodexRecord(
+  { root, sessionId }: Pick<TranscriptLine, 'root' | 'sessionId'>,
+  record: Record<string, unknown>,
+) {
+  const file = path.join(codexDay(root), `${sessionId}.jsonl`)
+  await appendFile(file, `${JSON.stringify(record)}\n`)
+  return file
+}
+
 // The same append caught halfway: half the record and no closing newline, which is what a read
 // racing the write sees. The returned function writes the rest of the same bytes.
 export async function appendHalfCodexTranscript(line: TranscriptLine) {
