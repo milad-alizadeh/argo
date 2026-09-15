@@ -1,4 +1,4 @@
-import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
+import { $createTextNode, $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
@@ -30,10 +30,11 @@ export function DraftContextPicker({
         editor?.update(() => {
           const selection = $getSelection()
           if (!$isRangeSelection(selection)) return
-          selection.insertText(' ')
           const reference = $createComposerTicketReferenceNode(ticket.key, ticket.provider)
           selection.insertNodes([reference])
-          reference.selectNext()
+          const trailingSpace = $createTextNode(' ')
+          reference.insertAfter(trailingSpace)
+          trailingSpace.select(1, 1)
         })
         onClose()
       }}
