@@ -3,6 +3,7 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
+import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
@@ -130,6 +131,8 @@ function feedRowContent(
       return <PlainText text={row.text} />
     case 'command-output':
       return <PlainText text={row.text} />
+    case 'event':
+      return <FeedEvent row={row} />
     case 'source':
       return <p>{row.label}</p>
     case 'marker':

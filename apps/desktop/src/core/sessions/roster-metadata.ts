@@ -2,9 +2,11 @@ import type { ContentBlock, TranscriptRecord } from './transcript'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {
-    if (block.shape !== 'prose') continue
+    const acceptsOpeningPrompt =
+      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+    if (!acceptsOpeningPrompt || block.text === null) continue
     const line = block.text.split('\n').find((text) => text.trim().length > 0)
-    if (line !== undefined) return [{ shape: 'prose', text: line }]
+    if (line !== undefined) return [{ ...block, text: line }]
   }
   return []
 }

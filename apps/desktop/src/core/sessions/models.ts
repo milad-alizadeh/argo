@@ -3,8 +3,11 @@ import { identifierSchema } from '../../boundary'
 import { ticketKey } from '../tickets/ticket'
 
 export {
+  FEED_EVENT_KINDS,
   FEED_MARKERS,
+  type FeedEventKind,
   type FeedMarker,
+  feedEventKindSchema,
   feedMarkerSchema,
   type SessionFeedRow,
   sessionFeedRowSchema,

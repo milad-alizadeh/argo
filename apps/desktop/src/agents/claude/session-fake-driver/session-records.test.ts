@@ -71,8 +71,11 @@ test('reads slash commands as the words the person typed', async () => {
   const prompts = file.records
     .filter((record) => record.kind === 'message' && record.role === 'user')
     .flatMap((record) => record.blocks)
-    .filter((block) => block.shape === 'prose')
-    .map((block) => block.text)
+    .flatMap((block) =>
+      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+        ? [block.text]
+        : [],
+    )
 
   assert.deepEqual(prompts, [
     '/effort',

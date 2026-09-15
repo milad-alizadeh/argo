@@ -1,5 +1,9 @@
 import { isRecord } from '@/boundary'
-import type { TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
+import type {
+  TranscriptEventKind,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/core/sessions/transcript'
 
 function tagged(tag: string, text: string): string | null {
   return text.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1] ?? null
@@ -14,22 +18,34 @@ function envelopeText(content: unknown): string | null {
     : null
 }
 
-// Harness-only envelopes stay at the parser boundary so their markup never reaches the Feed.
+// These envelopes configure the harness only, so they become traces and cannot split Tool Call groups.
 const HIDDEN_HARNESS_ENVELOPES = new Set([
-  'app-context',
   'apps_instructions',
   'collaboration_mode',
-  'environment_context',
   'local-command-caveat',
   'permissions',
   'plugins_instructions',
   'recommended_plugins',
-  'realtime_delegation',
   'skills_instructions',
-  'status',
-  'transcript_delta',
-  'transcript_tail_flush',
 ])
+
+const HARNESS_EVENTS: Record<
+  string,
+  { event: TranscriptEventKind; text: (body: string) => string | null; requiresText?: true }
+> = {
+  'app-context': { event: 'context', text: () => null },
+  environment_context: { event: 'context', text: () => null },
+  realtime_delegation: {
+    event: 'command',
+    text: (body) => tagged('input', body)?.trim() || null,
+    requiresText: true,
+  },
+  status: { event: 'status', text: (body) => body.trim() || null },
+  transcript_delta: { event: 'transcript', text: () => null },
+  transcript_tail_flush: { event: 'transcript', text: () => null },
+}
+
+type HarnessEvent = Extract<TranscriptRecord, { kind: 'event' | 'trace' }>
 
 function envelopeName(text: string): string | null {
   const name = /^\s*<([a-z][a-z0-9_-]*)(?:\s[^>]*)?>/i.exec(text)?.[1]
@@ -40,12 +56,23 @@ function isHarnessDelivery(record: Record<string, unknown>): boolean {
   return record.userType === 'external' && typeof record.sourceToolAssistantUUID === 'string'
 }
 
-function hiddenHarnessEnvelope(record: Record<string, unknown>, text: string): boolean {
+function completeEnvelope(text: string, name: string): string | null {
+  return (
+    new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>([\\s\\S]*)</${name}>\\s*$`, 'i').exec(text)?.[1] ?? null
+  )
+}
+
+function harnessEvent(record: Record<string, unknown>, text: string): HarnessEvent | null {
   const name = envelopeName(text)
-  if (!isHarnessDelivery(record) || name === null || !HIDDEN_HARNESS_ENVELOPES.has(name)) {
-    return false
-  }
-  return new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>[\\s\\S]*</${name}>\\s*$`, 'i').test(text)
+  if (!isHarnessDelivery(record) || name === null) return null
+  const body = completeEnvelope(text, name)
+  if (body === null) return null
+  if (HIDDEN_HARNESS_ENVELOPES.has(name)) return { kind: 'trace', uuid: '' }
+  const presentation = Object.hasOwn(HARNESS_EVENTS, name) ? HARNESS_EVENTS[name] : undefined
+  if (presentation === undefined) return null
+  const eventText = presentation.text(body)
+  if (presentation.requiresText && eventText === null) return { kind: 'trace', uuid: '' }
+  return { kind: 'event', uuid: '', event: presentation.event, text: eventText }
 }
 
 function readCommandPrompt(text: string): string | null | undefined {
@@ -64,7 +91,11 @@ export function readCommandEnvelope(
   const content = isRecord(record.message) ? record.message.content : null
   const text = envelopeText(content)
   if (text === null) return null
-  if (hiddenHarnessEnvelope(record, text)) return { kind: 'trace', uuid: message.uuid }
+  const event = harnessEvent(record, text)
+  if (event !== null)
+    return event.kind === 'trace'
+      ? { ...event, uuid: message.uuid }
+      : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
   if (text.startsWith('<local-command-stdout>')) {
     const output = tagged('local-command-stdout', text)
     return output === null
@@ -92,5 +123,5 @@ export function readCommandEnvelope(
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null
   if (prompt === null) return { kind: 'trace', uuid: message.uuid }
-  return { ...message, blocks: [{ shape: 'prose', text: prompt }] }
+  return { ...message, blocks: [{ shape: 'event', event: 'command', text: prompt }] }
 }

@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readTranscriptFile } from '@/core/sessions/transcript'
 import { parseTranscriptLine } from './records'
 
 test('reads a sent command as its visible source text', () => {
   const line = JSON.stringify({
     type: 'user',
     uuid: 'command-1',
+    cwd: '/tmp/project',
+    timestamp: '2026-09-15T06:00:00.000Z',
     message: {
       role: 'user',
       content:
@@ -14,8 +17,10 @@ test('reads a sent command as its visible source text', () => {
   })
   const record = parseTranscriptLine(line)
   assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
-    { shape: 'prose', text: '/implement 1847' },
+    { shape: 'event', event: 'command', text: '/implement 1847' },
   ])
+  assert.equal(record?.kind === 'message' ? record.cwd : null, '/tmp/project')
+  assert.equal(record?.kind === 'message' ? record.timestamp : null, '2026-09-15T06:00:00.000Z')
 })
 
 test('does not expose incomplete command tags', () => {
@@ -26,8 +31,26 @@ test('does not expose incomplete command tags', () => {
   })
   const record = parseTranscriptLine(line)
   assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
-    { shape: 'prose', text: 'implement' },
+    { shape: 'event', event: 'command', text: 'implement' },
   ])
+})
+
+test('keeps a command receipt as the Session opening prompt', () => {
+  const file = readTranscriptFile('/tmp/command.jsonl', {
+    fileName: 'command.jsonl',
+    lines: [
+      JSON.stringify({
+        type: 'user',
+        uuid: 'command-opening',
+        message: {
+          role: 'user',
+          content: '<command-name>/implement</command-name><command-args>2178</command-args>',
+        },
+      }),
+    ],
+    parse: parseTranscriptLine,
+  })
+  assert.equal(file.openingPrompt, '/implement 2178')
 })
 
 // A background task's delivery arrives as a user turn holding this envelope, embedded JSON
@@ -64,21 +87,15 @@ test('drops a task notification with no summary rather than guess', () => {
   assert.deepEqual(record, { kind: 'trace', uuid: 'task-2' })
 })
 
-test('suppresses complete known harness envelopes instead of rendering their markup', () => {
+test('suppresses harness envelopes with no reader value', () => {
   const envelopes = [
-    '<app-context>context</app-context>',
     '<apps_instructions>instructions</apps_instructions>',
     '<collaboration_mode>mode</collaboration_mode>',
-    '\n<environment_context>context</environment_context>\n',
     '<local-command-caveat>caveat</local-command-caveat>',
     '<permissions>permissions</permissions>',
     '<plugins_instructions>plugins</plugins_instructions>',
     '<recommended_plugins>plugins</recommended_plugins>',
-    '<realtime_delegation><input>Reader text</input></realtime_delegation>',
     '<skills_instructions>instructions</skills_instructions>',
-    '<status>running</status>',
-    '<transcript_delta>delivery</transcript_delta>',
-    '<transcript_tail_flush>delivery</transcript_tail_flush>',
   ]
   for (const [index, content] of envelopes.entries()) {
     const uuid = `harness-${index}`

@@ -6,6 +6,7 @@ export type ContentBlock =
   // Thought). The CLI writes most of them with the text withheld, so an empty one is ordinary.
   | { shape: 'thought'; text: string }
   | { shape: 'marker'; marker: FeedMarker }
+  | { shape: 'event'; event: TranscriptEventKind; text: string | null }
   | { shape: 'tool'; callId: string }
   // The honest fallback for content this Feed cannot draw richly yet: the block's own `type`
   // verbatim as the label, and its own JSON as the source. Nothing is summarised or dropped.
@@ -54,9 +55,14 @@ export type TranscriptMessage = {
 export const BACKGROUND_STATES = ['completed', 'failed', 'killed', 'stopped'] as const
 export type BackgroundState = (typeof BACKGROUND_STATES)[number]
 
+// A harness delivery that tells the reader something useful without being one of the person's Messages.
+export const TRANSCRIPT_EVENT_KINDS = ['status', 'transcript', 'context', 'command'] as const
+export type TranscriptEventKind = (typeof TRANSCRIPT_EVENT_KINDS)[number]
+
 export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
+  | { kind: 'event'; uuid: string; event: TranscriptEventKind; text: string | null }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // `subagent` is Codex-only: true when the thread was spawned by another agent rather than
@@ -112,7 +118,9 @@ function readOpeningPrompt(records: TranscriptRecord[]): string | null {
     if (record.kind !== 'message' || record.role !== 'user') continue
     for (const block of record.blocks) {
       const line =
-        block.shape === 'prose' ? block.text.split('\n').find((text) => text.trim()) : undefined
+        block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+          ? block.text?.split('\n').find((text) => text.trim())
+          : undefined
       if (line !== undefined) return line.trim()
     }
   }
