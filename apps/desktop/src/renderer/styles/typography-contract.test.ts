@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 const tokens = await Bun.file(new URL('../tokens.css', import.meta.url)).text()
 const utilities = await Bun.file(new URL('./typography.css', import.meta.url)).text()
 const entry = await Bun.file(new URL('../main.tsx', import.meta.url)).text()
+const button = await Bun.file(new URL('../components/ui/button.tsx', import.meta.url)).text()
 const feedTools = await Bun.file(
   new URL('../modules/sessions/feed/feed-tools.tsx', import.meta.url),
 ).text()
@@ -47,6 +48,7 @@ test('defines one app type scale without surface-specific aliases', () => {
   expect(tokens).toContain('--text-control--line-height: var(--text-body--line-height)')
   expect(tokens).toContain('--text-navigation-label: var(--text-control)')
   expect(tokens).toContain('--text-badge: var(--text-meta)')
+  expect(button).toContain('px-2.5 text-xs in-data-[slot=button-group]')
   expect(tokens).toContain('--text-heading: 13px')
   expect(tokens).toContain('--text-prose: 13px')
   expect(components.tailwind.cssVariables).toBe(true)
