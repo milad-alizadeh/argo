@@ -424,21 +424,18 @@ export const PromptWithImages: Story = {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(3))
     const [prompt, , imagesAlone] = drawnRows(canvasElement)
     const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
-    const thumbnail = within(bubble as HTMLElement).getByRole('button', {
-      name: 'Open attached image 1',
-    })
+    if (!bubble) throw new Error('expected the prompt to draw a bubble')
+    const thumbnail = within(bubble).getByRole('button', { name: 'Open attached image 1' })
     await waitFor(() => expect(thumbnail).toHaveAttribute('data-state', 'loaded'))
     const side = Number.parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--size-feed-attachment-preview'),
     )
     await expect(thumbnail.getBoundingClientRect().width).toBe(side)
     await expect(thumbnail.getBoundingClientRect().height).toBe(side)
-    await waitFor(() =>
-      expect(within(bubble as HTMLElement).getByRole('figure')).toHaveTextContent(
-        'Image unavailableAttached image 2',
-      ),
-    )
-    const words = within(bubble as HTMLElement).getByText('I asked to remove the indentation.')
+    const missing = await within(bubble).findByRole('figure')
+    await expect(within(missing).getByText('Image unavailable')).toBeInTheDocument()
+    await expect(within(missing).getByText('Attached image 2')).toBeInTheDocument()
+    const words = within(bubble).getByText('I asked to remove the indentation.')
     await expect(thumbnail.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       words.getBoundingClientRect().top,
     )
@@ -448,9 +445,9 @@ export const PromptWithImages: Story = {
     await expect(within(dialog).getByRole('img', { name: 'Attached image 1' })).toBeVisible()
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
-    // The thumbnail clips its own overflow, so a ring drawn outside it would never be seen.
+    // Drawn inside, the ring would sit on the picture, where a pale screenshot hides it.
     await waitFor(() => expect(thumbnail.matches(':focus-visible')).toBe(true))
-    await expect(Number.parseFloat(getComputedStyle(thumbnail).outlineOffset)).toBeLessThan(0)
+    await expect(Number.parseFloat(getComputedStyle(thumbnail).outlineOffset)).toBeGreaterThan(0)
   },
 }
 

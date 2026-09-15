@@ -85,11 +85,12 @@ function LightboxContent({
 }
 
 function triggerClass(compact: boolean, loading: boolean) {
-  // The ring is drawn inside the frame, because the frame's own `overflow-hidden` clips it outside.
-  const base = `shrink-0 overflow-hidden focus-visible:-outline-offset-2 ${FEED_CARD_RADIUS_CLASS}`
+  const base = `shrink-0 overflow-hidden border ${FEED_CARD_RADIUS_CLASS}`
+  // A thumbnail's ring sits outside it, against the bubble rather than the picture.
   if (compact) return `size-(--size-feed-attachment-preview) cursor-pointer ${base}`
   const frame = loading ? 'w-(--size-feed-image-frame)' : 'cursor-pointer'
-  return `relative h-full border bg-card ${frame} ${base}`
+  // The gallery's scrolling strip clips anything outside a frame, so its ring is drawn inside.
+  return `relative h-full bg-card focus-visible:-outline-offset-2 ${frame} ${base}`
 }
 
 export function ImageLightbox({

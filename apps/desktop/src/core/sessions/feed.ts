@@ -60,13 +60,13 @@ export function rowsOfRecord(
 function withImages(rows: SessionFeedRow[], record: TranscriptMessage): SessionFeedRow[] {
   const images = record.blocks.flatMap((block) => (block.shape === 'image' ? [block.url] : []))
   if (images.length === 0 || record.role !== 'user') return rows
-  const prose = rows.findIndex((row) => row.shape === 'prose')
-  if (prose === -1) {
+  const proseIndex = rows.findIndex((row) => row.shape === 'prose')
+  if (proseIndex === -1) {
     const index = record.blocks.findIndex((block) => block.shape === 'image')
     const id = `${record.uuid}:${index}`
     return [{ shape: 'prose', id, role: record.role, text: '', images }, ...rows]
   }
-  return rows.map((row, index) => (index === prose ? { ...row, images } : row))
+  return rows.map((row, index) => (index === proseIndex ? { ...row, images } : row))
 }
 
 function rowsOfBlock({

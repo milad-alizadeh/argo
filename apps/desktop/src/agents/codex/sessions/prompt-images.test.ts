@@ -18,25 +18,34 @@ const promptRows = (content: unknown[]) =>
     item: { type: 'UserMessage', id: 'prompt-1', content },
   })
 
-// The shape `codex exec -i` wrote under codex-cli 0.147.0, with its paths shortened.
-test('draws the images a bare prompt event carries inside its bubble', () => {
-  const rows = eventRows({
-    type: 'user_message',
-    message: 'Reply with the single word OK.',
-    images: ['data:image/png;base64,iVBORw0KGgo='],
-    local_images: ['/Users/x/dot.png'],
-    audio: [],
-    local_audio: [],
-    text_elements: [],
-  })
-  assert.deepEqual(rows, [
+// The event `codex exec -i` wrote under codex-cli 0.147.0, with its path shortened.
+const EXEC_PROMPT = {
+  type: 'user_message',
+  message: 'Reply with the single word OK.',
+  images: [],
+  local_images: ['/Users/x/dot.png'],
+  audio: [],
+  local_audio: [],
+  text_elements: [],
+}
+
+test('draws the image file a bare prompt event attached inside its bubble', () => {
+  assert.deepEqual(eventRows(EXEC_PROMPT), [
     {
       shape: 'prose',
       id: 'user:2026-09-15T10:00:00.000Z:0',
       role: 'user',
       text: 'Reply with the single word OK.',
-      images: ['data:image/png;base64,iVBORw0KGgo=', 'file:///Users/x/dot.png'],
+      images: ['file:///Users/x/dot.png'],
     },
+  ])
+})
+
+test('draws inline image bytes a bare prompt event carries before its files', () => {
+  const rows = eventRows({ ...EXEC_PROMPT, images: ['data:image/png;base64,iVBORw0KGgo=', 'x'] })
+  assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, [
+    'data:image/png;base64,iVBORw0KGgo=',
+    'file:///Users/x/dot.png',
   ])
 })
 

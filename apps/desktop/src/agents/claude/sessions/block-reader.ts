@@ -1,5 +1,5 @@
 import { isRecord } from '@/boundary'
-import { dataImageUrl } from '@/core/sessions/feed-images'
+import { dataImageUrl, imageBlocks } from '@/core/sessions/feed-images'
 import type { ContentBlock, ToolCall, ToolResult } from '@/core/sessions/transcript'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
@@ -12,8 +12,7 @@ function readImage(value: unknown): ContentBlock | null {
   if (!isRecord(value) || value.type !== 'image' || !isRecord(value.source)) return null
   const { type, media_type: mediaType, data } = value.source
   if (type !== 'base64' || typeof mediaType !== 'string' || typeof data !== 'string') return null
-  const url = dataImageUrl(mediaType, data)
-  return url === null ? null : { shape: 'image', url }
+  return imageBlocks([dataImageUrl(mediaType, data)])[0] ?? null
 }
 
 function readBlock(value: unknown): ContentBlock | null {

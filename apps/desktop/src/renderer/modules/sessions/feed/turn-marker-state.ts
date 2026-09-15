@@ -4,7 +4,7 @@
 // this Turn optimistically, before any record confirms it.
 
 import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
-import { fileImageUrl } from '@/core/sessions/feed-images'
+import { attachedImageUrl } from '@/core/sessions/feed-images'
 import type {
   SessionActivity,
   SessionFeedRow,
@@ -34,11 +34,8 @@ export function promptOf(turn: {
   prompt: string
   attachments: readonly SessionAttachmentInput[]
 }): Pick<TurnMarkerEntry, 'prompt' | 'images'> {
-  const images = turn.attachments.flatMap(({ kind, path }) => {
-    const url = kind === 'image' ? fileImageUrl(path) : null
-    return url === null ? [] : [url]
-  })
-  return { prompt: turn.prompt, images }
+  const images = turn.attachments.map(({ path }) => attachedImageUrl(path))
+  return { prompt: turn.prompt, images: images.filter((url) => url !== null) }
 }
 
 export type TurnMarkerView = { phase: TurnMarkerPhase; startedAt: number }

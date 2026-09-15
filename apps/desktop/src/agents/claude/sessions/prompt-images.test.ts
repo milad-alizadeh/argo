@@ -1,17 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { rowsOfRecord } from '@/core/sessions/feed'
+import { promptRows } from './prompt-fixture'
 import { parseTranscriptLine } from './records'
 
 const PIXEL = 'iVBORw0KGgo='
-
-function promptRows(content: unknown, role: 'user' | 'assistant' = 'user') {
-  const record = parseTranscriptLine(
-    JSON.stringify({ type: role, uuid: 'prompt-1', message: { role, content } }),
-  )
-  if (record === null) assert.fail('expected the message to parse')
-  return rowsOfRecord(record, '0:0', { results: new Map(), skillBodies: new Map() })
-}
 
 const pasted = (data: string) => ({
   type: 'image',
@@ -66,49 +58,15 @@ test('keeps an image placeholder the prompt carries no image for', () => {
   ])
 })
 
-test('draws attached image files from the @path mentions Argo appends', () => {
-  const rows = promptRows('Review this.\n\n@/Users/x/shot#1.png @/Users/x/notes.md @/Users/x/b.JPG')
-  assert.deepEqual(rows, [
-    {
-      shape: 'prose',
-      id: 'prompt-1:0',
-      role: 'user',
-      text: 'Review this.\n\n@/Users/x/notes.md',
-      images: ['file:///Users/x/shot%231.png', 'file:///Users/x/b.JPG'],
-    },
-  ])
-})
-
-for (const text of ['Compare @/Users/x/a.png with the design', 'Look at @/Users/x/a.png']) {
-  test(`draws an image the person mentioned but keeps their words: ${text}`, () => {
-    const rows = promptRows(text)
-    assert.deepEqual(rows, [
-      { shape: 'prose', id: 'prompt-1:0', role: 'user', text, images: ['file:///Users/x/a.png'] },
-    ])
-  })
-}
-
-test('draws an attached file whose path has a space, from its quoted mention', () => {
-  const rows = promptRows('Look.\n\n@"/Users/x/Screenshot at 06.44.png" @/Users/x/notes.md')
-  assert.deepEqual(rows, [
-    {
-      shape: 'prose',
-      id: 'prompt-1:0',
-      role: 'user',
-      text: 'Look.\n\n@/Users/x/notes.md',
-      images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
-    },
-  ])
-})
-
-test('draws an image mentioned before a full stop, as Claude Code attaches it', () => {
-  const rows = promptRows('Compare @/Users/x/a.png.')
-  assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, ['file:///Users/x/a.png'])
-})
-
 test('keeps the words around a pasted placeholder as the person wrote them', () => {
-  const rows = promptRows([{ type: 'text', text: '    indented\n[Image #2] see' }, pasted(PIXEL)])
+  const rows = promptRows([{ type: 'text', text: '    indented\nsee [Image #2]' }, pasted(PIXEL)])
   assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, '    indented\nsee')
+})
+
+test('keeps a placeholder the sentence refers to', () => {
+  const text = 'compare [Image #1] with [Image #2] please'
+  const rows = promptRows([{ type: 'text', text }, pasted('Zmlyc3Q='), pasted('c2Vjb25k')])
+  assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, text)
 })
 
 test('draws pasted images before attached files', () => {
