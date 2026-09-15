@@ -126,10 +126,8 @@ const COMPONENTS: Components = {
       <FeedCode {...fence} />
     )
   },
-  // `pre` draws fenced code itself, so every `code` reaching this is inline.
-  code: ({ children }) => (
-    <code className="rounded-md bg-muted px-1 font-mono type-code">{children}</code>
-  ),
+  // `pre` draws fenced code itself, so every `code` reaching this is inline and takes the text's size.
+  code: ({ children }) => <code className="rounded-md bg-muted px-1 font-mono">{children}</code>,
   hr: () => <hr className="border-border" />,
 }
 
