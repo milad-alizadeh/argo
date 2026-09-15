@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
 
@@ -42,6 +42,7 @@ const meta: Meta<typeof BasicFeed> = {
     feed,
     failure: null,
     isRunning: false,
+    onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },
