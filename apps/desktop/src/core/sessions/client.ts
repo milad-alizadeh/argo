@@ -4,6 +4,7 @@ import type { ClaudeQuestionAnswer } from './claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
+  type SessionArchiveSetReply,
   type SessionChooseAttachmentsReply,
   type SessionDelegationUsageReply,
   type SessionFeedReply,
@@ -53,6 +54,10 @@ export type SessionClient = {
     cursor: string | null
     restoreId: string | null
   }): Promise<SessionArchiveListReply>
+  setSessionsArchived(request: {
+    sessionIds: string[]
+    archived: boolean
+  }): Promise<SessionArchiveSetReply>
   readSessionFeed(request: {
     sessionId: string
     delegationId: string | null
@@ -91,6 +96,7 @@ export function createSessionClient(
     decideSessionQuestion: (request) => client.decideQuestion(request),
     listSessions: (request) => client.list(request),
     listArchivedSessions: (request) => client.archiveList(request),
+    setSessionsArchived: (request) => client.archiveSet(request),
     readWorkspaceFile: (request) => client.file(request),
     readSkillFile: (request) => client.skill(request),
     readShellOutput: (request) => client.shellOutput(request),

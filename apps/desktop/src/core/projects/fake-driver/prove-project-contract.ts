@@ -72,6 +72,7 @@ const SURFACE = [
   'sendSession',
   'setAppearance',
   'setCodexAutoCompactLimit',
+  'setSessionsArchived',
   'startSession',
   'statSessionAttachments',
   'updatePriority',

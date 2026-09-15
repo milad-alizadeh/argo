@@ -4,6 +4,7 @@ import { currentSessionId } from '@/core/sessions/models'
 import { useProjects } from '../../../projects/hooks/use-projects'
 import { useSelectedProject } from '../../../projects/hooks/use-selected-project'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
+import { useArchiveSelected } from '../../hooks/use-session-archive-mutation'
 import { useSessionTicketLink } from '../../hooks/use-session-ticket-link'
 import { useSessions } from '../../hooks/use-sessions'
 import { useComposerStore } from '../../state/use-composer-store'
@@ -24,6 +25,7 @@ export function SessionsSidebar() {
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)
+  const archiveSelected = useArchiveSelected()
   useEffect(() => {
     if (sessionId !== undefined || roster === null || rosterError !== null) return
     const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
@@ -39,6 +41,7 @@ export function SessionsSidebar() {
   return (
     <>
       <SessionsSidebarContent
+        onArchiveSelected={archiveSelected}
         onLinkTicket={setLinkTarget}
         onNew={() => {
           const target = newSessionTarget(lastHarness, cockpit.project?.path ?? null)

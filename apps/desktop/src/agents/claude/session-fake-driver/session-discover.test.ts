@@ -5,9 +5,13 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { fixturePath, replaceInFile, writeArchiveStore } from './session-fixture-files'
-import { fixtureRoot, LATER_TURN } from './session-fixtures'
+import {
+  fixtureRoot,
+  LATER_TURN,
+  unscopedListing as listing,
+  listSessions,
+} from './session-fixtures'
 
-const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 const feed = {
   version: 1,
   type: 'session.feed',
@@ -15,10 +19,6 @@ const feed = {
   sessionId: 'resumeParent',
   delegationId: null,
   revision: null,
-}
-
-function listSessions(value: unknown, root: string, archive?: string) {
-  return createClaudeSessionReader({ transcripts: root, archive }).listSessions(value)
 }
 
 function readFeed(value: unknown, root: string) {
