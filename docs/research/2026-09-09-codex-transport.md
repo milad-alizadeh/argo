@@ -48,7 +48,8 @@ Attachments remain separate from the draft:
 - Represent other local files with separate `text` input items containing their absolute paths. This is a file reference, not an upload.
 - Keep staged files available for the Session and its resume history. Reject inaccessible or unsupported attachments before sending any part of the submission.
 
-The file-reference text item is exactly `{"type":"text","text":absolutePath,"text_elements":[]}`.
+The file-reference text item is exactly `{"type":"text","text":absolutePath,"text_elements":[{"byteRange":{"start":0,"end":byteLength},"placeholder":absolutePath}]}`.
+The rollout joins every text item into one `user_message`, so the marked range is how the transcript finds the path again.
 Codex must read such a file through its tools and current permissions to obtain its bytes.
 The protocol has no generic `file` input variant.
 Image acceptance does not prove that a model understood the image.

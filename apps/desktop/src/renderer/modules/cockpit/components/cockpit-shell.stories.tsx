@@ -42,7 +42,7 @@ export const SidebarControls: Story = {
     if (header === null || railChrome === null) throw new Error('The cockpit chrome is absent.')
 
     expect(rail.getBoundingClientRect().width).toBe(64)
-    await expect(canvas.getByText('Sessions')).toHaveStyle({ fontSize: '10px' })
+    await expect(canvas.getByText('Sessions')).toHaveStyle({ fontSize: '13px' })
     expect(canvas.getByLabelText('Cockpit sidebar').getBoundingClientRect().width).toBe(368)
     expect(rail.getBoundingClientRect().top).toBeCloseTo(header.getBoundingClientRect().bottom, 1)
     expect(railChrome.getBoundingClientRect().bottom).toBeCloseTo(

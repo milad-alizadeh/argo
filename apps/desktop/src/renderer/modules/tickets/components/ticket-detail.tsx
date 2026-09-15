@@ -76,7 +76,7 @@ export function TicketDetail(props: TicketDetailProps) {
       <header className="border-b border-border/60">
         <div className={measure}>
           <div className="grid min-w-0 gap-(--spacing-shell-tight)">
-            <h2 className="min-w-0 ticket-title type-title wrap-anywhere">{ticket.title}</h2>
+            <h2 className="min-w-0 type-title wrap-anywhere">{ticket.title}</h2>
             <TicketKey provider={provider} ticket={ticket} />
           </div>
           <Properties

@@ -34,6 +34,8 @@
     "test:feed": "bun test src/core/sessions src/agents/claude/sessions src/agents/claude/session-fake-driver src/agents/codex/sessions src/renderer/modules/sessions/feed"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-virtual": "^3.14.13",
     "cmdk": "^1.1.1",

@@ -13,16 +13,31 @@ function firstOf<Kind extends TranscriptRecord['kind']>(records: TranscriptRecor
   )
 }
 
+function firstLine(text: string | null | undefined): string | undefined {
+  return text
+    ?.split('\n')
+    .find((line) => line.trim())
+    ?.trim()
+}
+
+function promptLine(record: TranscriptRecord): string | undefined {
+  // A voice thread opens on what the person said, handed over as a delegation rather than a prompt.
+  if (record.kind === 'delegation')
+    return record.actor === 'agent' ? firstLine(record.action) : undefined
+  if (record.kind !== 'message' || record.role !== 'user') return undefined
+  return record.blocks
+    .map((block) =>
+      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+        ? firstLine(block.text)
+        : undefined,
+    )
+    .find((line) => line !== undefined)
+}
+
 function readOpeningPrompt(records: TranscriptRecord[]): string | null {
   for (const record of records) {
-    if (record.kind !== 'message' || record.role !== 'user') continue
-    for (const block of record.blocks) {
-      const line =
-        block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
-          ? block.text?.split('\n').find((text) => text.trim())
-          : undefined
-      if (line !== undefined) return line.trim()
-    }
+    const line = promptLine(record)
+    if (line !== undefined) return line
   }
   return null
 }

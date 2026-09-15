@@ -106,7 +106,7 @@ export function SessionRosterItem({
           render={
             <button
               aria-current={selected ? 'page' : undefined}
-              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
+              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
               data-archived={archived}
               data-session-id={session.id}
               onClick={handleRowClick}
@@ -126,7 +126,7 @@ export function SessionRosterItem({
               {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className="block min-w-0 truncate type-roster-title text-foreground">
+                  <span className="block min-w-0 truncate type-body font-medium text-foreground">
                     <PromptText
                       interactiveLinks={false}
                       renderText={(value) => (

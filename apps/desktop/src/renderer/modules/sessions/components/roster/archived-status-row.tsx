@@ -68,7 +68,7 @@ export function ArchivedSectionRow({
         </Alert>
       )
     case 'archivedEmpty':
-      return <p className="px-2 text-sm text-muted-foreground">{t('archivedEmpty')}</p>
+      return <p className="px-2 type-body text-muted-foreground">{t('archivedEmpty')}</p>
     default:
       return null
   }

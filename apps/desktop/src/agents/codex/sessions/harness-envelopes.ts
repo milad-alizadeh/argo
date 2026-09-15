@@ -1,6 +1,8 @@
 import { isIdentifier } from '@/boundary'
 import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
 import { taggedField } from '../../envelope-tags'
+import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
+import { withoutChannelTag } from './realtime-replies'
 
 // The envelopes a user message can carry that `userRecord` reads.
 export const USER_HARNESS_ENVELOPES = new Set([
@@ -20,7 +22,7 @@ const HEARTBEAT_REPLY =
 
 function replyBlocks(text: string): ContentBlock[] {
   const reply = HEARTBEAT_REPLY.exec(text)
-  if (reply === null) return [{ shape: 'prose', text }]
+  if (reply === null) return text.trim() === '' ? [] : [{ shape: 'prose', text }]
   const around = [text.slice(0, reply.index), text.slice(reply.index + reply[0].length)]
   const [before, after] = around.map((part) => part.trim())
   const body = reply[1] ?? ''
@@ -33,11 +35,11 @@ function replyBlocks(text: string): ContentBlock[] {
   return [...prose(before), ...notice, ...prose(after)]
 }
 
-// A heartbeat turn that decided not to notify draws nothing; it still separates the Tool runs
-// either side of it, like any hidden harness delivery.
+// A heartbeat turn that decided not to notify, or a reply with no text, draws nothing; it still
+// separates the Tool runs either side of it, like any hidden harness delivery.
 function assistantRecord(message: TranscriptMessage): TranscriptRecord {
   const blocks = message.blocks.flatMap((block) =>
-    block.shape === 'prose' ? replyBlocks(block.text) : [block],
+    block.shape === 'prose' ? replyBlocks(withoutChannelTag(block.text)) : [block],
   )
   if (blocks.length === 0) return { kind: 'trace', uuid: message.uuid, boundary: true }
   return { ...message, blocks }
@@ -65,10 +67,15 @@ function realtimeDelegation(uuid: string, body: string): TranscriptRecord {
 // protocol.rs); the desktop app's in-app browser writes the shorter form.
 const REQUEST_HEADING = /^\s*## My request(?: for Codex)?:\s*/
 
-function withoutAmbientContext(text: string): string {
-  const context = /^\s*<in-app-browser-context(?:\s[^>]*)?>[\s\S]*?<\/in-app-browser-context>/
-  const rest = text.replace(context, '')
-  return rest === text ? text : rest.replace(REQUEST_HEADING, '').trim()
+const AMBIENT_CONTEXT = /^\s*<in-app-browser-context(?:\s[^>]*)?>[\s\S]*?<\/in-app-browser-context>/
+
+// The desktop app wraps a request in its attached files and browser state, in that order.
+function requestBlocks(text: string, hasImage: boolean): ContentBlock[] {
+  const mentioned = readMentionedFiles(text)
+  const rest = (mentioned?.rest ?? text).replace(AMBIENT_CONTEXT, '')
+  const request = rest === text ? text : rest.replace(REQUEST_HEADING, '').trim()
+  const files = mentionedBlocks(mentioned?.paths ?? [], hasImage)
+  return [...(request === '' ? [] : [{ shape: 'prose' as const, text: request }]), ...files]
 }
 
 // The heartbeat that wakes a thread is written by the system on a schedule, not by the person.
@@ -79,9 +86,9 @@ function userRecord(message: TranscriptMessage): TranscriptRecord {
     return { kind: 'trace', uuid: message.uuid, boundary: true }
   const delegation = wholeEnvelope(text, 'realtime_delegation')
   if (delegation !== null) return realtimeDelegation(message.uuid, delegation)
-  const blocks = message.blocks.map(
-    (block): ContentBlock =>
-      block.shape === 'prose' ? { shape: 'prose', text: withoutAmbientContext(block.text) } : block,
+  const hasImage = message.blocks.some((block) => block.shape === 'image')
+  const blocks = message.blocks.flatMap((block) =>
+    block.shape === 'prose' ? requestBlocks(block.text, hasImage) : [block],
   )
   return { ...message, blocks }
 }
@@ -96,7 +103,8 @@ const HEARTBEAT_TAG = '<heartbeat'
 
 // A streamed heartbeat reply is shown only up to its block, which is never meant for the reader;
 // a delta can end part-way through the tag, so a trailing start of it is held back too.
-export function draftText(text: string): string {
+export function draftText(streamed: string): string {
+  const text = withoutChannelTag(streamed)
   const cut = text.indexOf(HEARTBEAT_TAG)
   if (cut >= 0) return text.slice(0, cut).trimEnd()
   for (let length = HEARTBEAT_TAG.length - 1; length > 0; length -= 1)

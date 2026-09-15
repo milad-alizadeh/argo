@@ -96,7 +96,7 @@ export function SessionRenameDialog({
             value={name}
           />
           {error === null ? null : (
-            <p className="text-sm text-destructive" id="session-name-error" role="alert">
+            <p className="type-body text-destructive" id="session-name-error" role="alert">
               {error}
             </p>
           )}
