@@ -3,6 +3,12 @@ import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
+import {
+  beginCompaction,
+  clearCompaction,
+  compactSession,
+  completeCompaction,
+} from './compaction-driver'
 import type { ClaudeTurnRequest } from './deliver-turn'
 import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
@@ -12,6 +18,7 @@ import type { LiveMessage } from './live-messages'
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
   compact: (sessionId: string) => Promise<void>
+  beginCompaction: (sessionId: string, startedAt: string) => void
   completeCompaction: (sessionId: string, completedAt: string) => void
   handoff: (sessionId: string) => Promise<void>
   // Runs on every roster read (the same hot poll path as the ownership ledger): spawns the fresh
@@ -34,14 +41,7 @@ export type ClaudeSessionDriver = {
 }
 
 const INTERRUPT = '\u001b'
-const COMPACT = '/compact'
 type Sessions = Map<string, ManagedSession>
-
-function clearCompaction(session: ManagedSession) {
-  session.compactionStartedAt = null
-  session.compactionPercentage = null
-  session.compactionTokens = null
-}
 
 function closeSessions(options: DriverOptions, sessions: Sessions) {
   for (const [sessionId, session] of sessions) {
@@ -79,22 +79,6 @@ async function decideQuestion(
   if (pending === null || pending.id !== request.questionId) return false
   await context.channel.answer(session, request.answers)
   return true
-}
-
-function compactSession(options: DriverOptions, sessions: Sessions, sessionId: string) {
-  const session = sessions.get(sessionId)
-  if (!session) throw new ClaudeSessionDriverError('not-drivable')
-  clearCompaction(session)
-  session.compactionStartedAt = options.now().toISOString()
-  session.process.write(COMPACT)
-  session.process.write('\r')
-}
-
-function completeCompactionFor(sessions: Sessions, sessionId: string, completedAt: string) {
-  const session = sessions.get(sessionId)
-  if (!session || session.compactionStartedAt === null || completedAt < session.compactionStartedAt)
-    return
-  clearCompaction(session)
 }
 
 function interruptSession(sessions: Sessions, sessionId: string) {
@@ -144,8 +128,9 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       await channel.write(await channel.channelFor(sessionId, turn), turn)
     },
     compact: async (sessionId) => compactSession(options, sessions, sessionId),
+    beginCompaction: (sessionId, startedAt) => beginCompaction(sessions, sessionId, startedAt),
     completeCompaction: (sessionId, completedAt) =>
-      completeCompactionFor(sessions, sessionId, completedAt),
+      completeCompaction(sessions, sessionId, completedAt),
     handoff: (sessionId) => startHandoff(options, sessions, sessionId),
     completeHandoffs: () => completeHandoffs({ options, startSession, channel, sessions }),
     interrupt: (sessionId) => interruptSession(sessions, sessionId),

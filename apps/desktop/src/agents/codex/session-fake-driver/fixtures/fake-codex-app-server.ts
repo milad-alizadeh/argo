@@ -70,14 +70,13 @@ function completeTurn(threadId: unknown, turnId: string, text: string) {
   })
 }
 
-function completeCompaction(threadId: unknown) {
+function compactionItem(threadId: unknown, method: 'item/started' | 'item/completed') {
   send({
-    method: 'item/completed',
+    method,
     params: {
       threadId,
       turnId: `fake-compact-turn-${threadCounter}`,
-      completedAtMs: Date.now(),
-      item: { id: `fake-compaction-${threadCounter}-${Date.now()}`, type: 'contextCompaction' },
+      item: { id: `fake-compaction-${threadCounter}`, type: 'contextCompaction' },
     },
   })
 }
@@ -132,7 +131,8 @@ function handleRequest(message: {
     case 'thread/compact/start': {
       const threadId = message.params?.threadId
       send({ id: message.id, result: {} })
-      setTimeout(() => completeCompaction(threadId), 10)
+      compactionItem(threadId, 'item/started')
+      setTimeout(() => compactionItem(threadId, 'item/completed'), 10)
       return
     }
     case 'thread/name/set': {

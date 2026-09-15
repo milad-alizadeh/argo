@@ -7,45 +7,62 @@ import { fakeChannel } from './fake-channel.ts'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 
-test('compacts a Codex Session and clears its compaction once Codex reports the item complete', async () => {
-  const channel = fakeChannel()
-  const driver = createCodexSessionDriver({
+function codexDriver(channel: CodexChannel) {
+  return createCodexSessionDriver({
     findExecutable: () => '/usr/local/bin/codex',
     now: () => STARTED_AT,
     resumeTarget: async () => null,
     openChannel: () => channel,
   })
+}
+
+async function startedSession(channel: CodexChannel) {
+  const driver = codexDriver(channel)
   const sessionId = await driver.start({
     attachments: [],
     cwd: '/projects/argo',
     prompt: 'Inspect the test.',
   })
+  const compactionStartedAt = () => driver.roster().map((row) => row.compactionStartedAt)
+  return { driver, sessionId, compactionStartedAt }
+}
+
+function reportCompaction(
+  channel: ReturnType<typeof fakeChannel>,
+  threadId: string,
+  method: 'item/started' | 'item/completed',
+) {
+  channel.notifications[0]?.({
+    method,
+    params: { threadId, turnId: 'turn-1', item: { id: 'compaction-1', type: 'contextCompaction' } },
+  } as never)
+}
+
+test('compacts a Codex Session and clears its compaction once Codex reports the item complete', async () => {
+  const channel = fakeChannel()
+  const { driver, sessionId, compactionStartedAt } = await startedSession(channel)
 
   await driver.compact(sessionId)
+  reportCompaction(channel, sessionId, 'item/started')
+  const during = compactionStartedAt()
+  reportCompaction(channel, sessionId, 'item/completed')
 
   assert.deepEqual(channel.calls.at(-1), {
     method: 'thread/compact/start',
     params: { threadId: sessionId },
   })
-  assert.deepEqual(
-    driver.roster().map(({ id, compactionStartedAt }) => ({ id, compactionStartedAt })),
-    [{ id: sessionId, compactionStartedAt: STARTED_AT.toISOString() }],
-  )
+  assert.deepEqual([during, compactionStartedAt()], [[STARTED_AT.toISOString()], [null]])
+})
 
-  channel.notifications[0]?.({
-    method: 'item/completed',
-    params: {
-      threadId: sessionId,
-      turnId: 'compact-turn-1',
-      completedAtMs: 1,
-      item: { id: 'compaction-1', type: 'contextCompaction' },
-    },
-  } as never)
+test('shows a compaction Codex starts on its own until Codex reports it complete', async () => {
+  const channel = fakeChannel()
+  const { sessionId, compactionStartedAt } = await startedSession(channel)
 
-  assert.deepEqual(
-    driver.roster().map(({ id, compactionStartedAt }) => ({ id, compactionStartedAt })),
-    [{ id: sessionId, compactionStartedAt: null }],
-  )
+  reportCompaction(channel, sessionId, 'item/started')
+  const during = compactionStartedAt()
+  reportCompaction(channel, sessionId, 'item/completed')
+
+  assert.deepEqual([during, compactionStartedAt()], [[STARTED_AT.toISOString()], [null]])
 })
 
 test('leaves a Codex Session usable when its compact request fails', async () => {
@@ -58,33 +75,15 @@ test('leaves a Codex Session usable when its compact request fails', async () =>
       return decode({})
     },
   }
-  const driver = createCodexSessionDriver({
-    findExecutable: () => '/usr/local/bin/codex',
-    now: () => STARTED_AT,
-    resumeTarget: async () => null,
-    openChannel: () => channel,
-  })
-  const sessionId = await driver.start({
-    attachments: [],
-    cwd: '/projects/argo',
-    prompt: 'Inspect the test.',
-  })
+  const { driver, sessionId, compactionStartedAt } = await startedSession(channel)
 
   await assert.rejects(driver.compact(sessionId))
 
-  assert.deepEqual(
-    driver.roster().map(({ id, compactionStartedAt }) => ({ id, compactionStartedAt })),
-    [{ id: sessionId, compactionStartedAt: null }],
-  )
+  assert.deepEqual(compactionStartedAt(), [null])
 })
 
 test('refuses to compact a Session Argo no longer holds', async () => {
-  const driver = createCodexSessionDriver({
-    findExecutable: () => '/usr/local/bin/codex',
-    now: () => STARTED_AT,
-    resumeTarget: async () => null,
-    openChannel: () => fakeChannel(),
-  })
+  const driver = codexDriver(fakeChannel())
 
   await assert.rejects(
     driver.compact('unknown-session'),

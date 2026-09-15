@@ -1,6 +1,6 @@
 import type { SessionRosterRow } from '../../../core/sessions/models'
 import { rollupSessionStatus } from '../../../core/sessions/session-status-rollup'
-import { readCompletedCompaction } from './compact-protocol'
+import { readCompletedCompaction, readStartedCompaction } from './compact-protocol'
 import type { LiveMessages } from './live-messages'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
@@ -21,11 +21,13 @@ type HeldSession = {
 export function recordCodexNotification({
   acceptTitle,
   message,
+  now,
   sessionId,
   sessions,
 }: {
   acceptTitle: (title: string) => void
   message: WireMessage
+  now: () => Date
   sessionId: string
   sessions: Map<string, HeldSession>
 }): boolean {
@@ -61,19 +63,24 @@ export function recordCodexNotification({
     })
     return false
   }
-  const compacted = readCompletedCompaction(message)
-  if (compacted?.threadId === sessionId) session.compactionStartedAt = null
+  // A compaction Argo requested already holds its start; an automatic one starts here.
+  if (readStartedCompaction(message)?.threadId === sessionId)
+    session.compactionStartedAt ??= now().toISOString()
+  if (readCompletedCompaction(message)?.threadId === sessionId) session.compactionStartedAt = null
   return false
 }
 
-export function codexNotificationRecorder(
-  sessionId: string,
-  sessions: Map<string, HeldSession>,
-  renameWaiters: Map<string, (title: string) => void>,
-) {
+export function codexNotificationRecorder(options: {
+  sessionId: string
+  sessions: Map<string, HeldSession>
+  renameWaiters: Map<string, (title: string) => void>
+  now: () => Date
+}) {
+  const { now, renameWaiters, sessionId, sessions } = options
   return (message: WireMessage) =>
     recordCodexNotification({
       message,
+      now,
       sessionId,
       sessions,
       acceptTitle: (title) => {

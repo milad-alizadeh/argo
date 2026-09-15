@@ -74,6 +74,8 @@ export function launch(
 ) {
   const spawned: Spawned[] = []
   const exits: Array<() => unknown> = []
+  // What each process draws on its own, unprompted, the way a spinner repaints.
+  const paints: Array<(data: string) => void> = []
   // What each Session's MessageDisplay hook would deliver, keyed by Session.
   const displays = new Map<string, (batch: unknown) => void>()
   const ledger = createOwnershipLedger({
@@ -99,7 +101,9 @@ export function launch(
       const { cwd, env: environment } = spawnOptions
       const record = { command, commandArguments, cwd, environment, writes: [] as string[] }
       spawned.push(record)
-      return { ...terminal(record.writes), onExit: (listener) => exits.push(listener) }
+      const process = terminal(record.writes)
+      paints.push(process.paint)
+      return { ...process, onExit: (listener) => exits.push(listener) }
     },
     gate: options.gate ?? fakePermissionGate(),
     pluginRoot,
@@ -114,7 +118,8 @@ export function launch(
   })
   const state: Launch = { spawned, exit: (index) => exits[index]?.() }
   const display = (sessionId: string, batch: unknown) => displays.get(sessionId)?.(batch)
-  return { driver, ledger, handoffLedger, display, pluginRoot, ...state }
+  const paint = (index: number, data: string) => paints[index]?.(data)
+  return { driver, ledger, handoffLedger, display, paint, pluginRoot, ...state }
 }
 
 // A Session a previous launch started and released when it quit.
@@ -144,6 +149,7 @@ function terminal(writes: string[]) {
     onData: (next: (data: string) => void) => {
       listener = next
     },
+    paint: (data: string) => listener(data),
   }
 }
 

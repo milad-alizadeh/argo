@@ -157,6 +157,13 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
   if (payload === null) return null
   if (record.type === 'event_msg') return event(record, payload)
   if (record.type === 'response_item') return responseMessage(record, payload)
+  // Written once the context is replaced, by a manual `/compact` and an automatic one alike.
+  if (record.type === 'compacted' && typeof record.timestamp === 'string')
+    return {
+      kind: 'compaction',
+      uuid: `compacted:${record.timestamp}`,
+      timestamp: record.timestamp,
+    }
   if (record.type === 'session_meta' && typeof payload.id === 'string') {
     return {
       kind: 'trace',
