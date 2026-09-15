@@ -57,14 +57,16 @@ export function ContextPicker({
   onClose,
   onSelectTicket,
   query = '',
+  autoFocus = true,
 }: {
   onAttach: () => void
   onClose: () => void
   onSelectTicket: (ticket: TicketChoice) => void
   query?: string
+  autoFocus?: boolean
 }) {
   const { t } = useTranslation('sessions')
-  const focus = useContextPickerFocus(onClose)
+  const focus = useContextPickerFocus(onClose, autoFocus)
   const tickets = TICKETS.map(({ statusKey, titleKey, ...ticket }) => ({
     ...ticket,
     status: t(statusKey),

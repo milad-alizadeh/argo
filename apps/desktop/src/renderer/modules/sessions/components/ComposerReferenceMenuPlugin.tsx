@@ -63,7 +63,8 @@ export function ComposerReferenceMenuPlugin({
   draft: string
 }) {
   const [editor] = useLexicalComposerContext()
-  const menu = useReferenceChoices(disabled ? '' : draft, editor)
+  const reference = activeReference(draft.trimEnd())
+  const menu = useReferenceChoices(disabled || reference?.trigger === '@' ? '' : draft, editor)
   const menuRef = useRef(menu)
   menuRef.current = menu
   useEffect(

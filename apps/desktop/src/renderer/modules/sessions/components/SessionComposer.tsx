@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
 import { ComposerForm } from './ComposerForm'
+import { activeReference } from './composer-reference-menu'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import type { Send } from './useSend'
@@ -42,6 +43,9 @@ export function SessionComposer({
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
+  useEffect(() => {
+    if (activeReference(state.draft.trimEnd())?.trigger === '@') setContextPickerOpen(true)
+  }, [state.draft])
   return (
     <ComposerForm
       attachments={state.attachments}

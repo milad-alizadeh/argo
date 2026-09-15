@@ -19,7 +19,7 @@ export function DraftContextPicker({
   onAttach: () => void
   onClose: () => void
 }) {
-  const reference = activeReference(draft)
+  const reference = activeReference(draft.trimEnd())
   const query = reference?.trigger === '@' ? reference.query : ''
   return (
     <ContextPicker
@@ -29,6 +29,7 @@ export function DraftContextPicker({
       }}
       onClose={onClose}
       query={query}
+      autoFocus={reference === null}
       onSelectTicket={(ticket) => {
         onClose()
         const editor = editorRef.current
