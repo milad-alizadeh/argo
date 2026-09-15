@@ -93,9 +93,13 @@
 
 /* A background work block's state inks, leaned toward the ink so each holds contrast in both
    appearances, and the one motion that says the work is still running. */
-[data-slot="feed-delegation"],
-.feed-work-shimmer {
+[data-slot="feed-delegation"] {
   --feed-work-ink-active: color-mix(in oklab, var(--color-active) 62%, var(--foreground));
+}
+
+/* The shimmer's glint leans to the ground, so it is a light band in light and a dark one in dark. */
+.feed-work-shimmer {
+  --feed-work-glint: color-mix(in oklab, var(--foreground) 22%, var(--background));
 }
 
 [data-slot="feed-delegation"] {
@@ -115,9 +119,9 @@
 .feed-work-shimmer {
   background-image: linear-gradient(
     90deg,
-    var(--foreground) 38%,
-    var(--feed-work-ink-active) 50%,
-    var(--foreground) 62%
+    var(--foreground) 40%,
+    var(--feed-work-glint) 50%,
+    var(--foreground) 60%
   );
   background-size: 300% 100%;
   background-clip: text;

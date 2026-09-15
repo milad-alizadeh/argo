@@ -14,10 +14,10 @@
     letter-spacing: var(--text-heading-tracking);
   }
 
-  /* A Roster row's title sits at heading size but body weight, so a column of them reads light. */
+  /* A Roster row's title sits a step under heading size at body weight, so a column reads light. */
   .type-roster-title.type-roster-title {
-    font-size: var(--text-session-heading);
-    line-height: var(--text-session-heading--line-height);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     font-weight: var(--text-body-weight);
     letter-spacing: var(--text-heading-tracking);
   }
