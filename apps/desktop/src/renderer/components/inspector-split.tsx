@@ -57,8 +57,8 @@ function InspectorPanel({
           (panels.state === 'collapsed' || !panels.isInspectorReady) && 'invisible',
         )}
       >
-        <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
-          {bar}
+        <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
+          <div className="no-drag-region flex min-w-0 flex-1 items-center">{bar}</div>
         </header>
         {inspector}
       </aside>
