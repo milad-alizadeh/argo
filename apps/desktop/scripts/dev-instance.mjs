@@ -74,8 +74,8 @@ function runLinker() {
 async function main() {
   const worktree = await realpath(REPOSITORY_ROOT)
   const instance = developmentInstance(worktree)
-  await rm(instance.readyFile, { force: true })
   await assertPortAvailable(instance.port, instance.id)
+  await rm(instance.readyFile, { force: true })
   runLinker()
 
   const child = spawn('electron-forge', ['start'], {
