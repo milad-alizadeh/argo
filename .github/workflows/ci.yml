@@ -114,26 +114,39 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      # A replayed task needs neither Chromium nor the Electron zip, so a HIT skips their setup. Any
+      # other answer, a failed dry run included, sets them up (#2217).
+      - id: replay
+        name: Ask turbo which slow tasks it will replay
+        if: ${{ !cancelled() }}
+        run: |
+          summary=$(bun run turbo run test:storybook test:darwin-manifest --filter=@argo/desktop --dry=json)
+          echo "storybook=$(jq -r '.tasks[] | select(.task == "test:storybook") | .cache.status' <<< "$summary")" >> "$GITHUB_OUTPUT"
+          echo "package=$(jq -r '.tasks[] | select(.task == "test:darwin-manifest") | .cache.status' <<< "$summary")" >> "$GITHUB_OUTPUT"
+          jq -r '.tasks[] | "\(.task): \(.cache.status)"' <<< "$summary"
+
       # Keyed on the CLI that installs, so a Playwright bump fetches its own browser revision (#1966).
       - id: playwright
         name: Read the Playwright version
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
         run: |
           version=$(bunx playwright --version)
           echo "version=${version#Version }" >> "$GITHUB_OUTPUT"
 
       # The browsers only: `install` skips a present one but still runs apt for the fonts.
       - name: Playwright browser cache
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
 
       - name: Install Chromium for Storybook interaction tests
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
         run: bunx playwright install --with-deps chromium
 
+      # Ahead of the darwin package, whose `npm ci` deletes `apps/desktop/node_modules` and Vite's
+      # dependency cache in it: a cold start right after it failed the Mermaid stories locally.
       - name: Storybook interaction tests
         if: ${{ !cancelled() }}
         run: bun run test:storybook
@@ -163,22 +176,14 @@ jobs:
       # This job's `name:` is `main`'s required status check, matched literally, and renaming it
       # strands every open pull request on a check that never reports (#1733). So the name still
       # says what it said before this step arrived.
-      - if: ${{ !cancelled() }}
+      - if: ${{ !cancelled() && steps.replay.outputs.package != 'HIT' }}
         uses: ./.github/actions/electron-cache
 
-      - id: package
-        name: Package for darwin
+      # One turbo task packages and then reads the manifest, so turbo replays the pair when nothing
+      # it hashes changed, a lockfile included (#2217).
+      - name: Package for darwin and test its manifest
         if: ${{ !cancelled() }}
-        working-directory: apps/desktop
-        run: bun run package --platform darwin --arch arm64
-
-      # Gated on the package step alone, not `success()`: every gate above runs even after an
-      # earlier one fails, so a lint error must not take the manifest verdict with it. What this
-      # cannot survive is a failed package, which reports "no Contents/Resources" over the cause.
-      - name: Test package manifest
-        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
-        working-directory: apps/desktop
-        run: bun run test:packaged-manifest out/Argo-darwin-arm64/Argo.app
+        run: bun run turbo run test:darwin-manifest --filter=@argo/desktop
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about
