@@ -65,51 +65,62 @@ export function ContextPickerContents({
   onAttach,
   onSelectTicket,
   providerLabel,
+  selectedIndex,
+  showDefaultOptions,
   tickets,
 }: {
   onAttach: () => void
   onSelectTicket: (ticket: TicketChoice) => void
   providerLabel: (provider: TicketChoice['provider']) => string
+  selectedIndex: number
+  showDefaultOptions: boolean
   tickets: TicketChoice[]
 }) {
   const { t } = useTranslation('sessions')
   return (
     <>
-      <div className="border-t pt-(--spacing-shell-item)">
-        <button
-          className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-          onClick={onAttach}
-          type="button"
-        >
-          <Folder aria-hidden="true" className="size-4" />
-          <span className="type-label">{t('composer.contextPicker.filesAndFolders')}</span>
-        </button>
-      </div>
-      <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
-        <p className="px-(--spacing-shell-inset) type-meta text-muted-foreground">
-          {t('composer.contextPicker.tickets')}
-        </p>
-        {tickets.map((ticket, index) => (
-          <TicketResult
-            key={`${ticket.provider}-${ticket.key}`}
-            onSelect={onSelectTicket}
-            providerLabel={providerLabel}
-            selected={index === 0}
-            ticket={ticket}
-          />
-        ))}
-      </div>
-      <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
-        <button
-          aria-disabled="true"
-          className="flex w-full cursor-not-allowed items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left text-muted-foreground type-label"
-          disabled
-          type="button"
-        >
-          {t('composer.contextPicker.goals')}
-          <span className="type-meta">{t('composer.contextPicker.comingSoon')}</span>
-        </button>
-      </div>
+      {showDefaultOptions ? (
+        <div className="border-t pt-(--spacing-shell-item)">
+          <button
+            className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+            onClick={onAttach}
+            type="button"
+          >
+            <Folder aria-hidden="true" className="size-4" />
+            <span className="type-label">{t('composer.contextPicker.filesAndFolders')}</span>
+          </button>
+        </div>
+      ) : null}
+      {tickets.length > 0 ? (
+        <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
+          <div className="flex items-center gap-(--spacing-shell-item) px-(--spacing-shell-inset)">
+            <span className="size-4" />
+            <p className="type-meta text-muted-foreground">{t('composer.contextPicker.tickets')}</p>
+          </div>
+          {tickets.map((ticket, index) => (
+            <TicketResult
+              key={`${ticket.provider}-${ticket.key}`}
+              onSelect={onSelectTicket}
+              providerLabel={providerLabel}
+              selected={index === selectedIndex}
+              ticket={ticket}
+            />
+          ))}
+        </div>
+      ) : null}
+      {showDefaultOptions ? (
+        <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
+          <button
+            aria-disabled="true"
+            className="flex w-full cursor-not-allowed items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left text-muted-foreground type-label"
+            disabled
+            type="button"
+          >
+            {t('composer.contextPicker.goals')}
+            <span className="type-meta">{t('composer.contextPicker.comingSoon')}</span>
+          </button>
+        </div>
+      ) : null}
     </>
   )
 }

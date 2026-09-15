@@ -8,12 +8,52 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import type { RefObject } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
 import { $createComposerTicketReferenceNode } from './ComposerTicketReferenceNode'
 import { ContextPicker } from './ContextPicker'
 import { activeReference } from './composer-reference-menu'
+
+function contextTicketButtons() {
+  return [...document.querySelectorAll<HTMLButtonElement>('[data-context-ticket="true"]')]
+}
+
+function moveTicketSelection(
+  event: KeyboardEvent,
+  length: number,
+  setSelectedIndex: (value: (index: number) => number) => void,
+) {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return false
+  event.preventDefault()
+  setSelectedIndex((index) => (index + (event.key === 'ArrowDown' ? 1 : -1) + length) % length)
+  return true
+}
+
+function useTicketKeyboardNavigation(editorRef: RefObject<LexicalEditor | null>, active: boolean) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  useEffect(() => {
+    const editor = editorRef.current
+    if (editor === null) return
+    return editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event) => {
+        if (!active) return false
+        const tickets = contextTicketButtons()
+        if (tickets.length === 0) return false
+        if (moveTicketSelection(event, tickets.length, setSelectedIndex)) return true
+        if (event.key !== 'Enter') return false
+        const ticket = tickets[selectedIndex]
+        if (ticket === undefined) return false
+        event.preventDefault()
+        ticket.click()
+        return true
+      },
+      COMMAND_PRIORITY_HIGH,
+    )
+  }, [active, editorRef, selectedIndex])
+  return selectedIndex
+}
 
 export function DraftContextPicker({
   editorRef,
@@ -30,24 +70,7 @@ export function DraftContextPicker({
 }) {
   const reference = activeReference(draft.trimEnd())
   const query = reference?.trigger === '@' ? reference.query : ''
-  useEffect(() => {
-    const editor = editorRef.current
-    if (editor === null) return
-    return editor.registerCommand(
-      KEY_DOWN_COMMAND,
-      (event) => {
-        if (event.key !== 'Enter' || reference?.trigger !== '@') return false
-        const firstTicket = document.querySelector<HTMLButtonElement>(
-          '[data-context-ticket="true"]',
-        )
-        if (firstTicket === null) return false
-        event.preventDefault()
-        firstTicket.click()
-        return true
-      },
-      COMMAND_PRIORITY_HIGH,
-    )
-  }, [editorRef, reference?.trigger])
+  const selectedIndex = useTicketKeyboardNavigation(editorRef, reference?.trigger === '@')
   return (
     <ContextPicker
       onAttach={() => {
@@ -57,6 +80,7 @@ export function DraftContextPicker({
       onClose={onClose}
       query={query}
       autoFocus={reference === null}
+      selectedIndex={selectedIndex}
       onSelectTicket={(ticket) => {
         onClose()
         const editor = editorRef.current

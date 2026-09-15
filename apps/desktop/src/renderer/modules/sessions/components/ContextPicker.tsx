@@ -58,12 +58,14 @@ export function ContextPicker({
   onSelectTicket,
   query = '',
   autoFocus = true,
+  selectedIndex = 0,
 }: {
   onAttach: () => void
   onClose: () => void
   onSelectTicket: (ticket: TicketChoice) => void
   query?: string
   autoFocus?: boolean
+  selectedIndex?: number
 }) {
   const { t } = useTranslation('sessions')
   const focus = useContextPickerFocus(onClose, autoFocus)
@@ -92,6 +94,8 @@ export function ContextPicker({
         onAttach={onAttach}
         onSelectTicket={onSelectTicket}
         providerLabel={providerLabel}
+        selectedIndex={selectedIndex}
+        showDefaultOptions={normalizedQuery === ''}
         tickets={shownTickets}
       />
     </div>
