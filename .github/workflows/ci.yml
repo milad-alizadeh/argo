@@ -1,6 +1,7 @@
-# Two tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
-# the packaged-contents manifest (#1806) on Linux for every PR — the manifest with no path filter,
-# because a lockfile refresh can change what ships without touching an `apps/desktop` file.
+# Two tiers. On Linux, for every PR, `gates`, `storybook` and `darwin-manifest` run in parallel:
+# biome, the typecheck, the duplication gate, the tests, the Storybook interaction tests and the
+# packaged-contents manifest (#1806). The manifest has no path filter, because a lockfile refresh
+# can change what ships without touching an `apps/desktop` file. `check` passes when all three do.
 # `desktop-artifact` packages `apps/desktop` for arm64 on macOS and runs its packaged tests (#1769)
 # on a PR only when it touches the desktop app, the root manifest, the lockfile or `.github/`, and
 # its filter fails CLOSED. It also runs on every push to `main`, unfiltered, to write the
@@ -30,14 +31,16 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    name: lint · types · duplication · hook tests
+  # The Linux tier runs as three parallel jobs, because in one job the darwin package, Storybook and
+  # the gates ran in sequence and a desktop source change waited about four minutes (#2225).
+  gates:
+    name: lint · types · tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      # The one job on Linux, so it owns the `Linux-bun-*` cache write. `desktop-artifact` writes
-      # its own `macOS-bun-*` cache under a separate key (#2214).
+      # The only job that writes the `Linux-bun-*` cache: parallel writers race for one key, and
+      # `desktop-artifact` writes its own `macOS-bun-*` cache (#2214).
       - uses: ./.github/actions/setup
         with:
           save-cache: "true"
@@ -45,7 +48,7 @@ jobs:
       # Turbo's remote cache, backed by this repository's own Actions cache. The action runs a
       # cache server on localhost for the life of the job and exports TURBO_API, TURBO_TOKEN and
       # TURBO_TEAM at it, so `turbo run` restores a task it has already judged instead of running
-      # it again.
+      # it again. Each Linux job starts its own server over the same store.
       #
       # It has to sit above the first `turbo run` step, which is the typecheck.
       #
@@ -116,45 +119,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
-      # A replayed task needs neither Chromium nor the Electron zip, so a HIT skips their setup. Any
-      # other answer, a failed dry run included, sets them up (#2217). A HIT evicted before the real
-      # run costs only the Electron cache, since @electron/get downloads on its own, but it fails
-      # Storybook for a missing Chromium, and a rerun then installs it.
-      - id: replay
-        name: Ask turbo which slow tasks it will replay
-        if: ${{ !cancelled() }}
-        run: |
-          summary=$(bun run turbo run test:storybook test:darwin-manifest --filter=@argo/desktop --dry=json)
-          echo "storybook=$(jq -r '.tasks[] | select(.task == "test:storybook") | .cache.status' <<< "$summary")" >> "$GITHUB_OUTPUT"
-          echo "package=$(jq -r '.tasks[] | select(.task == "test:darwin-manifest") | .cache.status' <<< "$summary")" >> "$GITHUB_OUTPUT"
-          jq -r '.tasks[] | "\(.task): \(.cache.status)"' <<< "$summary"
-
-      # Keyed on the CLI that installs, so a Playwright bump fetches its own browser revision (#1966).
-      - id: playwright
-        name: Read the Playwright version
-        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
-        run: |
-          version=$(bunx playwright --version)
-          echo "version=${version#Version }" >> "$GITHUB_OUTPUT"
-
-      # The browsers only: `install` skips a present one but still runs apt for the fonts.
-      - name: Playwright browser cache
-        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
-
-      - name: Install Chromium for Storybook interaction tests
-        if: ${{ !cancelled() && steps.replay.outputs.storybook != 'HIT' }}
-        run: bunx playwright install --with-deps chromium
-
-      # Ahead of the darwin package, whose `npm ci` deletes `apps/desktop/node_modules` and Vite's
-      # dependency cache in it: a cold start right after it failed the Mermaid stories locally.
-      - name: Storybook interaction tests
-        if: ${{ !cancelled() }}
-        run: bun run test:storybook
-
       # Guardrail-hook tests (the publish guard, the worktree edit and naming guards, the shell
       # command reader) live outside the turbo `test` pipeline — plain node scripts, not a
       # workspace suite. They are what stands between a guard's prose and its behaviour.
@@ -162,32 +126,99 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test:hooks
 
-      # The package contents, on EVERY pull request and with no path filter (#1806). The
-      # manifest's likeliest regression is a lockfile refresh, and a dependency bump may touch no
-      # `apps/desktop` file at all, so the filter the macOS job carries would be wrong here.
-      #
-      # Forge packages for darwin on Linux, and the asar entry list is plain JavaScript over the
-      # built app. Nothing here signs, notarizes or builds the DMG, and none of that is what the
-      # manifest reads. This job needs no `Install the Electron binary` step, unlike the macOS one
-      # below: a cross-platform target is never the local `node_modules/electron`, so
-      # @electron/packager downloads the darwin zip through @electron/get itself. Verified by
-      # packaging darwin arm64 in a Linux container on the pinned Node.
-      #
-      # arm64: the architecture that actually ships, so both tiers read one package shape. A
-      # non-darwin host can build it only because `resetAdHocDarwinSignature` is narrowed to a
-      # darwin build host in forge.config.ts, which is where the reason for it is written down.
-      #
-      # This job's `name:` is `main`'s required status check, matched literally, and renaming it
-      # strands every open pull request on a check that never reports (#1733). So the name still
-      # says what it said before this step arrived.
-      - if: ${{ !cancelled() && steps.replay.outputs.package != 'HIT' }}
+  storybook:
+    name: storybook interaction tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+      - name: Turbo remote cache
+        uses: rharkor/caching-for-turbo@v2.5.1
+
+      - id: replay
+        uses: ./.github/actions/turbo-replay
+        with:
+          task: test:storybook
+
+      # Keyed on the CLI that installs, so a Playwright bump fetches its own browser revision (#1966).
+      - id: playwright
+        name: Read the Playwright version
+        if: steps.replay.outputs.status != 'HIT'
+        run: |
+          version=$(bunx playwright --version)
+          echo "version=${version#Version }" >> "$GITHUB_OUTPUT"
+
+      # The browsers only: `install` skips a present one but still runs apt for the fonts.
+      - name: Playwright browser cache
+        if: steps.replay.outputs.status != 'HIT'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium for Storybook interaction tests
+        if: steps.replay.outputs.status != 'HIT'
+        run: bunx playwright install --with-deps chromium
+
+      - name: Storybook interaction tests
+        run: bun run test:storybook
+
+  # The package contents, on EVERY pull request and with no path filter (#1806). The manifest's
+  # likeliest regression is a lockfile refresh, and a dependency bump may touch no `apps/desktop`
+  # file at all, so the filter the macOS job carries would be wrong here.
+  #
+  # Forge packages for darwin on Linux, and the asar entry list is plain JavaScript over the built
+  # app. Nothing here signs, notarizes or builds the DMG, and none of that is what the manifest
+  # reads. This job needs no `Install the Electron binary` step, unlike the macOS one below: a
+  # cross-platform target is never the local `node_modules/electron`, so @electron/packager
+  # downloads the darwin zip through @electron/get itself. Verified by packaging darwin arm64 in a
+  # Linux container on the pinned Node.
+  #
+  # arm64: the architecture that actually ships, so both tiers read one package shape. A
+  # non-darwin host can build it only because `resetAdHocDarwinSignature` is narrowed to a darwin
+  # build host in forge.config.ts, which is where the reason for it is written down.
+  darwin-manifest:
+    name: darwin package manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+      - name: Turbo remote cache
+        uses: rharkor/caching-for-turbo@v2.5.1
+
+      - id: replay
+        uses: ./.github/actions/turbo-replay
+        with:
+          task: test:darwin-manifest
+
+      - if: steps.replay.outputs.status != 'HIT'
         uses: ./.github/actions/electron-cache
 
       # One turbo task packages and then reads the manifest, so turbo replays the pair when nothing
       # it hashes changed, a lockfile included (#2217).
       - name: Package for darwin and test its manifest
-        if: ${{ !cancelled() }}
         run: bun run turbo run test:darwin-manifest --filter=@argo/desktop
+
+  # This job's `name:` is `main`'s required status check, matched literally, and renaming it
+  # strands every open pull request on a check that never reports (#1733). So it keeps the name
+  # the single Linux job had, and passes only when every Linux job passed.
+  check:
+    name: lint · types · duplication · hook tests
+    needs: [gates, storybook, darwin-manifest]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every Linux job to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "gates, storybook, darwin-manifest: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then exit 1; fi
+          done
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about
@@ -249,12 +280,12 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
 
-      # Both jobs take Node from `.node-version` (#1800), which is what this job needs anyway: the
+      # Every job takes Node from `.node-version` (#1800), which is what this job needs anyway: the
       # yauzl@2 hang the root override prevents only appears from Node 24.16 (forge#4277), so a
       # gate on an older Node would never see the thing the override is there for.
       #
-      # `save-cache: "true"`: this job's own writer of the `macOS-bun-*` cache. The Linux `check`
-      # job's cache lives under a `Linux-` key, so the two never race for the same entry (#2214).
+      # `save-cache: "true"`: this job's own writer of the `macOS-bun-*` cache. The Linux `gates`
+      # job writes under a `Linux-` key, so the two never race for the same entry (#2214).
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/setup
         with:
