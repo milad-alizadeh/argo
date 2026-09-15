@@ -44,7 +44,7 @@ export function SessionComposer({
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
   useEffect(() => {
-    if (activeReference(state.draft.trimEnd())?.trigger === '@') setContextPickerOpen(true)
+    if (activeReference(state.draft)?.trigger === '@') setContextPickerOpen(true)
   }, [state.draft])
   return (
     <ComposerForm

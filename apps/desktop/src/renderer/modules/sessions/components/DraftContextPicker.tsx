@@ -68,7 +68,7 @@ export function DraftContextPicker({
   onAttach: () => void
   onClose: () => void
 }) {
-  const reference = activeReference(draft.trimEnd())
+  const reference = activeReference(draft)
   const query = reference?.trigger === '@' ? reference.query : ''
   const selectedIndex = useTicketKeyboardNavigation(editorRef, reference?.trigger === '@')
   return (
