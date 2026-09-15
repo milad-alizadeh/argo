@@ -60,6 +60,7 @@ export function FeedRow({
         answering={answering}
         questionFailure={questionFailure}
         row={row}
+        streaming={streaming}
         streamingText={text}
       />
     </article>
@@ -83,6 +84,7 @@ function FeedRowContent({
   onAnswerQuestion,
   answering,
   questionFailure,
+  streaming,
   streamingText,
 }: FeedRowProps & { streamingText: string }) {
   switch (row.shape) {
@@ -107,6 +109,7 @@ function FeedRowContent({
             activeEvidenceId={activeEvidenceId}
             onOpenEvidence={onOpenEvidence}
             rowId={row.id}
+            streaming={streaming}
             text={streamingText}
           />
         )

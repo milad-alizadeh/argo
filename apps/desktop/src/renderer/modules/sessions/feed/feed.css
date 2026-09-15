@@ -89,3 +89,22 @@
   display: flex;
   align-items: center;
 }
+
+/* `remarkRevealWords` wraps each streamed word in one of these; React mounts a fresh span only
+   for a word that did not exist last render, so the animation plays once, on arrival. */
+.feed-reveal-word {
+  animation: feed-reveal-word-in 200ms ease-out both;
+}
+
+@keyframes feed-reveal-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-reveal-word {
+    animation: none;
+  }
+}

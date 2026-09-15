@@ -86,15 +86,13 @@ export const RunningSubagent: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Interface review')).toBeVisible()
     await expect(canvas.getByText('Running · 5m 0s')).toBeVisible()
-    // The delegation is running, so the last assistant row streams its reveal in rather than
-    // showing the full text on the first render.
+    // The delegation is running, so the last assistant row streams its reveal in, one word per
+    // `<span>`, rather than showing the full text as one text node on the first render.
     await waitFor(
       () =>
-        expect(
-          canvas.getByText(
-            'The two work buttons take the control size and the meta typography role.',
-          ),
-        ).toBeVisible(),
+        expect(canvasElement.querySelector('[data-feed-row="answer"] p')?.textContent).toBe(
+          'The two work buttons take the control size and the meta typography role.',
+        ),
       { timeout: 3000 },
     )
     const inspector = canvas.getByLabelText('Subagent')
