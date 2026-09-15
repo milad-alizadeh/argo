@@ -124,10 +124,12 @@ export function FeedDocument({
   const tailIsLive =
     lastRow?.shape === 'tool-group' || (lastRow?.shape === 'prose' && lastRow.role === 'assistant')
   const streamingRowId = isRunning && tailIsLive ? lastRow.id : null
+  // A live tail tool group already shimmers its latest call, so Working would say it twice.
+  const tailShimmers = isRunning && lastRow?.shape === 'tool-group'
   const tail = feedTail(
     compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens),
     handoffMarker(handoffStartedAt, handoffTo, onOpenSession),
-    turnMarker,
+    tailShimmers && turnMarker?.phase === 'working' ? null : turnMarker,
   )
   const content = feedContent({
     active,

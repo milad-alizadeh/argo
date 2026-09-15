@@ -1,13 +1,7 @@
 // One background Shell's live output, in the Terminal the rest of the app reads command output
 // through (#1582). The pane states the command's own words and its current state.
-import {
-  Terminal,
-  TerminalContent,
-  TerminalCopyButton,
-  TerminalHeader,
-  TerminalTitle,
-} from '@/components/ai-elements/terminal'
 import type { SessionShellCommand } from '@/core/sessions/models'
+import { InspectorTerminal } from './inspector-terminal'
 
 export function SessionShellInspector({
   command,
@@ -19,22 +13,13 @@ export function SessionShellInspector({
   output: string | null
   now?: number
 }) {
-  const title = command.label ?? command.command ?? command.id
   return (
     <section aria-label="Background Shell" className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-auto px-4 pb-4">
-        {output === null ? (
-          <p className="type-meta text-muted-foreground">This command recorded no output.</p>
-        ) : (
-          <Terminal output={output} isStreaming={command.state === 'running'}>
-            <TerminalHeader>
-              <TerminalTitle className="type-meta">{title}</TerminalTitle>
-              <TerminalCopyButton />
-            </TerminalHeader>
-            <TerminalContent className="type-code" />
-          </Terminal>
-        )}
-      </div>
+      {output === null ? (
+        <p className="px-4 type-meta text-muted-foreground">This command recorded no output.</p>
+      ) : (
+        <InspectorTerminal output={output} streaming={command.state === 'running'} />
+      )}
     </section>
   )
 }

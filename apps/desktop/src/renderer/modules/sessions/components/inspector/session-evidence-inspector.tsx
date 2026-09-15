@@ -1,15 +1,9 @@
 import type { ReactNode } from 'react'
 import { CodeBlock } from '@/components/ai-elements/code-block'
-import {
-  Terminal,
-  TerminalContent,
-  TerminalCopyButton,
-  TerminalHeader,
-  TerminalTitle,
-} from '@/components/ai-elements/terminal'
 import { detectCodeLanguageFromPath } from '../../feed/content/code-language'
 import { FeedMermaid } from '../../feed/content/feed-mermaid'
 import type { SessionEvidence } from '../../types'
+import { InspectorTerminal } from './inspector-terminal'
 import { SessionDiffViewer } from './session-diff-viewer'
 import { SessionSkillInspector } from './session-skill-inspector'
 
@@ -52,17 +46,7 @@ export function SessionEvidenceInspector({
     return <SessionDiffViewer path={title} sessionId={sessionId} source={source} />
   let content: ReactNode
   if (kind === 'output') {
-    content = (
-      <div className="min-h-0 overflow-auto p-4">
-        <Terminal output={source}>
-          <TerminalHeader>
-            <TerminalTitle className="type-meta">{title}</TerminalTitle>
-            <TerminalCopyButton />
-          </TerminalHeader>
-          <TerminalContent className="type-code" />
-        </Terminal>
-      </div>
-    )
+    content = <InspectorTerminal output={source} />
   } else {
     const language = detectCodeLanguageFromPath(title)?.grammar ?? null
     content = (
