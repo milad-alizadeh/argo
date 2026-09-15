@@ -6,7 +6,9 @@
 // poll, which is why an unresolved Tool Call near the start of a long chain can hold the cost up:
 // correct before fast, and the CLIs resolve a call within a message or two in practice.
 import type { SessionChain } from './chains'
+import { groupDelegations } from './delegation-groups'
 import { rowsOfRecord, withoutRepeatedBreaks } from './feed'
+import { groupToolRuns } from './tool-groups'
 import {
   advancedCursors,
   type FileCursor,
@@ -48,6 +50,27 @@ function positionedRows(records: PositionedRecord[], results: Map<string, ToolRe
   return { rows, sources }
 }
 
+// `groupToolRuns` and `withoutRepeatedBreaks` merge runs of matching shape; this walks the same
+// runs, purely by shape, to say which pre-merge rows (by their source) fold into each output row.
+function mergedRunSources(shapes: readonly string[], mergeable: string): number[][] {
+  const groups: number[][] = []
+  let index = 0
+  while (index < shapes.length) {
+    if (shapes[index] !== mergeable) {
+      groups.push([index])
+      index += 1
+      continue
+    }
+    const run: number[] = []
+    while (shapes[index] === mergeable) {
+      run.push(index)
+      index += 1
+    }
+    groups.push(run)
+  }
+  return groups
+}
+
 function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
   const { rows: preRows, sources: preSources } = positionedRows(records, results)
   const deduped = withoutRepeatedBreaks(preRows)
@@ -56,7 +79,24 @@ function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult
       ? [preSources[index]]
       : [],
   )
-  return deduped.map((row, index) => ({ row, source: dedupedSources[index] ?? 0 }))
+  const grouped = groupToolRuns(deduped)
+  const groups = mergedRunSources(
+    deduped.map((row) => row.shape),
+    'tool',
+  )
+  const groupedSources = groups.map((group) =>
+    Math.min(...group.map((index) => dedupedSources[index] ?? Number.POSITIVE_INFINITY)),
+  )
+  const sourcesByRowId = new Map(
+    grouped.map((row, index) => [row.id, groupedSources[index] ?? 0] as const),
+  )
+  return groupDelegations(grouped).map((row) => ({
+    row,
+    source:
+      row.shape === 'delegation-group'
+        ? Math.min(...row.entries.map((entry) => sourcesByRowId.get(entry.id) ?? 0))
+        : (sourcesByRowId.get(row.id) ?? 0),
+  }))
 }
 
 // Everything is safe to freeze except a Tool Call still missing a result, and a trailing run of

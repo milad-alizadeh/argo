@@ -33,6 +33,24 @@ const toolCallSchema = z.strictObject({
 
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
 
+const delegationRowSchema = z.strictObject({
+  shape: z.literal('delegation'),
+  id: identifierSchema,
+  actor: z.enum(['agent', 'shell']),
+  action: z.string().nullable(),
+  status: z.string().nullable(),
+  progress: z.string().nullable(),
+  groupId: identifierSchema.nullable(),
+})
+
+const delegationGroupSchema = z.strictObject({
+  shape: z.literal('delegation-group'),
+  id: identifierSchema,
+  actor: z.literal('shell'),
+  groupId: identifierSchema,
+  entries: z.array(delegationRowSchema).min(1),
+})
+
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   toolRowSchema,
   z.strictObject({
@@ -55,6 +73,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     event: feedEventKindSchema,
     text: z.string().nullable(),
   }),
+  delegationRowSchema,
+  delegationGroupSchema,
   z.strictObject({ shape: z.literal('marker'), id: identifierSchema, marker: feedMarkerSchema }),
   z.strictObject({
     shape: z.literal('source'),

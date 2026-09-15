@@ -10,6 +10,7 @@ import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
+import { proveDelegationCards } from './session-delegation-card-case'
 import { proveSessionDiagram } from './session-diagram-case'
 import {
   appendProse,
@@ -57,6 +58,7 @@ try {
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
   await ran(['session-tool-calls'], () => proveToolCalls(page))
+  await ran(['session-delegation-cards'], () => proveDelegationCards(page))
   await ran(['session-subagent-feed'], () => proveSubagentFeed(page))
   await ran(['session-background-shell'], () =>
     proveBackgroundShell(page, {

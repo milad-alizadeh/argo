@@ -121,6 +121,10 @@
     "status": { "label": "Status updated" },
     "transcript": { "label": "Transcript delivered" }
   },
+  "delegation": {
+    "agent": { "label": "Agent delegation" },
+    "shell": { "label": "Shell activity" }
+  },
   "diff": {
     "readingFile": "Reading current file…",
     "fileUnavailable": "Current file is unavailable.",

@@ -1,4 +1,4 @@
-import { isRecord } from '@/boundary'
+import { isIdentifier, isRecord } from '@/boundary'
 import type {
   TranscriptEventKind,
   TranscriptMessage,
@@ -75,6 +75,36 @@ function harnessEvent(record: Record<string, unknown>, text: string): HarnessEve
   return { kind: 'event', uuid: '', event: presentation.event, text: eventText }
 }
 
+function trimmedTag(text: string, tag: string): string | null {
+  return tagged(tag, text)?.trim() || null
+}
+
+function identifierTag(text: string, tag: string): string | null {
+  const value = trimmedTag(text, tag)
+  return value !== null && isIdentifier(value) ? value : null
+}
+
+function readRealtimeDelegation(
+  record: Record<string, unknown>,
+  message: TranscriptMessage,
+  text: string,
+): TranscriptRecord | null {
+  if (!isHarnessDelivery(record) || envelopeName(text) !== 'realtime_delegation') return null
+  const body = completeEnvelope(text, 'realtime_delegation')
+  if (body === null) return { kind: 'trace', uuid: message.uuid }
+  const action = trimmedTag(body, 'input')
+  if (action === null) return { kind: 'trace', uuid: message.uuid }
+  return {
+    kind: 'delegation',
+    uuid: message.uuid,
+    actor: 'agent',
+    action,
+    status: trimmedTag(body, 'status'),
+    progress: trimmedTag(body, 'progress'),
+    groupId: identifierTag(body, 'id'),
+  }
+}
+
 function readCommandPrompt(text: string): string | null | undefined {
   if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return undefined
   const name = tagged('command-name', text)
@@ -91,6 +121,8 @@ export function readCommandEnvelope(
   const content = isRecord(record.message) ? record.message.content : null
   const text = envelopeText(content)
   if (text === null) return null
+  const delegation = readRealtimeDelegation(record, message, text)
+  if (delegation !== null) return delegation
   const event = harnessEvent(record, text)
   if (event !== null)
     return event.kind === 'trace'
@@ -111,14 +143,15 @@ export function readCommandEnvelope(
   // summary, with the task's full JSON result attached for the model, not the reader.
   if (text.startsWith('<task-notification>')) {
     const summary = tagged('summary', text)
-    return summary === null
-      ? { kind: 'trace', uuid: message.uuid }
-      : {
-          kind: 'command-output',
-          uuid: message.uuid,
-          timestamp: message.timestamp,
-          text: summary,
-        }
+    return {
+      kind: 'delegation',
+      uuid: message.uuid,
+      actor: 'shell',
+      action: summary?.trim() || null,
+      status: trimmedTag(text, 'status'),
+      progress: null,
+      groupId: identifierTag(text, 'task-id'),
+    }
   }
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null

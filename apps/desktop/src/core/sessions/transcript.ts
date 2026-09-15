@@ -63,6 +63,15 @@ export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'event'; uuid: string; event: TranscriptEventKind; text: string | null }
+  | {
+      kind: 'delegation'
+      uuid: string
+      actor: 'agent' | 'shell'
+      action: string | null
+      status: string | null
+      progress: string | null
+      groupId: string | null
+    }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // `subagent` is Codex-only: true when the thread was spawned by another agent rather than
