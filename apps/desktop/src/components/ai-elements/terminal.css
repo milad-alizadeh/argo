@@ -1,23 +1,5 @@
 /* ANSI colours as classes (ansi-to-react `useClasses`), so output reads on the light ground as well
    as the dark one. White and black map to the ink, since either would vanish on one of the grounds. */
-.terminal-output {
-  --terminal-red: #c4302b;
-  --terminal-green: #1f7a3a;
-  --terminal-yellow: #946300;
-  --terminal-blue: #1f5fbf;
-  --terminal-magenta: #8a3fb8;
-  --terminal-cyan: #0f7285;
-}
-
-.dark .terminal-output {
-  --terminal-red: #f47067;
-  --terminal-green: #57ab5a;
-  --terminal-yellow: #daaa3f;
-  --terminal-blue: #6cb6ff;
-  --terminal-magenta: #dcbdfb;
-  --terminal-cyan: #56d4dd;
-}
-
 .terminal-output :is(.ansi-black-fg, .ansi-white-fg, .ansi-bright-white-fg) {
   color: var(--color-foreground);
 }
@@ -25,22 +7,22 @@
   color: var(--color-muted-foreground);
 }
 .terminal-output :is(.ansi-red-fg, .ansi-bright-red-fg) {
-  color: var(--terminal-red);
+  color: var(--color-terminal-red);
 }
 .terminal-output :is(.ansi-green-fg, .ansi-bright-green-fg) {
-  color: var(--terminal-green);
+  color: var(--color-terminal-green);
 }
 .terminal-output :is(.ansi-yellow-fg, .ansi-bright-yellow-fg) {
-  color: var(--terminal-yellow);
+  color: var(--color-terminal-yellow);
 }
 .terminal-output :is(.ansi-blue-fg, .ansi-bright-blue-fg) {
-  color: var(--terminal-blue);
+  color: var(--color-terminal-blue);
 }
 .terminal-output :is(.ansi-magenta-fg, .ansi-bright-magenta-fg) {
-  color: var(--terminal-magenta);
+  color: var(--color-terminal-magenta);
 }
 .terminal-output :is(.ansi-cyan-fg, .ansi-bright-cyan-fg) {
-  color: var(--terminal-cyan);
+  color: var(--color-terminal-cyan);
 }
 .terminal-output .ansi-bold {
   font-weight: 600;

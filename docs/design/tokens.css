@@ -210,6 +210,12 @@
   --color-language-typescript-ink: var(--color-white);
   --color-language-go: var(--color-cyan-600);
   --color-language-ruby: var(--color-red-600);
+  --color-terminal-red: var(--color-red-700);
+  --color-terminal-green: var(--color-green-700);
+  --color-terminal-yellow: var(--color-amber-700);
+  --color-terminal-blue: var(--color-blue-700);
+  --color-terminal-magenta: var(--color-purple-700);
+  --color-terminal-cyan: var(--color-cyan-700);
 }
 
 :root {
@@ -322,6 +328,12 @@
   --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
+  --color-terminal-red: var(--color-red-400);
+  --color-terminal-green: var(--color-green-400);
+  --color-terminal-yellow: var(--color-amber-400);
+  --color-terminal-blue: var(--color-blue-400);
+  --color-terminal-magenta: var(--color-purple-400);
+  --color-terminal-cyan: var(--color-cyan-400);
   --ticket-label-lean: 55%;
 }
 
