@@ -13,14 +13,10 @@ import type { SessionEvidence } from '../types'
 import { SessionDiffViewer } from './SessionDiffViewer'
 import { SessionSkillInspector } from './SessionSkillInspector'
 
-// A long file path reads best truncated at its start, so the filename at the end stays visible;
-// `direction: rtl` puts the ellipsis there while `text-align: left` keeps the visible text ltr.
+// A long path truncates at its start, so the filename at the end stays visible.
 function InspectorTitle({ title }: { title: string }) {
   return (
-    <span
-      className="block overflow-hidden text-ellipsis whitespace-nowrap text-left type-body font-semibold"
-      dir="rtl"
-    >
+    <span className="block truncate text-left [direction:rtl] type-body font-semibold">
       {title}
     </span>
   )

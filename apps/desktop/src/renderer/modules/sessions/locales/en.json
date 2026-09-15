@@ -130,8 +130,15 @@
   "delegation": {
     "agent": { "label": "Background Agent", "running": "Running Background Agent" },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
-    "done": "Done",
     "tokens": "{{amount}} tokens"
+  },
+  "workState": {
+    "running": "Running",
+    "done": "Done",
+    "completed": "Completed",
+    "failed": "Failed",
+    "killed": "Killed",
+    "stopped": "Stopped"
   },
   "skill": {
     "open": "Open the {{name}} skill",

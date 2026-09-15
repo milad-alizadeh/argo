@@ -40,6 +40,7 @@ function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {
     find: ({ callId, name }) => {
       const command = session?.shell.find((entry) => entry.id === callId)
       if (command !== undefined) return { kind: 'shell', command }
+      // A realtime delegation's envelope names no call, only the name the agent was sent with.
       const delegation =
         session?.delegations.find((entry) => entry.id === callId) ??
         session?.delegations.findLast((entry) => name !== null && entry.label === name)
@@ -82,8 +83,11 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
   if (model.delegation !== null) {
     return (
       <SessionWorkInspectorHeader
-        tokens={model.delegationTokens[model.delegation.id] ?? null}
-        work={{ kind: 'delegation', delegation: model.delegation }}
+        work={{
+          kind: 'delegation',
+          delegation: model.delegation,
+          tokens: model.delegationTokens[model.delegation.id] ?? null,
+        }}
       />
     )
   }

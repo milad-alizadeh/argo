@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { readSkillFile } from './read-skill-file'
 
-async function tempDirectory(context: { after: (fn: () => unknown) => void }) {
+async function tempDirectory(context: { after: (cleanup: () => unknown) => void }) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-skill-'))
   context.after(() => rm(directory, { recursive: true, force: true }))
   return directory

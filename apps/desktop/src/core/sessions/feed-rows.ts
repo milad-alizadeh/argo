@@ -23,7 +23,13 @@ const toolCallSchema = z.strictObject({
   id: identifierSchema,
   kind: z.enum(['command', 'read', 'edited', 'created', 'tool', 'skill']),
   label: z.string(),
-  detail: z.string().nullable(),
+  // An Edit's line counts, the one tool call that states a size today.
+  lineCounts: z
+    .strictObject({
+      added: z.number().int().nonnegative(),
+      removed: z.number().int().nonnegative(),
+    })
+    .nullable(),
   status: z.enum(['succeeded', 'failed', 'running']),
   evidence: toolEvidenceSchema,
   // The call's own raw text, read by a kind routed inline (a command's full text). Null for a

@@ -1,20 +1,12 @@
 import { createContext } from 'react'
-import {
-  type SessionDelegation,
-  type SessionShellCommand,
-  SHELL_STATES,
-  type ShellState,
-} from '@/core/sessions/models'
+import { SHELL_STATES, type ShellState } from '@/core/sessions/models'
+import { delegationState, type SessionWork, type WorkState } from '../components/session-work'
 import type { SessionFeedRow } from '../types'
-
-export type BackgroundWorkTarget =
-  | { kind: 'delegation'; delegation: SessionDelegation; tokens: number | null }
-  | { kind: 'shell'; command: SessionShellCommand }
 
 export type BackgroundWorkLinks = {
   // By the call a notification names, or else by the name an agent was given when it was sent.
-  find: (work: { callId: string | null; name: string | null }) => BackgroundWorkTarget | null
-  open: (target: BackgroundWorkTarget) => void
+  find: (work: { callId: string | null; name: string | null }) => SessionWork | null
+  open: (target: SessionWork) => void
 }
 
 // Set by the Session screen, so a background work block can open its own feed or terminal. A
@@ -23,24 +15,25 @@ export const BackgroundWork = createContext<BackgroundWorkLinks | null>(null)
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 type Actor = DelegationRow['actor']
-// A Subagent settles as `done`; a shell command keeps the CLI's own word for how it ended.
-export type WorkState = ShellState | 'done'
-
 function isShellState(status: string): status is ShellState {
   return (SHELL_STATES as readonly string[]).includes(status)
 }
 
 // The linked work is the live answer; the row's own status is what the notification said then.
-function workState(actor: Actor, status: string | null, target: BackgroundWorkTarget | null) {
+function workState(
+  actor: Actor,
+  status: string | null,
+  target: SessionWork | null,
+): WorkState | null {
   if (target?.kind === 'shell') return target.command.state
-  if (target?.kind === 'delegation') return target.delegation.landed ? 'done' : 'running'
+  if (target?.kind === 'delegation') return delegationState(target.delegation)
   if (status === null) return null
   if (actor === 'agent' && status === 'completed') return 'done'
   return isShellState(status) ? status : null
 }
 
 export type BackgroundWorkBlock = {
-  target: BackgroundWorkTarget | null
+  target: SessionWork | null
   status: string | null
   state: WorkState | null
   title: string | null

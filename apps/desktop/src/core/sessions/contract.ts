@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { sessionAttachmentInputSchema } from './attachments-contract'
-import { permissionSchema } from './permission'
+import { permissionSchema, READER_DECISIONS } from './permission'
 import { sessionErrorSchema } from './session-error'
 
 export * from './archive-contract'
@@ -105,7 +105,7 @@ export const sessionPermissionDecisionRequestSchema = z.strictObject({
   requestId: identifierSchema,
   sessionId: identifierSchema,
   permissionId: identifierSchema,
-  decision: z.enum(['allow', 'deny', 'allowForSession']),
+  decision: z.enum(READER_DECISIONS),
 })
 export type SessionPermissionDecisionRequest = z.infer<
   typeof sessionPermissionDecisionRequestSchema

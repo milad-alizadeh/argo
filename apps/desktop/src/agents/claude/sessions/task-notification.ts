@@ -1,11 +1,11 @@
 import type { TranscriptRecord } from '@/core/sessions/transcript'
-import { tagged } from './background-task'
+import { taggedField } from '../../envelope-tags'
 
 type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>
 
 // An agent's result opens with its own report; a workflow's is JSON meant for the model.
 function firstReportLine(text: string): string | null {
-  const result = tagged(text, 'result')
+  const result = taggedField(text, 'result')
   if (result === null || result.startsWith('{') || result.startsWith('[')) return null
   const line = result
     .split('\n')
@@ -20,7 +20,11 @@ const SUMMARY_KINDS = [
   { prefix: 'Agent', actor: 'agent', progress: firstReportLine },
   { prefix: 'Dynamic workflow', actor: 'agent', progress: firstReportLine },
   { prefix: 'Background command', actor: 'shell', progress: () => null },
-  { prefix: 'Monitor event:', actor: 'shell', progress: (text: string) => tagged(text, 'event') },
+  {
+    prefix: 'Monitor event:',
+    actor: 'shell',
+    progress: (text: string) => taggedField(text, 'event'),
+  },
 ] as const satisfies readonly {
   prefix: string
   actor: Delegation['actor']
@@ -31,7 +35,7 @@ const SUMMARY_KINDS = [
 export function readTaskNotification(
   text: string,
 ): Pick<Delegation, 'actor' | 'action' | 'progress'> {
-  const summary = tagged(text, 'summary')
+  const summary = taggedField(text, 'summary')
   for (const kind of SUMMARY_KINDS) {
     const name = summary?.startsWith(`${kind.prefix} "`)
       ? /^[^"]*"(.+)"/s.exec(summary)?.[1]

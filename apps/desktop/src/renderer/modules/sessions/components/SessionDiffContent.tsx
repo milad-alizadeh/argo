@@ -115,10 +115,7 @@ function DiffHeader({
   return (
     <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
       <CodeBlockTitle className="min-w-0">
-        <CodeBlockFilename
-          className="block overflow-hidden text-ellipsis whitespace-nowrap text-left type-body font-semibold"
-          dir="rtl"
-        >
+        <CodeBlockFilename className="block truncate text-left [direction:rtl] type-body font-semibold">
           {path}
         </CodeBlockFilename>
       </CodeBlockTitle>

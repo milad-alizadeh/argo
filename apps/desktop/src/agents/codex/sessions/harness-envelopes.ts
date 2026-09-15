@@ -1,9 +1,6 @@
 import { isIdentifier } from '@/boundary'
 import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
-
-function tagged(body: string, tag: string): string | null {
-  return new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`).exec(body)?.[1]?.trim() || null
-}
+import { taggedField } from '../../envelope-tags'
 
 function wholeEnvelope(text: string, name: string): string | null {
   return new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>([\\s\\S]*)</${name}>\\s*$`).exec(text)?.[1] ?? null
@@ -21,8 +18,8 @@ function replyBlocks(text: string): ContentBlock[] {
   const [before, after] = around.map((part) => part.trim())
   const body = reply[1] ?? ''
   const notice: ContentBlock[] =
-    tagged(body, 'decision') === 'NOTIFY'
-      ? [{ shape: 'event', event: 'status', text: tagged(body, 'message') }]
+    taggedField(body, 'decision') === 'NOTIFY'
+      ? [{ shape: 'event', event: 'status', text: taggedField(body, 'message') }]
       : []
   const prose = (part: string | undefined): ContentBlock[] =>
     part ? [{ shape: 'prose', text: part }] : []
@@ -42,16 +39,16 @@ function assistantRecord(message: TranscriptMessage): TranscriptRecord {
 // Codex realtime voice hands the thread what the person said as `<input>`, with the spoken
 // conversation so far beside it for the model: the same envelope the Claude adapter reads.
 function realtimeDelegation(uuid: string, body: string): TranscriptRecord {
-  const action = tagged(body, 'input')
+  const action = taggedField(body, 'input')
   if (action === null) return { kind: 'trace', uuid }
-  const id = tagged(body, 'id')
+  const id = taggedField(body, 'id')
   return {
     kind: 'delegation',
     uuid,
     actor: 'agent',
     action,
-    status: tagged(body, 'status'),
-    progress: tagged(body, 'progress'),
+    status: taggedField(body, 'status'),
+    progress: taggedField(body, 'progress'),
     groupId: id !== null && isIdentifier(id) ? id : null,
     callId: null,
   }

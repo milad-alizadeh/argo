@@ -166,7 +166,7 @@ function ReviewInspectorBar({
 }) {
   if (shell !== null) return <SessionWorkInspectorHeader work={{ kind: 'shell', command: shell }} />
   if (delegation !== null) {
-    return <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation }} />
+    return <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation, tokens: null }} />
   }
   return null
 }

@@ -2,7 +2,7 @@ import { GripVertical, Route } from 'lucide-react'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PendingTurnActions } from './PendingTurnActions'
-import { ATTACHMENT_EXIT_MS } from './use-exit-presence'
+import { attachmentExitDelay, focusMessageField } from './use-exit-presence'
 import type { PendingTurn } from './usePendingTurns'
 
 function queuedMessageClassName(
@@ -22,7 +22,7 @@ function queuedMessageClassName(
 function restoreFocusAfterRemoval(listRef: RefObject<HTMLUListElement | null>) {
   const nextControl = listRef.current?.querySelector<HTMLButtonElement>('button')
   if (nextControl) nextControl.focus()
-  else document.querySelector<HTMLButtonElement>('[aria-label="Message"]')?.focus()
+  else focusMessageField()
 }
 
 function useQueueAnimations(
@@ -65,7 +65,7 @@ function useQueueAnimations(
       onRemove(id)
       setExitingTurnId(null)
       setRestoreFocus(true)
-    }, ATTACHMENT_EXIT_MS)
+    }, attachmentExitDelay())
   }
 
   return { enteringTurnId, exitingTurnId, removeTurn }

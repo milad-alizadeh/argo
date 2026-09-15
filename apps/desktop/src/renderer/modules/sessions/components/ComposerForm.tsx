@@ -4,6 +4,7 @@ import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
+import { AttachmentTray } from './AttachmentTray'
 import { ComposerCard } from './ComposerCard'
 import { PendingTurns } from './PendingTurns'
 import type { TurnSetupControlProps } from './RunSetupMenu'
@@ -98,7 +99,7 @@ export function ComposerForm({
         onSend()
       }}
     >
-      <div className="session-page__composer-attachments">
+      <AttachmentTray>
         {permissionPrompt}
         <PendingTurns
           turns={pendingTurns}
@@ -106,7 +107,7 @@ export function ComposerForm({
           onRemove={onRemove}
           onReorder={onReorder}
         />
-      </div>
+      </AttachmentTray>
       <ComposerCard
         attachments={attachments}
         contextPickerOpen={contextPickerOpen}

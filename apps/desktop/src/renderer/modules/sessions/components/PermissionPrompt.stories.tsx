@@ -5,6 +5,7 @@ import type { Permission } from '@/core/sessions/contract'
 import { PendingTurns } from './PendingTurns'
 import { PermissionPrompt } from './PermissionPrompt'
 import './composer-content.css'
+import { AttachmentTray } from './AttachmentTray'
 
 const permission: Permission = {
   id: 'permission-one',
@@ -19,9 +20,9 @@ const meta = {
   decorators: [
     (Story) => (
       <div className="mx-auto w-full max-w-(--size-session-column) pt-6">
-        <div className="session-page__composer-attachments">
+        <AttachmentTray>
           <Story />
-        </div>
+        </AttachmentTray>
         <div className="relative z-10 h-14 rounded-xl border bg-card" />
       </div>
     ),
@@ -43,10 +44,28 @@ export const Pending: Story = {
 
 // Claude's gate remembers similar calls; the same answer reads as a Session-wide allow for Codex.
 export const AllowSimilar: Story = {
-  play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'More ways to allow' }))
+  render: (args) => {
+    const [answer, setAnswer] = useState<string | null>(null)
+    return (
+      <>
+        <PermissionPrompt
+          {...args}
+          onDecide={async (decision) => {
+            setAnswer(decision)
+            return true
+          }}
+        />
+        <output aria-label="Answer">{answer}</output>
+      </>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'More ways to allow' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Allow similar' }))
-    await expect(args.onDecide).toHaveBeenCalledWith('allowForSession')
+    await expect(canvas.getByRole('status', { name: 'Answer' })).toHaveTextContent(
+      'allowForSession',
+    )
   },
 }
 
@@ -102,6 +121,38 @@ export const LeavesTheTray: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Allow' }))
     await expect(canvas.getByRole('heading', { name: 'Allow this?' })).toBeInTheDocument()
     await waitFor(() => expect(canvas.queryByText(/bun test/)).toBeNull())
+  },
+}
+
+// Answered from the keyboard, the leaving card hands focus to the queue under it.
+export const HandsFocusOn: Story = {
+  render: (args) => {
+    const [pending, setPending] = useState<Permission | null>(permission)
+    return (
+      <>
+        <PermissionPrompt
+          {...args}
+          permission={pending}
+          onDecide={async () => {
+            setPending(null)
+            return true
+          }}
+        />
+        <PendingTurns
+          turns={[{ id: 'queued', text: 'Then run the linter', attachments: [] }]}
+          onEdit={() => {}}
+          onRemove={() => {}}
+          onReorder={() => {}}
+        />
+      </>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    canvas.getByRole('button', { name: 'Allow' }).focus()
+    await userEvent.keyboard('{Enter}')
+    const queue = canvas.getByRole('region', { name: 'Pending Turns' })
+    await waitFor(() => expect(queue).toContainElement(document.activeElement as HTMLElement))
   },
 }
 

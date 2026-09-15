@@ -1,14 +1,16 @@
+import type { TFunction } from 'i18next'
 import { Bot, ChevronRight, SquareTerminal } from 'lucide-react'
 import { type ReactNode, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { compactTokens, SHELL_STATE_WORDS, workDuration } from '../components/session-work'
-import type { SessionFeedRow } from '../types'
 import {
-  BackgroundWork,
-  type BackgroundWorkTarget,
-  backgroundWorkBlock,
+  type SessionWork,
+  spentTokens,
+  WORK_STATE_MARKS,
   type WorkState,
-} from './background-work'
+  workDuration,
+} from '../components/session-work'
+import type { SessionFeedRow } from '../types'
+import { BackgroundWork, backgroundWorkBlock } from './background-work'
 import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
@@ -17,15 +19,6 @@ type Actor = DelegationRow['actor']
 
 // The Session header's own two icons (SessionWorkButtons), so a block and its header button match.
 const ACTOR_ICON = { agent: Bot, shell: SquareTerminal } satisfies Record<Actor, typeof Bot>
-
-const STATE_DOT: Record<WorkState, string> = {
-  running: 'bg-active shadow-state-glow',
-  done: 'bg-idle',
-  completed: 'bg-idle',
-  failed: 'bg-danger',
-  killed: 'bg-warn',
-  stopped: 'bg-warn',
-}
 
 const STATE_INK: Record<WorkState, string> = {
   running: 'text-(--feed-work-ink-active)',
@@ -53,17 +46,16 @@ function WorkMark({ actor, state }: { actor: Actor; state: WorkState | null }) {
       <Icon aria-hidden="true" className="size-(--size-icon-control)" />
       <span
         aria-hidden="true"
-        className={`absolute -top-0.5 -right-0.5 size-(--size-state-dot) rounded-full ring-2 ring-card ${state === null ? 'bg-idle' : STATE_DOT[state]}`}
+        className={`absolute -top-0.5 -right-0.5 size-(--size-state-dot) rounded-full ring-2 ring-card ${state === null ? 'bg-idle' : WORK_STATE_MARKS[state]}`}
       />
     </span>
   )
 }
 
-function settledWord(state: WorkState | null, status: string | null, done: string) {
-  if (state === 'running') return null
-  if (state === 'done') return done
+// A running block says so in its shimmering headline, so only a settled state is worded.
+function settledWord(state: WorkState | null, status: string | null, t: TFunction<'sessions'>) {
   if (state === null) return status
-  return SHELL_STATE_WORDS[state]
+  return state === 'running' ? null : t(`workState.${state}`)
 }
 
 // The settled state word, then the tokens a Subagent spent, then how long the work ran.
@@ -74,33 +66,27 @@ function WorkFacts({
 }: {
   state: WorkState | null
   status: string | null
-  target: BackgroundWorkTarget | null
+  target: SessionWork | null
 }) {
   const { t } = useTranslation('sessions')
   const now = useNow(state === 'running')
   const work = target?.kind === 'shell' ? target.command : (target?.delegation ?? null)
   const elapsed = work === null ? null : workDuration(work.startedAt, work.endedAt, now)
-  const tokens = compactTokens(target?.kind === 'delegation' ? target.tokens : null)
-  const word = settledWord(state, status, t('delegation.done'))
+  const tokens = spentTokens(target?.kind === 'delegation' ? target.tokens : null, t)
+  const word = settledWord(state, status, t)
   return (
     <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">
       {word === null ? null : (
         <span className={state === null ? undefined : STATE_INK[state]}>{word}</span>
       )}
-      {tokens === null ? null : <span>{t('delegation.tokens', { amount: tokens })}</span>}
+      {tokens === null ? null : <span>{tokens}</span>}
       {elapsed === null ? null : <span>{elapsed}</span>}
     </span>
   )
 }
 
-// A block that links to its work is one button into that work's feed or terminal.
-function Surface({
-  target,
-  children,
-}: {
-  target: BackgroundWorkTarget | null
-  children: ReactNode
-}) {
+// The card's bordered box; linked to its work, it is one button into that work's feed or terminal.
+function CardFrame({ target, children }: { target: SessionWork | null; children: ReactNode }) {
   const links = useContext(BackgroundWork)
   const box = `block w-full overflow-hidden border bg-card text-left ${FEED_CARD_RADIUS_CLASS}`
   if (links === null || target === null) return <div className={box}>{children}</div>
@@ -143,7 +129,7 @@ function DelegationCard({
       data-slot="feed-delegation"
       data-state={state ?? undefined}
     >
-      <Surface target={target}>
+      <CardFrame target={target}>
         <div
           className={`flex min-w-0 items-center gap-2 px-3.5 py-1.5 type-meta text-muted-foreground ${line === null ? '' : 'border-b border-border/60'}`}
         >
@@ -169,7 +155,7 @@ function DelegationCard({
             {line}
           </p>
         )}
-      </Surface>
+      </CardFrame>
     </section>
   )
 }

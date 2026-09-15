@@ -4,11 +4,7 @@ import {
   type BackgroundState,
   type TranscriptRecord,
 } from '@/core/sessions/transcript'
-
-// One field of the notification's own XML body, which is the only place the CLI states it.
-export function tagged(body: string, tag: string): string | null {
-  return new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`).exec(body)?.[1]?.trim() ?? null
-}
+import { taggedField } from '../../envelope-tags'
 
 function isBackgroundState(value: string | null): value is BackgroundState {
   return value !== null && (BACKGROUND_STATES as readonly string[]).includes(value)
@@ -21,17 +17,17 @@ export function readBackgroundTask(record: Record<string, unknown>): TranscriptR
   if (attachment?.commandMode !== 'task-notification') return null
   if (typeof attachment.prompt !== 'string') return null
   const body = attachment.prompt
-  const taskId = tagged(body, 'task-id')
-  const callId = tagged(body, 'tool-use-id')
-  const state = tagged(body, 'status')
+  const taskId = taggedField(body, 'task-id')
+  const callId = taggedField(body, 'tool-use-id')
+  const state = taggedField(body, 'status')
   if (taskId === null || callId === null || !isBackgroundState(state)) return null
   return {
     kind: 'background-task',
     taskId,
     callId,
-    outputPath: tagged(body, 'output-file'),
+    outputPath: taggedField(body, 'output-file'),
     state,
-    summary: tagged(body, 'summary'),
+    summary: taggedField(body, 'summary'),
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
   }
 }

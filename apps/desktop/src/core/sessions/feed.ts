@@ -1,7 +1,7 @@
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
-import { type ToolResult, toolRows } from './tool-feed'
+import { type ToolEvidence, toolRows } from './tool-feed'
 import { groupToolRuns } from './tool-groups'
 import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
@@ -13,11 +13,6 @@ export { UNREADABLE_ROW, unreadableRowHeight }
 export function feedProjection(rows: readonly SessionFeedRow[]): string {
   return JSON.stringify(rows)
 }
-
-// The transcript never carries a call's evidence beside the call itself: a tool result and a
-// Skill's body both arrive as later, separate records. `rowsOfRecord` needs both maps at once, so
-// they travel together rather than as two more parameters (`useMaxParams`).
-export type ToolEvidence = { results: Map<string, ToolResult>; skillBodies: Map<string, string> }
 
 export function rowsOfRecord(
   record: TranscriptRecord,
@@ -53,26 +48,37 @@ export function rowsOfRecord(
   )
 }
 
-function rowsOfBlock(args: {
+function rowsOfBlock({
+  block,
+  id,
+  record,
+  calls,
+  evidence,
+}: {
   block: ContentBlock
   id: string
   record: TranscriptMessage
   calls: Map<string, ToolCall>
   evidence: ToolEvidence
 }): SessionFeedRow[] {
-  const { block, id, record, calls, evidence } = args
-  if (block.shape === 'prose') return [{ shape: 'prose', id, role: record.role, text: block.text }]
-  // An empty thinking block (redacted or summarized away by the API) draws nothing, so it must
-  // not count as a delivery either, or it silently splits a tool run across it (#2100).
-  if (block.shape === 'thought')
-    return block.text.trim() === '' ? [] : [{ shape: 'thought', id, text: block.text }]
-  if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
-  if (block.shape === 'event') return [{ shape: 'event', id, event: block.event, text: block.text }]
-  if (block.shape === 'tool') {
-    const call = calls.get(block.callId)
-    return call === undefined ? [] : toolRows([call], evidence.results, evidence.skillBodies)
+  switch (block.shape) {
+    case 'prose':
+      return [{ shape: 'prose', id, role: record.role, text: block.text }]
+    // An empty thinking block (redacted or summarized away by the API) draws nothing, so it must
+    // not count as a delivery either, or it silently splits a tool run across it (#2100).
+    case 'thought':
+      return block.text.trim() === '' ? [] : [{ shape: 'thought', id, text: block.text }]
+    case 'marker':
+      return [{ shape: 'marker', id, marker: block.marker }]
+    case 'event':
+      return [{ shape: 'event', id, event: block.event, text: block.text }]
+    case 'tool': {
+      const call = calls.get(block.callId)
+      return call === undefined ? [] : toolRows([call], evidence)
+    }
+    case 'source':
+      return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   }
-  return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
 }
 
 // Tool results, and an assistant message left with nothing to show (an empty or redacted

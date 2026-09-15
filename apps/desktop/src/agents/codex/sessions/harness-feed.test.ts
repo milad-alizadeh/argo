@@ -36,7 +36,9 @@ async function feed(
 
 function visible(rows: Record<string, unknown>[]) {
   return rows.map(({ id, shape, text, event, action }) =>
-    Object.fromEntries(Object.entries({ id, shape, text, event, action }).filter(([, v]) => v)),
+    Object.fromEntries(
+      Object.entries({ id, shape, text, event, action }).filter(([, value]) => value),
+    ),
   )
 }
 

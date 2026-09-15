@@ -47,11 +47,6 @@ function StatusMark({
   )
 }
 
-// The only detail text a tool call carries today is an Edit's line-count summary
-// (`+added −removed`, see `toolDetail` in tool-feed.ts). Coloring it here, rather than widening
-// the feed contract to a structured shape, keeps the IPC payload a plain string.
-const DIFF_DETAIL = /^\+(\d+) −(\d+)$/
-
 // A failed call reads red; otherwise the row is muted until hovered or open in the inspector.
 function lineInk(failed: boolean, active: boolean) {
   if (failed) return 'text-destructive'
@@ -59,13 +54,10 @@ function lineInk(failed: boolean, active: boolean) {
 }
 
 // The numbers keep their own colours whatever the row's ink.
-function ToolDetail({ detail }: { detail: string }) {
-  const diff = DIFF_DETAIL.exec(detail)
-  if (diff === null) return <span className="shrink-0">{detail}</span>
-  const [, added, removed] = diff
+function LineCounts({ added, removed }: NonNullable<ToolCall['lineCounts']>) {
   return (
     <span className="flex shrink-0 items-center gap-1">
-      <span className="text-emerald-600 dark:text-emerald-400">{`+${added}`}</span>
+      <span className="text-diff-added">{`+${added}`}</span>
       <span className="text-destructive">{`−${removed}`}</span>
     </span>
   )
@@ -89,15 +81,13 @@ export function FeedToolLine({
     <button
       type="button"
       aria-current={active ? 'location' : undefined}
-      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${lineInk(failed, active)}`}
+      className={`flex w-full items-center gap-2 py-1 text-left type-body transition-colors ${lineInk(failed, active)}`}
       data-feed-evidence-id={call.id}
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
       <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
-      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-left" dir="rtl">
-        {call.label}
-      </span>
-      {call.detail === null ? null : <ToolDetail detail={call.detail} />}
+      <span className="min-w-0 truncate text-left [direction:rtl]">{call.label}</span>
+      {call.lineCounts === null ? null : <LineCounts {...call.lineCounts} />}
       {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
       <span className="ml-auto flex shrink-0 items-center">
         <StatusIcon status={call.status} />
@@ -106,8 +96,7 @@ export function FeedToolLine({
   )
 }
 
-// One call inside a group: routed to the evidence panel, nested in its own collapsible, or (the
-// group's only call) shown directly with no redundant extra collapsible around it.
+// A group's only inline call shows its code block directly; any other nests in its own disclosure.
 function GroupedCall({
   activeEvidenceId,
   call,
@@ -139,16 +128,11 @@ export function FeedToolGroup({
   toolGroups: ToolGroupState
 }) {
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
-  // A code block already draws its own border, which would clash with the connecting line; a
-  // group of evidence-panel rows alone keeps the line, matching every collapsible outside a group.
-  const hasInlineCall = group.calls.some((call) => TOOL_CONTENT_ROUTE[call.kind] === 'inline')
-  // A single inline call needs no collapsible of its own: nesting one under the group's already
-  // adds nothing to collapse, so its code block sits directly under the group instead.
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
-  // A solo skill call never merges with another kind (`groupedRowIndexes`), so its group is
-  // always exactly this call: the outer collapsible reads with the skill's own name and icon
-  // instead of the generic "Invoked a skill" summary.
+  // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
   const isSoleSkill = soleCall?.kind === 'skill'
+  // A code block draws its own border, which would clash with the group's rule.
+  const showsCodeBlock = soleCall !== undefined && TOOL_CONTENT_ROUTE[soleCall.kind] === 'inline'
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -162,7 +146,7 @@ export function FeedToolGroup({
           />
         </TaskItem>
       ))}
-      contentVariant={hasInlineCall ? 'flush' : 'line'}
+      contentVariant={showsCodeBlock ? 'flush' : 'line'}
       icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
       onOpenChange={onOpenChange}
       open={open}

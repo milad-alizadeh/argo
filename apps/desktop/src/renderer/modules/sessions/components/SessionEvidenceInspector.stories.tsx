@@ -10,7 +10,7 @@ const command = {
   id: 'command',
   kind: 'command' as const,
   label: 'bun test',
-  detail: '13 passed',
+  lineCounts: null,
   status: 'succeeded' as const,
   evidence: { kind: 'output' as const, title: 'bun test', source: '13 pass\n0 fail' },
   text: 'bun test',

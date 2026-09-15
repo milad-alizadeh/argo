@@ -1,31 +1,18 @@
-import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
-import { compactTokens, SHELL_STATE_WORDS, workDuration } from './session-work'
-
-type SessionWorkInspectorHeaderProps =
-  | {
-      work: { kind: 'delegation'; delegation: SessionDelegation }
-      now?: number
-      tokens?: number | null
-    }
-  | { work: { kind: 'shell'; command: SessionShellCommand }; now?: number }
+import { useTranslation } from 'react-i18next'
+import { delegationState, type SessionWork, spentTokens, workDuration } from './session-work'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
-export function SessionWorkInspectorHeader({
-  work,
-  now,
-  ...rest
-}: SessionWorkInspectorHeaderProps) {
+export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {
+  const { t } = useTranslation('sessions')
   const currentTime = now ?? Date.now()
   if (work.kind === 'delegation') {
-    const { delegation } = work
-    const tokens = 'tokens' in rest ? (rest.tokens ?? null) : null
-    const compact = compactTokens(tokens)
+    const { delegation, tokens } = work
     return (
       <InspectorHeader
         facts={[
-          delegation.landed ? 'Done' : 'Running',
+          t(`workState.${delegationState(delegation)}`),
           workDuration(delegation.startedAt, delegation.endedAt, currentTime),
-          compact === null ? null : `${compact} tokens`,
+          spentTokens(tokens, t),
         ]}
         title={delegation.label ?? delegation.id}
       />
@@ -37,7 +24,7 @@ export function SessionWorkInspectorHeader({
   return (
     <InspectorHeader
       facts={[
-        SHELL_STATE_WORDS[command.state],
+        t(`workState.${command.state}`),
         workDuration(command.startedAt, command.endedAt, currentTime),
         command.result,
       ]}

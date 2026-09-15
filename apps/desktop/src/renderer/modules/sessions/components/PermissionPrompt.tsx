@@ -1,5 +1,5 @@
 import { ChevronDown, ShieldQuestion } from 'lucide-react'
-import { useId, useState } from 'react'
+import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Permission } from '@/core/sessions/contract'
 import { Button } from '../../../components/ui/button'
@@ -12,7 +12,7 @@ import {
 } from '../../../components/ui/dropdown-menu'
 import type { SessionCli } from '../harness/harnesses'
 import type { PermissionAnswer } from '../hooks/useSessionPermission'
-import { useExitPresence } from './use-exit-presence'
+import { focusAfterLeaving, useExitPresence } from './use-exit-presence'
 
 // What each CLI's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
 const STANDING_ALLOW = {
@@ -33,6 +33,16 @@ export function PermissionPrompt({ permission, ...props }: PermissionPromptProps
   return <PermissionCard key={shown.id} exiting={exiting} permission={shown} {...props} />
 }
 
+// An answer disables the buttons, which drops focus to the page; the leaving card hands it on.
+function useFocusAfterLeaving(cardRef: RefObject<HTMLElement | null>, exiting: boolean) {
+  useEffect(() => {
+    const card = cardRef.current
+    if (!exiting || card === null) return
+    const focus = document.activeElement
+    if (focus === document.body || card.contains(focus)) focusAfterLeaving(card)
+  }, [cardRef, exiting])
+}
+
 function PermissionCard({
   cli,
   exiting,
@@ -42,6 +52,8 @@ function PermissionCard({
   const { t } = useTranslation('sessions')
   const titleId = useId()
   const [deciding, setDeciding] = useState(false)
+  const cardRef = useRef<HTMLElement>(null)
+  useFocusAfterLeaving(cardRef, exiting)
   const decide = async (decision: PermissionAnswer) => {
     setDeciding(true)
     if (!(await onDecide(decision))) setDeciding(false)
@@ -50,6 +62,7 @@ function PermissionCard({
   return (
     <section
       aria-labelledby={titleId}
+      ref={cardRef}
       className={`session-page__composer-permission${exiting ? ' session-page__composer-permission--exit' : ''}`}
       inert={exiting}
     >

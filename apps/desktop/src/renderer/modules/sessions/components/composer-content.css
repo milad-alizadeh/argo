@@ -92,19 +92,20 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .session-page__queued-message--enter {
-    animation: session-page-queue-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: session-page-queue-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
   .session-page__queued-message--exit {
-    animation: session-page-queue-exit 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: session-page-queue-exit var(--attachment-exit) cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 
   .session-page__composer-permission {
-    animation: session-page-attachment-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: session-page-attachment-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1)
+      both;
   }
 
   .session-page__composer-permission--exit {
-    animation: session-page-attachment-exit 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: session-page-attachment-exit var(--attachment-exit) cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 }
 

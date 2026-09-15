@@ -1,15 +1,29 @@
 // How the work inspector words a Subagent's or a Shell's two facts: how long it has been going,
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
-import type { ShellState } from '@/core/sessions/models'
+import type { TFunction } from 'i18next'
+import type { SessionDelegation, SessionShellCommand, ShellState } from '@/core/sessions/models'
 
-// What a reader is told a Shell's state is, in the Shell list and in the pane alike.
-export const SHELL_STATE_WORDS: Record<ShellState, string> = {
-  running: 'Running',
-  completed: 'Completed',
-  failed: 'Failed',
-  killed: 'Killed',
-  stopped: 'Stopped',
+// What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
+export type SessionWork =
+  | { kind: 'delegation'; delegation: SessionDelegation; tokens: number | null }
+  | { kind: 'shell'; command: SessionShellCommand }
+
+// A Subagent settles as `done`; a shell command keeps the CLI's own word for how it ended.
+export type WorkState = ShellState | 'done'
+
+// The semantic ground a state mark takes, the same set the Roster draws a Session's status in.
+export const WORK_STATE_MARKS: Record<WorkState, string> = {
+  running: 'bg-active shadow-state-glow',
+  done: 'bg-idle',
+  completed: 'bg-idle',
+  failed: 'bg-danger',
+  killed: 'bg-warn',
+  stopped: 'bg-warn',
+}
+
+export function delegationState(delegation: SessionDelegation): WorkState {
+  return delegation.landed ? 'done' : 'running'
 }
 
 function elapsed(startedAt: string | null, endedAt: string | null, now: number): number | null {
@@ -47,4 +61,9 @@ export function compactTokens(tokens: number | null): string | null {
   if (tokens < 1000) return `${tokens}`
   if (tokens < 1_000_000) return scaled(tokens, 1000, 'k')
   return scaled(tokens, 1_000_000, 'M')
+}
+
+export function spentTokens(tokens: number | null, t: TFunction<'sessions'>): string | null {
+  const amount = compactTokens(tokens)
+  return amount === null ? null : t('delegation.tokens', { amount })
 }

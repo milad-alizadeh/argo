@@ -2,6 +2,7 @@
 // (#1582). A Session that ran neither draws neither, so a screen with no background work has no
 // header control at all.
 import { Bot, SquareTerminal } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { SessionWorkMenu } from './SessionWorkMenu'
 import { delegationEntries, shellEntries } from './session-work-entries'
@@ -28,18 +29,19 @@ export function SessionWorkButtons({
   selectedShellId: string | null
   shell: readonly SessionShellCommand[]
 }) {
+  const { t } = useTranslation('sessions')
   const clock = now ?? Date.now()
   return (
     <>
       <SessionWorkMenu
-        entries={delegationEntries(delegations, delegationTokens ?? {}, clock)}
+        entries={delegationEntries(delegations, { now: clock, tokens: delegationTokens ?? {} }, t)}
         icon={Bot}
         label="Subagents"
         onSelect={onSelectDelegation}
         selectedId={selectedDelegationId}
       />
       <SessionWorkMenu
-        entries={shellEntries(shell, clock)}
+        entries={shellEntries(shell, clock, t)}
         icon={SquareTerminal}
         label="Shell"
         onSelect={onSelectShell}

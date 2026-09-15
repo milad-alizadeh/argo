@@ -23,7 +23,8 @@ export function SkillBadge({ name }: { name: string }) {
   )
 }
 
-// The same badge as a button, where a caller can open the skill (the Feed, into the inspector).
+// The same badge as a button, where a caller can open the skill (the Feed, into the inspector). The
+// prompt bubble shares the badge's own ground, so an outline on the page ground marks it a control.
 function SkillButton({
   skill,
   onOpen,
@@ -36,10 +37,10 @@ function SkillButton({
   return (
     <Badge
       aria-label={t('skill.open', { name: label })}
-      className={`${SKILL_BADGE_CLASS} hover:bg-secondary/80`}
+      className={`${SKILL_BADGE_CLASS} bg-background hover:bg-background/60`}
       onClick={() => onOpen(skill)}
       render={<button type="button" />}
-      variant="secondary"
+      variant="outline"
     >
       <Sparkles data-icon="inline-start" />
       {label}

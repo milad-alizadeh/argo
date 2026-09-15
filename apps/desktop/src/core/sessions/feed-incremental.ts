@@ -4,7 +4,7 @@
 // is not part of a trailing Tool Call or damaged-line run. Frozen rows are never rebuilt.
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
-import { collectFeedRows, rowsOfRecord, type ToolEvidence, withoutRepeatedBreaks } from './feed'
+import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {
   advancedCursors,
   type FileCursor,
@@ -15,7 +15,7 @@ import {
   updatedSkillBodies,
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
-import type { ToolResult } from './tool-feed'
+import type { ToolEvidence, ToolResult } from './tool-feed'
 import { groupedRowIndexes, groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {

@@ -4,11 +4,8 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { taggedField, taggedText } from '../../envelope-tags'
 import { readTaskNotification } from './task-notification'
-
-function tagged(tag: string, text: string): string | null {
-  return text.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1] ?? null
-}
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content
@@ -39,7 +36,7 @@ const HARNESS_EVENTS: Record<
   environment_context: { event: 'context', text: () => null },
   realtime_delegation: {
     event: 'command',
-    text: (body) => tagged('input', body)?.trim() || null,
+    text: (body) => taggedField(body, 'input'),
     requiresText: true,
   },
   status: { event: 'status', text: (body) => body.trim() || null },
@@ -78,7 +75,7 @@ function harnessEvent(record: Record<string, unknown>, text: string): HarnessEve
 }
 
 function trimmedTag(text: string, tag: string): string | null {
-  return tagged(tag, text)?.trim() || null
+  return taggedField(text, tag)
 }
 
 function identifierTag(text: string, tag: string): string | null {
@@ -110,10 +107,10 @@ function readRealtimeDelegation(
 
 function readCommandPrompt(text: string): string | null | undefined {
   if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return undefined
-  const name = tagged('command-name', text)
-  const command = name ?? tagged('command-message', text)
+  const name = taggedText(text, 'command-name')
+  const command = name ?? taggedText(text, 'command-message')
   if (command === null) return null
-  const argumentsText = tagged('command-args', text) ?? ''
+  const argumentsText = taggedText(text, 'command-args') ?? ''
   return name === null || argumentsText.length === 0 ? command : `${name} ${argumentsText}`
 }
 
@@ -132,7 +129,7 @@ export function readCommandEnvelope(
       ? { ...event, uuid: message.uuid }
       : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
   if (text.startsWith('<local-command-stdout>')) {
-    const output = tagged('local-command-stdout', text)
+    const output = taggedText(text, 'local-command-stdout')
     return output === null
       ? { kind: 'trace', uuid: message.uuid }
       : {
