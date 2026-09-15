@@ -2,6 +2,8 @@
 
 Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26 · permission socket placement amended (#1842) · 2026-09-13
 
+ADR-0041 adds one user-level hook that every Claude Session runs, for compaction only.
+
 ## Context
 
 The cockpit needs to *drive* a Session, not just observe one: send a turn, attach a file,

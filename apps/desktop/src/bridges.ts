@@ -2,11 +2,17 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import path from 'node:path'
 import { app, type BrowserWindow, shell } from 'electron'
+import { installCompactionHook } from './agents/claude/compaction/compaction-hook'
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
-import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
+import {
+  claudeArchiveRoot,
+  claudeCompactionMarkersRoot,
+  claudeSettingsPath,
+  claudeTranscriptsRoot,
+} from './agents/claude/sessions/roots'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
@@ -46,6 +52,18 @@ function createSessionDrivers(userData: string, home: string, proofEnabled: bool
   return { claude, codex }
 }
 
+// ADR-0041: installs the `PreCompact` hook every Claude Session runs, and names where it writes.
+function watchCompactions(home: string) {
+  const markers = claudeCompactionMarkersRoot(home)
+  installCompactionHook(claudeSettingsPath(home), markers)
+    .then((install) => {
+      if (install === 'refused')
+        console.warn('Claude settings could not be read, so compactions stay hidden until they end')
+    })
+    .catch((error) => console.error('Claude compaction hook failed to install', error))
+  return markers
+}
+
 function attachSessions(
   window: BrowserWindow,
   request: {
@@ -53,9 +71,11 @@ function attachSessions(
     home: string
     userData: string
     drivers: ReturnType<typeof createSessionDrivers>
+    // A proof reads fixture transcripts, so it neither reads nor clears the person's real markers.
+    compactionMarkers?: string
   },
 ) {
-  const { rendererURL, home, userData, drivers } = request
+  const { rendererURL, home, userData, drivers, compactionMarkers } = request
   const { claude, codex } = drivers
   const ticketLinks = createSessionTicketLinkStore(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
@@ -67,6 +87,8 @@ function attachSessions(
           transcripts: claudeTranscriptsRoot(home),
           archive: claudeArchiveRoot(home),
           managedSessions: claude.roster,
+          compactionMarkers,
+          beginCompaction: claude.beginCompaction,
           completeCompaction: claude.completeCompaction,
           completeHandoffs: claude.completeHandoffs,
           handoffEdges: claude.handoffEdges,
@@ -99,9 +121,10 @@ export function attachBridges(
   const { userData, rendererURL, proofEnabled } = request
   const home = app.getPath('home')
   const drivers = createSessionDrivers(userData, home, proofEnabled)
+  const compactionMarkers = proofEnabled ? undefined : watchCompactions(home)
   attachWindowNavigation(window)
   attachProjectBridge(window, { userData, rendererURL })
-  attachSessions(window, { rendererURL, home, userData, drivers })
+  attachSessions(window, { rendererURL, home, userData, drivers, compactionMarkers })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({

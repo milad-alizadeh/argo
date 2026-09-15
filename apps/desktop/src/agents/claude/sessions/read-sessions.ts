@@ -5,6 +5,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
+import { markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
@@ -43,6 +44,9 @@ export function claudeSessionSource(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
+  // Where the `PreCompact` hook leaves a marker for each compaction it sees start (ADR-0041).
+  compactionMarkers?: string
+  beginCompaction?: (sessionId: string, startedAt: string) => void
   completeCompaction?: (sessionId: string, completedAt: string) => void
   // Runs once per discovery pass, ahead of the read below: a handoff that has landed publishes
   // its fresh Session before this pass's roster is built, so the edge below finds it immediately.
@@ -62,7 +66,13 @@ export function claudeSessionSource(roots: {
       const discovered = await discoverSessions(roots.transcripts, roots.archive)
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-      const merged = mergeManagedRoster(discovered, managed)
+      const roster = mergeManagedRoster(discovered, managed)
+      const rows = await markCompactingRows(roster.rows, {
+        markers: roots.compactionMarkers,
+        readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+        begin: roots.beginCompaction,
+      })
+      const merged = { ...roster, rows }
       const handoffEdges = roots.handoffEdges
       if (handoffEdges === undefined) return merged
       return {
@@ -104,6 +114,7 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
+  compactionMarkers?: string
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
