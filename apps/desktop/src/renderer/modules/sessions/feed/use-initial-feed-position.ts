@@ -14,7 +14,8 @@ export function useInitialFeedPosition({
   useLayoutEffect(() => {
     if (viewport === null || openedSession.current === sessionId) return
     openedSession.current = sessionId
-    const frame = requestAnimationFrame(() => virtualizer.scrollToEnd())
-    return () => cancelAnimationFrame(frame)
+    // Apply the opening position in layout so a delayed initial jump cannot
+    // override a reader who has already moved into history.
+    virtualizer.scrollToEnd()
   }, [sessionId, viewport, virtualizer])
 }
