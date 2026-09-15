@@ -266,14 +266,15 @@ export const LongBacklog: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('All open · 40+ Tickets')).toBeInTheDocument()
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
-    const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
-    if (list) {
-      list.scrollTop = list.scrollHeight
-      fireEvent.scroll(list)
-    }
-    await waitFor(() =>
-      expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
-    )
+    // Each retry scrolls again: a scroll before the list has laid out reaches no end.
+    await waitFor(() => {
+      const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
+      if (list) {
+        list.scrollTop = list.scrollHeight
+        fireEvent.scroll(list)
+      }
+      expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled()
+    })
   },
 }
 
