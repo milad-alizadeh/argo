@@ -22,8 +22,11 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   })
   // Commands render inside a closed tool group. Open the mounted group before looking for its
   // evidence row; querying the row first cannot make a virtualized, collapsed child exist.
-  await page.getByRole('button', { name: 'Ran a command' }).waitFor()
-  await page.getByRole('button', { name: 'Ran a command' }).click()
+  // There are several command groups in this fixture. The one at the top is the completed
+  // command whose evidence we want; scope to the history and choose its first rendered trigger.
+  const firstCommandGroup = history.getByRole('button', { name: 'Ran a command' }).first()
+  await firstCommandGroup.waitFor()
+  await firstCommandGroup.click()
   const finishedCommand = page.locator('[data-feed-evidence-id="sh-call-done"]')
   await finishedCommand.waitFor()
   await finishedCommand.click()
