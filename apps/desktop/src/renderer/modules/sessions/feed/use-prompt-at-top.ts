@@ -18,13 +18,11 @@ function promptTop(virtualizer: Virtualizer, index: number, gap: number) {
 // A prompt sent while the Feed is open scrolls to the top of the viewport, so the reply streams
 // into the room below it. A prompt already there when the Feed opens is left where it is.
 export function usePromptAtTop({
-  gap,
   positioned,
   rows,
   sessionId,
   virtualizer,
 }: {
-  gap: number
   positioned: boolean
   rows: readonly SessionFeedRow[]
   sessionId: string
@@ -40,12 +38,18 @@ export function usePromptAtTop({
       setPin({ sessionId, id: latest, index: rows.findLastIndex(isPrompt) })
   }
   const index = pin?.sessionId === sessionId ? rows.findLastIndex(isPrompt) : -1
+  // By index, not offset: the virtualizer re-aims each frame as the rows it draws on the way
+  // measure, where an offset from estimated heights stops short. `scrollPaddingStart` is the gap.
   useEffect(() => {
-    if (pin === null) return
-    const top = promptTop(virtualizer, pin.index, gap)
-    if (top !== null) virtualizer.scrollToOffset(top, { behavior: 'smooth' })
-  }, [gap, pin, virtualizer])
+    if (pin !== null) virtualizer.scrollToIndex(pin.index, { align: 'start', behavior: 'smooth' })
+  }, [pin, virtualizer])
   return index === -1 ? null : index
+}
+
+// True while the reply is shorter than the room below the prompt. TanStack's end anchor follows the
+// virtual total, which the room pads past, so a reply row measuring short would scroll the prompt down.
+export function promptHoldsRoom(virtualizer: Virtualizer, promptIndex: number | null, gap: number) {
+  return feedContentHeight(virtualizer, promptIndex, gap) > virtualizer.getTotalSize()
 }
 
 // Tall enough to scroll the pinned prompt to the top even while the reply is shorter than the
