@@ -1,7 +1,7 @@
 // One read of one Feed document, whether it is a Session's own or one Subagent's (#1582). Both
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
-import type { QueryClient, UseQueryOptions } from '@tanstack/react-query'
+import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
 import { mergeAppendedFeed } from '@/core/sessions/feed-contract'
 import {
   type SessionContractError,
@@ -10,6 +10,15 @@ import {
 } from '../session-contract-error'
 import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
+
+export async function retrySessionFeed(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  refetch: () => Promise<unknown>,
+) {
+  await queryClient.cancelQueries({ queryKey })
+  await refetch()
+}
 
 export function sessionFeedQuery(
   queryClient: QueryClient,

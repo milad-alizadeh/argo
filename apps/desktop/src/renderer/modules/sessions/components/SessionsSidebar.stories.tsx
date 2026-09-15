@@ -156,6 +156,30 @@ export const CommandTitledSession: Story = {
   },
 }
 
+// Optional activity metadata must not present `unknown` status as an activity summary.
+export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          activity: null,
+          status: 'unknown',
+          title: { text: 'A Session with no observed activity', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const unknown = canvas.getAllByText('Unknown')
+    await expect(unknown).toHaveLength(1)
+    await expect(unknown[0]).toHaveClass('sr-only')
+    await expect(canvas.queryByText('unknown')).toBeNull()
+  },
+}
+
 export const RosterStructure: Story = {
   args: {
     roster: {
