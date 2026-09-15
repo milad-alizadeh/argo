@@ -37,7 +37,7 @@ export function SessionEvidenceInspector({
     )
   if (evidence.evidence === null)
     return (
-      <section className="p-4 text-meta text-muted-foreground">
+      <section className="p-4 type-meta text-muted-foreground">
         Recorded evidence is unavailable.
       </section>
     )

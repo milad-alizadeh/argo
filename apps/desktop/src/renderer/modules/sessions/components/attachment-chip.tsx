@@ -59,7 +59,7 @@ export function AttachmentChip({
       </AttachmentMedia>
       <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
         <AttachmentTitle
-          className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label"
+          className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-control"
           title={name}
         >
           {title}

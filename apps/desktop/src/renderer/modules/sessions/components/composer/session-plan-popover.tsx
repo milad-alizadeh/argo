@@ -69,10 +69,10 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
             key={entry.position}
             aria-label={`${entry.content}: ${PLAN_ENTRY_LABEL[entry.status]}`}
             data-plan-status={entry.status}
-            className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 text-meta ${entry.status === 'in_progress' ? 'bg-muted font-medium' : ''}`}
+            className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${entry.status === 'in_progress' ? 'bg-muted font-medium' : ''}`}
           >
             <span
-              className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full text-meta ${PLAN_ENTRY_CLASS[entry.status]}`}
+              className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${PLAN_ENTRY_CLASS[entry.status]}`}
             >
               {entry.status === 'in_progress' ? (
                 <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40 motion-reduce:animate-none" />
@@ -110,7 +110,7 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium"
+            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-control"
             aria-label="Open task plan"
           />
         }

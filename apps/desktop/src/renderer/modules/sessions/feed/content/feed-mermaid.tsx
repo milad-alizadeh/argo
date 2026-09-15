@@ -87,7 +87,7 @@ export function FeedMermaid({
       className={`overflow-hidden border bg-card ${active ? 'border-primary' : 'border-border'} ${FEED_CARD_RADIUS_CLASS}`}
       data-component="FeedMermaid"
     >
-      <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 type-label">
+      <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 type-control">
         <span className="font-medium">
           {drawing === 'failed' ? 'Diagram · Could not render' : 'Diagram'}
         </span>
