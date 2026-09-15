@@ -275,11 +275,13 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
-  expect(fade.getBoundingClientRect().top).toBeCloseTo(composerBounds.top, 1)
-  expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
-    workspace.getBoundingClientRect().bottom,
-    1,
+  const fadeBounds = fade.getBoundingClientRect()
+  const fadeDepth = Number.parseFloat(
+    getComputedStyle(composer).getPropertyValue('--size-session-composer-fade-depth'),
   )
+  expect(fadeBounds.bottom).toBeCloseTo(composerBounds.top, 1)
+  expect(fadeBounds.height).toBeCloseTo(fadeDepth, 1)
+  expect(fadeBounds.top).toBeLessThan(composerBounds.top)
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
