@@ -3,7 +3,7 @@ import { fn } from 'storybook/test'
 
 import type { AccountSummary, Provider } from '@/core/accounts/contract'
 import type { ConnectionState, ConnectionSummary, Ticket } from '@/core/tickets/contract'
-import type { TicketsView } from '../hooks/useTicketsView'
+import type { TicketsView } from '../hooks/use-tickets-view'
 import type { Backlog } from '../lib/backlog'
 import { STATUSES } from './status-fixtures'
 

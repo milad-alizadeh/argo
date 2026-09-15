@@ -59,7 +59,7 @@ test('the Codex adapter reads no pending Permission, in the same shared shape', 
 })
 
 test('names which decision words each CLI actually answers with', () => {
-  assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.claude, ['allow', 'deny'])
+  assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.claude, ['allow', 'deny', 'allowForSession'])
   assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.codex, [
     'allow',
     'deny',

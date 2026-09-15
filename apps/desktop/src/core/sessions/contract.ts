@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { sessionAttachmentInputSchema } from './attachments-contract'
-import { permissionSchema } from './permission'
+import { permissionSchema, READER_DECISIONS } from './permission'
 import { sessionErrorSchema } from './session-error'
 
 export * from './archive-contract'
@@ -18,6 +18,7 @@ export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
+export * from './skill-contract'
 export * from './ticket-link-contract'
 
 // One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
@@ -104,7 +105,7 @@ export const sessionPermissionDecisionRequestSchema = z.strictObject({
   requestId: identifierSchema,
   sessionId: identifierSchema,
   permissionId: identifierSchema,
-  decision: z.enum(['allow', 'deny']),
+  decision: z.enum(READER_DECISIONS),
 })
 export type SessionPermissionDecisionRequest = z.infer<
   typeof sessionPermissionDecisionRequestSchema

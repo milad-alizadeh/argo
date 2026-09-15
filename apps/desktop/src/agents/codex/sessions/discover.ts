@@ -5,7 +5,7 @@ import {
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
-import { parseCodexTranscriptLine } from './records'
+import { parseCodexTranscriptLine, withoutModelInputCopies } from './records'
 
 export type Discovery = TranscriptDiscovery
 
@@ -46,7 +46,7 @@ function droppingSubagentThreads(records: TranscriptRecord[]): TranscriptRecord[
 }
 
 function normalizeRecords(records: TranscriptRecord[]): TranscriptRecord[] {
-  return droppingSubagentThreads(withoutDuplicateMessages(records))
+  return droppingSubagentThreads(withoutModelInputCopies(withoutDuplicateMessages(records)))
 }
 
 async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {

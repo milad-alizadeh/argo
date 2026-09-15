@@ -110,7 +110,7 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
     archivedBefore,
   )
   // Archiving dropped askPending from the roster's remembered order (see `keepRosterOrder` in
-  // useSessions.ts), so restoring it reintroduces it as an unrecognised row: it lands at the end,
+  // use-sessions.ts), so restoring it reintroduces it as an unrecognised row: it lands at the end,
   // the same place a newly discovered Session lands above.
   await mutations.archive('askPending', false)
   const restored = [...active, 'askPending']
