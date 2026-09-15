@@ -246,9 +246,9 @@
      Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
   --ticket-label-border-mix: 45%;
   --ticket-label-fill-mix: 18%;
-  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
-  --size-ticket-key: 40px;
-  --size-ticket-key-long: 64px;
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --text-body. */
+  --size-ticket-key: 52px;
+  --size-ticket-key-long: 80px;
   --size-ticket-age: 32px;
   --size-ticket-property: 56px;
   --size-ticket-inspector: 560px;
