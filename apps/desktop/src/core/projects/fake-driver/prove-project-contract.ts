@@ -75,6 +75,7 @@ const SURFACE = [
   'setSessionsArchived',
   'startSession',
   'statSessionAttachments',
+  'updatePriority',
   'updateStatus',
   'verifyAccount',
   'versions',

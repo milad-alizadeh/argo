@@ -1,6 +1,6 @@
 // The Backlog's rows: each open Ticket once, a listed child indented under its first listed parent.
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketStatus } from '@/core/tickets/contract'
+import type { Ticket, TicketPriority, TicketStatus } from '@/core/tickets/contract'
 
 // `nested` is true when a row of the listing is drawn under this one, so this one can fold.
 export type BacklogRow = { ticket: Ticket; depth: number; parent: string | null; nested: boolean }
@@ -24,6 +24,7 @@ export type Backlog = {
   // Every status a Ticket here can move to, and the move.
   statuses: readonly TicketStatus[]
   onChangeStatus: (key: string, status: TicketStatus) => void
+  onChangePriority: (key: string, priority: TicketPriority | null) => void
 }
 
 // A Ticket opened while paging shifts the listing, so a Ticket can arrive on two pages.

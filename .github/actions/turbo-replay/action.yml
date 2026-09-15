@@ -1,0 +1,30 @@
+name: Turbo replay probe
+description: Ask turbo, with a dry run, whether it will replay one desktop task from its cache (#2217).
+
+# A replayed task needs none of its toolchain, so a caller skips that setup on HIT. Any other
+# answer, a failed dry run included, sets it up. A HIT evicted before the real run fails that run
+# for the missing toolchain, and a rerun then installs it.
+
+inputs:
+  task:
+    description: The turbo task in @argo/desktop to ask about.
+    required: true
+
+outputs:
+  status:
+    description: HIT or MISS, as turbo's dry-run summary reports it.
+    value: ${{ steps.dry-run.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - id: dry-run
+      shell: bash
+      env:
+        TASK: ${{ inputs.task }}
+      run: |
+        status=$(bun run turbo run "$TASK" --filter=@argo/desktop --dry=json |
+          jq -r --arg task "$TASK" '.tasks[] | select(.task == $task) | .cache.status') || status=MISS
+        status=${status:-MISS}
+        echo "$TASK: $status"
+        echo "status=$status" >> "$GITHUB_OUTPUT"

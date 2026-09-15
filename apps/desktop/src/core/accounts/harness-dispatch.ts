@@ -1,6 +1,7 @@
 // The harness's stringly-typed test-facing dispatch, kept separate so `harness.ts` stays about
 // booting the fixture rather than routing test call sites onto the typed clients.
 import type { TicketClient } from '../tickets/client'
+import type { TicketPriority } from '../tickets/contract'
 import type { AccountClient } from './client'
 import { PROJECT_ID } from './harness-fixtures'
 
@@ -59,6 +60,15 @@ export async function dispatchTicket(
         projectId,
         key: String(fields.key),
         statusId: String(fields.statusId),
+      })
+    case 'ticket.priority':
+      return tickets.updatePriority({
+        projectId,
+        key: String(fields.key),
+        priorityLevel:
+          typeof fields.priorityLevel === 'number'
+            ? (fields.priorityLevel as TicketPriority['level'])
+            : null,
       })
     default:
       throw new Error(`unknown ticket operation ${type}`)

@@ -60,6 +60,7 @@ export function TicketDetail(props: TicketDetailProps) {
     provider,
     statuses,
     onChangeStatus,
+    onChangePriority,
     linkedSessions,
     onOpenSession,
     ...navigation
@@ -79,6 +80,7 @@ export function TicketDetail(props: TicketDetailProps) {
             <TicketKey provider={provider} ticket={ticket} />
           </div>
           <Properties
+            onChangePriority={onChangePriority}
             onChangeStatus={onChangeStatus}
             provider={provider}
             statuses={statuses}

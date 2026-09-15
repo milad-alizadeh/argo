@@ -78,6 +78,12 @@ test('a GitHub Ticket that is gone, or a status GitHub lacks, is refused', async
   }
 })
 
+test('a GitHub Ticket has no priority to change', async (context) => {
+  const { cockpit } = await github(context)
+  const reply = await cockpit.ticket('ticket.priority', { key: '#1', priorityLevel: 1 })
+  assert.equal(reply.code, 'ticket-not-writable')
+})
+
 test('moving a Linear Ticket to Done writes it in Linear and it leaves the backlog', async (context) => {
   const cockpit = await linear(context)
   const reply = await cockpit.ticket('ticket.update', {
@@ -96,4 +102,27 @@ test('a Linear state of another team is refused before anything is written', asy
   })
   assert.equal(reply.code, 'status-unknown')
   assert.deepEqual(await keys(cockpit), ['ENG-1', 'ENG-2'])
+})
+
+test('a Linear Ticket can move from High to Urgent, and from Urgent to No priority', async (context) => {
+  const cockpit = await linear(context)
+  const toUrgent = await cockpit.ticket('ticket.priority', { key: 'ENG-1', priorityLevel: 1 })
+  assert.deepEqual(toUrgent.priority, { level: 1, label: 'Urgent' })
+  const toNone = await cockpit.ticket('ticket.priority', { key: 'ENG-1', priorityLevel: null })
+  assert.equal(toNone.priority, null)
+})
+
+test('a Linear issue of another team is refused a priority change', async (context) => {
+  const cockpit = await harness(context)
+  cockpit.linear.addTeam(structuredClone(TEAM))
+  cockpit.linear.addTeam({
+    ...structuredClone(HIDDEN),
+    visibleTo: [ADA.id],
+    issues: [{ identifier: 'SEC-1', title: 'Secret work', status: 'Todo', stateType: 'unstarted' }],
+  })
+  cockpit.linear.signIn(ADA)
+  await connect(cockpit, 'linear')
+  await cockpit.ticket('ticket.connect', { accountId: 'linear:user-ada', scope: TEAM.id })
+  const reply = await cockpit.ticket('ticket.priority', { key: 'SEC-1', priorityLevel: 1 })
+  assert.equal(reply.code, 'ticket-not-found')
 })
