@@ -372,6 +372,14 @@ const meta: Meta<typeof SessionScreenView> = {
 export default meta
 type Story = StoryObj<typeof SessionScreenView>
 
+async function pickSubagent(canvas: ReturnType<typeof within>) {
+  await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+  await waitFor(() =>
+    expect(screen.queryByRole('menuitem', { name: /Interface review/ })).toBeNull(),
+  )
+}
+
 export const Open: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
@@ -405,8 +413,7 @@ export const Open: Story = {
     expectSessionsSidebarIsOpen(canvasElement)
 
     // Picking a Subagent in the header opens the collapsed inspector on its transcript.
-    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await pickSubagent(canvas)
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
@@ -419,8 +426,7 @@ export const Open: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
     )
-    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await pickSubagent(canvas)
     const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
     await expect(reopenedInspector).toBeVisible()
     expect(reopenedInspector.getBoundingClientRect().width).toBeGreaterThan(0)

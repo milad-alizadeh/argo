@@ -1,5 +1,5 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 import { FeedJumpToLatest } from './FeedJumpToLatest'
@@ -29,6 +29,17 @@ export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFee
   const { t } = useTranslation('sessions')
   const [atLatest, setAtLatest] = useState(true)
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
+  const [padding, setPadding] = useState({ start: 0, end: 0 })
+  const attachViewport = useCallback((element: HTMLElement | null) => {
+    if (element !== null) {
+      const style = getComputedStyle(element)
+      setPadding({
+        start: Number.parseFloat(style.scrollPaddingTop) || 0,
+        end: Number.parseFloat(style.scrollPaddingBottom) || 0,
+      })
+    }
+    setViewport(element)
+  }, [])
   const virtualizer = useVirtualizer({
     anchorTo: 'end',
     count: rows.length,
@@ -43,6 +54,8 @@ export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFee
       })
     },
     overscan: FEED_OVERSCAN,
+    paddingStart: padding.start,
+    paddingEnd: padding.end,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   useInitialFeedPosition({
@@ -58,7 +71,7 @@ export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFee
         FeedRow={FeedRow}
         reveals={reveals}
         rows={rows}
-        setViewport={setViewport}
+        setViewport={attachViewport}
         settled={settled}
         virtualizer={virtualizer}
       />

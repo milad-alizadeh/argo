@@ -11,19 +11,17 @@ export type InspectorSizes = { inspector: string; inspectorMin: string; workspac
 function useInspectorReadiness({
   defaultCollapsed,
   element,
-  inspectorMin,
   state,
 }: {
   defaultCollapsed: boolean
   element: RefObject<HTMLElement | null>
-  inspectorMin: string
   state: InspectorState
 }) {
   const [isInspectorReady, setIsInspectorReady] = useState(!defaultCollapsed)
   const synchronizeReady = useCallback(() => {
     const width = element.current?.getBoundingClientRect().width ?? 0
-    setIsInspectorReady(width >= readCssSize(inspectorMin))
-  }, [element, inspectorMin])
+    setIsInspectorReady(width > 0)
+  }, [element])
   useLayoutEffect(() => {
     if (state === 'collapsed' || element.current === null) return
     const observer = new ResizeObserver(synchronizeReady)
@@ -47,7 +45,6 @@ export function useInspectorPanels(
   const { isInspectorReady, setIsInspectorReady, synchronizeReady } = useInspectorReadiness({
     defaultCollapsed,
     element: inspectorElement,
-    inspectorMin: sizes.inspectorMin,
     state,
   })
   const updateState = (next: InspectorState) => {
