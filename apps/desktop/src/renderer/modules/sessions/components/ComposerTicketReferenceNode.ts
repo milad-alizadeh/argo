@@ -62,6 +62,10 @@ export class ComposerTicketReferenceNode extends TextNode {
     return element
   }
 
+  canInsertTextBefore() {
+    return false
+  }
+
   isTextEntity() {
     return true
   }
