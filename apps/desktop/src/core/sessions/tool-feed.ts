@@ -21,10 +21,12 @@ function text(value: unknown): string | null {
 }
 
 const TOOL_DETAILS = {
-  // The agent's own description reads as prose; the raw command is the fallback, first line only.
+  // The agent's own description is already a whole label; the raw command, first line, is the fallback.
   Bash: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: `Ran ${text(call.input.description) ?? String(call.input.command ?? 'command').split('\n')[0]}`,
+    label:
+      text(call.input.description) ??
+      `Ran ${String(call.input.command ?? 'command').split('\n')[0]}`,
   }),
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),

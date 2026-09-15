@@ -128,7 +128,7 @@ export const CommandWithDescriptionLabel = {
           {
             ...command,
             id: 'described-command',
-            label: 'Ran Listing changed files and scanning them for leftovers',
+            label: 'Listing changed files and scanning them for leftovers',
             text: 'RTK_DISABLED=1 git diff --name-only 5911f4e89~1 HEAD -- apps/desktop/src/agents/claude',
           },
         ],
@@ -141,7 +141,7 @@ export const CommandWithDescriptionLabel = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
     const group = canvas.getByRole('button', {
-      name: 'Ran Listing changed files and scanning them for leftovers',
+      name: 'Listing changed files and scanning them for leftovers',
     })
     await expect(group).toHaveAttribute('aria-expanded', 'false')
     await expect(canvas.queryByRole('code')).toBeNull()

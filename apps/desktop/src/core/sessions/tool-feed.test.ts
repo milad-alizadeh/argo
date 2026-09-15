@@ -63,7 +63,7 @@ test('a Bash call with a description labels itself with the description, not the
     ],
     new Map(),
   )
-  assert.equal(row.label, 'Ran Listing changed files')
+  assert.equal(row.label, 'Listing changed files')
 })
 
 test('a Bash call with no description falls back to the command, first line only', () => {
