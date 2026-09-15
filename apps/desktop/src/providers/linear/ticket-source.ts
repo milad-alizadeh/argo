@@ -2,6 +2,7 @@
 import type { SourceFailure, TicketSource } from '../../core/tickets/sources'
 import type { LinearFailure } from './http'
 import { readTicketPage } from './issues'
+import { updateIssuePriority } from './priority'
 import { updateIssueStatus } from './statuses'
 import { checkTeam, listTeams } from './teams'
 
@@ -56,6 +57,12 @@ export const linearTickets: TicketSource = {
   async update({ endpoints, token }, change) {
     if (!endpoints.linear) return UNREACHABLE
     const written = await updateIssueStatus(endpoints.linear, token, change)
+    return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
+  },
+
+  async updatePriority({ endpoints, token }, change) {
+    if (!endpoints.linear) return UNREACHABLE
+    const written = await updateIssuePriority(endpoints.linear, token, change)
     return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
 }

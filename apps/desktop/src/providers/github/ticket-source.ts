@@ -61,4 +61,9 @@ export const githubTickets: TicketSource = {
     const written = await updateIssueStatus(endpoints.github, token, change)
     return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
+
+  // GitHub keeps no priority; the row and Detail menus never call this for a GitHub Ticket.
+  async updatePriority() {
+    return { ok: false, failure: 'ticket-not-writable' }
+  },
 }

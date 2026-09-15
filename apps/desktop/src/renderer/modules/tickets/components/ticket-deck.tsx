@@ -38,6 +38,9 @@ export function TicketDeck({
         <TicketDetail
           linkedSessions={linkedSessions}
           listed={listed}
+          onChangePriority={(priority) =>
+            selected && backlog.onChangePriority(selected.key, priority)
+          }
           onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
           onOpenSession={onOpenSession}
           onSelect={onSelect}

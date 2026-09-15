@@ -7,7 +7,9 @@ import process from 'node:process'
 import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../../../core/sessions/proof-protocol.ts'
 
 const ESCAPE = String.fromCharCode(27)
-const COMPACTION_DELAY = 10_000
+// Long enough for the proof to read the running compaction before the boundary ends it; that read
+// landed 6ms after the click when measured (#2225).
+const COMPACTION_DELAY = 1_000
 const COMPACT = /\/compact[\r\n]/
 // Argo's bracketed paste, then its carriage return, which the line discipline turns into a
 // newline when it arrives before this process has switched the terminal to raw mode.
