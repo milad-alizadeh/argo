@@ -9,7 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu'
-import { NO_PRIORITY_LABEL, PRIORITY_OPTIONS, PriorityIcon, priorityName } from './TicketStatus'
+import { NO_PRIORITY_LABEL, PRIORITY_OPTIONS, PriorityIcon, priorityName } from './ticket-status'
 
 export type PriorityMenuProps = {
   priority: TicketPriority | null
