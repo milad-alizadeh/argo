@@ -40,6 +40,7 @@ function useReferenceChoices(draft: string, editor: LexicalEditor) {
   const choices = referenceMenu(draft)
   const choose = (choice: ReferenceSuggestion) => {
     replaceActiveReference(editor, choice.source)
+    setDismissedDraft(draft)
     setSelected(0)
   }
   const dismiss = () => {
@@ -55,13 +56,16 @@ function useReferenceChoices(draft: string, editor: LexicalEditor) {
 
 export function ComposerReferenceMenuPlugin({
   cli = null,
+  disabled = false,
   draft,
 }: {
   cli?: SessionCli | null
+  disabled?: boolean
   draft: string
 }) {
   const [editor] = useLexicalComposerContext()
-  const menu = useReferenceChoices(draft, editor)
+  const reference = activeReference(draft)
+  const menu = useReferenceChoices(disabled || reference?.trigger === '@' ? '' : draft, editor)
   const menuRef = useRef(menu)
   menuRef.current = menu
   useEffect(
@@ -86,7 +90,7 @@ export function ComposerReferenceMenuPlugin({
       ),
     [editor],
   )
-  if (menu.choices === null) return null
+  if (disabled || menu.choices === null) return null
   return (
     <ComposerReferenceMenu
       choices={menu.choices}

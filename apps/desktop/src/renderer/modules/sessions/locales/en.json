@@ -32,6 +32,37 @@
     "placeholder": "Direct the next move…",
     "plan": "Step {{current}}/{{total}}",
     "addContext": "Add context",
+    "contextPicker": {
+      "label": "Context picker",
+      "search": "Search context",
+      "searchPlaceholder": "Search Tickets",
+      "close": "Close context picker",
+      "filesAndFolders": "Files & folders",
+      "tickets": "Tickets",
+      "goals": "Goals",
+      "comingSoon": "Coming soon",
+      "blocked": "Blocked",
+      "terminal": "Terminal · {{status}}",
+      "removeTicket": "Remove {{key}}",
+      "openTicket": "Open {{key}}",
+      "selectedTickets": "Selected Tickets",
+      "provider": { "github": "GitHub", "linear": "Linear" },
+      "ticket": {
+        "sharedPicker": "Add a shared context picker to the Session composer",
+        "composerSync": "Keep the Composer draft in sync",
+        "refreshToken": "Store the refresh token",
+        "ticketsPrototype": "Prototype the Tickets room",
+        "open": "Open",
+        "inProgress": "In Progress",
+        "done": "Done",
+        "closed": "Closed"
+      }
+    },
+    "attachment": {
+      "fileType": "{{extension}} file",
+      "notFound": "Not found",
+      "remove": "Remove {{title}}"
+    },
     "attach": "Attach a file",
     "dictate": "Dictate",
     "send": "Send",

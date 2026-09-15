@@ -3,14 +3,17 @@ import type { DragEvent, RefObject } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
-import type { ComposerAttachment } from '../state/useComposerStore'
+import type { ComposerAttachment, ComposerTicketContext } from '../state/useComposerStore'
 import { ComposerEditorArea } from './ComposerEditorArea'
 import { ComposerToolbar } from './ComposerToolbar'
+import { DraftContextPicker } from './DraftContextPicker'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import { SessionContextBar } from './SessionContextBar'
 
 type ComposerCardProps = {
   attachments: ComposerAttachment[]
+  tickets: ComposerTicketContext[]
+  contextPickerOpen: boolean
   contextTokens: number | null | undefined
   disabled?: boolean
   draft: string
@@ -22,6 +25,8 @@ type ComposerCardProps = {
   isHandingOff?: boolean
   isRunning: boolean
   onAttach: () => void
+  onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
+  onContextPickerOpenChange: (open: boolean) => void
   onChange: (text: string) => void
   onCompact?: () => Promise<boolean>
   onDropFiles: (files: FileList) => void
@@ -34,9 +39,19 @@ type ComposerCardProps = {
   setup: TurnSetupControlProps | null
 }
 
+function closeContextPicker(
+  editorRef: RefObject<LexicalEditor | null>,
+  onOpenChange: (open: boolean) => void,
+) {
+  onOpenChange(false)
+  editorRef.current?.focus()
+}
+
 // The card and the context bar pinned under it: everything below the pending-turns list.
 export function ComposerCard({
   attachments,
+  tickets,
+  contextPickerOpen,
   contextTokens,
   disabled,
   draft,
@@ -48,6 +63,8 @@ export function ComposerCard({
   isHandingOff,
   isRunning,
   onAttach,
+  onAddTicket,
+  onContextPickerOpenChange,
   onChange,
   onCompact,
   onDropFiles,
@@ -64,7 +81,7 @@ export function ComposerCard({
       <fieldset
         aria-label="Message composer"
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
           event.preventDefault()
@@ -73,6 +90,8 @@ export function ComposerCard({
       >
         <ComposerEditorArea
           attachments={attachments}
+          contextPickerOpen={contextPickerOpen}
+          tickets={tickets}
           cli={harness?.cli ?? null}
           draft={draft}
           editorRef={editorRef}
@@ -87,15 +106,23 @@ export function ComposerCard({
           attachments={attachments}
           disabled={disabled}
           draft={draft}
-          editorRef={editorRef}
           harness={harness}
           interruptRef={interruptRef}
           isRunning={isRunning}
-          onAttach={onAttach}
+          onOpenContextPicker={() => onContextPickerOpenChange(true)}
           onInterrupt={onInterrupt}
           setup={setup}
         />
       </fieldset>
+      {contextPickerOpen ? (
+        <DraftContextPicker
+          draft={draft}
+          onAddTicket={onAddTicket}
+          onAttach={onAttach}
+          onClose={() => closeContextPicker(editorRef, onContextPickerOpenChange)}
+          editorRef={editorRef}
+        />
+      ) : null}
       <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
         <SessionContextBar
           contextTokens={contextTokens}

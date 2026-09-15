@@ -1,7 +1,7 @@
 import { Command, FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Badge } from '../../../components/ui/badge'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { InlineContext } from './InlineContext'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
 
@@ -29,7 +29,7 @@ export const sessionReferences = [
   {
     detail: 'Frequently used skill',
     kind: 'skill',
-    label: '$frontend-design',
+    label: 'frontend design',
     source: '@$frontend-design',
   },
   {
@@ -99,14 +99,10 @@ export function SessionReferenceBadge({
   const reference = referenceBySource(source)
   const unsupported = reference !== undefined && !referenceSupportsCli(reference, cli)
   return (
-    <Badge
-      className={`mx-0.5 align-text-bottom font-mono text-meta${unsupported ? ' border-dashed text-muted-foreground' : ''}`}
-      variant="outline"
-    >
-      {renderReferenceIcon(unsupported, reference)}
-      {source}
+    <span className={unsupported ? 'mx-0.5 opacity-60' : 'mx-0.5'}>
+      <InlineContext icon={renderReferenceIcon(unsupported, reference)} text={source} />
       {unsupported ? <span className="sr-only"> — not available for {cliLabel(cli)}</span> : null}
-    </Badge>
+    </span>
   )
 }
 

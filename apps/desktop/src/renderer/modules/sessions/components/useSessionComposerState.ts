@@ -68,7 +68,8 @@ export function useSessionComposerState({
 }) {
   const editorRef = useRef<LexicalEditor>(null)
   const { changeDraft, clearDraft, draft } = useComposerDraft(sessionId, editorRef)
-  const { attachments, attach, remove, markError, clear } = useComposerAttachments(sessionId)
+  const { attachments, attach, remove, markError, clear, tickets, addTicket, removeTicket } =
+    useComposerAttachments(sessionId)
   const onEdit = useEditPendingTurn(editorRef, changeDraft, setup)
   const sendPendingTurn: Send = useCallback(
     (text, turnSetup, pendingAttachments) =>
@@ -95,6 +96,8 @@ export function useSessionComposerState({
   const { attachFiles, dropFiles } = useAttachmentTransfer(attach)
   return {
     attachments,
+    tickets,
+    addTicket,
     attachFiles,
     changeDraft,
     draft,
@@ -103,6 +106,7 @@ export function useSessionComposerState({
     onEdit,
     pendingTurns,
     removeAttachment: remove,
+    removeTicket,
     removePendingTurn,
     reorderPendingTurn,
     send,
