@@ -33,7 +33,7 @@ async function proveBulkArchive(page) {
     applied: ['harnessNoise'],
     failed: [],
   })
-  const afterArchive = await page.evaluate(() => window.argo.listSessions())
+  const afterArchive = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.ok(!afterArchive.sessions.some((session) => session.id === 'harnessNoise'))
   const archivedPage = await page.evaluate(() =>
     window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
@@ -44,7 +44,7 @@ async function proveBulkArchive(page) {
     window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: false }),
   )
   assert.deepEqual(restored.applied, ['harnessNoise'])
-  const afterRestore = await page.evaluate(() => window.argo.listSessions())
+  const afterRestore = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.ok(afterRestore.sessions.some((session) => session.id === 'harnessNoise'))
 
   // A Session the store has no row for at all fails rather than the write inventing one.
