@@ -1,16 +1,16 @@
 import { isRecord } from '@/boundary'
 import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
-import {
-  BACKGROUND_STATES,
-  type BackgroundState,
-  type ContentBlock,
-  type ToolCall,
-  type TranscriptMessage,
-  type TranscriptRecord,
+import type {
+  ContentBlock,
+  ToolCall,
+  TranscriptMessage,
+  TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
 import { commandSource } from './command-source'
+import { readSkillBody } from './skill-body'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
@@ -75,41 +75,10 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
 
 function readUserMessage(record: Record<string, unknown>): TranscriptRecord | null {
   if (typeof record.uuid !== 'string') return null
-  if (record.isMeta === true) return { kind: 'trace', uuid: record.uuid }
+  if (record.isMeta === true) return readSkillBody(record) ?? { kind: 'trace', uuid: record.uuid }
   const read = readMessage(record, 'user')
   if (read === null) return null
   return readCommandEnvelope(record, read) ?? read
-}
-
-// One field of the notification's own XML body, which is the only place the CLI states it.
-function tagged(body: string, tag: string): string | null {
-  return new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`).exec(body)?.[1]?.trim() ?? null
-}
-
-function isBackgroundState(value: string | null): value is BackgroundState {
-  return value !== null && (BACKGROUND_STATES as readonly string[]).includes(value)
-}
-
-// The CLI's `task-notification`: one background task ended. The CLI writes it three times, as two
-// queue operations and this attachment, and only the attachment carries a timestamp of its own.
-function readBackgroundTask(record: Record<string, unknown>): TranscriptRecord | null {
-  const attachment = isRecord(record.attachment) ? record.attachment : null
-  if (attachment?.commandMode !== 'task-notification') return null
-  if (typeof attachment.prompt !== 'string') return null
-  const body = attachment.prompt
-  const taskId = tagged(body, 'task-id')
-  const callId = tagged(body, 'tool-use-id')
-  const state = tagged(body, 'status')
-  if (taskId === null || callId === null || !isBackgroundState(state)) return null
-  return {
-    kind: 'background-task',
-    taskId,
-    callId,
-    outputPath: tagged(body, 'output-file'),
-    state,
-    summary: tagged(body, 'summary'),
-    timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
-  }
 }
 
 function readTitle(record: Record<string, unknown>): TranscriptRecord | null {

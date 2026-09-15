@@ -8,11 +8,11 @@ import {
   EmptyTitle,
 } from '../../../components/ui/empty'
 import { Spinner } from '../../../components/ui/spinner'
-import { AnchoredFeed } from './AnchoredFeed'
+import { AnchoredFeed } from './anchored-feed'
 import type { DrawnRowProps } from './drawn-row'
 import type { Reveal } from './reveal'
-import { StalledFeed } from './StalledFeed'
-import type { Settled, useSettledFeed } from './useSettledFeed'
+import { StalledFeed } from './stalled-feed'
+import type { Settled, useSettledFeed } from './use-settled-feed'
 
 function RunningFeed() {
   return (

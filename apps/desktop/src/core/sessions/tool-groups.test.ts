@@ -19,7 +19,7 @@ function unclassified(id: string): ToolCall {
 }
 
 function rowsFor(calls: ToolCall[]): SessionFeedRow[] {
-  return toolRows(calls, new Map())
+  return toolRows(calls, { results: new Map(), skillBodies: new Map() })
 }
 
 function prose(id: string): SessionFeedRow {

@@ -8,6 +8,7 @@ import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-
 import { embedAttachments } from './attachment-prompt'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
+import type { ClaudePermissionDecision } from './permission-gate'
 
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
   return { error: error instanceof ClaudeSessionDriverError ? error.code : fallback }
@@ -19,13 +20,13 @@ function toPermission({ id, sessionId, toolName, input }: ClaudePermission): Per
   return { id, sessionId, description: `${toolName} ${JSON.stringify(input)}` }
 }
 
-// Claude's hook answers only `allow` or `deny` (ADR-0024): a session-scoped allow has no session
-// to stand on here, and a cancel has no Turn-interrupt meaning for a PreToolUse hook, so both
-// collapse to the decision they read closest to.
-const CLAUDE_DECISIONS: Record<PermissionDecision, 'allow' | 'deny'> = {
+// Claude's hook answers only `allow` or `deny`, so the gate keeps a session-scoped allow as a rule
+// for similar calls (ADR-0024 amended). A cancel has no Turn-interrupt meaning for a PreToolUse
+// hook, so it collapses to deny.
+const CLAUDE_DECISIONS: Record<PermissionDecision, ClaudePermissionDecision> = {
   allow: 'allow',
   deny: 'deny',
-  allowForSession: 'allow',
+  allowForSession: 'allowSimilar',
   cancel: 'deny',
 }
 

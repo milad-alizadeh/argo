@@ -23,11 +23,11 @@ function assertToolRows(reply) {
   assert.equal(group.shape, 'tool-group')
   assert.equal(group.label, 'Ran a command, edited a file, read a file')
   assert.deepEqual(
-    group.calls.map(({ label, detail, status }) => ({ label, detail, status })),
+    group.calls.map(({ label, lineCounts, status }) => ({ label, lineCounts, status })),
     [
-      { label: 'Ran bun test', detail: null, status: 'succeeded' },
-      { label: 'Read src/app.ts', detail: null, status: 'failed' },
-      { label: 'Edited src/app.ts', detail: '+1 −1', status: 'running' },
+      { label: 'Ran bun test', lineCounts: null, status: 'succeeded' },
+      { label: 'Read src/app.ts', lineCounts: null, status: 'failed' },
+      { label: 'Edited src/app.ts', lineCounts: { added: 1, removed: 1 }, status: 'running' },
     ],
   )
   assert.equal(reply.rows[1]?.shape, 'prose')

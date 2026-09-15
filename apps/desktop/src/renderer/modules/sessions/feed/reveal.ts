@@ -1,6 +1,6 @@
 import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 import type { SessionFeedRow } from '../types'
-import type { Settled } from './useSettledFeed'
+import type { Settled } from './use-settled-feed'
 
 // New agent text is uncovered top to bottom while the virtualizer corrects the mounted row's
 // height. The estimate controls only animation timing; layout is always measured from the row.

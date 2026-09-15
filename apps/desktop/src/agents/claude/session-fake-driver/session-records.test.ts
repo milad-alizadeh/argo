@@ -106,6 +106,7 @@ test('reads harness delegation and related Shell updates without protocol markup
         status: 'running',
         progress: 'Checking focus and motion',
         groupId: 'feed-review',
+        callId: null,
       },
       {
         kind: 'delegation',
@@ -115,6 +116,7 @@ test('reads harness delegation and related Shell updates without protocol markup
         status: 'running',
         progress: null,
         groupId: 'build',
+        callId: null,
       },
       {
         kind: 'delegation',
@@ -124,6 +126,7 @@ test('reads harness delegation and related Shell updates without protocol markup
         status: 'completed',
         progress: null,
         groupId: 'build',
+        callId: null,
       },
     ],
   )

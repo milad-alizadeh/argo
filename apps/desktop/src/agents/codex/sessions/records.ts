@@ -1,6 +1,7 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
+import { readHarnessEnvelopes } from './harness-envelopes'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -27,7 +28,7 @@ function messageRecord(
     blocks: ContentBlock[]
   },
 ): TranscriptRecord {
-  return {
+  return readHarnessEnvelopes({
     kind: 'message',
     uuid: message.uuid,
     parentUuid: null,
@@ -47,7 +48,7 @@ function messageRecord(
     toolResults: [],
     answeredCalls: [],
     usage: null,
-  }
+  })
 }
 
 function itemMessage(
@@ -114,7 +115,28 @@ function responseMessage(
   if (payload.role !== 'user' && payload.role !== 'developer') return null
   const blocks = currentUserBlocks(payload.content, payload.role)
   if (blocks === null || blocks.length === 0) return null
-  return messageRecord(record, { uuid: payload.id, role: 'user', originSessionId: null, blocks })
+  const uuid = `${MODEL_INPUT_PREFIX}${payload.id}`
+  return messageRecord(record, { uuid, role: 'user', originSessionId: null, blocks })
+}
+
+// Codex desktop writes each prompt twice: this model-input copy, then the `UserMessage` item the
+// person sees, one ordinal later and under another id. The input copy also carries injected context.
+const MODEL_INPUT_PREFIX = 'model-input:'
+
+// A thread with its own reader copy of a prompt keeps only those; one without keeps its input copies.
+export function withoutModelInputCopies(records: TranscriptRecord[]): TranscriptRecord[] {
+  const isInputCopy = (record: TranscriptRecord) =>
+    'uuid' in record && record.uuid.startsWith(MODEL_INPUT_PREFIX)
+  const hasReaderCopy = records.some(
+    (record) => record.kind === 'message' && record.role === 'user' && !isInputCopy(record),
+  )
+  return hasReaderCopy ? records.filter((record) => !isInputCopy(record)) : records
+}
+
+// A thread Codex dispatched itself, such as a spawned subagent or the `guardian` reviewer that judges
+// an approval (`SessionSource.subagent`, app-server schema): never a person's Session.
+function isSubagentThread(meta: Record<string, unknown>): boolean {
+  return meta.thread_source === 'subagent' || (isRecord(meta.source) && 'subagent' in meta.source)
 }
 
 export function parseCodexTranscriptLine(line: string): TranscriptRecord | null {
@@ -134,7 +156,7 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
     return {
       kind: 'trace',
       uuid: payload.id,
-      subagent: payload.thread_source === 'subagent',
+      subagent: isSubagentThread(payload),
       cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
     }
   }

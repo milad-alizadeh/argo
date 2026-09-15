@@ -94,11 +94,11 @@ export const FEED_EVIDENCE = {
   },
   createdAttachmentTray: {
     id: 'created-attachment-tray',
-    title: 'AttachmentTray.tsx',
+    title: 'attachment-tray.tsx',
     kind: 'diff',
     source:
       '@@ New attachment tray @@\n+ export function AttachmentTray({ files }) {\n+   return <div className="flex gap-2 overflow-x-auto">{files.map(renderAttachment)}</div>\n+ }',
-    detail: 'Recorded file creation · AttachmentTray.tsx',
+    detail: 'Recorded file creation · attachment-tray.tsx',
     status: 'succeeded',
   },
   createdContextBar: {

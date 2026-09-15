@@ -605,7 +605,7 @@ and **`Sidebar` does not wrap Radix**.
   — the Feed's contract, rules 4, 5 and 7 in particular.
 - `rules/swift.md` — "Tokens only", and Full Keyboard Access as the contract.
 - `apps/desktop/package.json` — React **19.2.1**, Electron 44.2.0, Vite 7.2.6. **No `components.json`,
-  no Tailwind, no shadcn component installed anywhere in the tree**; `src/renderer/App.tsx` is a
+  no Tailwind, no shadcn component installed anywhere in the tree**; `src/renderer/app.tsx` is a
   placeholder. Nothing has been committed to a foundation yet.
 - `docs/designs/prototypes/session-feed-core.prototype.html` (branch `argo/#1748-prototype-session-feed`,
   commit `9d9e7672`) — the approved Feed prototype is **hand-written HTML**, not shadcn. So #1748's

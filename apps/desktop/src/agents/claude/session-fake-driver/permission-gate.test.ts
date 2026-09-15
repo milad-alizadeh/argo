@@ -83,19 +83,17 @@ test.each([
   },
 )
 
-test('holds a managed Claude permission until the selected Session answers it', async () => {
-  const gate = createClaudePermissionGate()
-  const sessionId = randomUUID()
-  const opened = gate.open(sessionId)
+// Dials the gate as the hook does; `held` resolves once the gate holds the request for an answer.
+function askGate(part: CompanionPart, command: string) {
   let held: () => void = () => {}
   const heldByGate = new Promise<void>((resolve) => {
     held = resolve
   })
   const reply = new Promise<string>((resolve, reject) => {
-    const socket = net.createConnection(hookSocket(opened))
+    const socket = net.createConnection(hookSocket(part))
     socket.setEncoding('utf8')
     socket.once('connect', () =>
-      socket.write('{"tool_name":"Bash","tool_input":{"command":"bun test"}}\n'),
+      socket.write(`${JSON.stringify({ tool_name: 'Bash', tool_input: { command } })}\n`),
     )
     socket.on('data', (line) => {
       if (line === '__ARGO_GATE_HELD__\n') held()
@@ -103,13 +101,39 @@ test('holds a managed Claude permission until the selected Session answers it', 
     })
     socket.once('error', reject)
   })
+  return { held: heldByGate, reply }
+}
 
-  await heldByGate
+test('holds a managed Claude permission until the selected Session answers it', async () => {
+  const gate = createClaudePermissionGate()
+  const sessionId = randomUUID()
+  const opened = gate.open(sessionId)
+  const { held, reply } = askGate(opened, 'bun test')
+
+  await held
   const permission = gate.pending(sessionId)
   expect(permission).toMatchObject({ sessionId, toolName: 'Bash' })
   expect(gate.decide(sessionId, permission?.id ?? '', 'allow')).toBe(true)
   expect(await reply).toContain('"permissionDecision":"allow"')
   expect(gate.pending(sessionId)).toBeNull()
+
+  opened.close()
+  gate.close()
+})
+
+test('answers a similar request without asking again once the Session allows similar', async () => {
+  const gate = createClaudePermissionGate()
+  const sessionId = randomUUID()
+  const opened = gate.open(sessionId)
+  const first = askGate(opened, 'bun test composer')
+  await first.held
+  gate.decide(sessionId, gate.pending(sessionId)?.id ?? '', 'allowSimilar')
+  expect(await first.reply).toContain('"permissionDecision":"allow"')
+
+  expect(await askGate(opened, 'bun test feed').reply).toContain('"permissionDecision":"allow"')
+  const different = askGate(opened, 'rm -rf build')
+  await different.held
+  expect(gate.pending(sessionId)).toMatchObject({ input: { command: 'rm -rf build' } })
 
   opened.close()
   gate.close()

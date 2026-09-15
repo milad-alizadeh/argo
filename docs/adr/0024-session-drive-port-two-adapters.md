@@ -229,6 +229,26 @@ Codex thread is reachable. That was #698's bug, and the key is what fixes it rat
 it. Whether a per-Session answer is ever needed — a Session whose companion plugin is off — is
 undecided; the key means deciding it costs nothing here.
 
+## Amendment · the desktop standing allow · 2026-09-15
+
+The desktop `claude` adapter answered `allowForSession` as a plain `allow`, so the reader had no
+standing allow at all. It now keeps one, on Argo's side as the Codex decision above requires. The
+`claude` gate keeps a set of similarity keys for each Session, and a later request whose key is in
+the set is allowed at once. The hook still answers only `allow` or `deny`.
+
+A key is deliberately coarse, because it copies the choice the TUI itself offers:
+
+- Every file-edit tool (`Edit`, `Write`, `MultiEdit`, `NotebookEdit`) shares one key, so "Allow
+  similar" on one edit allows every file edit in the Session.
+- `Bash` keys on the program and its subcommand. A command with shell control (`;`, `&&`, `||`,
+  `|`, a backtick, `$(`) keys on its exact text.
+- `WebFetch` keys on the host. Any other tool keys on its name.
+
+The set lives as long as the gate's part for the Session, so it ends when that part closes. There is
+no revoke control on the desktop yet, so `revokeStandingAllow` has no desktop counterpart. Codex
+Permissions are still out of scope (#1841), so its adapter reads no pending Permission and refuses
+every decision.
+
 ## Why
 
 - The port is the only part that survives policy churn. Anthropic's billing rule changed three

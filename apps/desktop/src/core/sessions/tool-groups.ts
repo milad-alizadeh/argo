@@ -33,6 +33,7 @@ const KIND_PRESENTATION: Record<
   created: { route: 'evidence', verb: 'created', noun: 'file' },
   read: { route: 'evidence', verb: 'read', noun: 'file' },
   tool: { route: 'inline', verb: 'called', noun: 'tool' },
+  skill: { route: 'inline', verb: 'invoked', noun: 'skill' },
 }
 const KIND_ORDER = Object.keys(KIND_PRESENTATION) as ToolRow['kind'][]
 
@@ -74,17 +75,22 @@ export function groupedRowIndexes(
   const groups: number[][] = []
   for (let index = 0; index < rows.length; ) {
     const row = rows[index]
-    if (row?.shape !== 'tool') {
+    // A skill invocation reads as its own line, never folded into a mixed "ran a command,
+    // invoked a skill" summary alongside another kind, so it always starts (and ends) its own run.
+    if (row?.shape !== 'tool' || row.kind === 'skill') {
       groups.push([index])
       index += 1
       continue
     }
     const run: number[] = []
+    let next = rows[index]
     while (
-      rows[index]?.shape === 'tool' &&
-      (run.length === 0 || !breakBeforeIds.has(rows[index]?.id ?? ''))
+      next?.shape === 'tool' &&
+      next.kind !== 'skill' &&
+      (run.length === 0 || !breakBeforeIds.has(next.id))
     ) {
       run.push(index++)
+      next = rows[index]
     }
     groups.push(run)
   }

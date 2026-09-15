@@ -83,7 +83,7 @@ Two readings, both of them the mechanism:
 
 ## Not an overlay
 
-`apps/desktop/src/renderer/modules/sessions/screens/SessionFeedStall.stories.tsx` holds the Feed
+`apps/desktop/src/renderer/modules/sessions/screens/session-feed-stall.stories.tsx` holds the Feed
 read open forever and reads the window while the spinner shows. It passes today:
 
 - `document.elementFromPoint` over a Roster row answers with the row, so nothing covers it.
