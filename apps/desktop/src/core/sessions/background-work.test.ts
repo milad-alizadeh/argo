@@ -15,6 +15,7 @@ function shell(state: SessionShellCommand['state']): SessionShellCommand {
   return {
     id: 'shell',
     command: 'bun test',
+    label: null,
     background: state !== 'running',
     state,
     startedAt: null,

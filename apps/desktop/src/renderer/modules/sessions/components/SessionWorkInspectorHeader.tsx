@@ -30,8 +30,8 @@ export function SessionWorkInspectorHeader({ work, now }: SessionWorkInspectorHe
         workDuration(command.startedAt, command.endedAt, currentTime),
         command.result,
       ]}
-      monospace
-      title={command.command ?? command.id}
+      monospace={command.label === null}
+      title={command.label ?? command.command ?? command.id}
     />
   )
 }

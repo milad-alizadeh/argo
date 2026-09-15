@@ -10,6 +10,7 @@ export function sessionShellCommand(
 ): SessionShellCommand {
   return {
     command: null,
+    label: null,
     background: false,
     state: 'running',
     startedAt: null,
