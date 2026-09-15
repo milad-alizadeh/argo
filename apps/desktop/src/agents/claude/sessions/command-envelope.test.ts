@@ -61,5 +61,87 @@ test('drops a task notification with no summary rather than guess', () => {
     },
   })
   const record = parseTranscriptLine(line)
-  assert.equal(record?.kind === 'message' ? record.blocks[0]?.shape : record?.kind, 'prose')
+  assert.deepEqual(record, { kind: 'trace', uuid: 'task-2' })
+})
+
+test('suppresses complete known harness envelopes instead of rendering their markup', () => {
+  const envelopes = [
+    '<app-context>context</app-context>',
+    '<apps_instructions>instructions</apps_instructions>',
+    '<collaboration_mode>mode</collaboration_mode>',
+    '\n<environment_context>context</environment_context>\n',
+    '<local-command-caveat>caveat</local-command-caveat>',
+    '<permissions>permissions</permissions>',
+    '<plugins_instructions>plugins</plugins_instructions>',
+    '<recommended_plugins>plugins</recommended_plugins>',
+    '<realtime_delegation><input>Reader text</input></realtime_delegation>',
+    '<skills_instructions>instructions</skills_instructions>',
+    '<status>running</status>',
+    '<transcript_delta>delivery</transcript_delta>',
+    '<transcript_tail_flush>delivery</transcript_tail_flush>',
+  ]
+  for (const [index, content] of envelopes.entries()) {
+    const uuid = `harness-${index}`
+    const line = JSON.stringify({
+      type: 'user',
+      uuid,
+      userType: 'external',
+      sourceToolAssistantUUID: 'tool-1',
+      message: { role: 'user', content },
+    })
+    assert.deepEqual(parseTranscriptLine(line), { kind: 'trace', uuid })
+  }
+})
+
+test('keeps prose that happens to quote harness markup', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'quote-1',
+    message: { role: 'user', content: 'Explain <status>running</status> to me.' },
+  })
+  const record = parseTranscriptLine(line)
+
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: 'Explain <status>running</status> to me.' },
+  ])
+})
+
+test('keeps a known tag when it is not a complete harness envelope', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'status-example',
+    message: { role: 'user', content: '<status>running</status> is the literal response.' },
+  })
+  const record = parseTranscriptLine(line)
+
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: '<status>running</status> is the literal response.' },
+  ])
+})
+
+test('keeps an exact known tag when it is a person’s message', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'status-example-exact',
+    userType: 'external',
+    message: { role: 'user', content: '<status>running</status>' },
+  })
+  const record = parseTranscriptLine(line)
+
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: '<status>running</status>' },
+  ])
+})
+
+test('keeps an unknown complete envelope as reader prose', () => {
+  const line = JSON.stringify({
+    type: 'user',
+    uuid: 'unknown-envelope',
+    message: { role: 'user', content: '<example>keep this</example>' },
+  })
+  const record = parseTranscriptLine(line)
+
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: '<example>keep this</example>' },
+  ])
 })
