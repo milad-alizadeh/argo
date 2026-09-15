@@ -12,9 +12,10 @@ import {
   type PositionedRecord,
   updatedPending,
   updatedResults,
+  updatedSkillBodies,
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
-import type { ToolResult } from './tool-feed'
+import type { ToolEvidence, ToolResult } from './tool-feed'
 import { groupedRowIndexes, groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
@@ -22,6 +23,7 @@ export type FeedProjectionState = {
   files: FileCursor[]
   frozenRows: SessionFeedRow[]
   results: Map<string, ToolResult>
+  skillBodies: Map<string, string>
   pending: Set<string>
 }
 
@@ -35,18 +37,18 @@ function openRecordsSince(chain: SessionChain, state: FeedProjectionState | unde
 
 // The pre-merge row list for the open records, each tagged with the 0-based index (into
 // `records`) of the record that drew it, so freezing can tell which records a frozen row covers.
-function positionedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
+function positionedRows(records: PositionedRecord[], evidence: ToolEvidence) {
   const projected = records.map(({ record, position }) => ({
     record,
-    rows: rowsOfRecord(record, position, results),
+    rows: rowsOfRecord(record, position, evidence),
   }))
   const { rows, breakBeforeIds } = collectFeedRows(projected)
   const sources = projected.flatMap(({ rows }, source) => rows.map(() => source))
   return { rows, sources, breakBeforeIds }
 }
 
-function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
-  const { rows: preRows, sources: preSources, breakBeforeIds } = positionedRows(records, results)
+function mergedRows(records: PositionedRecord[], evidence: ToolEvidence) {
+  const { rows: preRows, sources: preSources, breakBeforeIds } = positionedRows(records, evidence)
   const deduped = withoutRepeatedBreaks(preRows)
   const dedupedSources = preRows.flatMap((row, index) =>
     row.shape !== 'unreadable' || preRows[index - 1]?.shape !== 'unreadable'
@@ -110,13 +112,15 @@ export function projectFeedIncrementally(
       files: cursors,
       frozenRows,
       results: state?.results ?? new Map(),
+      skillBodies: state?.skillBodies ?? new Map(),
       pending: state?.pending ?? new Set(),
     }
     return { rows: frozenRows, previouslyFrozenCount, state: settled }
   }
   const results = updatedResults(records, state?.results ?? new Map())
+  const skillBodies = updatedSkillBodies(records, state?.skillBodies ?? new Map())
   const pending = updatedPending(records, state?.pending ?? new Set(), results)
-  const openRows = mergedRows(records, results)
+  const openRows = mergedRows(records, { results, skillBodies })
   const firstUnfrozen = firstUnfrozenRecordIndex(openRows, records, pending)
   const safeRowCount = openRows.filter((entry) => entry.source < firstUnfrozen).length
   const newFrozenRows = [
@@ -128,6 +132,7 @@ export function projectFeedIncrementally(
     files: advancedCursors(cursors, records, firstUnfrozen),
     frozenRows: newFrozenRows,
     results,
+    skillBodies,
     pending,
   }
   return {

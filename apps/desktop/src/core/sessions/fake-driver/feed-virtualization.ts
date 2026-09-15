@@ -1,4 +1,4 @@
-// The Feed virtualizes its rows (`AnchoredFeed.tsx`, `@tanstack/react-virtual`): only rows near
+// The Feed virtualizes its rows (`anchored-feed.tsx`, `@tanstack/react-virtual`): only rows near
 // the viewport's current scroll position exist in the DOM. A case that reaches for a row by its
 // stable `data-feed-row` id must scroll it into the mounted window first, rather than assume the
 // id is already present — a raw `querySelector` on a far row returns null even though the row is

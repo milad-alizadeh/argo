@@ -2,8 +2,9 @@
 # the packaged-contents manifest (#1806) on Linux for every PR — the manifest with no path filter,
 # because a lockfile refresh can change what ships without touching an `apps/desktop` file.
 # `desktop-artifact` packages `apps/desktop` for arm64 on macOS and runs its packaged tests (#1769)
-# only when the PR touches the desktop app, the root manifest, the lockfile or `.github/`, and its
-# filter fails CLOSED.
+# on a PR only when it touches the desktop app, the root manifest, the lockfile or `.github/`, and
+# its filter fails CLOSED. It also runs on every push to `main`, unfiltered, to write the
+# base-branch `macOS-bun-*` and `macOS-electron-*` caches a PR restores from (#2214).
 #
 # The macOS job is free: standard GitHub-hosted runners are unlimited on public repositories, and
 # `argo` is public. The "99% of the Actions bill" figure that removed the previous macOS job read
@@ -35,7 +36,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      # The one job left, so it owns the bun cache write for the whole workflow.
+      # The one job on Linux, so it owns the `Linux-bun-*` cache write. `desktop-artifact` writes
+      # its own `macOS-bun-*` cache under a separate key (#2214).
       - uses: ./.github/actions/setup
         with:
           save-cache: "true"
@@ -193,8 +195,10 @@ jobs:
   #
   # macOS runners are free on this public repository — the ~$50/day that removed the old Swift job
   # was the gross column of the billing page, never the billed one. The limits that are real are 5
-  # concurrent macOS jobs on GitHub Free and no secrets on a fork pull request, which is why this
-  # is scoped to pull requests that touch the desktop app rather than to every push.
+  # concurrent macOS jobs on GitHub Free and no secrets on a fork pull request, which is why the
+  # pull-request side of this job stays scoped to pull requests that touch the desktop app rather
+  # than to every push. The push-to-main side always runs: it is the only writer of the base-branch
+  # `macOS-bun-*` and `macOS-electron-*` caches a pull request can restore from (#2214).
   #
   # It packages, it does not sign. `osxSign` is unconfigured until the entitlement set is chosen
   # (#1771) and this repository holds no signing identity. When both arrive, the signing steps
@@ -202,7 +206,7 @@ jobs:
   # again after them: a re-signature can invalidate what the package proved.
   desktop-artifact:
     name: package · run packaged tests
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: macos-26
     timeout-minutes: 45
     steps:
@@ -213,7 +217,8 @@ jobs:
           fetch-depth: 0
 
       # A step-level filter rather than a workflow-level `paths:`, which would gate the Linux job
-      # with it and leave a desktop-only pull request unlinted.
+      # with it and leave a desktop-only pull request unlinted. A push to `main` always runs: it
+      # exists to seed the base-branch cache, not to judge what that push touched.
       #
       # It fails CLOSED, and that is the whole design of it. Written the obvious way — a pipeline
       # inside an `if` — every failure mode writes `desktop=false` and skips the package, the
@@ -227,6 +232,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "push to main; the artifact tier runs to seed the shared macOS cache"
+            echo "desktop=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git fetch --no-tags origin "$BASE_REF"
           changed=$(git diff --name-only "FETCH_HEAD...HEAD")
           if grep -qE '^(apps/desktop/|package\.json|bun\.lock|\.github/)' <<<"$changed"; then
@@ -242,10 +252,17 @@ jobs:
       # Both jobs take Node from `.node-version` (#1800), which is what this job needs anyway: the
       # yauzl@2 hang the root override prevents only appears from Node 24.16 (forge#4277), so a
       # gate on an older Node would never see the thing the override is there for.
+      #
+      # `save-cache: "true"`: this job's own writer of the `macOS-bun-*` cache. The Linux `check`
+      # job's cache lives under a `Linux-` key, so the two never race for the same entry (#2214).
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/setup
+        with:
+          save-cache: "true"
 
-      # Scoped to this pull request, because this job never runs on `main` to write one for all.
+      # `actions/cache` saves on every miss regardless of branch, so this writes a base-branch
+      # `macOS-electron-*` cache on push to `main`, which a pull request's restore can then fall
+      # back to (#2214): GitHub only restores a cache from the current branch or the default one.
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/electron-cache
 

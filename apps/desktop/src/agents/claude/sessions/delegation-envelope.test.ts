@@ -2,26 +2,66 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseTranscriptLine } from './records'
 
-test('reads a background task notification as Shell activity, not raw envelope prose', () => {
-  const line = JSON.stringify({
-    type: 'user',
-    uuid: 'task-1',
-    message: {
-      role: 'user',
-      content:
-        '<task-notification>\n<task-id>a1</task-id>\n<status>completed</status>\n<summary>Agent "Consolidate stories" finished</summary>\n<result>{"files":[{"path":"a.tsx"}]}</result>\n</task-notification>',
-    },
-  })
+function notification(uuid: string, body: string) {
+  return JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: body } })
+}
+
+test('reads a background task notification as its readable name, not raw envelope prose', () => {
+  const line = notification(
+    'task-1',
+    '<task-notification>\n<task-id>a1</task-id>\n<tool-use-id>toolu_1</tool-use-id>\n<status>completed</status>\n<summary>Background command "Install dependencies" completed (exit code 0)</summary>\n</task-notification>',
+  )
   assert.deepEqual(parseTranscriptLine(line), {
     kind: 'delegation',
     uuid: 'task-1',
     actor: 'shell',
-    action: 'Agent "Consolidate stories" finished',
+    action: 'Install dependencies',
     status: 'completed',
     progress: null,
     groupId: 'a1',
+    callId: 'toolu_1',
   })
 })
+
+for (const { claim, body, actor, action, progress } of [
+  {
+    claim: 'an agent, with the first line of its report',
+    body: '<summary>Agent "Consolidate stories" finished</summary>\n<result>**Task:** Merge the stories\nMore</result>',
+    actor: 'agent',
+    action: 'Consolidate stories',
+    progress: 'Task: Merge the stories',
+  },
+  {
+    claim: 'a workflow, leaving its JSON result for the model',
+    body: '<summary>Dynamic workflow "Map the gaps" completed</summary>\n<result>{"summaries":[]}</result>',
+    actor: 'agent',
+    action: 'Map the gaps',
+    progress: null,
+  },
+  {
+    claim: 'a monitor, with its event as the latest line',
+    body: '<summary>Monitor event: "Watch CI to a verdict"</summary>\n<event>DONE: all checks settled</event>',
+    actor: 'shell',
+    action: 'Watch CI to a verdict',
+    progress: 'DONE: all checks settled',
+  },
+] as const) {
+  test(`reads a task notification from ${claim}`, () => {
+    const record = parseTranscriptLine(
+      notification('task-3', `<task-notification><task-id>t3</task-id>${body}</task-notification>`),
+    )
+    assert.deepEqual(record, {
+      kind: 'delegation',
+      uuid: 'task-3',
+      actor,
+      action,
+      status: null,
+      progress,
+      groupId: 't3',
+      callId: null,
+    })
+  })
+}
 
 test('keeps a background task status without inventing a summary', () => {
   const line = JSON.stringify({
@@ -40,6 +80,7 @@ test('keeps a background task status without inventing a summary', () => {
     status: 'completed',
     progress: null,
     groupId: null,
+    callId: null,
   })
 })
 
@@ -63,6 +104,7 @@ test('reads a realtime delegation into a safe Agent card model', () => {
     status: 'running',
     progress: 'Checking keyboard use',
     groupId: 'review',
+    callId: null,
   })
 })
 
@@ -86,5 +128,6 @@ test('drops an invalid delegation group id at the parser boundary', () => {
     status: null,
     progress: null,
     groupId: null,
+    callId: null,
   })
 })

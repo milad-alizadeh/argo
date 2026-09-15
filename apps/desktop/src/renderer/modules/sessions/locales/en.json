@@ -79,6 +79,7 @@
     "compact": "Compact the conversation",
     "handoff": "Hand off to a new Session",
     "removeQueued": "Remove queued message",
+    "pendingTurns": "Pending Turns",
     "context": "Context",
     "permission": "Allow this command?",
     "question": "Question from the agent",
@@ -135,8 +136,31 @@
     "protocolDetails": "Protocol text"
   },
   "delegation": {
-    "agent": { "label": "Agent delegation" },
-    "shell": { "label": "Shell activity" }
+    "agent": { "label": "Background Agent", "running": "Running Background Agent" },
+    "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "tokens": "{{amount}} tokens"
+  },
+  "workState": {
+    "running": "Running",
+    "done": "Done",
+    "completed": "Completed",
+    "failed": "Failed",
+    "killed": "Killed",
+    "stopped": "Stopped"
+  },
+  "skill": {
+    "open": "Open the {{name}} skill",
+    "inspector": "Skill",
+    "reading": "Reading skill…",
+    "unavailable": "This skill's file could not be read."
+  },
+  "permission": {
+    "title": "Allow this?",
+    "deny": "Deny",
+    "allow": "Allow",
+    "more": "More ways to allow",
+    "allowSimilar": "Allow similar",
+    "allowAll": "Allow all"
   },
   "diff": {
     "readingFile": "Reading current file…",
@@ -161,7 +185,8 @@
   },
   "tools": {
     "failed": "Failed",
-    "copyRun": "Copy command and result"
+    "copyRun": "Copy command and result",
+    "noOutput": "No output"
   },
   "rail": {
     "backgroundAgents": "Background agents",

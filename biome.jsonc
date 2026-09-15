@@ -140,6 +140,11 @@
             "skipBlankLines": true
           }
         },
+        // Every file name is kebab-case, the convention the shadcn generator writes.
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": { "filenameCases": ["kebab-case"], "requireAscii": true }
+        },
         "noNonNullAssertion": "error",
         "noNestedTernary": "error",
         "noUselessElse": "error"
@@ -187,7 +192,8 @@
             "useMaxParams": "off"
           },
           "style": {
-            "noExcessiveLinesPerFile": "off"
+            "noExcessiveLinesPerFile": "off",
+            "useFilenamingConvention": "off"
           },
           // A prototype's whole question can be the element this rule tells you to replace:
           // #1754 weighs a contenteditable against a textarea, and the rule answers it by fiat.

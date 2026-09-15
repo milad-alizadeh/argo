@@ -77,6 +77,8 @@
   --size-session-roster-max: 460px;
   --size-session-feed-min: 360px;
   --size-session-column: 48rem;
+  /* The least room the Feed and the composer keep from the window's edges. */
+  --spacing-session-gutter: var(--spacing-shell-gutter);
   --size-queue-row: 44px;
   --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
@@ -198,6 +200,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-diff-added: var(--diff-added);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -238,6 +241,7 @@
   --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
+  --size-icon-text: 1em; /* an icon set in running text, at the size of its words */
   --size-feed-attachment-preview: 80px;
   --size-feed-gallery: 160px;
   --size-feed-image-frame: 208px;
@@ -285,6 +289,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --diff-added: oklch(0.508 0.118 165.612); /* 5.5:1 on --background */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -356,6 +361,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --diff-added: oklch(0.765 0.177 163.223);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

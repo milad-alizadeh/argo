@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/core/sessions/models'
-import { type ComposerIdentity, composerIdentityKey } from '../hooks/composerIdentity'
+import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({

@@ -9,9 +9,11 @@ import {
   type SessionFeedReply,
   type SessionFileReply,
   type SessionListReply,
+  type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
   type SessionRenameReply,
   type SessionShellOutputReply,
+  type SessionSkillReply,
   type SessionStartReply,
   type SessionStatAttachmentsReply,
   sessionError,
@@ -39,7 +41,7 @@ export type SessionClient = {
   decideSessionPermission(request: {
     sessionId: string
     permissionId: string
-    decision: 'allow' | 'deny'
+    decision: SessionPermissionDecisionRequest['decision']
   }): Promise<SessionAcceptedReply>
   decideSessionQuestion(request: {
     sessionId: string
@@ -57,6 +59,7 @@ export type SessionClient = {
     revision: string | null
   }): Promise<SessionFeedReply>
   readWorkspaceFile(request: { sessionId: string; path: string }): Promise<SessionFileReply>
+  readSkillFile(request: { path: string }): Promise<SessionSkillReply>
   cancelSessionFeed(request: { sessionId: string }): Promise<SessionAcceptedReply>
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
@@ -89,6 +92,7 @@ export function createSessionClient(
     listSessions: (request) => client.list(request),
     listArchivedSessions: (request) => client.archiveList(request),
     readWorkspaceFile: (request) => client.file(request),
+    readSkillFile: (request) => client.skill(request),
     readShellOutput: (request) => client.shellOutput(request),
     readDelegationUsage: (request) => client.delegationUsage(request),
     renameSession: (request) => client.rename(request),
