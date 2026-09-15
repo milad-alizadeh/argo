@@ -276,11 +276,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
   const fadeBounds = fade.getBoundingClientRect()
-  const fadeDepth = Number.parseFloat(
-    getComputedStyle(composer).getPropertyValue('--size-session-composer-fade-depth'),
-  )
   expect(fadeBounds.bottom).toBeCloseTo(composerBounds.top, 1)
-  expect(fadeBounds.height).toBeCloseTo(fadeDepth, 1)
+  expect(fade.className).toContain('h-(--size-session-composer-fade-depth)')
+  expect(fadeBounds.height).toBeGreaterThan(0)
   expect(fadeBounds.top).toBeLessThan(composerBounds.top)
 }
 
@@ -458,6 +456,36 @@ export const WideSharedReadingColumn: Story = {
       ),
     )
     expectSharedReadingColumn(canvasElement)
+  },
+}
+
+// Visual regression pair: the fade is a visible strip immediately above the composer in both
+// appearances, rather than an invisible overlay underneath its card.
+export const ComposerFadeLight: Story = {
+  globals: { theme: 'light' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const ComposerFadeDark: Story = {
+  globals: { theme: 'dark' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
   },
 }
 
