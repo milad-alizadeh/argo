@@ -80,6 +80,10 @@ function createWindow(): BrowserWindow {
     },
   })
 
+  if (DEVELOPMENT_INSTANCE) {
+    window.webContents.on('page-title-updated', (event) => event.preventDefault())
+  }
+
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachBridges(window, { userData, rendererURL, proofEnabled: PROOF_ENABLED })

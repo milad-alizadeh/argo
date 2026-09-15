@@ -1,7 +1,15 @@
 import { describe, expect, test } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
+import os from 'node:os'
 import path from 'node:path'
-import { assertPortAvailable, developmentInstance, portCollisionError } from './dev-instance.mjs'
+import {
+  assertPortAvailable,
+  developmentInstance,
+  portCollisionError,
+  startControlServer,
+} from './dev-instance.mjs'
+import { stopDevelopmentInstance } from './dev-control.mjs'
 
 const worktree = path.join(path.sep, 'worktrees', 'ticket-2173')
 
@@ -42,6 +50,25 @@ describe('desktop development instances', () => {
       await new Promise((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
       )
+    }
+  })
+
+  test('stops through the instance control socket instead of a recorded process ID', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-desktop-dev-'))
+    const controlFile = path.join(directory, 'control.sock')
+    let stopped = false
+    const server = await startControlServer(controlFile, () => {
+      stopped = true
+    })
+
+    try {
+      await stopDevelopmentInstance(controlFile)
+      expect(stopped).toBe(true)
+    } finally {
+      await new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      )
+      await rm(directory, { recursive: true, force: true })
     }
   })
 })

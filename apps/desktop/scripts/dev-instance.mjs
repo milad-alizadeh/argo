@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { realpath, rm } from 'node:fs/promises'
+import { mkdir, realpath, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -34,6 +34,7 @@ export function developmentInstance(worktree, requestedPort = process.env[PORT_E
 
   return {
     directory,
+    controlFile: path.join(directory, 'control.sock'),
     id,
     port,
     readyFile: path.join(directory, 'ready.json'),
@@ -63,6 +64,20 @@ export async function assertPortAvailable(port, identity) {
   })
 }
 
+export function startControlServer(controlFile, stop) {
+  const server = createServer((socket) => {
+    socket.once('data', (command) => {
+      if (command.toString() !== 'stop') return socket.end('invalid command')
+      stop()
+      socket.end('stopping')
+    })
+  })
+  return new Promise((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(controlFile, () => resolve(server))
+  })
+}
+
 function runLinker() {
   const linker = spawnSync(process.execPath, ['scripts/link-hoisted-electron.mjs'], {
     cwd: DESKTOP_ROOT,
@@ -76,6 +91,8 @@ async function main() {
   const instance = developmentInstance(worktree)
   await assertPortAvailable(instance.port, instance.id)
   await rm(instance.readyFile, { force: true })
+  await rm(instance.controlFile, { force: true })
+  await mkdir(instance.directory, { recursive: true })
   runLinker()
 
   const child = spawn('electron-forge', ['start'], {
@@ -97,9 +114,14 @@ async function main() {
     stopping = true
     child.kill('SIGTERM')
   }
+  const controlServer = await startControlServer(instance.controlFile, stop)
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
-  child.once('exit', (code, signal) => process.exit(stopping ? 0 : (code ?? (signal ? 1 : 0))))
+  child.once('exit', (code, signal) => {
+    controlServer.close()
+    void rm(instance.controlFile, { force: true })
+    process.exit(stopping ? 0 : (code ?? (signal ? 1 : 0)))
+  })
 }
 
 if (process.argv[1] === import.meta.filename) {

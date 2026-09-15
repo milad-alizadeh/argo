@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { access, readFile, realpath } from 'node:fs/promises'
+import { createConnection } from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
 import { developmentInstance } from './dev-instance.mjs'
@@ -37,12 +38,17 @@ export function parseReadyRecord(value) {
   }
 }
 
-function stopProcess(processId) {
-  try {
-    process.kill(processId, 'SIGTERM')
-  } catch (error) {
-    if (error.code !== 'ESRCH') throw error
-  }
+export function stopDevelopmentInstance(controlFile) {
+  return new Promise((resolve, reject) => {
+    const socket = createConnection(controlFile)
+    socket.once('error', () => reject(new Error('The development launcher is not running.')))
+    socket.once('connect', () => socket.write('stop'))
+    socket.once('data', (reply) => {
+      if (reply.toString() === 'stopping') resolve()
+      else reject(new Error('The development launcher rejected the stop request.'))
+      socket.end()
+    })
+  })
 }
 
 async function readyRecord(worktree) {
@@ -73,8 +79,7 @@ async function main() {
       process.stdout.write(`${JSON.stringify({ ...record, readyFile: instance.readyFile })}\n`)
       return
     case 'stop':
-      stopProcess(record.processId)
-      stopProcess(record.launcherPid)
+      await stopDevelopmentInstance(instance.controlFile)
       process.stdout.write(`Stopped ${instance.id}.\n`)
       return
     default:
