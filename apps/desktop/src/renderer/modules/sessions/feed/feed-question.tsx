@@ -69,7 +69,7 @@ function QuestionField({
               onSelect(question.multiSelect ? toggle(selected, option.label) : [option.label])
             }
           >
-            <span className="type-heading font-medium">{option.label}</span>
+            <span className="type-heading">{option.label}</span>
             {option.description === null ? null : (
               <QuestionnaireChoiceDescription className="type-body">
                 {option.description}
@@ -193,7 +193,7 @@ export function FeedQuestion({
       <div className="flex justify-end">
         <QuestionnaireSubmit
           disabled={!canSubmit || answering}
-          className="bg-foreground type-label text-background hover:bg-foreground/80"
+          className="bg-foreground type-control text-background hover:bg-foreground/80"
         >
           Send answer
         </QuestionnaireSubmit>

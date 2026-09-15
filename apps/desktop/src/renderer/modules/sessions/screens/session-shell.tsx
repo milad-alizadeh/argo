@@ -25,7 +25,7 @@ function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
   const worktree = worktreeName(session.cwd)
   return (
     <div className="min-w-0 flex-1 overflow-hidden">
-      <h1 className="truncate type-heading font-medium">{session.title?.text ?? session.id}</h1>
+      <h1 className="truncate type-heading">{session.title?.text ?? session.id}</h1>
       {worktree ? (
         <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
           <GitFork aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />

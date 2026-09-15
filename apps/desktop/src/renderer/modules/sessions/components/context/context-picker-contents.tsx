@@ -37,7 +37,7 @@ function TicketResult({
     >
       <TicketProviderIcon provider={ticket.provider} />
       <span className="sr-only">{providerLabel(ticket.provider)} </span>
-      <span className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-tight) type-label">
+      <span className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-tight) type-control">
         <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
         <span
           className={`flex shrink-0 ${ticket.terminal ? 'text-danger' : 'text-muted-foreground'}`}
@@ -87,7 +87,7 @@ export function ContextPickerContents({
             type="button"
           >
             <Folder aria-hidden="true" className="size-4" />
-            <span className="type-label">{t('composer.contextPicker.filesAndFolders')}</span>
+            <span className="type-control">{t('composer.contextPicker.filesAndFolders')}</span>
           </button>
         </div>
       ) : null}
@@ -116,7 +116,7 @@ export function ContextPickerContents({
         <div className="mt-(--spacing-shell-item) border-t pt-(--spacing-shell-item)">
           <button
             aria-disabled="true"
-            className="flex w-full cursor-not-allowed items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left text-muted-foreground type-label"
+            className="flex w-full cursor-not-allowed items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left text-muted-foreground type-control"
             disabled
             type="button"
           >

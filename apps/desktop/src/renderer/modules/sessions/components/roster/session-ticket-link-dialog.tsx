@@ -68,7 +68,7 @@ function TicketPicker({
         ))}
       </ul>
       {error === null ? null : (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="type-body text-destructive" role="alert">
           {error}
         </p>
       )}
@@ -90,7 +90,7 @@ function RenameConfirm({
 }) {
   return (
     <div className="grid gap-2">
-      <p className="text-sm text-muted-foreground">
+      <p className="type-body text-muted-foreground">
         This Session has a name a person typed by hand. Replace it with “{title}”?
       </p>
       <DialogFooter>

@@ -52,13 +52,13 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
           <BookMarked aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle className="type-label">{t('settings.none.title')}</ItemTitle>
+          <ItemTitle className="type-control">{t('settings.none.title')}</ItemTitle>
           <ItemDescription className="type-meta">{t('settings.none.description')}</ItemDescription>
         </ItemContent>
         <ItemActions>
           <Button
             aria-label={t('settings.none.connectLabel')}
-            className="type-label"
+            className="type-control"
             onClick={onConnect}
             size="sm"
           >
@@ -75,7 +75,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
         <BookMarked aria-hidden="true" />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="type-label max-w-full truncate">{connection.label}</ItemTitle>
+        <ItemTitle className="type-control max-w-full truncate">{connection.label}</ItemTitle>
         <ItemDescription className="type-meta flex items-center gap-(--spacing-shell-icon)">
           <ConnectionStatusMark state={connection.state}>
             {t('settings.readThrough', {
@@ -88,7 +88,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
       <ItemActions>
         <Button
           aria-label={t('settings.disconnect', { scope: scope.one })}
-          className="type-label"
+          className="type-control"
           disabled={disconnecting}
           onClick={onDisconnect}
           size="sm"
@@ -115,7 +115,7 @@ export function SourceSettings(props: SourceSettingsProps) {
       ref={section}
     >
       <div className="grid gap-(--spacing-shell-tight)">
-        <h3 className="type-label">{t('settings.heading')}</h3>
+        <h3 className="type-control">{t('settings.heading')}</h3>
         <p className="type-meta text-muted-foreground">{t('settings.description')}</p>
       </div>
       <Source {...props} />

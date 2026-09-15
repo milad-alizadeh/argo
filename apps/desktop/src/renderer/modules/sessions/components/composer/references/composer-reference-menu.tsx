@@ -122,12 +122,12 @@ export function ComposerReferenceMenu({
               )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block type-label font-medium">{choice.label}</span>
-              <span className="block text-meta text-muted-foreground">
+              <span className="block type-control">{choice.label}</span>
+              <span className="block type-meta text-muted-foreground">
                 {unsupported ? `Not available for ${cliLabel(cli)}` : choice.detail}
               </span>
             </span>
-            <span className="text-meta capitalize text-muted-foreground">{choice.kind}</span>
+            <span className="type-meta capitalize text-muted-foreground">{choice.kind}</span>
           </button>
         )
       })}

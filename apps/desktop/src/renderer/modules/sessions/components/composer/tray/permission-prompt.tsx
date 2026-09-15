@@ -72,7 +72,7 @@ function PermissionCard({
             aria-hidden="true"
             className="size-(--size-icon-inline) shrink-0 text-muted-foreground"
           />
-          <h3 id={titleId} className="min-w-0 flex-1 type-heading font-medium">
+          <h3 id={titleId} className="min-w-0 flex-1 type-heading">
             {t('permission.title')}
           </h3>
           <Button disabled={locked} size="sm" variant="outline" onClick={() => void decide('deny')}>

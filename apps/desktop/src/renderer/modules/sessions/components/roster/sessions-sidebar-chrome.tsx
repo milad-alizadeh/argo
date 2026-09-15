@@ -47,7 +47,7 @@ export function SessionsSidebarHeader({
         </InputGroupAddon>
         <InputGroupInput
           aria-label={t('searchSessions')}
-          className="type-label"
+          className="type-control"
           onChange={(event) => onSearch(event.target.value)}
           placeholder={`${t('searchSessions')}…`}
           value={search}
