@@ -5,6 +5,7 @@ import type {
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { taggedField, taggedText } from '../../envelope-tags'
+import { readTaskEnding } from './background-task'
 import { readableCommandOutput } from './command-output'
 import { readTaskNotification } from './task-notification'
 
@@ -115,6 +116,29 @@ function readCommandPrompt(text: string): string | null | undefined {
   return name === null || argumentsText.length === 0 ? command : `${name} ${argumentsText}`
 }
 
+function readCommandOutput(message: TranscriptMessage, text: string): TranscriptRecord {
+  const output = readableCommandOutput(taggedText(text, 'local-command-stdout') ?? '')
+  if (output === '') return { kind: 'trace', uuid: message.uuid }
+  return { kind: 'command-output', uuid: message.uuid, timestamp: message.timestamp, text: output }
+}
+
+function readTaskDelivery(
+  record: Record<string, unknown>,
+  message: TranscriptMessage,
+  text: string,
+): TranscriptRecord {
+  const ending = readTaskEnding(text, record.timestamp)
+  return {
+    kind: 'delegation',
+    uuid: message.uuid,
+    ...readTaskNotification(text),
+    status: trimmedTag(text, 'status'),
+    groupId: identifierTag(text, 'task-id'),
+    callId: identifierTag(text, 'tool-use-id'),
+    ...(ending === null ? {} : { ending }),
+  }
+}
+
 export function readCommandEnvelope(
   record: Record<string, unknown>,
   message: TranscriptMessage,
@@ -129,29 +153,10 @@ export function readCommandEnvelope(
     return event.kind === 'trace'
       ? { ...event, uuid: message.uuid }
       : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
-  if (text.startsWith('<local-command-stdout>')) {
-    const output = readableCommandOutput(taggedText(text, 'local-command-stdout') ?? '')
-    return output === ''
-      ? { kind: 'trace', uuid: message.uuid }
-      : {
-          kind: 'command-output',
-          uuid: message.uuid,
-          timestamp: message.timestamp,
-          text: output,
-        }
-  }
+  if (text.startsWith('<local-command-stdout>')) return readCommandOutput(message, text)
   // A background task's delivery is not the person's own words: it is the CLI handing back a
   // summary, with the task's full result attached for the model, not the reader.
-  if (text.startsWith('<task-notification>')) {
-    return {
-      kind: 'delegation',
-      uuid: message.uuid,
-      ...readTaskNotification(text),
-      status: trimmedTag(text, 'status'),
-      groupId: identifierTag(text, 'task-id'),
-      callId: identifierTag(text, 'tool-use-id'),
-    }
-  }
+  if (text.startsWith('<task-notification>')) return readTaskDelivery(record, message, text)
   // The harness re-delivers the compaction summary as a synthetic user turn so the model can
   // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows
   // rather than letting it fall through to a prose prompt bubble (#2206).

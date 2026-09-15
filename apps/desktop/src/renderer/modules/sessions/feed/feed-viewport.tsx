@@ -66,7 +66,7 @@ export function FeedViewport({
               }}
             >
               {row === undefined ? (
-                tail
+                <div className="feed-row">{tail}</div>
               ) : (
                 <FeedRow
                   reveal={reveals.get(row.id)}

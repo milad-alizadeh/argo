@@ -1,6 +1,11 @@
 import { useCallback, useEffect } from 'react'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { optimisticRowFor, turnEnded, turnMarkerView } from '../feed/turn-marker-state'
+import {
+  optimisticRowFor,
+  runningTurnView,
+  turnEnded,
+  turnMarkerView,
+} from '../feed/turn-marker-state'
 import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composer-identity'
 import type { useSessions } from './use-sessions'
 import type { useTurnMarker } from './use-turn-marker'
@@ -31,7 +36,10 @@ export function useComposerMarker(options: {
   const markerEntry = marker.entries.get(composerIdentityKey(identity)) ?? null
   return {
     onInterrupt,
-    markerView: markerEntry === null ? null : turnMarkerView(markerEntry, selectedRow),
+    markerView:
+      markerEntry === null
+        ? runningTurnView(selectedRow)
+        : turnMarkerView(markerEntry, selectedRow),
     optimisticRow: markerEntry === null ? null : optimisticRowFor(markerEntry, selectedRow),
   }
 }

@@ -74,6 +74,18 @@ async function assertPortAvailableOnHost(port, host, identity) {
   })
 }
 
+// The profile command attaches over this port (#2228). The OS picks it, so two worktrees never collide.
+export function freeLoopbackPort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer()
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address()
+      server.close(() => resolve(port))
+    })
+  })
+}
+
 export async function assertPortAvailable(port, identity) {
   await assertPortAvailableOnHost(port, '127.0.0.1', identity)
   await assertPortAvailableOnHost(port, '::1', identity)
@@ -98,6 +110,7 @@ async function main() {
   await mkdir(instance.directory, { recursive: true })
   runLinker()
   const controlToken = randomBytes(32).toString('hex')
+  const debugPort = await freeLoopbackPort()
   await writeFile(instance.controlTokenFile, `${controlToken}\n`, { mode: 0o600 })
 
   const child = spawn('electron-forge', ['start'], {
@@ -108,6 +121,7 @@ async function main() {
     detached: process.platform !== 'win32',
     env: {
       ...process.env,
+      ARGO_DESKTOP_DEBUG_PORT: String(debugPort),
       ARGO_DESKTOP_DEV_PORT: String(instance.port),
       ARGO_DESKTOP_INSTANCE_DIRECTORY: instance.directory,
       ARGO_DESKTOP_INSTANCE_ID: instance.id,

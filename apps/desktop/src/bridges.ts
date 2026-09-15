@@ -9,6 +9,7 @@ import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
   claudeArchiveRoot,
   claudeCompactionStartsRoot,
+  claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
 } from './agents/claude/sessions/roots'
@@ -96,6 +97,7 @@ function attachSessions(
         claudeSessionSource({
           transcripts: claudeTranscriptsRoot(home),
           archive: claudeArchiveRoot(home),
+          processes: claudeProcessesRoot(home),
           managedSessions: claude.roster,
           compactionStarts: compactionStarts?.claude,
           beginCompaction: claude.beginCompaction,

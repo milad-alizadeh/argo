@@ -59,8 +59,8 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               <span
                 className={`grid size-9 place-items-center rounded-lg transition-colors ${
                   active
-                    ? 'bg-muted text-foreground'
-                    : 'text-muted-foreground group-hover:bg-sidebar group-hover:text-foreground'
+                    ? 'bg-selected text-foreground'
+                    : 'text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
                 }`}
               >
                 <Icon />

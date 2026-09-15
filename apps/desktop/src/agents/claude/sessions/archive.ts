@@ -18,6 +18,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { isRecord } from '../../../boundary'
+import { readJsonFile } from './json-file'
 
 // `<root>/<workspace>/<project>/local_<uuid>.json`, two levels down. The names are the desktop
 // app's and neither is a fact this reader needs, so the tree is walked rather than addressed.
@@ -39,14 +40,8 @@ async function filesUnder(directory: string, depth: number): Promise<string[]> {
 }
 
 async function jsonRecordIn(file: string): Promise<Record<string, unknown> | null> {
-  const text = await readFile(file, 'utf8').catch(() => null)
-  if (text === null) return null
-  try {
-    const value: unknown = JSON.parse(text)
-    return isRecord(value) ? value : null
-  } catch {
-    return null
-  }
+  const value = await readJsonFile(file)
+  return isRecord(value) ? value : null
 }
 
 async function archivedIdIn(file: string): Promise<string | null> {

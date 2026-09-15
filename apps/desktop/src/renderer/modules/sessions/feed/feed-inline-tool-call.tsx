@@ -12,7 +12,8 @@ import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import { StatusIcon, TOOL_ICONS, type ToolCall, type ToolRow } from './feed-tools'
+import { RunningText, StatusIcon, TOOL_ICONS, type ToolCall, type ToolRow } from './feed-tools'
+import { withoutRepeatedTitle } from './skill-title'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
@@ -20,7 +21,8 @@ import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 // Markdown body (carried through `text`, see `toolText` in tool-feed.ts), not code.
 export function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
   const { t } = useTranslation('sessions')
-  if (call.kind === 'skill') return <FeedMarkdown text={call.text ?? ''} />
+  if (call.kind === 'skill')
+    return <FeedMarkdown text={withoutRepeatedTitle(call.text ?? '', call.label)} />
   const result = call.evidence?.kind === 'output' ? call.evidence.source : null
   const source = [call.text, result].filter((part) => part !== null).join('\n')
   const language = detectCodeLanguage(call.text ?? '', call.kind === 'command' ? 'bash' : undefined)
@@ -81,7 +83,7 @@ export function FeedInlineToolCallItem({
       icon={Icon}
       onOpenChange={onOpenChange}
       open={open}
-      title={call.label}
+      title={<RunningText running={call.status === 'running'}>{call.label}</RunningText>}
     />
   )
 }

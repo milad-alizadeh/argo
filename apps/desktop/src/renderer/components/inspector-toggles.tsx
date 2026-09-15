@@ -17,7 +17,8 @@ export function InspectorToggles({
 }) {
   const expanded = state === 'expanded'
   return (
-    <div className="absolute top-0 right-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center gap-(--spacing-shell-tight)">
+    // It floats over a drag-region header, so it must opt out or the window swallows its clicks.
+    <div className="no-drag-region absolute top-0 right-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center gap-(--spacing-shell-tight)">
       {state === 'collapsed' ? (
         <Button
           aria-label={`Open ${noun} inspector`}

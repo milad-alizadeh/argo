@@ -35,7 +35,8 @@ function assertToolRows(reply) {
   assert.equal(unknownGroup?.shape, 'tool-group')
   assert.equal(unknownGroup?.label, 'Called a tool')
   const [unknown] = unknownGroup?.calls ?? []
-  assert.equal(unknown?.label, 'Called an unclassified tool')
+  assert.equal(unknown?.label, 'Called NewTool')
+  assert.equal(unknown?.text, 'select:Read')
 }
 
 test('keeps each line of a multi-line edit in one unified patch', async (context) => {
@@ -101,7 +102,7 @@ test('projects recorded command, file, and edit evidence', async (context) => {
             input: { file_path: 'src/app.ts', old_string: 'old', new_string: 'new' },
           },
           { type: 'text', text: 'I need to inspect one more thing.' },
-          { type: 'tool_use', id: 'unknown', name: 'NewTool', input: {} },
+          { type: 'tool_use', id: 'unknown', name: 'NewTool', input: { query: 'select:Read' } },
         ],
       },
     })}\n${JSON.stringify({

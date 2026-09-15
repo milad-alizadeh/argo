@@ -134,6 +134,60 @@ export const CommandGroupOfTwo = {
   ),
 }
 
+// While a call still runs, the closed group names that call, not its summary.
+export const GroupWithARunningCommand = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:running',
+        label: 'Ran 2 commands',
+        calls: [
+          { ...command, id: 'running-1', label: 'Ran bun test' },
+          {
+            ...command,
+            id: 'running-2',
+            label: 'Ran bun run typecheck',
+            status: 'running' as const,
+            evidence: null,
+          },
+        ],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /Ran bun run typecheck/ })).toBeVisible()
+    await expect(canvas.queryByText('Ran 2 commands')).toBeNull()
+  },
+}
+
+// The tail group of a running Turn names its latest call even between calls.
+export const LiveGroupBetweenCalls = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:live',
+        label: 'Ran a command, edited a file',
+        calls: [command, edited],
+      }}
+      live
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /Edited Composer.tsx/ })).toBeVisible()
+    await expect(canvas.queryByText('Ran a command, edited a file')).toBeNull()
+  },
+}
+
 export const UnclassifiedToolGroupOfOne = {
   render: () => (
     <FeedToolGroup

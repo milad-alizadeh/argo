@@ -7,20 +7,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Spinner } from '../../../components/ui/spinner'
 import { AnchoredFeed } from './anchored-feed'
 import type { DrawnRowProps } from './drawn-row'
+import { FeedLoading } from './feed-loading'
 import type { Reveal } from './reveal'
 import { StalledFeed } from './stalled-feed'
 import type { Settled, useSettledFeed } from './use-settled-feed'
-
-function RunningFeed() {
-  return (
-    <section className="grid h-full place-items-center" data-state="running">
-      <Spinner className="size-6" />
-    </section>
-  )
-}
 
 export function feedContent({
   active,
@@ -52,7 +44,7 @@ export function feedContent({
       <StalledFeed onRetry={onRetry} posture={posture} />
     ) : (
       <>
-        <RunningFeed />
+        <FeedLoading state="running" />
         {tail}
       </>
     )

@@ -37,7 +37,9 @@ async function drawDiagram(id: string, source: string, dark: boolean) {
 function DiagramFailure({ source }: { source: string }) {
   return (
     <div className="relative">
-      <pre className="max-h-64 overflow-auto p-4 pb-20 font-mono type-code">{source}</pre>
+      <pre className="max-h-64 overflow-x-hidden overflow-y-auto p-4 pb-20 font-mono type-code whitespace-pre-wrap wrap-anywhere">
+        {source}
+      </pre>
       <div
         role="alert"
         className="absolute inset-x-3 bottom-3 rounded-lg border border-destructive/30 bg-card px-3 py-2 text-destructive"

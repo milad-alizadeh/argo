@@ -119,12 +119,17 @@ export function FeedDocument({
     questionLocked: sessionPostureLocksAnswer(posture),
   })
   const lastRow = feed.rows[feed.rows.length - 1]
-  const streamingRowId =
-    isRunning && lastRow?.shape === 'prose' && lastRow.role === 'assistant' ? lastRow.id : null
+  // The tail row of a running Turn is live: an assistant reply still streaming, or a tool group the
+  // agent may add to.
+  const tailIsLive =
+    lastRow?.shape === 'tool-group' || (lastRow?.shape === 'prose' && lastRow.role === 'assistant')
+  const streamingRowId = isRunning && tailIsLive ? lastRow.id : null
+  // A live tail tool group already shimmers its latest call, so Working would say it twice.
+  const tailShimmers = isRunning && lastRow?.shape === 'tool-group'
   const tail = feedTail(
     compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens),
     handoffMarker(handoffStartedAt, handoffTo, onOpenSession),
-    turnMarker,
+    tailShimmers && turnMarker?.phase === 'working' ? null : turnMarker,
   )
   const content = feedContent({
     active,

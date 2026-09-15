@@ -18,6 +18,7 @@ import type { SelectionModifier } from '../../state/roster-selection'
 import type { Session } from '../../types'
 import { SessionReferenceText } from '../composer/references/session-reference'
 import { SessionMetadata } from './session-roster-metadata'
+import './session-roster-item.css'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
@@ -50,7 +51,7 @@ function sessionName(session: Session): string {
 
 function rowHighlightOf(checked: boolean, selected: boolean): string {
   if (checked) return 'bg-accent text-accent-foreground'
-  if (selected) return 'bg-muted text-foreground'
+  if (selected) return 'bg-selected text-foreground'
   return ''
 }
 
@@ -114,16 +115,18 @@ export function SessionRosterItem({
               type="button"
             >
               <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
-                {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+                <span className="roster-harness-mark">
+                  {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+                </span>
                 <span
-                  className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ring-2 ring-sidebar ${STATUS_MARKS[session.status]}`}
+                  className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${STATUS_MARKS[session.status]}`}
                 />
               </span>
               <span className="sr-only">{STATUS_LABELS[session.status]}</span>
               {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className="block min-w-0 truncate type-label font-medium text-foreground">
+                  <span className="block min-w-0 truncate type-roster-title text-foreground">
                     <PromptText
                       interactiveLinks={false}
                       renderText={(value) => (
@@ -136,9 +139,7 @@ export function SessionRosterItem({
                   <SessionLockedMark session={session} />
                 </span>
                 {activity === null ? null : (
-                  <span className="mt-0.5 block truncate type-roster-meta text-faint">
-                    {activity}
-                  </span>
+                  <span className="mt-0.5 block truncate type-meta text-faint">{activity}</span>
                 )}
                 <SessionMetadata session={session} />
               </span>

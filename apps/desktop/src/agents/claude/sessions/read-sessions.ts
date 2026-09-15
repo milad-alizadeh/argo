@@ -10,6 +10,7 @@ import { compactionEndedAt, markCompactingRows } from '../../compaction/compacti
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
+  type Discovery,
   discoverArchivedSessions,
   discoverSessions,
   readSessionFiles,
@@ -17,6 +18,7 @@ import {
 } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
+import { joinLiveProcesses, readLiveProcesses } from './live-processes'
 import { readShellOutput } from './shell-output'
 import { readDelegationChain, readDelegationTokens } from './subagents'
 
@@ -46,12 +48,22 @@ function withHandoffEdges(
   })
 }
 
+async function withLiveProcesses(discovery: Discovery, processes: string | undefined) {
+  if (processes === undefined) return discovery
+  return {
+    ...discovery,
+    rows: joinLiveProcesses(discovery.rows, await readLiveProcesses(processes)),
+  }
+}
+
 // Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
 // Claude desktop app's own store, which is where the archive flag already lives. `archive` is
 // optional: a machine without that app installed reads no archived Sessions rather than failing.
 export function claudeSessionSource(roots: {
   transcripts: string
   archive?: string
+  // Where each running `claude` names its Session; absent, no external Session reads `running`.
+  processes?: string
   managedSessions?: () => SessionRosterRow[]
   // Where the `PreCompact` hook leaves a file for each compaction it sees start (ADR-0041).
   compactionStarts?: string
@@ -72,7 +84,10 @@ export function claudeSessionSource(roots: {
     cli: 'claude',
     discoverSessions: async () => {
       roots.completeHandoffs?.()
-      const discovered = await discoverSessions(roots.transcripts, roots.archive)
+      const discovered = await withLiveProcesses(
+        await discoverSessions(roots.transcripts, roots.archive),
+        roots.processes,
+      )
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
       const roster = mergeManagedRoster(discovered, managed)
@@ -118,6 +133,7 @@ export function claudeSessionSource(roots: {
 export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
+  processes?: string
   managedSessions?: () => SessionRosterRow[]
   compactionStarts?: string
   liveMessages?: (sessionId: string) => LiveMessage[]

@@ -211,6 +211,7 @@
     "copyRun": "Copy command and result",
     "noOutput": "No output"
   },
+  "feedLoading": "Loading this Session",
   "rail": {
     "backgroundAgents": "Background agents",
     "shellSection": "Shell",
@@ -218,6 +219,8 @@
     "agentsUnknown": "Background agents",
     "shell": "Shell {{count}}",
     "shellBare": "a command with no text",
+    "shellInspector": "Background Shell",
+    "shellNoOutput": "This command recorded no output.",
     "subagent": "Subagent {{index}}",
     "finished": "{{count}} finished",
     "unresolved_one": "One delegation, unresolved",

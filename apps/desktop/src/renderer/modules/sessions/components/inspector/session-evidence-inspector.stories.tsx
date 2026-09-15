@@ -36,7 +36,7 @@ export const CommandOutput: Story = {
   args: { evidence: command, sessionId: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByText('bun test')).toHaveLength(2)
+    await expect(canvas.getByText('bun test')).toBeVisible()
     await expect(canvas.getByText(/13 pass/)).toBeVisible()
   },
 }
