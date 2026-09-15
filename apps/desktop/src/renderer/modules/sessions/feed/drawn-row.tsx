@@ -52,8 +52,8 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
         onOpenEvidence={onOpenEvidence}
         toolGroups={toolGroups}
         onAnswerQuestion={onAnswerQuestion}
-        answeringQuestionId={answeringId.current}
-        questionFailure={questionFailure}
+        answering={answeringId.current === props.row.id}
+        questionFailure={questionFailure(props.row.id)}
       />
     ),
     [onAnswerQuestion, onOpenEvidence, questionFailure, toolGroups],

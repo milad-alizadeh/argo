@@ -16,8 +16,8 @@ export type FeedRowProps = {
   toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
+  answering: boolean
+  questionFailure: string | null
 }
 
 export const FeedRow = memo(function FeedRow({
@@ -27,7 +27,7 @@ export const FeedRow = memo(function FeedRow({
   onOpenEvidence,
   toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
@@ -45,7 +45,7 @@ export const FeedRow = memo(function FeedRow({
         activeEvidenceId={activeEvidenceId}
         toolGroups={toolGroups}
         onAnswerQuestion={onAnswerQuestion}
-        answeringQuestionId={answeringQuestionId}
+        answering={answering}
         questionFailure={questionFailure}
         row={row}
       />
@@ -59,7 +59,7 @@ function FeedRowContent({
   activeEvidenceId,
   toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
 }: FeedRowProps) {
   switch (row.shape) {
@@ -92,8 +92,8 @@ function FeedRowContent({
       return (
         <FeedQuestion
           row={row}
-          answering={answeringQuestionId === row.id}
-          failure={questionFailure(row.id)}
+          answering={answering}
+          failure={questionFailure}
           onAnswer={onAnswerQuestion}
         />
       )
