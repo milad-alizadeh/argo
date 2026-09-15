@@ -1,6 +1,7 @@
 // The live-update half of the packaged Session proof: the reader's chosen row and tail stay put
 // while a transcript grows, and a kept Session returns without a remounted scroller.
 import assert from 'node:assert/strict'
+import { ACTIVE_VIEWPORT, offsetOf, waitForRevision } from './feed-selectors'
 import { openSession } from './session-roster-cases'
 
 type LiveFixture = {
@@ -9,14 +10,14 @@ type LiveFixture = {
   stream: (transcripts: string, text: string) => Promise<void>
 }
 
-const LIVE_REVISION_TIMEOUT_MS = 5_000
+const LIVE_ROW_COUNT_TIMEOUT_MS = 5_000
 
 async function fixedRow(page) {
-  const viewport = page.locator('.feed__document[data-active="true"] .feed__viewport')
+  const viewport = page.locator(ACTIVE_VIEWPORT)
   await viewport.focus()
   await page.keyboard.press('Home')
-  return page.evaluate(() => {
-    const viewport = document.querySelector('.feed__viewport')
+  return page.evaluate((selector) => {
+    const viewport = document.querySelector(selector)
     const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
       (candidate) =>
         candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
@@ -27,37 +28,17 @@ async function fixedRow(page) {
       offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
       revision: document.querySelector('.feed__document[data-active="true"]').dataset.revision,
     }
-  })
-}
-
-async function offsetOf(page, anchor) {
-  return page.evaluate((id) => {
-    const viewport = document.querySelector('.feed__viewport')
-    const row = viewport.querySelector(`[data-feed-row="${id}"]`)
-    return row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
-  }, anchor)
-}
-
-async function waitForRevision(page, previous) {
-  await page.waitForFunction(
-    (revision) => {
-      return (
-        document.querySelector('.feed__document[data-active="true"]')?.dataset.revision !== revision
-      )
-    },
-    previous,
-    { timeout: LIVE_REVISION_TIMEOUT_MS },
-  )
+  }, ACTIVE_VIEWPORT)
 }
 
 async function tailReading(page) {
-  return page.evaluate(() => {
-    const viewport = document.querySelector('.feed__viewport')
+  return page.evaluate((selector) => {
+    const viewport = document.querySelector(selector)
     return {
       fromTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop,
       hasMeasuredClone: document.querySelector('.feed__measured') !== null,
     }
-  })
+  }, ACTIVE_VIEWPORT)
 }
 
 async function waitForRowCount(page, count) {
@@ -67,15 +48,15 @@ async function waitForRowCount(page, count) {
         '.feed__document[data-active="true"] .feed__viewport [data-feed-row]',
       ).length === expected,
     count,
-    { timeout: LIVE_REVISION_TIMEOUT_MS },
+    { timeout: LIVE_ROW_COUNT_TIMEOUT_MS },
   )
 }
 
 async function proveTail(page, fixture: LiveFixture, before) {
-  await page.evaluate(() => {
-    const viewport = document.querySelector('.feed__viewport')
+  await page.evaluate((selector) => {
+    const viewport = document.querySelector(selector)
     viewport.scrollTop = viewport.scrollHeight
-  })
+  }, ACTIVE_VIEWPORT)
   const revision = await page.evaluate(
     () => document.querySelector('.feed__document[data-active="true"]')?.dataset.revision,
   )
