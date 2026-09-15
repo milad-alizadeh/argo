@@ -49,14 +49,14 @@ function TicketResult({
               : ticket.status}
           </span>
         </span>
-        <span className="min-w-0 truncate">{ticket.title}</span>
+        <span className="min-w-0 flex-1 truncate">{ticket.title}</span>
+        {ticket.blocked ? (
+          <span className="flex shrink-0 items-center text-danger">
+            <Ban aria-hidden="true" className="size-3.5" />
+            <span className="sr-only">{t('composer.contextPicker.blocked')}</span>
+          </span>
+        ) : null}
       </span>
-      {ticket.blocked ? (
-        <span className="flex shrink-0 items-center gap-1 text-danger type-meta">
-          <Ban aria-hidden="true" className="size-3.5" />
-          <span className="sr-only">{t('composer.contextPicker.blocked')}</span>
-        </span>
-      ) : null}
     </button>
   )
 }
