@@ -1,5 +1,5 @@
 import type { Meta } from '@storybook/react'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 import { ToolGroupState } from './tool-group-state'
 
@@ -113,6 +113,42 @@ export const CommandGroupOfOne = {
       toolGroups={openToolGroups}
     />
   ),
+}
+
+// The label is the agent's own description ("Listing changed files…"), the row expands to a
+// chevron disclosure, and the full raw command shows in a monospace block only once opened.
+export const CommandWithDescriptionLabel = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:described-command',
+        label: 'Ran a command',
+        calls: [
+          {
+            ...command,
+            id: 'described-command',
+            label: 'Listing changed files and scanning them for leftovers',
+            text: 'RTK_DISABLED=1 git diff --name-only 5911f4e89~1 HEAD -- apps/desktop/src/agents/claude',
+          },
+        ],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', {
+      name: 'Listing changed files and scanning them for leftovers',
+    })
+    await expect(group).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByRole('code')).toBeNull()
+    await userEvent.click(group)
+    const codeBlock = await canvas.findByRole('code')
+    await expect(codeBlock).toHaveTextContent('RTK_DISABLED=1')
+  },
 }
 
 export const CommandGroupOfTwo = {
