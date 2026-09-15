@@ -1,5 +1,6 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
+import { currentUserBlocks } from './current-user-blocks'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -92,22 +93,28 @@ function event(record: Record<string, unknown>, payload: Record<string, unknown>
 }
 
 // The assistant message keeps the id its `item/agentMessage/delta` notifications streamed under.
-// Codex also writes injected context as user and developer messages here, so only the assistant's
-// own are read; the person's prompt is the `user_message` event.
+// Codex also writes injected context as user and developer messages here; `currentUserBlocks`
+// tells the person's own words from the harness's, so both roles are read rather than dropped.
 function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message' || payload.role !== 'assistant') return null
+  if (payload.type !== 'message') return null
   if (typeof payload.id !== 'string') return null
-  const blocks = messageBlocks(payload.content, ['output_text'])
-  if (blocks === null) return null
-  return messageRecord(record, {
-    uuid: payload.id,
-    role: 'assistant',
-    originSessionId: null,
-    blocks,
-  })
+  if (payload.role === 'assistant') {
+    const blocks = messageBlocks(payload.content, ['output_text'])
+    if (blocks === null) return null
+    return messageRecord(record, {
+      uuid: payload.id,
+      role: 'assistant',
+      originSessionId: null,
+      blocks,
+    })
+  }
+  if (payload.role !== 'user' && payload.role !== 'developer') return null
+  const blocks = currentUserBlocks(payload.content, payload.role)
+  if (blocks === null || blocks.length === 0) return null
+  return messageRecord(record, { uuid: payload.id, role: 'user', originSessionId: null, blocks })
 }
 
 export function parseCodexTranscriptLine(line: string): TranscriptRecord | null {

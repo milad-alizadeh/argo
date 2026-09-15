@@ -88,6 +88,9 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     event: feedEventKindSchema,
     text: z.string().nullable(),
+    // The protocol update's own untranslated text, shown behind a closed disclosure for
+    // diagnostics; absent for a harness event, which has none worth keeping.
+    raw: z.string().nullable().optional(),
   }),
   delegationRowSchema,
   delegationGroupSchema,
