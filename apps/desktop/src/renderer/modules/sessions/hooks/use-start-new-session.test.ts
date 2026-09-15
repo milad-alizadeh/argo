@@ -1,35 +1,13 @@
 import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 
-import type { ProjectSummary } from '@/core/projects/messages'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { sendToNewSession } from './send-turn'
-
-const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
-const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
-const COCKPIT = {
-  status: 'selected' as const,
-  project: PROJECT,
-  projects: [PROJECT],
-  message: null,
-  code: null,
-  busy: false,
-}
+import { COCKPIT, fakeMutation, PROJECT, SETUP } from './send-turn-fixtures'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
 })
-
-function fakeMutation<Args, Reply>(reply: (args: Args) => Promise<Reply>) {
-  const calls: Args[] = []
-  return {
-    calls,
-    mutateAsync: async (args: Args) => {
-      calls.push(args)
-      return reply(args)
-    },
-  }
-}
 
 // A "+" already opened the optimistic row (#2109): sending reuses it rather than starting a
 // second draft, and the Roster's optimistic id resolves to the real one in place.
