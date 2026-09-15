@@ -8,6 +8,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { startControlServer } from './dev-control-server.mjs'
 import { stopElectronProcess, stopForgeProcess } from './dev-launch-stop.mjs'
+import { currentBranch, developmentBuildLabel } from './development-label.mjs'
+
+export { developmentBuildLabel } from './development-label.mjs'
 
 const DESKTOP_ROOT = path.resolve(import.meta.dirname, '..')
 const REPOSITORY_ROOT = path.resolve(DESKTOP_ROOT, '..', '..')
@@ -26,9 +29,14 @@ function integerPort(value) {
   return port
 }
 
-export function developmentInstance(worktree, requestedPort = process.env[PORT_ENV]) {
+export function developmentInstance(
+  worktree,
+  requestedPort = process.env[PORT_ENV],
+  branch = null,
+) {
   const hash = createHash('sha256').update(worktree).digest('hex')
   const id = `${path.basename(worktree)}-${hash.slice(0, 8)}`
+  const label = developmentBuildLabel(worktree, branch)
   const port = requestedPort
     ? integerPort(requestedPort)
     : PORT_START + (Number.parseInt(hash.slice(0, 8), 16) % PORT_COUNT)
@@ -39,9 +47,10 @@ export function developmentInstance(worktree, requestedPort = process.env[PORT_E
     controlFile: path.join(directory, 'control.sock'),
     controlTokenFile: path.join(directory, 'control-token'),
     id,
+    label,
     port,
     readyFile: path.join(directory, 'ready.json'),
-    title: `Argo dev · ${id} · :${port}`,
+    title: `Argo dev · ${label} · :${port}`,
     userData: path.join(directory, 'user-data'),
     worktree,
   }
@@ -103,7 +112,7 @@ function runLinker() {
 
 async function main() {
   const worktree = await realpath(REPOSITORY_ROOT)
-  const instance = developmentInstance(worktree)
+  const instance = developmentInstance(worktree, process.env[PORT_ENV], currentBranch(worktree))
   await assertPortAvailable(instance.port, instance.id)
   await rm(instance.readyFile, { force: true })
   await rm(instance.controlFile, { force: true })
@@ -125,6 +134,7 @@ async function main() {
       ARGO_DESKTOP_DEV_PORT: String(instance.port),
       ARGO_DESKTOP_INSTANCE_DIRECTORY: instance.directory,
       ARGO_DESKTOP_INSTANCE_ID: instance.id,
+      ARGO_DESKTOP_BUILD_LABEL: instance.label,
       ARGO_DESKTOP_LAUNCHER_PID: String(process.pid),
       ARGO_DESKTOP_CONTROL_FILE: instance.controlFile,
       ARGO_DESKTOP_CONTROL_TOKEN: controlToken,

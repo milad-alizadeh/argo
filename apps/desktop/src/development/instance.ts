@@ -9,6 +9,14 @@ const PORT_ENV = 'ARGO_DESKTOP_DEV_PORT'
 const DEBUG_PORT_ENV = 'ARGO_DESKTOP_DEBUG_PORT'
 const WINDOW_TITLE_ENV = 'ARGO_DESKTOP_WINDOW_TITLE'
 const WORKTREE_ENV = 'ARGO_DESKTOP_WORKTREE'
+const BUILD_LABEL_ENV = 'ARGO_DESKTOP_BUILD_LABEL'
+
+export type DevelopmentIdentity = {
+  id: string
+  label: string
+  title: string
+  worktree: string
+}
 
 export type DevelopmentInstance = {
   controlFile: string
@@ -17,6 +25,7 @@ export type DevelopmentInstance = {
   debugPort: number
   directory: string
   id: string
+  label: string
   launcherPid: number
   port: number
   title: string
@@ -62,6 +71,7 @@ export function developmentInstance(
   const debugPort = environment[DEBUG_PORT_ENV]
   const title = environment[WINDOW_TITLE_ENV]
   const worktree = environment[WORKTREE_ENV]
+  const label = environment[BUILD_LABEL_ENV]
   const values = [
     directory,
     id,
@@ -72,6 +82,7 @@ export function developmentInstance(
     debugPort,
     title,
     worktree,
+    label,
   ]
 
   if (values.every((value) => value === undefined)) return null
@@ -89,6 +100,7 @@ export function developmentInstance(
     debugPort: parsedDebugPort,
     directory: absolute(required(environment, INSTANCE_DIRECTORY_ENV), INSTANCE_DIRECTORY_ENV),
     id: required(environment, INSTANCE_ID_ENV),
+    label: required(environment, BUILD_LABEL_ENV),
     launcherPid: parsedLauncherPid,
     port: parsedPort,
     title: required(environment, WINDOW_TITLE_ENV),
@@ -98,11 +110,23 @@ export function developmentInstance(
   }
 }
 
+export function developmentIdentity(
+  environment: Environment = process.env,
+): DevelopmentIdentity | null {
+  const id = environment[INSTANCE_ID_ENV]
+  const label = environment[BUILD_LABEL_ENV]
+  const title = environment[WINDOW_TITLE_ENV]
+  const worktree = environment[WORKTREE_ENV]
+  if (!id || !label || !title || !worktree) return null
+  return { id, label, title, worktree: absolute(worktree, WORKTREE_ENV) }
+}
+
 export function developmentReadyRecord(instance: DevelopmentInstance, windowId: number) {
   return {
     version: 1,
     state: 'ready' as const,
     id: instance.id,
+    label: instance.label,
     processId: process.pid,
     launcherPid: instance.launcherPid,
     port: instance.port,

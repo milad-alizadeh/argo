@@ -6,6 +6,7 @@ import path from 'node:path'
 import { stopDevelopmentInstance } from './dev-control.mjs'
 import {
   assertPortAvailable,
+  developmentBuildLabel,
   developmentInstance,
   portCollisionError,
   startControlServer,
@@ -21,9 +22,25 @@ describe('desktop development instances', () => {
     expect(first).toEqual(second)
     expect(first.directory).toContain('argo-desktop-dev')
     expect(first.directory).toStartWith('/tmp/argo-desktop-dev')
-    expect(first.title).toContain('ticket-2173')
+    expect(first.title).toContain('#2173')
     expect(first.title).toContain(`:${first.port}`)
     expect(first.userData).toBe(path.join(first.directory, 'user-data'))
+  })
+
+  test('uses only the ticket number as the development build label', () => {
+    expect(developmentBuildLabel('/worktrees/argo', 'argo/#2173-isolate-launches')).toBe('#2173')
+    expect(
+      developmentInstance('/worktrees/argo', '45173', 'argo/#2173-isolate-launches'),
+    ).toMatchObject({
+      label: '#2173',
+      title: 'Argo dev · #2173 · :45173',
+    })
+  })
+
+  test('falls back to a readable numberless branch label', () => {
+    expect(developmentBuildLabel('/worktrees/argo', 'argo/build-identity-bar')).toBe(
+      'build-identity-bar',
+    )
   })
 
   test('uses an explicit development port when an agent resolves a collision', () => {
