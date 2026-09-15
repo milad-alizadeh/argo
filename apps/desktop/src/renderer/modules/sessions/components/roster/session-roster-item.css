@@ -1,0 +1,18 @@
+/* The harness logo with a gap cut around its status dot. A cut shows whatever ground the row has,
+   idle, hovered or selected, where a painted ring would show the one colour it was given. */
+.roster-harness-mark {
+  --roster-dot-gap: 2px;
+  --roster-dot-radius: calc(var(--size-state-dot) / 2);
+  --roster-dot-offset: 2px;
+
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  mask: radial-gradient(
+    circle at calc(100% + var(--roster-dot-offset) - var(--roster-dot-radius))
+      calc(100% - var(--roster-dot-radius)),
+    transparent calc(var(--roster-dot-radius) + var(--roster-dot-gap)),
+    black calc(var(--roster-dot-radius) + var(--roster-dot-gap))
+  );
+}

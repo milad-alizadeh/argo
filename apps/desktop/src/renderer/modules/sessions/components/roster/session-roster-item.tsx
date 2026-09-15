@@ -16,6 +16,7 @@ import type { Session } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 import { SessionReferenceText } from '../composer/references/session-reference'
 import { SessionMetadata } from './session-roster-metadata'
+import './session-roster-item.css'
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -133,9 +134,11 @@ export function SessionRosterItem({
             >
               <span className="flex items-start gap-2">
                 <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
-                  {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+                  <span className="roster-harness-mark">
+                    {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+                  </span>
                   <span
-                    className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ring-2 ${selected ? 'ring-selected' : 'ring-sidebar'} ${STATUS_MARKS[session.status]}`}
+                    className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${STATUS_MARKS[session.status]}`}
                   />
                 </span>
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
