@@ -920,8 +920,9 @@ export const StreamingReplyReducedMotion: Story = {
 const streamingText = 'The check ran.'
 const firstChunkText =
   'The check ran. The reader sees each new word at a steady pace while the response arrives.'
-const streamedText =
-  'The check ran. The reader sees each new word at a steady pace while the response is still arriving.'
+// Extends `firstChunkText` rather than rewording its tail, so the reveal keeps walking forward
+// from where it left off instead of snapping (`advanceVisibleText` only replays a shared prefix).
+const streamedText = `${firstChunkText} The check passed.`
 
 function streamingAssistantRow(text: string) {
   return { shape: 'prose' as const, id: 'streaming-text', role: 'assistant' as const, text }
