@@ -77,32 +77,43 @@ export function SessionRosterItem({
   const { t } = useTranslation('sessions')
   const activity = activitySummary(session)
   const name = sessionName(session)
+  // A shift- or platform-modifier click anywhere on the row extends the bulk selection instead of
+  // opening the Session, so range- and additive-select are not limited to the small checkbox
+  // hit area (#2194). A plain click keeps opening the Session, as it did before selection existed.
+  function handleRowClick(event: MouseEvent) {
+    if (selectable && (event.shiftKey || event.metaKey || event.ctrlKey)) {
+      onToggleSelect(selectionModifierOf(event))
+      return
+    }
+    onSelect()
+  }
   return (
     <li className="min-w-0">
-      <ContextMenu>
-        <ContextMenuTrigger
-          render={
-            <button
-              aria-current={selected ? 'page' : undefined}
-              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
-              data-session-id={session.id}
-              onClick={onSelect}
-              onFocus={onFocus}
-              tabIndex={tabIndex}
-              type="button"
-            >
-              {selectable ? (
-                <Checkbox
-                  aria-label={t('bulkSelect.selectRow', { title: name })}
-                  checked={checked}
-                  className="mt-1 shrink-0"
-                  onClick={(event: MouseEvent) => {
-                    event.stopPropagation()
-                    onToggleSelect(selectionModifierOf(event))
-                  }}
-                />
-              ) : null}
-              <span className="flex min-w-0 flex-1 items-start gap-2">
+      <div
+        className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 hover:bg-muted ${selected ? 'bg-muted text-foreground' : ''}`}
+      >
+        {selectable ? (
+          <Checkbox
+            aria-label={t('bulkSelect.selectRow', { title: name })}
+            checked={checked}
+            className="mt-1 shrink-0"
+            onClick={(event: MouseEvent) => {
+              onToggleSelect(selectionModifierOf(event))
+            }}
+          />
+        ) : null}
+        <ContextMenu>
+          <ContextMenuTrigger
+            render={
+              <button
+                aria-current={selected ? 'page' : undefined}
+                className="flex min-w-0 flex-1 items-start gap-2 rounded-md text-left text-sm focus-visible:ring-2 focus-visible:ring-ring"
+                data-session-id={session.id}
+                onClick={handleRowClick}
+                onFocus={onFocus}
+                tabIndex={tabIndex}
+                type="button"
+              >
                 <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
                   {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
                   <span
@@ -131,25 +142,31 @@ export function SessionRosterItem({
                   )}
                   <SessionMetadata session={session} />
                 </span>
-              </span>
-            </button>
-          }
-        />
-        <ContextMenuContent aria-label={`${sessionName(session)} actions`}>
-          <ContextMenuGroup>
-            <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
-            <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
-            {session.ticket !== null ? (
-              <>
-                <ContextMenuItem onClick={onOpenTicket}>Open Ticket</ContextMenuItem>
-                <ContextMenuItem onClick={onUnlinkTicket}>Unlink Ticket</ContextMenuItem>
-              </>
-            ) : (
-              <ContextMenuItem onClick={onLinkTicket}>Link Ticket…</ContextMenuItem>
-            )}
-          </ContextMenuGroup>
-        </ContextMenuContent>
-      </ContextMenu>
+              </button>
+            }
+          />
+          <ContextMenuContent aria-label={`${sessionName(session)} actions`}>
+            <ContextMenuGroup>
+              <ContextMenuLabel>{sessionName(session)}</ContextMenuLabel>
+              <ContextMenuItem onClick={onRename}>{t('contextMenu.rename')}</ContextMenuItem>
+              {session.ticket !== null ? (
+                <>
+                  <ContextMenuItem onClick={onOpenTicket}>
+                    {t('contextMenu.openTicket')}
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={onUnlinkTicket}>
+                    {t('contextMenu.unlinkTicket')}
+                  </ContextMenuItem>
+                </>
+              ) : (
+                <ContextMenuItem onClick={onLinkTicket}>
+                  {t('contextMenu.linkTicket')}
+                </ContextMenuItem>
+              )}
+            </ContextMenuGroup>
+          </ContextMenuContent>
+        </ContextMenu>
+      </div>
     </li>
   )
 }

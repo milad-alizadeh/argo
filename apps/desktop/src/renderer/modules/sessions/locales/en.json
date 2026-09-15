@@ -117,6 +117,12 @@
     "partialFailure": "Argo could not archive every selected Session.",
     "failure": "Argo could not archive the selected Sessions."
   },
+  "contextMenu": {
+    "rename": "Rename",
+    "openTicket": "Open Ticket",
+    "unlinkTicket": "Unlink Ticket",
+    "linkTicket": "Link Ticket…"
+  },
   "empty": {
     "unselected": {
       "title": "No Session selected",
