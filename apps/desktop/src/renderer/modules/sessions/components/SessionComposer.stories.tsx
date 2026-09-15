@@ -551,16 +551,16 @@ export const EnterConfirmingAnImeCompositionSendsNothing: Story = {
   },
 }
 
-// The @-reference menu claims Enter ahead of the send: the press that picks a reference is not
+// The /-reference menu claims Enter ahead of the send: the press that picks a reference is not
 // also the press that sends the draft it went into.
-export const EnterPicksAReferenceWhileTheMenuIsOpen: Story = {
+export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, 'Read @argo')
+    await userEvent.type(composer, 'Read /argo')
     const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
     const menu = option.closest('[role="listbox"]')
     const card = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
