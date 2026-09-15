@@ -1,8 +1,10 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 import type { Reveal } from './reveal'
+import { useFeedTailFollow } from './use-feed-tail-follow'
+import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
 import type { Settled } from './useSettledFeed'
 
@@ -34,44 +36,29 @@ export function AnchoredFeed({
   settled,
   revealsFor,
 }: AnchoredFeedProps) {
-  const [atLatest, setAtLatest] = useState(true)
-  const [viewport, setViewport] = useState<HTMLElement | null>(null)
-  const [padding, setPadding] = useState({ start: 0, end: 0 })
-  const attachViewport = useCallback((element: HTMLElement | null) => {
-    if (element !== null) {
-      const style = getComputedStyle(element)
-      setPadding({
-        start: Number.parseFloat(style.scrollPaddingTop) || 0,
-        end: Number.parseFloat(style.scrollPaddingBottom) || 0,
-      })
-    }
-    setViewport(element)
-  }, [])
+  const { attachViewport, padding, viewport } = useFeedViewport()
+  const tailFollow = useFeedTailFollow(settled.reading.sessionId)
   const virtualizer = useVirtualizer({
     // End anchoring is only correct while the reader is following the tail.
     // While they are reading history, retain their actual reading position as
     // rows append instead of resolving the previous end anchor.
-    anchorTo: atLatest ? 'end' : 'start',
+    anchorTo: tailFollow.shouldFollow ? 'end' : 'start',
     count: rows.length,
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
     // Only follow an append while the reader is already at the tail. Keeping
     // this enabled while they are inspecting history makes a streamed row pull
     // them back to the end before the Jump to latest control can be used.
-    followOnAppend: atLatest ? 'smooth' : false,
+    followOnAppend: tailFollow.shouldFollow ? 'smooth' : false,
     getItemKey: (index) => feedRowAt(rows, index).id,
     getScrollElement: () => viewport,
-    onChange: (instance) => {
-      setAtLatest((current) => {
-        const next = instance.isAtEnd(TAIL_THRESHOLD_PX)
-        return current === next ? current : next
-      })
-    },
+    onChange: tailFollow.onChange,
     overscan: FEED_OVERSCAN,
     paddingStart: padding.start,
     paddingEnd: padding.end,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   useInitialFeedPosition({
+    onPositioned: tailFollow.markInitiallyPositioned,
     sessionId: settled.reading.sessionId,
     viewport,
     virtualizer,
@@ -81,9 +68,19 @@ export function AnchoredFeed({
     virtualizer.scrollToEnd({ behavior: 'smooth' })
   }, [virtualizer])
   useEffect(() => {
-    onJumpToLatestChange(settled.reading.sessionId, active && !atLatest ? jumpToLatest : null)
+    onJumpToLatestChange(
+      settled.reading.sessionId,
+      active && !tailFollow.awaitingInitialPosition && !tailFollow.atLatest ? jumpToLatest : null,
+    )
     return () => onJumpToLatestChange(settled.reading.sessionId, null)
-  }, [active, atLatest, jumpToLatest, onJumpToLatestChange, settled.reading.sessionId])
+  }, [
+    active,
+    jumpToLatest,
+    onJumpToLatestChange,
+    settled.reading.sessionId,
+    tailFollow.atLatest,
+    tailFollow.awaitingInitialPosition,
+  ])
 
   return (
     <div className="feed__scroller">
