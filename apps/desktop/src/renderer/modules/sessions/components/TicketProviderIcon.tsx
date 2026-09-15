@@ -10,7 +10,7 @@ export function TicketProviderIcon({ provider }: { provider: ComposerTicketConte
     <img
       alt=""
       aria-hidden="true"
-      className="mt-0.5 size-4 shrink-0 self-start dark:invert"
+      className="size-3.5 shrink-0 dark:invert"
       src={ticketProviderIconSource[provider]}
     />
   )

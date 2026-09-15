@@ -33,12 +33,11 @@ function TicketResult({
     >
       <TicketProviderIcon provider={ticket.provider} />
       <span className="sr-only">{providerLabel(ticket.provider)} </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-(--spacing-shell-tight) type-label">
-          <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
-          <span className="truncate">{ticket.title}</span>
-        </span>
-        <span className={ticket.terminal ? 'text-danger' : 'text-muted-foreground'}>
+      <span className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-tight) type-label">
+        <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
+        <span
+          className={`flex shrink-0 ${ticket.terminal ? 'text-danger' : 'text-muted-foreground'}`}
+        >
           <StatusIcon aria-hidden="true" className="size-3.5" />
           <span className="sr-only">
             {ticket.terminal
@@ -46,6 +45,7 @@ function TicketResult({
               : ticket.status}
           </span>
         </span>
+        <span className="min-w-0 truncate">{ticket.title}</span>
       </span>
       {ticket.blocked ? (
         <span className="flex shrink-0 items-center gap-1 text-danger type-meta">
