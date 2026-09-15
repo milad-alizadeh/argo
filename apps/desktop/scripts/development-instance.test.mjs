@@ -33,13 +33,14 @@ describe('development instances', () => {
     const instance = developmentInstance(environment)
     if (!instance) throw new Error('development instance was not created')
 
-    expect(developmentReadyRecord(instance)).toMatchObject({
+    expect(developmentReadyRecord(instance, 17)).toMatchObject({
       id: environment.ARGO_DESKTOP_INSTANCE_ID,
       launcherPid: 42,
       port: 45173,
       state: 'ready',
       title: environment.ARGO_DESKTOP_WINDOW_TITLE,
       userData: path.join(directory, 'user-data'),
+      windowId: 17,
       worktree: environment.ARGO_DESKTOP_WORKTREE,
     })
   })

@@ -69,7 +69,7 @@ export function developmentInstance(
   }
 }
 
-export function developmentReadyRecord(instance: DevelopmentInstance) {
+export function developmentReadyRecord(instance: DevelopmentInstance, windowId: number) {
   return {
     version: 1,
     state: 'ready' as const,
@@ -80,5 +80,6 @@ export function developmentReadyRecord(instance: DevelopmentInstance) {
     title: instance.title,
     worktree: instance.worktree,
     userData: instance.userData,
+    windowId,
   }
 }

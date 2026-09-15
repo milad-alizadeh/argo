@@ -45,13 +45,13 @@ if (DEVELOPMENT_INSTANCE) {
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
 }
 
-async function writeDevelopmentReady(): Promise<void> {
+async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
   if (!DEVELOPMENT_INSTANCE) return
 
   await mkdir(DEVELOPMENT_INSTANCE.directory, { recursive: true })
   await writeFile(
     DEVELOPMENT_INSTANCE.readyFile,
-    `${JSON.stringify(developmentReadyRecord(DEVELOPMENT_INSTANCE), null, 2)}\n`,
+    `${JSON.stringify(developmentReadyRecord(DEVELOPMENT_INSTANCE, window.id), null, 2)}\n`,
     { mode: 0o600 },
   )
 }
@@ -96,7 +96,7 @@ function createWindow(): BrowserWindow {
   }
 
   window.webContents.once('did-finish-load', () => {
-    void writeDevelopmentReady().catch((error: unknown) => console.error(error))
+    void writeDevelopmentReady(window).catch((error: unknown) => console.error(error))
   })
 
   return window

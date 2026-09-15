@@ -36,6 +36,16 @@ The state directory is under the system temporary directory and is unique to the
 `bun run desktop:stop` reads only this worktree's ready record. It stops the recorded app and
 launcher processes. It does not target another worktree's app.
 
+When changing this launcher, prove two real worktrees rather than relying only on unit tests:
+
+```sh
+bun run dev:prove-isolation -- /absolute/path/to/another/argo/worktree
+```
+
+The proof launches two Electron windows, verifies their title, port, profile and ready records
+are distinct, then stops one. It passes only when that worktree's actual Electron process and
+ready record disappear while the other window remains live and responsive.
+
 ## Visual design infra
 
 - Design stack: `docs/design-stack.md`
