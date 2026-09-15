@@ -1,0 +1,8 @@
+{"type":"last-prompt","leafUuid":"think-two-result"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:00.000Z","uuid":"think-prompt","parentUuid":null,"message":{"role":"user","content":"Run the checks."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:01.000Z","uuid":"think-one","parentUuid":"think-prompt","message":{"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"sig-one"}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:02.000Z","uuid":"think-one-call","parentUuid":"think-one","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"think-one-test","name":"Bash","input":{"command":"bun test"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:03.000Z","uuid":"think-one-result","parentUuid":"think-one-call","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"think-one-test","content":"tests pass"}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:04.000Z","uuid":"think-two","parentUuid":"think-one-result","message":{"role":"assistant","content":[{"type":"thinking","thinking":"","signature":"sig-two"}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:05.000Z","uuid":"think-two-call","parentUuid":"think-two","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"think-two-types","name":"Bash","input":{"command":"bun run typecheck"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-15T09:00:06.000Z","uuid":"think-two-result","parentUuid":"think-two-call","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"think-two-types","content":"types pass"}]}}
