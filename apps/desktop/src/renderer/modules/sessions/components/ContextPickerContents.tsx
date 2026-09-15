@@ -38,11 +38,13 @@ function TicketResult({
           <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
           <span className="truncate">{ticket.title}</span>
         </span>
-        <span
-          aria-label={ticket.terminal ? t('composer.contextPicker.terminal', { status: ticket.status }) : ticket.status}
-          className={ticket.terminal ? 'text-danger' : 'text-muted-foreground'}
-        >
+        <span className={ticket.terminal ? 'text-danger' : 'text-muted-foreground'}>
           <StatusIcon aria-hidden="true" className="size-3.5" />
+          <span className="sr-only">
+            {ticket.terminal
+              ? t('composer.contextPicker.terminal', { status: ticket.status })
+              : ticket.status}
+          </span>
         </span>
       </span>
       {ticket.blocked ? (

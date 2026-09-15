@@ -3,8 +3,8 @@ import type { RefObject } from 'react'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
 import { $createComposerTicketReferenceNode } from './ComposerTicketReferenceNode'
-import { activeReference } from './composer-reference-menu'
 import { ContextPicker } from './ContextPicker'
+import { activeReference } from './composer-reference-menu'
 
 export function DraftContextPicker({
   editorRef,
