@@ -43,18 +43,23 @@ export const ChangePriority: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const row = within(canvasElement)
-      .getByRole('button', { name: /ENG-12$/ })
+      .getByRole('button', { name: /^ENG-12/ })
       .closest('div')
     if (row === null) throw new Error('The row needs its wrapper.')
     const priority = within(row).getByRole('button', { name: 'Priority: High' })
-    const key = within(row).getByText('ENG-12')
+    const key = within(row).getByText('ENG-12', { selector: 'span[aria-hidden="true"]' })
     const status = within(row).getByRole('button', { name: 'Status: In Review' })
     await expect(priority.getBoundingClientRect().left).toBeLessThan(
       key.getBoundingClientRect().left,
     )
     await expect(key.getBoundingClientRect().left).toBeLessThan(status.getBoundingClientRect().left)
     await userEvent.click(priority)
-    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    // The portal mounts slower than testing-library's 1s default in this row's dev-mode render.
+    const menu = await within(canvasElement.ownerDocument.body).findByRole(
+      'menu',
+      {},
+      { timeout: 3000 },
+    )
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
     await expect(args.backlog.onChangePriority).toHaveBeenCalledWith('ENG-12', {
       level: 1,

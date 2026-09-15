@@ -125,15 +125,14 @@ export function TicketRow(props: TicketRowProps) {
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
-      {/* Reserves the icon's width even where a provider has no priority, so titles keep one line. */}
-      <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
-        {provider === 'linear' ? (
+      {provider === 'linear' ? (
+        <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
           <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />
-        ) : null}
-      </span>
+        </span>
+      ) : null}
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} mt-2 shrink-0 font-mono type-meta text-faint`}
+        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 font-mono text-body text-faint`}
       >
         {ticket.key}
       </span>

@@ -14,8 +14,7 @@ type Snapshot = [QueryKey, TicketPages | undefined][]
 // included. Every field a Ticket can be moved to shares this traversal and supplies its own patch.
 export function patchTicket(
   client: QueryClient,
-  projectId: string,
-  key: string,
+  { projectId, key }: TicketChange,
   patch: (ticket: Ticket) => Ticket,
 ) {
   client.setQueriesData<TicketPages>({ queryKey: listKey(projectId) }, (data) =>

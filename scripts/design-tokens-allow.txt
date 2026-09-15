@@ -15,8 +15,8 @@
 ^apps/desktop/src/core/sessions/fake-driver/session-formatted-feed-case\.ts:14:
 ^apps/desktop/src/renderer/modules/sessions/feed/content/feedSamples\.ts:2:
 ^apps/desktop/src/providers/linear/fake-driver/fake-linear-cast\.ts:26:
-^apps/desktop/src/renderer/modules/tickets/components/TicketDetail\.stories\.tsx:74:
+^apps/desktop/src/renderer/modules/tickets/components/TicketDetail\.stories\.tsx:75:
 
 # A Storybook viewport wrapper testing narrow-width wrapping: a test viewport, not a production
 # size (#1913).
-^apps/desktop/src/renderer/modules/tickets/components/TicketList\.stories\.tsx:44:
+^apps/desktop/src/renderer/modules/tickets/components/TicketList\.stories\.tsx:77:

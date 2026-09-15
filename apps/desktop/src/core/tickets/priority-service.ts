@@ -10,7 +10,9 @@ export async function updatePriority(
 ): Promise<TicketPriorityReply> {
   const { requestId, projectId } = call
   const written = await writeTicketField(call, (accountId, scope) =>
-    readAs(call, accountId, (source, reader) => source.updatePriority(reader, { scope, ...change })),
+    readAs(call, accountId, (source, reader) =>
+      source.updatePriority(reader, { scope, ...change }),
+    ),
   )
   if (!written.ok) return written.error
   const { key } = change

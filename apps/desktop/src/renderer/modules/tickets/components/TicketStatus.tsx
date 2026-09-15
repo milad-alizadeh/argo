@@ -1,19 +1,13 @@
 // A Ticket's status and priority, drawn where the provider keeps them. Only Linear keeps a priority.
 // The icon's shape carries the category, so a status is never its colour alone.
-import {
-  type LucideIcon,
-  OctagonAlert,
-  SignalHigh,
-  SignalLow,
-  SignalMedium,
-  SignalZero,
-} from 'lucide-react'
+import { OctagonAlert } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { TicketPriority, TicketStatus } from '@/core/tickets/contract'
 import { StatusGlyph } from './StatusGlyph'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 
-type Mark = { Icon: LucideIcon; tone: string }
+type Mark = { render: () => ReactNode; tone: string }
 
 const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
   triage: 'text-warn',
@@ -22,6 +16,37 @@ const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
   started: 'text-warn',
   completed: 'text-ticket-done',
   canceled: 'text-faint',
+}
+
+// Three ascending bars, drawn in the 14x14 box `StatusGlyph` also draws in, so priority and status
+// read at the same size. `filled` counts bars lit solid; the rest stay at low opacity. `null` draws
+// three flat dashes instead of bars, Linear's own mark for "No priority".
+const BAR_X = [1.5, 5.5, 9.5]
+const BAR_HEIGHT = [4, 7, 10]
+const BAR_BASELINE = 12.5
+const DASH_HEIGHT = 2
+
+function PriorityBars({ filled }: { filled: 0 | 1 | 2 | 3 | null }) {
+  return (
+    <svg aria-hidden="true" className={markIcon} viewBox="0 0 14 14">
+      {BAR_X.map((x, index) => {
+        const height = filled === null ? DASH_HEIGHT : (BAR_HEIGHT[index] ?? DASH_HEIGHT)
+        const lit = filled === null || index < filled
+        return (
+          <rect
+            fill="currentColor"
+            height={height}
+            key={x}
+            opacity={lit ? 1 : 0.3}
+            rx="1"
+            width="3"
+            x={x}
+            y={BAR_BASELINE - height}
+          />
+        )
+      })}
+    </svg>
+  )
 }
 
 // The nth started status fills 1/2, 3/4, 7/8 of its pie, so a later stage reads as further on.
@@ -33,12 +58,15 @@ function startedShare(status: TicketStatus, statuses: readonly TicketStatus[]) {
 
 // Level 1 is the most urgent; null is Linear's own "No priority".
 const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
-  1: { Icon: OctagonAlert, tone: 'text-danger' },
-  2: { Icon: SignalHigh, tone: 'text-muted-foreground' },
-  3: { Icon: SignalMedium, tone: 'text-muted-foreground' },
-  4: { Icon: SignalLow, tone: 'text-muted-foreground' },
+  1: {
+    render: () => <OctagonAlert aria-hidden="true" className={markIcon} />,
+    tone: 'text-danger',
+  },
+  2: { render: () => <PriorityBars filled={3} />, tone: 'text-muted-foreground' },
+  3: { render: () => <PriorityBars filled={2} />, tone: 'text-muted-foreground' },
+  4: { render: () => <PriorityBars filled={1} />, tone: 'text-muted-foreground' },
 }
-const NO_PRIORITY_MARK: Mark = { Icon: SignalZero, tone: 'text-faint' }
+const NO_PRIORITY_MARK: Mark = { render: () => <PriorityBars filled={null} />, tone: 'text-faint' }
 
 // Linear's own words for every level a Ticket's priority can move to, No priority included.
 export const PRIORITY_OPTIONS: readonly (TicketPriority | null)[] = [
@@ -80,6 +108,6 @@ export function StatusMark({ status, named }: { status: TicketStatus; named: boo
 }
 
 export function PriorityIcon({ priority }: { priority: TicketPriority | null }) {
-  const { Icon, tone } = priority ? PRIORITY_MARKS[priority.level] : NO_PRIORITY_MARK
-  return <Icon aria-hidden="true" className={`${markIcon} ${tone}`} />
+  const { render, tone } = priority ? PRIORITY_MARKS[priority.level] : NO_PRIORITY_MARK
+  return <span className={tone}>{render()}</span>
 }

@@ -7,9 +7,9 @@ import { patchTicket, type TicketChange, useTicketFieldMutation } from './useTic
 
 export type StatusChange = TicketChange & { status: TicketStatus }
 
-function move(client: QueryClient, { projectId, key, status }: StatusChange) {
-  const state = closureOf(status.category)
-  patchTicket(client, projectId, key, (ticket) => ({ ...ticket, status, state }))
+function move(client: QueryClient, change: StatusChange) {
+  const state = closureOf(change.status.category)
+  patchTicket(client, change, (ticket) => ({ ...ticket, status: change.status, state }))
 }
 
 export function useUpdateStatus() {

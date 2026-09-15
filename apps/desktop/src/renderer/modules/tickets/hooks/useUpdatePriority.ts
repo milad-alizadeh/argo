@@ -6,8 +6,8 @@ import { patchTicket, type TicketChange, useTicketFieldMutation } from './useTic
 
 export type PriorityChange = TicketChange & { priority: TicketPriority | null }
 
-function move(client: QueryClient, { projectId, key, priority }: PriorityChange) {
-  patchTicket(client, projectId, key, (ticket) => ({ ...ticket, priority }))
+function move(client: QueryClient, change: PriorityChange) {
+  patchTicket(client, change, (ticket) => ({ ...ticket, priority: change.priority }))
 }
 
 export function useUpdatePriority() {
