@@ -62,7 +62,7 @@ function link(value: unknown): TicketLink | null {
 }
 
 // Linear's priority 0 is "No priority", which is no priority rather than a lowest one.
-function priorityOf(value: unknown, label: unknown): TicketPriority | null {
+export function priorityOf(value: unknown, label: unknown): TicketPriority | null {
   const level = PRIORITY_LEVELS.find((candidate) => candidate === value)
   return level && typeof label === 'string' && label !== '' ? { level, label } : null
 }

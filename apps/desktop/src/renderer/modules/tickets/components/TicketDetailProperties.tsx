@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/core/accounts/contract'
-import type { Ticket, TicketStatus } from '@/core/tickets/contract'
+import type { Ticket, TicketPriority, TicketStatus } from '@/core/tickets/contract'
 import { Badge } from '../../../components/ui/badge'
 import { sourcePresentation } from '../lib/sources'
+import { PriorityMenu } from './PriorityMenu'
 import { StatusMenu } from './StatusMenu'
 import { TicketLabel } from './TicketLabel'
-import { PriorityMark } from './TicketStatus'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -24,11 +24,18 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
 export type Editing = {
   statuses: readonly TicketStatus[]
   onChangeStatus: (status: TicketStatus) => void
+  onChangePriority: (priority: TicketPriority | null) => void
 }
 
 export type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
 
-export function Properties({ ticket, provider, statuses, onChangeStatus }: PropertiesProps) {
+export function Properties({
+  ticket,
+  provider,
+  statuses,
+  onChangeStatus,
+  onChangePriority,
+}: PropertiesProps) {
   const { t } = useTranslation('tickets')
   const noun = sourcePresentation(provider).statusNoun
   return (
@@ -42,9 +49,9 @@ export function Properties({ ticket, provider, statuses, onChangeStatus }: Prope
           statuses={statuses}
         />
       </Property>
-      {ticket.priority ? (
+      {provider === 'linear' ? (
         <Property name={t('detail.priority')}>
-          <PriorityMark priority={ticket.priority} />
+          <PriorityMenu named onChange={onChangePriority} priority={ticket.priority} />
         </Property>
       ) : null}
       {ticket.type ? (

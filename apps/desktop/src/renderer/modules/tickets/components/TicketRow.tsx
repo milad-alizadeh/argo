@@ -2,12 +2,14 @@ import { Ban, ChevronRight } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { Ticket, TicketStatus } from '@/core/tickets/contract'
+import type { Provider } from '@/core/accounts/contract'
+import type { Ticket, TicketPriority, TicketStatus } from '@/core/tickets/contract'
 import { ticketAge } from '@/core/tickets/ticket-age'
 import { TreeRails, TreeStem, TreeTwig } from '../../../components/TreeLines'
 import { type BacklogRow, closedChildren, openBlockers } from '../lib/backlog'
 import type { SourcePresentation } from '../lib/sources'
 import { ChildProgress } from './ChildProgress'
+import { PriorityMenu } from './PriorityMenu'
 import { StatusMenu } from './StatusMenu'
 import { TicketLabel } from './TicketLabel'
 
@@ -101,6 +103,7 @@ type TicketRowProps = {
   // The tree lines this row draws, one per ancestor column.
   rails: readonly boolean[]
   presentation: Pick<SourcePresentation, 'keyColumn' | 'statusNoun'>
+  provider: Provider
   statuses: readonly TicketStatus[]
   selected: boolean
   folded: boolean
@@ -108,6 +111,7 @@ type TicketRowProps = {
   onSelect: () => void
   onToggle: () => void
   onChangeStatus: (status: TicketStatus) => void
+  onChangePriority: (priority: TicketPriority | null) => void
 }
 
 // The row selects wherever it is pressed but on its status and its chevron: the select button's
@@ -115,12 +119,18 @@ type TicketRowProps = {
 // keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
 export function TicketRow(props: TicketRowProps) {
   const { t } = useTranslation('tickets')
-  const { row, rails, presentation, statuses, selected, folded, now } = props
-  const { onSelect, onToggle, onChangeStatus } = props
+  const { row, rails, presentation, provider, statuses, selected, folded, now } = props
+  const { onSelect, onToggle, onChangeStatus, onChangePriority } = props
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
+      {/* Reserves the icon's width even where a provider has no priority, so titles keep one line. */}
+      <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
+        {provider === 'linear' ? (
+          <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />
+        ) : null}
+      </span>
       <span
         aria-hidden="true"
         className={`${presentation.keyColumn} mt-2 shrink-0 font-mono type-meta text-faint`}

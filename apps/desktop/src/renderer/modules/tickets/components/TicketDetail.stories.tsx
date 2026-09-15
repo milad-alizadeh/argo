@@ -26,6 +26,7 @@ const meta: Meta<typeof TicketDetail> = {
     provider: 'github',
     statuses: STATUSES.github,
     onChangeStatus: fn(),
+    onChangePriority: fn(),
   },
 }
 
@@ -108,6 +109,19 @@ export const Linear: Story = {
     await expect(within(article).getByRole('region', { name: 'Blocked by · 1' })).toHaveTextContent(
       'ClosedStore the refresh tokenENG-9',
     )
+  },
+}
+
+// Linear's priority menu moves the Ticket to another level, in Linear's own words.
+export const ChangePriority: Story = {
+  args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
+  play: async ({ args, canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
+    await userEvent.click(within(article).getByRole('button', { name: 'Priority: High' }))
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await expect(within(menu).getByRole('menuitemradio', { name: 'High' })).toBeChecked()
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
+    await expect(args.onChangePriority).toHaveBeenCalledWith({ level: 1, label: 'Urgent' })
   },
 }
 

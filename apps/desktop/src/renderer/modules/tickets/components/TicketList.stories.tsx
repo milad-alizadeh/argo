@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
+import { STATUSES } from './status-fixtures'
 import { TicketList } from './TicketList'
-import { backlog, standalone, wayfinder } from './ticket-fixtures'
+import { backlog, engine, standalone, wayfinder } from './ticket-fixtures'
 
 const longTicket = {
   ...wayfinder,
@@ -32,6 +33,33 @@ export const Ages: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /^#607/ })).toHaveTextContent('14d')
     await expect(canvas.getByRole('button', { name: /^#273/ })).toHaveTextContent('5mo')
+  },
+}
+
+// A Linear row draws priority, then key, then status, leftmost first.
+export const ChangePriority: Story = {
+  args: {
+    backlog: backlog({ provider: 'linear', tickets: [engine], statuses: STATUSES.linear }),
+  },
+  play: async ({ args, canvasElement }) => {
+    const row = within(canvasElement)
+      .getByRole('button', { name: /ENG-12$/ })
+      .closest('div')
+    if (row === null) throw new Error('The row needs its wrapper.')
+    const priority = within(row).getByRole('button', { name: 'Priority: High' })
+    const key = within(row).getByText('ENG-12')
+    const status = within(row).getByRole('button', { name: 'Status: In Review' })
+    await expect(priority.getBoundingClientRect().left).toBeLessThan(
+      key.getBoundingClientRect().left,
+    )
+    await expect(key.getBoundingClientRect().left).toBeLessThan(status.getBoundingClientRect().left)
+    await userEvent.click(priority)
+    const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
+    await expect(args.backlog.onChangePriority).toHaveBeenCalledWith('ENG-12', {
+      level: 1,
+      label: 'Urgent',
+    })
   },
 }
 

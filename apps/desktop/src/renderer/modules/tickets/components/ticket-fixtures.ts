@@ -133,6 +133,7 @@ export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({
   onRetryLoadMore: fn(),
   statuses: STATUSES[overrides.provider ?? 'github'],
   onChangeStatus: fn(),
+  onChangePriority: fn(),
   ...overrides,
 })
 

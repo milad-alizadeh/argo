@@ -11,11 +11,12 @@ type Listing = {
   list: TicketListing
   query: string
   onChangeStatus: Backlog['onChangeStatus']
+  onChangePriority: Backlog['onChangePriority']
 }
 
 export function listedBacklog(
   pages: TicketPages,
-  { list, query, onChangeStatus }: Listing,
+  { list, query, onChangeStatus, onChangePriority }: Listing,
 ): Omit<Backlog, 'provider'> {
   const loadMore = () => {
     if (!list.isFetching) void list.fetchNextPage()
@@ -24,6 +25,7 @@ export function listedBacklog(
     tickets: uniqueTickets(pages.pages),
     statuses: pages.pages[0]?.statuses ?? [],
     onChangeStatus,
+    onChangePriority,
     query,
     total: pages.pages[0]?.total ?? null,
     hasMore: list.hasNextPage,

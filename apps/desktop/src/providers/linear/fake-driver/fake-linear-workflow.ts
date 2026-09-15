@@ -40,3 +40,11 @@ export function moveIssue(state: FakeLinearState, identifier: string, target: st
   found.issue.stateType = next.type
   return issueState(found.team, found.issue)
 }
+
+// Answers `null` for an issue the write cannot reach.
+export function setPriority(state: FakeLinearState, identifier: string, priority: number) {
+  const found = findIssue(state, identifier.replace(/^issue-/, ''))
+  if (!found) return null
+  found.issue.priority = priority as FakeLinearIssue['priority']
+  return found.issue
+}

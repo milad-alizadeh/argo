@@ -4,7 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import type { Provider } from '@/core/accounts/contract'
 import type { ProjectSummary } from '@/core/projects/messages'
-import type { ConnectionSummary, TicketStatus } from '@/core/tickets/contract'
+import type { ConnectionSummary, TicketPriority, TicketStatus } from '@/core/tickets/contract'
 import type { ContractFailure } from '../../../lib/query-client'
 import type { AccountListing } from '../../accounts/hooks/useAccounts'
 import { openAccountsDialog } from '../../accounts/state/useAccountsDialog'
@@ -77,6 +77,7 @@ export type Connected = {
   query: string
   onDisconnectSource: () => void
   onChangeStatus: (key: string, status: TicketStatus) => void
+  onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void

@@ -17,6 +17,7 @@ import {
 export type { TicketsView } from './useTicketsView-derive'
 
 import { useConnection, useDisconnectSource, useTicketList } from './useTickets'
+import { useUpdatePriority } from './useUpdatePriority'
 import { useUpdateStatus } from './useUpdateStatus'
 
 export type TicketsScreenProps = { view: TicketsView }
@@ -32,6 +33,7 @@ export function useTicketsView(): TicketsScreenProps {
   const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
   const disconnectSource = useDisconnectSource()
   const updateStatus = useUpdateStatus()
+  const updatePriority = useUpdatePriority()
   const { ticketKey } = useParams()
   const navigate = useNavigate()
 
@@ -53,6 +55,7 @@ export function useTicketsView(): TicketsScreenProps {
       query,
       onDisconnectSource: () => disconnectSource.mutate({ projectId }),
       onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
+      onChangePriority: (key, priority) => updatePriority.mutate({ projectId, key, priority }),
       selectedKey: ticketKey ?? null,
       onSelect: (key) => navigate(`/tickets/${encodeURIComponent(key)}`),
       onOpenSession: (id) => navigate(`/sessions/${id}`),
