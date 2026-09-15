@@ -2,11 +2,20 @@ import assert from 'node:assert/strict'
 import { openArchivedSection, openSessionByClick } from './session-gestures'
 import { readRosterIds } from './session-roster-facts'
 
+const ACTIVE_ROW = 'nav[aria-label="Sessions"] button[data-archived="false"]'
+
+function archivedRow(sessionId: string) {
+  return `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"][data-archived="true"]`
+}
+
 async function waitForActiveSessions(page, expected) {
-  await page.waitForFunction((ids) => {
-    const rows = [...document.querySelectorAll('nav[aria-label="Sessions"] button')]
-    return rows.map((row) => row.getAttribute('data-session-id')).join('|') === ids.join('|')
-  }, expected)
+  await page.waitForFunction(
+    ({ selector, ids }) => {
+      const rows = [...document.querySelectorAll(selector)]
+      return rows.map((row) => row.getAttribute('data-session-id')).join('|') === ids.join('|')
+    },
+    { selector: ACTIVE_ROW, ids: expected },
+  )
 }
 
 async function proveVisibleNames(page) {
@@ -86,7 +95,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 
 async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   await openArchivedSection(page)
-  await page.locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]').waitFor()
+  await page.locator(archivedRow('plannedWork')).waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()
   await mutations.archive('askPending', true)
@@ -101,9 +110,9 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   )
   // The active list polls; the archived list is read on demand (#1593), so a live mutation only
   // reaches it once the reader asks again — closing and reopening the section is that ask.
-  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
-  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
-  await page.locator('nav[aria-label="Archived"] button[data-session-id="askPending"]').waitFor()
+  await page.locator('[data-slot="archived-toggle"]').click()
+  await page.locator('[data-slot="archived-toggle"]').click()
+  await page.locator(archivedRow('askPending')).waitFor()
   const archivedAfter = await readRosterIds(page, 'Archived')
   assert.deepEqual(
     archivedAfter.filter((sessionId) => sessionId !== 'askPending'),

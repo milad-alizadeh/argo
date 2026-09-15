@@ -13,7 +13,7 @@ import type { SessionCli } from '../../../renderer/modules/sessions/harness/harn
 const HARNESS_TABS: Record<SessionCli, string> = { claude: 'Claude Code', codex: 'Codex' }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
-const ARCHIVED = '.roster__archived'
+const ARCHIVED_TOGGLE = '[data-slot="archived-toggle"]'
 export const RUN_SETUP = '[aria-label^="Choose run setup"]'
 const ROW_TIMEOUT = 30_000
 const POLL_MS = 25
@@ -47,14 +47,14 @@ export async function openSessionByClick(page: Page, sessionId: string) {
 // An archived Session is behind the Archived disclosure, which a person opens before clicking its
 // row. The disclosure can already be open, so this reads it rather than toggling it blind.
 export async function openArchivedSection(page: Page) {
-  const disclosure = page.locator(`${ARCHIVED} [data-slot="collapsible-trigger"]`)
+  const disclosure = page.locator(ARCHIVED_TOGGLE)
   await disclosure.waitFor()
   if ((await disclosure.getAttribute('aria-expanded')) !== 'true') await disclosure.click()
 }
 
 export async function openArchivedSessionByClick(page: Page, sessionId: string) {
   await openArchivedSection(page)
-  await page.locator(`nav[aria-label="Archived"] button[data-session-id="${sessionId}"]`).click()
+  await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
 }
 
