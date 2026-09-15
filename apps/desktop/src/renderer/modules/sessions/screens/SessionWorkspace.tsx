@@ -138,10 +138,7 @@ export function SessionWorkspace({
           turnMarker={turnMarker}
         />
       </section>
-      <ComposerSection
-        composer={composer}
-        onJumpToLatest={jumpToLatest?.action ?? null}
-      />
+      <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />
     </section>
   )
 }
