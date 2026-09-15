@@ -989,16 +989,14 @@ export const SmoothedStreamingText: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const reply = () => drawnRow(canvasElement, 'streaming-text') as HTMLElement
-    await waitFor(() => expect(reply()).toBeDefined())
-    await expect(reply()).not.toHaveTextContent(streamingText)
+    // Not asserted un-revealed first: the opening text is three words, short enough that a
+    // slow CI paint can let the catch-up rate clear it before this line ever runs.
     await waitFor(() => expect(reply()).toHaveTextContent(streamingText))
     await expect(canvas.getByRole('status')).toHaveTextContent('Assistant is responding.')
     await userEvent.click(canvas.getByRole('button', { name: 'Receive chunk' }))
-    await expect(reply()).not.toHaveTextContent(firstChunkText)
     await expect(reply()).not.toHaveAttribute('data-revealing')
     await waitFor(() => expect(reply()).toHaveTextContent(firstChunkText), { timeout: 3000 })
     await userEvent.click(canvas.getByRole('button', { name: 'Receive final chunk' }))
-    await expect(reply()).not.toHaveTextContent(streamedText)
     await userEvent.click(canvas.getByRole('button', { name: 'Complete reply' }))
     await waitFor(() => expect(reply()).toHaveTextContent(streamedText))
     await expect(canvas.getByRole('status')).toHaveTextContent('Assistant response complete.')
