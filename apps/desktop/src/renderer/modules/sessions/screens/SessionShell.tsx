@@ -40,7 +40,7 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
   return (
     <div
       data-component="SessionHeaderControls"
-      className="ml-auto flex shrink-0 items-center gap-1"
+      className="no-drag-region ml-auto flex shrink-0 items-center gap-1"
     >
       {children}
     </div>
@@ -74,7 +74,7 @@ export function SessionShell({
             header={
               <header
                 data-component="SessionHeader"
-                className="flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
+                className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
               >
                 <SessionHeader session={session} />
                 <SessionHeaderControls>{headerControls}</SessionHeaderControls>

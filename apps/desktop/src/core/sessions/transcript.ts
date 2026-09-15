@@ -4,7 +4,9 @@ export type ContentBlock =
   | { shape: 'prose'; text: string }
   | { shape: 'thought'; text: string }
   | { shape: 'marker'; marker: FeedMarker }
-  | { shape: 'event'; event: TranscriptEventKind; text: string | null }
+  // `raw` is the protocol update's own untranslated text, shown behind a closed disclosure for
+  // diagnostics; absent for a harness event, which has none worth keeping.
+  | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }
   | { shape: 'tool'; callId: string }
   | { shape: 'source'; label: string; source: string }
 
