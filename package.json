@@ -20,6 +20,8 @@
     "build:storybook": "turbo run build:storybook",
     "design:tokens": "node scripts/design-token-mirror.mjs && node scripts/design-token-class-groups.mjs",
     "dev": "turbo run dev",
+    "desktop:status": "bun run --cwd apps/desktop dev:status",
+    "desktop:stop": "bun run --cwd apps/desktop dev:stop",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",

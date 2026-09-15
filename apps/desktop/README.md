@@ -10,8 +10,31 @@ Every `@electron-forge/*` package and Electron itself are pinned exactly, becaus
 Vite plugin experimental and reserves breaking changes for a minor release. Upgrade them as one
 reviewed unit.
 
-Run the app against the dev server with `bun run dev` from the repository root. That is Forge's
-`start`, so it holds the terminal until you quit the app.
+Run the app against the dev server with `bun run dev` from the repository root. It holds the
+terminal until you stop the instance. The launcher gives each worktree its own Electron state,
+strict Vite port, and native window title.
+
+## Worktree development launch
+
+Use these commands from the root of the worktree that owns the check:
+
+```sh
+bun run dev
+bun run desktop:status
+bun run desktop:stop
+```
+
+`bun run desktop:status` prints one JSON record after the renderer loads. It includes the exact
+window title, port, Electron process ID, launcher process ID, state directory, and ready-file
+path. Use the title to select the correct native window. Do not select or quit another generic
+Argo window.
+
+The default port is stable for the worktree. Vite refuses a busy port. If another process uses
+the port, stop that process or start this run with `ARGO_DESKTOP_DEV_PORT=<free-port> bun run dev`.
+The state directory is under the system temporary directory and is unique to the worktree.
+
+`bun run desktop:stop` reads only this worktree's ready record. It stops the recorded app and
+launcher processes. It does not target another worktree's app.
 
 ## Visual design infra
 
