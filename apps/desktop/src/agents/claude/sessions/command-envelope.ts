@@ -18,7 +18,8 @@ function envelopeText(content: unknown): string | null {
     : null
 }
 
-// These envelopes configure the harness only, so they become traces and cannot split Tool Call groups.
+// These envelopes configure the harness only, so they become hidden traces. They still mark a
+// real delivery boundary: Tool Calls either side must not be summarised as one run.
 const HIDDEN_HARNESS_ENVELOPES = new Set([
   'apps_instructions',
   'collaboration_mode',
@@ -67,7 +68,7 @@ function harnessEvent(record: Record<string, unknown>, text: string): HarnessEve
   if (!isHarnessDelivery(record) || name === null) return null
   const body = completeEnvelope(text, name)
   if (body === null) return null
-  if (HIDDEN_HARNESS_ENVELOPES.has(name)) return { kind: 'trace', uuid: '' }
+  if (HIDDEN_HARNESS_ENVELOPES.has(name)) return { kind: 'trace', uuid: '', boundary: true }
   const presentation = Object.hasOwn(HARNESS_EVENTS, name) ? HARNESS_EVENTS[name] : undefined
   if (presentation === undefined) return null
   const eventText = presentation.text(body)

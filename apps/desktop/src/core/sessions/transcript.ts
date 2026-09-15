@@ -65,7 +65,9 @@ export type TranscriptRecord =
     }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
-  | { kind: 'trace'; uuid: string; subagent?: boolean; cwd?: string | null }
+  // A hidden harness envelope draws no Feed row, but `boundary` preserves that a real transcript
+  // delivery happened there so adjacent Tool Calls on either side do not become one group.
+  | { kind: 'trace'; uuid: string; boundary?: boolean; subagent?: boolean; cwd?: string | null }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   | { kind: 'compaction'; uuid: string; timestamp?: string }
   | {

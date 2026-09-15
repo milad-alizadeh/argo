@@ -61,18 +61,51 @@ function toolGroupLabel(calls: ToolRow[]) {
   return kinds.map((kind, index) => countPhrase(kind, counts[kind], index === 0)).join(', ')
 }
 
-// A caller supplies one transcript tool run; routing then applies whether it holds one call or many.
-export function groupToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
-  const grouped: SessionFeedRow[] = []
+// A caller supplies the ids that began immediately after a hidden transcript delivery. That
+// delivery is not a Feed row, but it is still a real turn boundary: calls on either side must
+// not acquire one summary merely because the delivery itself has nothing useful to render.
+//
+// The optional set keeps this renderer-facing helper useful for ordinary row lists while the
+// transcript projectors retain the history information that disappears from those lists.
+export function groupedRowIndexes(
+  rows: SessionFeedRow[],
+  breakBeforeIds: ReadonlySet<string> = new Set(),
+): number[][] {
+  const groups: number[][] = []
   for (let index = 0; index < rows.length; ) {
     const row = rows[index]
     if (row?.shape !== 'tool') {
-      if (row !== undefined) grouped.push(row)
+      groups.push([index])
       index += 1
       continue
     }
-    const calls: ToolRow[] = []
-    while (rows[index]?.shape === 'tool') calls.push(rows[index++] as ToolRow)
+    const run: number[] = []
+    while (
+      rows[index]?.shape === 'tool' &&
+      (run.length === 0 || !breakBeforeIds.has(rows[index]?.id ?? ''))
+    ) {
+      run.push(index++)
+    }
+    groups.push(run)
+  }
+  return groups
+}
+
+export function groupToolRuns(
+  rows: SessionFeedRow[],
+  breakBeforeIds: ReadonlySet<string> = new Set(),
+): SessionFeedRow[] {
+  const grouped: SessionFeedRow[] = []
+  for (const indexes of groupedRowIndexes(rows, breakBeforeIds)) {
+    const first = rows[indexes[0] ?? -1]
+    if (first === undefined) continue
+    if (first.shape !== 'tool') {
+      grouped.push(first)
+      continue
+    }
+    const calls = indexes
+      .map((index) => rows[index])
+      .filter((row): row is ToolRow => row?.shape === 'tool')
     grouped.push({
       shape: 'tool-group',
       id: toolGroupId(calls),

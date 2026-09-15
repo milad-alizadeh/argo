@@ -77,15 +77,17 @@ function projectionsWith(delivery: ReturnType<typeof harnessDelivery>) {
   return [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
 }
 
-test('a hidden delivery traces silently and never splits a Tool Call group', () => {
+test('keeps commands from distinct transcript events separate across a hidden delivery', () => {
   const delivery = harnessDelivery(
     'delivery-2',
     '<skills_instructions>internal update</skills_instructions>',
   )
   for (const rows of projectionsWith(delivery)) {
-    assert.equal(rows.length, 1)
+    assert.equal(rows.length, 2)
     assert.equal(rows[0]?.shape, 'tool-group')
-    assert.equal(rows[0]?.shape === 'tool-group' ? rows[0].calls.length : 0, 2)
+    assert.equal(rows[0]?.shape === 'tool-group' ? rows[0].calls.length : 0, 1)
+    assert.equal(rows[1]?.shape, 'tool-group')
+    assert.equal(rows[1]?.shape === 'tool-group' ? rows[1].calls.length : 0, 1)
   }
 })
 

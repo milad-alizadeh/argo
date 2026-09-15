@@ -59,6 +59,17 @@ export function rowsOfRecord(
   return rows
 }
 
+// Tool results are deliberately silent in the Feed: they fill in the Tool Call that already drew
+// the command. Other silent messages are deliveries in their own right, so they close a Tool run
+// even though nothing from them is shown.
+export function isHiddenToolRunBoundary(record: TranscriptRecord, rows: SessionFeedRow[]) {
+  return (
+    rows.length === 0 &&
+    ((record.kind === 'message' && (record.sidechain || (record.toolResults?.length ?? 0) === 0)) ||
+      (record.kind === 'trace' && record.boundary === true))
+  )
+}
+
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
 // dozens in a row, and a row each turns a Feed into a wall of the same sentence, which says no more
 // than the first one does (#1907). So consecutive damaged lines are drawn as a single row; the
@@ -81,15 +92,21 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
         (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
       ),
   )
-  return groupDelegations(
-    groupToolRuns(
-      withoutRepeatedBreaks(
-        chain.files.flatMap((file, fileIndex) =>
-          file.records.flatMap((record, recordIndex) =>
-            rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
-          ),
-        ),
-      ),
-    ),
-  )
+  const rows: SessionFeedRow[] = []
+  const breakBeforeIds = new Set<string>()
+  let hiddenDelivery = false
+  for (const [fileIndex, file] of chain.files.entries()) {
+    for (const [recordIndex, record] of file.records.entries()) {
+      const recordRows = rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results)
+      if (isHiddenToolRunBoundary(record, recordRows)) {
+        hiddenDelivery = true
+        continue
+      }
+      if (recordRows.length === 0) continue
+      if (hiddenDelivery) breakBeforeIds.add(recordRows[0]?.id ?? '')
+      hiddenDelivery = false
+      rows.push(...recordRows)
+    }
+  }
+  return groupDelegations(groupToolRuns(withoutRepeatedBreaks(rows), breakBeforeIds))
 }

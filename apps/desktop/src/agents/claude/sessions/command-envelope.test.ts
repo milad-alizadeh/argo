@@ -53,7 +53,7 @@ test('keeps a command receipt as the Session opening prompt', () => {
   assert.equal(file.openingPrompt, '/implement 2178')
 })
 
-test('suppresses harness envelopes with no reader value', () => {
+test('suppresses harness envelopes while preserving their Tool Call boundary', () => {
   const envelopes = [
     '<apps_instructions>instructions</apps_instructions>',
     '<collaboration_mode>mode</collaboration_mode>',
@@ -72,7 +72,7 @@ test('suppresses harness envelopes with no reader value', () => {
       sourceToolAssistantUUID: 'tool-1',
       message: { role: 'user', content },
     })
-    assert.deepEqual(parseTranscriptLine(line), { kind: 'trace', uuid })
+    assert.deepEqual(parseTranscriptLine(line), { kind: 'trace', uuid, boundary: true })
   }
 })
 
