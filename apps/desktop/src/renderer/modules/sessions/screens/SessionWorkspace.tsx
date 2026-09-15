@@ -6,7 +6,6 @@ import { BasicFeed } from '../feed/BasicFeed'
 import type { TurnMarkerView } from '../feed/turn-marker'
 import type { useSessions } from '../hooks/useSessions'
 import type { SessionEvidence, SessionFeedRow } from '../types'
-import { useComposerFadeTop } from './useComposerFadeTop'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
@@ -32,14 +31,12 @@ export type SessionWorkspaceProps = {
   questionFailure: (questionId: string) => string | null
 }
 
-function ComposerFade({ top }: { top: number | null }) {
-  if (top === null) return null
+function ComposerFade() {
   return (
     <div
       aria-hidden="true"
       data-component="SessionComposerFade"
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[image:var(--gradient-session-composer-fade)]"
-      style={{ top: `${top}px` }}
+      className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade-depth) bg-[image:var(--gradient-session-composer-fade)]"
     />
   )
 }
@@ -47,26 +44,22 @@ function ComposerFade({ top }: { top: number | null }) {
 // Unmounted rather than hidden: a Session with nothing selected has no composer at all (#2105).
 function ComposerSection({
   composer,
-  fadeTop,
   sectionRef,
 }: {
   composer: ReactNode | null
-  fadeTop: number | null
   sectionRef: React.RefObject<HTMLElement | null>
 }) {
   const { t } = useTranslation('sessions')
   if (composer === null) return null
   return (
-    <>
-      <ComposerFade top={fadeTop} />
-      <section
-        aria-label={t('composerRegionLabel')}
-        className="absolute inset-x-0 bottom-0 z-20 isolate"
-        ref={sectionRef}
-      >
-        {composer}
-      </section>
-    </>
+    <section
+      aria-label={t('composerRegionLabel')}
+      className="absolute inset-x-0 bottom-0 z-20 isolate"
+      ref={sectionRef}
+    >
+      <ComposerFade />
+      {composer}
+    </section>
   )
 }
 
@@ -94,16 +87,10 @@ export function SessionWorkspace({
   questionFailure,
 }: SessionWorkspaceProps) {
   const composerElement = useRef<HTMLElement>(null)
-  const workspaceElement = useRef<HTMLElement>(null)
-  const fadeTop = useComposerFadeTop({ composerElement, workspaceElement })
   const { t } = useTranslation('sessions')
 
   return (
-    <section
-      aria-label={t('workspaceLabel')}
-      className="relative flex h-full min-h-0 flex-col"
-      ref={workspaceElement}
-    >
+    <section aria-label={t('workspaceLabel')} className="relative flex h-full min-h-0 flex-col">
       {header}
       <section
         aria-label={t('feedRegionLabel')}
@@ -131,7 +118,7 @@ export function SessionWorkspace({
           turnMarker={turnMarker}
         />
       </section>
-      <ComposerSection composer={composer} fadeTop={fadeTop} sectionRef={composerElement} />
+      <ComposerSection composer={composer} sectionRef={composerElement} />
     </section>
   )
 }

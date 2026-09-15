@@ -275,11 +275,11 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
-  expect(fade.getBoundingClientRect().top).toBeCloseTo(composerBounds.top, 1)
-  expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
-    workspace.getBoundingClientRect().bottom,
-    1,
-  )
+  const fadeBounds = fade.getBoundingClientRect()
+  expect(fadeBounds.bottom).toBeCloseTo(composerBounds.top, 1)
+  expect(fade.className).toContain('h-(--size-session-composer-fade-depth)')
+  expect(fadeBounds.height).toBeGreaterThan(0)
+  expect(fadeBounds.top).toBeLessThan(composerBounds.top)
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -456,6 +456,34 @@ export const WideSharedReadingColumn: Story = {
       ),
     )
     expectSharedReadingColumn(canvasElement)
+  },
+}
+
+export const ComposerFadeLight: Story = {
+  globals: { theme: 'light' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const ComposerFadeDark: Story = {
+  globals: { theme: 'dark' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
   },
 }
 
