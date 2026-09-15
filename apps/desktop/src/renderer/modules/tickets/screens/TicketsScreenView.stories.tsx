@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { STATUSES } from '../components/status-fixtures'
@@ -267,7 +267,10 @@ export const LongBacklog: Story = {
     await expect(canvas.getByText('All open · 40+ Tickets')).toBeInTheDocument()
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
     const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
-    if (list) list.scrollTop = list.scrollHeight
+    if (list) {
+      list.scrollTop = list.scrollHeight
+      fireEvent.scroll(list)
+    }
     await waitFor(() =>
       expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled(),
     )
