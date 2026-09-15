@@ -52,7 +52,9 @@ npx -y agent-browser@0.37.1 react renders stop
 
 The report gives the FPS (average, minimum and drops under 30) and a table of components by
 render time. The table gives the re-render count and the top change reason for each component. A
-component that re-renders during a gesture that does not concern it is a finding by itself.
+component that re-renders during a gesture that does not concern it is a finding by itself. A
+drop is a frame under 30 FPS, not a missed refresh of the display, so compare the minimum FPS as
+well.
 
 ## The CPU recorder
 
