@@ -99,7 +99,12 @@ function createWindow(): BrowserWindow {
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
-  attachBridges(window, { userData, rendererURL, proofEnabled: PROOF_ENABLED })
+  attachBridges(window, {
+    userData,
+    rendererURL,
+    proofEnabled: PROOF_ENABLED,
+    acceptance: ACCEPTANCE_ENABLED,
+  })
   installMenu(window)
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

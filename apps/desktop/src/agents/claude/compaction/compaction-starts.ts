@@ -4,11 +4,11 @@ import { z } from 'zod'
 import { identifierSchema } from '@/boundary'
 
 // One compaction the hook saw start: the file's write time is when it started.
-export type CompactionMarker = { sessionId: string; startedAt: string; file: string }
+export type CompactionStart = { sessionId: string; startedAt: string; file: string }
 
 const hookInputSchema = z.object({ session_id: identifierSchema })
 
-async function readMarker(file: string): Promise<CompactionMarker | null> {
+async function readStart(file: string): Promise<CompactionStart | null> {
   try {
     const [content, written] = await Promise.all([readFile(file, 'utf8'), stat(file)])
     const parsed = hookInputSchema.safeParse(JSON.parse(content))
@@ -19,16 +19,16 @@ async function readMarker(file: string): Promise<CompactionMarker | null> {
   }
 }
 
-export async function readCompactionMarkers(folder: string): Promise<CompactionMarker[]> {
+export async function readCompactionStarts(folder: string): Promise<CompactionStart[]> {
   const names = await readdir(folder).catch(() => [])
   const markers = await Promise.all(
     names
       .filter((name) => name.endsWith('.json'))
-      .map((name) => readMarker(path.join(folder, name))),
+      .map((name) => readStart(path.join(folder, name))),
   )
   return markers.filter((marker) => marker !== null)
 }
 
-export async function removeCompactionMarker(marker: CompactionMarker) {
+export async function removeCompactionStart(marker: CompactionStart) {
   await rm(marker.file, { force: true }).catch(() => undefined)
 }

@@ -1,69 +1,67 @@
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { SessionChain } from '../sessions/chains'
 import {
-  type CompactionMarker,
-  readCompactionMarkers,
-  removeCompactionMarker,
-} from './compaction-markers'
+  type CompactionStart,
+  readCompactionStarts,
+  removeCompactionStart,
+} from './compaction-starts'
 
-// A compaction of a 200k-token context took 72 s; a marker this old is a Session killed mid-compaction.
+// A compaction of a 200k-token context took 72 s; one this old is a Session killed mid-compaction.
 const COMPACTION_PATIENCE_MS = 30 * 60_000
 
-type Settle = {
-  // Unset in a proof, which reads fixture transcripts and leaves the person's markers alone.
-  markers: string | undefined
+type CompactionWatch = {
+  folder: string | undefined
   readChain: (sessionId: string) => Promise<SessionChain | null>
-  // A managed Session the marker names starts reading its own progress off the screen.
+  // A managed Session the start names reads its own progress off the screen.
   begin?: (sessionId: string, startedAt: string) => void
 }
 
 // Claude Code writes nothing while it compacts, so the first record after the start ends it: the
-// compact boundary, or a reply when the compaction was interrupted.
-function endedSince(chain: SessionChain | null, startedAt: string) {
+// compact boundary, or a message when the compaction was interrupted.
+export function compactionEndedAt(chain: SessionChain | null, startedAt: string, now: number) {
+  if (now - Date.parse(startedAt) > COMPACTION_PATIENCE_MS) return new Date(now).toISOString()
   return (chain?.files ?? [])
     .flatMap((file) => file.records)
-    .some((record) => {
-      if (record.kind === 'compaction') return (record.timestamp ?? '') >= startedAt
-      if (record.kind !== 'message' || record.role !== 'assistant') return false
-      return (record.timestamp ?? '') > startedAt
+    .flatMap((record) => {
+      if (record.kind !== 'compaction' && record.kind !== 'message') return []
+      const at = record.timestamp ?? ''
+      const ends = record.kind === 'compaction' ? at >= startedAt : at > startedAt
+      return ends ? [at] : []
     })
+    .sort()
+    .at(0)
 }
 
-function rowFor(rows: SessionRosterRow[], marker: CompactionMarker) {
-  return rows.find(
-    (row) => row.id === marker.sessionId || row.retiredIds.includes(marker.sessionId),
-  )
+function rowFor(rows: SessionRosterRow[], start: CompactionStart) {
+  return rows.find((row) => row.id === start.sessionId || row.retiredIds.includes(start.sessionId))
 }
 
 async function liveStart(
-  marker: CompactionMarker,
+  start: CompactionStart,
   row: SessionRosterRow | undefined,
-  settle: Settle,
+  watch: CompactionWatch,
 ) {
-  const expired = Date.now() - Date.parse(marker.startedAt) > COMPACTION_PATIENCE_MS
-  if (
-    expired ||
-    (row !== undefined && endedSince(await settle.readChain(row.id), marker.startedAt))
-  ) {
-    await removeCompactionMarker(marker)
+  const chain = row === undefined ? null : await watch.readChain(row.id)
+  if (compactionEndedAt(chain, start.startedAt, Date.now()) !== undefined) {
+    await removeCompactionStart(start)
     return null
   }
-  return row === undefined ? null : marker.startedAt
+  return row === undefined ? null : start.startedAt
 }
 
 export async function markCompactingRows(
   rows: SessionRosterRow[],
-  settle: Settle,
+  watch: CompactionWatch,
 ): Promise<SessionRosterRow[]> {
-  if (settle.markers === undefined) return rows
-  const markers = await readCompactionMarkers(settle.markers)
-  if (markers.length === 0) return rows
+  if (watch.folder === undefined) return rows
+  const starts = await readCompactionStarts(watch.folder)
+  if (starts.length === 0) return rows
   const started = new Map<string, string>()
-  for (const marker of markers) {
-    const row = rowFor(rows, marker)
-    const startedAt = await liveStart(marker, row, settle)
+  for (const start of starts) {
+    const row = rowFor(rows, start)
+    const startedAt = await liveStart(start, row, watch)
     if (row === undefined || startedAt === null) continue
-    settle.begin?.(row.id, startedAt)
+    watch.begin?.(row.id, startedAt)
     started.set(row.id, startedAt)
   }
   return rows.map((row) => {

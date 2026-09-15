@@ -15,7 +15,7 @@ export function claudeSettingsPath(home: string): string {
 }
 
 // Fixed under home rather than `userData`, so a dev instance and the app share one hook.
-export function claudeCompactionMarkersRoot(home: string): string {
+export function claudeCompactionStartsRoot(home: string): string {
   return path.join(home, '.claude', 'argo-compactions')
 }
 

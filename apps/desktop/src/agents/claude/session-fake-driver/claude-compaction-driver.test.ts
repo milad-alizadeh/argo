@@ -16,7 +16,7 @@ test('keeps the selected Session compacting until a newer compact boundary arriv
   assert.equal(driver.roster()[0]?.compactionStartedAt, null)
 })
 
-test('a compaction Argo did not ask for reads its progress off the screen once the hook marks it', async (context) => {
+test('a compaction Argo did not ask for reads its progress off the screen once the hook sees it start', async (context) => {
   const { driver, sessionId, paint } = await startedSession(context)
   const startedAt = '2026-09-13T15:18:00.000Z'
 
@@ -39,7 +39,7 @@ test('a compaction Argo did not ask for reads its progress off the screen once t
   )
 })
 
-test('a compaction Argo asked for keeps its own start when the hook marks it too', async (context) => {
+test('a compaction Argo asked for keeps its own start when the hook sees it too', async (context) => {
   const { driver, sessionId } = await startedSession(context)
 
   await driver.compact(sessionId)

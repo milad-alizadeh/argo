@@ -19,8 +19,7 @@ export function compactSession(options: DriverOptions, sessions: Sessions, sessi
   session.process.write('\r')
 }
 
-// The `PreCompact` hook saw a compaction start that Argo did not ask for: an auto-compact, or a
-// `/compact` typed into the terminal. One Argo asked for keeps its own start.
+// The `PreCompact` hook also fires for a compaction Argo asked for, which keeps its own start.
 export function beginCompaction(sessions: Sessions, sessionId: string, startedAt: string) {
   const session = sessions.get(sessionId)
   if (!session || session.compactionStartedAt !== null) return

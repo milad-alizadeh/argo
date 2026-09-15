@@ -5,7 +5,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
-import { markCompactingRows } from '../compaction/compaction-roster'
+import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
@@ -25,15 +25,11 @@ async function completeCompactions(
 ) {
   if (complete === undefined) return
   for (const session of sessions) {
-    if (session.compactionStartedAt === null || session.compactionStartedAt === undefined) continue
+    const startedAt = session.compactionStartedAt
+    if (startedAt === null || startedAt === undefined) continue
     const chain = await readSessionFiles(transcripts, session.id)
-    const completedAt = chain?.files
-      .flatMap((file) => file.records)
-      .filter((record) => record.kind === 'compaction')
-      .flatMap((record) => (record.timestamp === undefined ? [] : [record.timestamp]))
-      .sort()
-      .at(-1)
-    if (completedAt !== undefined) complete(session.id, completedAt)
+    const endedAt = compactionEndedAt(chain, startedAt, Date.now())
+    if (endedAt !== undefined) complete(session.id, endedAt)
   }
 }
 
@@ -44,8 +40,8 @@ export function claudeSessionSource(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
-  // Where the `PreCompact` hook leaves a marker for each compaction it sees start (ADR-0041).
-  compactionMarkers?: string
+  // Where the `PreCompact` hook leaves a file for each compaction it sees start (ADR-0041).
+  compactionStarts?: string
   beginCompaction?: (sessionId: string, startedAt: string) => void
   completeCompaction?: (sessionId: string, completedAt: string) => void
   // Runs once per discovery pass, ahead of the read below: a handoff that has landed publishes
@@ -68,7 +64,7 @@ export function claudeSessionSource(roots: {
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
       const roster = mergeManagedRoster(discovered, managed)
       const rows = await markCompactingRows(roster.rows, {
-        markers: roots.compactionMarkers,
+        folder: roots.compactionStarts,
         readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
         begin: roots.beginCompaction,
       })
@@ -114,7 +110,7 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
-  compactionMarkers?: string
+  compactionStarts?: string
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
