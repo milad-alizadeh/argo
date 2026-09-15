@@ -76,7 +76,7 @@
      reading column, and the Roster widens no further than its maximum. */
   --size-session-roster-max: 460px;
   --size-session-feed-min: 360px;
-  --size-session-column: 896px;
+  --size-session-column: 48rem;
   --size-queue-row: 44px;
   --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);

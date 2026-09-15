@@ -2,9 +2,8 @@ import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 import type { SessionFeedRow } from '../types'
 import type { Settled } from './useSettledFeed'
 
-// New agent text is uncovered top to bottom inside the height ADR-0033 already gave its row, so
-// nothing moves while it plays. The rate is a reading pace, capped so a long block never makes the
-// reader wait.
+// New agent text is uncovered top to bottom while the virtualizer corrects the mounted row's
+// height. The estimate controls only animation timing; layout is always measured from the row.
 const REVEAL_PIXELS_PER_SECOND = 900
 const REVEAL_MIN_MS = 250
 const REVEAL_MAX_MS = 1200
@@ -19,12 +18,7 @@ export type Reveal = { fromPx: number; toPx: number; durationMs: number }
 // What this deck last drew: the geometry it was drawn at, and each row's text, height and the
 // reveal still playing on it, with the time that reveal ends.
 type ShownRow = { text: string; height: number; playing?: { reveal: Reveal; endsAt: number } }
-export type Shown = { geometry: string; rows: Map<string, ShownRow> }
-
-function geometryOf(settled: Settled) {
-  const { width, font, zoom } = settled.reading
-  return JSON.stringify({ width, font, zoom })
-}
+export type Shown = { rows: Map<string, ShownRow> }
 
 function revealsText(row: SessionFeedRow): row is Extract<SessionFeedRow, { shape: 'prose' }> {
   return row.shape === 'prose' && row.role === 'assistant'
@@ -37,6 +31,10 @@ function reveal(fromPx: number, toPx: number): Reveal {
     toPx,
     durationMs: Math.round(Math.min(REVEAL_MAX_MS, Math.max(REVEAL_MIN_MS, durationMs))),
   }
+}
+
+function estimatedTextHeight(text: string) {
+  return Math.max(REVEAL_EDGE_PX, Math.ceil(text.length / 48) * 24)
 }
 
 // A reveal still playing when an unrelated row arrives is handed on unchanged, so it plays to its
@@ -54,14 +52,13 @@ function playing(before: ShownRow | undefined, current: ShownRow, now: number) {
 // The first document a deck draws is history and shows at once, and so is any document drawn at
 // a new width, font or zoom, where every height changed without any text arriving.
 export function nextReveals(previous: Shown | null, settled: Settled, now: number) {
-  const geometry = geometryOf(settled)
-  const shown: Shown = { geometry, rows: new Map() }
+  const shown: Shown = { rows: new Map() }
   const reveals = new Map<string, Reveal>()
   for (const row of settled.rows) {
     if (!revealsText(row)) continue
-    const current: ShownRow = { text: row.text, height: settled.heights.get(row.id) ?? 0 }
+    const current: ShownRow = { text: row.text, height: estimatedTextHeight(row.text) }
     shown.rows.set(row.id, current)
-    if (previous === null || previous.geometry !== geometry) continue
+    if (previous === null) continue
     current.playing = playing(previous.rows.get(row.id), current, now)
     if (current.playing !== undefined) reveals.set(row.id, current.playing.reveal)
   }

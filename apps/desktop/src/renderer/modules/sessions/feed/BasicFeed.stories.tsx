@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed } from '../types'
 
@@ -111,13 +111,10 @@ const richFeed = {
 } satisfies SessionFeed
 
 function drawnRows(canvasElement: HTMLElement) {
-  return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')].filter(
-    (row) => row.closest('.feed__measured') === null,
-  )
+  return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')]
 }
 
-// Each drawn row keeps the height its measured copy was given, after the highlighter and the
-// images have finished (ADR-0035). User prose stays the text it was typed as.
+// Mounted rows retain their natural content height after images and code highlighting finish.
 export const FormattedProse: Story = {
   args: { feed: richFeed, selectedSessionId: 'rich' },
   play: async ({ canvasElement }) => {
@@ -135,15 +132,7 @@ export const FormattedProse: Story = {
     await waitFor(() =>
       expect(within(answer as HTMLElement).getByText('Image unavailable')).toBeVisible(),
     )
-    for (const row of drawnRows(canvasElement)) {
-      const measured = canvasElement.querySelector(
-        `.feed__measured [data-feed-row="${row.dataset.feedRow}"]`,
-      )
-      await expect(Number.parseFloat(row.style.height)).toBe(
-        measured?.getBoundingClientRect().height,
-      )
-      await expect(row.scrollHeight).toBe(row.clientHeight)
-    }
+    for (const row of drawnRows(canvasElement)) await expect(row.style.height).toBe('')
   },
 }
 
@@ -319,8 +308,8 @@ function drawnRow(canvasElement: HTMLElement, id: string) {
   return drawnRows(canvasElement).find((row) => row.dataset.feedRow === id)
 }
 
-// History shows at once; a reply that arrives while the Feed is open is uncovered inside the
-// height it was measured at, and ends with no mask left on the row.
+// History shows at once; a reply that arrives while the Feed is open is uncovered, then its mask
+// is removed.
 export const StreamingReply: Story = {
   render: () => <StreamingFeed />,
   play: async ({ canvasElement }) => {
@@ -336,14 +325,173 @@ export const StreamingReply: Story = {
     await expect(reply).toHaveAttribute('data-revealing', 'true')
     await expect(reply.getAnimations()).toHaveLength(1)
     await expect(drawnRow(canvasElement, 'streaming-first')).not.toHaveAttribute('data-revealing')
-    const measured = canvasElement.querySelector(
-      '.feed__measured [data-feed-row="streaming-second"]',
-    )
-    await expect(Number.parseFloat(reply.style.height)).toBe(
-      measured?.getBoundingClientRect().height,
-    )
     await waitFor(() => expect(reply.getAnimations()).toHaveLength(0), { timeout: 3000 })
     await expect(getComputedStyle(reply).maskImage).toBe('none')
+  },
+}
+
+const historyRows = Array.from({ length: 36 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `history-${index}`,
+  role: 'assistant' as const,
+  text: `History row ${index + 1}: the reader can inspect this earlier part of the Session.`,
+}))
+const largeHistoryRows = Array.from({ length: 480 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `large-history-${index}`,
+  role: 'assistant' as const,
+  text: `Large history row ${index + 1}: only visible and overscanned rows may mount.`,
+}))
+const historyFeed = {
+  ...feed,
+  chainId: 'history',
+  revision: 'history-one',
+  sessionId: 'history',
+  rows: historyRows,
+} satisfies SessionFeed
+const largeHistoryFeed = {
+  ...historyFeed,
+  chainId: 'large-history',
+  revision: 'large-history-one',
+  sessionId: 'large-history',
+  rows: largeHistoryRows,
+} satisfies SessionFeed
+
+// Opening a long Session must not create a second document or mount every transcript row.
+export const LargeTranscriptVirtualizesMountedRows: Story = {
+  args: { feed: largeHistoryFeed, selectedSessionId: 'large-history' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByLabelText('Session history')
+    await waitFor(() =>
+      expect(drawnRows(canvasElement).length).toBeLessThan(largeHistoryRows.length),
+    )
+    await expect(canvasElement.querySelector('.feed__measured')).toBeNull()
+  },
+}
+const updatedHistoryFeed = {
+  ...historyFeed,
+  revision: 'history-two',
+  rows: [
+    ...historyRows,
+    {
+      shape: 'prose' as const,
+      id: 'history-streamed',
+      role: 'assistant' as const,
+      text: 'A streamed reply arrived while the reader was inspecting history.',
+    },
+  ],
+} satisfies SessionFeed
+const prependedHistoryFeed = {
+  ...historyFeed,
+  revision: 'history-with-earlier-page',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'history-earlier',
+      role: 'assistant' as const,
+      text: 'Earlier Session history arrived.',
+    },
+    ...historyRows,
+  ],
+} satisfies SessionFeed
+
+function HistoryScrollHarness() {
+  const [current, setCurrent] = useState<SessionFeed>(historyFeed)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(updatedHistoryFeed)}>
+        Receive streamed reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          isRunning={false}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+          selectedSessionId="history"
+        />
+      </div>
+    </div>
+  )
+}
+
+function HistoryPrependHarness() {
+  const [current, setCurrent] = useState<SessionFeed>(historyFeed)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(prependedHistoryFeed)}>
+        Load earlier history
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          isRunning={false}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId="history"
+        />
+      </div>
+    </div>
+  )
+}
+
+// TanStack keeps an earlier reading position when a reply arrives, then its own scrollToEnd
+// action renders the new tail. This covers the one Feed viewport controller's contract.
+export const HistoryDoesNotFollowStreamingReply: Story = {
+  render: () => <HistoryScrollHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    await expect(drawnRows(canvasElement).length).toBeLessThan(historyRows.length)
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await canvas.findByRole('button', { name: 'Jump to latest' })
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
+    await expect(drawnRow(canvasElement, 'history-streamed')).toBeUndefined()
+    const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
+    await userEvent.click(latest)
+    await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
+    await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+  },
+}
+
+export const HistoryFollowsStreamingReplyAtLatest: Story = {
+  render: () => <HistoryScrollHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByLabelText('Session history')
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
+    await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+  },
+}
+
+export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
+  render: () => <HistoryPrependHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    history.scrollTop = history.scrollHeight / 2
+    fireEvent.scroll(history)
+    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBeDefined())
+    const anchoredRow = drawnRow(canvasElement, 'history-18')
+    await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBe(anchoredRow))
   },
 }
 

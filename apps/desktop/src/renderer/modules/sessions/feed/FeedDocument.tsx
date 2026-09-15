@@ -2,7 +2,6 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow, useToolGroups } from './drawn-row'
-import { FeedRow } from './FeedRow'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
@@ -55,28 +54,6 @@ function handoffMarker(
   return null
 }
 
-// The hidden measuring pass draws every row with no interaction wired up: it only needs to match
-// the drawn layout's geometry, never to answer a click.
-function measuredRows(
-  feed: SessionFeed,
-  groups: Pick<ReturnType<typeof useToolGroups>, 'openToolGroups' | 'onOpenToolGroup'>,
-  props: Pick<FeedDocumentProps, 'activeEvidenceId' | 'onOpenEvidence'>,
-) {
-  return feed.rows.map((row) => (
-    <FeedRow
-      key={row.id}
-      activeEvidenceId={props.activeEvidenceId}
-      onOpenEvidence={props.onOpenEvidence}
-      onOpenToolGroup={groups.onOpenToolGroup}
-      openToolGroups={groups.openToolGroups}
-      onAnswerQuestion={() => {}}
-      answeringQuestionId={null}
-      questionFailure={() => null}
-      row={row}
-    />
-  ))
-}
-
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -100,7 +77,7 @@ export function FeedDocument({
 }: FeedDocumentProps) {
   const { onOpenToolGroup, openToolGroups } = useToolGroups()
   const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
-  const { column, measured, settled, stalled, retry } = useSettledFeed({
+  const { column, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
     revision: layoutRevision,
@@ -133,19 +110,10 @@ export function FeedDocument({
     <div
       className="feed__document"
       data-active={active}
-      data-measure-ms={settled?.measuredMs}
       data-revision={settled?.reading.revision}
-      data-settle-ms={settled?.settledMs}
       inert={!active}
     >
       <div className="feed__column" ref={column}>
-        <div aria-hidden="true" className="feed__measured" ref={measured}>
-          {measuredRows(
-            feed,
-            { openToolGroups, onOpenToolGroup },
-            { activeEvidenceId, onOpenEvidence },
-          )}
-        </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
         {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}

@@ -309,6 +309,28 @@ function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
   )
 }
 
+function expectSharedReadingColumn(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+  const composer = canvas.getByLabelText('Session composer')
+  const feedColumn = history.querySelector<HTMLElement>('.feed__content')
+  const composerColumn = composer.querySelector<HTMLElement>('form')
+  if (feedColumn === null || composerColumn === null)
+    throw new Error('The shared reading column is absent.')
+  const maximum = 48 * Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+  expect(feedColumn.getBoundingClientRect().width).toBeLessThanOrEqual(maximum)
+  expect(
+    Math.abs(
+      composerColumn.getBoundingClientRect().width - feedColumn.getBoundingClientRect().width,
+    ),
+  ).toBeLessThanOrEqual(2)
+  expect(feedColumn.getBoundingClientRect().left).toBeCloseTo(
+    history.getBoundingClientRect().left +
+      (history.getBoundingClientRect().width - feedColumn.getBoundingClientRect().width) / 2,
+    1,
+  )
+}
+
 async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
@@ -320,6 +342,16 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   )
   await userEvent.click(opener)
   await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
+}
+
+async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+  await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
+  const shellInspector = canvas.getByRole('region', { name: 'Background Shell' })
+  await expect(shellInspector).toBeVisible()
+  await expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible()
 }
 
 const meta: Meta<typeof SessionScreenView> = {
@@ -384,11 +416,20 @@ export const Open: Story = {
     await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
+    )
     await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
     await expect(inspector).toBeVisible()
     expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
+    const subagentMessage = within(inspector)
+      .getAllByText('Use the approved prototype to review the Session composer in context.')
+      .find((message) => message.getBoundingClientRect().height > 0)
+    if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
+    await expect(subagentMessage).toBeVisible()
+
+    await expectShellReopensWithOutput(canvasElement)
   },
 }
 
@@ -403,6 +444,20 @@ export const ComposerStaysFixed: Story = {
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
     expectContextBarInset(canvasElement)
+  },
+}
+
+export const WideSharedReadingColumn: Story = {
+  parameters: { viewport: { defaultViewport: 'desktop' } },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectSharedReadingColumn(canvasElement)
   },
 }
 
