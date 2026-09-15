@@ -1,5 +1,5 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 import type { Reveal } from './reveal'
@@ -7,7 +7,7 @@ import { useFeedTailFollow } from './use-feed-tail-follow'
 import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
 import { useJumpToLatest } from './use-jump-to-latest'
-import { feedContentHeight, promptHoldsRoom, usePromptAtTop } from './use-prompt-at-top'
+import { feedContentHeight, usePromptAtTop, usePromptHold } from './use-prompt-at-top'
 import type { Settled } from './use-settled-feed'
 
 type FeedRowComponent = (props: {
@@ -51,8 +51,7 @@ export function AnchoredFeed({
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
-  const [holdingPrompt, setHoldingPrompt] = useState(false)
-  const following = tailFollow.shouldFollow && !holdingPrompt
+  const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
   const virtualizer = useVirtualizer({
     // End anchoring is only correct while the reader is following the tail.
     // While they are reading history, retain their actual reading position as
@@ -87,8 +86,7 @@ export function AnchoredFeed({
     sessionId: settled.reading.sessionId,
     virtualizer,
   })
-  const holds = promptHoldsRoom(virtualizer, promptIndex, padding.start)
-  if (holds !== holdingPrompt) setHoldingPrompt(holds)
+  updatePromptHold(virtualizer, promptIndex, padding.start)
   const reveals = revealsFor(settled)
   useJumpToLatest({
     active,

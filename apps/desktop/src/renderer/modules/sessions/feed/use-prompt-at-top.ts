@@ -46,10 +46,18 @@ export function usePromptAtTop({
   return index === -1 ? null : index
 }
 
-// True while the reply is shorter than the room below the prompt. TanStack's end anchor follows the
-// virtual total, which the room pads past, so a reply row measuring short would scroll the prompt down.
-export function promptHoldsRoom(virtualizer: Virtualizer, promptIndex: number | null, gap: number) {
-  return feedContentHeight(virtualizer, promptIndex, gap) > virtualizer.getTotalSize()
+// The Feed stops following the tail while a reply is shorter than the room below its prompt.
+// TanStack's end anchor follows the virtual total, which the room pads past, so a reply row
+// measuring short of its estimate would scroll the prompt down.
+export function usePromptHold(shouldFollow: boolean) {
+  const [holding, setHolding] = useState(false)
+  return {
+    following: shouldFollow && !holding,
+    update(virtualizer: Virtualizer, promptIndex: number | null, gap: number) {
+      const holds = feedContentHeight(virtualizer, promptIndex, gap) > virtualizer.getTotalSize()
+      if (holds !== holding) setHolding(holds)
+    },
+  }
 }
 
 // Tall enough to scroll the pinned prompt to the top even while the reply is shorter than the
