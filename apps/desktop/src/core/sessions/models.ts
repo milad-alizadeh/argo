@@ -117,6 +117,7 @@ export type ShellState = z.infer<typeof shellStateSchema>
 export const sessionShellCommandSchema = z.strictObject({
   id: identifierSchema,
   command: z.string().nullable(),
+  label: z.string().nullable(),
   background: z.boolean(),
   state: shellStateSchema,
   startedAt: z.string().nullable(),
