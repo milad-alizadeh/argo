@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { parseCodexTranscriptLine } from '../sessions/records'
+import { assertMessageBlocks, assertUserMessage } from './assert-user-message'
 
 test('reads a current user prompt written as an input_text block', () => {
   const record = parseCodexTranscriptLine(
@@ -15,16 +16,10 @@ test('reads a current user prompt written as an input_text block', () => {
       },
     }),
   )
-  assert.equal(record?.kind, 'message')
-  if (record?.kind !== 'message') return
-  assert.deepEqual(
-    { uuid: record.uuid, role: record.role, blocks: record.blocks },
-    {
-      uuid: 'msg_user_1',
-      role: 'user',
-      blocks: [{ shape: 'prose', text: 'Repair the Roster.' }],
-    },
-  )
+  assertUserMessage(record, {
+    uuid: 'msg_user_1',
+    blocks: [{ shape: 'prose', text: 'Repair the Roster.' }],
+  })
 })
 
 test('renders a transcript-delta update compact, with the protocol text kept for diagnostics', () => {
@@ -40,9 +35,7 @@ test('renders a transcript-delta update compact, with the protocol text kept for
       },
     }),
   )
-  assert.equal(record?.kind, 'message')
-  if (record?.kind !== 'message') return
-  assert.deepEqual(record.blocks, [
+  assertMessageBlocks(record, [
     {
       shape: 'event',
       event: 'transcript',
@@ -65,9 +58,7 @@ test('renders a status update compact, with the protocol text kept for diagnosti
       },
     }),
   )
-  assert.equal(record?.kind, 'message')
-  if (record?.kind !== 'message') return
-  assert.deepEqual(record.blocks, [
+  assertMessageBlocks(record, [
     { shape: 'event', event: 'status', text: 'running', raw: '<status>running</status>' },
   ])
 })
@@ -85,9 +76,7 @@ test('keeps unenveloped developer text out of the prompt, since only the user sp
       },
     }),
   )
-  assert.equal(record?.kind, 'message')
-  if (record?.kind !== 'message') return
-  assert.deepEqual(record.blocks, [
+  assertMessageBlocks(record, [
     { shape: 'source', label: 'developer', source: 'Some harness-authored instruction.' },
   ])
 })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { parseCodexTranscriptLine } from '../sessions/records'
+import { assertUserMessage } from './assert-user-message'
 
 test('keeps malformed Codex evidence visible as unreadable', () => {
   assert.deepEqual(parseCodexTranscriptLine('{'), { kind: 'unreadable', line: '{' })
@@ -63,16 +64,10 @@ test('reads the prompt the person wrote, keyed by when it was written', () => {
       payload: { type: 'user_message', message: 'Write about ducks.', images: [] },
     }),
   )
-  assert.equal(record?.kind, 'message')
-  if (record?.kind !== 'message') return
-  assert.deepEqual(
-    { uuid: record.uuid, role: record.role, blocks: record.blocks },
-    {
-      uuid: 'user:2026-09-13T14:51:47.308Z',
-      role: 'user',
-      blocks: [{ shape: 'prose', text: 'Write about ducks.' }],
-    },
-  )
+  assertUserMessage(record, {
+    uuid: 'user:2026-09-13T14:51:47.308Z',
+    blocks: [{ shape: 'prose', text: 'Write about ducks.' }],
+  })
 })
 
 test('does not invent a message when Codex omits its identity', () => {
