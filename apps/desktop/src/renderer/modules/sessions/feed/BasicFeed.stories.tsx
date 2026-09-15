@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed } from '../types'
@@ -601,6 +601,21 @@ export const HistoryFollowsStreamingReplyAtLatest: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
     await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
     await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+  },
+}
+
+export const FreshSessionLandsAtEndUnderStrictMode: Story = {
+  render: () => (
+    <StrictMode>
+      <HistoryScrollHarness />
+    </StrictMode>
+  ),
+  play: async ({ canvasElement }) => {
+    const history = await within(canvasElement).findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    await waitFor(() =>
+      expect(history.scrollTop).toBeCloseTo(history.scrollHeight - history.clientHeight, 1),
+    )
   },
 }
 
