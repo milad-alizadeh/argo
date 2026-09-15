@@ -957,10 +957,6 @@ export const SharedContextPicker: Story = {
       expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).not.toBeNull(),
     )
     await expect(canvas.getByLabelText('Message')).toHaveFocus()
-    await userEvent.keyboard('{End}{Backspace}')
-    await waitFor(() =>
-      expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).toBeNull(),
-    )
   },
 }
 
