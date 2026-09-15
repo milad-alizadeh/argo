@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -7,26 +7,25 @@ import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
+import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
   row: SessionFeedRow
   reveal?: Reveal
   activeEvidenceId: string | null
-  openToolGroups: ReadonlySet<string>
-  onOpenToolGroup: (id: string, open: boolean) => void
+  toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
 }
 
-export function FeedRow({
+export const FeedRow = memo(function FeedRow({
   row,
   reveal,
   activeEvidenceId,
   onOpenEvidence,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
@@ -44,8 +43,7 @@ export function FeedRow({
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
-        onOpenToolGroup={onOpenToolGroup}
-        openToolGroups={openToolGroups}
+        toolGroups={toolGroups}
         onAnswerQuestion={onAnswerQuestion}
         answeringQuestionId={answeringQuestionId}
         questionFailure={questionFailure}
@@ -53,14 +51,13 @@ export function FeedRow({
       />
     </article>
   )
-}
+})
 
 function FeedRowContent({
   row,
   onOpenEvidence,
   activeEvidenceId,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
@@ -77,8 +74,7 @@ function FeedRowContent({
           group={row}
           activeEvidenceId={activeEvidenceId}
           onOpen={onOpenEvidence}
-          onOpenChange={(open) => onOpenToolGroup(row.id, open)}
-          open={openToolGroups.has(row.id)}
+          toolGroups={toolGroups}
         />
       )
     case 'prose':

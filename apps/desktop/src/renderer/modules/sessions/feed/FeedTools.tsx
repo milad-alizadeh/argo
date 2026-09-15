@@ -31,6 +31,7 @@ import type { SessionFeedRow } from '../types'
 import { CodeLanguageIcon } from './content/CodeLanguageIcon'
 import { codeLanguageLabel, detectCodeLanguage } from './content/codeLanguage'
 import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
+import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
@@ -154,16 +155,15 @@ function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
 export function FeedToolGroup({
   group,
   activeEvidenceId,
-  open,
   onOpen,
-  onOpenChange,
+  toolGroups,
 }: {
   group: Extract<SessionFeedRow, { shape: 'tool-group' }>
   activeEvidenceId: string | null
-  open: boolean
   onOpen: (row: ToolRow) => void
-  onOpenChange: (open: boolean) => void
+  toolGroups: ToolGroupState
 }) {
+  const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   // A code block already draws its own border, which would clash with the connecting line; a
   // group of evidence-panel rows alone keeps the line, matching every collapsible outside a group.
   const hasInlineCall = group.calls.some((call) => TOOL_CONTENT_ROUTE[call.kind] === 'inline')

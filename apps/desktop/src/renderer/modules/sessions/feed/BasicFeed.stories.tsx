@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import type { SessionError, SessionFeed } from '../types'
+import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
 
 import { BasicFeed } from './BasicFeed'
 import { RICH_MARKDOWN } from './content/feedSamples'
@@ -303,6 +303,7 @@ export const GroupedToolCalls: Story = {
     await waitFor(() => expect(commandText).toBeVisible())
     const panel = commandText.closest('[data-slot="collapsible-content"]')
     await expect(panel).toHaveClass('transition-[height,opacity,transform]')
+    await expect(panel).toHaveClass('motion-reduce:transition-none')
     await expect(Math.abs(group.getBoundingClientRect().top - groupTop)).toBeLessThan(1)
     await expect(call).toHaveClass('type-body')
     await userEvent.click(group)
@@ -465,6 +466,25 @@ const historyFeed = {
   sessionId: 'history',
   rows: historyRows,
 } satisfies SessionFeed
+
+const disclosureGroup = toolFeed.rows[0]
+if (disclosureGroup === undefined) throw new RangeError('Tool Feed needs a disclosure row.')
+const disclosureHistoryRows: SessionFeedRow[] = Array.from({ length: 42 }, (_unused, index) => {
+  if (index === 9) return { ...disclosureGroup, id: 'history-disclosure' }
+  return {
+    shape: 'prose' as const,
+    id: `history-disclosure-${index}`,
+    role: 'assistant' as const,
+    text: `History row ${index + 1}: preserves the reader's place during disclosure motion.`,
+  }
+})
+const disclosureHistoryFeed = {
+  ...historyFeed,
+  chainId: 'history-disclosure',
+  revision: 'history-disclosure-one',
+  sessionId: 'history-disclosure',
+  rows: disclosureHistoryRows,
+} satisfies SessionFeed
 const largeHistoryFeed = {
   ...historyFeed,
   chainId: 'large-history',
@@ -569,6 +589,28 @@ function HistoryPrependHarness() {
   )
 }
 
+function DisclosureHistoryHarness() {
+  return (
+    <div className="flex h-dvh flex-col">
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={disclosureHistoryFeed}
+          isRunning={false}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId="history-disclosure"
+        />
+      </div>
+    </div>
+  )
+}
+
 // TanStack keeps an earlier reading position when a reply arrives, then its own scrollToEnd
 // action renders the new tail. This covers the one Feed viewport controller's contract.
 export const HistoryDoesNotFollowStreamingReply: Story = {
@@ -583,7 +625,7 @@ export const HistoryDoesNotFollowStreamingReply: Story = {
     await canvas.findByRole('button', { name: 'Jump to latest' })
 
     const scrollHeight = history.scrollHeight
-    await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
+    fireEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
     await expect(history.scrollTop).toBe(0)
     const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
@@ -630,6 +672,44 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     const anchoredRow = drawnRow(canvasElement, 'history-18')
     await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
     await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBe(anchoredRow))
+  },
+}
+
+export const DisclosureKeepsReaderAnchorDuringMotion: Story = {
+  render: () => <DisclosureHistoryHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    history.scrollTop = history.scrollHeight * 0.6
+    fireEvent.scroll(history)
+    const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
+    const anchor = await waitFor(() => {
+      const row = drawnRow(canvasElement, 'history-disclosure-18')
+      expect(row).toBeDefined()
+      return row as HTMLElement
+    })
+    const anchorTop = anchor.getBoundingClientRect().top
+
+    fireEvent.click(group)
+    await waitFor(() => expect(group).toHaveAttribute('aria-expanded', 'true'))
+    const panelId = group.getAttribute('aria-controls')
+    if (panelId === null) throw new TypeError('Disclosure trigger needs a controlled panel.')
+    const panel = canvasElement.ownerDocument.getElementById(panelId)
+    if (!(panel instanceof HTMLElement)) throw new TypeError('Disclosure panel needs an element.')
+    await waitFor(() => expect(panel.scrollHeight).toBeGreaterThan(0))
+    await waitFor(() => expect(panel.getAnimations().length).toBeGreaterThan(0))
+    await waitFor(() => expect(panel.getAnimations()).toHaveLength(0))
+    await waitFor(() =>
+      expect(Math.abs(anchor.getBoundingClientRect().top - anchorTop)).toBeLessThan(1),
+    )
+
+    fireEvent.click(group)
+    await waitFor(() => expect(group).toHaveAttribute('aria-expanded', 'false'))
+    await waitFor(() => expect(panel.getAnimations().length).toBeGreaterThan(0))
+    await waitFor(() => expect(panel.getAnimations()).toHaveLength(0))
+    await waitFor(() =>
+      expect(Math.abs(anchor.getBoundingClientRect().top - anchorTop)).toBeLessThan(1),
+    )
   },
 }
 
