@@ -22,7 +22,6 @@
     "dev": "turbo run dev",
     "desktop:status": "bun run --cwd apps/desktop dev:status",
     "desktop:stop": "bun run --cwd apps/desktop dev:stop",
-    "desktop:profile": "bun run --cwd apps/desktop profile",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",

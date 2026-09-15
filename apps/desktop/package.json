@@ -27,7 +27,6 @@
     "test:packaged-tickets": "bun run build:fake-drivers && node scripts/ticket-fake-driver/prove-tickets.mjs",
     "test:live-claude-display": "bun build src/agents/claude/session-fake-driver/prove-message-display.ts --target=node --format=esm --packages=external --outfile=scripts/claude-session-fake-driver/prove-message-display.mjs && node scripts/claude-session-fake-driver/prove-message-display.mjs",
     "capture:cockpit": "bun run build:fake-drivers && node scripts/project-fake-driver/capture-cockpit.mjs",
-    "profile": "bun build src/development/profile/profile.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/profile/profile.mjs && node scripts/profile/profile.mjs",
     "measure:cockpit": "bun run build:fake-drivers && node scripts/project-fake-driver/measure-cockpit.mjs",
     "desktop:manifest": "node scripts/desktop-manifest.mjs",
     "desktop:verdict": "node scripts/write-release-verdict.mjs",

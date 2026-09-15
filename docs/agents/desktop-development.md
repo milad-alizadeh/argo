@@ -13,8 +13,8 @@ bun run desktop:status
 ```
 
 The JSON record names the exact window title, port, loopback debugging port, Electron process ID,
-launcher process ID, state directory, and ready file. Use its `title` field when you locate the native window. Do not
-select a window with only the generic Argo name.
+launcher process ID, state directory, and ready file. Use its `title` field when you locate the
+native window. Do not select a window with only the generic Argo name.
 
 To stop only this worktree's run, use:
 
