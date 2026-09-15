@@ -5,7 +5,7 @@ import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/tes
 import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
 import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
 import { BasicFeed } from './basic-feed'
-import { RICH_MARKDOWN } from './content/feed-samples'
+import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from './content/feed-samples'
 import { FeedJumpToLatest } from './feed-jump-to-latest'
 
 const feed = {
@@ -384,6 +384,112 @@ export const PromptWithSkillMentionAndLink: Story = {
     await expect(
       canvas.getByRole('link', { name: 'https://github.com/milad-alizadeh/argo/issues/1944' }),
     ).toBeVisible()
+  },
+}
+
+const promptImagesFeed = {
+  ...feed,
+  sessionId: 'prompt-images',
+  chainId: 'prompt-images',
+  revision: 'prompt-images-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-words',
+      role: 'user' as const,
+      text: 'I asked to remove the indentation.',
+      images: [SAMPLE_PICTURE, BROKEN_PICTURE],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-reply',
+      role: 'assistant' as const,
+      text: 'Looking.',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-alone',
+      role: 'user' as const,
+      text: '',
+      images: [SAMPLE_PICTURE],
+    },
+  ],
+} satisfies SessionFeed
+
+// A prompt's images are thumbnails inside its bubble, above its words, and each opens full size.
+export const PromptWithImages: Story = {
+  args: { feed: promptImagesFeed, selectedSessionId: 'prompt-images' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(3))
+    const [prompt, , imagesAlone] = drawnRows(canvasElement)
+    const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
+    if (!bubble) throw new Error('expected the prompt to draw a bubble')
+    const thumbnail = within(bubble).getByRole('button', { name: 'Open attached image 1' })
+    await waitFor(() => expect(thumbnail).toHaveAttribute('data-state', 'loaded'))
+    const side = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--size-feed-attachment-preview'),
+    )
+    await expect(thumbnail.getBoundingClientRect().width).toBe(side)
+    await expect(thumbnail.getBoundingClientRect().height).toBe(side)
+    const missing = await within(bubble).findByRole('figure')
+    await expect(within(missing).getByText('Image unavailable')).toBeInTheDocument()
+    await expect(within(missing).getByText('Attached image 2')).toBeInTheDocument()
+    const words = within(bubble).getByText('I asked to remove the indentation.')
+    await expect(thumbnail.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      words.getBoundingClientRect().top,
+    )
+    await expect(imagesAlone?.querySelector('[data-slot="bubble"] p')).toBeNull()
+    await userEvent.click(thumbnail)
+    const dialog = await within(document.body).findByRole('dialog')
+    await expect(within(dialog).getByRole('img', { name: 'Attached image 1' })).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
+    // Drawn inside, the ring would sit on the picture, where a pale screenshot hides it.
+    await waitFor(() => expect(thumbnail.matches(':focus-visible')).toBe(true))
+    await expect(Number.parseFloat(getComputedStyle(thumbnail).outlineOffset)).toBeGreaterThan(0)
+  },
+}
+
+const promptFilesFeed = {
+  ...feed,
+  sessionId: 'prompt-files',
+  chainId: 'prompt-files',
+  revision: 'prompt-files-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'prompt-files-words',
+      role: 'user' as const,
+      text: 'Merge these two plans.',
+      files: ['/Users/x/notes.md', '/Users/x/plan.v2.md'],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-files-alone',
+      role: 'user' as const,
+      text: '',
+      files: ['/Users/x/report.pdf'],
+    },
+  ],
+} satisfies SessionFeed
+
+// A prompt's other files are chips inside its bubble, as the composer showed them before Send.
+export const PromptWithFiles: Story = {
+  args: { feed: promptFilesFeed, selectedSessionId: 'prompt-files' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+    const [prompt, filesAlone] = drawnRows(canvasElement)
+    const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
+    if (!bubble || !filesAlone) throw new Error('expected both prompts to draw')
+    const chip = within(bubble).getByText('notes')
+    await expect(within(bubble).getByText('plan.v2')).toBeVisible()
+    await expect(within(bubble).getAllByText('MD file')).toHaveLength(2)
+    const words = within(bubble).getByText('Merge these two plans.')
+    await expect(chip.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      words.getBoundingClientRect().top,
+    )
+    await expect(within(bubble).queryByRole('button')).toBeNull()
+    await expect(within(filesAlone).getByText('PDF file')).toBeVisible()
   },
 }
 
@@ -787,7 +893,7 @@ export const StreamingReply: Story = {
   },
 }
 
-const historyRows = Array.from({ length: 36 }, (_unused, index) => ({
+const historyRows = Array.from({ length: 60 }, (_unused, index) => ({
   shape: 'prose' as const,
   id: `history-${index}`,
   role: 'assistant' as const,
@@ -806,6 +912,7 @@ const historyFeed = {
   sessionId: 'history',
   rows: historyRows,
 } satisfies SessionFeed
+const historyAnchorId = `history-${Math.floor(historyRows.length / 2)}`
 
 const disclosureGroup = toolFeed.rows[0]
 if (disclosureGroup === undefined) throw new RangeError('Tool Feed needs a disclosure row.')
@@ -1086,10 +1193,10 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     const history = await canvas.findByLabelText('Session history')
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
-    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBeDefined())
-    const anchoredRow = drawnRow(canvasElement, 'history-18')
+    await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBeDefined())
+    const anchoredRow = drawnRow(canvasElement, historyAnchorId)
     await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
-    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBe(anchoredRow))
+    await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBe(anchoredRow))
   },
 }
 

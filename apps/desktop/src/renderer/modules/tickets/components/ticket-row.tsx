@@ -132,7 +132,7 @@ export function TicketRow(props: TicketRowProps) {
       ) : null}
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 font-mono text-body text-faint`}
+        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 font-mono type-body text-faint`}
       >
         {ticket.key}
       </span>
@@ -156,7 +156,7 @@ export function TicketRow(props: TicketRowProps) {
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>
-        <span className="order-1 min-w-0 flex-1 line-clamp-2 text-body @[22rem]:line-clamp-none @[22rem]:truncate">
+        <span className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate">
           {ticket.title}
         </span>
         <span className="order-2 mt-[calc((var(--text-body--line-height)-var(--size-icon-meta))_/_2)] self-start @[22rem]:order-3 @[22rem]:mt-0 @[22rem]:self-auto">

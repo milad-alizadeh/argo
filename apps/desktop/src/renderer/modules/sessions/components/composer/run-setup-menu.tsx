@@ -35,7 +35,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         render={
           <InputGroupButton
             variant="ghost"
-            className="max-w-80 min-w-0 type-label font-medium text-foreground"
+            className="max-w-80 min-w-0 type-control text-foreground"
             aria-label={`Choose run setup: ${[harnessLabel, ...facts].join(', ')}`}
           />
         }
@@ -124,7 +124,7 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                 className="sr-only"
               />
               <span className="min-w-0">
-                <span className="block type-heading font-medium">{model.label}</span>
+                <span className="block type-heading">{model.label}</span>
                 {model.detail ? (
                   <span
                     className={`mt-0.5 block type-meta ${active ? 'text-background/65' : 'text-muted-foreground'}`}

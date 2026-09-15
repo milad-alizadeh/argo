@@ -22,7 +22,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
         render={
           <InputGroupButton
             variant="ghost"
-            className="shrink-0 type-label font-medium text-foreground"
+            className="shrink-0 type-control text-foreground"
             aria-label={`Choose permission mode: ${current?.label}`}
           />
         }
@@ -33,7 +33,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">
+          <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">
             {choices.label} permissions
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
@@ -49,7 +49,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
               >
                 <mode.icon className="mt-0.5 size-3.5" />
                 <span className="grid gap-0.5">
-                  <span className="type-heading font-medium">{mode.label}</span>
+                  <span className="type-heading">{mode.label}</span>
                   <span className="type-meta text-muted-foreground">{mode.detail}</span>
                 </span>
               </DropdownMenuRadioItem>

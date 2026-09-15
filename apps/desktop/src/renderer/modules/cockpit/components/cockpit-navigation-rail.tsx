@@ -51,7 +51,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               type="button"
               aria-current={active ? 'page' : undefined}
               aria-label={label}
-              className="group flex flex-col items-center gap-1 type-label"
+              className="group flex flex-col items-center gap-1 type-control"
               onClick={() => {
                 window.location.hash = DESTINATION_PATHS[itemDestination]
               }}
@@ -82,7 +82,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         <button
           type="button"
           aria-label={settingsLabel}
-          className="group flex flex-col items-center gap-1 type-label"
+          className="group flex flex-col items-center gap-1 type-control"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Settings />

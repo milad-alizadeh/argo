@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCodexTranscriptLine, withoutModelInputCopies } from '../sessions/records'
+import { withoutModelInputCopies } from '../sessions/model-input-copies'
+import { parseCodexTranscriptLine } from '../sessions/records'
 import { assertMessageBlocks, assertUserMessage } from './assert-user-message'
 
 test('reads a current user prompt written as an input_text block', () => {
@@ -63,41 +64,43 @@ test('renders a status update compact, with the protocol text kept for diagnosti
   ])
 })
 
-test('keeps unenveloped developer text out of the prompt, since only the user speaks', () => {
-  const record = parseCodexTranscriptLine(
+function injected(role: string, text: string) {
+  return parseCodexTranscriptLine(
     JSON.stringify({
-      timestamp: '2026-09-13T14:51:47.308Z',
       type: 'response_item',
       payload: {
         type: 'message',
-        id: 'msg_developer_1',
-        role: 'developer',
-        content: [{ type: 'input_text', text: 'Some harness-authored instruction.' }],
+        id: `msg_${role}`,
+        role,
+        content: [{ type: 'input_text', text }],
       },
     }),
   )
-  assertMessageBlocks(record, [
-    { shape: 'source', label: 'developer', source: 'Some harness-authored instruction.' },
-  ])
+}
+
+test('hides developer text, which Codex writes only to instruct the model', () => {
+  const text = 'You are `/root`, the primary agent in a team of agents.'
+  assert.equal(injected('developer', text), null)
 })
 
 test('skips the context Codex injects as user and developer messages', () => {
-  for (const role of ['user', 'developer']) {
-    assert.equal(
-      parseCodexTranscriptLine(
-        JSON.stringify({
-          type: 'response_item',
-          payload: {
-            type: 'message',
-            id: `msg_${role}`,
-            role,
-            content: [{ type: 'input_text', text: '<environment_context>' }],
-          },
-        }),
-      ),
-      null,
-    )
-  }
+  const contexts = [
+    '<environment_context>',
+    '<app-context>\n# Codex desktop context\n</app-context>',
+    '<collaboration_mode># Collaboration Mode: Default</collaboration_mode>',
+    '<multi_agent_mode>\nYou are in multi-agent mode.\n</multi_agent_mode>',
+    '<recommended_plugins>\n- Figma\n</recommended_plugins>',
+    '<codex_internal_context source="goal">\nKeep going.\n</codex_internal_context>',
+    '# AGENTS.md instructions for /Users/x/argo\n\n<INSTRUCTIONS>\n# Argo\n</INSTRUCTIONS>',
+  ]
+  for (const role of ['user', 'developer'])
+    for (const text of contexts) assert.equal(injected(role, text), null, text)
+})
+
+test('keeps a user message that only mentions AGENTS.md', () => {
+  assertMessageBlocks(injected('user', '# AGENTS.md instructions look wrong, fix them'), [
+    { shape: 'prose', text: '# AGENTS.md instructions look wrong, fix them' },
+  ])
 })
 
 test('keeps a prompt input copy only in a thread with no reader copy of its prompts', () => {

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { TurnMarkerEntry, TurnMarkerStage } from '../feed/turn-marker-state'
+import type { TurnMarkerEntry } from '../feed/turn-marker-state'
 
 export type TurnMarkerEntries = Map<string, TurnMarkerEntry>
 
@@ -7,7 +7,7 @@ export type TurnMarkerEntries = Map<string, TurnMarkerEntry>
 export function beginEntry(
   entries: TurnMarkerEntries,
   key: string,
-  entry: { stage: TurnMarkerStage; since: string | null; prompt: string; startedAt: number },
+  entry: TurnMarkerEntry,
 ): TurnMarkerEntries {
   return new Map(entries).set(key, entry)
 }
@@ -40,12 +40,9 @@ export function clearEntry(entries: TurnMarkerEntries, key: string): TurnMarkerE
 export function useTurnMarker() {
   const [entries, setEntries] = useState<TurnMarkerEntries>(() => new Map())
 
-  const begin = useCallback(
-    (key: string, entry: { stage: TurnMarkerStage; since: string | null; prompt: string }) => {
-      setEntries((current) => beginEntry(current, key, { ...entry, startedAt: Date.now() }))
-    },
-    [],
-  )
+  const begin = useCallback((key: string, entry: Omit<TurnMarkerEntry, 'startedAt'>) => {
+    setEntries((current) => beginEntry(current, key, { ...entry, startedAt: Date.now() }))
+  }, [])
   const rekey = useCallback((from: string, to: string) => {
     setEntries((current) => rekeyEntry(current, from, to))
   }, [])
