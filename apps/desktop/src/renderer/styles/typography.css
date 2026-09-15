@@ -14,6 +14,14 @@
     letter-spacing: var(--text-heading-tracking);
   }
 
+  /* A Roster row's title sits at heading size but body weight, so a column of them reads light. */
+  .type-roster-title.type-roster-title {
+    font-size: var(--text-session-heading);
+    line-height: var(--text-session-heading--line-height);
+    font-weight: var(--text-body-weight);
+    letter-spacing: var(--text-heading-tracking);
+  }
+
   /* Session body text follows the root font scale; the existing text-body utility remains fixed. */
   .type-body.type-body {
     font-size: var(--text-session-body);
