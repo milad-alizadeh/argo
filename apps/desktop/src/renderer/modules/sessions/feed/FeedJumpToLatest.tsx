@@ -23,7 +23,7 @@ export function FeedJumpToLatest({
           render={
             <Button
               aria-label={label}
-              className={className}
+              className={`rounded-full ${className ?? ''}`}
               onClick={onClick}
               size="icon"
               type="button"
