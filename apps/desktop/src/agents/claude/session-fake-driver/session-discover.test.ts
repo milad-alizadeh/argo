@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { appendFile, chmod, mkdtemp, rm } from 'node:fs/promises'
+import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
-import { writeArchiveStore } from './session-fixture-files'
+import { fixturePath, replaceInFile, writeArchiveStore } from './session-fixture-files'
 import { fixtureRoot, LATER_TURN } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
@@ -36,6 +36,27 @@ test('discovers Sessions with no Project registration and states what it read', 
     'externalBasic',
     'resumeParent',
   ])
+})
+
+// The CLI records its cwd with symlinks resolved (macOS `/var` is `/private/var`), so a Project
+// registered through a symlinked path still owns the Sessions started in it (#2204).
+test('keeps a Session in a Project registered through a symlinked path', async (context) => {
+  const root = await fixtureRoot(context, ['externalBasic'])
+  const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-project-'))
+  context.after(() => rm(folder, { recursive: true, force: true }))
+  await mkdir(path.join(folder, 'real'))
+  await symlink(path.join(folder, 'real'), path.join(folder, 'link'))
+  await replaceInFile(
+    fixturePath(root, 'externalBasic'),
+    '/Users/x/proj',
+    await realpath(path.join(folder, 'real')),
+  )
+  const scoped = (projectRoot: string) => listSessions({ ...listing, projectRoot }, root)
+  assert.deepEqual(
+    (await scoped(path.join(folder, 'link'))).sessions.map((session) => session.id),
+    ['externalBasic'],
+  )
+  assert.deepEqual((await scoped(path.join(folder, 'other'))).sessions, [])
 })
 
 // The archive flag is the Claude desktop app's own, read out of that app's store and joined on

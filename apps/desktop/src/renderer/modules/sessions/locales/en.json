@@ -22,6 +22,7 @@
     "retry": "Retry"
   },
   "question": {
+    "needed": "Your input is needed",
     "locked": {
       "title": "This session is open in another app",
       "description": "Close it there to answer from Argo."

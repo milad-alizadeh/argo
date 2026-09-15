@@ -3,10 +3,13 @@
 // same resume-chain. A Session Argo never started resumes the same way: origin does not decide
 // whether Argo can open a channel to a transcript it can read.
 import assert from 'node:assert/strict'
-import { chmod, readFile, utimes, writeFile } from 'node:fs/promises'
+import { chmod, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { fixturePath } from '../../../core/sessions/fake-driver/session-fixture-files'
+import {
+  fixturePath,
+  replaceInFile,
+} from '../../../core/sessions/fake-driver/session-fixture-files'
 import {
   createSessionByClick,
   openSessionByClick,
@@ -115,15 +118,4 @@ async function waitForCompactionFeed(page, sessionId) {
       .allTextContents()
     return rows.some((row) => row.includes('Conversation compacted'))
   }, 60_000)
-}
-
-async function replaceInFile(file, search, replacement) {
-  const before = await readFile(file, 'utf8')
-  await writeFile(file, before.split(search).join(replacement))
-  // The transcript summariser caches a file by path and mtime; a coarse filesystem clock can
-  // leave this write's mtime tied with the read that happened before it, so the resume that
-  // follows would see the stale, pre-patch content. Setting the mtime into the near future rules
-  // that tie out rather than hoping the clock ticked.
-  const future = new Date(Date.now() + 60_000)
-  await utimes(file, future, future)
 }

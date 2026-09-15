@@ -52,6 +52,7 @@ export async function feedStateSnapshot(page) {
         rowCount: viewport?.querySelectorAll('[data-feed-row]').length ?? null,
         session: viewport?.getAttribute('data-session') ?? null,
         scrollHeight: viewport?.scrollHeight ?? null,
+        clientHeight: viewport?.clientHeight ?? null,
         scrollTop: viewport?.scrollTop ?? null,
       }
     })
