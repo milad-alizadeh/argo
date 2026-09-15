@@ -39,13 +39,16 @@ async function proveBulkArchive(page) {
     window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
   )
   assert.ok(archivedPage.sessions.some((session) => session.id === 'harnessNoise'))
-
   const restored = await page.evaluate(() =>
     window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: false }),
   )
   assert.deepEqual(restored.applied, ['harnessNoise'])
   const afterRestore = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.ok(afterRestore.sessions.some((session) => session.id === 'harnessNoise'))
+  // A roster fetch that lands while the Session is archived drops it from the renderer's kept
+  // order, and it returns last; a reload reads the order afresh, as `session-roster-restart` expects.
+  await page.reload()
+  await page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]').waitFor()
 
   // A Session the store has no row for at all fails rather than the write inventing one.
   const unknown = await page.evaluate(() =>
