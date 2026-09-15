@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
-import { createServer } from 'node:net'
+import { createConnection, createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { stopDevelopmentInstance } from './dev-control.mjs'
@@ -53,16 +53,31 @@ describe('desktop development instances', () => {
     }
   })
 
-  test('stops through the instance control socket instead of a recorded process ID', async () => {
+  function request(controlFile, command) {
+    return new Promise((resolve, reject) => {
+      const socket = createConnection(controlFile)
+      socket.once('error', reject)
+      socket.once('connect', () => socket.write(command))
+      socket.once('data', (reply) => {
+        resolve(reply.toString())
+        socket.end()
+      })
+    })
+  }
+
+  test('stops only the Electron process that the live launcher registered', async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-desktop-dev-'))
     const controlFile = path.join(directory, 'control.sock')
     let stopped = false
-    const server = await startControlServer(controlFile, () => {
+    const server = await startControlServer(controlFile, 'proof-token', () => {
       stopped = true
     })
 
     try {
-      await stopDevelopmentInstance(controlFile)
+      expect(await request(controlFile, 'stop 43')).toBe('invalid command')
+      expect(stopped).toBe(false)
+      expect(await request(controlFile, 'ready 43 proof-token')).toBe('ready')
+      await stopDevelopmentInstance(controlFile, 43)
       expect(stopped).toBe(true)
     } finally {
       await new Promise((resolve, reject) =>

@@ -7,6 +7,8 @@ const environment = {
   ARGO_DESKTOP_INSTANCE_DIRECTORY: directory,
   ARGO_DESKTOP_INSTANCE_ID: 'ticket-2173-a1b2c3d4',
   ARGO_DESKTOP_LAUNCHER_PID: '42',
+  ARGO_DESKTOP_CONTROL_FILE: path.join(directory, 'control.sock'),
+  ARGO_DESKTOP_CONTROL_TOKEN: 'control-token',
   ARGO_DESKTOP_DEV_PORT: '45173',
   ARGO_DESKTOP_WINDOW_TITLE: 'Argo dev · ticket-2173 · :45173',
   ARGO_DESKTOP_WORKTREE: path.join(path.sep, 'worktrees', 'ticket-2173'),
@@ -16,6 +18,8 @@ describe('development instances', () => {
   test('keeps the development state inside its instance directory', () => {
     expect(developmentInstance(environment)).toMatchObject({
       directory,
+      controlFile: path.join(directory, 'control.sock'),
+      controlToken: 'control-token',
       port: 45173,
       readyFile: path.join(directory, 'ready.json'),
       userData: path.join(directory, 'user-data'),

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { mkdir, realpath, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import os from 'node:os'
@@ -58,6 +58,13 @@ async function assertPortAvailableOnHost(port, host, identity) {
         reject(portCollisionError(port, identity))
         return
       }
+      // IPv6 can be disabled on a perfectly usable local development host.
+      // Vite will bind its IPv4 loopback address in that case, so this is not a
+      // collision and must not prevent an isolated desktop launch.
+      if (host === '::1' && ['EADDRNOTAVAIL', 'EAFNOSUPPORT'].includes(error.code)) {
+        resolve()
+        return
+      }
       reject(error)
     })
     server.listen(port, host, () => server.close(resolve))
@@ -69,12 +76,30 @@ export async function assertPortAvailable(port, identity) {
   await assertPortAvailableOnHost(port, '::1', identity)
 }
 
-export function startControlServer(controlFile, stop) {
+export function startControlServer(controlFile, controlToken, stop) {
+  let electronProcessId = null
   const server = createServer((socket) => {
-    socket.once('data', (command) => {
-      if (command.toString() !== 'stop') return socket.end('invalid command')
-      stop()
-      socket.end('stopping')
+    socket.once('data', async (command) => {
+      const [verb, processId, token] = command.toString().trim().split(' ')
+      if (verb === 'ready' && token === controlToken && /^\d+$/.test(processId)) {
+        electronProcessId = Number(processId)
+        socket.end('ready')
+        return
+      }
+      if (
+        verb !== 'stop' ||
+        !/^\d+$/.test(processId) ||
+        electronProcessId !== Number(processId)
+      ) {
+        socket.end('invalid command')
+        return
+      }
+      try {
+        await stop(electronProcessId)
+        socket.end('stopped')
+      } catch {
+        socket.end('failed')
+      }
     })
   })
   return new Promise((resolve, reject) => {
@@ -99,6 +124,7 @@ async function main() {
   await rm(instance.controlFile, { force: true })
   await mkdir(instance.directory, { recursive: true })
   runLinker()
+  const controlToken = randomBytes(32).toString('hex')
 
   const child = spawn('electron-forge', ['start'], {
     cwd: DESKTOP_ROOT,
@@ -108,6 +134,8 @@ async function main() {
       ARGO_DESKTOP_INSTANCE_DIRECTORY: instance.directory,
       ARGO_DESKTOP_INSTANCE_ID: instance.id,
       ARGO_DESKTOP_LAUNCHER_PID: String(process.pid),
+      ARGO_DESKTOP_CONTROL_FILE: instance.controlFile,
+      ARGO_DESKTOP_CONTROL_TOKEN: controlToken,
       ARGO_DESKTOP_WINDOW_TITLE: instance.title,
       ARGO_DESKTOP_WORKTREE: instance.worktree,
     },
@@ -115,13 +143,31 @@ async function main() {
   })
 
   let stopping = false
-  const stop = () => {
+  const stop = async (electronProcessId) => {
     stopping = true
+    if (electronProcessId) {
+      try {
+        process.kill(electronProcessId, 'SIGTERM')
+      } catch (error) {
+        if (!error || typeof error !== 'object' || error.code !== 'ESRCH') throw error
+      }
+      const deadline = Date.now() + 5_000
+      while (true) {
+        try {
+          process.kill(electronProcessId, 0)
+        } catch (error) {
+          if (error && typeof error === 'object' && error.code === 'ESRCH') break
+          throw error
+        }
+        if (Date.now() >= deadline) throw new Error('Recorded Electron process did not exit.')
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+    }
     child.kill('SIGTERM')
   }
-  const controlServer = await startControlServer(instance.controlFile, stop)
-  process.once('SIGINT', stop)
-  process.once('SIGTERM', stop)
+  const controlServer = await startControlServer(instance.controlFile, controlToken, stop)
+  process.once('SIGINT', () => void stop())
+  process.once('SIGTERM', () => void stop())
   child.once('exit', (code, signal) => {
     controlServer.close()
     void rm(instance.controlFile, { force: true })

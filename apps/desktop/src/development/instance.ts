@@ -3,11 +3,15 @@ import path from 'node:path'
 const INSTANCE_DIRECTORY_ENV = 'ARGO_DESKTOP_INSTANCE_DIRECTORY'
 const INSTANCE_ID_ENV = 'ARGO_DESKTOP_INSTANCE_ID'
 const LAUNCHER_PID_ENV = 'ARGO_DESKTOP_LAUNCHER_PID'
+const CONTROL_FILE_ENV = 'ARGO_DESKTOP_CONTROL_FILE'
+const CONTROL_TOKEN_ENV = 'ARGO_DESKTOP_CONTROL_TOKEN'
 const PORT_ENV = 'ARGO_DESKTOP_DEV_PORT'
 const WINDOW_TITLE_ENV = 'ARGO_DESKTOP_WINDOW_TITLE'
 const WORKTREE_ENV = 'ARGO_DESKTOP_WORKTREE'
 
 export type DevelopmentInstance = {
+  controlFile: string
+  controlToken: string
   directory: string
   id: string
   launcherPid: number
@@ -43,10 +47,12 @@ export function developmentInstance(
   const directory = environment[INSTANCE_DIRECTORY_ENV]
   const id = environment[INSTANCE_ID_ENV]
   const launcherPid = environment[LAUNCHER_PID_ENV]
+  const controlFile = environment[CONTROL_FILE_ENV]
+  const controlToken = environment[CONTROL_TOKEN_ENV]
   const port = environment[PORT_ENV]
   const title = environment[WINDOW_TITLE_ENV]
   const worktree = environment[WORKTREE_ENV]
-  const values = [directory, id, launcherPid, port, title, worktree]
+  const values = [directory, id, launcherPid, controlFile, controlToken, port, title, worktree]
 
   if (values.every((value) => value === undefined)) return null
 
@@ -58,6 +64,8 @@ export function developmentInstance(
   if (parsedLauncherPid < 1) throw new Error(`${LAUNCHER_PID_ENV} must be positive.`)
 
   return {
+    controlFile: absolute(required(environment, CONTROL_FILE_ENV), CONTROL_FILE_ENV),
+    controlToken: required(environment, CONTROL_TOKEN_ENV),
     directory: absolute(required(environment, INSTANCE_DIRECTORY_ENV), INSTANCE_DIRECTORY_ENV),
     id: required(environment, INSTANCE_ID_ENV),
     launcherPid: parsedLauncherPid,

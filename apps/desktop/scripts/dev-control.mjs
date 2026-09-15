@@ -39,21 +39,17 @@ export function parseReadyRecord(value) {
   }
 }
 
-export function stopDevelopmentInstance(controlFile) {
+export function stopDevelopmentInstance(controlFile, processId) {
   return new Promise((resolve, reject) => {
     const socket = createConnection(controlFile)
     socket.once('error', () => reject(new Error('The development launcher is not running.')))
-    socket.once('connect', () => socket.write('stop'))
+    socket.once('connect', () => socket.write(`stop ${processId}`))
     socket.once('data', (reply) => {
-      if (reply.toString() === 'stopping') resolve()
+      if (reply.toString() === 'stopped') resolve()
       else reject(new Error('The development launcher rejected the stop request.'))
       socket.end()
     })
   })
-}
-
-function wait(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
 export function processIsRunning(processId, kill = process.kill) {
@@ -63,28 +59,6 @@ export function processIsRunning(processId, kill = process.kill) {
   } catch (error) {
     if (error && typeof error === 'object' && error.code === 'ESRCH') return false
     throw error
-  }
-}
-
-/**
- * The ready record is written by Electron's main process, so its processId is
- * the app we promised to control. Forge is only the launcher and can outlive
- * that app briefly; stopping Forge alone used to leave the native window alive.
- */
-export async function stopRecordedElectron(record, options = {}) {
-  const kill = options.kill ?? process.kill
-  const waitFor = options.waitFor ?? wait
-  const pollInterval = options.pollInterval ?? 50
-  const timeout = options.timeout ?? 5_000
-
-  if (!processIsRunning(record.processId, kill)) return
-  kill(record.processId, 'SIGTERM')
-
-  const deadline = Date.now() + timeout
-  while (processIsRunning(record.processId, kill)) {
-    if (Date.now() >= deadline)
-      throw new Error(`Electron process ${record.processId} did not exit after ${timeout}ms.`)
-    await waitFor(pollInterval)
   }
 }
 
@@ -116,11 +90,11 @@ async function main() {
       process.stdout.write(`${JSON.stringify({ ...record, readyFile: instance.readyFile })}\n`)
       return
     case 'stop':
-      // First target the recorded Electron PID. The control socket then tears
-      // down Forge if it is still alive, rather than pretending Forge is the app.
-      await stopRecordedElectron(record)
+      // The launcher registered this exact Electron PID after its BrowserWindow
+      // loaded. It owns the process; a stale ready file cannot make this command
+      // signal an unrelated PID that the operating system has reused.
       try {
-        await stopDevelopmentInstance(instance.controlFile)
+        await stopDevelopmentInstance(instance.controlFile, record.processId)
       } catch (error) {
         // Electron exiting normally makes Forge close the socket itself. That
         // is a successful shutdown, not a reason to report a failed stop.

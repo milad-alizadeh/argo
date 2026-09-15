@@ -1,4 +1,5 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { createConnection } from 'node:net'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
@@ -49,6 +50,18 @@ async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
   if (!DEVELOPMENT_INSTANCE) return
 
   await mkdir(DEVELOPMENT_INSTANCE.directory, { recursive: true })
+  await new Promise<void>((resolve, reject) => {
+    const socket = createConnection(DEVELOPMENT_INSTANCE.controlFile)
+    socket.once('error', reject)
+    socket.once('connect', () =>
+      socket.write(`ready ${process.pid} ${DEVELOPMENT_INSTANCE?.controlToken}`),
+    )
+    socket.once('data', (reply) => {
+      if (reply.toString() === 'ready') resolve()
+      else reject(new Error('Development launcher rejected Electron readiness.'))
+      socket.end()
+    })
+  })
   await writeFile(
     DEVELOPMENT_INSTANCE.readyFile,
     `${JSON.stringify(developmentReadyRecord(DEVELOPMENT_INSTANCE, window.id), null, 2)}\n`,

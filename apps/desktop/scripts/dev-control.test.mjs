@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { parseReadyRecord, processIsRunning, stopRecordedElectron } from './dev-control.mjs'
+import { parseReadyRecord, processIsRunning } from './dev-control.mjs'
 
 const readyRecord = {
   id: 'ticket-2173-a1b2c3d4',
@@ -31,38 +31,4 @@ test('checks the recorded Electron process before controlling it', () => {
       expect(signal).toBe(0)
     }),
   ).toBe(true)
-})
-
-test('stops and awaits the recorded Electron process instead of only Forge', async () => {
-  let running = true
-  const signals = []
-
-  await stopRecordedElectron(readyRecord, {
-    kill: (processId, signal) => {
-      expect(processId).toBe(readyRecord.processId)
-      signals.push(signal)
-      if (signal === 'SIGTERM') running = false
-      else if (!running) {
-        const error = new Error('gone')
-        error.code = 'ESRCH'
-        throw error
-      }
-    },
-    waitFor: async () => {},
-  })
-
-  expect(signals).toEqual([0, 'SIGTERM', 0])
-})
-
-test('does not signal a stale recorded process', async () => {
-  const signals = []
-  await stopRecordedElectron(readyRecord, {
-    kill: (_processId, signal) => {
-      signals.push(signal)
-      const error = new Error('gone')
-      error.code = 'ESRCH'
-      throw error
-    },
-  })
-  expect(signals).toEqual([0])
 })
