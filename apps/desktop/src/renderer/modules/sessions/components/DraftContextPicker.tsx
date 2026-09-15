@@ -25,6 +25,7 @@ export function DraftContextPicker({
       onClose={onClose}
       onSelectTicket={(ticket) => {
         onAddTicket(ticket)
+        onClose()
         const editor = editorRef.current
         editor?.focus()
         editor?.update(() => {
@@ -36,7 +37,6 @@ export function DraftContextPicker({
           reference.insertAfter(trailingSpace)
           reference.selectEnd()
         })
-        onClose()
       }}
     />
   )
