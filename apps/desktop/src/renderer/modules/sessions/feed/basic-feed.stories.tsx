@@ -5,7 +5,7 @@ import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/tes
 import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
 import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
 import { BasicFeed } from './basic-feed'
-import { RICH_MARKDOWN } from './content/feed-samples'
+import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from './content/feed-samples'
 import { FeedJumpToLatest } from './feed-jump-to-latest'
 
 const feed = {
@@ -385,6 +385,72 @@ export const PromptWithSkillMentionAndLink: Story = {
     await expect(
       canvas.getByRole('link', { name: 'https://github.com/milad-alizadeh/argo/issues/1944' }),
     ).toBeVisible()
+  },
+}
+
+const promptImagesFeed = {
+  ...feed,
+  sessionId: 'prompt-images',
+  chainId: 'prompt-images',
+  revision: 'prompt-images-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-words',
+      role: 'user' as const,
+      text: 'I asked to remove the indentation.',
+      images: [SAMPLE_PICTURE, BROKEN_PICTURE],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-reply',
+      role: 'assistant' as const,
+      text: 'Looking.',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-images-alone',
+      role: 'user' as const,
+      text: '',
+      images: [SAMPLE_PICTURE],
+    },
+  ],
+} satisfies SessionFeed
+
+// A prompt's images are thumbnails inside its bubble, above its words, and each opens full size.
+export const PromptWithImages: Story = {
+  args: { feed: promptImagesFeed, selectedSessionId: 'prompt-images' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(3))
+    const [prompt, , imagesAlone] = drawnRows(canvasElement)
+    const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
+    const thumbnail = within(bubble as HTMLElement).getByRole('button', {
+      name: 'Open Attached image 1 in lightbox',
+    })
+    await waitFor(() => expect(thumbnail).toHaveAttribute('data-state', 'loaded'))
+    const side = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--size-feed-attachment-preview'),
+    )
+    await expect(thumbnail.getBoundingClientRect().width).toBe(side)
+    await expect(thumbnail.getBoundingClientRect().height).toBe(side)
+    await waitFor(() =>
+      expect(within(bubble as HTMLElement).getByRole('figure')).toHaveTextContent(
+        'Image unavailableAttached image 2',
+      ),
+    )
+    const words = within(bubble as HTMLElement).getByText('I asked to remove the indentation.')
+    await expect(thumbnail.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      words.getBoundingClientRect().top,
+    )
+    await expect(imagesAlone?.querySelector('[data-slot="bubble"] p')).toBeNull()
+    await userEvent.click(thumbnail)
+    const dialog = await within(document.body).findByRole('dialog')
+    await expect(within(dialog).getByRole('img', { name: 'Attached image 1' })).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
+    // The thumbnail clips its own overflow, so a ring drawn outside it would never be seen.
+    await waitFor(() => expect(thumbnail.matches(':focus-visible')).toBe(true))
+    await expect(Number.parseFloat(getComputedStyle(thumbnail).outlineOffset)).toBeLessThan(0)
   },
 }
 

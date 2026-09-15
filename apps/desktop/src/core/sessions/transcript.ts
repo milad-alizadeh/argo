@@ -8,6 +8,8 @@ export type ContentBlock =
   // diagnostics; absent for a harness event, which has none worth keeping.
   | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }
   | { shape: 'tool'; callId: string }
+  // A `data:` or `file://` URL built by `feed-images.ts`, never a CLI's own string.
+  | { shape: 'image'; url: string }
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }

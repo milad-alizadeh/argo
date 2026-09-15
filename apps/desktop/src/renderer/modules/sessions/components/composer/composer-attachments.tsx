@@ -2,6 +2,7 @@ import { File, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { attachmentKindOf } from '@/core/sessions/attachments-contract'
+import { fileImageUrl } from '@/core/sessions/feed-images'
 import {
   Attachment,
   AttachmentAction,
@@ -21,12 +22,6 @@ function parseFilename(path: string): { title: string; extension: string | null 
   const separator = name.lastIndexOf('.')
   if (separator < 1 || separator === name.length - 1) return { title: name, extension: null }
   return { title: name.slice(0, separator), extension: name.slice(separator + 1) }
-}
-
-// POSIX only: the managed drivers this reads paths from run on macOS today (#1894, #1892 track
-// Linux and Windows separately).
-function fileUrl(path: string): string {
-  return `file://${path.split('/').map(encodeURIComponent).join('/')}`
 }
 
 export type ComposerAttachmentsProps = {
@@ -57,7 +52,7 @@ export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmen
                 <img
                   alt=""
                   className="absolute inset-0 !size-full object-cover"
-                  src={fileUrl(attachment.path)}
+                  src={fileImageUrl(attachment.path) ?? undefined}
                 />
               ) : (
                 <File className="size-6" />

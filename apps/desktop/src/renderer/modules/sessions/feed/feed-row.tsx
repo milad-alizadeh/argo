@@ -118,7 +118,7 @@ function FeedRowContent({
             text={streamingText}
           />
         )
-      return <FeedPrompt onOpenEvidence={onOpenEvidence} text={row.text} />
+      return <FeedPrompt images={row.images} onOpenEvidence={onOpenEvidence} text={row.text} />
     case 'ask':
       return (
         <FeedQuestion

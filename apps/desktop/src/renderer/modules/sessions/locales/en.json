@@ -96,6 +96,16 @@
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
   "promptSender": "You",
+  "promptImage": "Attached image {{number}}",
+  "image": {
+    "fallbackTitle": "Image",
+    "unavailable": "Image unavailable",
+    "open": "Open {{title}} in lightbox",
+    "preview": "Full-size image preview",
+    "download": "Download {{title}}",
+    "close": "Close image preview",
+    "closeBackdrop": "Close image preview backdrop"
+  },
   "streaming": {
     "responding": "Assistant is responding.",
     "complete": "Assistant response complete."

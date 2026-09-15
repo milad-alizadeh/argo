@@ -50,9 +50,23 @@ export function rowsOfRecord(
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  return record.blocks.flatMap((block, index) =>
+  const rows = record.blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
+  return withImages(rows, record)
+}
+
+// A prompt of images alone still gets a bubble, under the first image's own id.
+function withImages(rows: SessionFeedRow[], record: TranscriptMessage): SessionFeedRow[] {
+  const images = record.blocks.flatMap((block) => (block.shape === 'image' ? [block.url] : []))
+  if (images.length === 0 || record.role !== 'user') return rows
+  const prose = rows.findIndex((row) => row.shape === 'prose')
+  if (prose === -1) {
+    const index = record.blocks.findIndex((block) => block.shape === 'image')
+    const id = `${record.uuid}:${index}`
+    return [{ shape: 'prose', id, role: record.role, text: '', images }, ...rows]
+  }
+  return rows.map((row, index) => (index === prose ? { ...row, images } : row))
 }
 
 function rowsOfBlock({
@@ -83,6 +97,11 @@ function rowsOfBlock({
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)
     }
+    // A prompt's image is drawn in its bubble by `withImages`; only prompts draw thumbnails.
+    case 'image':
+      return record.role === 'user'
+        ? []
+        : [{ shape: 'source', id, role: record.role, label: 'image', source: block.url }]
     case 'source':
       return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   }

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
+import { feedImageUrlSchema } from './feed-images'
 import { questionSchema } from './question'
 import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from './transcript'
 
@@ -87,6 +88,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     role: z.enum(['user', 'assistant']),
     text: z.string(),
+    // The images the same message carries, drawn inside its bubble; absent when there are none.
+    images: z.array(feedImageUrlSchema).min(1).optional(),
   }),
   z.strictObject({ shape: z.literal('thought'), id: identifierSchema, text: z.string() }),
   z.strictObject({ shape: z.literal('command-output'), id: identifierSchema, text: z.string() }),

@@ -1,10 +1,20 @@
 import { isRecord } from '@/boundary'
+import { dataImageUrl } from '@/core/sessions/feed-images'
 import type { ContentBlock, ToolCall, ToolResult } from '@/core/sessions/transcript'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
 
 const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
+
+// A pasted image is inline bytes; any other image source keeps the generic source fallback.
+function readImage(value: unknown): ContentBlock | null {
+  if (!isRecord(value) || value.type !== 'image' || !isRecord(value.source)) return null
+  const { type, media_type: mediaType, data } = value.source
+  if (type !== 'base64' || typeof mediaType !== 'string' || typeof data !== 'string') return null
+  const url = dataImageUrl(mediaType, data)
+  return url === null ? null : { shape: 'image', url }
+}
 
 function readBlock(value: unknown): ContentBlock | null {
   if (
@@ -24,6 +34,8 @@ function readBlock(value: unknown): ContentBlock | null {
   if (isRecord(value) && value.type === 'thinking' && typeof value.thinking === 'string') {
     return { shape: 'thought', text: value.thinking }
   }
+  const image = readImage(value)
+  if (image !== null) return image
   const label = isRecord(value) && typeof value.type === 'string' ? value.type : 'unfamiliar'
   return { shape: 'source', label, source: JSON.stringify(value, null, 2) ?? String(value) }
 }

@@ -2,10 +2,13 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
+import { readImage } from './prompt-images'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
-  return value.map((block) => {
+  return value.map((block): ContentBlock => {
+    const image = isRecord(block) ? readImage(block) : null
+    if (image !== null) return image
     if (
       isRecord(block) &&
       typeof block.type === 'string' &&
