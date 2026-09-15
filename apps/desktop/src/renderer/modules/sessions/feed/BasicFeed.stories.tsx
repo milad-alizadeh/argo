@@ -403,6 +403,8 @@ export const GroupedToolCalls: Story = {
     await expect(group).toHaveAttribute('aria-expanded', 'false')
     await expect(canvas.queryByText('command output 1')).toBeNull()
     await userEvent.click(group)
+    // A command inside a group is its own disclosure, closed until the reader opens it.
+    await userEvent.click(await canvas.findByRole('button', { name: 'Ran a command' }))
     const commandText = await canvas.findByText((_content, node) => {
       const isMatch = node?.textContent === 'bun test composer'
       const descendantHasMatch = Array.from(node?.querySelectorAll('*') ?? []).some(

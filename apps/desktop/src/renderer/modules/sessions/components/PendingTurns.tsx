@@ -1,6 +1,6 @@
 import { GripVertical, Route } from 'lucide-react'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
-
+import { useTranslation } from 'react-i18next'
 import { PendingTurnActions } from './PendingTurnActions'
 import { ATTACHMENT_EXIT_MS } from './use-exit-presence'
 import type { PendingTurn } from './usePendingTurns'
@@ -82,12 +82,13 @@ export function PendingTurns({
   onRemove: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
 }) {
+  const { t } = useTranslation('sessions')
   const listRef = useRef<HTMLUListElement>(null)
   const { enteringTurnId, exitingTurnId, removeTurn } = useQueueAnimations(turns, onRemove, listRef)
 
   if (turns.length === 0) return null
   return (
-    <section aria-label="Pending Turns">
+    <section aria-label={t('composer.pendingTurns')}>
       <ul ref={listRef}>
         {turns.map((turn) => (
           <li

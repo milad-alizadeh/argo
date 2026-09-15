@@ -10,7 +10,7 @@ import { formatSkillLabel, type PromptSegment, parsePromptText } from './promptS
 // reads at the same size as the words beside it. Its baseline is the name's, not the icon's
 // bottom edge, so the name sits on the same line as the surrounding text.
 const SKILL_BADGE_CLASS =
-  'items-baseline text-[length:inherit] leading-none [&>svg]:size-[1em]! [&>svg]:self-center'
+  'items-baseline text-[length:inherit] leading-none [&>svg]:size-(--size-icon-text)! [&>svg]:self-center'
 
 export type PromptSkill = { name: string; path: string }
 

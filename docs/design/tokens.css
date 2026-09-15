@@ -41,6 +41,7 @@
   --size-session-roster-max: 460px;
   --size-session-feed-min: 360px;
   --size-session-column: 48rem;
+  --spacing-session-gutter: var(--spacing-shell-gutter);
   --size-queue-row: 44px;
   --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
@@ -179,6 +180,7 @@
   --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
+  --size-icon-text: 1em;
   --size-feed-attachment-preview: 80px;
   --size-feed-gallery: 160px;
   --size-feed-image-frame: 208px;

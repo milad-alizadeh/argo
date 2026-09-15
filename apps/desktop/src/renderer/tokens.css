@@ -240,6 +240,7 @@
   --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
+  --size-icon-text: 1em; /* an icon set in running text, at the size of its words */
   --size-feed-attachment-preview: 80px;
   --size-feed-gallery: 160px;
   --size-feed-image-frame: 208px;
