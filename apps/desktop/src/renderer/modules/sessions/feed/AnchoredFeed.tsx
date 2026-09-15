@@ -1,15 +1,16 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
-import { FeedJumpToLatest } from './FeedJumpToLatest'
 import type { Reveal } from './reveal'
 import { useInitialFeedPosition } from './use-initial-feed-position'
 import type { Settled } from './useSettledFeed'
 
 type FeedRowComponent = (props: { row: SessionFeedRow; reveal?: Reveal }) => ReactNode
 type AnchoredFeedProps = {
+  active: boolean
   FeedRow: FeedRowComponent
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   rows: readonly SessionFeedRow[]
   settled: Settled
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
@@ -25,8 +26,14 @@ const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
-export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFeedProps) {
-  const { t } = useTranslation('sessions')
+export function AnchoredFeed({
+  active,
+  FeedRow,
+  onJumpToLatestChange,
+  rows,
+  settled,
+  revealsFor,
+}: AnchoredFeedProps) {
   const [atLatest, setAtLatest] = useState(true)
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
   const [padding, setPadding] = useState({ start: 0, end: 0 })
@@ -64,6 +71,13 @@ export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFee
     virtualizer,
   })
   const reveals = revealsFor(settled)
+  const jumpToLatest = useCallback(() => {
+    virtualizer.scrollToEnd({ behavior: 'smooth' })
+  }, [virtualizer])
+  useEffect(() => {
+    onJumpToLatestChange(settled.reading.sessionId, active && !atLatest ? jumpToLatest : null)
+    return () => onJumpToLatestChange(settled.reading.sessionId, null)
+  }, [active, atLatest, jumpToLatest, onJumpToLatestChange, settled.reading.sessionId])
 
   return (
     <div className="feed__scroller">
@@ -75,12 +89,6 @@ export function AnchoredFeed({ FeedRow, rows, settled, revealsFor }: AnchoredFee
         settled={settled}
         virtualizer={virtualizer}
       />
-      {atLatest ? null : (
-        <FeedJumpToLatest
-          label={t('jumpToLatest')}
-          onClick={() => virtualizer.scrollToEnd({ behavior: 'smooth' })}
-        />
-      )}
     </div>
   )
 }

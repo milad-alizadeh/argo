@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
@@ -72,6 +72,12 @@ const SESSION_ROSTER = [
 ] satisfies Session[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
+const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `jump-to-latest-${index}`,
+  role: 'assistant' as const,
+  text: `History row ${index + 1} keeps the Jump to latest control visible while the reader is away from the end.`,
+}))
 
 function feedFor(sessionId: string) {
   return {
@@ -167,9 +173,11 @@ function ReviewInspectorBar({
 
 function ReviewScreen({
   initialSessionId = 'composer-review',
+  rows = null,
   showPlan = true,
 }: {
   initialSessionId?: string
+  rows?: SessionFeed['rows'] | null
   showPlan?: boolean
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
@@ -177,7 +185,7 @@ function ReviewScreen({
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
-  const feed = feedFor(selectedSessionId)
+  const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
@@ -259,7 +267,7 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
-function expectComposerFade(canvasElement: HTMLElement) {
+function expectContextBarInset(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const workspace = within(canvasElement).getByLabelText('Session workspace')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
@@ -289,20 +297,23 @@ function expectComposerFade(canvasElement: HTMLElement) {
   expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 
-async function expectComposerRemainsInteractive(canvasElement: HTMLElement, lines = 1) {
+async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
+  const history = await canvas.findByLabelText(SESSION_HISTORY_LABEL)
+  await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+  history.scrollTo({ top: 0 })
+  fireEvent.scroll(history)
+  const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
   const composer = canvas.getByLabelText('Session composer')
-  const message = canvas.getByLabelText('Message')
-  const before = composer.getBoundingClientRect().height
-
-  await userEvent.click(message)
-  await userEvent.type(
-    message,
-    'Check the composer interaction.{Shift>}{Enter}{/Shift}'.repeat(lines),
+  const latestBounds = latest.getBoundingClientRect()
+  const composerBounds = composer.getBoundingClientRect()
+  expect(latestBounds.left + latestBounds.width / 2).toBeCloseTo(
+    composerBounds.left + composerBounds.width / 2,
+    1,
   )
-  await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
-
-  if (lines > 1) expect(composer.getBoundingClientRect().height).toBeGreaterThan(before)
+  expect(latestBounds.bottom).toBeLessThanOrEqual(composerBounds.top)
+  await userEvent.click(latest)
+  await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -464,7 +475,7 @@ export const ComposerStaysFixed: Story = {
       ),
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
-    expectComposerFade(canvasElement)
+    expectContextBarInset(canvasElement)
   },
 }
 
@@ -482,21 +493,8 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const ComposerFadeNormal: Story = {
-  render: () => <ReviewScreen showPlan={false} />,
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    await expectComposerRemainsInteractive(canvasElement)
-    expectComposerFade(canvasElement)
-  },
-}
-
-export const ComposerFadeTall: Story = {
+export const ComposerFadeLight: Story = {
+  globals: { theme: 'light' },
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -505,8 +503,35 @@ export const ComposerFadeTall: Story = {
         'composer-review',
       ),
     )
-    await expectComposerRemainsInteractive(canvasElement, 10)
-    expectComposerFade(canvasElement)
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const ComposerFadeDark: Story = {
+  globals: { theme: 'dark' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const JumpToLatestInExpandedComposerFade: Story = {
+  render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    await expectJumpToLatestInComposerFade(canvasElement)
+  },
+}
+
+export const JumpToLatestInNormalComposerFade: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    await expectJumpToLatestInComposerFade(canvasElement)
   },
 }
 

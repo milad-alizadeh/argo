@@ -55,6 +55,7 @@ export type KeptDocumentShared = {
   facts: LiveFacts
   activeEvidenceId: string | null
   failure: SessionError | null
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
@@ -74,6 +75,7 @@ export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptD
       compactionTokens={selected.compactionTokens}
       handoffStartedAt={selected.handoffStartedAt}
       handoffTo={selected.handoffTo}
+      onJumpToLatestChange={shared.onJumpToLatestChange}
       onOpenSession={shared.onOpenSession}
       feed={withOptimisticRow(document, selected.optimisticRow)}
       key={id}

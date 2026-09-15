@@ -26,12 +26,15 @@ type FeedDocumentProps = {
   compactionTokens: string | null
   handoffStartedAt: string | null
   handoffTo: string | null
+  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
   posture: 'managed' | 'external' | null
   turnMarker: TurnMarkerView | null
 } & FeedQuestionHandlers
+
+function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 
 function compactionMarker(
   startedAt: string | null,
@@ -64,6 +67,7 @@ export function FeedDocument({
   compactionTokens,
   handoffStartedAt,
   handoffTo,
+  onJumpToLatestChange = ignoreJumpToLatestChange,
   onOpenSession,
   feed,
   isRunning,
@@ -97,11 +101,13 @@ export function FeedDocument({
     questionFailure,
   })
   const content = feedContent({
+    active,
     settled,
     isRunning,
     stalled,
     posture,
     onRetry: retry,
+    onJumpToLatestChange,
     DrawnRow,
     revealsFor,
   })

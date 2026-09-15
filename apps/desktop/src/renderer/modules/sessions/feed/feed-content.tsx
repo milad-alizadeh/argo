@@ -23,19 +23,23 @@ function RunningFeed() {
 }
 
 export function feedContent({
+  active,
   settled,
   isRunning,
   stalled,
   posture,
   onRetry,
+  onJumpToLatestChange,
   DrawnRow,
   revealsFor,
 }: {
+  active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
   stalled: boolean
   posture: 'managed' | 'external' | null
   onRetry: () => void
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
 }) {
@@ -57,9 +61,11 @@ export function feedContent({
     )
   return (
     <AnchoredFeed
+      active={active}
       rows={settled.rows}
       settled={settled}
       FeedRow={DrawnRow}
+      onJumpToLatestChange={onJumpToLatestChange}
       revealsFor={revealsFor}
     />
   )

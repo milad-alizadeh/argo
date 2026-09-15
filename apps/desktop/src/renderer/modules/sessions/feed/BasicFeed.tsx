@@ -9,6 +9,8 @@ import { useKeptDocuments } from './useKeptDocuments'
 
 import './feed.css'
 
+function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
+
 export function BasicFeed({
   feed,
   activeEvidenceId,
@@ -20,6 +22,7 @@ export function BasicFeed({
   onOpenSession,
   failure,
   onRetryFeed,
+  onJumpToLatestChange = ignoreJumpToLatestChange,
   isRunning,
   optimisticRow = null,
   posture = null,
@@ -41,6 +44,7 @@ export function BasicFeed({
   onOpenSession: (sessionId: string) => void
   failure: SessionError | null
   onRetryFeed: () => void
+  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   isRunning: boolean
   optimisticRow?: SessionFeedRow | null
   posture?: 'managed' | 'external' | null
@@ -77,6 +81,7 @@ export function BasicFeed({
     activeEvidenceId,
     failure,
     onOpenSession,
+    onJumpToLatestChange,
     onOpenEvidence,
     onAnswerQuestion,
     answeringQuestionId,

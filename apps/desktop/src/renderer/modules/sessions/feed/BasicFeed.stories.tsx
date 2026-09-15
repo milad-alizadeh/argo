@@ -6,6 +6,7 @@ import type { SessionError, SessionFeed } from '../types'
 
 import { BasicFeed } from './BasicFeed'
 import { RICH_MARKDOWN } from './content/feedSamples'
+import { FeedJumpToLatest } from './FeedJumpToLatest'
 
 const feed = {
   version: 1,
@@ -513,6 +514,7 @@ const prependedHistoryFeed = {
 
 function HistoryScrollHarness() {
   const [current, setCurrent] = useState<SessionFeed>(historyFeed)
+  const [jumpToLatest, setJumpToLatest] = useState<(() => void) | null>(null)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setCurrent(updatedHistoryFeed)}>
@@ -524,6 +526,7 @@ function HistoryScrollHarness() {
           feed={current}
           failure={null}
           isRunning={false}
+          onJumpToLatestChange={(_sessionId, action) => setJumpToLatest(() => action)}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -532,6 +535,9 @@ function HistoryScrollHarness() {
           questionFailure={() => null}
           selectedSessionId="history"
         />
+        {jumpToLatest === null ? null : (
+          <FeedJumpToLatest label="Jump to latest" onClick={jumpToLatest} />
+        )}
       </div>
     </div>
   )
