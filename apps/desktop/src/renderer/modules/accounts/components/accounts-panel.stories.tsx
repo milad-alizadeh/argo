@@ -60,7 +60,9 @@ export const Accounts: Story = {
     const row = canvas.getByRole('listitem', { name: 'GitHub Account octocat' })
     const connections = within(row).getByRole('list', { name: 'Repositories for octocat' })
     await expect(connections).toHaveTextContent('argo · octocat/hello-world')
-    await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
+    const disconnect = within(row).getByRole('button', { name: 'Disconnect…' })
+    await expect(disconnect).toHaveStyle({ fontSize: '13px', lineHeight: '19px' })
+    await userEvent.click(disconnect)
     // Asking lands on the harmless answer, and answering puts focus back on the row.
     await expect(within(row).getByRole('button', { name: 'Keep' })).toHaveFocus()
     await userEvent.click(within(row).getByRole('button', { name: 'Keep' }))

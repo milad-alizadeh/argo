@@ -891,7 +891,7 @@ export const StreamingReply: Story = {
   },
 }
 
-const historyRows = Array.from({ length: 36 }, (_unused, index) => ({
+const historyRows = Array.from({ length: 60 }, (_unused, index) => ({
   shape: 'prose' as const,
   id: `history-${index}`,
   role: 'assistant' as const,
@@ -910,6 +910,7 @@ const historyFeed = {
   sessionId: 'history',
   rows: historyRows,
 } satisfies SessionFeed
+const historyAnchorId = `history-${Math.floor(historyRows.length / 2)}`
 
 const disclosureGroup = toolFeed.rows[0]
 if (disclosureGroup === undefined) throw new RangeError('Tool Feed needs a disclosure row.')
@@ -1190,10 +1191,10 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     const history = await canvas.findByLabelText('Session history')
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
-    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBeDefined())
-    const anchoredRow = drawnRow(canvasElement, 'history-18')
+    await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBeDefined())
+    const anchoredRow = drawnRow(canvasElement, historyAnchorId)
     await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
-    await waitFor(() => expect(drawnRow(canvasElement, 'history-18')).toBe(anchoredRow))
+    await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBe(anchoredRow))
   },
 }
 

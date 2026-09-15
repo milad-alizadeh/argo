@@ -78,7 +78,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-muted);
   color: var(--color-ink);
-  font: var(--text-code) / var(--leading-code) var(--font-mono);
+  font: var(--text-code) / var(--text-code--line-height) var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

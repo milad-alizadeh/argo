@@ -45,13 +45,14 @@ test('the derived scale carries measurements, color aliases, and named colors', 
   assert.equal(scale.includes('--color-traffic-light-close: #ff5f57;'), true)
 })
 
-test('the mirror includes Session tokens in declaration order', () => {
+test('the mirror includes desktop tokens in declaration order', () => {
   const mirror = mirrorContract(readContract(contractPath))
   for (const declaration of [
     '--color-traffic-light-close: #ff5f57;',
     '--color-traffic-light-minimize: #febc2e;',
     '--color-traffic-light-zoom: #28c840;',
-    '--text-session-body: var(--text-base, 1rem);',
+    '--text-body: 13px;',
+    '--text-control: var(--text-body);',
   ]) {
     assert.equal(mirror.includes(declaration), true, declaration)
   }
