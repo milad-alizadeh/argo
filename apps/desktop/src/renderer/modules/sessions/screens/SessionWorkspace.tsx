@@ -90,10 +90,7 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section
-      aria-label={t('workspaceLabel')}
-      className="relative flex h-full min-h-0 flex-col"
-    >
+    <section aria-label={t('workspaceLabel')} className="relative flex h-full min-h-0 flex-col">
       {header}
       <section
         aria-label={t('feedRegionLabel')}
