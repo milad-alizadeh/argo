@@ -571,6 +571,7 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
     await expect(menu.getBoundingClientRect().width).toBeCloseTo(card.getBoundingClientRect().width)
     await userEvent.keyboard('{Enter}')
 
+    await userEvent.keyboard(' ')
     await expect(canvas.queryByRole('option')).toBeNull()
     await userEvent.keyboard('{Enter}')
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read \/implement$/)
