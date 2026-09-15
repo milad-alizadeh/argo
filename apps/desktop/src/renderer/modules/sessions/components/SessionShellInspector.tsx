@@ -19,7 +19,7 @@ export function SessionShellInspector({
   output: string | null
   now?: number
 }) {
-  const title = command.command ?? command.id
+  const title = command.label ?? command.command ?? command.id
   return (
     <section aria-label="Background Shell" className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-4">

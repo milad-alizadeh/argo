@@ -7,7 +7,7 @@ import { compactTokens, SHELL_STATE_WORDS, workDuration } from './session-work'
 export type WorkEntry = {
   id: string
   title: string
-  // A command is the text the CLI was given, so it is read as code. A Subagent's label is prose.
+  // Raw command text is read as code; a derived label, Subagent or Shell, is prose.
   monospace: boolean
   running: boolean
   // The semantic ground the state mark takes, the same set the Roster draws a Session's status in.
@@ -52,8 +52,8 @@ export function delegationEntries(
 export function shellEntries(shell: readonly SessionShellCommand[], now: number): WorkEntry[] {
   return shell.map((command) => ({
     id: command.id,
-    title: command.command ?? command.id,
-    monospace: true,
+    title: command.label ?? command.command ?? command.id,
+    monospace: command.label === null,
     running: command.state === 'running',
     mark: SHELL_MARKS[command.state],
     state: SHELL_STATE_WORDS[command.state],

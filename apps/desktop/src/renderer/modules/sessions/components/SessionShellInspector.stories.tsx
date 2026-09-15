@@ -78,6 +78,25 @@ export const Completed: Story = {
   },
 }
 
+export const WithLabel: Story = {
+  args: {
+    command: sessionShellCommand({
+      id: 'call-package',
+      command: 'RTK_DISABLED=1 bun run package 2>&1 | tee /tmp/pkg.log',
+      label: 'Package the Electron app',
+      background: true,
+      startedAt: '2026-09-02T08:00:30.000Z',
+    }),
+    output: 'packaging...\n',
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByText('Package the Electron app')).toHaveLength(2)
+    await expect(canvas.queryByText(/RTK_DISABLED=1/)).not.toBeInTheDocument()
+  },
+}
+
 export const NoRecordedOutput: Story = {
   args: { command: WATCH, output: null },
   render: (args) => <InspectorStory args={args} />,
