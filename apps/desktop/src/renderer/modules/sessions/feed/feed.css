@@ -93,8 +93,12 @@
 
 /* A background work block's state inks, leaned toward the ink so each holds contrast in both
    appearances, and the one motion that says the work is still running. */
-[data-slot="feed-delegation"] {
+[data-slot="feed-delegation"],
+.feed-work-shimmer {
   --feed-work-ink-active: color-mix(in oklab, var(--color-active) 62%, var(--foreground));
+}
+
+[data-slot="feed-delegation"] {
   --feed-work-ink-danger: color-mix(in oklab, var(--color-danger) 78%, var(--foreground));
   --feed-work-ink-warn: color-mix(in oklab, var(--color-warn) 66%, var(--foreground));
 }

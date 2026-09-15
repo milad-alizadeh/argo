@@ -47,6 +47,11 @@ function StatusMark({
   )
 }
 
+// Text for work still running carries the Feed's work shimmer.
+export function RunningText({ running, children }: { running: boolean; children: string }) {
+  return running ? <span className="feed-work-shimmer">{children}</span> : children
+}
+
 // A failed call reads red; otherwise the row is muted until hovered or open in the inspector.
 function lineInk(failed: boolean, active: boolean) {
   if (failed) return 'text-destructive'
@@ -86,7 +91,9 @@ export function FeedToolLine({
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
       <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
-      <span className="min-w-0 truncate text-left [direction:rtl]">{call.label}</span>
+      <span className="min-w-0 truncate text-left [direction:rtl]">
+        <RunningText running={call.status === 'running'}>{call.label}</RunningText>
+      </span>
       {call.lineCounts === null ? null : <LineCounts {...call.lineCounts} />}
       {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
       <span className="ml-auto flex shrink-0 items-center">
@@ -148,7 +155,11 @@ export function FeedToolGroup({
       icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
       onOpenChange={onOpenChange}
       open={open}
-      title={isSoleSkill ? soleCall.label : group.label}
+      title={
+        <RunningText running={group.calls.some((call) => call.status === 'running')}>
+          {isSoleSkill ? soleCall.label : group.label}
+        </RunningText>
+      }
     />
   )
 }

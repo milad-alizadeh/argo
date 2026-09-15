@@ -12,7 +12,7 @@ import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import { StatusIcon, TOOL_ICONS, type ToolCall, type ToolRow } from './feed-tools'
+import { RunningText, StatusIcon, TOOL_ICONS, type ToolCall, type ToolRow } from './feed-tools'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
@@ -81,7 +81,7 @@ export function FeedInlineToolCallItem({
       icon={Icon}
       onOpenChange={onOpenChange}
       open={open}
-      title={call.label}
+      title={<RunningText running={call.status === 'running'}>{call.label}</RunningText>}
     />
   )
 }
