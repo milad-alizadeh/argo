@@ -48,10 +48,16 @@ export function AnchoredFeed({
     setViewport(element)
   }, [])
   const virtualizer = useVirtualizer({
-    anchorTo: 'end',
+    // End anchoring is only correct while the reader is following the tail.
+    // While they are reading history, retain their actual reading position as
+    // rows append instead of resolving the previous end anchor.
+    anchorTo: atLatest ? 'end' : 'start',
     count: rows.length,
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
-    followOnAppend: 'smooth',
+    // Only follow an append while the reader is already at the tail. Keeping
+    // this enabled while they are inspecting history makes a streamed row pull
+    // them back to the end before the Jump to latest control can be used.
+    followOnAppend: atLatest ? 'smooth' : false,
     getItemKey: (index) => feedRowAt(rows, index).id,
     getScrollElement: () => viewport,
     onChange: (instance) => {
