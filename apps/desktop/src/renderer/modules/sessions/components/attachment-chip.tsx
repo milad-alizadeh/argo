@@ -12,13 +12,16 @@ import {
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
 
-// Extracted from the composer prototype's ReferenceStrip (602bcce2). The prototype names attached
-// files by a bare mock path; here `path` is the file's absolute path on disk.
-export function parseFilename(path: string): { title: string; extension: string | null } {
+// `path` is the file's absolute path on disk.
+export function parseFilename(path: string): {
+  name: string
+  title: string
+  extension: string | null
+} {
   const name = path.split('/').at(-1) ?? path
   const separator = name.lastIndexOf('.')
-  if (separator < 1 || separator === name.length - 1) return { title: name, extension: null }
-  return { title: name.slice(0, separator), extension: name.slice(separator + 1) }
+  if (separator < 1 || separator === name.length - 1) return { name, title: name, extension: null }
+  return { name, title: name.slice(0, separator), extension: name.slice(separator + 1) }
 }
 
 // One attached file as the composer shows it before Send and the prompt bubble shows it after.
@@ -33,10 +36,10 @@ export function AttachmentChip({
 }) {
   const { t } = useTranslation('sessions')
   const isImage = attachmentKindOf(path) === 'image'
-  const { title, extension } = parseFilename(path)
+  const { name, title, extension } = parseFilename(path)
   return (
     <Attachment
-      className={`relative h-(--size-composer-attachment) w-fit min-w-(--size-composer-attachment-chip-min) max-w-(--size-composer-attachment-chip-max) shrink-0 items-start border-border py-1 pl-2 ${children === undefined ? 'pr-2' : 'pr-9'}`}
+      className="relative h-(--size-composer-attachment) w-fit min-w-(--size-composer-attachment-chip-min) max-w-(--size-composer-attachment-chip-max) shrink-0 items-start border-border"
       size="xs"
       state={failed ? 'error' : 'done'}
     >
@@ -55,7 +58,10 @@ export function AttachmentChip({
         )}
       </AttachmentMedia>
       <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
-        <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label">
+        <AttachmentTitle
+          className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label"
+          title={name}
+        >
           {title}
         </AttachmentTitle>
         <AttachmentDescription className="type-meta">

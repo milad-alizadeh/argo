@@ -103,11 +103,33 @@ test('drops the placeholders a bare prompt event marks at its end', () => {
   assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, 'look é')
 })
 
-test('draws the files Argo attached as their own path items, not as words', () => {
+// The event the app-server wrote for Argo's `inputItemsFor` under codex-cli 0.147.0: every text
+// item joined with no separator, and each marked range moved onto the joined message.
+test('draws the files Argo marked in a bare prompt event as chips, not as words', () => {
+  const rows = eventRows({
+    ...EXEC_PROMPT,
+    message: 'Review é./Users/x/a.md/Users/x/my notes.md',
+    local_images: [],
+    text_elements: [
+      placeholder(Buffer.byteLength('Review é.'), '/Users/x/a.md'),
+      placeholder(Buffer.byteLength('Review é./Users/x/a.md'), '/Users/x/my notes.md'),
+    ],
+  })
+  assert.deepEqual(rows[0]?.shape === 'prose' ? [rows[0].text, rows[0].files] : null, [
+    'Review é.',
+    ['/Users/x/a.md', '/Users/x/my notes.md'],
+  ])
+})
+
+test('draws the files Argo marked in their own path items, not as words', () => {
   const rows = promptRows([
     { type: 'text', text: '/Users/x/typed.md', text_elements: [] },
     { type: 'local_image', path: '/Users/x/a.png' },
-    { type: 'text', text: '/Users/x/my notes.md', text_elements: [] },
+    {
+      type: 'text',
+      text: '/Users/x/my notes.md',
+      text_elements: [placeholder(0, '/Users/x/my notes.md')],
+    },
   ])
   assert.deepEqual(rows, [
     {

@@ -1,6 +1,8 @@
 import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
 
-export type TextInput = { type: 'text'; text: string; text_elements: [] }
+// app-server v2 `TextElement` (v2/turn.rs, rust-v0.147.0): a UTF-8 byte range and its placeholder.
+type TextElement = { byteRange: { start: number; end: number }; placeholder: string }
+export type TextInput = { type: 'text'; text: string; text_elements: TextElement[] }
 export type Input = TextInput | { type: 'localImage'; path: string }
 
 // The draft is the first input item, always a `text` item. An attachment is a second, separate
@@ -12,7 +14,13 @@ export function inputItemsFor(prompt: string, attachments: SessionAttachmentInpu
   const attachmentItems: Input[] = attachments.map((attachment) =>
     attachment.kind === 'image'
       ? { type: 'localImage', path: attachment.path }
-      : { type: 'text', text: attachment.path, text_elements: [] },
+      : pathItem(attachment.path),
   )
   return [{ type: 'text', text: prompt, text_elements: [] }, ...attachmentItems]
+}
+
+// The rollout joins every text item into one message, so the path is marked to be found again.
+function pathItem(path: string): TextInput {
+  const byteRange = { start: 0, end: Buffer.byteLength(path) }
+  return { type: 'text', text: path, text_elements: [{ byteRange, placeholder: path }] }
 }

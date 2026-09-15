@@ -29,9 +29,8 @@ function withoutAppendedRun(text: string): { text: string; files: ContentBlock[]
   return { text: text.slice(0, appended.index), files }
 }
 
-// A prompt's images, pasted ones first, then its files follow its blocks, and the text that stood
-// in for them goes.
-export function withPromptAttachments(blocks: ContentBlock[]): ContentBlock[] {
+// A prompt's images, pasted ones first, then its files follow its blocks, minus their stand-in text.
+export function promptBlocks(blocks: ContentBlock[]): ContentBlock[] {
   const hasPastedImage = blocks.some((block) => block.shape === 'image')
   const attached: ContentBlock[] = []
   const withoutStandIns = blocks.flatMap((block): ContentBlock[] => {
