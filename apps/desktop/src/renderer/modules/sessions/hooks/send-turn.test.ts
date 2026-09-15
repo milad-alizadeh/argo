@@ -1,35 +1,14 @@
 import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 
-import type { ProjectSummary } from '@/core/projects/messages'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
-import { sendToNewSession, sendToSelected } from './send-turn'
-
-const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
-const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
-const COCKPIT = {
-  status: 'selected' as const,
-  project: PROJECT,
-  projects: [PROJECT],
-  message: null,
-  code: null,
-  busy: false,
-}
+import { type SendDeps, sendToDraftIdentity, sendToNewSession, sendToSelected } from './send-turn'
+import { COCKPIT, fakeMutation, PROJECT, SETUP } from './send-turn-fixtures'
+import { beginEntry, clearEntry, rekeyEntry, type TurnMarkerEntries } from './use-turn-marker'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
 })
-
-function fakeMutation<Args, Reply>(reply: (args: Args) => Promise<Reply>) {
-  const calls: Args[] = []
-  return {
-    calls,
-    mutateAsync: async (args: Args) => {
-      calls.push(args)
-      return reply(args)
-    },
-  }
-}
 
 // The identity's session variant routes a Send to that Session, never a new one.
 test('a Send with a selected Session sends to it', async () => {
@@ -80,4 +59,57 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
     { cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
   ])
   expect(navigated).toEqual([['/sessions/session-new', { replace: true, state: 'focus-composer' }]])
+})
+
+// The hook's own transitions over a plain map, without mounting React.
+function turnMarker() {
+  const marker = {
+    entries: new Map() as TurnMarkerEntries,
+    begin: (key: string, entry: Parameters<SendDeps['marker']['begin']>[1]) => {
+      marker.entries = beginEntry(marker.entries, key, { ...entry, startedAt: 0 })
+    },
+    rekey: (from: string, to: string) => {
+      marker.entries = rekeyEntry(marker.entries, from, to)
+    },
+    clear: (key: string) => {
+      marker.entries = clearEntry(marker.entries, key)
+    },
+  }
+  return marker
+}
+
+// Rapid Enter presses on a new Session (#2229): the dropped duplicate leaves the first Send's
+// Turn Marker in place, so Starting Session shows until the Session answers.
+test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => {
+  const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
+  let answer: (reply: { sessionId: string }) => void = () => {}
+  const start = fakeMutation(
+    () =>
+      new Promise<{ sessionId: string }>((resolve) => {
+        answer = resolve
+      }),
+  )
+  const marker = turnMarker()
+  const deps = {
+    cli: 'claude',
+    cockpit: COCKPIT,
+    navigate: () => undefined as never,
+    queryClient: new QueryClient(),
+    roster: null,
+    marker,
+    send: fakeMutation(async () => undefined) as never,
+    setFailure: () => {},
+    start: start as never,
+    watchTurn: () => {},
+  } as unknown as SendDeps
+  const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
+  const turn = { prompt: 'hello', setup: null, attachments: [] }
+
+  const first = sendToDraftIdentity(deps, identity, turn)
+  expect(await sendToDraftIdentity(deps, identity, turn)).toBe(false)
+  expect([...marker.entries.keys()]).toEqual([opened.id])
+  answer({ sessionId: 'session-new' })
+  expect(await first).toBe(true)
+  expect([...marker.entries.keys()]).toEqual(['session-new'])
+  expect(start.calls.length).toBe(1)
 })
