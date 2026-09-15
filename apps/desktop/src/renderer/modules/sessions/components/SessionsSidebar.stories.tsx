@@ -226,6 +226,7 @@ export const PendingBadges: Story = {
         {
           ...session,
           id: 'wants-answer',
+          posture: 'managed',
           status: 'asking',
           title: { text: 'A question is waiting', source: 'first-prompt' },
         },

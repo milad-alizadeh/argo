@@ -35,7 +35,7 @@ function clientReturning(reply) {
 }
 
 test('passes a reply of the shape it asked for through', async () => {
-  const listedReply = await clientReturning(listed).listSessions()
+  const listedReply = await clientReturning(listed).listSessions({ projectRoot: null })
   assert.deepEqual({ ...listedReply, requestId: undefined }, { ...listed, requestId: undefined })
   const feedReply = await clientReturning(read).readSessionFeed(feed)
   assert.deepEqual({ ...feedReply, requestId: undefined }, { ...read, requestId: undefined })
@@ -43,7 +43,7 @@ test('passes a reply of the shape it asked for through', async () => {
 
 test('refuses a reply that answers a different request', async () => {
   const client = createSessionClient(async () => ({ ...listed, requestId: 'list-2' }))
-  const reply = await client.listSessions()
+  const reply = await client.listSessions({ projectRoot: null })
   assert.equal(reply.code, 'invalid-response')
 })
 
@@ -76,7 +76,7 @@ test('names a lost connection, which the renderer can see no other way', async (
   const client = createSessionClient(async () => {
     throw new Error('the window went away')
   })
-  assert.equal((await client.listSessions()).code, 'connection-lost')
+  assert.equal((await client.listSessions({ projectRoot: null })).code, 'connection-lost')
   assert.equal((await client.readSessionFeed(feed)).code, 'connection-lost')
 })
 
@@ -87,7 +87,7 @@ test('passes an error reply through as itself', async () => {
     code: 'access-denied',
     message: 'Argo cannot access these Sessions.',
   }
-  const reply = await clientReturning(error).listSessions()
+  const reply = await clientReturning(error).listSessions({ projectRoot: null })
   assert.deepEqual({ ...reply, requestId: undefined }, { ...error, requestId: undefined })
 })
 

@@ -93,7 +93,7 @@ export async function streamProse(transcripts, text) {
   const before = await readFile(transcript, 'utf8')
   await writeFile(
     transcript,
-    before.replace(/"text":"(?:[^"\\]|\\.)*"/, `"text":${JSON.stringify(text)}`),
+    before.replace(/"text":\s*"(?:[^"\\]|\\.)*"/, `"text": ${JSON.stringify(text)}`),
   )
 }
 
@@ -114,15 +114,28 @@ export async function prepare(root) {
   const project = path.join(root, 'project')
   await mkdir(project)
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  // No Project is selected yet: the fixtures span unrelated fake cwds (/Users/x/tree, ...), and a
+  // selected Project scopes every one of them out of the Roster (#2204).
+  await writeProjectStore(userData, project, null)
+  return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
+}
+
+const PROOF_PROJECT_ID = 'session-proof-project'
+
+async function writeProjectStore(userData, project, selectedId) {
   await writeFile(
     path.join(userData, 'portable-v1', 'projects.json'),
     JSON.stringify({
       version: 1,
-      projects: [{ id: 'session-proof-project', path: project, bindings: [] }],
-      selectedId: 'session-proof-project',
+      projects: [{ id: PROOF_PROJECT_ID, path: project, bindings: [] }],
+      selectedId,
     }),
   )
-  return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
+}
+
+// Written to the store rather than picked in the switcher, whose choice a restart does not keep.
+export async function selectProofProject(userData, project) {
+  await writeProjectStore(userData, project, PROOF_PROJECT_ID)
 }
 
 export async function growCodexTranscript(transcripts) {
@@ -152,10 +165,4 @@ export async function capture(page, application, name) {
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
   await page.waitForTimeout(400)
   await page.screenshot({ path: path.join(shots, name) })
-}
-
-// Transcript discovery needs no Project, but the shell keeps every working surface behind the
-// selected Project gate. `prepare` supplies the smallest valid registry entry for the UI proof.
-export async function openSessionsScreen(page) {
-  await page.waitForSelector('nav[aria-label="Sessions"] button')
 }

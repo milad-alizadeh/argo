@@ -9,6 +9,10 @@ export const sessionListRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.list'),
   requestId: identifierSchema,
+  // The open cockpit window's Project root (CONTEXT.md L1 · Project), or null to read every
+  // Session on the machine. A Session whose cwd does not resolve under this root belongs to a
+  // different Project and is left out of the reply (#2204).
+  projectRoot: z.string().nullable(),
 })
 export type SessionListRequest = z.infer<typeof sessionListRequestSchema>
 export const sessionFeedRequestSchema = z.strictObject({

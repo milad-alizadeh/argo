@@ -17,6 +17,20 @@ export async function offsetOf(page, anchor: string) {
   )
 }
 
+export async function viewportAnchor(page) {
+  return page.evaluate((selector) => {
+    const viewport = document.querySelector(selector)
+    const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
+      (candidate) =>
+        candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
+    )
+    return {
+      anchor: row.dataset.feedRow,
+      offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
+    }
+  }, ACTIVE_VIEWPORT)
+}
+
 export async function waitForRevision(page, previous: string | undefined) {
   await page.waitForFunction(
     (revision) =>
@@ -38,6 +52,7 @@ export async function feedStateSnapshot(page) {
         rowCount: viewport?.querySelectorAll('[data-feed-row]').length ?? null,
         session: viewport?.getAttribute('data-session') ?? null,
         scrollHeight: viewport?.scrollHeight ?? null,
+        clientHeight: viewport?.clientHeight ?? null,
         scrollTop: viewport?.scrollTop ?? null,
       }
     })

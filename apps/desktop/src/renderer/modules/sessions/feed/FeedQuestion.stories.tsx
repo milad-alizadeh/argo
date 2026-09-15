@@ -49,6 +49,7 @@ const meta = {
     row: singleSelect,
     answering: false,
     failure: null,
+    locked: false,
     onAnswer: fn(),
   },
 } satisfies Meta<typeof FeedQuestion>
@@ -158,6 +159,16 @@ export const Unsupported: Story = {
     await expect(
       canvas.getByText('This question asks for a secret value, which Argo cannot show or submit.'),
     ).toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: 'Send answer' })).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('radio')).not.toBeInTheDocument()
+  },
+}
+
+export const Locked: Story = {
+  args: { locked: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('This session is open in another app')).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: 'Send answer' })).not.toBeInTheDocument()
     await expect(canvas.queryByRole('radio')).not.toBeInTheDocument()
   },
