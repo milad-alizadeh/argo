@@ -1,4 +1,5 @@
 import { ChevronRight, Loader2, TriangleAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { sessionFailureState } from '../../session-failure-state'
 import type { RosterRow } from './roster-rows'
@@ -47,11 +48,12 @@ export function ArchivedSectionRow({
     { kind: 'archivedLoading' | 'archivedLoadingMore' | 'archivedError' | 'archivedEmpty' }
   >
 }) {
+  const { t } = useTranslation('sessions')
   switch (row.kind) {
     case 'archivedLoading':
-      return <ArchivedStatus label="Reading archived Sessions" />
+      return <ArchivedStatus label={t('readingArchivedSessions')} />
     case 'archivedLoadingMore':
-      return <ArchivedStatus label="Loading more archived Sessions" />
+      return <ArchivedStatus label={t('loadingMoreArchivedSessions')} />
     case 'archivedError':
       return (
         <Alert
@@ -60,12 +62,12 @@ export function ArchivedSectionRow({
           variant="destructive"
         >
           <TriangleAlert aria-hidden="true" />
-          <AlertTitle>Unable to load archived Sessions</AlertTitle>
+          <AlertTitle>{t('unableToLoadArchivedSessions')}</AlertTitle>
           <AlertDescription>{row.error.message}</AlertDescription>
         </Alert>
       )
     case 'archivedEmpty':
-      return <p className="px-2 text-sm text-muted-foreground">No archived Sessions</p>
+      return <p className="px-2 text-sm text-muted-foreground">{t('archivedEmpty')}</p>
     default:
       return null
   }

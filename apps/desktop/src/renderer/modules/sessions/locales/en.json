@@ -103,6 +103,10 @@
     "complete": "Assistant response complete."
   },
   "archived": "Archived",
+  "archivedEmpty": "No archived Sessions",
+  "readingArchivedSessions": "Reading archived Sessions",
+  "loadingMoreArchivedSessions": "Loading more archived Sessions",
+  "unableToLoadArchivedSessions": "Unable to load archived Sessions",
   "bulkSelect": {
     "selected": "Selected",
     "archive": "Archive",
