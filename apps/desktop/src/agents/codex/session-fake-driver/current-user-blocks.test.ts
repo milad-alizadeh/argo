@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCodexTranscriptLine, withoutModelInputCopies } from '../sessions/records'
+import { withoutModelInputCopies } from '../sessions/model-input-copies'
+import { parseCodexTranscriptLine } from '../sessions/records'
 import { assertMessageBlocks, assertUserMessage } from './assert-user-message'
 
 test('reads a current user prompt written as an input_text block', () => {

@@ -2,6 +2,7 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
+import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { promptBlocks, promptEventImages, readImage } from './prompt-images'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
@@ -122,20 +123,6 @@ function responseMessage(
   if (blocks === null || blocks.length === 0) return null
   const uuid = `${MODEL_INPUT_PREFIX}${payload.id}`
   return messageRecord(record, { uuid, role: 'user', originSessionId: null, blocks })
-}
-
-// Codex desktop writes each prompt twice: this model-input copy, then the `UserMessage` item the
-// person sees, one ordinal later and under another id. The input copy also carries injected context.
-const MODEL_INPUT_PREFIX = 'model-input:'
-
-// A thread with its own reader copy of a prompt keeps only those; one without keeps its input copies.
-export function withoutModelInputCopies(records: TranscriptRecord[]): TranscriptRecord[] {
-  const isInputCopy = (record: TranscriptRecord) =>
-    'uuid' in record && record.uuid.startsWith(MODEL_INPUT_PREFIX)
-  const hasReaderCopy = records.some(
-    (record) => record.kind === 'message' && record.role === 'user' && !isInputCopy(record),
-  )
-  return hasReaderCopy ? records.filter((record) => !isInputCopy(record)) : records
 }
 
 // A thread Codex dispatched itself, such as a spawned subagent or the `guardian` reviewer that judges

@@ -5,7 +5,8 @@ import {
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
-import { parseCodexTranscriptLine, withoutModelInputCopies } from './records'
+import { withoutModelInputCopies } from './model-input-copies'
+import { parseCodexTranscriptLine } from './records'
 
 export type Discovery = TranscriptDiscovery
 
