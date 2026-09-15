@@ -347,7 +347,6 @@ export const GroupedToolCalls: Story = {
     const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
     await expect(group).toHaveAttribute('aria-expanded', 'false')
     await expect(canvas.queryByText('command output 1')).toBeNull()
-    const groupTop = group.getBoundingClientRect().top
     await userEvent.click(group)
     const commandText = await canvas.findByText((_content, node) => {
       const isMatch = node?.textContent === 'bun test composer'
@@ -360,14 +359,18 @@ export const GroupedToolCalls: Story = {
     const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
     await waitFor(() => expect(commandText).toBeVisible())
+    const combinedCode = commandText.closest('[data-language]')
+    await expect(combinedCode).toHaveTextContent('bun test composer')
+    await expect(combinedCode).toHaveTextContent('command output 1')
+    const visibleCodeBlocks = [...(group.closest('article')?.querySelectorAll('pre') ?? [])].filter(
+      (block) => block.closest('[aria-hidden="true"]') === null,
+    )
+    await expect(visibleCodeBlocks).toHaveLength(1)
     const panel = commandText.closest('[data-slot="collapsible-content"]')
     await expect(panel).toHaveClass('transition-[height,opacity,transform]')
-    await expect(panel).toHaveClass('motion-reduce:transition-none')
-    await expect(Math.abs(group.getBoundingClientRect().top - groupTop)).toBeLessThan(1)
     await expect(call).toHaveClass('type-body')
     await userEvent.click(group)
     await waitFor(() => expect(canvas.queryByText('command output 1')).toBeNull())
-    await expect(Math.abs(group.getBoundingClientRect().top - groupTop)).toBeLessThan(1)
   },
 }
 

@@ -18,13 +18,6 @@ import {
 } from '@/components/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
 import { TaskItem } from '@/components/ai-elements/task'
-import {
-  Terminal,
-  TerminalContent,
-  TerminalCopyButton,
-  TerminalHeader,
-  TerminalTitle,
-} from '@/components/ai-elements/terminal'
 import { TOOL_CONTENT_ROUTE } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import type { SessionFeedRow } from '../types'
@@ -106,49 +99,36 @@ export function FeedToolLine({
   )
 }
 
-// A command needs no separate evidence-panel step: its own text is the thing there is to read,
-// so it draws inline as a labelled code block, never styled as a terminal (#2110). Its output, if
-// the call has finished, is attached directly beneath it — the terminal styling belongs there,
-// since that content genuinely is terminal output.
+// One command run reads as one code block despite the transcript's separate invocation and result messages.
 function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
   const { t } = useTranslation('sessions')
-  const source = call.text ?? ''
-  const language = detectCodeLanguage(source, 'bash')
+  const result = call.evidence?.kind === 'output' ? call.evidence.source : null
+  const source = [call.text, result].filter((part) => part !== null).join('\n')
+  const language = detectCodeLanguage(call.text ?? '', 'bash')
   const languageLabel = codeLanguageLabel(language)
   return (
-    <div className="space-y-2">
-      <CodeBlock
-        code={source}
-        language={language?.grammar ?? null}
-        className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
-      >
-        <CodeBlockHeader className="bg-muted type-meta">
-          <CodeBlockTitle>
-            <span aria-hidden="true">
-              <CodeLanguageIcon language={language} />
-            </span>
-            <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
-          </CodeBlockTitle>
-          <CodeBlockActions>
-            {call.status === 'failed' ? (
-              <span className="text-destructive">{t('tools.failed')}</span>
-            ) : (
-              <StatusIcon status={call.status} />
-            )}
-            <CodeBlockCopyButton aria-label={t('tools.copyCommand')} className="size-7" />
-          </CodeBlockActions>
-        </CodeBlockHeader>
-      </CodeBlock>
-      {call.evidence?.kind === 'output' ? (
-        <Terminal output={call.evidence.source} aria-label={call.evidence.title}>
-          <TerminalHeader>
-            <TerminalTitle className="type-meta" />
-            <TerminalCopyButton />
-          </TerminalHeader>
-          <TerminalContent className="type-code" />
-        </Terminal>
-      ) : null}
-    </div>
+    <CodeBlock
+      code={source}
+      language={language?.grammar ?? null}
+      className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
+    >
+      <CodeBlockHeader className="bg-muted type-meta">
+        <CodeBlockTitle>
+          <span aria-hidden="true">
+            <CodeLanguageIcon language={language} />
+          </span>
+          <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
+        </CodeBlockTitle>
+        <CodeBlockActions>
+          {call.status === 'failed' ? (
+            <span className="text-destructive">{t('tools.failed')}</span>
+          ) : (
+            <StatusIcon status={call.status} />
+          )}
+          <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
+        </CodeBlockActions>
+      </CodeBlockHeader>
+    </CodeBlock>
   )
 }
 

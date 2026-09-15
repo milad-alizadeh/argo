@@ -148,7 +148,7 @@
   },
   "tools": {
     "failed": "Failed",
-    "copyCommand": "Copy command"
+    "copyRun": "Copy command and result"
   },
   "rail": {
     "backgroundAgents": "Background agents",

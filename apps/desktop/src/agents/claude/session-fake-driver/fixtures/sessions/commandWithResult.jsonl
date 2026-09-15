@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"command-result"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-15T10:00:00.000Z","uuid":"command-prompt","message":{"role":"user","content":"Check the working tree."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-15T10:00:01.000Z","uuid":"command-run","parentUuid":"command-prompt","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"command-run-1","name":"Bash","input":{"command":"git status --short"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-15T10:00:02.000Z","uuid":"command-result","parentUuid":"command-run","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"command-run-1","content":" M apps/desktop/src/renderer/App.tsx","is_error":false}]}}
