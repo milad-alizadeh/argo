@@ -16,6 +16,23 @@ test('skips Codex events outside the Session evidence contract', () => {
   )
 })
 
+test('reads the record Codex writes once it has compacted the context', () => {
+  assert.deepEqual(
+    parseCodexTranscriptLine(
+      JSON.stringify({
+        timestamp: '2026-09-15T00:30:36.403Z',
+        type: 'compacted',
+        payload: { message: '', replacement_history: [] },
+      }),
+    ),
+    {
+      kind: 'compaction',
+      uuid: 'compacted:2026-09-15T00:30:36.403Z',
+      timestamp: '2026-09-15T00:30:36.403Z',
+    },
+  )
+})
+
 // The two record shapes codex-cli 0.147.0 writes for an app-server Turn, trimmed from a live rollout.
 test('reads the assistant message under the id its deltas streamed with', () => {
   assert.deepEqual(

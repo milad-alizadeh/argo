@@ -6,6 +6,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
+import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
@@ -28,16 +29,23 @@ async function completeCompactions(
 ) {
   if (complete === undefined) return
   for (const session of sessions) {
-    if (session.compactionStartedAt === null || session.compactionStartedAt === undefined) continue
+    const startedAt = session.compactionStartedAt
+    if (startedAt === null || startedAt === undefined) continue
     const chain = await readSessionFiles(transcripts, session.id)
-    const completedAt = chain?.files
-      .flatMap((file) => file.records)
-      .filter((record) => record.kind === 'compaction')
-      .flatMap((record) => (record.timestamp === undefined ? [] : [record.timestamp]))
-      .sort()
-      .at(-1)
-    if (completedAt !== undefined) complete(session.id, completedAt)
+    const endedAt = compactionEndedAt(chain, startedAt, Date.now())
+    if (endedAt !== undefined) complete(session.id, endedAt)
   }
+}
+
+function withHandoffEdges(
+  rows: SessionRosterRow[],
+  handoffEdges: ((sessionId: string) => { to: string | null; from: string | null }) | undefined,
+) {
+  if (handoffEdges === undefined) return rows
+  return rows.map((row) => {
+    const edges = handoffEdges(row.id)
+    return { ...row, handoffTo: edges.to, handoffFrom: edges.from }
+  })
 }
 
 async function withLiveProcesses(discovery: Discovery, processes: string | undefined) {
@@ -57,6 +65,9 @@ export function claudeSessionSource(roots: {
   // Where each running `claude` names its Session; absent, no external Session reads `running`.
   processes?: string
   managedSessions?: () => SessionRosterRow[]
+  // Where the `PreCompact` hook leaves a file for each compaction it sees start (ADR-0041).
+  compactionStarts?: string
+  beginCompaction?: (sessionId: string, startedAt: string) => void
   completeCompaction?: (sessionId: string, completedAt: string) => void
   // Runs once per discovery pass, ahead of the read below: a handoff that has landed publishes
   // its fresh Session before this pass's roster is built, so the edge below finds it immediately.
@@ -79,16 +90,13 @@ export function claudeSessionSource(roots: {
       )
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-      const merged = mergeManagedRoster(discovered, managed)
-      const handoffEdges = roots.handoffEdges
-      if (handoffEdges === undefined) return merged
-      return {
-        ...merged,
-        rows: merged.rows.map((row) => {
-          const edges = handoffEdges(row.id)
-          return { ...row, handoffTo: edges.to, handoffFrom: edges.from }
-        }),
-      }
+      const roster = mergeManagedRoster(discovered, managed)
+      const rows = await markCompactingRows(roster.rows, {
+        folder: roots.compactionStarts,
+        readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+        begin: roots.beginCompaction,
+      })
+      return { ...roster, rows: withHandoffEdges(rows, roots.handoffEdges) }
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
@@ -127,6 +135,7 @@ export function createClaudeSessionReader(roots: {
   archive?: string
   processes?: string
   managedSessions?: () => SessionRosterRow[]
+  compactionStarts?: string
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean

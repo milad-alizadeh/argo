@@ -86,7 +86,9 @@ export function rememberManagedSession(options: {
     if (session) session.status = 'ended'
     driver.ownership?.release(sessionId)
   })
-  channel.onNotification(codexNotificationRecorder(sessionId, sessions, renameWaiters))
+  channel.onNotification(
+    codexNotificationRecorder({ sessionId, sessions, renameWaiters, now: driver.now }),
+  )
 }
 
 export function managedRoster(sessions: Map<string, ManagedSession>): SessionRosterRow[] {

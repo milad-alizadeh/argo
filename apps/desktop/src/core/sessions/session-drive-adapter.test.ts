@@ -12,6 +12,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
   return createClaudeDriveAdapter({
     start: () => 'session-1',
     compact: async () => {},
+    beginCompaction: () => {},
     completeCompaction: () => {},
     send: async () => {},
     interrupt: () => {},
