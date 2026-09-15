@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { offsetOf, viewportAnchor, waitForRevision } from './feed-motion-helpers'
+import { offsetOf, viewportAnchor, waitForRevision } from './feed-selectors'
 
 async function scrollViewport(page) {
   const viewport = page.locator('.feed__document[data-active="true"] .feed__viewport')

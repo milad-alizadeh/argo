@@ -28,6 +28,9 @@ jobs:
   links:
     name: story links in the pull request body
     # `pending` and `in_progress` statuses also start this workflow; only a finished deploy has a URL.
+    # A quota-exhausted or otherwise failed Vercel deploy reports `error`/`failure` here, which this
+    # condition already excludes: the job is skipped, never failed, so it never reads as a source-test
+    # failure (#2201). Nothing else in CI depends on Vercel.
     if: ${{ github.event_name == 'pull_request' || github.event.deployment_status.state == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

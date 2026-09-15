@@ -17,7 +17,7 @@ async function proveVisibleNames(page) {
   await page.waitForSelector('.feed__viewport[data-session="harnessNoise"] [data-feed-row]')
   assert.equal(
     await page
-      .locator('.feed__viewport [data-feed-row]', {
+      .locator('.feed__viewport[data-session="harnessNoise"] [data-feed-row]', {
         hasText: 'Set effort level to medium',
       })
       .count(),
@@ -36,7 +36,11 @@ async function proveVisibleNames(page) {
   )
   await page.waitForSelector('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]')
   assert.equal(
-    await page.locator('.feed__viewport [data-feed-row]', { hasText: 'Checking...' }).count(),
+    await page
+      .locator('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]', {
+        hasText: 'Checking...',
+      })
+      .count(),
     1,
   )
 }

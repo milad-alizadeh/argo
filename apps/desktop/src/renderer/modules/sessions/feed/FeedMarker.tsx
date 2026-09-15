@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   Collapsible,
   CollapsibleContent,
@@ -9,9 +10,9 @@ import type { SessionFeedRow } from '../types'
 
 type MarkerRow = Extract<SessionFeedRow, { shape: 'marker' }>
 
-const MARKER_LABEL: Record<MarkerRow['marker'], string> = {
-  compacted: 'Conversation compacted',
-  interrupted: 'Interrupted',
+const MARKER_LABEL: Record<MarkerRow['marker'], 'marks.compacted' | 'marks.interrupted'> = {
+  compacted: 'marks.compacted',
+  interrupted: 'marks.interrupted',
 }
 
 // A transcript boundary, drawn as a divider rather than a bubble so a reader never mistakes it
@@ -19,16 +20,18 @@ const MARKER_LABEL: Record<MarkerRow['marker'], string> = {
 // wrote to resume from, the only surviving record of what the compacted history held; a reader
 // expands it to see that text rather than losing it entirely.
 export function FeedMarker({ row }: { row: MarkerRow }) {
+  const { t } = useTranslation('sessions')
+  const label = t(MARKER_LABEL[row.marker])
   if (row.summary === null)
     return (
       <Marker variant="separator" className="py-2 type-meta">
-        <MarkerContent>{MARKER_LABEL[row.marker]}</MarkerContent>
+        <MarkerContent>{label}</MarkerContent>
       </Marker>
     )
   return (
     <Collapsible className="py-2">
       <CollapsibleTrigger className={`group ${markerVariants({ variant: 'separator' })}`}>
-        <MarkerContent>{MARKER_LABEL[row.marker]}</MarkerContent>
+        <MarkerContent>{label}</MarkerContent>
         <MarkerIcon>
           <ChevronDown className="transition-transform group-data-[panel-open]:rotate-180" />
         </MarkerIcon>

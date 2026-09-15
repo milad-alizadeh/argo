@@ -3,9 +3,15 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './FeedRow'
 import type { Reveal } from './reveal'
+import type { RevealCache } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
 
-export type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
+export type DrawnRowProps = {
+  row: SessionFeedRow
+  height?: number
+  reveal?: Reveal
+  streaming?: boolean
+}
 
 const noQuestionFailure = () => null
 
@@ -14,6 +20,7 @@ type DrawnRowInputs = {
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
   toolGroups: ToolGroupState
+  revealCache: RevealCache
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
@@ -31,6 +38,7 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
   const openEvidence = useRef(inputs.onOpenEvidence)
   openEvidence.current = inputs.onOpenEvidence
   const toolGroups = inputs.toolGroups
+  const revealCache = inputs.revealCache
   const answerQuestion = useRef(inputs.onAnswerQuestion)
   answerQuestion.current = inputs.onAnswerQuestion
   const answeringId = useRef(inputs.answeringQuestionId)
@@ -60,12 +68,13 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
         activeEvidenceId={evidence.current}
         onOpenEvidence={onOpenEvidence}
         toolGroups={toolGroups}
+        revealCache={revealCache}
         onAnswerQuestion={onAnswerQuestion}
         answering={answeringId.current === props.row.id}
         questionFailure={questionFailure(props.row.id)}
         questionLocked={questionLocked}
       />
     ),
-    [onAnswerQuestion, onOpenEvidence, questionFailure, questionLocked, toolGroups],
+    [onAnswerQuestion, onOpenEvidence, questionFailure, questionLocked, toolGroups, revealCache],
   )
 }
