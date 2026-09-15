@@ -118,9 +118,7 @@ function readOpeningPrompt(records: TranscriptRecord[]): string | null {
     if (record.kind !== 'message' || record.role !== 'user') continue
     for (const block of record.blocks) {
       const line =
-        block.shape === 'prose' || block.shape === 'event'
-          ? block.text?.split('\n').find((text) => text.trim())
-          : undefined
+        block.shape === 'prose' ? block.text.split('\n').find((text) => text.trim()) : undefined
       if (line !== undefined) return line.trim()
     }
   }

@@ -143,5 +143,8 @@ test('keeps a sidechain harness delivery out of the parent Feed', () => {
       },
     ],
   }
-  assert.deepEqual(projectFeed(chain).map((row) => row.shape), ['tool-group'])
+  assert.deepEqual(
+    projectFeed(chain).map((row) => row.shape),
+    ['tool-group'],
+  )
 })
