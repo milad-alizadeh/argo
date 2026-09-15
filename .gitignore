@@ -6,6 +6,7 @@ apps/desktop/scripts/project-fake-driver/
 apps/desktop/scripts/claude-session-fake-driver/
 apps/desktop/scripts/session-fake-driver/
 apps/desktop/scripts/ticket-fake-driver/
+apps/desktop/scripts/profile/
 docs/designs/renders/
 *.log
 .DS_Store

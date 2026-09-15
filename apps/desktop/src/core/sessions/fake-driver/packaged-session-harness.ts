@@ -81,6 +81,7 @@ export async function createPackagedSessionHarness(
     launch,
     restart,
     close: () => application?.close(),
+    application: () => application,
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
   }

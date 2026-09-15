@@ -26,7 +26,8 @@ bun run desktop:stop
 
 `bun run desktop:status` prints one JSON record after the renderer loads. It includes the exact
 window title, port, Electron process ID, launcher process ID, state directory, and ready-file
-path. Use the title to select the correct native window. Do not select or quit another generic
+path. It also includes `debugPort`, a loopback Chromium debugging port that the OS picks for the
+run and that `bun run desktop:profile` attaches to (`docs/agents/profiling.md`). Use the title to select the correct native window. Do not select or quit another generic
 Argo window.
 
 The default port is stable for the worktree. Vite refuses a busy port. If another process uses

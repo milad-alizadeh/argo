@@ -180,6 +180,9 @@ One rule outlives the tooling: **an e2e run holds the real keyboard and mouse fo
 length, so say so and wait before starting one.** The desktop render commands do not: every key
 and click they send goes into the renderer over the debugging protocol.
 
+**Profile** a desktop screen's jank, dropped frames or white flashes with `bun run
+desktop:profile`, and read `docs/agents/profiling.md` first.
+
 ## House rules
 
 What no linter checks and a model does not do unprompted. Every cap, escape-hatch ban and
