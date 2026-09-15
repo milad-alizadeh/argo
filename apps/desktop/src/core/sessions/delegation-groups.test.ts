@@ -11,6 +11,7 @@ const started = {
   status: 'running',
   progress: null,
   groupId: 'build',
+  callId: null,
 }
 
 const completed = {
@@ -21,6 +22,7 @@ const completed = {
   status: 'completed',
   progress: null,
   groupId: 'build',
+  callId: null,
 }
 
 test('groups adjacent Shell updates for one background task', () => {

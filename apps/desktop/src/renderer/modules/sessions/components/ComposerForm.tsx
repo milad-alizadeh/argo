@@ -1,5 +1,5 @@
 import type { LexicalEditor } from 'lexical'
-import { type RefObject, useEffect, useRef } from 'react'
+import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
@@ -50,6 +50,7 @@ type ComposerFormProps = {
   onReorder: (sourceId: string, targetId: string) => void
   onSend: () => void
   pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
+  permissionPrompt?: ReactNode
   plan: SessionPlan | null
   sessionId: string
   harness: HarnessControl | null
@@ -82,6 +83,7 @@ export function ComposerForm({
   onReorder,
   onSend,
   pendingTurns,
+  permissionPrompt,
   plan,
   sessionId,
   harness,
@@ -96,12 +98,15 @@ export function ComposerForm({
         onSend()
       }}
     >
-      <PendingTurns
-        turns={pendingTurns}
-        onEdit={onEdit}
-        onRemove={onRemove}
-        onReorder={onReorder}
-      />
+      <div className="session-page__composer-attachments">
+        {permissionPrompt}
+        <PendingTurns
+          turns={pendingTurns}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          onReorder={onReorder}
+        />
+      </div>
       <ComposerCard
         attachments={attachments}
         contextPickerOpen={contextPickerOpen}

@@ -62,9 +62,14 @@ export type TranscriptRecord =
       status: string | null
       progress: string | null
       groupId: string | null
+      // The Shell call a background task's notification names, so its block can open that command.
+      callId: string | null
     }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
+  // The Skill tool's result is a placeholder ("Launching skill: X"); the CLI delivers the skill's
+  // actual body as a separate, later user record tied back to the call by `sourceToolUseID`.
+  | { kind: 'skill-body'; uuid: string; callId: string; text: string }
   // A hidden harness envelope draws no Feed row, but `boundary` preserves that a real transcript
   // delivery happened there so adjacent Tool Calls on either side do not become one group.
   | { kind: 'trace'; uuid: string; boundary?: boolean; subagent?: boolean; cwd?: string | null }

@@ -5,8 +5,8 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../compo
 import { Button } from '../../../components/ui/button'
 import type { HarnessControl } from '../harness/harnesses'
 import type { SessionRoster } from '../hooks/useSessions'
-import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
 import { COMPOSER_COLUMN } from './ComposerForm'
+import { PermissionPrompt } from './PermissionPrompt'
 import { SessionComposer } from './SessionComposer'
 
 // Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
@@ -39,14 +39,18 @@ export function SessionComposerArea({
     <>
       {composer.failure ? <Failure message={composer.failure.message} /> : null}
       {permission.failure ? <Failure message={permission.failure} /> : null}
-      {permission.permission ? (
-        <ClaudePermissionPrompt permission={permission.permission} onDecide={permission.decide} />
-      ) : null}
       <SessionComposer
         {...composer.props}
         contextTokens={session?.contextTokens}
         disabled={questionPending}
         harness={harness}
+        permissionPrompt={
+          <PermissionPrompt
+            cli={harness.cli}
+            permission={permission.permission}
+            onDecide={permission.decide}
+          />
+        }
         plan={session?.plan ?? null}
       />
     </>

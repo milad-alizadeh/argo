@@ -2,14 +2,47 @@
 // Roster and the composer (SkillMentionNode.tsx decorates with the same SkillBadge).
 import { Sparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/renderer/components/ui/badge'
 import { formatSkillLabel, type PromptSegment, parsePromptText } from './promptSegments'
 
+// Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name
+// reads at the same size as the words beside it. Its baseline is the name's, not the icon's
+// bottom edge, so the name sits on the same line as the surrounding text.
+const SKILL_BADGE_CLASS =
+  'items-baseline text-[length:inherit] leading-none [&>svg]:size-[1em]! [&>svg]:self-center'
+
+export type PromptSkill = { name: string; path: string }
+
 export function SkillBadge({ name }: { name: string }) {
   return (
-    <Badge variant="secondary" className="type-meta">
+    <Badge variant="secondary" className={SKILL_BADGE_CLASS}>
       <Sparkles data-icon="inline-start" />
       {formatSkillLabel(name)}
+    </Badge>
+  )
+}
+
+// The same badge as a button, where a caller can open the skill (the Feed, into the inspector).
+function SkillButton({
+  skill,
+  onOpen,
+}: {
+  skill: PromptSkill
+  onOpen: (skill: PromptSkill) => void
+}) {
+  const { t } = useTranslation('sessions')
+  const label = formatSkillLabel(skill.name)
+  return (
+    <Badge
+      aria-label={t('skill.open', { name: label })}
+      className={`${SKILL_BADGE_CLASS} hover:bg-secondary/80`}
+      onClick={() => onOpen(skill)}
+      render={<button type="button" />}
+      variant="secondary"
+    >
+      <Sparkles data-icon="inline-start" />
+      {label}
     </Badge>
   )
 }
@@ -42,13 +75,18 @@ function segmentIdentity(segment: PromptSegment): string {
 
 type RenderOptions = {
   interactiveLinks: boolean
+  onOpenSkill: ((skill: PromptSkill) => void) | null
   renderText: (value: string) => ReactNode
 }
 
 function renderSegment(segment: PromptSegment, key: string, options: RenderOptions) {
   switch (segment.kind) {
     case 'skill':
-      return <SkillBadge key={key} name={segment.name} />
+      return options.onOpenSkill === null ? (
+        <SkillBadge key={key} name={segment.name} />
+      ) : (
+        <SkillButton key={key} onOpen={options.onOpenSkill} skill={segment} />
+      )
     case 'link':
       return options.interactiveLinks ? (
         <PromptLink href={segment.href} key={key} label={segment.label} />
@@ -71,10 +109,12 @@ function renderSegment(segment: PromptSegment, key: string, options: RenderOptio
 export function PromptText({
   text,
   interactiveLinks = true,
+  onOpenSkill = null,
   renderText = (value) => value,
 }: {
   text: string
   interactiveLinks?: boolean
+  onOpenSkill?: ((skill: PromptSkill) => void) | null
   renderText?: (value: string) => ReactNode
 }) {
   const seen = new Map<string, number>()
@@ -82,6 +122,10 @@ export function PromptText({
     const identity = segmentIdentity(segment)
     const occurrence = seen.get(identity) ?? 0
     seen.set(identity, occurrence + 1)
-    return renderSegment(segment, `${identity}:${occurrence}`, { interactiveLinks, renderText })
+    return renderSegment(segment, `${identity}:${occurrence}`, {
+      interactiveLinks,
+      onOpenSkill,
+      renderText,
+    })
   })
 }

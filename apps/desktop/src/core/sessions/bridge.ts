@@ -35,6 +35,7 @@ import {
   startSession,
 } from './drive'
 import { SESSION_OPERATIONS } from './operations'
+import { readSkillFile } from './read-skill-file'
 import type { SessionDriveAdapters } from './session-drive-adapter'
 
 export type SessionReader = {
@@ -93,6 +94,7 @@ export function attachSessionBridge(
       archiveList: (request, context) => context.reader.archiveList(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       file: (request, context) => context.reader.readWorkspaceFile(request),
+      skill: (request) => readSkillFile(request),
       cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       shellOutput: (request, context) => context.reader.readShellOutput(request),
       delegationUsage: (request, context) => context.reader.readDelegationUsage(request),

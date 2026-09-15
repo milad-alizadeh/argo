@@ -3,8 +3,8 @@ import { StrictMode, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
-
 import { BasicFeed } from './BasicFeed'
+import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
 import { RICH_MARKDOWN } from './content/feedSamples'
 import { FeedJumpToLatest } from './FeedJumpToLatest'
 
@@ -43,6 +43,7 @@ const meta: Meta<typeof BasicFeed> = {
     failure: null,
     isRunning: false,
     onOpenEvidence: () => {},
+    onJumpToLatestChange: () => {},
     selectedSessionId: 'prose',
   },
 }
@@ -200,6 +201,7 @@ const delegationFeed = {
       status: 'running',
       progress: 'Checking focus and motion',
       groupId: 'review',
+      callId: null,
     },
     {
       shape: 'delegation-group' as const,
@@ -211,37 +213,89 @@ const delegationFeed = {
           shape: 'delegation' as const,
           id: 'shell-build-start',
           actor: 'shell' as const,
-          action: 'Started bun run build',
+          action: 'Build the app',
           status: 'running',
-          progress: null,
+          progress: 'Started bun run build',
           groupId: 'build',
+          callId: 'call-build',
         },
         {
           shape: 'delegation' as const,
           id: 'shell-build-end',
           actor: 'shell' as const,
-          action: 'Build completed',
+          action: 'Build the app',
           status: 'completed',
           progress: null,
           groupId: 'build',
+          callId: 'call-build',
         },
       ],
     },
   ],
 } satisfies SessionFeed
 
+const BUILD_COMMAND = {
+  id: 'call-build',
+  command: 'bun run build',
+  background: true,
+  state: 'completed' as const,
+  startedAt: '2026-09-02T08:00:00.000Z',
+  endedAt: '2026-09-02T08:01:12.000Z',
+  outputPath: null,
+  result: null,
+}
+
+const REVIEW_AGENT = {
+  id: 'call-review',
+  label: 'Review the Feed card for keyboard access.',
+  landed: false,
+  startedAt: new Date(Date.now() - 3 * 60_000).toISOString(),
+  endedAt: null,
+}
+
+// The Session screen's links, reduced to the command and the Subagent this Feed names.
+function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
+  const [opened, setOpened] = useState<string | null>(null)
+  const links: BackgroundWorkLinks = {
+    find: ({ callId, name }) => {
+      if (callId === BUILD_COMMAND.id) return { kind: 'shell', command: BUILD_COMMAND }
+      if (name !== REVIEW_AGENT.label) return null
+      return { kind: 'delegation', delegation: REVIEW_AGENT, tokens: 4200 }
+    },
+    open: (target) =>
+      setOpened(target.kind === 'shell' ? target.command.command : target.delegation.label),
+  }
+  return (
+    <BackgroundWork.Provider value={links}>
+      <output className="sr-only">{opened === null ? '' : `Opened ${opened}`}</output>
+      <BasicFeed {...args} />
+    </BackgroundWork.Provider>
+  )
+}
+
+// Each block titles its work and shows only the newest line, and opens its feed or terminal.
 export const DelegationCards: Story = {
   args: { feed: delegationFeed, selectedSessionId: 'delegations' },
+  render: (args) => <LinkedFeed {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const agent = canvas.getByRole('region', { name: 'Agent delegation' })
+    const agent = canvas.getByRole('region', { name: 'Background Agent' })
+    await expect(agent).toHaveTextContent('Running Background Agent')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
-    await expect(agent).toHaveTextContent('running')
-    const shell = canvas.getByRole('region', { name: 'Shell activity' })
-    await expect(shell).toHaveTextContent('Started bun run build')
-    await expect(shell).toHaveTextContent('Build completed')
-    await expect(shell).toHaveTextContent('completed')
-    await expect(canvasElement.querySelectorAll('[data-slot="feed-delegation"]')).toHaveLength(2)
+    await expect(agent).toHaveTextContent('Checking focus and motion')
+    await expect(agent).toHaveTextContent('4.2k tokens')
+    await userEvent.click(within(agent).getByRole('button'))
+    await expect(
+      canvas.getByText('Opened Review the Feed card for keyboard access.'),
+    ).toBeInTheDocument()
+    const shell = canvas.getByRole('region', { name: 'Background Task' })
+    await expect(shell).toHaveTextContent('Build the app')
+    await expect(shell).toHaveTextContent('Completed')
+    await expect(shell).toHaveTextContent('1m 12s')
+    await expect(shell).toHaveTextContent('bun run build')
+    await expect(shell).not.toHaveTextContent('Started bun run build')
+    await userEvent.click(within(shell).getByRole('button'))
+    await expect(canvas.getByText('Opened bun run build')).toBeInTheDocument()
   },
 }
 
@@ -291,6 +345,7 @@ export const PromptWithSkillMentionAndLink: Story = {
     const [prompt] = drawnRows(canvasElement)
     await expect(prompt).toHaveTextContent('Implement')
     await expect(prompt).not.toHaveTextContent('[$implement]')
+    await expect(canvas.getByRole('button', { name: 'Open the Implement skill' })).toBeVisible()
     await expect(
       canvas.getByRole('link', { name: 'https://github.com/milad-alizadeh/argo/issues/1944' }),
     ).toBeVisible()
@@ -374,6 +429,26 @@ export const GroupedToolCalls: Story = {
   },
 }
 
+// A disclosure the reader opens at the latest row grows down from the control they pressed,
+// instead of the Feed pinning its bottom and sliding that control up the screen.
+export const DisclosureAtLatestKeepsItsControlStill: Story = {
+  args: { feed: toolFeed, selectedSessionId: 'tools' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
+    const groupTop = group.getBoundingClientRect().top
+    await userEvent.click(group)
+    const call = await canvas.findByRole('button', { name: 'Ran a command' })
+    await waitFor(() => expect(canvasElement.getAnimations({ subtree: true })).toHaveLength(0))
+    await expect(group.getBoundingClientRect().top).toBeCloseTo(groupTop, 0)
+    const callTop = call.getBoundingClientRect().top
+    await userEvent.click(call)
+    await waitFor(() => expect(call).toHaveAttribute('aria-expanded', 'true'))
+    await waitFor(() => expect(canvasElement.getAnimations({ subtree: true })).toHaveLength(0))
+    await expect(call.getBoundingClientRect().top).toBeCloseTo(callTop, 0)
+  },
+}
+
 // commandRuns.jsonl has adjacent Claude runs; each assistant record owns a distinct Feed block.
 const separateToolRunsFeed = {
   ...feed,
@@ -434,6 +509,170 @@ export const SeparateToolRuns: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Ran 2 commands' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
+  },
+}
+
+// One feed holding every row variation the Feed draws today, for visual review in one place:
+// a solo skill invocation, a mixed command/edit group, an unclassified tool with no output, a
+// running agent delegation, a completed shell delegation group, and a reply with a bold link.
+const allVariationsFeed = {
+  ...feed,
+  chainId: 'all-variations',
+  revision: 'all-variations-one',
+  sessionId: 'all-variations',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'variations-skill-label',
+      role: 'assistant' as const,
+      text: '**Skill invocation** (its own line, never mixed with another tool kind)',
+    },
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:skill',
+      label: 'Invoked a skill',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'skill-call',
+          kind: 'skill' as const,
+          label: 'Simple english',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: null,
+          text: '# Simple English\n\nWrite plain English a reader understands on one read.',
+        },
+      ],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'variations-group-label',
+      role: 'assistant' as const,
+      text: '**Mixed tool group** (a command inline, an edit routed to the evidence panel)',
+    },
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:mixed',
+      label: 'Ran a command, edited a file',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'mixed-command',
+          kind: 'command' as const,
+          label: 'Ran bun test composer',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
+          text: 'bun test composer',
+        },
+        {
+          shape: 'tool' as const,
+          id: 'mixed-edit',
+          kind: 'edited' as const,
+          label: 'Edited Composer.tsx',
+          detail: '+3 −1',
+          status: 'succeeded' as const,
+          evidence: { kind: 'diff' as const, title: 'Composer.tsx', source: '-old\n+new' },
+          text: null,
+        },
+      ],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'variations-empty-label',
+      role: 'assistant' as const,
+      text: '**Unclassified tool with no output** (a running or empty-result call)',
+    },
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:empty',
+      label: 'Called an unclassified tool',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'empty-call',
+          kind: 'tool' as const,
+          label: 'Called an unclassified tool',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: null,
+          text: null,
+        },
+      ],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'variations-delegation-label',
+      role: 'assistant' as const,
+      text: '**Delegation cards** (an agent still running, a shell activity group that completed)',
+    },
+    {
+      shape: 'delegation' as const,
+      id: 'variations-agent',
+      actor: 'agent' as const,
+      action: 'Review the Feed card for keyboard access.',
+      status: 'running',
+      progress: 'Checking focus and motion',
+      groupId: 'variations-review',
+      callId: null,
+    },
+    {
+      shape: 'delegation-group' as const,
+      id: 'delegation:variations-build',
+      actor: 'shell' as const,
+      groupId: 'variations-build',
+      entries: [
+        {
+          shape: 'delegation' as const,
+          id: 'variations-shell-start',
+          actor: 'shell' as const,
+          action: 'Started bun run build',
+          status: 'running',
+          progress: null,
+          groupId: 'variations-build',
+          callId: null,
+        },
+        {
+          shape: 'delegation' as const,
+          id: 'variations-shell-end',
+          actor: 'shell' as const,
+          action: 'Build completed',
+          status: 'completed',
+          progress: null,
+          groupId: 'variations-build',
+          callId: null,
+        },
+      ],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'variations-link-label',
+      role: 'assistant' as const,
+      text: '**Reply with a link** (renders bold, like the rest of a Markdown reply)',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'variations-link',
+      role: 'assistant' as const,
+      text: 'PR opened: [https://github.com/milad-alizadeh/argo/pull/2203](https://github.com/milad-alizadeh/argo/pull/2203)',
+    },
+  ],
+} satisfies SessionFeed
+
+export const AllRowVariations: Story = {
+  args: { feed: allVariationsFeed, selectedSessionId: 'all-variations' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Simple english' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Ran a command, edited a file' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Called an unclassified tool' })).toBeVisible()
+    await expect(canvas.getByRole('region', { name: 'Background Agent' })).toBeVisible()
+    await expect(canvas.getByRole('region', { name: 'Background Task' })).toBeVisible()
+    const link = canvas.getByRole('link', {
+      name: 'https://github.com/milad-alizadeh/argo/pull/2203',
+    })
+    await expect(link).toBeVisible()
+    await expect(link).toHaveClass('font-semibold')
   },
 }
 
@@ -720,6 +959,84 @@ export const FreshSessionLandsAtEndUnderStrictMode: Story = {
     await waitFor(() =>
       expect(history.scrollTop).toBeCloseTo(history.scrollHeight - history.clientHeight, 1),
     )
+  },
+}
+
+const SENT_PROMPT = 'Tighten the Feed spacing around tool groups.'
+const repliedHistoryFeed = {
+  ...historyFeed,
+  revision: 'history-replied',
+  rows: [
+    ...historyRows,
+    { shape: 'prose' as const, id: 'history-prompt', role: 'user' as const, text: SENT_PROMPT },
+    {
+      shape: 'prose' as const,
+      id: 'history-reply',
+      role: 'assistant' as const,
+      text: 'Reading the tool group styles first.',
+    },
+  ],
+} satisfies SessionFeed
+
+function SendPromptHarness() {
+  const [current, setCurrent] = useState<SessionFeed>(historyFeed)
+  const [sent, setSent] = useState<SessionFeedRow | null>(null)
+  const send = () =>
+    setSent({ shape: 'prose', id: 'optimistic-turn:1', role: 'user', text: SENT_PROMPT })
+  const reply = () => {
+    setSent(null)
+    setCurrent(repliedHistoryFeed)
+  }
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={send}>
+        Send prompt
+      </button>
+      <button type="button" onClick={reply}>
+        Receive reply
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          isRunning={false}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          optimisticRow={sent}
+          questionFailure={() => null}
+          selectedSessionId="history"
+        />
+      </div>
+    </div>
+  )
+}
+
+// Near the top: the Feed's scroll padding sits above the prompt, and nothing else does.
+const PROMPT_TOP_PX = 40
+
+// The prompt's distance below the top of the Feed viewport.
+function promptOffset(history: HTMLElement) {
+  const prompt = within(history).getByText(SENT_PROMPT)
+  const row = prompt.closest('[data-index]')
+  if (row === null) throw new Error('The sent prompt is not a drawn Feed row.')
+  return row.getBoundingClientRect().top - history.getBoundingClientRect().top
+}
+
+// A sent prompt rises to the top of the Feed and the reply streams into the room below it.
+export const SentPromptRisesToTop: Story = {
+  render: () => <SendPromptHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send prompt' }))
+    await waitFor(() => expect(promptOffset(history)).toBeLessThan(PROMPT_TOP_PX))
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive reply' }))
+    await canvas.findByText('Reading the tool group styles first.')
+    await waitFor(() => expect(promptOffset(history)).toBeLessThan(PROMPT_TOP_PX))
   },
 }
 

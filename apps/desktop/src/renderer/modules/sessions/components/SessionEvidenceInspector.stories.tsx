@@ -68,6 +68,30 @@ export const FileDiff: Story = {
   },
 }
 
+export const ReadDocument: Story = {
+  args: {
+    sessionId: null,
+    evidence: {
+      ...command,
+      id: 'read',
+      evidence: {
+        kind: 'document',
+        title:
+          '/Users/milad/Developer/argo/.claude/worktrees/ticket-2202-concrete-refusal/hooks/worktree-names.mjs',
+        source:
+          'export function recipeFor(name) {\n  if (!rules.named) return null\n  return name\n}',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/worktree-names\.mjs/)).toBeVisible()
+    await waitFor(() =>
+      expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
+    )
+  },
+}
+
 export const Unavailable: Story = {
   args: { evidence: { ...command, id: 'missing', evidence: null }, sessionId: null },
   play: async ({ canvasElement }) => {

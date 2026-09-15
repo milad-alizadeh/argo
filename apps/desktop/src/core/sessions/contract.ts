@@ -18,6 +18,7 @@ export * from './permission'
 export * from './question-contract'
 export * from './rename-contract'
 export * from './session-error'
+export * from './skill-contract'
 export * from './ticket-link-contract'
 
 // One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
@@ -104,7 +105,7 @@ export const sessionPermissionDecisionRequestSchema = z.strictObject({
   requestId: identifierSchema,
   sessionId: identifierSchema,
   permissionId: identifierSchema,
-  decision: z.enum(['allow', 'deny']),
+  decision: z.enum(['allow', 'deny', 'allowForSession']),
 })
 export type SessionPermissionDecisionRequest = z.infer<
   typeof sessionPermissionDecisionRequestSchema

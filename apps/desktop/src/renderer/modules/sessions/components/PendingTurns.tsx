@@ -2,6 +2,7 @@ import { GripVertical, Route } from 'lucide-react'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { PendingTurnActions } from './PendingTurnActions'
+import { ATTACHMENT_EXIT_MS } from './use-exit-presence'
 import type { PendingTurn } from './usePendingTurns'
 
 function queuedMessageClassName(
@@ -64,7 +65,7 @@ function useQueueAnimations(
       onRemove(id)
       setExitingTurnId(null)
       setRestoreFocus(true)
-    }, 280)
+    }, ATTACHMENT_EXIT_MS)
   }
 
   return { enteringTurnId, exitingTurnId, removeTurn }
@@ -86,7 +87,7 @@ export function PendingTurns({
 
   if (turns.length === 0) return null
   return (
-    <section aria-label="Pending Turns" className="session-page__composer-queue">
+    <section aria-label="Pending Turns">
       <ul ref={listRef}>
         {turns.map((turn) => (
           <li

@@ -1,4 +1,6 @@
-.session-page__composer-queue {
+/* The composer's attachment tray: one card inset from its edges and tucked under its top, holding
+   the Permission above the queue. */
+.session-page__composer-attachments {
   position: relative;
   z-index: 0;
   width: calc(100% - var(--spacing-shell-section));
@@ -11,6 +13,37 @@
   border-start-start-radius: var(--radius-xl);
   border-start-end-radius: var(--radius-xl);
   background: var(--card);
+}
+
+.session-page__composer-attachments:empty {
+  display: none;
+}
+
+.session-page__composer-attachments > * + * {
+  border-top: 1px solid var(--border);
+}
+
+.session-page__composer-permission {
+  overflow: hidden;
+  interpolate-size: allow-keywords;
+}
+
+.session-page__composer-permission-body {
+  display: grid;
+  gap: var(--spacing-shell-item);
+  padding: var(--spacing-shell-item) var(--spacing-shell-item) var(--spacing-shell-item)
+    var(--spacing-shell-inset);
+}
+
+.session-page__composer-permission-call {
+  max-height: calc(var(--size-queue-row) * 3);
+  margin: 0;
+  overflow: auto;
+  padding: var(--spacing-tight) var(--spacing-shell-item);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .session-page__queued-message {
@@ -45,6 +78,18 @@
   }
 }
 
+@keyframes session-page-attachment-enter {
+  from {
+    height: 0;
+  }
+}
+
+@keyframes session-page-attachment-exit {
+  to {
+    height: 0;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .session-page__queued-message--enter {
     animation: session-page-queue-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -52,6 +97,14 @@
 
   .session-page__queued-message--exit {
     animation: session-page-queue-exit 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .session-page__composer-permission {
+    animation: session-page-attachment-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .session-page__composer-permission--exit {
+    animation: session-page-attachment-exit 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 }
 

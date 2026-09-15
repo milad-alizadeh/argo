@@ -122,8 +122,24 @@
     "transcript": { "label": "Transcript delivered" }
   },
   "delegation": {
-    "agent": { "label": "Agent delegation" },
-    "shell": { "label": "Shell activity" }
+    "agent": { "label": "Background Agent", "running": "Running Background Agent" },
+    "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "done": "Done",
+    "tokens": "{{amount}} tokens"
+  },
+  "skill": {
+    "open": "Open the {{name}} skill",
+    "inspector": "Skill",
+    "reading": "Reading skill…",
+    "unavailable": "This skill's file could not be read."
+  },
+  "permission": {
+    "title": "Allow this?",
+    "deny": "Deny",
+    "allow": "Allow",
+    "more": "More ways to allow",
+    "allowSimilar": "Allow similar",
+    "allowAll": "Allow all"
   },
   "diff": {
     "readingFile": "Reading current file…",
@@ -148,7 +164,8 @@
   },
   "tools": {
     "failed": "Failed",
-    "copyRun": "Copy command and result"
+    "copyRun": "Copy command and result",
+    "noOutput": "No output"
   },
   "rail": {
     "backgroundAgents": "Background agents",

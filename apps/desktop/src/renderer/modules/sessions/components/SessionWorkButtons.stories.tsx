@@ -103,7 +103,7 @@ export const RunningAndFinishedGroups: Story = {
     ).toHaveTextContent('Running · 5m 0s · 18k tokens')
     await expect(
       within(finished).getByRole('menuitem', { name: /Find every caller/ }),
-    ).toHaveTextContent('Landed · 1m 12s · 2.7k tokens')
+    ).toHaveTextContent('Done · 1m 12s · 2.7k tokens')
   },
 }
 

@@ -39,7 +39,7 @@ export function delegationEntries(
     monospace: false,
     running: !delegation.landed,
     mark: delegation.landed ? 'bg-idle' : 'bg-active shadow-state-glow',
-    state: delegation.landed ? 'Landed' : 'Running',
+    state: delegation.landed ? 'Done' : 'Running',
     facts: joined([
       workDuration(delegation.startedAt, delegation.endedAt, now),
       compactTokens(tokens[delegation.id] ?? null) === null

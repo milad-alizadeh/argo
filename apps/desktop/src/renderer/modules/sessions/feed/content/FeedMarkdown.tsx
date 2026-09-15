@@ -37,7 +37,7 @@ function Link({ href, children }: { href?: string; children?: ReactNode }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="underline decoration-border underline-offset-4 hover:decoration-foreground"
+      className="font-semibold underline decoration-border underline-offset-4 hover:decoration-foreground"
     >
       {children}
     </a>

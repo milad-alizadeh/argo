@@ -88,7 +88,7 @@ function FeedRowContent({
             text={row.text}
           />
         )
-      return <FeedPrompt text={row.text} />
+      return <FeedPrompt onOpenEvidence={onOpenEvidence} text={row.text} />
     case 'ask':
       return (
         <FeedQuestion
@@ -107,7 +107,13 @@ function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
-function FeedPrompt({ text }: { text: string }) {
+function FeedPrompt({
+  onOpenEvidence,
+  text,
+}: {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  text: string
+}) {
   return (
     <p
       className="max-w-full rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
@@ -115,7 +121,12 @@ function FeedPrompt({ text }: { text: string }) {
       data-variant="muted"
     >
       <span className="sr-only">You</span>
-      <PromptText text={text} />
+      <PromptText
+        onOpenSkill={({ name, path }) =>
+          onOpenEvidence({ shape: 'skill', id: `skill:${path}`, name, path })
+        }
+        text={text}
+      />
     </p>
   )
 }

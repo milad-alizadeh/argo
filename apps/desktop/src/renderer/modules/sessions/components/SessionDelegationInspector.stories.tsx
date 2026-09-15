@@ -56,15 +56,18 @@ type Story = StoryObj<typeof SessionDelegationInspector>
 
 function InspectorStory({
   args,
+  tokens,
 }: {
   args: React.ComponentProps<typeof SessionDelegationInspector>
+  tokens?: number | null
 }) {
   return (
     <>
       <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
         <SessionWorkInspectorHeader
-          work={{ kind: 'delegation', delegation: args.delegation }}
           now={args.now}
+          tokens={tokens}
+          work={{ kind: 'delegation', delegation: args.delegation }}
         />
       </header>
       <SessionDelegationInspector {...args} />
@@ -81,11 +84,11 @@ export const RunningSubagent: Story = {
     onOpenEvidence: () => {},
     onOpenSession: () => {},
   },
-  render: (args) => <InspectorStory args={args} />,
+  render: (args) => <InspectorStory args={args} tokens={4200} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Interface review')).toBeVisible()
-    await expect(canvas.getByText('Running · 5m 0s')).toBeVisible()
+    await expect(canvas.getByText('Running · 5m 0s · 4.2k tokens')).toBeVisible()
     await expect(
       canvas.getByText('The two work buttons take the control size and the meta typography role.'),
     ).toBeVisible()

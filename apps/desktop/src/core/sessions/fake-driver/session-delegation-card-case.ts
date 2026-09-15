@@ -4,14 +4,14 @@ export async function proveDelegationCards(page) {
   await page.evaluate(() => {
     window.location.hash = '#/sessions/harnessNoise'
   })
-  const agent = page.getByRole('region', { name: 'Agent delegation' })
+  const agent = page.getByRole('region', { name: 'Background Agent' })
   await agent.waitFor()
   await assert.doesNotReject(() =>
     agent.getByText('Review the Feed card for keyboard access.').waitFor(),
   )
   await assert.doesNotReject(() => agent.getByText('Checking focus and motion').waitFor())
   await assert.doesNotReject(() => agent.getByText('running').waitFor())
-  const shell = page.getByRole('region', { name: 'Shell activity' })
+  const shell = page.getByRole('region', { name: 'Background Task' })
   await shell.waitFor()
   await assert.doesNotReject(() => shell.getByText('Started bun run build').waitFor())
   await assert.doesNotReject(() => shell.getByText('Build completed').waitFor())

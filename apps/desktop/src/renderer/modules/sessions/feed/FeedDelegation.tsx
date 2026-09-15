@@ -1,26 +1,117 @@
-import { Bot, Terminal } from 'lucide-react'
+import { Bot, ChevronRight, SquareTerminal } from 'lucide-react'
+import { type ReactNode, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { compactTokens, SHELL_STATE_WORDS, workDuration } from '../components/session-work'
 import type { SessionFeedRow } from '../types'
+import {
+  BackgroundWork,
+  type BackgroundWorkTarget,
+  backgroundWorkBlock,
+  type WorkState,
+} from './background-work'
 import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 type DelegationGroup = Extract<SessionFeedRow, { shape: 'delegation-group' }>
+type Actor = DelegationRow['actor']
 
-const DELEGATION_PRESENTATION = {
-  agent: Bot,
-  shell: Terminal,
-} satisfies Record<DelegationRow['actor'], typeof Bot>
+// The Session header's own two icons (SessionWorkButtons), so a block and its header button match.
+const ACTOR_ICON = { agent: Bot, shell: SquareTerminal } satisfies Record<Actor, typeof Bot>
 
-function DelegationDetail({ row }: { row: DelegationRow }) {
+const STATE_DOT: Record<WorkState, string> = {
+  running: 'bg-active shadow-state-glow',
+  done: 'bg-idle',
+  completed: 'bg-idle',
+  failed: 'bg-danger',
+  killed: 'bg-warn',
+  stopped: 'bg-warn',
+}
+
+const STATE_INK: Record<WorkState, string> = {
+  running: 'text-(--feed-work-ink-active)',
+  done: 'text-muted-foreground',
+  completed: 'text-muted-foreground',
+  failed: 'text-(--feed-work-ink-danger)',
+  killed: 'text-(--feed-work-ink-warn)',
+  stopped: 'text-(--feed-work-ink-warn)',
+}
+
+function useNow(ticking: boolean) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!ticking) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(timer)
+  }, [ticking])
+  return now
+}
+
+function WorkMark({ actor, state }: { actor: Actor; state: WorkState | null }) {
+  const Icon = ACTOR_ICON[actor]
   return (
-    <div className="min-w-0 space-y-1">
-      {row.action === null ? null : (
-        <p className="whitespace-pre-wrap break-words text-foreground type-body">{row.action}</p>
+    <span className="relative inline-flex shrink-0 text-muted-foreground">
+      <Icon aria-hidden="true" className="size-(--size-icon-control)" />
+      <span
+        aria-hidden="true"
+        className={`absolute -top-0.5 -right-0.5 size-(--size-state-dot) rounded-full ring-2 ring-card ${state === null ? 'bg-idle' : STATE_DOT[state]}`}
+      />
+    </span>
+  )
+}
+
+function settledWord(state: WorkState | null, status: string | null, done: string) {
+  if (state === 'running') return null
+  if (state === 'done') return done
+  if (state === null) return status
+  return SHELL_STATE_WORDS[state]
+}
+
+// The settled state word, then the tokens a Subagent spent, then how long the work ran.
+function WorkFacts({
+  state,
+  status,
+  target,
+}: {
+  state: WorkState | null
+  status: string | null
+  target: BackgroundWorkTarget | null
+}) {
+  const { t } = useTranslation('sessions')
+  const now = useNow(state === 'running')
+  const work = target?.kind === 'shell' ? target.command : (target?.delegation ?? null)
+  const elapsed = work === null ? null : workDuration(work.startedAt, work.endedAt, now)
+  const tokens = compactTokens(target?.kind === 'delegation' ? target.tokens : null)
+  const word = settledWord(state, status, t('delegation.done'))
+  return (
+    <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">
+      {word === null ? null : (
+        <span className={state === null ? undefined : STATE_INK[state]}>{word}</span>
       )}
-      {row.progress === null ? null : (
-        <p className="break-words text-muted-foreground type-meta">{row.progress}</p>
-      )}
-    </div>
+      {tokens === null ? null : <span>{t('delegation.tokens', { amount: tokens })}</span>}
+      {elapsed === null ? null : <span>{elapsed}</span>}
+    </span>
+  )
+}
+
+// A block that links to its work is one button into that work's feed or terminal.
+function Surface({
+  target,
+  children,
+}: {
+  target: BackgroundWorkTarget | null
+  children: ReactNode
+}) {
+  const links = useContext(BackgroundWork)
+  const box = `block w-full overflow-hidden border bg-card text-left ${FEED_CARD_RADIUS_CLASS}`
+  if (links === null || target === null) return <div className={box}>{children}</div>
+  return (
+    <button
+      className={`group ${box} transition-colors hover:bg-muted/40`}
+      onClick={() => links.open(target)}
+      type="button"
+    >
+      {children}
+    </button>
   )
 }
 
@@ -29,37 +120,56 @@ function DelegationCard({
   entries,
   groupId = null,
 }: {
-  actor: DelegationRow['actor']
+  actor: Actor
   entries: readonly DelegationRow[]
   groupId?: string | null
 }) {
   const { t } = useTranslation('sessions')
-  const Icon = DELEGATION_PRESENTATION[actor]
-  const latest = entries.at(-1)
+  const links = useContext(BackgroundWork)
+  const { target, status, state, title, line, lineIsCommand } = backgroundWorkBlock(
+    actor,
+    entries.at(-1),
+    links,
+  )
+  const running = state === 'running'
   const label = t(`delegation.${actor}.label`)
-  const status = latest?.status ?? null
+  const headline = running ? t(`delegation.${actor}.running`) : label
   return (
     <section
       aria-label={label}
-      className={`min-w-0 border border-border/70 bg-muted/50 px-3 py-2.5 ${FEED_CARD_RADIUS_CLASS}`}
+      className="min-w-0 py-1"
       data-actor={actor}
       data-group={groupId ?? undefined}
       data-slot="feed-delegation"
+      data-state={state ?? undefined}
     >
-      <div className="mb-1.5 flex min-w-0 items-center gap-2 type-meta">
-        <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1 font-medium text-foreground">{label}</span>
-        {status === null ? null : (
-          <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-muted-foreground">
-            {status}
+      <Surface target={target}>
+        <div
+          className={`flex min-w-0 items-center gap-2 px-3.5 py-1.5 type-meta text-muted-foreground ${line === null ? '' : 'border-b border-border/60'}`}
+        >
+          <WorkMark actor={actor} state={state} />
+          <span
+            className={`min-w-0 truncate type-body ${running ? 'feed-work-shimmer' : 'text-foreground'}`}
+          >
+            <span className="sr-only">{headline}: </span>
+            {title ?? label}
           </span>
+          <WorkFacts state={state} status={status} target={target} />
+          {target === null || links === null ? null : (
+            <ChevronRight
+              aria-hidden="true"
+              className="size-(--size-icon-control) shrink-0 transition-transform group-hover:translate-x-0.5"
+            />
+          )}
+        </div>
+        {line === null ? null : (
+          <p
+            className={`truncate px-3.5 py-2.5 text-muted-foreground ${lineIsCommand ? 'font-mono type-code' : 'type-meta'}`}
+          >
+            {line}
+          </p>
         )}
-      </div>
-      <div className="space-y-2">
-        {entries.map((entry) => (
-          <DelegationDetail key={entry.id} row={entry} />
-        ))}
-      </div>
+      </Surface>
     </section>
   )
 }

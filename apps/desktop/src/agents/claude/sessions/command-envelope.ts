@@ -4,6 +4,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { readTaskNotification } from './task-notification'
 
 function tagged(tag: string, text: string): string | null {
   return text.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1] ?? null
@@ -103,6 +104,7 @@ function readRealtimeDelegation(
     status: trimmedTag(body, 'status'),
     progress: trimmedTag(body, 'progress'),
     groupId: identifierTag(body, 'id'),
+    callId: null,
   }
 }
 
@@ -141,17 +143,15 @@ export function readCommandEnvelope(
         }
   }
   // A background task's delivery is not the person's own words: it is the CLI handing back a
-  // summary, with the task's full JSON result attached for the model, not the reader.
+  // summary, with the task's full result attached for the model, not the reader.
   if (text.startsWith('<task-notification>')) {
-    const summary = tagged('summary', text)
     return {
       kind: 'delegation',
       uuid: message.uuid,
-      actor: 'shell',
-      action: summary?.trim() || null,
+      ...readTaskNotification(text),
       status: trimmedTag(text, 'status'),
-      progress: null,
       groupId: identifierTag(text, 'task-id'),
+      callId: identifierTag(text, 'tool-use-id'),
     }
   }
   const prompt = readCommandPrompt(text)

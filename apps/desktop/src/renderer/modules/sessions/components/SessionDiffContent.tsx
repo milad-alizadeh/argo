@@ -113,9 +113,14 @@ function DiffHeader({
 }) {
   const Icon = copyLabel === undefined ? GitCompareArrows : FileText
   return (
-    <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3 type-meta">
+    <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
       <CodeBlockTitle className="min-w-0">
-        <CodeBlockFilename className="truncate">{path}</CodeBlockFilename>
+        <CodeBlockFilename
+          className="block overflow-hidden text-ellipsis whitespace-nowrap text-left type-body font-semibold"
+          dir="rtl"
+        >
+          {path}
+        </CodeBlockFilename>
       </CodeBlockTitle>
       <CodeBlockActions>
         <Button

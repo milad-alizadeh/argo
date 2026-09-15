@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { ClaudePermission } from '@/core/sessions/contract'
+import type { ClaudePermissionDecision } from '../drive/permission-gate'
 import { createClaudeDriveAdapter } from '../drive/session-drive-adapter.ts'
 
 const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
@@ -38,8 +39,8 @@ test('reads the pending Permission the driver holds, mapped onto the shared Perm
   })
 })
 
-test("translates every shared decision word into the two words Claude's hook answers with", async () => {
-  const decided: Array<'allow' | 'deny'> = []
+test("translates every shared decision word into the words Claude's gate answers with", async () => {
+  const decided: ClaudePermissionDecision[] = []
   const adapter = createClaudeDriveAdapter(
     fakeDriver({
       decidePermission: (_sessionId, _permissionId, decision) => {
@@ -57,7 +58,7 @@ test("translates every shared decision word into the two words Claude's hook ans
     })
     assert.deepEqual(result, { ok: true })
   }
-  assert.deepEqual(decided, ['allow', 'deny', 'allow', 'deny'])
+  assert.deepEqual(decided, ['allow', 'deny', 'allowSimilar', 'deny'])
 })
 
 test('refuses a Permission decision that is no longer waiting', async () => {

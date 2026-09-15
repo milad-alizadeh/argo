@@ -3,6 +3,7 @@ import { SessionInspector } from '../components/SessionInspector'
 import { SessionComposerArea, SessionHandoffFacts } from '../components/SessionScreenDetails'
 import { SessionWorkButtons } from '../components/SessionWorkButtons'
 import { SessionWorkInspectorHeader } from '../components/SessionWorkInspectorHeader'
+import { BackgroundWork, type BackgroundWorkLinks } from '../feed/background-work'
 import type { SessionFeed } from '../types'
 import { SessionShell } from './SessionShell'
 import { type SessionScreenModel, useSessionScreenModel } from './useSessionScreenModel'
@@ -32,6 +33,29 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   )
 }
 
+// A background work block in the Feed opens the same inspector its header button does.
+function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {
+  const { pick, selectedSessionId, session } = model
+  return {
+    find: ({ callId, name }) => {
+      const command = session?.shell.find((entry) => entry.id === callId)
+      if (command !== undefined) return { kind: 'shell', command }
+      const delegation =
+        session?.delegations.find((entry) => entry.id === callId) ??
+        session?.delegations.findLast((entry) => name !== null && entry.label === name)
+      if (delegation === undefined) return null
+      const tokens = model.delegationTokens[delegation.id] ?? null
+      return { kind: 'delegation', delegation, tokens }
+    },
+    open: (target) =>
+      pick(
+        target.kind === 'shell'
+          ? { sessionId: selectedSessionId, delegationId: null, shellId: target.command.id }
+          : { sessionId: selectedSessionId, delegationId: target.delegation.id, shellId: null },
+      ),
+  }
+}
+
 function Inspector({ model }: { model: SessionScreenModel }) {
   const { evidence, navigate, roster, session, setEvidence } = model
   return (
@@ -57,7 +81,10 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
   }
   if (model.delegation !== null) {
     return (
-      <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation: model.delegation }} />
+      <SessionWorkInspectorHeader
+        tokens={model.delegationTokens[model.delegation.id] ?? null}
+        work={{ kind: 'delegation', delegation: model.delegation }}
+      />
     )
   }
   return null
@@ -74,46 +101,48 @@ export function SessionScreenView() {
     answers: ClaudeQuestionAnswer[],
   ) => void question.decide(questionId, answers)
   return (
-    <SessionShell
-      feed={feed}
-      feedError={feedError}
-      onRetryFeed={retryFeed}
-      compactionStartedAt={session?.compactionStartedAt ?? null}
-      compactionPercentage={session?.compactionPercentage ?? null}
-      compactionTokens={session?.compactionTokens ?? null}
-      handoffStartedAt={session?.handoffStartedAt ?? null}
-      handoffTo={session?.handoffTo ?? null}
-      onOpenSession={openSession}
-      isRunning={session?.status === 'running'}
-      posture={session?.posture ?? null}
-      optimisticRow={composer.optimisticRow}
-      turnMarker={composer.markerView}
-      selectedSessionId={selectedSessionId}
-      activeEvidenceId={evidence?.id ?? null}
-      onOpenEvidence={setEvidence}
-      onAnswerQuestion={answerQuestion}
-      answeringQuestionId={model.question.answeringId}
-      questionFailure={model.question.failureFor}
-      composer={
-        selectedSessionId === null ? null : (
-          <SessionComposerArea
-            composer={model.composer}
-            permission={model.permission}
-            questionPending={pendingQuestionId(feed) !== null}
-            session={session}
-            harness={model.harness}
-          />
-        )
-      }
-      headerControls={<WorkButtons model={model} />}
-      session={session}
-      inspector={<Inspector model={model} />}
-      inspectorBar={<InspectorBar model={model} />}
-      defaultInspectorCollapsed={true}
-      // Picking work in the header opens the inspector, the way opening recorded evidence does.
-      // Nothing opens it on its own any more: the header buttons are what say a Session has
-      // background work (#1582 AC1).
-      inspectorReveal={evidence?.id ?? workReveal ?? undefined}
-    />
+    <BackgroundWork.Provider value={backgroundWorkLinks(model)}>
+      <SessionShell
+        feed={feed}
+        feedError={feedError}
+        onRetryFeed={retryFeed}
+        compactionStartedAt={session?.compactionStartedAt ?? null}
+        compactionPercentage={session?.compactionPercentage ?? null}
+        compactionTokens={session?.compactionTokens ?? null}
+        handoffStartedAt={session?.handoffStartedAt ?? null}
+        handoffTo={session?.handoffTo ?? null}
+        onOpenSession={openSession}
+        isRunning={session?.status === 'running'}
+        posture={session?.posture ?? null}
+        optimisticRow={composer.optimisticRow}
+        turnMarker={composer.markerView}
+        selectedSessionId={selectedSessionId}
+        activeEvidenceId={evidence?.id ?? null}
+        onOpenEvidence={setEvidence}
+        onAnswerQuestion={answerQuestion}
+        answeringQuestionId={model.question.answeringId}
+        questionFailure={model.question.failureFor}
+        composer={
+          selectedSessionId === null ? null : (
+            <SessionComposerArea
+              composer={model.composer}
+              permission={model.permission}
+              questionPending={pendingQuestionId(feed) !== null}
+              session={session}
+              harness={model.harness}
+            />
+          )
+        }
+        headerControls={<WorkButtons model={model} />}
+        session={session}
+        inspector={<Inspector model={model} />}
+        inspectorBar={<InspectorBar model={model} />}
+        defaultInspectorCollapsed={true}
+        // Picking work in the header opens the inspector, the way opening recorded evidence does.
+        // Nothing opens it on its own any more: the header buttons are what say a Session has
+        // background work (#1582 AC1).
+        inspectorReveal={evidence?.id ?? workReveal ?? undefined}
+      />
+    </BackgroundWork.Provider>
   )
 }

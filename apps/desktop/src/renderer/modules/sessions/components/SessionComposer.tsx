@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
 import { ComposerForm } from './ComposerForm'
@@ -20,6 +20,7 @@ export type SessionComposerProps = {
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: Send
+  permissionPrompt?: ReactNode
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
@@ -37,6 +38,7 @@ export function SessionComposer({
   onInterrupt,
   sessionId,
   onSend,
+  permissionPrompt,
   plan = null,
   harness = null,
   setup = null,
@@ -74,6 +76,7 @@ export function SessionComposer({
         if (!disabled) void state.send()
       }}
       pendingTurns={state.pendingTurns}
+      permissionPrompt={permissionPrompt}
       plan={plan}
       sessionId={sessionId}
       setup={setup}

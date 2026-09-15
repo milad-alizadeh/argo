@@ -1,11 +1,13 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useCallback, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 import type { Reveal } from './reveal'
 import { useFeedTailFollow } from './use-feed-tail-follow'
 import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
+import { useJumpToLatest } from './use-jump-to-latest'
+import { feedContentHeight, usePromptAtTop } from './use-prompt-at-top'
 import type { Settled } from './useSettledFeed'
 
 type FeedRowComponent = (props: { row: SessionFeedRow; reveal?: Reveal }) => ReactNode
@@ -18,6 +20,8 @@ type AnchoredFeedProps = {
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
 }
 type FeedViewportProps = Pick<AnchoredFeedProps, 'FeedRow' | 'rows' | 'settled'> & {
+  gap: number
+  promptIndex: number | null
   reveals: ReadonlyMap<string, Reveal>
   setViewport: (viewport: HTMLElement | null) => void
   virtualizer: ReactVirtualizer<HTMLElement, Element>
@@ -37,7 +41,7 @@ export function AnchoredFeed({
   revealsFor,
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
-  const tailFollow = useFeedTailFollow(settled.reading.sessionId)
+  const tailFollow = useFeedTailFollow(settled.reading.sessionId, viewport)
   const virtualizer = useVirtualizer({
     // End anchoring is only correct while the reader is following the tail.
     // While they are reading history, retain their actual reading position as
@@ -63,29 +67,28 @@ export function AnchoredFeed({
     viewport,
     virtualizer,
   })
+  const promptIndex = usePromptAtTop({
+    gap: padding.start,
+    positioned: !tailFollow.awaitingInitialPosition,
+    rows,
+    sessionId: settled.reading.sessionId,
+    virtualizer,
+  })
   const reveals = revealsFor(settled)
-  const jumpToLatest = useCallback(() => {
-    virtualizer.scrollToEnd({ behavior: 'smooth' })
-  }, [virtualizer])
-  useEffect(() => {
-    onJumpToLatestChange(
-      settled.reading.sessionId,
-      active && !tailFollow.awaitingInitialPosition && !tailFollow.atLatest ? jumpToLatest : null,
-    )
-    return () => onJumpToLatestChange(settled.reading.sessionId, null)
-  }, [
+  useJumpToLatest({
     active,
-    jumpToLatest,
     onJumpToLatestChange,
-    settled.reading.sessionId,
-    tailFollow.atLatest,
-    tailFollow.awaitingInitialPosition,
-  ])
+    sessionId: settled.reading.sessionId,
+    tailFollow,
+    virtualizer,
+  })
 
   return (
     <div className="feed__scroller">
       <FeedViewport
         FeedRow={FeedRow}
+        gap={padding.start}
+        promptIndex={promptIndex}
         reveals={reveals}
         rows={rows}
         setViewport={attachViewport}
@@ -104,6 +107,8 @@ function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
 
 function FeedViewport({
   FeedRow,
+  gap,
+  promptIndex,
   reveals,
   rows,
   settled,
@@ -119,7 +124,10 @@ function FeedViewport({
       data-session={settled.reading.sessionId}
       ref={setViewport}
     >
-      <div className="feed__content" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+      <div
+        className="feed__content"
+        style={{ height: `${feedContentHeight(virtualizer, promptIndex, gap)}px` }}
+      >
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index]
           if (row === undefined) return null

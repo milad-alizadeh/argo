@@ -12,15 +12,15 @@ export const permissionSchema = z.strictObject({
 })
 export type Permission = z.infer<typeof permissionSchema>
 
-// Every decision word any adapter's Permission can answer with. Claude's PreToolUse hook only
-// ever returns two; `allowForSession` and `cancel` exist for Codex's app-server (#1841), which
-// joins a standing allow and an interrupt to its two approval decisions respectively.
+// Every decision word any adapter's Permission can answer with. `allowForSession` is a standing
+// allow: Claude's gate keeps it as a rule for similar calls, Codex's app-server (#1841) for the
+// whole Session. `cancel` exists for Codex alone, which joins an interrupt to its approvals.
 export const PERMISSION_DECISIONS = ['allow', 'deny', 'allowForSession', 'cancel'] as const
 export type PermissionDecision = (typeof PERMISSION_DECISIONS)[number]
 
 // Which of the four words each CLI's Permission actually answers with, so a decision word one CLI
 // needs but another doesn't stays representable rather than silently unsupported.
 export const PERMISSION_DECISIONS_BY_CLI: Record<string, readonly PermissionDecision[]> = {
-  claude: ['allow', 'deny'],
+  claude: ['allow', 'deny', 'allowForSession'],
   codex: ['allow', 'deny', 'allowForSession', 'cancel'],
 }

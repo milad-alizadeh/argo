@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { CodeBlock } from '@/components/ai-elements/code-block'
 import {
   Terminal,
   TerminalContent,
@@ -6,9 +7,24 @@ import {
   TerminalHeader,
   TerminalTitle,
 } from '@/components/ai-elements/terminal'
+import { detectCodeLanguageFromPath } from '../feed/content/codeLanguage'
 import { FeedMermaid } from '../feed/content/FeedMermaid'
 import type { SessionEvidence } from '../types'
 import { SessionDiffViewer } from './SessionDiffViewer'
+import { SessionSkillInspector } from './SessionSkillInspector'
+
+// A long file path reads best truncated at its start, so the filename at the end stays visible;
+// `direction: rtl` puts the ellipsis there while `text-align: left` keeps the visible text ltr.
+function InspectorTitle({ title }: { title: string }) {
+  return (
+    <span
+      className="block overflow-hidden text-ellipsis whitespace-nowrap text-left type-body font-semibold"
+      dir="rtl"
+    >
+      {title}
+    </span>
+  )
+}
 
 export function SessionEvidenceInspector({
   evidence,
@@ -17,11 +33,12 @@ export function SessionEvidenceInspector({
   evidence: SessionEvidence
   sessionId: string | null
 }) {
+  if (evidence.shape === 'skill') return <SessionSkillInspector evidence={evidence} />
   if (evidence.shape === 'diagram')
     return (
       <section className="flex min-h-0 flex-1 flex-col" aria-label="Diagram inspector">
-        <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
-          {evidence.title}
+        <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
+          <InspectorTitle title={evidence.title} />
         </header>
         <div className="min-h-0 flex-1 overflow-auto p-4">
           <FeedMermaid source={evidence.source} />
@@ -51,14 +68,17 @@ export function SessionEvidenceInspector({
       </div>
     )
   } else {
+    const language = detectCodeLanguageFromPath(title)?.grammar ?? null
     content = (
-      <pre className="min-h-0 overflow-auto p-4 type-code whitespace-pre-wrap">{source}</pre>
+      <div className="min-h-0 overflow-auto p-4">
+        <CodeBlock code={source} language={language} className="type-code-content bg-card" />
+      </div>
     )
   }
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label="Command and file inspector">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3 type-meta">
-        {title}
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
+        <InspectorTitle title={title} />
       </header>
       {content}
     </section>

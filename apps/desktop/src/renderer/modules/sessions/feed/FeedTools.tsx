@@ -1,50 +1,32 @@
-import {
-  CircleCheck,
-  FilePenLine,
-  LoaderCircle,
-  Search,
-  SquareTerminal,
-  TerminalIcon,
-  Wrench,
-} from 'lucide-react'
+import { FilePenLine, LoaderCircle, Search, Sparkles, SquareTerminal, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '@/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
 import { TaskItem } from '@/components/ai-elements/task'
 import { TOOL_CONTENT_ROUTE } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import type { SessionFeedRow } from '../types'
-import { CodeLanguageIcon } from './content/CodeLanguageIcon'
-import { codeLanguageLabel, detectCodeLanguage } from './content/codeLanguage'
-import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
+import { FeedInlineToolCall, FeedInlineToolCallItem } from './FeedInlineToolCall'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
-type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
-type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
+export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
+export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
 
-const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: string }>> = {
+export const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: string }>> = {
   command: SquareTerminal,
   read: Search,
   edited: FilePenLine,
   created: FilePenLine,
   tool: Wrench,
+  skill: Sparkles,
 }
 
-function StatusIcon({ status }: { status: ToolRow['status'] }) {
+export function StatusIcon({ status }: { status: ToolRow['status'] }) {
   switch (status) {
     case 'failed':
+    case 'succeeded':
       return null
     case 'running':
       return <StatusMark icon={LoaderCircle} label="In progress" className="animate-spin" />
-    case 'succeeded':
-      return <StatusMark icon={CircleCheck} label="Succeeded" className="text-muted-foreground" />
   }
 }
 
@@ -65,6 +47,31 @@ function StatusMark({
   )
 }
 
+// The only detail text a tool call carries today is an Edit's line-count summary
+// (`+added −removed`, see `toolDetail` in tool-feed.ts). Coloring it here, rather than widening
+// the feed contract to a structured shape, keeps the IPC payload a plain string.
+const DIFF_DETAIL = /^\+(\d+) −(\d+)$/
+
+// A failed call reads red; otherwise the row is muted until hovered or open in the inspector.
+function lineInk(failed: boolean, active: boolean) {
+  if (failed) return 'text-destructive'
+  return active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+}
+
+// The numbers keep their own colours whatever the row's ink.
+function ToolDetail({ detail }: { detail: string }) {
+  const diff = DIFF_DETAIL.exec(detail)
+  if (diff === null) return <span className="shrink-0">{detail}</span>
+  const [, added, removed] = diff
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <span className="text-emerald-600 dark:text-emerald-400">{`+${added}`}</span>
+      <span className="text-destructive">{`−${removed}`}</span>
+    </span>
+  )
+}
+
+// The numbers sit right after the label, as if inline; a running spinner keeps the far edge.
 export function FeedToolLine({
   call,
   activeEvidenceId,
@@ -74,63 +81,50 @@ export function FeedToolLine({
   activeEvidenceId: string | null
   onOpen: (row: ToolRow) => void
 }) {
+  const { t } = useTranslation('sessions')
   const Icon = TOOL_ICONS[call.kind]
+  const active = activeEvidenceId === call.id
   const failed = call.status === 'failed'
   return (
     <button
       type="button"
-      aria-current={activeEvidenceId === call.id ? 'location' : undefined}
-      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${failed ? 'text-destructive hover:text-destructive' : 'text-muted-foreground hover:text-foreground'} ${activeEvidenceId === call.id && !failed ? 'text-foreground' : ''}`}
+      aria-current={active ? 'location' : undefined}
+      className={`flex w-full items-center gap-2 text-left type-body transition-colors ${lineInk(failed, active)}`}
       data-feed-evidence-id={call.id}
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
-      <Icon
-        aria-hidden="true"
-        className={`!size-(--size-icon-inline) shrink-0 ${failed ? 'text-destructive' : 'text-muted-foreground'}`}
-      />
-      <span className="min-w-0 flex-1 truncate">{call.label}</span>
-      {call.detail === null ? null : (
-        <span className={`shrink-0 ${failed ? 'text-destructive' : 'text-muted-foreground'}`}>
-          {call.detail}
-        </span>
-      )}
-      {failed ? null : <StatusIcon status={call.status} />}
+      <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
+      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-left" dir="rtl">
+        {call.label}
+      </span>
+      {call.detail === null ? null : <ToolDetail detail={call.detail} />}
+      {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
+      <span className="ml-auto flex shrink-0 items-center">
+        <StatusIcon status={call.status} />
+      </span>
     </button>
   )
 }
 
-// A command or an unclassified tool call reads as one code block despite the transcript's
-// separate invocation and result messages.
-function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
-  const { t } = useTranslation('sessions')
-  const result = call.evidence?.kind === 'output' ? call.evidence.source : null
-  const source = [call.text, result].filter((part) => part !== null).join('\n')
-  const language = detectCodeLanguage(call.text ?? '', call.kind === 'command' ? 'bash' : undefined)
-  const languageLabel = codeLanguageLabel(language)
-  return (
-    <CodeBlock
-      code={source}
-      language={language?.grammar ?? null}
-      className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
-    >
-      <CodeBlockHeader className="bg-muted type-meta">
-        <CodeBlockTitle>
-          <span aria-hidden="true">
-            <CodeLanguageIcon language={language} />
-          </span>
-          <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
-        </CodeBlockTitle>
-        <CodeBlockActions>
-          {call.status === 'failed' ? (
-            <span className="text-destructive">{t('tools.failed')}</span>
-          ) : (
-            <StatusIcon status={call.status} />
-          )}
-          <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
-        </CodeBlockActions>
-      </CodeBlockHeader>
-    </CodeBlock>
-  )
+// One call inside a group: routed to the evidence panel, nested in its own collapsible, or (the
+// group's only call) shown directly with no redundant extra collapsible around it.
+function GroupedCall({
+  activeEvidenceId,
+  call,
+  isSole,
+  onOpen,
+  toolGroups,
+}: {
+  activeEvidenceId: string | null
+  call: ToolCall
+  isSole: boolean
+  onOpen: (row: ToolRow) => void
+  toolGroups: ToolGroupState
+}) {
+  if (TOOL_CONTENT_ROUTE[call.kind] !== 'inline')
+    return <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
+  if (isSole) return <FeedInlineToolCall call={call} />
+  return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
 }
 
 export function FeedToolGroup({
@@ -148,22 +142,31 @@ export function FeedToolGroup({
   // A code block already draws its own border, which would clash with the connecting line; a
   // group of evidence-panel rows alone keeps the line, matching every collapsible outside a group.
   const hasInlineCall = group.calls.some((call) => TOOL_CONTENT_ROUTE[call.kind] === 'inline')
+  // A single inline call needs no collapsible of its own: nesting one under the group's already
+  // adds nothing to collapse, so its code block sits directly under the group instead.
+  const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
+  // A solo skill call never merges with another kind (`groupedRowIndexes`), so its group is
+  // always exactly this call: the outer collapsible reads with the skill's own name and icon
+  // instead of the generic "Invoked a skill" summary.
+  const isSoleSkill = soleCall?.kind === 'skill'
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
         <TaskItem key={call.id}>
-          {TOOL_CONTENT_ROUTE[call.kind] === 'inline' ? (
-            <FeedInlineToolCall call={call} />
-          ) : (
-            <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
-          )}
+          <GroupedCall
+            activeEvidenceId={activeEvidenceId}
+            call={call}
+            isSole={call.id === soleCall?.id}
+            onOpen={onOpen}
+            toolGroups={toolGroups}
+          />
         </TaskItem>
       ))}
-      contentVariant={hasInlineCall ? 'plain' : 'line'}
-      icon={TerminalIcon}
+      contentVariant={hasInlineCall ? 'flush' : 'line'}
+      icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
       onOpenChange={onOpenChange}
       open={open}
-      title={group.label}
+      title={isSoleSkill ? soleCall.label : group.label}
     />
   )
 }

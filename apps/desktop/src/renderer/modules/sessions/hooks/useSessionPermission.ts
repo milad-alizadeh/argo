@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { Permission } from '@/core/sessions/contract'
+import type { Permission, SessionPermissionDecisionRequest } from '@/core/sessions/contract'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
 import { invalidateSessionRoster, sessionPermissionQueryKey } from '../session-queries'
+
+export type PermissionAnswer = SessionPermissionDecisionRequest['decision']
 
 export function useSessionPermission(sessionId: string | null) {
   const [failure, setFailure] = useState<string | null>(null)
@@ -31,7 +33,7 @@ export function useSessionPermission(sessionId: string | null) {
     },
   })
   const permissionDecision = usePermissionDecision()
-  const decide = async (decision: 'allow' | 'deny') => {
+  const decide = async (decision: PermissionAnswer) => {
     if (permission.data === null || permission.data === undefined) return false
     try {
       await permissionDecision.mutateAsync({ decision, permission: permission.data })
@@ -57,7 +59,7 @@ function usePermissionDecision() {
       decision,
       permission,
     }: {
-      decision: 'allow' | 'deny'
+      decision: PermissionAnswer
       permission: Permission
     }) => {
       const reply = await window.argo.decideSessionPermission({

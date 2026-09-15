@@ -2,12 +2,21 @@ import net from 'node:net'
 import { z } from 'zod'
 import type { ClaudePermission } from '@/core/sessions/contract'
 import { type CompanionPart, createSocketFolder } from './companion-plugin'
+import { similarityKey } from './permission-similarity'
+
+// `allowSimilar` answers this request and every later one like it until the Session's part closes.
+export type ClaudePermissionDecision = 'allow' | 'deny' | 'allowSimilar'
 
 export type ClaudePermissionGate = {
   open: (sessionId: string) => CompanionPart
   pending: (sessionId: string) => ClaudePermission | null
-  decide: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  decide: (sessionId: string, permissionId: string, decision: ClaudePermissionDecision) => boolean
   close: () => void
+}
+
+type GateState = {
+  waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>
+  standing: Map<string, Set<string>>
 }
 
 const HOOK = `#!/bin/sh
@@ -59,18 +68,22 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
 
 // Each managed Session gets its own Unix socket, so a late answer cannot reach a different turn.
 export function createClaudePermissionGate(): ClaudePermissionGate {
-  const waiting = new Map<string, { permission: ClaudePermission; socket: net.Socket }>()
+  const state: GateState = { waiting: new Map(), standing: new Map() }
   const sockets = createSocketFolder('permission')
   return {
-    open: (sessionId) => openPermissionGate(sockets.socketPath(sessionId), sessionId, waiting),
+    open: (sessionId) => openPermissionGate(sockets.socketPath(sessionId), sessionId, state),
     pending(sessionId) {
-      return waiting.get(sessionId)?.permission ?? null
+      return state.waiting.get(sessionId)?.permission ?? null
     },
     decide(sessionId, permissionId, decision) {
-      const held = waiting.get(sessionId)
+      const held = state.waiting.get(sessionId)
       if (!held || held.permission.id !== permissionId) return false
-      waiting.delete(sessionId)
-      held.socket.end(decisionLine(decision))
+      state.waiting.delete(sessionId)
+      if (decision === 'allowSimilar') {
+        const rules = state.standing.get(sessionId) ?? new Set<string>()
+        state.standing.set(sessionId, rules.add(similarityKey(held.permission)))
+      }
+      held.socket.end(decisionLine(decision === 'deny' ? 'deny' : 'allow'))
       return true
     },
     close: sockets.close,
@@ -80,7 +93,7 @@ export function createClaudePermissionGate(): ClaudePermissionGate {
 function openPermissionGate(
   socketPath: string,
   sessionId: string,
-  waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>,
+  { standing, waiting }: GateState,
 ): CompanionPart {
   const server = net.createServer((socket) => {
     let received = ''
@@ -98,6 +111,10 @@ function openPermissionGate(
       }
       if (permission === null || waiting.has(sessionId)) {
         socket.end(decisionLine('deny'))
+        return
+      }
+      if (standing.get(sessionId)?.has(similarityKey(permission))) {
+        socket.end(decisionLine('allow'))
         return
       }
       waiting.set(sessionId, { permission, socket })
@@ -119,6 +136,7 @@ function openPermissionGate(
       const held = waiting.get(sessionId)
       if (held) held.socket.end(decisionLine('deny'))
       waiting.delete(sessionId)
+      standing.delete(sessionId)
       server.close()
     },
   }
