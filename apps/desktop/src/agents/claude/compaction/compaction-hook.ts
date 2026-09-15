@@ -5,7 +5,7 @@ import { readDocument, writeDocument } from '@/core/storage/portable-file'
 
 export type HookInstall = 'installed' | 'present' | 'refused'
 
-const TAG = '# argo-compaction-start'
+export const TAG = '# argo-compaction-start'
 const EVENT = 'PreCompact'
 
 function shellQuote(text: string) {

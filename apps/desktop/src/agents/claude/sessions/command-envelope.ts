@@ -5,6 +5,7 @@ import type {
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { taggedField, taggedText } from '../../envelope-tags'
+import { readableCommandOutput } from './command-output'
 import { readTaskNotification } from './task-notification'
 
 function envelopeText(content: unknown): string | null {
@@ -129,8 +130,8 @@ export function readCommandEnvelope(
       ? { ...event, uuid: message.uuid }
       : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
   if (text.startsWith('<local-command-stdout>')) {
-    const output = taggedText(text, 'local-command-stdout')
-    return output === null
+    const output = readableCommandOutput(taggedText(text, 'local-command-stdout') ?? '')
+    return output === ''
       ? { kind: 'trace', uuid: message.uuid }
       : {
           kind: 'command-output',
