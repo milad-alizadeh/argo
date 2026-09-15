@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// CI probe for #2218, reverted in the next commit.
 // The mirror resolves local contract imports and exposes Tailwind theme declarations as browser custom properties.
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
