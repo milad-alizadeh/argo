@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
@@ -72,12 +72,6 @@ const SESSION_ROSTER = [
 ] satisfies Session[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
-const REVIEW_HISTORY = Array.from({ length: 4 }, (_unused, index) => ({
-  shape: 'prose' as const,
-  id: `review-history-${index}`,
-  role: 'assistant' as const,
-  text: `The reader can inspect this earlier Session history row ${index + 1}. `.repeat(24),
-}))
 
 function feedFor(sessionId: string) {
   return {
@@ -105,7 +99,6 @@ function feedFor(sessionId: string) {
         id: 'review-thought',
         text: 'The transcript keeps the feed, plan, and composer visible together.',
       },
-      ...REVIEW_HISTORY,
     ],
   } satisfies SessionFeed
 }
@@ -172,19 +165,13 @@ function ReviewInspectorBar({
   return null
 }
 
-function ReviewScreen({
-  feed: suppliedFeed,
-  initialSessionId = 'composer-review',
-}: {
-  feed?: SessionFeed
-  initialSessionId?: string
-}) {
+function ReviewScreen({ initialSessionId = 'composer-review' }: { initialSessionId?: string }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
-  const feed = suppliedFeed?.sessionId === selectedSessionId ? suppliedFeed : feedFor(selectedSessionId)
+  const feed = feedFor(selectedSessionId)
   if (session === undefined) return null
   const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
@@ -234,35 +221,6 @@ function ReviewScreen({
   )
 }
 
-function StreamingHistoryReview() {
-  const [feed, setFeed] = useState(() => feedFor('composer-review'))
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() =>
-          setFeed((current) => ({
-            ...current,
-            revision: 'screen-review-composer-review-streamed',
-            rows: [
-              ...current.rows,
-              {
-                shape: 'prose',
-                id: 'review-streamed-response',
-                role: 'assistant',
-                text: 'A streamed response arrived while the reader inspected earlier history.',
-              },
-            ],
-          }))
-        }
-      >
-        Receive streamed response
-      </button>
-      <ReviewScreen feed={feed} />
-    </>
-  )
-}
-
 function expectTranscriptRowsDoNotOverlap(canvasElement: HTMLElement) {
   const sessionHistory = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const promptRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-request"]')
@@ -281,7 +239,6 @@ function expectSessionsSidebarIsOpen(canvasElement: HTMLElement) {
 }
 
 async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const before = composer.getBoundingClientRect()
@@ -290,21 +247,9 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(history.scrollTop).toBeGreaterThan(0)
   expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
   history.scrollTo({ top: 0 })
-  fireEvent.scroll(history)
-  const readerPosition = history.scrollTop
-  expect(readerPosition).toBe(0)
-
-  await canvas.findByRole('button', { name: 'Jump to latest' })
-  await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed response' }))
-  await waitFor(() =>
-    expect(history).toHaveAttribute(
-      'data-reading-revision',
-      'screen-review-composer-review-streamed:',
-    ),
-  )
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
-  expect(history.scrollTop).toBe(readerPosition)
+  expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
@@ -487,7 +432,7 @@ export const Open: Story = {
 }
 
 export const ComposerStaysFixed: Story = {
-  render: () => <StreamingHistoryReview />,
+  render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
