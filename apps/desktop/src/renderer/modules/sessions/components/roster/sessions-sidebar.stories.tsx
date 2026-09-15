@@ -343,37 +343,151 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
-// The active Roster never carries an archived Session (#1593): Archive states live in
-// archived-sessions.stories.tsx, which drives window.argo.listArchivedSessions directly.
+// The active Roster never carries an archived Session (#1593). Archived rows share the same
+// scrolled list as the active ones (#2194 follow-up), so opening the section adds its rows
+// straight into this list rather than a separately scrolled block.
+function withArchiveHost(
+  handler: (request: { cursor: string | null; restoreId: string | null }) => Promise<unknown>,
+) {
+  const before = window.argo
+  window.argo = { ...before, listArchivedSessions: handler as typeof before.listArchivedSessions }
+  return () => {
+    window.argo = before
+  }
+}
+
+function archiveReply(fields: {
+  sessions?: unknown[]
+  nextCursor?: string | null
+  restored?: unknown
+}) {
+  return {
+    version: 1,
+    type: 'session.archive.listed',
+    requestId: 'storybook-archive',
+    sessions: [],
+    nextCursor: null,
+    restored: null,
+    ...fields,
+  }
+}
+
 export const WithArchive: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    window.argo = {
-      ...before,
-      listArchivedSessions: () =>
-        Promise.resolve({
-          version: 1,
-          type: 'session.archive.listed',
-          requestId: 'storybook-archive',
-          sessions: [{ ...session, id: 'archived-session', archived: true }],
-          nextCursor: null,
-          restored: null,
-        }),
-    }
-    return () => {
-      window.argo = before
-    }
-  },
+  beforeEach: () =>
+    withArchiveHost(async () =>
+      archiveReply({
+        sessions: [
+          {
+            ...session,
+            id: 'archived-session',
+            archived: true,
+            title: { text: 'Read the archived transcript', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const disclosure = canvas.getByRole('button', { name: 'Archived' })
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(disclosure)
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
-    const archived = within(canvas.getByRole('navigation', { name: 'Archived' }))
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole('button', { name: /Read the archived transcript/ }),
+      ).toBeVisible()
+    })
+  },
+}
+
+export const ArchiveEmpty: Story = {
+  beforeEach: () => withArchiveHost(async () => archiveReply({})),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await waitFor(() => expect(canvas.getByText('No archived Sessions')).toBeInTheDocument())
+  },
+}
+
+export const ArchiveLoading: Story = {
+  beforeEach: () => withArchiveHost(() => new Promise(() => {})),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
     await expect(
-      archived.getByRole('button', { name: /Read the Session transcript/ }),
-    ).toBeVisible()
+      canvas.getByRole('status', { name: 'Reading archived Sessions' }),
+    ).toBeInTheDocument()
+  },
+}
+
+export const ArchiveFailure: Story = {
+  beforeEach: () =>
+    withArchiveHost(async () => {
+      throw new Error('archive read failed')
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await waitFor(async () => {
+      const alert = canvas.getByRole('alert')
+      await expect(alert).toHaveTextContent('Unable to load archived Sessions')
+    })
+  },
+}
+
+// Two pages, each holding one Session: opening the section reads the first, and scrolling to the
+// sentinel row reads the second on its own once it enters view, without repeating the first (#1593).
+export const ArchiveLoadsFurtherPagesWithoutDuplicating: Story = {
+  beforeEach: () =>
+    withArchiveHost(async ({ cursor }) => {
+      const first = { ...session, id: 'archived-first', archived: true }
+      if (cursor === null) return archiveReply({ sessions: [first], nextCursor: 'page-2' })
+      return archiveReply({ sessions: [{ ...first, id: 'archived-second' }] })
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await waitFor(async () => {
+      const rows = canvas.getAllByRole('button').filter((button) => button.dataset.sessionId)
+      await expect(rows).toHaveLength(3)
+    })
+  },
+}
+
+// A Session id the sidebar has selected but that never appears in the active Roster can only be
+// archived: the section resolves and opens it on its own (#1593).
+export const ArchiveRestored: Story = {
+  args: { selectedSessionId: 'archived-first-session' },
+  beforeEach: () =>
+    withArchiveHost(async ({ restoreId }) =>
+      archiveReply({
+        restored:
+          restoreId === 'archived-first-session'
+            ? { ...session, id: 'archived-first-session', archived: true }
+            : null,
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(async () => {
+      await expect(canvas.getByRole('button', { name: 'Archived' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
+    })
+  },
+}
+
+// Archiving lives on the row's context menu now, with no bulk action bar footer (#2194 follow-up).
+export const ArchiveFromContextMenu: Story = {
+  args: { onArchiveSelected: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
+    await userEvent.click(archive)
+    await expect(args.onArchiveSelected).toHaveBeenCalledWith(['prose'])
   },
 }
 

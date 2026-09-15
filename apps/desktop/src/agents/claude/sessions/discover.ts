@@ -8,7 +8,7 @@ import {
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
 import type { ArchivedSessionsPage } from '@/core/sessions/session-source'
-import { readArchivedSessions } from './archive'
+import { readArchivedSessions, writeArchivedSessionFlags } from './archive'
 import { parseTranscriptLine } from './records'
 
 // A page's worth of Archived Sessions (#1593), read on demand rather than on every poll.
@@ -88,4 +88,21 @@ export async function discoverArchivedSessions(
       ? null
       : (archived.find((row) => row.id === restoreId || row.retiredIds.includes(restoreId)) ?? null)
   return { rows: page, nextCursor, restored }
+}
+
+// Setting the archive flag for a batch of Sessions (#2194), by canonical id: each id is resolved
+// against the full discovery (active and archived alike) so a Session archived under a retired id
+// is still found under its current one, and the write reaches whichever file the store already
+// keeps for it under any id it has answered to.
+export async function setArchivedSessions(
+  root: string,
+  archiveRoot: string,
+  request: { ids: readonly string[]; archived: boolean },
+): Promise<{ applied: string[]; failed: string[] }> {
+  const discovery = await reader.discoverSessions(root)
+  const targets = request.ids.map((id) => {
+    const row = discovery.rows.find((candidate) => candidate.id === id)
+    return { id, candidateIds: row === undefined ? [id] : [row.id, ...row.retiredIds] }
+  })
+  return await writeArchivedSessionFlags(archiveRoot, targets, request.archived)
 }

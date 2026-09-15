@@ -22,6 +22,7 @@ import { readFailure, versionFailure } from './read-request'
 import { createFeedReader } from './read-session-feed'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
+import { archiveSetReply } from './write-archive'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
@@ -144,6 +145,7 @@ export function createSessionReader(
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (value) => archiveListReply(sources, value),
+    archiveSet: (value) => archiveSetReply(sources, value),
     readWorkspaceFile: (value) => workspaceFileReply(ownership.ownerFor, value),
     readSessionFeed: feedReader.readSessionFeed,
     cancelSessionFeed: feedReader.cancelSessionFeed,

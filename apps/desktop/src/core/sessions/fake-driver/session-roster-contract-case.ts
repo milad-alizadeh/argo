@@ -16,6 +16,45 @@ async function proveArchivedPage(page) {
   assert.equal(archived.restored, null)
 }
 
+// A real archive round trip (#2194): archiving moves `harnessNoise` out of the active list and
+// into the Archived page, and restoring it (the shape a short-lived Undo calls) brings it back.
+// Both calls flip the same fixture row `session-feed-fixture.ts` wrote for it, so this leaves the
+// fixture exactly as every other case in this file finds it.
+async function proveBulkArchive(page) {
+  const archived = await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: true }),
+  )
+  assert.equal(archived.type, 'session.archive.applied')
+  assert.deepEqual(archived, {
+    version: 1,
+    type: 'session.archive.applied',
+    requestId: archived.requestId,
+    archived: true,
+    applied: ['harnessNoise'],
+    failed: [],
+  })
+  const afterArchive = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
+  assert.ok(!afterArchive.sessions.some((session) => session.id === 'harnessNoise'))
+  const archivedPage = await page.evaluate(() =>
+    window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
+  )
+  assert.ok(archivedPage.sessions.some((session) => session.id === 'harnessNoise'))
+
+  const restored = await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: false }),
+  )
+  assert.deepEqual(restored.applied, ['harnessNoise'])
+  const afterRestore = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
+  assert.ok(afterRestore.sessions.some((session) => session.id === 'harnessNoise'))
+
+  // A Session the store has no row for at all fails rather than the write inventing one.
+  const unknown = await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['not-a-session'], archived: true }),
+  )
+  assert.deepEqual(unknown.applied, [])
+  assert.deepEqual(unknown.failed, ['not-a-session'])
+}
+
 export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
@@ -40,6 +79,7 @@ export async function proveContract(page) {
     [],
   )
   await proveArchivedPage(page)
+  await proveBulkArchive(page)
   assert.deepEqual(
     list.sessions.filter((session) => session.originUnread).map((session) => session.id),
     ['strandedResume'],
