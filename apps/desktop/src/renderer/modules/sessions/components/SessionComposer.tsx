@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../harness/harnesses'
 import { ComposerForm } from './ComposerForm'
+import { activeReference } from './composer-reference-menu'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './RunSetupMenu'
 import type { Send } from './useSend'
@@ -39,10 +41,15 @@ export function SessionComposer({
   harness = null,
   setup = null,
 }: SessionComposerProps) {
+  const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
+  useEffect(() => {
+    if (activeReference(state.draft)?.trigger === '@') setContextPickerOpen(true)
+  }, [state.draft])
   return (
     <ComposerForm
       attachments={state.attachments}
+      contextPickerOpen={contextPickerOpen}
       contextTokens={contextTokens}
       disabled={disabled}
       draft={state.draft}
@@ -53,6 +60,7 @@ export function SessionComposer({
       isHandingOff={isHandingOff}
       isRunning={isRunning}
       onAttach={() => void state.attachFiles()}
+      onAddTicket={state.addTicket}
       onChange={state.changeDraft}
       onCompact={onCompact}
       onDropFiles={state.dropFiles}
@@ -69,6 +77,8 @@ export function SessionComposer({
       plan={plan}
       sessionId={sessionId}
       setup={setup}
+      tickets={state.tickets}
+      onContextPickerOpenChange={setContextPickerOpen}
     />
   )
 }

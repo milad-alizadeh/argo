@@ -11,12 +11,11 @@ import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
-// The Attach action lives inside the "Add context" menu, matching the composer prototype.
+// Files and folders stay on the native attachment path, reached through the shared picker.
 async function attachViaMenu(canvas: ReturnType<typeof within>) {
   await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-  await userEvent.click(
-    await within(document.body).findByRole('menuitem', { name: 'Files & folders' }),
-  )
+  const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
+  await userEvent.click(within(picker).getByRole('button', { name: 'Files & folders' }))
 }
 
 // The send chord spelled once, so the stories that only need a draft sent do not each restate it.
@@ -31,6 +30,7 @@ async function sendDraft(canvas: ReturnType<typeof within>, draft: string) {
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
+const CONTEXT_PICKER_FRAME = 'mx-auto mt-72 max-w-4xl p-8 pt-96'
 
 const plan: SessionPlan = {
   state: 'available' as const,
@@ -551,22 +551,28 @@ export const EnterConfirmingAnImeCompositionSendsNothing: Story = {
   },
 }
 
-// The @-reference menu claims Enter ahead of the send: the press that picks a reference is not
+// The /-reference menu claims Enter ahead of the send: the press that picks a reference is not
 // also the press that sends the draft it went into.
-export const EnterPicksAReferenceWhileTheMenuIsOpen: Story = {
+export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, 'Read @argo')
-    await canvas.findByRole('option', { name: /Argo Session plugin/ })
+    await userEvent.type(composer, 'Read /implement')
+    const option = await canvas.findByRole('option', { name: /Implement/ })
+    const menu = option.closest('[role="listbox"]')
+    const card = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    if (!menu || !card) throw new Error('Reference menu or Composer card is missing.')
+    await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      card.getBoundingClientRect().top,
+    )
+    await expect(menu.getBoundingClientRect().width).toBeCloseTo(card.getBoundingClientRect().width)
     await userEvent.keyboard('{Enter}')
-
-    await expect(canvas.queryByRole('option')).toBeNull()
+    await waitFor(() => expect(canvas.queryByRole('option')).toBeNull())
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read @argo-plugin$/)
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read \/implement$/)
   },
 }
 
@@ -644,17 +650,20 @@ export const CodexDraftRestoresUnsupportedReference: Story = {
   },
 }
 
-export const ReferenceMenuFlagsUnsupportedForCodex: Story = {
+export const AtTicketQueryShowsTicketsForCodex: Story = {
   render: () => <CodexComposerStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, '@argo')
+    await userEvent.type(composer, '@ENG')
 
-    const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
-    await expect(option).toHaveTextContent('Not available for Codex')
+    const picker = await canvas.findByRole('dialog', { name: 'Context picker' })
+    await expect(
+      within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }),
+    ).toBeVisible()
+    await expect(canvas.queryByRole('option')).toBeNull()
   },
 }
 
@@ -933,15 +942,23 @@ export const AttachViaButton: Story = {
   },
 }
 
-export const SkillsMenuOpensCommandAutocomplete: Story = {
+export const SharedContextPicker: Story = {
+  parameters: { frame: CONTEXT_PICKER_FRAME },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-    await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Skills' }))
+    const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
+    await expect(within(picker).getByRole('button', { name: 'Files & folders' })).toHaveFocus()
+    await expect(within(picker).getByText('ENG-42')).toBeVisible()
+    await expect(within(picker).queryByText('ENG-9')).toBeNull()
+    await expect(within(picker).getByRole('button', { name: /Goals.*Coming soon/ })).toBeDisabled()
 
-    await expect(await canvas.findByRole('listbox', { name: 'References' })).toBeVisible()
-    await expect(canvas.getByRole('option', { name: /Implement/ })).toBeVisible()
+    await userEvent.click(within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }))
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).not.toBeNull(),
+    )
+    await expect(canvas.getByLabelText('Message')).toHaveFocus()
   },
 }
 
@@ -955,6 +972,11 @@ export const ImageAttachmentShowsAPreview: Story = {
     await canvas.findByText('notes')
     await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///repo/screenshot.png')
     await expect(canvas.getByText('MD file')).toBeVisible()
+    const attachmentGroup = canvasElement.querySelector('[data-slot="attachment-group"]')
+    if (attachmentGroup === null) throw new Error('Attachment group did not render')
+    await expect(attachmentGroup.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      canvas.getByLabelText('Message').getBoundingClientRect().top,
+    )
   },
 }
 

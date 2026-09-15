@@ -150,7 +150,8 @@ export const CommandTitledSession: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    const reference = canvas.getByText('/implement').closest('span.inline-flex')
+    await expect(reference?.querySelector('svg')).not.toBeNull()
     await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
   },
 }

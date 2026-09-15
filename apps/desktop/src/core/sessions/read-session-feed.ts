@@ -68,7 +68,10 @@ export function createFeedReader(
         if (controller.signal.aborted) return sessionError('cancelled', parsed.data.requestId)
         return reply
       } catch (error) {
-        if (isAbortError(error)) return sessionError('cancelled', parsed.data.requestId)
+        // A cancelled caller wins even when an adapter surfaces a non-AbortError interruption.
+        if (controller.signal.aborted || isAbortError(error)) {
+          return sessionError('cancelled', parsed.data.requestId)
+        }
         return sessionError(readFailure(error), parsed.data.requestId)
       } finally {
         reads.finish(sessionId, controller)

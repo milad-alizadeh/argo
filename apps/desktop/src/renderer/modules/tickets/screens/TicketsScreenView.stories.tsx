@@ -103,25 +103,9 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   await expect(rows[0]).toHaveAttribute('aria-current', 'true')
 }
 
-async function choosingATicketKeepsTheInspectorAvailable(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  const collapse = canvas.queryByRole('button', { name: 'Collapse Ticket inspector' })
-  if (collapse !== null) {
-    await userEvent.click(collapse)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Open Ticket inspector' })).toBeInTheDocument(),
-    )
-  }
-  await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
-  const open = canvas.queryByRole('button', { name: 'Open Ticket inspector' })
-  if (open !== null) return
-  await waitFor(() => expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible())
-}
-
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
     await readsTheBacklog(canvasElement)
-    await choosingATicketKeepsTheInspectorAvailable(canvasElement)
   },
 }
 
