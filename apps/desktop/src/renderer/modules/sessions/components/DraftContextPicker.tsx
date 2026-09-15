@@ -34,7 +34,7 @@ export function DraftContextPicker({
           selection.insertNodes([reference])
           const trailingSpace = $createTextNode(' ')
           reference.insertAfter(trailingSpace)
-          trailingSpace.select(0, 0)
+          reference.selectEnd()
         })
         onClose()
       }}
