@@ -3,13 +3,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
+import { stopDevelopmentInstance } from './dev-control.mjs'
 import {
   assertPortAvailable,
   developmentInstance,
   portCollisionError,
   startControlServer,
 } from './dev-instance.mjs'
-import { stopDevelopmentInstance } from './dev-control.mjs'
 
 const worktree = path.join(path.sep, 'worktrees', 'ticket-2173')
 
