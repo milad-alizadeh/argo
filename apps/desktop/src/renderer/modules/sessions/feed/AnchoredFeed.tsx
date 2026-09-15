@@ -8,7 +8,11 @@ import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
 import type { Settled } from './useSettledFeed'
 
-type FeedRowComponent = (props: { row: SessionFeedRow; reveal?: Reveal }) => ReactNode
+type FeedRowComponent = (props: {
+  row: SessionFeedRow
+  reveal?: Reveal
+  streaming?: boolean
+}) => ReactNode
 type AnchoredFeedProps = {
   active: boolean
   FeedRow: FeedRowComponent
@@ -16,8 +20,12 @@ type AnchoredFeedProps = {
   rows: readonly SessionFeedRow[]
   settled: Settled
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  streamingRowId: string | null
 }
-type FeedViewportProps = Pick<AnchoredFeedProps, 'FeedRow' | 'rows' | 'settled'> & {
+type FeedViewportProps = Pick<
+  AnchoredFeedProps,
+  'FeedRow' | 'rows' | 'settled' | 'streamingRowId'
+> & {
   reveals: ReadonlyMap<string, Reveal>
   setViewport: (viewport: HTMLElement | null) => void
   virtualizer: ReactVirtualizer<HTMLElement, Element>
@@ -35,6 +43,7 @@ export function AnchoredFeed({
   rows,
   settled,
   revealsFor,
+  streamingRowId,
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId)
@@ -90,6 +99,7 @@ export function AnchoredFeed({
         rows={rows}
         setViewport={attachViewport}
         settled={settled}
+        streamingRowId={streamingRowId}
         virtualizer={virtualizer}
       />
     </div>
@@ -108,6 +118,7 @@ function FeedViewport({
   rows,
   settled,
   setViewport,
+  streamingRowId,
   virtualizer,
 }: FeedViewportProps) {
   const { t } = useTranslation('sessions')
@@ -134,7 +145,11 @@ function FeedViewport({
                 width: '100%',
               }}
             >
-              <FeedRow reveal={reveals.get(row.id)} row={row} />
+              <FeedRow
+                reveal={reveals.get(row.id)}
+                row={row}
+                streaming={row.id === streamingRowId}
+              />
             </div>
           )
         })}
