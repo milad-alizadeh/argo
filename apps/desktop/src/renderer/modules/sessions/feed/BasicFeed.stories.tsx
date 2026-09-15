@@ -360,6 +360,13 @@ export const GroupedToolCalls: Story = {
     const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
     await waitFor(() => expect(commandText).toBeVisible())
+    await expect(commandText.closest('[data-language="bash"]')).toHaveTextContent(
+      'bun test composer\ncommand output 1',
+    )
+    const visibleCodeBlocks = [...(group.closest('article')?.querySelectorAll('pre') ?? [])].filter(
+      (block) => block.closest('[aria-hidden="true"]') === null,
+    )
+    await expect(visibleCodeBlocks).toHaveLength(1)
     const panel = commandText.closest('[data-slot="collapsible-content"]')
     await expect(panel).toHaveClass('transition-[height,opacity,transform]')
     await expect(panel).toHaveClass('motion-reduce:transition-none')
