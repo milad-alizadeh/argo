@@ -100,7 +100,7 @@ export function FeedToolLine({
 }
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
-// separate invocation and result messages, so a lone call in a group never doubles its own label.
+// separate invocation and result messages.
 function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
   const { t } = useTranslation('sessions')
   const result = call.evidence?.kind === 'output' ? call.evidence.source : null
