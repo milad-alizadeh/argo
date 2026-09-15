@@ -6,10 +6,11 @@ import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 
+import { isLiveElsewhere } from '@/core/sessions/live-elsewhere'
 import type { SessionRosterRow, SessionStatus } from '@/core/sessions/models'
 import { readJsonFile } from './json-file'
 
-type ProcessState = 'busy' | 'idle'
+export type ProcessState = 'busy' | 'idle'
 
 const processFileSchema = z.object({
   pid: z.number().int().positive(),
@@ -52,6 +53,14 @@ function liveStatus(floor: SessionStatus, state: ProcessState): SessionStatus {
     case 'idle':
       return floor === 'unknown' ? 'idle' : floor
   }
+}
+
+// A live `claude` holds its Session at its prompt as much as mid-Turn, so either state locks it.
+export function lockLiveProcesses(
+  rows: SessionRosterRow[],
+  live: ReadonlyMap<string, ProcessState>,
+): SessionRosterRow[] {
+  return rows.map((row) => (isLiveElsewhere(row, live) ? { ...row, locked: true } : row))
 }
 
 // A resume can move a Session's id forward, so the process may name the stable id or a retired one.

@@ -1,0 +1,101 @@
+import assert from 'node:assert/strict'
+import { appendFile, copyFile, mkdir, mkdtemp, rm, utimes } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
+import { managedRow } from '@/core/sessions/managed-row'
+import type { SessionRosterRow } from '@/core/sessions/models'
+import { listed } from '@/core/sessions/reader-test-helpers'
+import { createCodexSessionReader } from './read-sessions'
+
+const THREAD = '01a0b000-0000-7000-8000-000000000001'
+const FIXTURE = fileURLToPath(
+  new URL('../session-fake-driver/fixtures/sessions/rollout-codexOpenTurn.jsonl', import.meta.url),
+)
+
+// The two ways codex-cli 0.147.0 closes a Turn, in the shape its rollouts write them.
+const TURN_ENDS = {
+  task_complete: {
+    type: 'task_complete',
+    turn_id: '01a0b000-0000-7000-8000-00000000a001',
+    last_agent_message: 'Checked.',
+    started_at: 1789509320,
+    completed_at: 1789509380,
+    duration_ms: 60000,
+  },
+  turn_aborted: {
+    type: 'turn_aborted',
+    turn_id: '01a0b000-0000-7000-8000-00000000a001',
+    reason: 'interrupted',
+    started_at: 1789509320,
+    completed_at: 1789509322,
+    duration_ms: 2154,
+  },
+}
+
+async function rolloutRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-turns-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const day = path.join(root, '2026', '09', '15')
+  await mkdir(day, { recursive: true })
+  const rollout = path.join(day, `rollout-2026-09-15T22-55-19-${THREAD}.jsonl`)
+  await copyFile(FIXTURE, rollout)
+  return { root, rollout }
+}
+
+function readerFor(root: string, roster?: () => SessionRosterRow[]) {
+  // The ledger sees no other Argo window: any lock below comes from the rollout alone.
+  return createCodexSessionReader(root, { roster, isLockedElsewhere: () => false })
+}
+
+async function rows(reader: ReturnType<typeof readerFor>) {
+  const reply = await listed(reader)
+  return reply?.sessions.map(({ id, posture, status, locked }) => ({ id, posture, status, locked }))
+}
+
+test('locks a thread whose newest Turn another Codex client is still running', async (context) => {
+  const { root } = await rolloutRoot(context)
+  assert.deepEqual(await rows(readerFor(root)), [
+    { id: THREAD, posture: 'external', status: 'running', locked: true },
+  ])
+})
+
+for (const [name, end] of Object.entries(TURN_ENDS)) {
+  test(`unlocks the thread once its Turn ends with \`${name}\``, async (context) => {
+    const { root, rollout } = await rolloutRoot(context)
+    const reader = readerFor(root)
+    await rows(reader)
+    await appendFile(
+      rollout,
+      `${JSON.stringify({ timestamp: '2026-09-15T21:56:20.000Z', type: 'event_msg', payload: end })}\n`,
+    )
+    assert.deepEqual(await rows(reader), [
+      { id: THREAD, posture: 'external', status: 'unknown', locked: false },
+    ])
+  })
+}
+
+test('keeps a thread resumable when its open Turn has not been written to for 31 minutes', async (context) => {
+  const { root, rollout } = await rolloutRoot(context)
+  const silentSince = new Date(Date.now() - 31 * 60 * 1000)
+  await utimes(rollout, silentSince, silentSince)
+  assert.deepEqual(await rows(readerFor(root)), [
+    { id: THREAD, posture: 'external', status: 'unknown', locked: false },
+  ])
+})
+
+test('never locks a thread this Argo is running the Turn in', async (context) => {
+  const { root } = await rolloutRoot(context)
+  const held = managedRow(THREAD, {
+    cli: 'codex',
+    cwd: '/projects/argo',
+    status: 'running',
+    setup: { model: null, effort: null, mode: null },
+    prompt: 'Run the Codex check',
+    startedAt: '2026-09-15T21:55:19.000Z',
+  })
+  assert.deepEqual(await rows(readerFor(root, () => [held])), [
+    { id: THREAD, posture: 'managed', status: 'running', locked: false },
+  ])
+})

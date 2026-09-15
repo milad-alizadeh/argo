@@ -49,7 +49,10 @@ async function discoverFromSource(source: SessionSource, requestId: string): Pro
     if (isLockedElsewhere === undefined) return discovery
     return {
       ...discovery,
-      rows: discovery.rows.map((row) => ({ ...row, locked: isLockedElsewhere(row.id) })),
+      rows: discovery.rows.map((row) => ({
+        ...row,
+        locked: row.locked === true || isLockedElsewhere(row.id),
+      })),
     }
   } catch (error) {
     return { error: sessionError(readFailure(error), requestId) }

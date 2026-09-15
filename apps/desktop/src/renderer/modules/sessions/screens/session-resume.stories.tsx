@@ -20,7 +20,7 @@ const resumable = sessionRosterRow({
 
 // The bridge a restarted Argo answers with: the Roster lists the resumable Session, and a Send
 // either resumes it into a live managed channel or is refused with the reason.
-function restartedHost(refusal: DriveSessionErrorCode | null) {
+function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
   let resumed = false
   const before = window.argo
   window.argo = {
@@ -29,7 +29,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null) {
       version: 1,
       type: 'session.listed',
       requestId: 'storybook-sessions',
-      sessions: [resumed ? { ...resumable, posture: 'managed', status: 'running' } : resumable],
+      sessions: [resumed ? { ...row, posture: 'managed', status: 'running' } : row],
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
@@ -110,5 +110,30 @@ export const RefusedSend: Story = {
     await expect(canvas.queryByLabelText('Message')).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
+  },
+}
+
+// A Session another process runs live right now (a `claude` in a terminal, a Codex Turn in the
+// Codex app) is locked in the Roster, and its composer never shows: no Send is offered to refuse.
+const liveElsewhere = sessionRosterRow({ ...resumable, status: 'running', locked: true })
+
+export const LockedWhileLiveElsewhere: Story = {
+  beforeEach: () => restartedHost(null, liveElsewhere),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getAllByText('Storybook Session Feed.').length).toBeGreaterThan(0),
+    )
+
+    await waitFor(() =>
+      expect(canvas.getByRole('alert')).toHaveTextContent('This session is open in another app'),
+    )
+    await expect(
+      canvas.getByText(
+        'This session is open in another app. Close it there to continue it in Argo.',
+      ),
+    ).toBeInTheDocument()
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
   },
 }
