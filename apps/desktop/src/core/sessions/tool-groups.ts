@@ -32,7 +32,7 @@ const KIND_PRESENTATION: Record<
   edited: { route: 'evidence', verb: 'edited', noun: 'file' },
   created: { route: 'evidence', verb: 'created', noun: 'file' },
   read: { route: 'evidence', verb: 'read', noun: 'file' },
-  tool: { route: 'evidence', verb: 'called', noun: 'tool' },
+  tool: { route: 'inline', verb: 'called', noun: 'tool' },
 }
 const KIND_ORDER = Object.keys(KIND_PRESENTATION) as ToolRow['kind'][]
 
