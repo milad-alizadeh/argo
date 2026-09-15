@@ -1,10 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 
+// A reading pace, not a typing one, and a ceiling on how long a burst can trail before the
+// reveal rate lifts to close the gap.
 const WORDS_PER_SECOND = 8
 const MAX_LAG_SECONDS = 0.8
 
 function wordEnds(text: string) {
   return [...text.matchAll(/\S+\s*/g)].map((match) => (match.index ?? 0) + match[0].length)
+}
+
+export type Advanced = { text: string; progress: number }
+
+// `progress` counts whole words revealed of `target`; `shown` is what was last drawn and at what
+// progress. A `target` that no longer extends `shown.text` (an edit, not an append) snaps rather
+// than replays, since there is no shared prefix left to walk from.
+export function advanceVisibleText(
+  shown: Advanced,
+  target: string,
+  elapsedSeconds: number,
+): Advanced {
+  const ends = wordEnds(target)
+  if (!target.startsWith(shown.text)) return { text: target, progress: ends.length }
+  const wordsPerSecond = Math.max(
+    WORDS_PER_SECOND,
+    (ends.length - shown.progress) / MAX_LAG_SECONDS,
+  )
+  const progress = Math.min(ends.length, shown.progress + elapsedSeconds * wordsPerSecond)
+  const words = Math.floor(progress)
+  const text = words === 0 ? '' : target.slice(0, ends[words - 1])
+  return { text, progress }
 }
 
 function reducedMotion() {
@@ -15,44 +39,27 @@ function reducedMotion() {
 // about the Message (CONTEXT.md L3 · Message).
 export function useStreamingText(text: string, streaming: boolean) {
   const [visibleText, setVisibleText] = useState(streaming ? '' : text)
-  const current = useRef(streaming ? '' : text)
-  const progress = useRef(streaming ? 0 : wordEnds(text).length)
+  const shown = useRef({
+    text: streaming ? '' : text,
+    progress: streaming ? 0 : wordEnds(text).length,
+  })
   const prefersReducedMotion = reducedMotion()
 
   useEffect(() => {
     if (!streaming || prefersReducedMotion) {
-      current.current = text
-      progress.current = wordEnds(text).length
+      shown.current = { text, progress: wordEnds(text).length }
       setVisibleText(text)
       return
     }
-    const ends = wordEnds(text)
-    const previous = current.current
-    if (!text.startsWith(previous)) {
-      current.current = text
-      progress.current = ends.length
-      setVisibleText(text)
-      return
-    }
-    const wordsPerSecond = Math.max(
-      WORDS_PER_SECOND,
-      (ends.length - progress.current) / MAX_LAG_SECONDS,
-    )
     let previousFrame = performance.now()
     let frame: number | null = null
     const draw = (now: number) => {
-      const remaining = ends.length - progress.current
-      if (remaining <= 0) return
-      const seconds = (now - previousFrame) / 1000
+      const elapsedSeconds = (now - previousFrame) / 1000
       previousFrame = now
-      progress.current = Math.min(ends.length, progress.current + seconds * wordsPerSecond)
-      const nextWords = Math.floor(progress.current)
-      if (nextWords > wordEnds(current.current).length) {
-        const next = text.slice(0, ends[nextWords - 1])
-        current.current = next
-        setVisibleText(next)
-      }
-      if (progress.current < ends.length) frame = window.requestAnimationFrame(draw)
+      const next = advanceVisibleText(shown.current, text, elapsedSeconds)
+      if (next.text !== shown.current.text) setVisibleText(next.text)
+      shown.current = next
+      if (next.progress < wordEnds(text).length) frame = window.requestAnimationFrame(draw)
     }
     frame = window.requestAnimationFrame(draw)
     return () => {
