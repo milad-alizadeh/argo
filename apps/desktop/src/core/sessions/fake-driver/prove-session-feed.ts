@@ -7,6 +7,7 @@ import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/se
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
+import { createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
@@ -48,12 +49,11 @@ try {
   const { fixture, launch, restart, isPackaged } = started
   let page = await launch()
   assert.equal(await isPackaged(), true)
-  // Each passing case records its name.
-  const ran = async (names, prove) => {
-    const reading = await prove()
-    cases.push(...names)
-    return reading
-  }
+  const ran = createCaseRunner(
+    cases,
+    () => page,
+    () => harness,
+  )
   await ran(['session-roster-contract'], () => proveContract(page))
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
