@@ -9,7 +9,15 @@ import {
 } from './turn-marker-state'
 
 function entry(overrides: Partial<TurnMarkerEntry> = {}): TurnMarkerEntry {
-  return { stage: 'live', since: null, startedAt: 1000, prompt: 'hello', images: [], ...overrides }
+  return {
+    stage: 'live',
+    since: null,
+    startedAt: 1000,
+    prompt: 'hello',
+    images: [],
+    files: [],
+    ...overrides,
+  }
 }
 
 function row(overrides: Partial<TurnMarkerRow> = {}): TurnMarkerRow {
@@ -83,7 +91,7 @@ test('optimisticRowFor shows the prompt until the record settles', () => {
   })
 })
 
-test('optimisticRowFor draws the images a Send attached, before the record arrives', () => {
+test('optimisticRowFor draws the images and files a Send attached, before the record arrives', () => {
   const sent = promptOf({
     prompt: 'compare',
     attachments: [
@@ -98,6 +106,7 @@ test('optimisticRowFor draws the images a Send attached, before the record arriv
     role: 'user',
     text: 'compare',
     images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
+    files: ['/Users/x/notes.md'],
   })
 })
 

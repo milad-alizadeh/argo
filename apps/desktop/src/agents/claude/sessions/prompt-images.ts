@@ -17,32 +17,33 @@ const APPENDED_MENTIONS = new RegExp(
 
 const mentionedPath = ([, quoted, bare]: RegExpMatchArray) => quoted ?? bare ?? ''
 
-// A mention the person typed is part of what they said; only the appended run is Argo's own.
-function withoutAppendedImages(text: string): string {
+// A mention the person typed is part of what they said; only the appended run is Argo's own, and
+// what it names is drawn as the prompt's attachments.
+function withoutAppendedRun(text: string): { text: string; files: ContentBlock[] } {
   const appended = APPENDED_MENTIONS.exec(text)
-  if (appended === null) return text
-  const fileMentions = [...(appended[1] ?? '').matchAll(APPENDED_TOKEN)]
-    .filter((match) => attachedImageUrl(mentionedPath(match)) === null)
-    .map(([token]) => token)
-  const before = text.slice(0, appended.index)
-  if (fileMentions.length === 0) return before
-  return `${before}${appended[0].startsWith('\n') ? '\n\n' : ''}${fileMentions.join(' ')}`
+  if (appended === null) return { text, files: [] }
+  const files = [...(appended[1] ?? '').matchAll(APPENDED_TOKEN)]
+    .map(mentionedPath)
+    .filter((path) => attachedImageUrl(path) === null)
+    .map((path): ContentBlock => ({ shape: 'file', path }))
+  return { text: text.slice(0, appended.index), files }
 }
 
-// A prompt's images follow its blocks, pasted ones first, and the text that stood in for them goes.
-export function withPromptImages(blocks: ContentBlock[]): ContentBlock[] {
+// A prompt's images, pasted ones first, then its files follow its blocks, and the text that stood
+// in for them goes.
+export function withPromptAttachments(blocks: ContentBlock[]): ContentBlock[] {
   const hasPastedImage = blocks.some((block) => block.shape === 'image')
-  const mentioned: ContentBlock[] = []
+  const attached: ContentBlock[] = []
   const withoutStandIns = blocks.flatMap((block): ContentBlock[] => {
     if (block.shape !== 'prose') return [block]
     const images = imageBlocks(
       [...block.text.matchAll(MENTION)].map((match) => attachedImageUrl(mentionedPath(match))),
     )
-    mentioned.push(...images)
-    const unmentioned = images.length > 0 ? withoutAppendedImages(block.text) : block.text
-    const text = hasPastedImage ? unmentioned.replace(EDGE_PLACEHOLDERS, '') : unmentioned
+    const appended = withoutAppendedRun(block.text)
+    attached.push(...images, ...appended.files)
+    const text = hasPastedImage ? appended.text.replace(EDGE_PLACEHOLDERS, '') : appended.text
     // Only words this emptied are dropped; a prompt that arrived blank stays as it was.
     return text === block.text || text.trim() !== '' ? [{ shape: 'prose', text }] : []
   })
-  return [...withoutStandIns, ...mentioned]
+  return [...withoutStandIns, ...attached]
 }

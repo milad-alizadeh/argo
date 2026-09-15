@@ -451,6 +451,49 @@ export const PromptWithImages: Story = {
   },
 }
 
+const promptFilesFeed = {
+  ...feed,
+  sessionId: 'prompt-files',
+  chainId: 'prompt-files',
+  revision: 'prompt-files-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'prompt-files-words',
+      role: 'user' as const,
+      text: 'Merge these two plans.',
+      files: ['/Users/x/notes.md', '/Users/x/plan.v2.md'],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'prompt-files-alone',
+      role: 'user' as const,
+      text: '',
+      files: ['/Users/x/report.pdf'],
+    },
+  ],
+} satisfies SessionFeed
+
+// A prompt's other files are chips inside its bubble, as the composer showed them before Send.
+export const PromptWithFiles: Story = {
+  args: { feed: promptFilesFeed, selectedSessionId: 'prompt-files' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
+    const [prompt, filesAlone] = drawnRows(canvasElement)
+    const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
+    if (!bubble || !filesAlone) throw new Error('expected both prompts to draw')
+    const chip = within(bubble).getByText('notes')
+    await expect(within(bubble).getByText('plan.v2')).toBeVisible()
+    await expect(within(bubble).getAllByText('MD file')).toHaveLength(2)
+    const words = within(bubble).getByText('Merge these two plans.')
+    await expect(chip.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      words.getBoundingClientRect().top,
+    )
+    await expect(within(bubble).queryByRole('button')).toBeNull()
+    await expect(within(filesAlone).getByText('PDF file')).toBeVisible()
+  },
+}
+
 const toolFeed = {
   ...feed,
   chainId: 'tools',

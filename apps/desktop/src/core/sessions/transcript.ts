@@ -10,6 +10,8 @@ export type ContentBlock =
   | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }
   | { shape: 'tool'; callId: string }
   | { shape: 'image'; url: FeedImageUrl }
+  // A file the person attached to a prompt, by its absolute path.
+  | { shape: 'file'; path: string }
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }

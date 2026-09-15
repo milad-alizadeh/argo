@@ -27,15 +27,22 @@ export type TurnMarkerEntry = {
   startedAt: number
   prompt: string
   images: readonly string[]
+  files: readonly string[]
 }
 
-// What the optimistic bubble draws of a Send: its words and its attached images.
+// What the optimistic bubble draws of a Send: its words, its attached images and its other files.
 export function promptOf(turn: {
   prompt: string
   attachments: readonly SessionAttachmentInput[]
-}): Pick<TurnMarkerEntry, 'prompt' | 'images'> {
-  const images = turn.attachments.map(({ path }) => attachedImageUrl(path))
-  return { prompt: turn.prompt, images: images.filter((url) => url !== null) }
+}): Pick<TurnMarkerEntry, 'prompt' | 'images' | 'files'> {
+  const images: string[] = []
+  const files: string[] = []
+  for (const { path } of turn.attachments) {
+    const image = attachedImageUrl(path)
+    if (image === null) files.push(path)
+    else images.push(image)
+  }
+  return { prompt: turn.prompt, images, files }
 }
 
 export type TurnMarkerView = { phase: TurnMarkerPhase; startedAt: number }
@@ -79,6 +86,7 @@ export function optimisticRowFor(
     role: 'user',
     text: entry.prompt,
     ...(entry.images.length > 0 ? { images: [...entry.images] } : {}),
+    ...(entry.files.length > 0 ? { files: [...entry.files] } : {}),
   }
 }
 

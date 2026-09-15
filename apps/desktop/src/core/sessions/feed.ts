@@ -1,6 +1,7 @@
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
+import { withPromptAttachments } from './prompt-attachments'
 import { type ToolEvidence, toolRows } from './tool-feed'
 import { groupToolRuns } from './tool-groups'
 import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
@@ -53,20 +54,7 @@ export function rowsOfRecord(
   const rows = record.blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
-  return withImages(rows, record)
-}
-
-// A prompt of images alone still gets a bubble, under the first image's own id.
-function withImages(rows: SessionFeedRow[], record: TranscriptMessage): SessionFeedRow[] {
-  const images = record.blocks.flatMap((block) => (block.shape === 'image' ? [block.url] : []))
-  if (images.length === 0 || record.role !== 'user') return rows
-  const proseIndex = rows.findIndex((row) => row.shape === 'prose')
-  if (proseIndex === -1) {
-    const index = record.blocks.findIndex((block) => block.shape === 'image')
-    const id = `${record.uuid}:${index}`
-    return [{ shape: 'prose', id, role: record.role, text: '', images }, ...rows]
-  }
-  return rows.map((row, index) => (index === proseIndex ? { ...row, images } : row))
+  return withPromptAttachments(rows, record)
 }
 
 function rowsOfBlock({
@@ -97,7 +85,9 @@ function rowsOfBlock({
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)
     }
-    // A prompt's image is drawn in its bubble by `withImages`; only prompts draw thumbnails.
+    // A prompt's attachments are drawn in its bubble by `withPromptAttachments`.
+    case 'file':
+      return []
     case 'image':
       return record.role === 'user'
         ? []

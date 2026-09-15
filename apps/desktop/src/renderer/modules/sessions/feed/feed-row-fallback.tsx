@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { AttachmentChip } from '../components/attachment-chip'
 import { PromptText } from '../prompt/prompt-text'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedImage } from './content/feed-images'
@@ -10,13 +11,13 @@ export function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
-// Biome refuses a position key, and the same picture can be pasted twice: count earlier copies.
-function keyedImages(images: readonly string[]) {
+// Biome refuses a position key, and the same file can be attached twice: count earlier copies.
+function keyedAttachments(sources: readonly string[]) {
   const seen = new Map<string, number>()
-  return images.map((url, position) => {
-    const occurrence = seen.get(url) ?? 0
-    seen.set(url, occurrence + 1)
-    return { url, key: `${occurrence}:${url}`, number: position + 1 }
+  return sources.map((source, position) => {
+    const occurrence = seen.get(source) ?? 0
+    seen.set(source, occurrence + 1)
+    return { source, key: `${occurrence}:${source}`, number: position + 1 }
   })
 }
 
@@ -24,10 +25,12 @@ export function FeedPrompt({
   onOpenEvidence,
   text,
   images = [],
+  files = [],
 }: {
   onOpenEvidence: (evidence: SessionEvidence) => void
   text: string
   images?: readonly string[]
+  files?: readonly string[]
 }) {
   const { t } = useTranslation('sessions')
   return (
@@ -39,14 +42,21 @@ export function FeedPrompt({
       <span className="sr-only">{t('promptSender')}</span>
       {images.length === 0 ? null : (
         <div className="flex flex-wrap justify-end gap-(--spacing-tight)">
-          {keyedImages(images).map(({ url, key, number }) => (
+          {keyedAttachments(images).map(({ source, key, number }) => (
             <FeedImage
               alt={t('promptImage', { number })}
               openLabel={t('promptImageOpen', { number })}
               compact
               key={key}
-              source={url}
+              source={source}
             />
+          ))}
+        </div>
+      )}
+      {files.length === 0 ? null : (
+        <div className="flex flex-wrap justify-end gap-(--spacing-tight)">
+          {keyedAttachments(files).map(({ source, key }) => (
+            <AttachmentChip key={key} path={source} />
           ))}
         </div>
       )}

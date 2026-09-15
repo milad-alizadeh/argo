@@ -10,10 +10,28 @@ test('draws attached image files from the @path mentions Argo appends', () => {
       shape: 'prose',
       id: 'prompt-1:0',
       role: 'user',
-      text: 'Review this.\n\n@/Users/x/notes.md',
+      text: 'Review this.',
       images: ['file:///Users/x/shot%231.png', 'file:///Users/x/b.JPG'],
+      files: ['/Users/x/notes.md'],
     },
   ])
+})
+
+test('draws a prompt of attached files alone as a bubble of files', () => {
+  assert.deepEqual(promptRows('@/Users/x/notes.md @"/Users/x/my plan.md"'), [
+    {
+      shape: 'prose',
+      id: 'prompt-1:0',
+      role: 'user',
+      text: '',
+      files: ['/Users/x/notes.md', '/Users/x/my plan.md'],
+    },
+  ])
+})
+
+test('keeps a file the person mentioned inside their words as they wrote it', () => {
+  const text = 'Read @/Users/x/notes.md first'
+  assert.deepEqual(promptRows(text), [{ shape: 'prose', id: 'prompt-1:0', role: 'user', text }])
 })
 
 for (const text of ['Compare @/Users/x/a.png with the design', 'Look at @/Users/x/a.png']) {
@@ -32,8 +50,9 @@ test('draws an attached file whose path has a space, from its quoted mention', (
       shape: 'prose',
       id: 'prompt-1:0',
       role: 'user',
-      text: 'Look.\n\n@/Users/x/notes.md',
+      text: 'Look.',
       images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
+      files: ['/Users/x/notes.md'],
     },
   ])
 })
@@ -55,8 +74,9 @@ test('reads back every attachment the composer appends, as its bubble draws it',
       shape: 'prose',
       id: 'prompt-1:0',
       role: 'user',
-      text: 'Look.\n\n@/Users/x/notes.md',
+      text: 'Look.',
       images: ['file:///Users/x/Screenshot%20at%2006.44.png', 'file:///Users/x/b.png'],
+      files: ['/Users/x/notes.md'],
     },
   ])
 })

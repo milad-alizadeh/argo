@@ -90,6 +90,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     text: z.string(),
     // The images the same message carries, drawn inside its bubble; absent when there are none.
     images: z.array(feedImageUrlSchema).min(1).optional(),
+    // The other files it attached, by absolute path; absent when there are none.
+    files: z.array(z.string().startsWith('/')).min(1).optional(),
   }),
   z.strictObject({ shape: z.literal('thought'), id: identifierSchema, text: z.string() }),
   z.strictObject({ shape: z.literal('command-output'), id: identifierSchema, text: z.string() }),

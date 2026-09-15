@@ -1,6 +1,41 @@
 import assert from 'node:assert/strict'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
-import { embedAttachments } from './attachment-prompt'
+import { embedAttachments, mentionableAttachments } from './attachment-prompt'
+
+test('mentions a file whose path has a space and a quote through a link Claude Code can read', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'argo-mention-'))
+  try {
+    const folder = join(root, 'the "draft" folder')
+    await mkdir(folder)
+    await writeFile(join(folder, 'notes 1.md'), 'hello')
+    const plain = { path: join(root, 'plain.md'), kind: 'file' as const }
+    const [linked, kept] = await mentionableAttachments(
+      [{ path: join(folder, 'notes 1.md'), kind: 'file' }, plain],
+      join(root, 'links'),
+    )
+    assert.equal(kept, plain)
+    assert.doesNotMatch(linked?.path ?? '', /"/)
+    assert.match(embedAttachments('', linked ? [linked] : []), /^@"[^"]+notes 1\.md"$/)
+    assert.equal(await readFile(linked?.path ?? '', 'utf8'), 'hello')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('links the same file again without failing', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'argo-mention-'))
+  try {
+    const attachment = { path: join(root, 'a "b" c.png'), kind: 'image' as const }
+    await writeFile(attachment.path, '')
+    const first = await mentionableAttachments([attachment], root)
+    assert.deepEqual(await mentionableAttachments([attachment], root), first)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
 
 test('appends @path mentions after non-empty draft text, separated by a blank line', () => {
   assert.equal(

@@ -2,7 +2,7 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
-import { promptEventImages, readImage } from './prompt-images'
+import { promptBlocks, promptEventImages, readImage } from './prompt-images'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -64,12 +64,12 @@ function itemMessage(
   if (item?.type === 'AgentMessage') role = 'assistant'
   if (item === null || role === null || typeof item.id !== 'string') return null
   const blocks = messageBlocks(item.content, ['text', 'Text'])
-  if (blocks === null) return null
+  if (blocks === null || !Array.isArray(item.content)) return null
   return messageRecord(record, {
     uuid: item.id,
     role,
     originSessionId: typeof payload.thread_id === 'string' ? payload.thread_id : null,
-    blocks,
+    blocks: role === 'user' ? promptBlocks(item.content, blocks) : blocks,
   })
 }
 
@@ -80,11 +80,13 @@ function promptMessage(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   if (typeof payload.message !== 'string' || typeof record.timestamp !== 'string') return null
+  const images = promptEventImages(payload)
+  const content = [{ text_elements: payload.text_elements }, ...images]
   return messageRecord(record, {
     uuid: `user:${record.timestamp}`,
     role: 'user',
     originSessionId: null,
-    blocks: [{ shape: 'prose', text: payload.message }, ...promptEventImages(payload)],
+    blocks: promptBlocks(content, [{ shape: 'prose', text: payload.message }, ...images]),
   })
 }
 

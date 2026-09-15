@@ -66,6 +66,61 @@ test('draws a prompt image and a local image file inside the prompt bubble', () 
   ])
 })
 
+// The TUI's own submission (composer_submission.rs, rust-v0.147.0): images first, then one text
+// holding `[Image #N]` where each sat, marked by a `text_elements` byte range.
+const placeholder = (start: number, text = '[Image #2]') => ({
+  byte_range: { start, end: start + Buffer.byteLength(text) },
+  placeholder: text,
+})
+
+test('draws a TUI prompt image without the placeholder the TUI wrote for it', () => {
+  const rows = promptRows([
+    { type: 'local_image', path: '/Users/x/a.png' },
+    { type: 'text', text: '[Image #2] submit mixed', text_elements: [placeholder(0)] },
+  ])
+  assert.deepEqual(rows[0]?.shape === 'prose' ? [rows[0].text, rows[0].images] : null, [
+    'submit mixed',
+    ['file:///Users/x/a.png'],
+  ])
+})
+
+test('keeps a placeholder the sentence refers to, and one the TUI did not mark', () => {
+  const text = 'né [Image #2] ok [Image #3]'
+  const rows = promptRows([
+    { type: 'local_image', path: '/Users/x/a.png' },
+    { type: 'text', text, text_elements: [placeholder(Buffer.byteLength('né '))] },
+  ])
+  assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, text)
+})
+
+test('drops the placeholders a bare prompt event marks at its end', () => {
+  const message = 'look é [Image #2]'
+  const rows = eventRows({
+    ...EXEC_PROMPT,
+    message,
+    text_elements: [placeholder(Buffer.byteLength('look é '))],
+  })
+  assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, 'look é')
+})
+
+test('draws the files Argo attached as their own path items, not as words', () => {
+  const rows = promptRows([
+    { type: 'text', text: '/Users/x/typed.md', text_elements: [] },
+    { type: 'local_image', path: '/Users/x/a.png' },
+    { type: 'text', text: '/Users/x/my notes.md', text_elements: [] },
+  ])
+  assert.deepEqual(rows, [
+    {
+      shape: 'prose',
+      id: 'prompt-1:0',
+      role: 'user',
+      text: '/Users/x/typed.md',
+      images: ['file:///Users/x/a.png'],
+      files: ['/Users/x/my notes.md'],
+    },
+  ])
+})
+
 test('keeps an image it cannot draw as its source', () => {
   const rows = promptRows([
     { type: 'text', text: 'Look', text_elements: [] },

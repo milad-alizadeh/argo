@@ -5,7 +5,7 @@ import {
 } from '@/core/sessions/contract'
 import type { Permission, PermissionDecision } from '@/core/sessions/permission'
 import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
-import { embedAttachments } from './attachment-prompt'
+import { embedAttachments, mentionableAttachments } from './attachment-prompt'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'
 import type { ClaudePermissionDecision } from './permission-gate'
@@ -39,7 +39,7 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
         return {
           sessionId: driver.start({
             cwd,
-            prompt: embedAttachments(prompt, attachments),
+            prompt: embedAttachments(prompt, await mentionableAttachments(attachments)),
             setup: setup as ClaudeTurnSetup,
           }),
         }
@@ -50,7 +50,7 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
     async send({ sessionId, prompt, setup, attachments }) {
       try {
         await driver.send(sessionId, {
-          prompt: embedAttachments(prompt, attachments),
+          prompt: embedAttachments(prompt, await mentionableAttachments(attachments)),
           setup: setup as ClaudeTurnSetup,
         })
         return { ok: true }
