@@ -10,7 +10,7 @@ function shellGroup(row: DelegationRow): DelegationGroup | null {
     id: row.id,
     actor: 'shell',
     groupId: row.groupId,
-    entries: [row],
+    entries: [{ ...row, actor: 'shell', groupId: row.groupId }],
   }
 }
 
@@ -30,7 +30,8 @@ export function groupDelegations(rows: SessionFeedRow[]): SessionFeedRow[] {
       previous?.shape === 'delegation-group' &&
       previous.groupId === nextGroup.groupId
     ) {
-      previous.entries.push(row)
+      const [entry] = nextGroup.entries
+      if (entry !== undefined) previous.entries.push(entry)
       continue
     }
     grouped.push(nextGroup ?? row)

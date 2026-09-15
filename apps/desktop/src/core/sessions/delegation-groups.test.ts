@@ -47,3 +47,27 @@ test('keeps a maximum-length Shell group valid at the Feed boundary', () => {
     entries: [{ ...started, groupId }],
   })
 })
+
+test('rejects an Agent entry inside a Shell activity group', () => {
+  const parsed = sessionFeedRowSchema.safeParse({
+    shape: 'delegation-group',
+    id: 'mixed',
+    actor: 'shell',
+    groupId: 'build',
+    entries: [{ ...started, actor: 'agent' }],
+  })
+  assert.equal(parsed.success, false)
+})
+
+test('rejects a Shell activity entry with a different or missing group id', () => {
+  for (const groupId of ['other', null]) {
+    const parsed = sessionFeedRowSchema.safeParse({
+      shape: 'delegation-group',
+      id: 'mismatched',
+      actor: 'shell',
+      groupId: 'build',
+      entries: [{ ...started, groupId }],
+    })
+    assert.equal(parsed.success, false)
+  }
+})

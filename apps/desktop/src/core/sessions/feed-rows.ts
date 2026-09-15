@@ -43,13 +43,29 @@ const delegationRowSchema = z.strictObject({
   groupId: identifierSchema.nullable(),
 })
 
-const delegationGroupSchema = z.strictObject({
-  shape: z.literal('delegation-group'),
-  id: identifierSchema,
+const shellDelegationEntrySchema = delegationRowSchema.extend({
   actor: z.literal('shell'),
   groupId: identifierSchema,
-  entries: z.array(delegationRowSchema).min(1),
 })
+
+const delegationGroupSchema = z
+  .strictObject({
+    shape: z.literal('delegation-group'),
+    id: identifierSchema,
+    actor: z.literal('shell'),
+    groupId: identifierSchema,
+    entries: z.array(shellDelegationEntrySchema).min(1),
+  })
+  .superRefine((group, context) => {
+    group.entries.forEach((entry, index) => {
+      if (entry.groupId !== group.groupId)
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'A Shell activity entry must use its enclosing group id.',
+          path: ['entries', index, 'groupId'],
+        })
+    })
+  })
 
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   toolRowSchema,
