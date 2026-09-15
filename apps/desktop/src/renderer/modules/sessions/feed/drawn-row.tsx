@@ -7,6 +7,8 @@ import type { ToolGroupState } from './tool-group-state'
 
 export type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 
+const noQuestionFailure = () => null
+
 type DrawnRowInputs = {
   sessionId: string
   activeEvidenceId: string | null
@@ -30,8 +32,11 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
   answerQuestion.current = inputs.onAnswerQuestion
   const answeringId = useRef(inputs.answeringQuestionId)
   answeringId.current = inputs.answeringQuestionId
-  const failureFor = useRef(inputs.questionFailure)
-  failureFor.current = inputs.questionFailure
+  const failureFor = useRef<(questionId: string) => string | null>(
+    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure,
+  )
+  failureFor.current =
+    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure
   const sessionId = inputs.sessionId
   const onOpenEvidence = useCallback(
     (evidence: SessionEvidence) => openEvidence.current(evidence),
