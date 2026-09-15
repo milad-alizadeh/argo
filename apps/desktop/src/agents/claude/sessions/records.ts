@@ -10,6 +10,7 @@ import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
 import { commandSource } from './command-source'
+import { readPlanChanges } from './plan-changes'
 import { readSkillBody } from './skill-body'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
@@ -47,8 +48,11 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   // whole history as unreadable over a field nothing reads.
   if (typeof record.uuid !== 'string') return null
   const results = readToolResults(content, record.toolUseResult)
+  const calls = readToolCalls(content)
+  const planChanges = readPlanChanges(calls, results, record.toolUseResult)
   const parsed: TranscriptMessage = {
-    toolCalls: readToolCalls(content),
+    ...(planChanges.length === 0 ? {} : { planChanges }),
+    toolCalls: calls,
     toolResults: results,
     answeredCalls: results.map((result) => result.callId),
     kind: 'message',

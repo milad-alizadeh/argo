@@ -23,19 +23,9 @@ function rosterToolInput(input: Record<string, unknown>): Record<string, unknown
     'run_in_background',
     'url',
   ]
-  const kept = Object.fromEntries(
+  return Object.fromEntries(
     fields.flatMap((field) => (field in input ? [[field, input[field]]] : [])),
   )
-  const todos = input.todos
-  if (!Array.isArray(todos)) return kept
-  return {
-    ...kept,
-    todos: todos.flatMap((todo) => {
-      if (typeof todo !== 'object' || todo === null) return []
-      const { content, status } = todo as { content?: unknown; status?: unknown }
-      return typeof content === 'string' && typeof status === 'string' ? [{ content, status }] : []
-    }),
-  }
 }
 
 // The Roster needs Session facts, not Feed content. Keeping only the fields its projections read

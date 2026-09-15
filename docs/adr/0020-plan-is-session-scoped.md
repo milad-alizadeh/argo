@@ -21,15 +21,18 @@ Checked against what the two CLIs actually emit:
 
 - **ACP** delivers a plan as a session-level `session/update` notification, and the agent re-sends
   the **complete** entry list on every change. There is no per-turn plan object.
-- **Claude Code's TodoWrite** writes a session list that survives the next prompt; the agent
-  rewrites the whole list rather than appending to a turn's.
+- **Claude Code** keeps a session list that survives the next prompt. Its `TaskCreate` adds one
+  step and `TaskUpdate` changes or deletes one by id; older transcripts carry `TodoWrite`, which
+  rewrites the whole list. Neither appends to a turn's.
+- **Codex's `update_plan`** rewrites the whole list, session-level like the others.
 
 A Turn is *when a version of the plan was observed*, not what owns it. The model mistook the
 observation point for ownership.
 
 ## Decision
 
-**A Session holds `0..1` Plan** — one live list, replaced wholesale by the agent. **A Turn carries
+**A Session holds `0..1` Plan** — one live list, which the agent rewrites whole or changes one step at a time; Argo replays
+every change in order. **A Turn carries
 `0..1` snapshot** of it: the version in force while that turn ran, which is all the transcript
 record actually gives us.
 

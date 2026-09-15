@@ -1,4 +1,4 @@
-import type { FeedMarker, SessionEntry } from './models'
+import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }
@@ -24,6 +24,16 @@ export type TranscriptUsage = {
   cacheCreationTokens: number
 }
 
+// One change a record makes to its Session's Plan (CONTEXT.md L3 · Plan), as its adapter read it.
+export type PlanChange =
+  | { kind: 'replace'; entries: { content: string; status: PlanEntryStatus }[] }
+  | { kind: 'unreadable' }
+  // A step exists only once the result of the call that added it names the step's key.
+  | { kind: 'add'; callId: string; content: string }
+  | { kind: 'added'; callId: string; key: string }
+  | { kind: 'update'; key: string; content: string | null; status: PlanEntryStatus | null }
+  | { kind: 'remove'; key: string }
+
 export type TranscriptMessage = {
   kind: 'message'
   uuid: string
@@ -44,6 +54,7 @@ export type TranscriptMessage = {
   toolResults?: ToolResult[]
   answeredCalls: string[]
   usage: TranscriptUsage | null
+  planChanges?: PlanChange[]
 }
 
 export const BACKGROUND_STATES = ['completed', 'failed', 'killed', 'stopped'] as const
@@ -78,6 +89,8 @@ export type TranscriptRecord =
   // delivery happened there so adjacent Tool Calls on either side do not become one group.
   | { kind: 'trace'; uuid: string; boundary?: boolean; subagent?: boolean; cwd?: string | null }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
+  // A CLI that writes its Plan outside any message, as Codex's `update_plan` call does.
+  | { kind: 'plan'; changes: PlanChange[] }
   | { kind: 'compaction'; uuid: string; timestamp?: string; summary?: string }
   // The harness re-delivers the compaction summary as a separate, later user turn than the
   // `compact_boundary` it belongs to; `readTranscriptFile` folds it into that record and this

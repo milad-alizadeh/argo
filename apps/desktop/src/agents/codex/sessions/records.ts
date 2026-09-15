@@ -2,6 +2,7 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
+import { readPlanCall } from './plan-changes'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -100,7 +101,7 @@ function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message') return null
+  if (payload.type !== 'message') return readPlanCall(payload)
   if (typeof payload.id !== 'string') return null
   if (payload.role === 'assistant') {
     const blocks = messageBlocks(payload.content, ['output_text'])
