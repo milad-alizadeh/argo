@@ -5,7 +5,10 @@
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {
-    "dev": "node scripts/link-hoisted-electron.mjs && electron-forge start",
+    "dev": "node scripts/dev-instance.mjs",
+    "dev:status": "node scripts/dev-control.mjs status",
+    "dev:stop": "node scripts/dev-control.mjs stop",
+    "dev:prove-isolation": "node scripts/prove-dev-instance-isolation.mjs",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "storybook": "storybook dev -p 6006",

@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { createConnection } from 'node:net'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
@@ -9,6 +11,7 @@ import { installMenu } from './core/commands/menu'
 import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
+import { developmentInstance, developmentReadyRecord } from './development/instance'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -33,12 +36,46 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
+// The launch wrapper supplies these only for Forge's Vite development server. A packaged app
+// never reads them, so production keeps its normal application state and window identity.
+const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
+  ? developmentInstance(process.env)
+  : null
+if (DEVELOPMENT_INSTANCE) {
+  app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
+  app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
+}
+
+async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
+  if (!DEVELOPMENT_INSTANCE) return
+
+  await mkdir(DEVELOPMENT_INSTANCE.directory, { recursive: true })
+  await new Promise<void>((resolve, reject) => {
+    const socket = createConnection(DEVELOPMENT_INSTANCE.controlFile)
+    socket.once('error', reject)
+    socket.once('connect', () =>
+      socket.write(`ready ${process.pid} ${DEVELOPMENT_INSTANCE?.controlToken}`),
+    )
+    socket.once('data', (reply) => {
+      if (reply.toString() === 'ready') resolve()
+      else reject(new Error('Development launcher rejected Electron readiness.'))
+      socket.end()
+    })
+  })
+  await writeFile(
+    DEVELOPMENT_INSTANCE.readyFile,
+    `${JSON.stringify(developmentReadyRecord(DEVELOPMENT_INSTANCE, window.id), null, 2)}\n`,
+    { mode: 0o600 },
+  )
+}
+
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: WINDOW_MINIMUM_WIDTH,
+    ...(DEVELOPMENT_INSTANCE ? { title: DEVELOPMENT_INSTANCE.title } : {}),
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
     // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
     // the frame keeps the native controls and gives up the native title bar.
@@ -56,6 +93,10 @@ function createWindow(): BrowserWindow {
     },
   })
 
+  if (DEVELOPMENT_INSTANCE) {
+    window.webContents.on('page-title-updated', (event) => event.preventDefault())
+  }
+
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachBridges(window, { userData, rendererURL, proofEnabled: PROOF_ENABLED })
@@ -66,6 +107,10 @@ function createWindow(): BrowserWindow {
   } else {
     void window.loadFile(rendererPath)
   }
+
+  window.webContents.once('did-finish-load', () => {
+    void writeDevelopmentReady(window).catch((error: unknown) => console.error(error))
+  })
 
   return window
 }
@@ -92,4 +137,8 @@ void app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   app.quit()
+})
+
+app.on('will-quit', () => {
+  if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
 })
