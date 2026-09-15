@@ -27,7 +27,7 @@ const built = (id: string, ...importers: string[]) => ({
 const IMPORTERS = parseImporters(
   JSON.stringify({
     modules: [
-      built(`${MODULES}/components/FeedDocument.tsx`, `${MODULES}/components/SessionFeed.tsx`),
+      built(`${MODULES}/components/feed-document.tsx`, `${MODULES}/components/SessionFeed.tsx`),
       built(
         `${MODULES}/components/SessionFeed.tsx`,
         `${MODULES}/components/SessionFeed.stories.tsx`,
@@ -74,7 +74,7 @@ test('a link opens its story on the preview and names the short commit', () => {
 })
 
 test('a component with no story of its own links the stories that render it', () => {
-  assert.deepEqual(linked([`${MODULES}/components/FeedDocument.tsx`]), [
+  assert.deepEqual(linked([`${MODULES}/components/feed-document.tsx`]), [
     'sessions-sessionfeed--default',
     'sessions-sessionfeed--empty',
     'sessions-sessionsscreenview--reading',

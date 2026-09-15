@@ -2,7 +2,7 @@ import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 
 import type { ProjectSummary } from '@/core/projects/messages'
-import { useSessionCreationStore } from '../state/useSessionCreationStore'
+import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { sendToNewSession, sendToSelected } from './send-turn'
 
 const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }

@@ -6,7 +6,7 @@ import {
   referenceSupportsCli,
   type SessionReference,
   SessionReferenceIcon,
-} from './SessionReference'
+} from './session-reference'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {

@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { PromptText } from '../prompt/PromptText'
+import { PromptText } from '../prompt/prompt-text'
 import type { SessionEvidence, SessionFeedRow } from '../types'
-import { FeedDelegation } from './FeedDelegation'
-import { FeedEvent } from './FeedEvent'
-import { FeedMarker } from './FeedMarker'
+import { FeedDelegation } from './feed-delegation'
+import { FeedEvent } from './feed-event'
+import { FeedMarker } from './feed-marker'
 
 export function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
