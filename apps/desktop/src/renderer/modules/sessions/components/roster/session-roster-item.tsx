@@ -15,13 +15,13 @@ import { PromptText } from '../../prompt/prompt-text'
 import type { SelectionModifier } from '../../state/roster-selection'
 import type { Session } from '../../types'
 import { SessionReferenceText } from '../composer/references/session-reference'
+import { SessionMetadata } from './session-roster-metadata'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
   STATUS_LABELS,
   STATUS_MARKS,
 } from './session-roster-status'
-import { SessionMetadata } from './session-roster-metadata'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
