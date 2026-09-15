@@ -29,14 +29,13 @@ interrupted the compaction. A compaction older than 30 minutes belongs to a Sess
 The reader deletes its start file. For a `managed` Session, the start file also starts the
 reading of the percentage that the terminal paints, and the same rule ends that reading.
 
-Codex gets the same hook in its user hooks file, `~/.codex/hooks.json`, which holds hooks in the
-same shape. Its start files go to `~/.codex/argo-compactions/`. Codex also writes nothing to a
-rollout while it compacts: a measured auto-compact ran for 45 seconds with no record. The
-top-level `compacted` record ends the compaction, and the Feed draws it as the compaction divider.
-A `managed` Codex Session does not need the hook. `codex app-server` sends `item/started` for a
-`contextCompaction` item when a compaction starts, for a requested and an automatic compaction
-alike. The matching `item/completed` ends it. Codex gives no percentage, so the Feed shows only
-the spinner and the elapsed time for a Codex Session.
+Codex gets no hook. A `managed` Codex Session does not need one: `codex app-server` sends
+`item/started` for a `contextCompaction` item when a compaction starts, for a requested and an
+automatic compaction alike, and the matching `item/completed` ends it. Codex gives no percentage,
+so the Feed shows only the spinner and the elapsed time. An `external` Codex Session shows nothing
+while it compacts. Codex writes nothing to a rollout during a compaction: a measured auto-compact
+ran for 45 seconds with no record. The top-level `compacted` record at the end draws the
+compaction divider.
 
 ## Why
 
@@ -58,8 +57,7 @@ The hook is the only live signal that Claude Code gives. The folder is under hom
 - A proof run and a PTY acceptance run do not install the hook and do not read start files.
 - No live-CLI test proves that Claude Code runs this hook. The tests run the hook command in
   `/bin/sh` and read fixture transcripts. ADR-0024 covers its own hooks with a live-CLI test.
-- Codex runs a new user hook only after the person trusts it once in the `/hooks` view of Codex.
-  Until then, Codex skips the hook and shows a warning, and an `external` Codex Session shows no
-  compaction until the `compacted` record. Argo never writes a trust hash for the person and never
-  starts Codex with `--dangerously-bypass-hook-trust`.
+- Argo installs nothing in `~/.codex/`. The same hook in `~/.codex/hooks.json` would cover
+  `external` Codex Sessions, but Codex runs a new user hook only after the person trusts it in its
+  `/hooks` view, and it shows a warning until then.
 - `external` Sessions still raise no Permission. This hook observes. It does not drive.

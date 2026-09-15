@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { compactionHookCommand } from '../../compaction/compaction-hook.ts'
+import { compactionHookCommand } from '../compaction/compaction-hook.ts'
 import { parseTranscriptLine } from '../sessions/records.ts'
 
 const ESCAPE = String.fromCharCode(27)

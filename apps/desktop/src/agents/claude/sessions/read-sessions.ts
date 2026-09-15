@@ -6,7 +6,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
-import { compactionEndedAt, markCompactingRows } from '../../compaction/compaction-roster'
+import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
