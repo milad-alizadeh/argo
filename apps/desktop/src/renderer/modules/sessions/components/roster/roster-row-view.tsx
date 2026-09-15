@@ -48,6 +48,7 @@ export function RosterRowView({
   const selectable = !row.archived
   return (
     <SessionRosterItem
+      archived={row.archived}
       checked={selectable && selectedIds.has(session.id)}
       onArchive={selectable ? () => onArchive(session.id) : undefined}
       onFocus={() => onFocus(session.id)}

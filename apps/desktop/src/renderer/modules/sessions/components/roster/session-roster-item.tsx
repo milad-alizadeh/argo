@@ -55,6 +55,7 @@ function rowHighlightOf(checked: boolean, selected: boolean): string {
 }
 
 export function SessionRosterItem({
+  archived,
   checked,
   onArchive,
   onFocus,
@@ -69,6 +70,7 @@ export function SessionRosterItem({
   session,
   tabIndex,
 }: {
+  archived: boolean
   checked: boolean
   onArchive?: () => void
   onFocus: () => void
@@ -104,6 +106,7 @@ export function SessionRosterItem({
             <button
               aria-current={selected ? 'page' : undefined}
               className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
+              data-archived={archived}
               data-session-id={session.id}
               onClick={handleRowClick}
               onFocus={onFocus}

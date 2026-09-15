@@ -17,6 +17,7 @@ export function ArchivedToggleRow({
     <button
       aria-expanded={open}
       className="group flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-left type-body text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      data-slot="archived-toggle"
       onClick={onToggle}
       type="button"
     >
