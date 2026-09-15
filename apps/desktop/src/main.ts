@@ -44,6 +44,8 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
 if (DEVELOPMENT_INSTANCE) {
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
+  // Loopback only; agent-browser attaches here to profile, and a packaged app never opens it (#2228).
+  app.commandLine.appendSwitch('remote-debugging-port', String(DEVELOPMENT_INSTANCE.debugPort))
 }
 
 async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
