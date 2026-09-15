@@ -35,7 +35,10 @@ test('keeps commands from distinct transcript events separate across a hidden de
       uuid: 'delivery-2',
       userType: 'external',
       sourceToolAssistantUUID: 'tool-1',
-      message: { role: 'user', content: '<transcript_delta>internal update</transcript_delta>' },
+      message: {
+        role: 'user',
+        content: '<skills_instructions>internal update</skills_instructions>',
+      },
     }),
   )
   if (delivery === null) assert.fail('expected transcript delivery to parse')
@@ -68,4 +71,77 @@ test('keeps commands from distinct transcript events separate across a hidden de
     assert.equal(rows[1]?.shape, 'tool-group')
     assert.equal(rows[1]?.shape === 'tool-group' ? rows[1].calls.length : 0, 1)
   }
+})
+
+test('keeps a reader event between command groups', () => {
+  const delivery = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'status-2',
+      userType: 'external',
+      sourceToolAssistantUUID: 'tool-1',
+      message: { role: 'user', content: '<status>running</status>' },
+    }),
+  )
+  if (delivery === null) assert.fail('expected status to parse')
+  const chain = {
+    id: 'session',
+    retiredIds: [],
+    originUnread: false,
+    files: [
+      {
+        path: '/tmp/session.jsonl',
+        sessionId: 'session',
+        resumedFrom: null,
+        originSessionId: null,
+        openedAt: '',
+        openingPrompt: null,
+        records: [
+          commandMessage('command-1', 'call-1'),
+          delivery,
+          commandMessage('command-2', 'call-2'),
+        ],
+        unreadableLines: 0,
+      },
+    ],
+  }
+  const projections = [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
+  for (const rows of projections) {
+    assert.deepEqual(
+      rows.map((row) => row.shape),
+      ['tool-group', 'event', 'tool-group'],
+    )
+  }
+})
+
+test('keeps a sidechain harness delivery out of the parent Feed', () => {
+  const delivery = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'sidechain-status',
+      isSidechain: true,
+      userType: 'external',
+      sourceToolAssistantUUID: 'tool-1',
+      message: { role: 'user', content: '<status>running</status>' },
+    }),
+  )
+  if (delivery === null) assert.fail('expected status to parse')
+  const chain = {
+    id: 'session',
+    retiredIds: [],
+    originUnread: false,
+    files: [
+      {
+        path: '/tmp/session.jsonl',
+        sessionId: 'session',
+        resumedFrom: null,
+        originSessionId: null,
+        openedAt: '',
+        openingPrompt: null,
+        records: [commandMessage('command-1', 'call-1'), delivery],
+        unreadableLines: 0,
+      },
+    ],
+  }
+  assert.deepEqual(projectFeed(chain).map((row) => row.shape), ['tool-group'])
 })

@@ -23,6 +23,8 @@ export function rowsOfRecord(
     return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
+  if (record.kind === 'event')
+    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text }]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
@@ -33,6 +35,8 @@ export function rowsOfRecord(
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
     if (block.shape === 'thought') return [{ shape: 'thought', id, text: block.text }]
     if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
+    if (block.shape === 'event')
+      return [{ shape: 'event', id, event: block.event, text: block.text }]
     if (block.shape === 'tool') {
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], results)

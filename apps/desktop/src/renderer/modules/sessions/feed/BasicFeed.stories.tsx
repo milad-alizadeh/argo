@@ -185,6 +185,42 @@ export const TaskNotification: Story = {
   },
 }
 
+const commandReceipt =
+  '/implement 2178 --focus feed protocol event accessibility and command grouping'
+
+const eventFeed = {
+  ...feed,
+  chainId: 'events',
+  revision: 'events-one',
+  sessionId: 'events',
+  rows: [
+    { shape: 'event' as const, id: 'event-status', event: 'status' as const, text: 'running' },
+    { shape: 'event' as const, id: 'event-transcript', event: 'transcript' as const, text: null },
+    { shape: 'event' as const, id: 'event-context', event: 'context' as const, text: null },
+    {
+      shape: 'event' as const,
+      id: 'event-command',
+      event: 'command' as const,
+      text: commandReceipt,
+    },
+  ],
+} satisfies SessionFeed
+
+export const ProtocolEvents: Story = {
+  args: { feed: eventFeed, selectedSessionId: 'events' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Status updated')).toBeVisible()
+    await expect(canvas.getByText('running')).toBeVisible()
+    await expect(canvas.getByText('Transcript delivered')).toBeVisible()
+    await expect(canvas.getByText('System context updated')).toBeVisible()
+    await expect(canvas.getByText('Command received')).toBeVisible()
+    await expect(canvas.getByText(commandReceipt)).toBeVisible()
+    await expect(canvas.queryByText('<status>running</status>')).toBeNull()
+    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(4)
+  },
+}
+
 // A prompt that opens with a skill mention and a link draws a badge and a clean link, not the
 // raw markdown-link brackets (#2049).
 export const PromptWithSkillMentionAndLink: Story = {
