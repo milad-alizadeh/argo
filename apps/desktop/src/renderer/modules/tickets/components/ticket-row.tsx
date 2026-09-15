@@ -124,7 +124,7 @@ export function TicketRow(props: TicketRowProps) {
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
-    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-muted">
+    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
       {provider === 'linear' ? (
         <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
           <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />

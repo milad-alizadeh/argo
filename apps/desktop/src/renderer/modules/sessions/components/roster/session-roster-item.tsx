@@ -124,7 +124,7 @@ export function SessionRosterItem({
           render={
             <button
               aria-current={selected ? 'page' : undefined}
-              className={`w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
+              className={`w-full rounded-lg px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-selected text-foreground' : 'hover:bg-muted'}`}
               data-session-id={session.id}
               onClick={onSelect}
               onFocus={onFocus}

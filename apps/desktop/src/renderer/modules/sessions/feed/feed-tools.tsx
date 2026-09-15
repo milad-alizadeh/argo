@@ -131,8 +131,6 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
   const isSoleSkill = soleCall?.kind === 'skill'
-  // A code block draws its own border, which would clash with the group's rule.
-  const showsCodeBlock = soleCall !== undefined && TOOL_CONTENT_ROUTE[soleCall.kind] === 'inline'
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -146,7 +144,7 @@ export function FeedToolGroup({
           />
         </TaskItem>
       ))}
-      contentVariant={showsCodeBlock ? 'flush' : 'line'}
+      contentVariant="flush"
       icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
       onOpenChange={onOpenChange}
       open={open}
