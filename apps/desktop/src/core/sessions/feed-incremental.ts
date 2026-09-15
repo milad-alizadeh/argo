@@ -1,13 +1,10 @@
 // Projecting a Feed while a CLI keeps appending to it (#2145): a poll runs `rowsOfRecord` over
 // the records the last poll already turned into rows only when it must. A row freezes once
 // nothing later in the chain can still change it — every Tool Call it draws has a result, and it
-// is not part of a Tool Call run or a run of damaged lines still touching the end of the chain —
-// and a frozen row is never rebuilt. What is not frozen is rebuilt from its own records each
-// poll, which is why an unresolved Tool Call near the start of a long chain can hold the cost up:
-// correct before fast, and the CLIs resolve a call within a message or two in practice.
+// is not part of a trailing Tool Call or damaged-line run. Frozen rows are never rebuilt.
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
-import { rowsOfRecord, withoutRepeatedBreaks } from './feed'
+import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {
   advancedCursors,
   type FileCursor,
@@ -18,7 +15,7 @@ import {
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
 import type { ToolResult } from './tool-feed'
-import { groupToolRuns } from './tool-groups'
+import { groupedRowIndexes, groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
   chainId: string
@@ -39,51 +36,25 @@ function openRecordsSince(chain: SessionChain, state: FeedProjectionState | unde
 // The pre-merge row list for the open records, each tagged with the 0-based index (into
 // `records`) of the record that drew it, so freezing can tell which records a frozen row covers.
 function positionedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
-  const rows: SessionFeedRow[] = []
-  const sources: number[] = []
-  records.forEach(({ record, position }, source) => {
-    for (const row of rowsOfRecord(record, position, results)) {
-      rows.push(row)
-      sources.push(source)
-    }
-  })
-  return { rows, sources }
-}
-
-// `groupToolRuns` and `withoutRepeatedBreaks` merge runs of matching shape; this walks the same
-// runs, purely by shape, to say which pre-merge rows (by their source) fold into each output row.
-function mergedRunSources(shapes: readonly string[], mergeable: string): number[][] {
-  const groups: number[][] = []
-  let index = 0
-  while (index < shapes.length) {
-    if (shapes[index] !== mergeable) {
-      groups.push([index])
-      index += 1
-      continue
-    }
-    const run: number[] = []
-    while (shapes[index] === mergeable) {
-      run.push(index)
-      index += 1
-    }
-    groups.push(run)
-  }
-  return groups
+  const projected = records.map(({ record, position }) => ({
+    record,
+    rows: rowsOfRecord(record, position, results),
+  }))
+  const { rows, breakBeforeIds } = collectFeedRows(projected)
+  const sources = projected.flatMap(({ rows }, source) => rows.map(() => source))
+  return { rows, sources, breakBeforeIds }
 }
 
 function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
-  const { rows: preRows, sources: preSources } = positionedRows(records, results)
+  const { rows: preRows, sources: preSources, breakBeforeIds } = positionedRows(records, results)
   const deduped = withoutRepeatedBreaks(preRows)
   const dedupedSources = preRows.flatMap((row, index) =>
     row.shape !== 'unreadable' || preRows[index - 1]?.shape !== 'unreadable'
       ? [preSources[index]]
       : [],
   )
-  const grouped = groupToolRuns(deduped)
-  const groups = mergedRunSources(
-    deduped.map((row) => row.shape),
-    'tool',
-  )
+  const grouped = groupToolRuns(deduped, breakBeforeIds)
+  const groups = groupedRowIndexes(deduped, breakBeforeIds)
   const groupedSources = groups.map((group) =>
     Math.min(...group.map((index) => dedupedSources[index] ?? Number.POSITIVE_INFINITY)),
   )

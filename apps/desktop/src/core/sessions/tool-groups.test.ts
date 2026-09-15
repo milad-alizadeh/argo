@@ -14,6 +14,10 @@ function edit(id: string, path: string): ToolCall {
   return { id, name: 'Edit', input: { file_path: path, old_string: 'a', new_string: 'b' } }
 }
 
+function unclassified(id: string): ToolCall {
+  return { id, name: 'SomeMcpTool', input: {} }
+}
+
 function rowsFor(calls: ToolCall[]): SessionFeedRow[] {
   return toolRows(calls, new Map())
 }
@@ -39,6 +43,13 @@ test('a single command groups alone and reads "Ran a command"', () => {
   assert.equal(found.label, 'Ran a command')
   assert.equal(found.calls.length, 1)
   assert.equal(found.calls[0]?.text, 'bun test')
+})
+
+test('a single unclassified tool call groups alone and reads "Called a tool"', () => {
+  const found = group(rowsFor([unclassified('u1')]))
+  assert.equal(found.label, 'Called a tool')
+  assert.equal(found.calls.length, 1)
+  assert.equal(found.calls[0]?.kind, 'tool')
 })
 
 test('several consecutive commands state the count', () => {
@@ -72,12 +83,12 @@ test('a run broken by an intervening row never merges', () => {
   }
 })
 
-test('a command routes inline and a file edit routes to the evidence panel', () => {
+test('a command or an unclassified tool call routes inline, and a file edit routes to the evidence panel', () => {
   assert.equal(TOOL_CONTENT_ROUTE.command, 'inline')
   assert.equal(TOOL_CONTENT_ROUTE.edited, 'evidence')
   assert.equal(TOOL_CONTENT_ROUTE.created, 'evidence')
   assert.equal(TOOL_CONTENT_ROUTE.read, 'evidence')
-  assert.equal(TOOL_CONTENT_ROUTE.tool, 'evidence')
+  assert.equal(TOOL_CONTENT_ROUTE.tool, 'inline')
 })
 
 test('a long tool run keeps its group id inside the Session feed contract', () => {

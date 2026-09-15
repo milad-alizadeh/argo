@@ -99,12 +99,13 @@ export function FeedToolLine({
   )
 }
 
-// One command run reads as one code block despite the transcript's separate invocation and result messages.
-function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
+// A command or an unclassified tool call reads as one code block despite the transcript's
+// separate invocation and result messages.
+function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
   const { t } = useTranslation('sessions')
   const result = call.evidence?.kind === 'output' ? call.evidence.source : null
   const source = [call.text, result].filter((part) => part !== null).join('\n')
-  const language = detectCodeLanguage(call.text ?? '', 'bash')
+  const language = detectCodeLanguage(call.text ?? '', call.kind === 'command' ? 'bash' : undefined)
   const languageLabel = codeLanguageLabel(language)
   return (
     <CodeBlock
@@ -152,7 +153,7 @@ export function FeedToolGroup({
       content={group.calls.map((call) => (
         <TaskItem key={call.id}>
           {TOOL_CONTENT_ROUTE[call.kind] === 'inline' ? (
-            <FeedInlineCommand call={call} />
+            <FeedInlineToolCall call={call} />
           ) : (
             <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
           )}
