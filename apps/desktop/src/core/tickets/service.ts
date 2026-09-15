@@ -10,6 +10,7 @@ import {
   type ConnectionSummary,
   type TicketConnectedReply,
   type TicketDiscoverReply,
+  type TicketError,
   type TicketListReply,
   type TicketUpdateReply,
   ticketError,
@@ -56,7 +57,7 @@ async function projectExists(call: Call): Promise<boolean> {
   return (await projectNames(call.access)).has(call.projectId)
 }
 
-async function findConnection(call: Call) {
+export async function findConnection(call: Call) {
   const read = await readConnections(call.access.paths.connections)
   if (!read.ok)
     return { ok: false, error: ticketError(STORAGE_ERRORS[read.reason], call.requestId) } as const
@@ -68,6 +69,30 @@ export async function readConnection(call: Call): Promise<TicketConnectedReply> 
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)
   const found = await findConnection(call)
   return found.ok ? connected(call, found.connection) : found.error
+}
+
+// The Connection a write goes through: its Account and scope, or why there is none to write with.
+export async function writableConnection(call: Call) {
+  const found = await findConnection(call)
+  if (!found.ok) return { ok: false, error: found.error } as const
+  if (!found.connection) {
+    return { ok: false, error: ticketError('not-connected', call.requestId) } as const
+  }
+  return { ok: true, ...found.connection } as const
+}
+
+// Every field a Ticket can be moved to resolves the write's Account and scope the same way, then
+// asks the source for its own field-specific write.
+export async function writeTicketField<Value>(
+  call: Call,
+  read: (
+    accountId: string,
+    scope: string,
+  ) => Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }>,
+): Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }> {
+  const target = await writableConnection(call)
+  if (!target.ok) return target
+  return read(target.accountId, target.scope)
 }
 
 // Replace this Project's Connection with `next`, or remove it when `next` is null.
@@ -111,10 +136,9 @@ export async function listTickets(
   request: { query: string; cursor: string | null },
 ): Promise<TicketListReply> {
   const { requestId, projectId } = call
-  const found = await findConnection(call)
-  if (!found.ok) return found.error
-  if (!found.connection) return ticketError('not-connected', requestId)
-  const { accountId, scope } = found.connection
+  const target = await writableConnection(call)
+  if (!target.ok) return target.error
+  const { accountId, scope } = target
   const page = await readAs(call, accountId, (source, reader) =>
     source.page(reader, { scope, ...request }),
   )
@@ -134,12 +158,8 @@ export async function updateStatus(
   change: { key: string; statusId: string },
 ): Promise<TicketUpdateReply> {
   const { requestId, projectId } = call
-  const found = await findConnection(call)
-  if (!found.ok) return found.error
-  if (!found.connection) return ticketError('not-connected', requestId)
-  const { accountId, scope } = found.connection
-  const written = await readAs(call, accountId, (source, reader) =>
-    source.update(reader, { scope, ...change }),
+  const written = await writeTicketField(call, (accountId, scope) =>
+    readAs(call, accountId, (source, reader) => source.update(reader, { scope, ...change })),
   )
   if (!written.ok) return written.error
   const { key } = change

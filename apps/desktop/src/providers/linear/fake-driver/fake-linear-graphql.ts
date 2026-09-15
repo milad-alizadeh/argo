@@ -8,7 +8,7 @@ import {
   type Route,
   reply,
 } from './fake-linear-state'
-import { findIssue, issueState, moveIssue, teamStates } from './fake-linear-workflow'
+import { findIssue, issueState, moveIssue, setPriority, teamStates } from './fake-linear-workflow'
 
 type Variables = {
   team?: string
@@ -19,6 +19,7 @@ type Variables = {
   key?: string
   id?: string
   state?: string
+  priority?: number
 }
 type Answer = (state: FakeLinearState, user: FakeLinearUser, variables: Variables) => unknown
 
@@ -129,10 +130,21 @@ const ANSWERS: Record<string, Answer> = {
     const moved = moveIssue(state, variables.id ?? '', variables.state ?? '')
     return { issueUpdate: { success: moved !== null, issue: moved ? { state: moved } : null } }
   },
+  PriorityTarget: (state, user, variables) => ({ issue: target(state, user, variables.key ?? '') }),
+  SetPriority: (state, _user, variables) => {
+    const level = variables.priority ?? 0
+    const changed = setPriority(state, variables.id ?? '', level)
+    return {
+      issueUpdate: {
+        success: changed !== null,
+        issue: changed ? { priority: level, priorityLabel: PRIORITY_LABELS[level] } : null,
+      },
+    }
+  },
 }
 
 // Linear refuses a write made with a token granted `read` alone.
-const WRITES = new Set(['Move'])
+const WRITES = new Set(['Move', 'SetPriority'])
 
 function caller(state: FakeLinearState, header: string | undefined): FakeConsent | null {
   const grant = state.access.get((header ?? '').replace(/^Bearer /, ''))

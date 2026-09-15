@@ -74,6 +74,7 @@ const SURFACE = [
   'setCodexAutoCompactLimit',
   'startSession',
   'statSessionAttachments',
+  'updatePriority',
   'updateStatus',
   'verifyAccount',
   'versions',
