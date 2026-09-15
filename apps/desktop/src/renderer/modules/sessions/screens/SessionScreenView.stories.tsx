@@ -459,8 +459,6 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-// Visual regression pair: the fade is a visible strip immediately above the composer in both
-// appearances, rather than an invisible overlay underneath its card.
 export const ComposerFadeLight: Story = {
   globals: { theme: 'light' },
   render: () => <ReviewScreen />,
