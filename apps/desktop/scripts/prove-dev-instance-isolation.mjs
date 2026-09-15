@@ -44,7 +44,7 @@ function run(worktree, args, stdio = 'pipe') {
 }
 
 async function status(worktree) {
-  const child = run(worktree, ['run', 'desktop:status'])
+  const child = run(worktree, ['run', '--cwd', 'apps/desktop', 'dev:status'])
   const chunks = []
   const errors = []
   child.stdout.on('data', (chunk) => chunks.push(chunk))
@@ -63,7 +63,7 @@ async function readyStatus(worktree) {
 }
 
 async function stop(worktree) {
-  const child = run(worktree, ['run', 'desktop:stop'])
+  const child = run(worktree, ['run', '--cwd', 'apps/desktop', 'dev:stop'])
   const code = await new Promise((resolve) => child.once('exit', resolve))
   if (code !== 0) throw new Error(`desktop:stop failed for ${worktree}`)
 }
@@ -89,8 +89,11 @@ async function main() {
   if (first === second) throw new Error('The second worktree must differ from this one.')
 
   const firstInstance = developmentInstance(first)
-  const firstLaunch = run(first, ['run', 'dev'], 'inherit')
-  const secondLaunch = run(second, ['run', 'dev'], 'inherit')
+  // Do not route through root `turbo run dev`: when two worktrees share a
+  // package store, Turbo can resolve the first workspace it discovered. The
+  // desktop launcher must execute in the selected worktree itself.
+  const firstLaunch = run(first, ['run', '--cwd', 'apps/desktop', 'dev'], 'inherit')
+  const secondLaunch = run(second, ['run', '--cwd', 'apps/desktop', 'dev'], 'inherit')
 
   try {
     const [firstReady, secondReady] = await Promise.all([readyStatus(first), readyStatus(second)])
