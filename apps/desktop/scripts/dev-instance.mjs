@@ -128,6 +128,10 @@ async function main() {
 
   const child = spawn('electron-forge', ['start'], {
     cwd: DESKTOP_ROOT,
+    // Forge starts Vite and Electron descendants. A dedicated process group
+    // lets this launcher stop that complete tree after it has first targeted
+    // the registered Electron PID, rather than leaving an orphan window.
+    detached: process.platform !== 'win32',
     env: {
       ...process.env,
       ARGO_DESKTOP_DEV_PORT: String(instance.port),
@@ -163,7 +167,8 @@ async function main() {
         await new Promise((resolve) => setTimeout(resolve, 50))
       }
     }
-    child.kill('SIGTERM')
+    if (process.platform === 'win32' || !child.pid) child.kill('SIGTERM')
+    else process.kill(-child.pid, 'SIGTERM')
   }
   const controlServer = await startControlServer(instance.controlFile, controlToken, stop)
   process.once('SIGINT', () => void stop())
