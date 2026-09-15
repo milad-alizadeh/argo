@@ -16,10 +16,15 @@ const claudeQuestionCallInputSchema = z.strictObject({
   questions: z.array(claudeQuestionSchema).min(1),
 })
 
+function text(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null
+}
+
 const TOOL_DETAILS = {
+  // The agent's own description reads as prose; the raw command is the fallback, first line only.
   Bash: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: `Ran ${String(call.input.command ?? 'command').split('\n')[0]}`,
+    label: `Ran ${text(call.input.description) ?? String(call.input.command ?? 'command').split('\n')[0]}`,
   }),
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
