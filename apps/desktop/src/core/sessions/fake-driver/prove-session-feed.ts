@@ -7,7 +7,7 @@ import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/se
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
-import { createCaseRunner } from './packaged-case-runner'
+import { type CaseResults, createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
@@ -40,8 +40,8 @@ import { proveToolCalls } from './session-tool-calls-case'
 import { proveComposerMemory, proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
-let delayedRoot: string | undefined
-const cases = []
+const results: CaseResults = { cases: [], timings: {} }
+const provingStarted = performance.now()
 let harness: Awaited<ReturnType<typeof createPackagedSessionHarness>> | undefined
 try {
   const started = await createPackagedSessionHarness(root)
@@ -50,7 +50,7 @@ try {
   let page = await launch()
   assert.equal(await isPackaged(), true)
   const ran = createCaseRunner(
-    cases,
+    results,
     () => page,
     () => harness,
   )
@@ -130,23 +130,22 @@ try {
   await ran(['session-claude-rename'], () =>
     proveClaudeRename(page, { project: fixture.project, transcripts: fixture.claudeTranscripts }),
   )
-  await harness.close()
-  delayedRoot = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
-  const delayed = await createPackagedSessionHarness(delayedRoot, { replyDelayMs: 2_000 })
-  harness = delayed
-  await selectProofProject(delayed.fixture.userData, delayed.fixture.project)
-  page = await delayed.launch()
-  await ran(['session-reply-wait'], () => proveReplyWait(page, delayed.fixture.claudeTranscripts))
-  await ran(['session-duplicate-send'], () =>
-    proveDuplicateSend(page, delayed.fixture.claudeTranscripts),
-  )
+  // Each case below starts its own Session with its own prompt, so the fixture root carries over.
+  page = await restart({ replyDelayMs: 2_000 })
+  await ran(['session-reply-wait'], () => proveReplyWait(page, fixture.claudeTranscripts))
+  await ran(['session-duplicate-send'], () => proveDuplicateSend(page, fixture.claudeTranscripts))
   await assertShippedFusesIntact()
-  console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted }))
+  const timings = {
+    total: Math.round(performance.now() - provingStarted),
+    launches: started.launches(),
+    cases: results.timings,
+  }
+  const { cases } = results
+  console.log(JSON.stringify({ ok: true, packaged: true, cases, formatted, timings }))
 } finally {
   try {
     await harness?.close()
   } finally {
     await rm(root, { recursive: true, force: true })
-    if (delayedRoot !== undefined) await rm(delayedRoot, { recursive: true, force: true })
   }
 }

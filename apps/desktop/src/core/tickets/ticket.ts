@@ -18,8 +18,9 @@ export const ticketStatus = z.strictObject({
 })
 // 1 is the most urgent. A provider with no priority, or a Ticket without one, has null.
 export const PRIORITY_LEVELS = [1, 2, 3, 4] as const
-const ticketPriority = z.strictObject({
-  level: z.literal(PRIORITY_LEVELS),
+export const priorityLevel = z.literal(PRIORITY_LEVELS)
+export const ticketPriority = z.strictObject({
+  level: priorityLevel,
   label: z.string().min(1),
 })
 
@@ -58,6 +59,12 @@ export const closureOf = (category: TicketStatus['category']): TicketState =>
 
 // Moving one Ticket of a Connection's scope to one of the statuses its listing offered.
 export type StatusChange = { scope: string; key: string; statusId: string }
+// Moving one Ticket of a Connection's scope to another priority level, or to none.
+export type PriorityChange = {
+  scope: string
+  key: string
+  priorityLevel: (typeof PRIORITY_LEVELS)[number] | null
+}
 
 export type TicketState = z.infer<typeof ticketState>
 export type TicketLink = z.infer<typeof ticketLink>

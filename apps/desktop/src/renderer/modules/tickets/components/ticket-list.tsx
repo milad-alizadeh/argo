@@ -147,10 +147,12 @@ export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListPr
               rails={rails[index] ?? []}
               folded={folded.has(row.ticket.key)}
               now={now}
+              onChangePriority={(priority) => backlog.onChangePriority(row.ticket.key, priority)}
               onChangeStatus={(status) => backlog.onChangeStatus(row.ticket.key, status)}
               onSelect={() => onSelect(row.ticket.key)}
               onToggle={() => toggle(row.ticket.key)}
               presentation={sourcePresentation(backlog.provider)}
+              provider={backlog.provider}
               row={row}
               selected={row.ticket.key === selectedKey}
               statuses={backlog.statuses}
