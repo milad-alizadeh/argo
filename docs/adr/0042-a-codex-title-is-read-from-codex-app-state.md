@@ -32,9 +32,11 @@ For the second step, the adapter already hides the `AGENTS.md` block, `<recommen
 opens with its request and not with an injected block.
 
 Argo opens the state file read-only through `node:sqlite`, which Electron 44 ships with Node
-24.20. It runs one query for each discovery pass, for the ids of the rows that the pass found. If
-the file is missing, locked for more than 100 ms, or has a different schema, the query names
-nothing and the title falls back to the prompt. Argo never writes to the file.
+24.20. It keeps the names it read. A discovery pass opens the file only when the file or its
+`-wal` file has a new modification time or size, or when the pass finds a thread that Argo did
+not ask about yet. The read does not wait for a lock. If the file is missing, locked, or has a
+different schema, the read names nothing new. A name that Argo already has stays, and a thread
+without one falls back to the prompt. The next pass asks again. Argo never writes to the file.
 
 The state file sits next to the `sessions/` folder. The adapter finds it from the transcripts
 root, so a proof that points `ARGO_CODEX_TRANSCRIPTS` at a fixture folder never reads the real file.
@@ -52,8 +54,12 @@ question.
   rename the column or the file. The title then falls back to the prompt without an error.
 - A rename through `thread/name/set`, from Argo or from Codex, also writes `threads.name`. After a
   restart it reads as `summarised`, so Connect a Ticket replaces it without asking.
-- The read is synchronous in the main process. It measured 5 ms on the real file.
-- Bun, which runs the tests, has no `node:sqlite`. The tests give the same reader a `bun:sqlite`
-  store, so the query, the schema check and the fallback run for real. Only the one line that
-  opens the file with `node:sqlite` is not under test.
+- The read is synchronous in the main process. It measured 5 ms on the real file, and a pass
+  with no change does not open the file. On 2026-09-15, with Codex Desktop running, 23,811
+  reads with no lock wait were never refused while Codex committed 67 times. A reader of a WAL
+  database does not wait for the writer.
+- Bun, which runs the unit tests, has no `node:sqlite`. The unit tests give the same reader a
+  `bun:sqlite` store, so the query, the schema check, the cache and the fallback run for real.
+  The packaged Session proof writes a store beside its fixture rollouts, and the packaged app
+  must then show the name. That proof covers the `node:sqlite` open.
 - A thread with no name and no prompt, such as a voice chat, still shows its id.
