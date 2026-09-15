@@ -11,8 +11,10 @@ debugging protocol, so it never holds the real keyboard or mouse. The scenarios 
    release, but every bottleneck it shows is real, and it reloads while you fix one. Use
    `--packaged` to judge what a user sees, after `bun run --cwd apps/desktop package`. The packaged
    target seeds its own long Session, or copies a real transcript with `--transcript <file>`.
-2. For the dev target, make sure that `bun run desktop:status` prints a record that has a
-   `debugPort`. A record without one comes from an instance started before #2228: restart it.
+2. For the dev target, make sure that the dev instance runs. If `bun run desktop:status` fails,
+   start `bun run dev` from the worktree root as a background command, and wait until the status
+   command prints a record. That record must have a `debugPort`. A record without one comes from
+   an instance started before #2228: stop it with `bun run desktop:stop` and start it again.
 3. Open the screen the scenario needs. For `feed-scroll`, that is a Session with a long history.
    Pass `--session <id>` to open it, and take the id from a Roster row's `data-session-id`. The
    command refuses a Feed that scrolls less than 4000 px.
