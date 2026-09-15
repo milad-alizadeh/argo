@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { projectFeed } from '@/core/sessions/feed'
 import { projectFeedIncrementally } from '@/core/sessions/feed-incremental'
+import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { parseTranscriptLine } from './records'
 
 function commandMessage(uuid: string, callId: string) {
@@ -28,21 +29,27 @@ function commandMessage(uuid: string, callId: string) {
   }
 }
 
-test('keeps commands from distinct transcript events separate across a hidden delivery', () => {
+function harnessDelivery(
+  uuid: string,
+  content: string,
+  { sidechain = false }: { sidechain?: boolean } = {},
+) {
   const delivery = parseTranscriptLine(
     JSON.stringify({
       type: 'user',
-      uuid: 'delivery-2',
+      uuid,
+      isSidechain: sidechain || undefined,
       userType: 'external',
       sourceToolAssistantUUID: 'tool-1',
-      message: {
-        role: 'user',
-        content: '<skills_instructions>internal update</skills_instructions>',
-      },
+      message: { role: 'user', content },
     }),
   )
-  if (delivery === null) assert.fail('expected transcript delivery to parse')
-  const chain = {
+  if (delivery === null) assert.fail('expected harness delivery to parse')
+  return delivery
+}
+
+function chainWith(...records: TranscriptRecord[]) {
+  return {
     id: 'session',
     retiredIds: [],
     originUnread: false,
@@ -54,17 +61,28 @@ test('keeps commands from distinct transcript events separate across a hidden de
         originSessionId: null,
         openedAt: '',
         openingPrompt: null,
-        records: [
-          commandMessage('command-1', 'call-1'),
-          delivery,
-          commandMessage('command-2', 'call-2'),
-        ],
+        records,
         unreadableLines: 0,
       },
     ],
   }
-  const projections = [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
-  for (const rows of projections) {
+}
+
+function projectionsWith(delivery: ReturnType<typeof harnessDelivery>) {
+  const chain = chainWith(
+    commandMessage('command-1', 'call-1'),
+    delivery,
+    commandMessage('command-2', 'call-2'),
+  )
+  return [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
+}
+
+test('keeps commands from distinct transcript events separate across a hidden delivery', () => {
+  const delivery = harnessDelivery(
+    'delivery-2',
+    '<skills_instructions>internal update</skills_instructions>',
+  )
+  for (const rows of projectionsWith(delivery)) {
     assert.equal(rows.length, 2)
     assert.equal(rows[0]?.shape, 'tool-group')
     assert.equal(rows[0]?.shape === 'tool-group' ? rows[0].calls.length : 0, 1)
@@ -74,39 +92,8 @@ test('keeps commands from distinct transcript events separate across a hidden de
 })
 
 test('keeps a reader event between command groups', () => {
-  const delivery = parseTranscriptLine(
-    JSON.stringify({
-      type: 'user',
-      uuid: 'status-2',
-      userType: 'external',
-      sourceToolAssistantUUID: 'tool-1',
-      message: { role: 'user', content: '<status>running</status>' },
-    }),
-  )
-  if (delivery === null) assert.fail('expected status to parse')
-  const chain = {
-    id: 'session',
-    retiredIds: [],
-    originUnread: false,
-    files: [
-      {
-        path: '/tmp/session.jsonl',
-        sessionId: 'session',
-        resumedFrom: null,
-        originSessionId: null,
-        openedAt: '',
-        openingPrompt: null,
-        records: [
-          commandMessage('command-1', 'call-1'),
-          delivery,
-          commandMessage('command-2', 'call-2'),
-        ],
-        unreadableLines: 0,
-      },
-    ],
-  }
-  const projections = [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
-  for (const rows of projections) {
+  const delivery = harnessDelivery('status-2', '<status>running</status>')
+  for (const rows of projectionsWith(delivery)) {
     assert.deepEqual(
       rows.map((row) => row.shape),
       ['tool-group', 'event', 'tool-group'],
@@ -115,34 +102,10 @@ test('keeps a reader event between command groups', () => {
 })
 
 test('keeps a sidechain harness delivery out of the parent Feed', () => {
-  const delivery = parseTranscriptLine(
-    JSON.stringify({
-      type: 'user',
-      uuid: 'sidechain-status',
-      isSidechain: true,
-      userType: 'external',
-      sourceToolAssistantUUID: 'tool-1',
-      message: { role: 'user', content: '<status>running</status>' },
-    }),
-  )
-  if (delivery === null) assert.fail('expected status to parse')
-  const chain = {
-    id: 'session',
-    retiredIds: [],
-    originUnread: false,
-    files: [
-      {
-        path: '/tmp/session.jsonl',
-        sessionId: 'session',
-        resumedFrom: null,
-        originSessionId: null,
-        openedAt: '',
-        openingPrompt: null,
-        records: [commandMessage('command-1', 'call-1'), delivery],
-        unreadableLines: 0,
-      },
-    ],
-  }
+  const delivery = harnessDelivery('sidechain-status', '<status>running</status>', {
+    sidechain: true,
+  })
+  const chain = chainWith(commandMessage('command-1', 'call-1'), delivery)
   assert.deepEqual(
     projectFeed(chain).map((row) => row.shape),
     ['tool-group'],

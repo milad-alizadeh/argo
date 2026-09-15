@@ -55,3 +55,35 @@ test('keeps roster facts while dropping Feed payloads', () => {
     ],
   })
 })
+
+test('keeps a command receipt as the lightweight opening prompt', () => {
+  const record: TranscriptRecord = {
+    kind: 'message',
+    uuid: 'command-1',
+    parentUuid: null,
+    originSessionId: null,
+    role: 'user',
+    sidechain: false,
+    cwd: null,
+    branch: null,
+    timestamp: null,
+    entry: 'interactive',
+    stopReason: null,
+    model: null,
+    effort: null,
+    mode: null,
+    blocks: [
+      { shape: 'event', event: 'status', text: 'not a title' },
+      { shape: 'event', event: 'command', text: '/implement 2178' },
+    ],
+    toolCalls: [],
+    toolResults: [],
+    answeredCalls: [],
+    usage: null,
+  }
+
+  const metadata = rosterMetadata(record)
+  assert.equal(metadata.kind, 'message')
+  if (metadata.kind !== 'message') assert.fail('expected message metadata')
+  assert.deepEqual(metadata.blocks, [{ shape: 'event', event: 'command', text: '/implement 2178' }])
+})
