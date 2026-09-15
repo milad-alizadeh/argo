@@ -29,7 +29,7 @@ function TicketResult({
   return (
     <button
       data-selected={selected || undefined}
-      className={`flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${selected ? 'bg-muted' : ''}`}
+      className={`flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring ${selected ? 'bg-muted' : ''}`}
       data-context-ticket="true"
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => onSelect(ticket)}
@@ -49,7 +49,7 @@ function TicketResult({
               : ticket.status}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate">{ticket.title}</span>
+        <span className="min-w-0 truncate">{ticket.title}</span>
         {ticket.blocked ? (
           <span className="flex shrink-0 items-center text-danger">
             <Ban aria-hidden="true" className="size-3.5" />
