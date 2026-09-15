@@ -11,6 +11,7 @@ const WORKTREE_ENV = 'ARGO_DESKTOP_WORKTREE'
 
 export type DevelopmentInstance = {
   controlFile: string
+  controlTokenFile: string
   controlToken: string
   directory: string
   id: string
@@ -65,6 +66,7 @@ export function developmentInstance(
 
   return {
     controlFile: absolute(required(environment, CONTROL_FILE_ENV), CONTROL_FILE_ENV),
+    controlTokenFile: path.join(required(environment, INSTANCE_DIRECTORY_ENV), 'control-token'),
     controlToken: required(environment, CONTROL_TOKEN_ENV),
     directory: absolute(required(environment, INSTANCE_DIRECTORY_ENV), INSTANCE_DIRECTORY_ENV),
     id: required(environment, INSTANCE_ID_ENV),

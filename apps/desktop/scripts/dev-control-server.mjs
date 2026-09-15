@@ -4,11 +4,9 @@ function commandParts(command) {
   return command.toString().trim().split(' ')
 }
 
-function registeredElectron(processId, controlToken, registered) {
+function registeredElectron({ processId, token, controlToken, registeredProcessId }) {
   return (
-    /^\d+$/.test(processId) &&
-    controlToken === registered.controlToken &&
-    Number(processId) === registered.processId
+    /^\d+$/.test(processId) && token === controlToken && Number(processId) === registeredProcessId
   )
 }
 
@@ -28,8 +26,15 @@ export function startControlServer(controlFile, controlToken, stop) {
         return
       }
 
-      const registered = { controlToken, processId: electronProcessId }
-      if (verb !== 'stop' || !registeredElectron(processId, controlToken, registered)) {
+      if (
+        verb !== 'stop' ||
+        !registeredElectron({
+          processId,
+          token,
+          controlToken,
+          registeredProcessId: electronProcessId,
+        })
+      ) {
         socket.end('invalid command')
         return
       }

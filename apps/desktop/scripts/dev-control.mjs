@@ -39,11 +39,11 @@ export function parseReadyRecord(value) {
   }
 }
 
-export function stopDevelopmentInstance(controlFile, processId) {
+export function stopDevelopmentInstance(controlFile, processId, controlToken) {
   return new Promise((resolve, reject) => {
     const socket = createConnection(controlFile)
     socket.once('error', () => reject(new Error('The development launcher is not running.')))
-    socket.once('connect', () => socket.write(`stop ${processId}`))
+    socket.once('connect', () => socket.write(`stop ${processId} ${controlToken}`))
     socket.once('data', (reply) => {
       if (reply.toString() === 'stopped') resolve()
       else reject(new Error('The development launcher rejected the stop request.'))
@@ -77,12 +77,14 @@ async function readyRecord(worktree) {
     record.userData !== instance.userData
   )
     throw new Error(`The ready record for ${instance.id} does not match this worktree.`)
-  return { instance, record }
+  const controlToken = (await readFile(instance.controlTokenFile, 'utf8')).trim()
+  if (!controlToken) throw new Error(`The control token for ${instance.id} is missing.`)
+  return { instance, record, controlToken }
 }
 
 async function main() {
   const worktree = await realpath(REPOSITORY_ROOT)
-  const { instance, record } = await readyRecord(worktree)
+  const { instance, record, controlToken } = await readyRecord(worktree)
   const command = process.argv[2]
 
   switch (command) {
@@ -94,7 +96,7 @@ async function main() {
       // loaded. It owns the process; a stale ready file cannot make this command
       // signal an unrelated PID that the operating system has reused.
       try {
-        await stopDevelopmentInstance(instance.controlFile, record.processId)
+        await stopDevelopmentInstance(instance.controlFile, record.processId, controlToken)
       } catch (error) {
         // Electron exiting normally makes Forge close the socket itself. That
         // is a successful shutdown, not a reason to report a failed stop.

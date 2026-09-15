@@ -75,10 +75,11 @@ test('stops only the Electron process that the live launcher registered', async 
   })
 
   try {
-    expect(await request(controlFile, 'stop 43')).toBe('invalid command')
+    expect(await request(controlFile, 'stop 43 proof-token')).toBe('invalid command')
     expect(stopped).toBe(false)
     expect(await request(controlFile, 'ready 43 proof-token')).toBe('ready')
-    await stopDevelopmentInstance(controlFile, 43)
+    expect(await request(controlFile, 'stop 43 wrong-token')).toBe('invalid command')
+    await stopDevelopmentInstance(controlFile, 43, 'proof-token')
     expect(stopped).toBe(true)
   } finally {
     await new Promise((resolve, reject) =>

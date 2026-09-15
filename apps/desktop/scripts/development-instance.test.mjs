@@ -19,6 +19,7 @@ describe('development instances', () => {
     expect(developmentInstance(environment)).toMatchObject({
       directory,
       controlFile: path.join(directory, 'control.sock'),
+      controlTokenFile: path.join(directory, 'control-token'),
       controlToken: 'control-token',
       port: 45173,
       readyFile: path.join(directory, 'ready.json'),

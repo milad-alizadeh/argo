@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { mkdir, realpath, rm } from 'node:fs/promises'
+import { mkdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -37,6 +37,7 @@ export function developmentInstance(worktree, requestedPort = process.env[PORT_E
   return {
     directory,
     controlFile: path.join(directory, 'control.sock'),
+    controlTokenFile: path.join(directory, 'control-token'),
     id,
     port,
     readyFile: path.join(directory, 'ready.json'),
@@ -97,6 +98,7 @@ async function main() {
   await mkdir(instance.directory, { recursive: true })
   runLinker()
   const controlToken = randomBytes(32).toString('hex')
+  await writeFile(instance.controlTokenFile, `${controlToken}\n`, { mode: 0o600 })
 
   const child = spawn('electron-forge', ['start'], {
     cwd: DESKTOP_ROOT,
@@ -130,6 +132,7 @@ async function main() {
   child.once('exit', (code, signal) => {
     controlServer.close()
     void rm(instance.controlFile, { force: true })
+    void rm(instance.controlTokenFile, { force: true })
     process.exit(stopping ? 0 : (code ?? (signal ? 1 : 0)))
   })
 }
