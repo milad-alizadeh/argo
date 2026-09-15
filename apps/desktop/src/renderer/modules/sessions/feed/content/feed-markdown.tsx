@@ -129,6 +129,8 @@ const COMPONENTS: Components = {
   // `pre` draws fenced code itself, so every `code` reaching this is inline and takes the text's size.
   code: ({ children }) => <code className="rounded-md bg-muted px-1 font-mono">{children}</code>,
   hr: () => <hr className="border-border" />,
+  // The browser's `bolder` lands on 700, which shouts beside 400 body text.
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
 }
 
 // An assistant's prose, or a Ticket's description, as Markdown (#1835). Raw HTML stays text, which is react-markdown's default.
