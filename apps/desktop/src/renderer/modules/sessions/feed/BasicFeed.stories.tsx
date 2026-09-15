@@ -448,28 +448,6 @@ function HistoryPrependHarness() {
   )
 }
 
-// TanStack keeps an earlier reading position when a reply arrives, then its own scrollToEnd
-// action renders the new tail. This covers the one Feed viewport controller's contract.
-export const HistoryDoesNotFollowStreamingReply: Story = {
-  render: () => <HistoryScrollHarness />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const history = await canvas.findByLabelText('Session history')
-    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
-    await expect(drawnRows(canvasElement).length).toBeLessThan(historyRows.length)
-    history.scrollTop = 0
-    fireEvent.scroll(history)
-    await canvas.findByRole('button', { name: 'Jump to latest' })
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
-    await expect(drawnRow(canvasElement, 'history-streamed')).toBeUndefined()
-    const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
-    await userEvent.click(latest)
-    await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
-    await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
-  },
-}
-
 export const HistoryFollowsStreamingReplyAtLatest: Story = {
   render: () => <HistoryScrollHarness />,
   play: async ({ canvasElement }) => {

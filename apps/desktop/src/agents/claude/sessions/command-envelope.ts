@@ -14,6 +14,49 @@ function envelopeText(content: unknown): string | null {
     : null
 }
 
+// Harness-only envelopes stay at the parser boundary so their markup never reaches the Feed.
+const HIDDEN_HARNESS_ENVELOPES = new Set([
+  'app-context',
+  'apps_instructions',
+  'collaboration_mode',
+  'environment_context',
+  'local-command-caveat',
+  'permissions',
+  'plugins_instructions',
+  'recommended_plugins',
+  'realtime_delegation',
+  'skills_instructions',
+  'status',
+  'transcript_delta',
+  'transcript_tail_flush',
+])
+
+function envelopeName(text: string): string | null {
+  const name = /^\s*<([a-z][a-z0-9_-]*)(?:\s[^>]*)?>/i.exec(text)?.[1]
+  return name?.toLowerCase() ?? null
+}
+
+function isHarnessDelivery(record: Record<string, unknown>): boolean {
+  return record.userType === 'external' && typeof record.sourceToolAssistantUUID === 'string'
+}
+
+function hiddenHarnessEnvelope(record: Record<string, unknown>, text: string): boolean {
+  const name = envelopeName(text)
+  if (!isHarnessDelivery(record) || name === null || !HIDDEN_HARNESS_ENVELOPES.has(name)) {
+    return false
+  }
+  return new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>[\\s\\S]*</${name}>\\s*$`, 'i').test(text)
+}
+
+function readCommandPrompt(text: string): string | null | undefined {
+  if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return undefined
+  const name = tagged('command-name', text)
+  const command = name ?? tagged('command-message', text)
+  if (command === null) return null
+  const argumentsText = tagged('command-args', text) ?? ''
+  return name === null || argumentsText.length === 0 ? command : `${name} ${argumentsText}`
+}
+
 export function readCommandEnvelope(
   record: Record<string, unknown>,
   message: TranscriptMessage,
@@ -21,10 +64,11 @@ export function readCommandEnvelope(
   const content = isRecord(record.message) ? record.message.content : null
   const text = envelopeText(content)
   if (text === null) return null
+  if (hiddenHarnessEnvelope(record, text)) return { kind: 'trace', uuid: message.uuid }
   if (text.startsWith('<local-command-stdout>')) {
     const output = tagged('local-command-stdout', text)
     return output === null
-      ? null
+      ? { kind: 'trace', uuid: message.uuid }
       : {
           kind: 'command-output',
           uuid: message.uuid,
@@ -37,7 +81,7 @@ export function readCommandEnvelope(
   if (text.startsWith('<task-notification>')) {
     const summary = tagged('summary', text)
     return summary === null
-      ? null
+      ? { kind: 'trace', uuid: message.uuid }
       : {
           kind: 'command-output',
           uuid: message.uuid,
@@ -45,10 +89,8 @@ export function readCommandEnvelope(
           text: summary,
         }
   }
-  if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return null
-  const name = tagged('command-name', text)
-  if (name === null) return null
-  const argumentsText = tagged('command-args', text) ?? ''
-  const prompt = argumentsText.length === 0 ? name : `${name} ${argumentsText}`
+  const prompt = readCommandPrompt(text)
+  if (prompt === undefined) return null
+  if (prompt === null) return { kind: 'trace', uuid: message.uuid }
   return { ...message, blocks: [{ shape: 'prose', text: prompt }] }
 }
