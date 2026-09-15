@@ -13,14 +13,15 @@ export type Run = { application: ElectronApplication; page: Page; fixture: Ticke
 export const press = (scope: Page | Locator, name: string) =>
   scope.getByRole('button', { name, exact: true }).dispatchEvent('click')
 
-// Base UI opens a select or a menu from the keyboard; a select's option ignores a dispatched click
-// and takes Enter.
+// The packaged proof window is hidden, so normal pointer actions cannot hit-test it. Base UI's
+// trigger still accepts the dispatched click; opening it that way is more reliable than a key
+// press racing the trigger's focus setup. Its option then takes Enter rather than a click.
 export async function choose(
   page: Page,
   trigger: Locator,
   choice: { role: 'option' | 'menuitemradio'; name: string },
 ) {
-  await trigger.press('ArrowDown')
+  await trigger.dispatchEvent('click')
   await page.getByRole(choice.role, { name: choice.name, exact: true }).press('Enter')
 }
 
