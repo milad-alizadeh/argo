@@ -52,6 +52,7 @@
 
 .feed__jump-to-latest {
   position: absolute;
+  z-index: 1;
   right: var(--spacing-wide);
   bottom: calc(var(--spacing-session-feed-composer-inset) + var(--spacing-wide));
 }
