@@ -25,6 +25,14 @@ export function FeedEvent({ row }: { row: FeedEventRow }) {
       {row.text === null ? null : (
         <span className="min-w-0 break-words text-muted-foreground">{row.text}</span>
       )}
+      {row.raw == null ? null : (
+        <details className="ml-auto shrink-0">
+          <summary className="cursor-pointer text-muted-foreground">
+            {t('events.protocolDetails')}
+          </summary>
+          <pre className="mt-1 whitespace-pre-wrap break-words type-meta">{row.raw}</pre>
+        </details>
+      )}
     </div>
   )
 }

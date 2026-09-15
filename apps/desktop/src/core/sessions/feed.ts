@@ -25,7 +25,7 @@ export function rowsOfRecord(
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
-    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text }]
+    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text, raw: null }]
   if (record.kind === 'delegation')
     return [
       {
@@ -49,7 +49,7 @@ export function rowsOfRecord(
     if (block.shape === 'thought') return [{ shape: 'thought', id, text: block.text }]
     if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
     if (block.shape === 'event')
-      return [{ shape: 'event', id, event: block.event, text: block.text }]
+      return [{ shape: 'event', id, event: block.event, text: block.text, raw: block.raw ?? null }]
     if (block.shape === 'tool') {
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], results)

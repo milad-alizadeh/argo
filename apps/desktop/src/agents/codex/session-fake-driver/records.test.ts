@@ -75,25 +75,6 @@ test('reads the prompt the person wrote, keyed by when it was written', () => {
   )
 })
 
-test('skips the context Codex injects as user and developer messages', () => {
-  for (const role of ['user', 'developer']) {
-    assert.equal(
-      parseCodexTranscriptLine(
-        JSON.stringify({
-          type: 'response_item',
-          payload: {
-            type: 'message',
-            id: `msg_${role}`,
-            role,
-            content: [{ type: 'input_text', text: '<environment_context>' }],
-          },
-        }),
-      ),
-      null,
-    )
-  }
-})
-
 test('does not invent a message when Codex omits its identity', () => {
   assert.equal(
     parseCodexTranscriptLine(

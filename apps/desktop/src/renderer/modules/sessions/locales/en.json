@@ -119,7 +119,8 @@
     "command": { "label": "Command received" },
     "context": { "label": "System context updated" },
     "status": { "label": "Status updated" },
-    "transcript": { "label": "Transcript delivered" }
+    "transcript": { "label": "Transcript delivered" },
+    "protocolDetails": "Protocol text"
   },
   "delegation": {
     "agent": { "label": "Agent delegation" },
