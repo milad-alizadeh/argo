@@ -19,13 +19,15 @@ export async function startNewSession(
     setFailure: (failure: Failure | null) => void
   },
   callbacks: {
+    // Fires once this Send is the row's one submission, so a dropped duplicate never reaches it.
+    onSubmitted: () => void
     afterStart: (sessionId: string) => Promise<void>
     onStarted: (sessionId: string) => void
     onFailed: () => void
   },
 ) {
   const { cli, cockpit, identity, prompt, setup, attachments, start, setFailure } = request
-  const { afterStart, onStarted, onFailed } = callbacks
+  const { onSubmitted, afterStart, onStarted, onFailed } = callbacks
   if (cockpit.project === null) {
     setFailure({
       sessionId: null,
@@ -43,6 +45,7 @@ export async function startNewSession(
   // A rapid second Enter/`+` finds the row already submitting and no-ops (#2109): the observable
   // contract is one user action produces at most one new Session, not which mechanism enforces it.
   if (!creation.startSubmission(pending.id)) return false
+  onSubmitted()
   try {
     const reply = await start.mutateAsync({
       cli,
