@@ -2,15 +2,17 @@ import { LoaderCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Marker, MarkerContent, MarkerIcon } from '../../../components/ui/marker'
-import { formatElapsed } from './elapsed'
+import { formatTurnElapsed } from './elapsed'
 import type { TurnMarkerView } from './turn-marker-state'
 
 const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
   starting: 'Starting Session',
   resuming: 'Resuming Session',
-  thinking: 'Thinking',
   working: 'Working',
 }
+
+// Fast enough for the tenths the first minute shows.
+const TICK_MS = 100
 
 // The Turn Marker (#2099): what a running Turn is doing right now, with a live elapsed-time
 // counter that keeps counting across a phase change, because it is keyed on when the Turn
@@ -18,7 +20,7 @@ const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
 export function TurnMarker({ phase, startedAt }: TurnMarkerView) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    const timer = window.setInterval(() => setNow(Date.now()), TICK_MS)
     return () => window.clearInterval(timer)
   }, [])
   return (
@@ -26,12 +28,12 @@ export function TurnMarker({ phase, startedAt }: TurnMarkerView) {
       <MarkerIcon>
         <LoaderCircle className="animate-spin" />
       </MarkerIcon>
-      <MarkerContent>
-        <span className="font-medium text-foreground">{PHASE_LABEL[phase]}</span>
+      <MarkerContent className="flex items-baseline gap-2">
+        <span className="feed-work-shimmer">{PHASE_LABEL[phase]}</span>
+        <span aria-hidden="true" className="text-muted-foreground tabular-nums">
+          {formatTurnElapsed(now - startedAt)}
+        </span>
       </MarkerContent>
-      <span aria-hidden="true" className="ml-auto type-meta text-muted-foreground tabular-nums">
-        {formatElapsed(now - startedAt)}
-      </span>
     </Marker>
   )
 }

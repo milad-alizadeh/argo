@@ -13,29 +13,42 @@
       "outputs": ["out/**"]
     },
     "build:storybook": {
-      "inputs": [
-        ".storybook/**",
-        "src/renderer/**",
-        "src/core/**",
-        "index.html",
-        "components.json",
-        "vite.renderer.config.ts",
-        "tsconfig*.json",
-        "package.json"
-      ],
+      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
       "outputs": ["storybook-static/**"]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"],
-      "inputs": ["src/**", "scripts/**/*.mjs", "*.config.ts", "tsconfig*.json", "package.json"],
+      "inputs": [
+        "src/**",
+        ".storybook/**/*.ts",
+        "scripts/**/*.mjs",
+        "*.config.ts",
+        "tsconfig*.json",
+        "package.json",
+        "$TURBO_ROOT$/scripts/design-token-*.mjs"
+      ],
       "outputs": []
     },
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!*.md",
+        "$TURBO_ROOT$/docs/design/tokens.css",
+        "$TURBO_ROOT$/scripts/design-token-*.mjs"
+      ],
       "outputs": []
     },
     "test:feed": {
-      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
+      "outputs": []
+    },
+    "test:storybook": {
+      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
+      "outputs": []
+    },
+    "test:darwin-manifest": {
+      "inputs": ["$TURBO_DEFAULT$", "!*.md", "$TURBO_ROOT$/package-lock.json"],
+      "env": ["ARGO_SIGNING_*", "ARGO_NOTARIZE_*"],
       "outputs": []
     },
     "dev": {

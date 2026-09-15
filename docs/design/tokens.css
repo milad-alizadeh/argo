@@ -80,7 +80,7 @@
   --size-state-dot: 6px;
   --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
   --size-subagent-dot: 4px;
-  --size-plan-bar: 3px;
+  --size-plan-bar: 4px;
   --text-tally: 9px;
   --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
   --shadow-state-outline: inset 0 0 0 1px var(--color-off);
@@ -146,6 +146,7 @@
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
+  --color-selected: var(--selected);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -178,7 +179,6 @@
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
   --size-icon-meta: 14px;
-  --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-icon-text: 1em;
@@ -210,6 +210,12 @@
   --color-language-typescript-ink: var(--color-white);
   --color-language-go: var(--color-cyan-600);
   --color-language-ruby: var(--color-red-600);
+  --color-terminal-red: var(--color-red-700);
+  --color-terminal-green: var(--color-green-700);
+  --color-terminal-yellow: var(--color-amber-700);
+  --color-terminal-blue: var(--color-blue-700);
+  --color-terminal-magenta: var(--color-purple-700);
+  --color-terminal-cyan: var(--color-cyan-700);
 }
 
 :root {
@@ -225,6 +231,8 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+  /* The selected row or rail item: a step past the hover ground, so the two never read alike. */
+  --selected: oklch(0.92 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -250,9 +258,9 @@
      Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
   --ticket-label-border-mix: 45%;
   --ticket-label-fill-mix: 18%;
-  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
-  --size-ticket-key: 40px;
-  --size-ticket-key-long: 64px;
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --text-body. */
+  --size-ticket-key: 52px;
+  --size-ticket-key-long: 80px;
   --size-ticket-age: 32px;
   --size-ticket-property: 56px;
   --size-ticket-inspector: 560px;
@@ -297,6 +305,7 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
+  --selected: oklch(0.34 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -319,6 +328,12 @@
   --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
+  --color-terminal-red: var(--color-red-400);
+  --color-terminal-green: var(--color-green-400);
+  --color-terminal-yellow: var(--color-amber-400);
+  --color-terminal-blue: var(--color-blue-400);
+  --color-terminal-magenta: var(--color-purple-400);
+  --color-terminal-cyan: var(--color-cyan-400);
   --ticket-label-lean: 55%;
 }
 

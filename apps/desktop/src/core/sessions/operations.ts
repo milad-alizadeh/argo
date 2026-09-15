@@ -2,6 +2,8 @@ import {
   sessionAcceptedReplySchema,
   sessionArchiveListReplySchema,
   sessionArchiveListRequestSchema,
+  sessionArchiveSetReplySchema,
+  sessionArchiveSetRequestSchema,
   sessionChooseAttachmentsReplySchema,
   sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
@@ -43,6 +45,12 @@ export const SESSION_OPERATIONS = {
     channel: 'argo:session:archive:list',
     request: sessionArchiveListRequestSchema,
     reply: sessionArchiveListReplySchema,
+  },
+  archiveSet: {
+    name: 'session.archive.set',
+    channel: 'argo:session:archive:set',
+    request: sessionArchiveSetRequestSchema,
+    reply: sessionArchiveSetReplySchema,
   },
   ...SESSION_READ_OPERATIONS,
   shellOutput: {

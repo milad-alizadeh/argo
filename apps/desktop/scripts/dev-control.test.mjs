@@ -5,6 +5,7 @@ const readyRecord = {
   id: 'ticket-2173-a1b2c3d4',
   launcherPid: 42,
   port: 45173,
+  debugPort: 45174,
   processId: 43,
   state: 'ready',
   title: 'Argo dev · ticket-2173 · :45173',

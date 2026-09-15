@@ -1,4 +1,4 @@
-import { _electron as electron } from 'playwright-core'
+import { _electron as electron, type Page } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import { writeFakeClaude } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { writeFakeCodex } from '../../../agents/codex/session-fake-driver/fixture-driver'
@@ -16,22 +16,43 @@ import { prepare } from './session-feed-fixture'
 
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
+// A ring buffer of renderer console output, so a failure can print what the page said right
+// before it broke instead of sending a reader back to a headless re-run (#2201).
+const RECENT_CONSOLE_LINES = 50
+
+type LaunchOptions = { replyDelayMs?: number }
+
+function keepRecentConsole(page: Page, lines: string[]) {
+  const keep = (line: string) => {
+    lines.push(line)
+    if (lines.length > RECENT_CONSOLE_LINES) lines.shift()
+  }
+  page.on('console', (message) => keep(`[${message.type()}] ${message.text()}`))
+  page.on('pageerror', (error) => keep(`[pageerror] ${error.stack ?? error.message}`))
+}
+
+// Runs a launch or restart, pushing its wall time in milliseconds for the proof's timings line.
+async function timed<T>(launches: number[], start: () => Promise<T>) {
+  const started = performance.now()
+  try {
+    return await start()
+  } finally {
+    launches.push(Math.round(performance.now() - started))
+  }
+}
+
 // Launches the packaged app against the fixture's fake CLIs, then restarts it in place so
 // roster/resume proof cases can exercise a fresh process without losing the fixture root.
-export async function createPackagedSessionHarness(
-  root: string,
-  options: { replyDelayMs?: number } = {},
-) {
+export async function createPackagedSessionHarness(root: string) {
   const fixture = await prepare(root)
   const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const fakeCodex = await writeFakeCodex(root)
   let application: Awaited<ReturnType<typeof electron.launch>> | undefined
-  // A ring buffer of renderer console output, so a failure can print what the page said right
-  // before it broke instead of sending a reader back to a headless re-run (#2201).
-  const RECENT_CONSOLE_LINES = 50
   let recentConsole: string[] = []
+  const launches: number[] = []
 
-  const launch = async () => {
+  // The fake CLIs read their reply delay when the app spawns them, so it is fixed per launch.
+  const open = async (options: LaunchOptions) => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
       env: {
@@ -50,14 +71,7 @@ export async function createPackagedSessionHarness(
     const page = await application.firstWindow()
     page.setDefaultTimeout(30_000)
     recentConsole = []
-    page.on('console', (message) => {
-      recentConsole.push(`[${message.type()}] ${message.text()}`)
-      if (recentConsole.length > RECENT_CONSOLE_LINES) recentConsole.shift()
-    })
-    page.on('pageerror', (error) => {
-      recentConsole.push(`[pageerror] ${error.stack ?? error.message}`)
-      if (recentConsole.length > RECENT_CONSOLE_LINES) recentConsole.shift()
-    })
+    keepRecentConsole(page, recentConsole)
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
@@ -69,10 +83,13 @@ export async function createPackagedSessionHarness(
     return page
   }
 
-  const restart = async () => {
-    await application?.close()
-    return launch()
-  }
+  const launch = (options: LaunchOptions = {}) => timed(launches, () => open(options))
+
+  const restart = (options: LaunchOptions = {}) =>
+    timed(launches, async () => {
+      await application?.close()
+      return open(options)
+    })
 
   return {
     fixture,
@@ -80,6 +97,7 @@ export async function createPackagedSessionHarness(
     fakeCodex,
     launch,
     restart,
+    launches: () => launches,
     close: () => application?.close(),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,

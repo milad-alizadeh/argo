@@ -55,6 +55,7 @@ export function sendToNewSession(request: {
   start: ReturnType<typeof useSessionMutations>['start']
   turn: TurnInput
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
+  onSubmitted?: () => void
   // Fires with the real Session id as soon as it is known, before the navigate that follows: the
   // Marker begun under the draft composer's key lives there too.
   onStarted?: (sessionId: string) => void
@@ -69,12 +70,14 @@ export function sendToNewSession(request: {
     start,
     turn,
     watchTurn,
+    onSubmitted,
     onStarted,
   } = request
   const { prompt, setup, attachments } = turn
   return startNewSession(
     { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
     {
+      onSubmitted: () => onSubmitted?.(),
       afterStart: (sessionId) => {
         if (setup !== null) watchTurn(sessionId, setup, null)
         return invalidateSessionRoster(queryClient)
@@ -130,7 +133,8 @@ export async function sendToDraftIdentity(
 ) {
   const { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn } = deps
   const key = composerIdentityKey(identity)
-  marker.begin(key, { stage: 'starting', since: null, ...promptOf(turn) })
+  // A duplicate Enter that the row drops must leave the first Send's Marker alone (#2229).
+  let began = false
   const sent = await sendToNewSession({
     cli,
     cockpit,
@@ -142,8 +146,12 @@ export async function sendToDraftIdentity(
     start,
     turn,
     watchTurn,
+    onSubmitted: () => {
+      began = true
+      marker.begin(key, { stage: 'starting', since: null, ...promptOf(turn) })
+    },
     onStarted: (sessionId) => marker.rekey(key, sessionId),
   })
-  if (!sent) marker.clear(key)
+  if (!sent && began) marker.clear(key)
   return sent
 }

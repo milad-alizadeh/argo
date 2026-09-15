@@ -1,20 +1,15 @@
-import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
+import { type FeedRowComponent, FeedViewport } from './feed-viewport'
 import type { Reveal } from './reveal'
 import { useFeedTailFollow } from './use-feed-tail-follow'
 import { useFeedViewport } from './use-feed-viewport'
 import { useInitialFeedPosition } from './use-initial-feed-position'
 import { useJumpToLatest } from './use-jump-to-latest'
-import { feedContentHeight, usePromptAtTop, usePromptHold } from './use-prompt-at-top'
+import { usePromptAtTop, usePromptHold } from './use-prompt-at-top'
 import type { Settled } from './use-settled-feed'
 
-type FeedRowComponent = (props: {
-  row: SessionFeedRow
-  reveal?: Reveal
-  streaming?: boolean
-}) => ReactNode
 type AnchoredFeedProps = {
   active: boolean
   FeedRow: FeedRowComponent
@@ -23,21 +18,14 @@ type AnchoredFeedProps = {
   settled: Settled
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
-}
-type FeedViewportProps = Pick<
-  AnchoredFeedProps,
-  'FeedRow' | 'rows' | 'settled' | 'streamingRowId'
-> & {
-  gap: number
-  promptIndex: number | null
-  reveals: ReadonlyMap<string, Reveal>
-  setViewport: (viewport: HTMLElement | null) => void
-  virtualizer: ReactVirtualizer<HTMLElement, Element>
+  // Markers after the last row (Working, compaction, handoff), scrolled with it clear of the composer.
+  tail: ReactNode
 }
 
 const FEED_ROW_ESTIMATE_PX = 96
 const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
+const TAIL_KEY = 'feed-tail'
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
 export function AnchoredFeed({
@@ -48,6 +36,7 @@ export function AnchoredFeed({
   settled,
   revealsFor,
   streamingRowId,
+  tail,
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
@@ -57,13 +46,13 @@ export function AnchoredFeed({
     // While they are reading history, retain their actual reading position as
     // rows append instead of resolving the previous end anchor.
     anchorTo: following ? 'end' : 'start',
-    count: rows.length,
+    count: rows.length + (tail === null ? 0 : 1),
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
     // Only follow an append while the reader is already at the tail. Keeping
     // this enabled while they are inspecting history makes a streamed row pull
     // them back to the end before the Jump to latest control can be used.
     followOnAppend: following ? 'smooth' : false,
-    getItemKey: (index) => feedRowAt(rows, index).id,
+    getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
     getScrollElement: () => viewport,
     onChange: tailFollow.onChange,
     overscan: FEED_OVERSCAN,
@@ -107,6 +96,7 @@ export function AnchoredFeed({
         setViewport={attachViewport}
         settled={settled}
         streamingRowId={streamingRowId}
+        tail={tail}
         virtualizer={virtualizer}
       />
     </div>
@@ -117,55 +107,4 @@ function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
   const row = rows[index]
   if (row === undefined) throw new RangeError(`Feed row ${index} is outside the virtualizer range.`)
   return row
-}
-
-function FeedViewport({
-  FeedRow,
-  gap,
-  promptIndex,
-  reveals,
-  rows,
-  settled,
-  setViewport,
-  streamingRowId,
-  virtualizer,
-}: FeedViewportProps) {
-  const { t } = useTranslation('sessions')
-  return (
-    <section
-      aria-label={t('historyLabel')}
-      className="feed__viewport"
-      data-reading-revision={settled.reading.revision}
-      data-session={settled.reading.sessionId}
-      ref={setViewport}
-    >
-      <div
-        className="feed__content"
-        style={{ height: `${feedContentHeight(virtualizer, promptIndex, gap)}px` }}
-      >
-        {virtualizer.getVirtualItems().map((item) => {
-          const row = rows[item.index]
-          if (row === undefined) return null
-          return (
-            <div
-              data-index={item.index}
-              key={item.key}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                transform: `translateY(${item.start}px)`,
-                width: '100%',
-              }}
-            >
-              <FeedRow
-                reveal={reveals.get(row.id)}
-                row={row}
-                streaming={row.id === streamingRowId}
-              />
-            </div>
-          )
-        })}
-      </div>
-    </section>
-  )
 }

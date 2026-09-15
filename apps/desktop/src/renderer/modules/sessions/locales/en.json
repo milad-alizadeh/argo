@@ -9,6 +9,8 @@
   "subagent": "Subagent",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
+  "noSessionsFound": "No Sessions found",
+  "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
     "roster": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."
@@ -112,6 +114,27 @@
     "complete": "Assistant response complete."
   },
   "archived": "Archived",
+  "archivedEmpty": "No archived Sessions",
+  "readingArchivedSessions": "Reading archived Sessions",
+  "loadingMoreArchivedSessions": "Loading more archived Sessions",
+  "unableToLoadArchivedSessions": "Unable to load archived Sessions",
+  "bulkSelect": {
+    "selected": "Selected",
+    "archive": "Archive",
+    "archived_one": "Archived {{count}} Session",
+    "archived_other": "Archived {{count}} Sessions",
+    "undo": "Undo",
+    "restored_one": "Restored {{count}} Session",
+    "restored_other": "Restored {{count}} Sessions",
+    "partialFailure": "Argo could not archive every selected Session.",
+    "failure": "Argo could not archive the selected Sessions."
+  },
+  "contextMenu": {
+    "rename": "Rename",
+    "openTicket": "Open Ticket",
+    "unlinkTicket": "Unlink Ticket",
+    "linkTicket": "Link Ticket…"
+  },
   "empty": {
     "unselected": {
       "title": "No Session selected",
@@ -199,6 +222,7 @@
     "copyRun": "Copy command and result",
     "noOutput": "No output"
   },
+  "feedLoading": "Loading this Session",
   "rail": {
     "backgroundAgents": "Background agents",
     "shellSection": "Shell",
@@ -206,6 +230,8 @@
     "agentsUnknown": "Background agents",
     "shell": "Shell {{count}}",
     "shellBare": "a command with no text",
+    "shellInspector": "Background Shell",
+    "shellNoOutput": "This command recorded no output.",
     "subagent": "Subagent {{index}}",
     "finished": "{{count}} finished",
     "unresolved_one": "One delegation, unresolved",

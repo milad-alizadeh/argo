@@ -2,7 +2,7 @@ import { LoaderCircle } from 'lucide-react'
 
 export function HandoffMarker() {
   return (
-    <article className="feed-row feed-row--marker grid gap-2" role="status">
+    <article className="feed-row feed-row--marker grid gap-2 type-body" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
         <span>Handing off to a new session…</span>
@@ -19,7 +19,7 @@ export function HandoffCompletedMarker({
   onOpenSession: (sessionId: string) => void
 }) {
   return (
-    <article className="feed-row feed-row--marker grid gap-2">
+    <article className="feed-row feed-row--marker grid gap-2 type-body">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span>Handed off to a new session.</span>
         <button

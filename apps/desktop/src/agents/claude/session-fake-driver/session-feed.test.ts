@@ -86,3 +86,12 @@ test('merges consecutive tool runs with nothing rendered between them', async ()
     { label: 'Ran 3 commands', calls: ['bun test', 'bun run typecheck', 'bunx biome check .'] },
   )
 })
+
+// Claude Code writes each thinking block as its own record, and a redacted one has no text.
+test('merges tool runs separated only by thinking with no text', async () => {
+  const rows = await feedOf(['thinkingCommandRuns'])
+  assert.deepEqual(
+    rows.map((row) => (row.shape === 'tool-group' ? row.label : row.shape)),
+    ['prose', 'Ran 2 commands'],
+  )
+})

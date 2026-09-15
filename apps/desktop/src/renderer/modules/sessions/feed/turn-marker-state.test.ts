@@ -3,6 +3,7 @@ import type { TurnMarkerEntry, TurnMarkerRow } from './turn-marker-state'
 import {
   optimisticRowFor,
   promptOf,
+  runningTurnView,
   stageFor,
   turnEnded,
   turnMarkerView,
@@ -21,7 +22,7 @@ function entry(overrides: Partial<TurnMarkerEntry> = {}): TurnMarkerEntry {
 }
 
 function row(overrides: Partial<TurnMarkerRow> = {}): TurnMarkerRow {
-  return { turnStartedAt: null, activity: null, status: 'running', ...overrides }
+  return { turnStartedAt: null, status: 'running', ...overrides }
 }
 
 test('stageFor starts a draft identity', () => {
@@ -54,30 +55,34 @@ test('turnMarkerView holds Resuming until the real record catches up', () => {
   })
 })
 
-test('turnMarkerView reads Thinking once settled with no activity', () => {
+test('turnMarkerView reads Working once the real record catches up', () => {
   const e = entry({ stage: 'starting', since: null })
   expect(turnMarkerView(e, row({ turnStartedAt: '2026-01-01T00:00:00Z' }))).toEqual({
-    phase: 'thinking',
-    startedAt: 1000,
-  })
-})
-
-test('turnMarkerView reads Working once settled with an activity signal', () => {
-  const e = entry({ stage: 'starting', since: null })
-  const activeRow = row({ turnStartedAt: '2026-01-01T00:00:00Z', activity: 'bash' as never })
-  expect(turnMarkerView(e, activeRow)).toEqual({ phase: 'working', startedAt: 1000 })
-})
-
-test('turnMarkerView reads Thinking/Working immediately for a live stage', () => {
-  const e = entry({ stage: 'live', since: null })
-  expect(turnMarkerView(e, row({ turnStartedAt: null, activity: null }))).toEqual({
-    phase: 'thinking',
-    startedAt: 1000,
-  })
-  expect(turnMarkerView(e, row({ turnStartedAt: null, activity: 'bash' as never }))).toEqual({
     phase: 'working',
     startedAt: 1000,
   })
+})
+
+test('turnMarkerView reads Working immediately for a live stage', () => {
+  const e = entry({ stage: 'live', since: null })
+  expect(turnMarkerView(e, row({ turnStartedAt: null }))).toEqual({
+    phase: 'working',
+    startedAt: 1000,
+  })
+})
+
+test('runningTurnView times a Turn no Send opened from its own start', () => {
+  const turnStartedAt = '2026-01-01T00:00:00Z'
+  expect(runningTurnView(row({ turnStartedAt }))).toEqual({
+    phase: 'working',
+    startedAt: Date.parse(turnStartedAt),
+  })
+})
+
+test('runningTurnView shows nothing for a Session that is not running', () => {
+  expect(runningTurnView(row({ turnStartedAt: '2026-01-01T00:00:00Z', status: 'idle' }))).toBe(null)
+  expect(runningTurnView(row({ turnStartedAt: null }))).toBe(null)
+  expect(runningTurnView(null)).toBe(null)
 })
 
 test('optimisticRowFor shows the prompt until the record settles', () => {

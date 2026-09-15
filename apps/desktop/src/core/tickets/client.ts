@@ -4,6 +4,8 @@ import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketListReply,
+  type TicketPriority,
+  type TicketPriorityReply,
   type TicketUpdateReply,
   ticketError,
 } from './contract'
@@ -28,6 +30,11 @@ export type TicketClient = {
     key: string
     statusId: string
   }): Promise<TicketUpdateReply>
+  updatePriority(request: {
+    projectId: string
+    key: string
+    priorityLevel: TicketPriority['level'] | null
+  }): Promise<TicketPriorityReply>
 }
 
 export function createTicketClient(
@@ -36,7 +43,12 @@ export function createTicketClient(
   const client = createDomainClient(TICKET_OPERATIONS, invoke, ticketError)
 
   async function forProject<
-    T extends TicketConnectedReply | TicketListReply | TicketDiscoverReply | TicketUpdateReply,
+    T extends
+      | TicketConnectedReply
+      | TicketListReply
+      | TicketDiscoverReply
+      | TicketUpdateReply
+      | TicketPriorityReply,
   >(request: { projectId: string }, reply: Promise<T>): Promise<T> {
     const resolved = await reply
     if (resolved.type !== 'ticket.error' && resolved.projectId !== request.projectId) {
@@ -52,5 +64,6 @@ export function createTicketClient(
     listTickets: (request) => forProject(request, client.list(request)),
     discoverSources: (request) => forProject(request, client.discover(request)),
     updateStatus: (request) => forProject(request, client.update(request)),
+    updatePriority: (request) => forProject(request, client.priority(request)),
   }
 }

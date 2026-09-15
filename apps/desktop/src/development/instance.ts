@@ -6,6 +6,7 @@ const LAUNCHER_PID_ENV = 'ARGO_DESKTOP_LAUNCHER_PID'
 const CONTROL_FILE_ENV = 'ARGO_DESKTOP_CONTROL_FILE'
 const CONTROL_TOKEN_ENV = 'ARGO_DESKTOP_CONTROL_TOKEN'
 const PORT_ENV = 'ARGO_DESKTOP_DEV_PORT'
+const DEBUG_PORT_ENV = 'ARGO_DESKTOP_DEBUG_PORT'
 const WINDOW_TITLE_ENV = 'ARGO_DESKTOP_WINDOW_TITLE'
 const WORKTREE_ENV = 'ARGO_DESKTOP_WORKTREE'
 
@@ -13,6 +14,7 @@ export type DevelopmentInstance = {
   controlFile: string
   controlTokenFile: string
   controlToken: string
+  debugPort: number
   directory: string
   id: string
   launcherPid: number
@@ -42,6 +44,12 @@ function integer(value: string, name: string): number {
   return parsed
 }
 
+function listeningPort(environment: Environment, name: string): number {
+  const parsed = integer(required(environment, name), name)
+  if (parsed < 1024 || parsed > 65_535) throw new Error(`${name} must be between 1024 and 65535.`)
+  return parsed
+}
+
 export function developmentInstance(
   environment: Environment = process.env,
 ): DevelopmentInstance | null {
@@ -51,23 +59,34 @@ export function developmentInstance(
   const controlFile = environment[CONTROL_FILE_ENV]
   const controlToken = environment[CONTROL_TOKEN_ENV]
   const port = environment[PORT_ENV]
+  const debugPort = environment[DEBUG_PORT_ENV]
   const title = environment[WINDOW_TITLE_ENV]
   const worktree = environment[WORKTREE_ENV]
-  const values = [directory, id, launcherPid, controlFile, controlToken, port, title, worktree]
+  const values = [
+    directory,
+    id,
+    launcherPid,
+    controlFile,
+    controlToken,
+    port,
+    debugPort,
+    title,
+    worktree,
+  ]
 
   if (values.every((value) => value === undefined)) return null
 
-  const parsedPort = integer(required(environment, PORT_ENV), PORT_ENV)
-  if (parsedPort < 1024 || parsedPort > 65_535)
-    throw new Error(`${PORT_ENV} must be between 1024 and 65535.`)
+  const parsedPort = listeningPort(environment, PORT_ENV)
 
   const parsedLauncherPid = integer(required(environment, LAUNCHER_PID_ENV), LAUNCHER_PID_ENV)
   if (parsedLauncherPid < 1) throw new Error(`${LAUNCHER_PID_ENV} must be positive.`)
+  const parsedDebugPort = listeningPort(environment, DEBUG_PORT_ENV)
 
   return {
     controlFile: absolute(required(environment, CONTROL_FILE_ENV), CONTROL_FILE_ENV),
     controlTokenFile: path.join(required(environment, INSTANCE_DIRECTORY_ENV), 'control-token'),
     controlToken: required(environment, CONTROL_TOKEN_ENV),
+    debugPort: parsedDebugPort,
     directory: absolute(required(environment, INSTANCE_DIRECTORY_ENV), INSTANCE_DIRECTORY_ENV),
     id: required(environment, INSTANCE_ID_ENV),
     launcherPid: parsedLauncherPid,
@@ -87,6 +106,7 @@ export function developmentReadyRecord(instance: DevelopmentInstance, windowId: 
     processId: process.pid,
     launcherPid: instance.launcherPid,
     port: instance.port,
+    debugPort: instance.debugPort,
     title: instance.title,
     worktree: instance.worktree,
     userData: instance.userData,

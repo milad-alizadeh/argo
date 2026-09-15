@@ -54,4 +54,11 @@ export type SessionSource = {
     cursor: string | null
     restoreId: string | null
   }) => Promise<ArchivedSessionsPage>
+  // Setting the archive flag for one or more Sessions (#2194), on the same store
+  // `discoverArchivedSessions` reads. A Session with no writable row there comes back in
+  // `failed`. Absent where the CLI has no archive concept of its own, same as the read above.
+  setArchived?: (options: {
+    ids: readonly string[]
+    archived: boolean
+  }) => Promise<{ applied: string[]; failed: string[] }>
 }

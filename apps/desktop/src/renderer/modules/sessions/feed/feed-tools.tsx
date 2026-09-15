@@ -47,6 +47,11 @@ function StatusMark({
   )
 }
 
+// Text for work still running carries the Feed's work shimmer.
+export function RunningText({ running, children }: { running: boolean; children: string }) {
+  return running ? <span className="feed-work-shimmer">{children}</span> : children
+}
+
 // A failed call reads red; otherwise the row is muted until hovered or open in the inspector.
 function lineInk(failed: boolean, active: boolean) {
   if (failed) return 'text-destructive'
@@ -86,7 +91,9 @@ export function FeedToolLine({
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
       <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
-      <span className="min-w-0 truncate text-left [direction:rtl]">{call.label}</span>
+      <span className="min-w-0 truncate text-left [direction:rtl]">
+        <RunningText running={call.status === 'running'}>{call.label}</RunningText>
+      </span>
       {call.lineCounts === null ? null : <LineCounts {...call.lineCounts} />}
       {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
       <span className="ml-auto flex shrink-0 items-center">
@@ -118,11 +125,13 @@ function GroupedCall({
 
 export function FeedToolGroup({
   group,
+  live = false,
   activeEvidenceId,
   onOpen,
   toolGroups,
 }: {
   group: Extract<SessionFeedRow, { shape: 'tool-group' }>
+  live?: boolean
   activeEvidenceId: string | null
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
@@ -131,8 +140,11 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
   const isSoleSkill = soleCall?.kind === 'skill'
-  // A code block draws its own border, which would clash with the group's rule.
-  const showsCodeBlock = soleCall !== undefined && TOOL_CONTENT_ROUTE[soleCall.kind] === 'inline'
+  // While the group is still growing or a call in it runs, it names its latest call, not its summary.
+  const latestCall = live
+    ? group.calls.at(-1)
+    : group.calls.findLast((call) => call.status === 'running')
+  const titleCall = latestCall ?? (isSoleSkill ? soleCall : undefined)
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -146,11 +158,15 @@ export function FeedToolGroup({
           />
         </TaskItem>
       ))}
-      contentVariant={showsCodeBlock ? 'flush' : 'line'}
-      icon={isSoleSkill ? TOOL_ICONS.skill : SquareTerminal}
+      contentVariant="flush"
+      icon={titleCall === undefined ? SquareTerminal : TOOL_ICONS[titleCall.kind]}
       onOpenChange={onOpenChange}
       open={open}
-      title={isSoleSkill ? soleCall.label : group.label}
+      title={
+        <RunningText running={latestCall !== undefined}>
+          {titleCall?.label ?? group.label}
+        </RunningText>
+      }
     />
   )
 }

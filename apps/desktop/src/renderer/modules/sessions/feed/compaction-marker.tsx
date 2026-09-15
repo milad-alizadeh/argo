@@ -23,7 +23,7 @@ export function CompactionMarker({
     return () => window.clearInterval(timer)
   }, [])
   return (
-    <article className="feed-row feed-row--marker grid gap-2" role="status">
+    <article className="feed-row feed-row--marker grid gap-2 type-body" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
         <span>Compacting conversation…</span>

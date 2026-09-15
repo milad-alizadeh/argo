@@ -6,6 +6,8 @@ import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveListRequest,
+  type SessionArchiveSetReply,
+  type SessionArchiveSetRequest,
   type SessionDelegationUsageReply,
   type SessionDelegationUsageRequest,
   type SessionFeedCancelRequest,
@@ -41,6 +43,7 @@ import type { SessionDriveAdapters } from './session-drive-adapter'
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
+  archiveSet(request: SessionArchiveSetRequest): Promise<SessionArchiveSetReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
   readWorkspaceFile(request: SessionFileRequest): Promise<SessionFileReply>
   cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
@@ -92,6 +95,7 @@ export function attachSessionBridge(
     handlers: {
       list: (request, context) => context.reader.listSessions(request),
       archiveList: (request, context) => context.reader.archiveList(request),
+      archiveSet: (request, context) => context.reader.archiveSet(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       file: (request, context) => context.reader.readWorkspaceFile(request),
       skill: (request) => readSkillFile(request),

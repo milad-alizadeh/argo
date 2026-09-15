@@ -1,5 +1,6 @@
-// The Claude source the shared Session reader drives (#2025). Everything this slice touches is
-// read-only: it observes transcripts and writes nothing back to them.
+// The Claude source the shared Session reader drives (#2025). Transcripts are read-only. The one
+// exception is the archive flag (#2194): `setArchivedSessions` writes it back into the Claude
+// desktop app's own store, the same file `discoverArchivedSessions` reads (`sessions/archive.ts`).
 import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
@@ -8,12 +9,15 @@ import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
 import {
   clearFullRecords,
+  type Discovery,
   discoverArchivedSessions,
   discoverSessions,
   readSessionFiles,
+  setArchivedSessions,
 } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
+import { joinLiveProcesses, readLiveProcesses } from './live-processes'
 import { readShellOutput } from './shell-output'
 import { readDelegationChain, readDelegationTokens } from './subagents'
 
@@ -36,12 +40,22 @@ async function completeCompactions(
   }
 }
 
+async function withLiveProcesses(discovery: Discovery, processes: string | undefined) {
+  if (processes === undefined) return discovery
+  return {
+    ...discovery,
+    rows: joinLiveProcesses(discovery.rows, await readLiveProcesses(processes)),
+  }
+}
+
 // Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
 // Claude desktop app's own store, which is where the archive flag already lives. `archive` is
 // optional: a machine without that app installed reads no archived Sessions rather than failing.
 export function claudeSessionSource(roots: {
   transcripts: string
   archive?: string
+  // Where each running `claude` names its Session; absent, no external Session reads `running`.
+  processes?: string
   managedSessions?: () => SessionRosterRow[]
   completeCompaction?: (sessionId: string, completedAt: string) => void
   // Runs once per discovery pass, ahead of the read below: a handoff that has landed publishes
@@ -59,7 +73,10 @@ export function claudeSessionSource(roots: {
     cli: 'claude',
     discoverSessions: async () => {
       roots.completeHandoffs?.()
-      const discovered = await discoverSessions(roots.transcripts, roots.archive)
+      const discovered = await withLiveProcesses(
+        await discoverSessions(roots.transcripts, roots.archive),
+        roots.processes,
+      )
       const managed = roots.managedSessions?.() ?? []
       await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
       const merged = mergeManagedRoster(discovered, managed)
@@ -89,6 +106,11 @@ export function claudeSessionSource(roots: {
       archiveRoot === undefined
         ? undefined
         : (options) => discoverArchivedSessions(roots.transcripts, archiveRoot, options),
+    setArchived:
+      archiveRoot === undefined
+        ? undefined
+        : ({ ids, archived }) =>
+            setArchivedSessions(roots.transcripts, archiveRoot, { ids, archived }),
     overlayFor:
       liveMessages === undefined
         ? undefined
@@ -103,6 +125,7 @@ export function claudeSessionSource(roots: {
 export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
+  processes?: string
   managedSessions?: () => SessionRosterRow[]
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>

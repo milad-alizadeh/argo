@@ -1,21 +1,16 @@
-// The Marker's label state machine (#2099): Starting Session -> Resuming Session -> Thinking <->
-// Working -> gone. A presentation-layer label only (no new Session status), driven off the
-// Session's existing posture and per-Turn activity signal, and the client-owned Send that opened
-// this Turn optimistically, before any record confirms it.
+// The Marker's label state machine (#2099): Starting Session -> Resuming Session -> Working ->
+// gone. A presentation-layer label only (no new Session status), driven off the Session's existing
+// posture and the client-owned Send that opened this Turn optimistically, before any record
+// confirms it.
 
 import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import { attachedImageUrl } from '@/core/sessions/feed-images'
-import type {
-  SessionActivity,
-  SessionFeedRow,
-  SessionPosture,
-  SessionStatus,
-} from '@/core/sessions/models'
+import type { SessionFeedRow, SessionPosture, SessionStatus } from '@/core/sessions/models'
 
 export const TURN_MARKER_STAGES = ['starting', 'resuming', 'live'] as const
 export type TurnMarkerStage = (typeof TURN_MARKER_STAGES)[number]
 
-export const TURN_MARKER_PHASES = ['starting', 'resuming', 'thinking', 'working'] as const
+export const TURN_MARKER_PHASES = ['starting', 'resuming', 'working'] as const
 export type TurnMarkerPhase = (typeof TURN_MARKER_PHASES)[number]
 
 export type TurnMarkerEntry = {
@@ -49,7 +44,6 @@ export type TurnMarkerView = { phase: TurnMarkerPhase; startedAt: number }
 
 export type TurnMarkerRow = {
   turnStartedAt: string | null
-  activity: SessionActivity | null
   status: SessionStatus
 }
 
@@ -91,13 +85,21 @@ export function optimisticRowFor(
 }
 
 // The Marker's current label and elapsed-time origin. Starting/Resuming hold until the real
-// record catches up; a `live` stage reads Thinking/Working immediately, since the process was
-// already there before this Send.
+// record catches up; a `live` stage reads Working immediately, since the process was already
+// there before this Send.
 export function turnMarkerView(entry: TurnMarkerEntry, row: TurnMarkerRow | null): TurnMarkerView {
   if (entry.stage !== 'live' && !hasSettled(entry, row)) {
     return { phase: entry.stage, startedAt: entry.startedAt }
   }
-  return { phase: row?.activity ? 'working' : 'thinking', startedAt: entry.startedAt }
+  return { phase: 'working', startedAt: entry.startedAt }
+}
+
+// A Turn no Send here opened, such as one typed into the CLI itself, still reads Working while the
+// Session runs, timed from the Turn's own start.
+export function runningTurnView(row: TurnMarkerRow | null): TurnMarkerView | null {
+  if (row?.status !== 'running' || row.turnStartedAt === null) return null
+  const startedAt = Date.parse(row.turnStartedAt)
+  return Number.isNaN(startedAt) ? null : { phase: 'working', startedAt }
 }
 
 // The Turn is over once the real record has caught up and the Session has left `running`

@@ -130,7 +130,7 @@
   /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
      in the Session's own column. */
   --size-subagent-dot: 4px;
-  --size-plan-bar: 3px;
+  --size-plan-bar: 4px;
   /* The count under a stack of Subagent dots: the one figure on the row smaller than `--text-badge`,
      because it is texture the eye only reads when it stops on the column. */
   --text-tally: 9px;
@@ -205,6 +205,7 @@
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
+  --color-selected: var(--selected);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -238,7 +239,6 @@
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
   --size-icon-meta: 14px;
-  --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-icon-text: 1em; /* an icon set in running text, at the size of its words */
@@ -271,6 +271,13 @@
   --color-language-typescript-ink: var(--color-white);
   --color-language-go: var(--color-cyan-600);
   --color-language-ruby: var(--color-red-600);
+  /* Terminal output's ANSI hues, dark enough to read on the light ground. */
+  --color-terminal-red: var(--color-red-700);
+  --color-terminal-green: var(--color-green-700);
+  --color-terminal-yellow: var(--color-amber-700);
+  --color-terminal-blue: var(--color-blue-700);
+  --color-terminal-magenta: var(--color-purple-700);
+  --color-terminal-cyan: var(--color-cyan-700);
 }
 
 :root {
@@ -286,6 +293,8 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+  /* The selected row or rail item: a step past the hover ground, so the two never read alike. */
+  --selected: oklch(0.92 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -311,9 +320,9 @@
      Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
   --ticket-label-border-mix: 45%;
   --ticket-label-fill-mix: 18%;
-  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`. */
-  --size-ticket-key: 40px;
-  --size-ticket-key-long: 64px;
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --text-body. */
+  --size-ticket-key: 52px;
+  --size-ticket-key-long: 80px;
   --size-ticket-age: 32px;
   --size-ticket-property: 56px;
   --size-ticket-inspector: 560px;
@@ -358,6 +367,7 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
+  --selected: oklch(0.34 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -380,6 +390,12 @@
   --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
+  --color-terminal-red: var(--color-red-400);
+  --color-terminal-green: var(--color-green-400);
+  --color-terminal-yellow: var(--color-amber-400);
+  --color-terminal-blue: var(--color-blue-400);
+  --color-terminal-magenta: var(--color-purple-400);
+  --color-terminal-cyan: var(--color-cyan-400);
   --ticket-label-lean: 55%;
 }
 

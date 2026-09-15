@@ -1,4 +1,4 @@
-import { Check, ChevronDown, FolderGit2, Plus, Settings } from 'lucide-react'
+import { Check, ChevronDown, Folder, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -40,7 +40,7 @@ export function ProjectSwitcher() {
             />
           }
         >
-          <FolderGit2 />
+          <Folder />
           <span className="truncate font-medium">{projectName}</span>
           <ChevronDown className="text-muted-foreground" />
         </DropdownMenuTrigger>
@@ -53,7 +53,7 @@ export function ProjectSwitcher() {
                 aria-label={t('projectSwitcher.switchTo', { name: project.name })}
                 onClick={() => actions.select(project.id)}
               >
-                <FolderGit2 />
+                <Folder />
                 <span className="flex-1 truncate">{project.name}</span>
                 {project.id === cockpit.project?.id ? <Check /> : null}
               </DropdownMenuItem>

@@ -41,7 +41,10 @@ export function chainMessages(chain: SessionChain): TranscriptMessage[] {
 // The completion notifications the chain carries, whatever tool started the task they end.
 export function chainBackgroundTasks(chain: SessionChain): BackgroundTask[] {
   return chain.files.flatMap((file) =>
-    file.records.filter((record) => record.kind === 'background-task'),
+    file.records.flatMap((record) => {
+      if (record.kind === 'background-task') return [record]
+      return record.kind === 'delegation' && record.ending !== undefined ? [record.ending] : []
+    }),
   )
 }
 
