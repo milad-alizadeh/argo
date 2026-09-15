@@ -45,6 +45,7 @@
 
   .type-code.type-code,
   .type-code-content :is(code, pre) {
+    font-family: var(--font-mono);
     font-size: var(--text-code);
     line-height: var(--text-code--line-height);
     font-weight: var(--text-code-weight);

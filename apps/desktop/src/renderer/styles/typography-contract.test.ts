@@ -37,6 +37,7 @@ test('defines one app type scale without surface-specific aliases', () => {
   }
   expect(tokens).toContain('--font-sans: "Geist Variable"')
   expect(tokens).toContain('--font-mono: "Geist Mono Variable"')
+  expect(utilities).toContain('font-family: var(--font-mono)')
   expect(entry).toContain("import '@fontsource-variable/geist/wght.css'")
   expect(entry).toContain("import '@fontsource-variable/geist-mono/wght.css'")
   expect(tokens).toContain('--text-sm: var(--text-body)')
