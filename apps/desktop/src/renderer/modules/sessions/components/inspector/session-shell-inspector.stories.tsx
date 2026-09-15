@@ -51,7 +51,7 @@ export const Running: Story = {
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByText('npm run watch')).toHaveLength(2)
+    await expect(canvas.getByText('npm run watch')).toBeVisible()
     await expect(canvas.getByText('Running · 4m 30s')).toBeVisible()
     await expect(canvas.getByText(/rebuilt in 240ms/)).toBeVisible()
   },
@@ -92,7 +92,7 @@ export const WithLabel: Story = {
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByText('Package the Electron app')).toHaveLength(2)
+    await expect(canvas.getByText('Package the Electron app')).toBeVisible()
     await expect(canvas.queryByText(/RTK_DISABLED=1/)).not.toBeInTheDocument()
   },
 }

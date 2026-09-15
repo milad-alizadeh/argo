@@ -1,4 +1,4 @@
-import { Bot, Ticket } from 'lucide-react'
+import { Bot, GitFork, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Session } from '../../types'
 import { sessionTiming } from './session-timing'
@@ -62,26 +62,26 @@ export function SessionMetadata({ session }: { session: Session }) {
     timing !== null
   if (!hasMetadata) return null
   return (
-    <span className="mt-1 flex items-center gap-2 type-roster-meta text-faint [&_svg]:size-(--size-icon-roster-meta)">
+    <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
       {timing === null ? null : <SessionTiming timing={timing} />}
       <SessionPlanBar session={session} />
       {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
-      {session.delegations.length > 0 ? (
-        <span className="inline-flex items-center gap-1">
-          <Bot aria-hidden="true" />
-          <span>{session.delegations.length}</span>
-        </span>
-      ) : null}
-      {session.pullRequest !== null ? (
-        <span className="inline-flex items-center gap-1">
-          <Ticket aria-hidden="true" />
-          <span>#{session.pullRequest.number}</span>
-        </span>
-      ) : null}
       {session.ticket !== null ? (
         <span className="inline-flex items-center gap-1">
           <Ticket aria-hidden="true" />
           <span>{session.ticket.key}</span>
+        </span>
+      ) : null}
+      {session.pullRequest !== null ? (
+        <span className="inline-flex items-center gap-1">
+          <GitFork aria-hidden="true" />
+          <span>#{session.pullRequest.number}</span>
+        </span>
+      ) : null}
+      {session.delegations.length > 0 ? (
+        <span className="inline-flex items-center gap-1">
+          <Bot aria-hidden="true" />
+          <span>{session.delegations.length}</span>
         </span>
       ) : null}
     </span>

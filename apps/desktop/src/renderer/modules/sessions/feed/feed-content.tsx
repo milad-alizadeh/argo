@@ -7,20 +7,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Spinner } from '../../../components/ui/spinner'
 import { AnchoredFeed } from './anchored-feed'
 import type { DrawnRowProps } from './drawn-row'
+import { FeedLoading } from './feed-loading'
 import type { Reveal } from './reveal'
 import { StalledFeed } from './stalled-feed'
 import type { Settled, useSettledFeed } from './use-settled-feed'
-
-function RunningFeed() {
-  return (
-    <section className="grid h-full place-items-center" data-state="running">
-      <Spinner className="size-6" />
-    </section>
-  )
-}
 
 export function feedContent({
   active,
@@ -33,6 +25,7 @@ export function feedContent({
   DrawnRow,
   revealsFor,
   streamingRowId,
+  tail,
 }: {
   active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -44,11 +37,19 @@ export function feedContent({
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
+  tail: ReactNode
 }) {
   if (isRunning && (settled === null || settled.rows.length === 0)) {
-    return stalled ? <StalledFeed onRetry={onRetry} posture={posture} /> : <RunningFeed />
+    return stalled ? (
+      <StalledFeed onRetry={onRetry} posture={posture} />
+    ) : (
+      <>
+        <FeedLoading state="running" />
+        {tail}
+      </>
+    )
   }
-  if (settled === null) return null
+  if (settled === null) return tail
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">
@@ -70,6 +71,7 @@ export function feedContent({
       onJumpToLatestChange={onJumpToLatestChange}
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}
+      tail={tail}
     />
   )
 }

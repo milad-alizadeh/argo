@@ -15,3 +15,8 @@ export function unifiedPatch(oldText: string, newText: string) {
     changedLines('+', newText),
   ].join('\n')
 }
+
+// A created file has no old side, so every line it holds is an addition.
+export function createdPatch(text: string) {
+  return [`@@ -0,0 +1,${text.split('\n').length} @@`, changedLines('+', text)].join('\n')
+}

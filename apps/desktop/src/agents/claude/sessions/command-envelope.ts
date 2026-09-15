@@ -5,6 +5,7 @@ import type {
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { taggedField, taggedText } from '../../envelope-tags'
+import { readTaskEnding } from './background-task'
 import { readTaskNotification } from './task-notification'
 
 function envelopeText(content: unknown): string | null {
@@ -142,6 +143,7 @@ export function readCommandEnvelope(
   // A background task's delivery is not the person's own words: it is the CLI handing back a
   // summary, with the task's full result attached for the model, not the reader.
   if (text.startsWith('<task-notification>')) {
+    const ending = readTaskEnding(text, record.timestamp)
     return {
       kind: 'delegation',
       uuid: message.uuid,
@@ -149,6 +151,7 @@ export function readCommandEnvelope(
       status: trimmedTag(text, 'status'),
       groupId: identifierTag(text, 'task-id'),
       callId: identifierTag(text, 'tool-use-id'),
+      ...(ending === null ? {} : { ending }),
     }
   }
   // The harness re-delivers the compaction summary as a synthetic user turn so the model can

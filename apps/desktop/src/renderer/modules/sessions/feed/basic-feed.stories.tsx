@@ -64,10 +64,9 @@ export const Loaded: Story = {
 export const Loading: Story = {
   args: { feed: null, failure: null, selectedSessionId: 'prose' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('status', { name: 'Loading' })).toHaveAttribute(
-      'data-slot',
-      'spinner',
-    )
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Loading this Session' }),
+    ).toBeInTheDocument()
   },
 }
 export const Empty: Story = {

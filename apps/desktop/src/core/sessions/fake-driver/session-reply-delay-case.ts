@@ -38,7 +38,7 @@ async function begin({ page, transcripts, prompt, sends }: BeginRequest) {
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
   await send(page, prompt, sends)
-  const waiting = page.getByRole('status', { name: /Starting Session|Thinking/ })
+  const waiting = page.getByRole('status', { name: /Starting Session|Working/ })
   await waiting.waitFor()
   assert.equal(await page.getByText(`Fake Claude read: ${prompt}`).count(), 0)
   assert.equal(await fakeHasReplied(transcripts, prompt), false)

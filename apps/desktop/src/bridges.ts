@@ -6,7 +6,11 @@ import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
-import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
+import {
+  claudeArchiveRoot,
+  claudeProcessesRoot,
+  claudeTranscriptsRoot,
+} from './agents/claude/sessions/roots'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
@@ -66,6 +70,7 @@ function attachSessions(
         claudeSessionSource({
           transcripts: claudeTranscriptsRoot(home),
           archive: claudeArchiveRoot(home),
+          processes: claudeProcessesRoot(home),
           managedSessions: claude.roster,
           completeCompaction: claude.completeCompaction,
           completeHandoffs: claude.completeHandoffs,

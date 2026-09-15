@@ -68,7 +68,7 @@ function HighlightedCode({
   }, [text, language])
   let lineOffset = 0
   return (
-    <pre className="m-0 overflow-auto p-4 text-sm">
+    <pre className="m-0 overflow-x-hidden overflow-y-auto p-4 text-sm">
       <code className="font-mono text-sm" data-highlighted={tokens !== null}>
         {lines.map((lineText, index) => {
           const lineKey = lineOffset
@@ -79,7 +79,8 @@ function HighlightedCode({
           return (
             <span key={lineKey} className={cn('flex min-h-[1lh]', decoration?.className)}>
               {decoration?.prefix}
-              <span className="min-w-0 flex-1">
+              {/* Code wraps rather than scrolling sideways, breaking a long token wherever it must. */}
+              <span className="min-w-0 flex-1 whitespace-pre-wrap wrap-anywhere">
                 {lineTokens.map((token) => {
                   const tokenKey = tokenOffset
                   tokenOffset += token.content.length

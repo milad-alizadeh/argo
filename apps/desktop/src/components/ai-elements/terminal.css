@@ -1,0 +1,32 @@
+/* ANSI colours as classes (ansi-to-react `useClasses`), so output reads on the light ground as well
+   as the dark one. White and black map to the ink, since either would vanish on one of the grounds. */
+.terminal-output :is(.ansi-black-fg, .ansi-white-fg, .ansi-bright-white-fg) {
+  color: var(--color-foreground);
+}
+.terminal-output .ansi-bright-black-fg {
+  color: var(--color-muted-foreground);
+}
+.terminal-output :is(.ansi-red-fg, .ansi-bright-red-fg) {
+  color: var(--color-terminal-red);
+}
+.terminal-output :is(.ansi-green-fg, .ansi-bright-green-fg) {
+  color: var(--color-terminal-green);
+}
+.terminal-output :is(.ansi-yellow-fg, .ansi-bright-yellow-fg) {
+  color: var(--color-terminal-yellow);
+}
+.terminal-output :is(.ansi-blue-fg, .ansi-bright-blue-fg) {
+  color: var(--color-terminal-blue);
+}
+.terminal-output :is(.ansi-magenta-fg, .ansi-bright-magenta-fg) {
+  color: var(--color-terminal-magenta);
+}
+.terminal-output :is(.ansi-cyan-fg, .ansi-bright-cyan-fg) {
+  color: var(--color-terminal-cyan);
+}
+.terminal-output .ansi-bold {
+  font-weight: 600;
+}
+.terminal-output .ansi-dim {
+  opacity: 0.6;
+}

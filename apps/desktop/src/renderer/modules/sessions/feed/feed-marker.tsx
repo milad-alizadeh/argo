@@ -24,13 +24,13 @@ export function FeedMarker({ row }: { row: MarkerRow }) {
   const label = t(MARKER_LABEL[row.marker])
   if (row.summary === null)
     return (
-      <Marker variant="separator" className="py-2 type-meta">
+      <Marker variant="separator" className="py-2 type-body">
         <MarkerContent>{label}</MarkerContent>
       </Marker>
     )
   return (
     <Collapsible className="py-2">
-      <CollapsibleTrigger className={`group ${markerVariants({ variant: 'separator' })}`}>
+      <CollapsibleTrigger className={`group ${markerVariants({ variant: 'separator' })} type-body`}>
         <MarkerContent>{label}</MarkerContent>
         <MarkerIcon>
           <ChevronDown className="transition-transform group-data-[panel-open]:rotate-180" />

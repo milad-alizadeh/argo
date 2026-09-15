@@ -14,6 +14,14 @@
     letter-spacing: var(--text-heading-tracking);
   }
 
+  /* A Roster row's title sits a step under heading size at body weight, so a column reads light. */
+  .type-roster-title.type-roster-title {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    font-weight: var(--text-body-weight);
+    letter-spacing: var(--text-heading-tracking);
+  }
+
   /* Session body text follows the root font scale; the existing text-body utility remains fixed. */
   .type-body.type-body {
     font-size: var(--text-session-body);
@@ -46,13 +54,6 @@
   /* The approved Session metadata is 12px; the existing text-meta utility remains 11px. */
   .type-meta.type-meta {
     font-size: var(--text-session-meta);
-    line-height: var(--text-meta--line-height);
-    font-weight: var(--text-meta-weight);
-    letter-spacing: var(--text-meta-tracking);
-  }
-
-  .type-roster-meta.type-roster-meta {
-    font-size: var(--text-meta);
     line-height: var(--text-meta--line-height);
     font-weight: var(--text-meta-weight);
     letter-spacing: var(--text-meta-tracking);
