@@ -56,7 +56,9 @@ export function FeedRow({
       data-role={'role' in row ? row.role : undefined}
       ref={element}
     >
-      <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
+      {row.shape === 'prose' ? (
+        <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
+      ) : null}
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
@@ -66,6 +68,7 @@ export function FeedRow({
         questionFailure={questionFailure}
         questionLocked={questionLocked}
         row={row}
+        streaming={streaming}
         streamingText={text}
       />
     </article>
@@ -91,8 +94,12 @@ function FeedRowContent({
   answering,
   questionFailure,
   questionLocked,
+  streaming,
   streamingText,
-}: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & { streamingText: string }) {
+}: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & {
+  streaming: boolean
+  streamingText: string
+}) {
   switch (row.shape) {
     // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
     // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
@@ -103,6 +110,7 @@ function FeedRowContent({
       return (
         <FeedToolGroup
           group={row}
+          live={streaming}
           activeEvidenceId={activeEvidenceId}
           onOpen={onOpenEvidence}
           toolGroups={toolGroups}

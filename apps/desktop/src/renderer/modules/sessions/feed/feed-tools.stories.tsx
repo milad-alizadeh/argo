@@ -165,6 +165,29 @@ export const GroupWithARunningCommand = {
   },
 }
 
+// The tail group of a running Turn names its latest call even between calls.
+export const LiveGroupBetweenCalls = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:live',
+        label: 'Ran a command, edited a file',
+        calls: [command, edited],
+      }}
+      live
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /Edited Composer.tsx/ })).toBeVisible()
+    await expect(canvas.queryByText('Ran a command, edited a file')).toBeNull()
+  },
+}
+
 export const UnclassifiedToolGroupOfOne = {
   render: () => (
     <FeedToolGroup

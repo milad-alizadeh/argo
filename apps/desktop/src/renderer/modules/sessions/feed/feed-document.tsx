@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { type ReactNode, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
@@ -61,6 +61,19 @@ function handoffMarker(
   return null
 }
 
+function feedTail(compaction: ReactNode, handoff: ReactNode, turnMarker: TurnMarkerView | null) {
+  if (compaction === null && handoff === null && turnMarker === null) return null
+  return (
+    <>
+      {compaction}
+      {handoff}
+      {turnMarker === null ? null : (
+        <TurnMarker phase={turnMarker.phase} startedAt={turnMarker.startedAt} />
+      )}
+    </>
+  )
+}
+
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({
@@ -106,8 +119,16 @@ export function FeedDocument({
     questionLocked: sessionPostureLocksAnswer(posture),
   })
   const lastRow = feed.rows[feed.rows.length - 1]
-  const streamingRowId =
-    isRunning && lastRow?.shape === 'prose' && lastRow.role === 'assistant' ? lastRow.id : null
+  // The tail row of a running Turn is live: an assistant reply still streaming, or a tool group the
+  // agent may add to.
+  const tailIsLive =
+    lastRow?.shape === 'tool-group' || (lastRow?.shape === 'prose' && lastRow.role === 'assistant')
+  const streamingRowId = isRunning && tailIsLive ? lastRow.id : null
+  const tail = feedTail(
+    compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens),
+    handoffMarker(handoffStartedAt, handoffTo, onOpenSession),
+    turnMarker,
+  )
   const content = feedContent({
     active,
     settled,
@@ -119,6 +140,7 @@ export function FeedDocument({
     DrawnRow,
     revealsFor,
     streamingRowId,
+    tail,
   })
 
   return (
@@ -130,11 +152,6 @@ export function FeedDocument({
     >
       <div className="feed__column" ref={column}>
         {content}
-        {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
-        {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}
-        {turnMarker === null ? null : (
-          <TurnMarker phase={turnMarker.phase} startedAt={turnMarker.startedAt} />
-        )}
       </div>
     </div>
   )

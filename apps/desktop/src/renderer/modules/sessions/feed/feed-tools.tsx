@@ -125,11 +125,13 @@ function GroupedCall({
 
 export function FeedToolGroup({
   group,
+  live = false,
   activeEvidenceId,
   onOpen,
   toolGroups,
 }: {
   group: Extract<SessionFeedRow, { shape: 'tool-group' }>
+  live?: boolean
   activeEvidenceId: string | null
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
@@ -138,9 +140,11 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
   const isSoleSkill = soleCall?.kind === 'skill'
-  // While a call in the group still runs, the group names that call rather than its summary.
-  const runningCall = group.calls.findLast((call) => call.status === 'running')
-  const titleCall = runningCall ?? (isSoleSkill ? soleCall : undefined)
+  // While the group is still growing or a call in it runs, it names its latest call, not its summary.
+  const latestCall = live
+    ? group.calls.at(-1)
+    : group.calls.findLast((call) => call.status === 'running')
+  const titleCall = latestCall ?? (isSoleSkill ? soleCall : undefined)
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -159,7 +163,7 @@ export function FeedToolGroup({
       onOpenChange={onOpenChange}
       open={open}
       title={
-        <RunningText running={runningCall !== undefined}>
+        <RunningText running={latestCall !== undefined}>
           {titleCall?.label ?? group.label}
         </RunningText>
       }
