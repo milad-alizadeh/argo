@@ -7,7 +7,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
-  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_CRITICAL,
   KEY_BACKSPACE_COMMAND,
   type LexicalNode,
   type TextNode,
@@ -78,7 +78,7 @@ export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTi
           ticket.remove()
           return true
         },
-        COMMAND_PRIORITY_HIGH,
+        COMMAND_PRIORITY_CRITICAL,
       ),
     [editor],
   )

@@ -24,7 +24,6 @@ export function DraftContextPicker({
       }}
       onClose={onClose}
       onSelectTicket={(ticket) => {
-        onAddTicket(ticket)
         onClose()
         const editor = editorRef.current
         editor?.focus()
@@ -35,8 +34,9 @@ export function DraftContextPicker({
           selection.insertNodes([reference])
           const trailingSpace = $createTextNode(' ')
           reference.insertAfter(trailingSpace)
-          reference.selectEnd()
+          trailingSpace.selectEnd()
         })
+        onAddTicket(ticket)
       }}
     />
   )

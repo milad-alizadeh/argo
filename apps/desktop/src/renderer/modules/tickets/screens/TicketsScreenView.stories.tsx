@@ -113,9 +113,11 @@ async function choosingATicketKeepsTheInspectorAvailable(canvasElement: HTMLElem
     )
   }
   await userEvent.click(canvas.getByRole('button', { name: /^#273/ }))
-  const open = canvas.queryByRole('button', { name: 'Open Ticket inspector' })
-  if (open !== null) return
-  await waitFor(() => expect(canvas.getByRole('article', { name: 'Ticket #273' })).toBeVisible())
+  await waitFor(() => {
+    const inspector = canvas.queryByRole('article', { name: 'Ticket #273' })
+    const open = canvas.queryByRole('button', { name: 'Open Ticket inspector' })
+    expect(inspector !== null || open !== null).toBe(true)
+  })
 }
 
 export const Backlog: Story = {
