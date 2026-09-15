@@ -1,5 +1,6 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
+import { readHarnessEnvelopes } from './harness-envelopes'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -26,7 +27,7 @@ function messageRecord(
     blocks: ContentBlock[]
   },
 ): TranscriptRecord {
-  return {
+  return readHarnessEnvelopes({
     kind: 'message',
     uuid: message.uuid,
     parentUuid: null,
@@ -46,7 +47,7 @@ function messageRecord(
     toolResults: [],
     answeredCalls: [],
     usage: null,
-  }
+  })
 }
 
 function itemMessage(
@@ -110,6 +111,12 @@ function responseMessage(
   })
 }
 
+// A thread Codex dispatched itself, such as a spawned subagent or the `guardian` reviewer that judges
+// an approval (`SessionSource.subagent`, app-server schema): never a person's Session.
+function isSubagentThread(meta: Record<string, unknown>): boolean {
+  return meta.thread_source === 'subagent' || (isRecord(meta.source) && 'subagent' in meta.source)
+}
+
 export function parseCodexTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let record: unknown
@@ -127,7 +134,7 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
     return {
       kind: 'trace',
       uuid: payload.id,
-      subagent: payload.thread_source === 'subagent',
+      subagent: isSubagentThread(payload),
       cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
     }
   }
