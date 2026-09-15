@@ -11,11 +11,7 @@
 // The convention and what parses it: docs/agents/worktrees.md.
 import { ALLOW } from './hook-io.mjs'
 import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mjs'
-
-const SLUG = '[a-z0-9]+(?:-[a-z0-9]+)*'
-// A numberless slug may not itself start with a number: `901-naming` is a dropped `#`, and
-// nothing downstream can tell it from work that genuinely has no ticket.
-const NAMELESS = '[a-z][a-z0-9]*(?:-[a-z0-9]+)*'
+import { NAMELESS, SLUG, twoStepMessage } from './worktree-slug.mjs'
 
 // The convention belongs to the project, not to this file. `worktreeGuard.branchPrefix` in
 // hooks.json is what turns the naming half on: a project that has declared no branch convention
@@ -73,8 +69,7 @@ export function configureNaming(config) {
   return rules
 }
 
-const twoStep = () =>
-  `Create the tree with git: git worktree add -b ${rules.branchShape} ${rules.dir}/${rules.tree}. ${rules.enter}`
+const twoStep = (name) => twoStepMessage(name, rules)
 
 const refuseName = (what) => ({ block: true, reason: `${what} ${rules.how}` })
 
@@ -216,7 +211,7 @@ export function decideName({ toolName, toolInput = {}, cwd, isAgent }) {
     if (toolInput.path) return ALLOW
     return refuseName(
       'EnterWorktree names the branch `worktree-<name>`, and its name cannot hold a `#`, so no ' +
-        `tree it creates can sit on ${rules.branchShape}. ${twoStep()}`,
+        `tree it creates can sit on ${rules.branchShape}. ${twoStep(toolInput.name)}`,
     )
   }
   if (toolName === 'Bash' && typeof toolInput.command === 'string') {
