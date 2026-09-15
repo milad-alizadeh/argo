@@ -33,7 +33,7 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
         render={
           <Button
             aria-label={`Usage ${primaryPercentage}%`}
-            className="shrink-0 gap-1.5 px-2 type-label font-medium"
+            className="shrink-0 gap-1.5 px-2 type-control"
             size="sm"
             variant="ghost"
           />
@@ -52,7 +52,7 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
         {usage.map((item) => (
           <div className="grid gap-1.5" key={item.label}>
             <div className="flex items-baseline gap-2">
-              <span className="type-heading font-medium">{item.label}</span>
+              <span className="type-heading">{item.label}</span>
               <span className="ml-auto type-meta text-muted-foreground">{item.detail}</span>
               <span className="w-8 text-right type-meta tabular-nums">{item.percentage}%</span>
             </div>

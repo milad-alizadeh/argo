@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { roleColors } from './appearance-probe'
-import { FeedGallery, FeedImage, FeedMissingImage, ImageLightbox } from './feed-images'
+import { FeedGallery, FeedImage, FeedMissingImage } from './feed-images'
 import { BROKEN_PICTURE, SAMPLE_PICTURE } from './feed-samples'
+import { ImageLightbox } from './image-lightbox'
 
 const meta: Meta<typeof FeedImage> = {
   title: 'Sessions/Feed/Images',

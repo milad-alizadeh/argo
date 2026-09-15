@@ -1,4 +1,4 @@
-/* The Sessions surface's own inks and scale. The inks below are the approved design's, and the
+/* The desktop app's own inks and scale. The inks below are the approved Session design's, and the
    design is graphite: it has no light appearance. The app offers one (#1820), so the block after
    `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
    to keep the same order of contrast on the shadcn light grounds. Read `AGENTS.md` · Appearance
@@ -38,20 +38,11 @@
   --color-pr-draft: #8b949e;
   /* A Ticket's completed status, in Linear's hue for it. */
   --color-ticket-done: #5e6ad2;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "SF Mono", "Cascadia Mono", Menlo, monospace;
   --text-code: 12px;
-  /* rowMeta and badge, the two rungs under the row title. The title itself is `--text-body`. */
+  /* Supporting facts and compact counts share the one smaller sans rung. */
   --text-meta: 11px;
-  --text-navigation-label: 10px;
-  --text-navigation-label--line-height: 14px;
-  --text-badge: 10px;
-  /* The pane eyebrows (`Sessions`, `Background Agents`) and the rail's chip labels, from the
-     layout prototype. */
-  --text-eyebrow: 10.5px;
-  --text-chip: 11.5px;
-  --leading-body: 20px;
-  --leading-code: 18px;
   /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
      reaches these through var() for properties no utility expresses, and the Roster reaches the
      same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
@@ -137,9 +128,6 @@
      in the Session's own column. */
   --size-subagent-dot: 4px;
   --size-plan-bar: 4px;
-  /* The count under a stack of Subagent dots: the one figure on the row smaller than `--text-badge`,
-     because it is texture the eye only reads when it stops on the column. */
-  --text-tally: 9px;
   /* The two marks a state dot is drawn with. The running dot glows in its own ink, and a state
      Argo cannot place is an outline in the disabled ink: both are reached by name so neither
      restates a colour the block above already holds. */
@@ -153,14 +141,44 @@
    appearances; only the Plan track, a white wash that vanishes on white, is restated. */
 @theme inline {
   --font-heading: var(--font-sans);
-  --text-title: 20px;
-  --text-title--line-height: 24px;
-  --text-heading: 14px;
-  --text-heading--line-height: 20px;
-  --text-body: 14px;
-  --text-body--line-height: 20px;
-  --text-control: 12px;
-  --text-control--line-height: 16px;
+  /* Most product text shares one compact reading rung. Role and weight create hierarchy; the
+     title is the rare larger step and code is the technical 12px exception. */
+  --text-title: 16px;
+  --text-title--line-height: 22px;
+  --text-heading: 13px;
+  --text-heading--line-height: 19px;
+  --text-body: 13px;
+  --text-body--line-height: 19px;
+  --text-prose: 13px;
+  --text-prose--line-height: 19px;
+  --text-meta--line-height: 15px;
+  --text-code--line-height: 18px;
+  --text-control: var(--text-body);
+  --text-control--line-height: var(--text-body--line-height);
+  --text-navigation-label: var(--text-control);
+  --text-navigation-label--line-height: var(--text-control--line-height);
+  --text-badge: var(--text-meta);
+  /* Generated shadcn primitives keep their rung names but resolve through the app scale. */
+  --text-xs: var(--text-control);
+  --text-xs--line-height: var(--text-control--line-height);
+  --text-sm: var(--text-body);
+  --text-sm--line-height: var(--text-body--line-height);
+  --text-base: var(--text-body);
+  --text-base--line-height: var(--text-body--line-height);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-control-weight: 500;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
+  --text-control-tracking: normal;
   --size-chrome-bar: 52px;
   --size-navigation-rail: 64px;
   --inset-navigation-rail-item-top: calc((var(--size-chrome-bar) - var(--size-control)) / 2);
@@ -230,17 +248,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --text-session-heading: var(--text-base, 1rem);
-  --text-prose: var(--text-base, 1rem);
-  --text-label: var(--text-xs, 0.75rem);
-  --text-composer-control: var(--text-control);
-  --text-session-title: var(--text-xl, 1.25rem);
-  --text-session-body: var(--text-base, 1rem);
-  /* A Composer section heading separates a Markdown document without competing with its title. */
-  --text-composer-section: 1rem;
-  --text-composer-section--line-height: 1.5rem;
-  --text-session-meta: var(--text-xs, 0.75rem);
-  --text-session-code: var(--text-xs, 0.75rem);
   --duration-standard: var(--duration-layout);
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
@@ -333,31 +340,8 @@
   --size-ticket-property: 56px;
   --size-ticket-inspector: 560px;
   --size-ticket-inspector-min: 440px;
-  --text-ticket-title: var(--text-base, 1rem);
-  --text-ticket-title--line-height: var(--text-base--line-height, 1.5rem);
   --size-ticket-workspace-min: 400px;
   --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
-  --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
-  --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
-  --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
-  --text-prose--line-height: var(--leading-6, 1.5rem);
-  --text-label--line-height: var(--text-xs--line-height, 1rem);
-  --text-meta--line-height: var(--text-xs--line-height, 1rem);
-  --text-code--line-height: var(--leading-5, 1.25rem);
-  --text-title-weight: 500;
-  --text-heading-weight: 500;
-  --text-body-weight: 400;
-  --text-prose-weight: 400;
-  --text-label-weight: 500;
-  --text-meta-weight: 400;
-  --text-code-weight: 400;
-  --text-title-tracking: normal;
-  --text-heading-tracking: normal;
-  --text-body-tracking: normal;
-  --text-prose-tracking: normal;
-  --text-label-tracking: normal;
-  --text-meta-tracking: normal;
-  --text-code-tracking: normal;
 }
 
 .dark {
@@ -413,9 +397,4 @@
   --color-plan-track: rgb(0 0 0 / 0.1);
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
   --ticket-label-lean: 40%;
-}
-
-.ticket-title {
-  --text-session-title: var(--text-ticket-title);
-  --text-session-title--line-height: var(--text-ticket-title--line-height);
 }

@@ -11,6 +11,7 @@ import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
 import { commandSource } from './command-source'
 import { readPlanChanges } from './plan-changes'
+import { promptBlocks } from './prompt-images'
 import { readSkillBody } from './skill-body'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
@@ -72,7 +73,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     effort: typeof record.effort === 'string' ? record.effort : null,
     mode: typeof record.permissionMode === 'string' ? record.permissionMode : null,
     usage: readUsage(message.usage),
-    blocks: readBlocks(content),
+    blocks: role === 'user' ? promptBlocks(readBlocks(content)) : readBlocks(content),
   }
   return parsed
 }

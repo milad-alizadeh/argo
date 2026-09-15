@@ -1,6 +1,7 @@
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
+import { withPromptAttachments } from './prompt-attachments'
 import { type ToolEvidence, toolRows } from './tool-feed'
 import { groupToolRuns } from './tool-groups'
 import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
@@ -50,9 +51,10 @@ export function rowsOfRecord(
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  return record.blocks.flatMap((block, index) =>
+  const rows = record.blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
+  return withPromptAttachments(rows, record)
 }
 
 function rowsOfBlock({
@@ -83,6 +85,13 @@ function rowsOfBlock({
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)
     }
+    // A prompt's attachments are drawn in its bubble by `withPromptAttachments`.
+    case 'file':
+      return []
+    case 'image':
+      return record.role === 'user'
+        ? []
+        : [{ shape: 'source', id, role: record.role, label: 'image', source: block.url }]
     case 'source':
       return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   }

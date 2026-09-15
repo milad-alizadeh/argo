@@ -9,12 +9,14 @@ test('beginEntry adds an entry under its key', () => {
     stage: 'starting',
     since: null,
     prompt: 'hi',
+    images: [],
     startedAt: 500,
   })
   expect(next.get('draft:1')).toEqual({
     stage: 'starting',
     since: null,
     prompt: 'hi',
+    images: [],
     startedAt: 500,
   })
 })
@@ -24,6 +26,7 @@ test('rekeyEntry moves an entry from its draft key to the real Session id', () =
     stage: 'starting',
     since: null,
     prompt: 'hi',
+    images: [],
     startedAt: 500,
   })
   const next = rekeyEntry(started, 'draft:1', 'session-1')
@@ -32,6 +35,7 @@ test('rekeyEntry moves an entry from its draft key to the real Session id', () =
     stage: 'starting',
     since: null,
     prompt: 'hi',
+    images: [],
     startedAt: 500,
   })
 })
@@ -45,6 +49,7 @@ test('clearEntry removes an entry by key', () => {
     stage: 'live',
     since: null,
     prompt: 'hi',
+    images: [],
     startedAt: 500,
   })
   const next = clearEntry(started, 'session-1')

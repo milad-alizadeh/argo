@@ -86,11 +86,11 @@ export function ContextDetails({
     <>
       <div className="grid gap-2.5">
         <div className="flex items-baseline justify-between gap-3">
-          <div className="type-title font-semibold tabular-nums">
+          <div className="type-title tabular-nums">
             {Math.round(usedTokens / 1000)}k{' '}
             <span className="type-body font-normal text-muted-foreground">/ 200k tokens</span>
           </div>
-          <span className={`type-heading font-medium ${zone.text}`}>
+          <span className={`type-heading ${zone.text}`}>
             {percentage}% used · {zone.label}
           </span>
         </div>

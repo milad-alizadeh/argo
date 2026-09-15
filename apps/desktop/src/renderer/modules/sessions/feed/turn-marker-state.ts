@@ -3,6 +3,8 @@
 // posture and the client-owned Send that opened this Turn optimistically, before any record
 // confirms it.
 
+import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
+import { attachedImageUrl } from '@/core/sessions/feed-images'
 import type { SessionFeedRow, SessionPosture, SessionStatus } from '@/core/sessions/models'
 
 export const TURN_MARKER_STAGES = ['starting', 'resuming', 'live'] as const
@@ -19,6 +21,23 @@ export type TurnMarkerEntry = {
   since: string | null
   startedAt: number
   prompt: string
+  images: readonly string[]
+  files: readonly string[]
+}
+
+// What the optimistic bubble draws of a Send: its words, its attached images and its other files.
+export function promptOf(turn: {
+  prompt: string
+  attachments: readonly SessionAttachmentInput[]
+}): Pick<TurnMarkerEntry, 'prompt' | 'images' | 'files'> {
+  const images: string[] = []
+  const files: string[] = []
+  for (const { path } of turn.attachments) {
+    const image = attachedImageUrl(path)
+    if (image === null) files.push(path)
+    else images.push(image)
+  }
+  return { prompt: turn.prompt, images, files }
 }
 
 export type TurnMarkerView = { phase: TurnMarkerPhase; startedAt: number }
@@ -60,6 +79,8 @@ export function optimisticRowFor(
     id: `optimistic-turn:${entry.startedAt}`,
     role: 'user',
     text: entry.prompt,
+    ...(entry.images.length > 0 ? { images: [...entry.images] } : {}),
+    ...(entry.files.length > 0 ? { files: [...entry.files] } : {}),
   }
 }
 

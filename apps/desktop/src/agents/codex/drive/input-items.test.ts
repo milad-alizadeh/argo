@@ -18,11 +18,21 @@ test('turns an image attachment into a localImage item after the draft', () => {
   ])
 })
 
-test('turns a non-image attachment into a text item holding its path, not its contents', () => {
-  const attachments: SessionAttachmentInput[] = [{ path: '/tmp/brief.md', kind: 'file' }]
+const pathItem = (path: string) => ({
+  type: 'text',
+  text: path,
+  text_elements: [{ byteRange: { start: 0, end: Buffer.byteLength(path) }, placeholder: path }],
+})
+
+test('turns a non-image attachment into a text item marking its path, not its contents', () => {
+  const attachments: SessionAttachmentInput[] = [{ path: '/tmp/brief é.md', kind: 'file' }]
   assert.deepEqual(inputItemsFor('Review this.', attachments), [
     { type: 'text', text: 'Review this.', text_elements: [] },
-    { type: 'text', text: '/tmp/brief.md', text_elements: [] },
+    {
+      type: 'text',
+      text: '/tmp/brief é.md',
+      text_elements: [{ byteRange: { start: 0, end: 16 }, placeholder: '/tmp/brief é.md' }],
+    },
   ])
 })
 
@@ -33,7 +43,7 @@ test('keeps every attachment as its own item, in the order they were chosen', ()
   ]
   assert.deepEqual(inputItemsFor('', attachments), [
     { type: 'text', text: '', text_elements: [] },
-    { type: 'text', text: '/tmp/brief.md', text_elements: [] },
+    pathItem('/tmp/brief.md'),
     { type: 'localImage', path: '/tmp/screenshot.png' },
   ])
 })

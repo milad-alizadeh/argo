@@ -2,11 +2,15 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
+import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
+import { promptBlocks, promptEventImages, readImage } from './prompt-images'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
-  return value.map((block) => {
+  return value.map((block): ContentBlock => {
+    const image = isRecord(block) ? readImage(block) : null
+    if (image !== null) return image
     if (
       isRecord(block) &&
       typeof block.type === 'string' &&
@@ -62,12 +66,12 @@ function itemMessage(
   if (item?.type === 'AgentMessage') role = 'assistant'
   if (item === null || role === null || typeof item.id !== 'string') return null
   const blocks = messageBlocks(item.content, ['text', 'Text'])
-  if (blocks === null) return null
+  if (blocks === null || !Array.isArray(item.content)) return null
   return messageRecord(record, {
     uuid: item.id,
     role,
     originSessionId: typeof payload.thread_id === 'string' ? payload.thread_id : null,
-    blocks,
+    blocks: role === 'user' ? promptBlocks(item.content, blocks) : blocks,
   })
 }
 
@@ -78,11 +82,13 @@ function promptMessage(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   if (typeof payload.message !== 'string' || typeof record.timestamp !== 'string') return null
+  const images = promptEventImages(payload)
+  const content = [{ text_elements: payload.text_elements }, ...images]
   return messageRecord(record, {
     uuid: `user:${record.timestamp}`,
     role: 'user',
     originSessionId: null,
-    blocks: [{ shape: 'prose', text: payload.message }],
+    blocks: promptBlocks(content, [{ shape: 'prose', text: payload.message }, ...images]),
   })
 }
 
@@ -118,20 +124,6 @@ function responseMessage(
   if (blocks === null || blocks.length === 0) return null
   const uuid = `${MODEL_INPUT_PREFIX}${payload.id}`
   return messageRecord(record, { uuid, role: 'user', originSessionId: null, blocks })
-}
-
-// Codex desktop writes each prompt twice: this model-input copy, then the `UserMessage` item the
-// person sees, one ordinal later and under another id. The input copy also carries injected context.
-const MODEL_INPUT_PREFIX = 'model-input:'
-
-// A thread with its own reader copy of a prompt keeps only those; one without keeps its input copies.
-export function withoutModelInputCopies(records: TranscriptRecord[]): TranscriptRecord[] {
-  const isInputCopy = (record: TranscriptRecord) =>
-    'uuid' in record && record.uuid.startsWith(MODEL_INPUT_PREFIX)
-  const hasReaderCopy = records.some(
-    (record) => record.kind === 'message' && record.role === 'user' && !isInputCopy(record),
-  )
-  return hasReaderCopy ? records.filter((record) => !isInputCopy(record)) : records
 }
 
 // A thread Codex dispatched itself, such as a spawned subagent or the `guardian` reviewer that judges
