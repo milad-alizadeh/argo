@@ -6,8 +6,8 @@ import type {
   SessionFeedRow,
   SessionId,
 } from '../types'
-import { FeedDocument } from './FeedDocument'
-import type { TurnMarkerView } from './turn-marker'
+import { FeedDocument } from './feed-document'
+import type { TurnMarkerView } from './turn-marker-state'
 
 // The optimistic Turn row rides above the transcript's own rows, under its own revision so the
 // Feed's layout pass re-measures the one row it adds rather than reusing a cached reading.

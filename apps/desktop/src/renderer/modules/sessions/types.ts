@@ -28,7 +28,17 @@ export type SessionDiagramEvidence = {
   title: string
   source: string
 }
-export type SessionEvidence = Extract<SessionFeedRow, { shape: 'tool' }> | SessionDiagramEvidence
+// A skill a prompt mentions, opened by the path the CLI wrote into the prompt.
+export type SessionSkillEvidence = {
+  shape: 'skill'
+  id: string
+  name: string
+  path: string
+}
+export type SessionEvidence =
+  | Extract<SessionFeedRow, { shape: 'tool' }>
+  | SessionDiagramEvidence
+  | SessionSkillEvidence
 
 // Argo can only write an answer into a Session whose channel it currently holds (#2205): every
 // other posture — another Argo window, an external terminal, or simply idle — locks the answer

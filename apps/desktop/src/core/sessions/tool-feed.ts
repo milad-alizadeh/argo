@@ -8,6 +8,9 @@ type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = { content: string | null; failed: boolean }
 
+// A call's result and a Skill's body both arrive as later, separate records, keyed by call id.
+export type ToolEvidence = { results: Map<string, ToolResult>; skillBodies: Map<string, string> }
+
 const ASK_TOOL = 'AskUserQuestion'
 const claudeQuestionCallInputSchema = z.strictObject({
   questions: z.array(claudeQuestionSchema).min(1),
@@ -21,9 +24,22 @@ const TOOL_DETAILS = {
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
   Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
+  Skill: (call: ToolCall) => ({
+    kind: 'skill' as const,
+    label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
+  }),
 } as const
 
 const EVIDENCE_KINDS = { Bash: 'output', Edit: 'diff', Read: 'document' } as const
+
+// The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
+// reader-facing sentence form ("Simple english") instead.
+function skillTitle(slug: string): string {
+  const words = slug.split('-').filter((word) => word.length > 0)
+  const [first, ...rest] = words
+  if (first === undefined) return slug
+  return [`${first[0]?.toUpperCase()}${first.slice(1)}`, ...rest].join(' ')
+}
 
 function filePath(call: ToolCall) {
   if (typeof call.input.file_path !== 'string') return 'file'
@@ -39,18 +55,24 @@ function toolPresentation(call: ToolCall) {
   )
 }
 
-function toolDetail(call: ToolCall): string | null {
+function lineCounts(call: ToolCall): ToolRow['lineCounts'] {
   if (
     call.name === 'Edit' &&
     typeof call.input.old_string === 'string' &&
     typeof call.input.new_string === 'string'
   ) {
-    return `+${call.input.new_string.split('\n').length} −${call.input.old_string.split('\n').length}`
+    return {
+      added: call.input.new_string.split('\n').length,
+      removed: call.input.old_string.split('\n').length,
+    }
   }
   return null
 }
 
-function evidence(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
+function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
+  // A Skill call's own result is a fixed placeholder ("Launching skill: X"); its real content is
+  // the skill body, carried through `text` (see `toolText`), not the evidence panel.
+  if (call.name === 'Skill') return null
   const presentation = toolPresentation(call)
   const source =
     call.name === 'Edit' &&
@@ -68,20 +90,21 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
   return result.failed ? 'failed' : 'succeeded'
 }
 
-function toolText(call: ToolCall): string | null {
-  return call.name === 'Bash' && typeof call.input.command === 'string' ? call.input.command : null
+function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
+  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
+  return call.name === 'Skill' ? (skillBodies.get(call.id) ?? null) : null
 }
 
-function toolRow(call: ToolCall, results: Map<string, ToolResult>): ToolRow {
+function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {
   const result = results.get(call.id)
   return {
     shape: 'tool',
     id: call.id,
     ...toolPresentation(call),
-    detail: toolDetail(call),
+    lineCounts: lineCounts(call),
     status: toolStatus(result),
-    evidence: evidence(call, result),
-    text: toolText(call),
+    evidence: evidenceOf(call, result),
+    text: toolText(call, skillBodies),
   }
 }
 
@@ -99,11 +122,11 @@ function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null
   }
 }
 
-function feedRow(call: ToolCall, results: Map<string, ToolResult>): SessionFeedRow {
-  if (call.name === ASK_TOOL) return askRow(call, results) ?? toolRow(call, results)
-  return toolRow(call, results)
+function feedRow(call: ToolCall, evidence: ToolEvidence): SessionFeedRow {
+  if (call.name === ASK_TOOL) return askRow(call, evidence.results) ?? toolRow(call, evidence)
+  return toolRow(call, evidence)
 }
 
-export function toolRows(calls: ToolCall[], results: Map<string, ToolResult>): SessionFeedRow[] {
-  return calls.map((call) => feedRow(call, results))
+export function toolRows(calls: ToolCall[], evidence: ToolEvidence): SessionFeedRow[] {
+  return calls.map((call) => feedRow(call, evidence))
 }

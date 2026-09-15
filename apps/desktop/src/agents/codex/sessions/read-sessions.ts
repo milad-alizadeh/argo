@@ -7,6 +7,7 @@ import { createSessionReader, type FeedOverlay, type SessionSource } from '@/cor
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
+import { draftText } from './harness-envelopes'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
@@ -24,6 +25,8 @@ type ReaderOptions = {
 function draftRows(rows: readonly SessionFeedRow[], live: LiveMessage[]): SessionFeedRow[] {
   return live
     .filter((message) => !rows.some((row) => row.id.startsWith(`${message.id}:`)))
+    .map((message) => ({ id: message.id, text: draftText(message.text) }))
+    .filter((message) => message.text.length > 0)
     .map((message) => ({
       shape: 'prose',
       id: `${message.id}:0`,

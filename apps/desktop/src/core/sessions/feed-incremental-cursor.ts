@@ -86,6 +86,14 @@ export function updatedResults(records: PositionedRecord[], prior: Map<string, T
   return results
 }
 
+export function updatedSkillBodies(records: PositionedRecord[], prior: Map<string, string>) {
+  const skillBodies = new Map(prior)
+  for (const { record } of records) {
+    if (record.kind === 'skill-body') skillBodies.set(record.callId, record.text)
+  }
+  return skillBodies
+}
+
 export function updatedPending(
   records: PositionedRecord[],
   prior: Set<string>,

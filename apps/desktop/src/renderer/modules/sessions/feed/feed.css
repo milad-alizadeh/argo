@@ -37,6 +37,7 @@
 }
 
 .feed__viewport {
+  padding-inline: var(--spacing-session-gutter);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -88,4 +89,42 @@
 .feed-row--unreadable {
   display: flex;
   align-items: center;
+}
+
+/* A background work block's state inks, leaned toward the ink so each holds contrast in both
+   appearances, and the one motion that says the work is still running. */
+[data-slot="feed-delegation"] {
+  --feed-work-ink-active: color-mix(in oklab, var(--color-active) 62%, var(--foreground));
+  --feed-work-ink-danger: color-mix(in oklab, var(--color-danger) 78%, var(--foreground));
+  --feed-work-ink-warn: color-mix(in oklab, var(--color-warn) 66%, var(--foreground));
+}
+
+@keyframes feed-work-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.feed-work-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--foreground) 38%,
+    var(--feed-work-ink-active) 50%,
+    var(--foreground) 62%
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: feed-work-shimmer 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-work-shimmer {
+    animation: none;
+    background: none;
+    color: var(--foreground);
+  }
 }

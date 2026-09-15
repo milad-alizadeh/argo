@@ -15,7 +15,7 @@ function call(overrides: Partial<ToolCall> & { id: string; name: string }): Tool
 }
 
 function onlyToolRow(calls: ToolCall[], results: Map<string, ToolResult>): ToolRow {
-  const [row] = toolRows(calls, results)
+  const [row] = toolRows(calls, { results, skillBodies: new Map() })
   if (row === undefined || row.shape !== 'tool') throw new Error('expected a tool row')
   return row
 }
@@ -62,7 +62,7 @@ test('an Edit call carries its diff evidence before the result lands', () => {
   )
   assert.equal(row.status, 'running')
   assert.equal(row.evidence?.kind, 'diff')
-  assert.equal(row.detail, '+3 −2')
+  assert.deepEqual(row.lineCounts, { added: 3, removed: 2 })
 })
 
 test('a Read call with no result yet has no evidence to open', () => {

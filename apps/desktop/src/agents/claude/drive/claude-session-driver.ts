@@ -24,7 +24,7 @@ export type ClaudeSessionDriver = {
   roster: () => SessionRosterRow[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingPermission: (sessionId: string) => ClaudePermission | null
-  decidePermission: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  decidePermission: DriverOptions['gate']['decide']
   decideQuestion: (
     sessionId: string,
     questionId: string,

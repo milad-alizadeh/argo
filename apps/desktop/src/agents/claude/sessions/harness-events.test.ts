@@ -46,6 +46,7 @@ test('reads a realtime delegation input as Agent activity', () => {
     status: null,
     progress: null,
     groupId: null,
+    callId: null,
   })
 })
 

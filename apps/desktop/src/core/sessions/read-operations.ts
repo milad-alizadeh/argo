@@ -5,6 +5,8 @@ import {
   sessionFeedRequestSchema,
   sessionFileReplySchema,
   sessionFileRequestSchema,
+  sessionSkillReplySchema,
+  sessionSkillRequestSchema,
 } from './contract'
 
 export const SESSION_READ_OPERATIONS = {
@@ -19,6 +21,12 @@ export const SESSION_READ_OPERATIONS = {
     channel: 'argo:session:file:read',
     request: sessionFileRequestSchema,
     reply: sessionFileReplySchema,
+  },
+  skill: {
+    name: 'session.skill.read',
+    channel: 'argo:session:skill:read',
+    request: sessionSkillRequestSchema,
+    reply: sessionSkillReplySchema,
   },
   cancelFeed: {
     name: 'session.feed.cancel',

@@ -1,15 +1,21 @@
 import { useTranslation } from 'react-i18next'
-import { PromptText } from '../prompt/PromptText'
-import type { SessionFeedRow } from '../types'
-import { FeedDelegation } from './FeedDelegation'
-import { FeedEvent } from './FeedEvent'
-import { FeedMarker } from './FeedMarker'
+import { PromptText } from '../prompt/prompt-text'
+import type { SessionEvidence, SessionFeedRow } from '../types'
+import { FeedDelegation } from './feed-delegation'
+import { FeedEvent } from './feed-event'
+import { FeedMarker } from './feed-marker'
 
 export function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
-export function FeedPrompt({ text }: { text: string }) {
+export function FeedPrompt({
+  onOpenEvidence,
+  text,
+}: {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  text: string
+}) {
   const { t } = useTranslation('sessions')
   return (
     <p
@@ -18,7 +24,12 @@ export function FeedPrompt({ text }: { text: string }) {
       data-variant="muted"
     >
       <span className="sr-only">{t('promptSender')}</span>
-      <PromptText text={text} />
+      <PromptText
+        onOpenSkill={({ name, path }) =>
+          onOpenEvidence({ shape: 'skill', id: `skill:${path}`, name, path })
+        }
+        text={text}
+      />
     </p>
   )
 }

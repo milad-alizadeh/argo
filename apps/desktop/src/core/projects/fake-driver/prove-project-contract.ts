@@ -64,6 +64,7 @@ const SURFACE = [
   'readSessionFeed',
   'readSessionPermission',
   'readShellOutput',
+  'readSkillFile',
   'readWorkspaceFile',
   'registerProject',
   'relocateProject',

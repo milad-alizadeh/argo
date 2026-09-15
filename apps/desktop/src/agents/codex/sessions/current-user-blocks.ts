@@ -1,5 +1,6 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptEventKind } from '@/core/sessions/transcript'
+import { USER_HARNESS_ENVELOPES } from './harness-envelopes'
 
 // Codex injects these as user and developer `input_text` blocks, whole and un-nested, so a
 // leading-tag match is enough: the envelope configures the harness rather than speaking to the
@@ -33,9 +34,10 @@ function envelopeBody(text: string, name: string): string | null {
 // envelope is either dropped (injected context) or rendered compact with its own text kept for
 // diagnostics. An envelope this does not know is neither invented as a prompt nor silently
 // dropped — it keeps the generic source fallback too, the same as any other unsupported block.
+// A user envelope `readHarnessEnvelopes` reads stays prose, so that reader still finds it.
 function currentUserBlock(text: string, role: 'user' | 'developer'): ContentBlock | 'hidden' {
   const name = envelopeName(text)
-  if (name === null)
+  if (name === null || (role === 'user' && USER_HARNESS_ENVELOPES.has(name)))
     return role === 'user'
       ? { shape: 'prose', text }
       : { shape: 'source', label: role, source: text }

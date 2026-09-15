@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
-import { FeedRow } from './FeedRow'
+import { FeedRow } from './feed-row'
 import type { Reveal } from './reveal'
 import type { RevealCache } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
