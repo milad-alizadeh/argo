@@ -115,7 +115,9 @@ jobs:
         run: bun run test
 
       # A replayed task needs neither Chromium nor the Electron zip, so a HIT skips their setup. Any
-      # other answer, a failed dry run included, sets them up (#2217).
+      # other answer, a failed dry run included, sets them up (#2217). A HIT evicted before the real
+      # run costs only the Electron cache, since @electron/get downloads on its own, but it fails
+      # Storybook for a missing Chromium, and a rerun then installs it.
       - id: replay
         name: Ask turbo which slow tasks it will replay
         if: ${{ !cancelled() }}
