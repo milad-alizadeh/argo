@@ -1,11 +1,13 @@
+import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
-import { useDrawnRow, useToolGroups } from './drawn-row'
+import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
 import { TurnMarker } from './TurnMarker'
+import { ToolGroupState } from './tool-group-state'
 import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
 
@@ -79,12 +81,11 @@ export function FeedDocument({
   questionFailure,
   stallTimeoutMs,
 }: FeedDocumentProps) {
-  const { onOpenToolGroup, openToolGroups } = useToolGroups()
-  const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
+  const toolGroups = useRef(new ToolGroupState()).current
   const { column, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
-    revision: layoutRevision,
+    revision: feed.revision,
     rows: feed.rows,
     isRunning,
     stallTimeoutMs,
@@ -94,8 +95,7 @@ export function FeedDocument({
     sessionId: feed.sessionId,
     activeEvidenceId,
     onOpenEvidence,
-    openToolGroups,
-    onOpenToolGroup,
+    toolGroups,
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,

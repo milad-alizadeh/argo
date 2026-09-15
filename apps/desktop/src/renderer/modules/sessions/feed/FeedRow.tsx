@@ -8,17 +8,17 @@ import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
+import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
   row: SessionFeedRow
   reveal?: Reveal
   activeEvidenceId: string | null
-  openToolGroups: ReadonlySet<string>
-  onOpenToolGroup: (id: string, open: boolean) => void
+  toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
+  answering: boolean
+  questionFailure: string | null
 }
 
 export function FeedRow({
@@ -26,10 +26,9 @@ export function FeedRow({
   reveal,
   activeEvidenceId,
   onOpenEvidence,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
@@ -45,10 +44,9 @@ export function FeedRow({
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
-        onOpenToolGroup={onOpenToolGroup}
-        openToolGroups={openToolGroups}
+        toolGroups={toolGroups}
         onAnswerQuestion={onAnswerQuestion}
-        answeringQuestionId={answeringQuestionId}
+        answering={answering}
         questionFailure={questionFailure}
         row={row}
       />
@@ -60,10 +58,9 @@ function FeedRowContent({
   row,
   onOpenEvidence,
   activeEvidenceId,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
 }: FeedRowProps) {
   switch (row.shape) {
@@ -78,8 +75,7 @@ function FeedRowContent({
           group={row}
           activeEvidenceId={activeEvidenceId}
           onOpen={onOpenEvidence}
-          onOpenChange={(open) => onOpenToolGroup(row.id, open)}
-          open={openToolGroups.has(row.id)}
+          toolGroups={toolGroups}
         />
       )
     case 'prose':
@@ -97,8 +93,8 @@ function FeedRowContent({
       return (
         <FeedQuestion
           row={row}
-          answering={answeringQuestionId === row.id}
-          failure={questionFailure(row.id)}
+          answering={answering}
+          failure={questionFailure}
           onAnswer={onAnswerQuestion}
         />
       )

@@ -1,30 +1,19 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './FeedRow'
 import type { Reveal } from './reveal'
+import type { ToolGroupState } from './tool-group-state'
 
 export type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 
-export function useToolGroups() {
-  const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
-  const onOpenToolGroup = (id: string, open: boolean) => {
-    setOpenToolGroups((previous) => {
-      const next = new Set(previous)
-      if (open) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-  return { onOpenToolGroup, openToolGroups }
-}
+const noQuestionFailure = () => null
 
 type DrawnRowInputs = {
   sessionId: string
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
-  openToolGroups: ReadonlySet<string>
-  onOpenToolGroup: (id: string, open: boolean) => void
+  toolGroups: ToolGroupState
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
@@ -38,33 +27,40 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
   evidence.current = inputs.activeEvidenceId
   const openEvidence = useRef(inputs.onOpenEvidence)
   openEvidence.current = inputs.onOpenEvidence
-  const toolGroups = useRef(inputs.openToolGroups)
-  toolGroups.current = inputs.openToolGroups
-  const openToolGroup = useRef(inputs.onOpenToolGroup)
-  openToolGroup.current = inputs.onOpenToolGroup
+  const toolGroups = inputs.toolGroups
   const answerQuestion = useRef(inputs.onAnswerQuestion)
   answerQuestion.current = inputs.onAnswerQuestion
   const answeringId = useRef(inputs.answeringQuestionId)
   answeringId.current = inputs.answeringQuestionId
-  const failureFor = useRef(inputs.questionFailure)
-  failureFor.current = inputs.questionFailure
+  const failureFor = useRef<(questionId: string) => string | null>(
+    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure,
+  )
+  failureFor.current =
+    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure
   const sessionId = inputs.sessionId
+  const onOpenEvidence = useCallback(
+    (evidence: SessionEvidence) => openEvidence.current(evidence),
+    [],
+  )
+  const onAnswerQuestion = useCallback(
+    (questionId: string, answers: ClaudeQuestionAnswer[]) =>
+      answerQuestion.current(sessionId, questionId, answers),
+    [sessionId],
+  )
+  const questionFailure = useCallback((questionId: string) => failureFor.current(questionId), [])
 
   return useCallback(
     (props: DrawnRowProps) => (
       <FeedRow
         {...props}
         activeEvidenceId={evidence.current}
-        onOpenEvidence={(evidence) => openEvidence.current(evidence)}
-        onOpenToolGroup={openToolGroup.current}
-        openToolGroups={toolGroups.current}
-        onAnswerQuestion={(questionId, answers) =>
-          answerQuestion.current(sessionId, questionId, answers)
-        }
-        answeringQuestionId={answeringId.current}
-        questionFailure={(questionId) => failureFor.current(questionId)}
+        onOpenEvidence={onOpenEvidence}
+        toolGroups={toolGroups}
+        onAnswerQuestion={onAnswerQuestion}
+        answering={answeringId.current === props.row.id}
+        questionFailure={questionFailure(props.row.id)}
       />
     ),
-    [sessionId],
+    [onAnswerQuestion, onOpenEvidence, questionFailure, toolGroups],
   )
 }

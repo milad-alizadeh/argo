@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
+import { ToolGroupState } from './tool-group-state'
 
 const command = {
   shape: 'tool' as const,
@@ -22,6 +23,11 @@ const edited = {
   evidence: { kind: 'diff' as const, title: 'Composer.tsx', source: '-old\n+new' },
   text: null,
 }
+
+const openToolGroups = new ToolGroupState()
+openToolGroups.setOpen('tool-group:command', true)
+openToolGroups.setOpen('tool-group:one:two', true)
+const closedToolGroups = new ToolGroupState()
 
 const meta: Meta<typeof FeedToolLine> = {
   title: 'Sessions/Feed/Tool Line',
@@ -64,8 +70,7 @@ export const CommandGroupOfOne = {
       }}
       activeEvidenceId={null}
       onOpen={() => {}}
-      onOpenChange={() => {}}
-      open
+      toolGroups={openToolGroups}
     />
   ),
 }
@@ -81,8 +86,7 @@ export const GroupClosed = {
       }}
       activeEvidenceId={null}
       onOpen={() => {}}
-      onOpenChange={() => {}}
-      open={false}
+      toolGroups={closedToolGroups}
     />
   ),
 }
@@ -98,8 +102,7 @@ export const GroupOpen = {
       }}
       activeEvidenceId={null}
       onOpen={() => {}}
-      onOpenChange={() => {}}
-      open
+      toolGroups={openToolGroups}
     />
   ),
 }
