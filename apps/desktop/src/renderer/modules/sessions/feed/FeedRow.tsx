@@ -5,7 +5,7 @@ import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
-import { FeedPrompt, feedRowContent } from './feed-row-fallback'
+import { FeedPrompt, FeedRowFallback } from './feed-row-fallback'
 import { type Reveal, useRevealAnimation } from './reveal'
 import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
@@ -125,6 +125,6 @@ function FeedRowContent({
         />
       )
     default:
-      return feedRowContent(row)
+      return <FeedRowFallback row={row} />
   }
 }
