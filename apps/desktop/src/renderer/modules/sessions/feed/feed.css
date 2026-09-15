@@ -91,15 +91,20 @@
 }
 
 /* `remarkRevealWords` wraps each streamed word in one of these; React mounts a fresh span only
-   for a word that did not exist last render, so the animation plays once, on arrival. */
+   for a word that did not exist last render, so the animation plays once, on arrival. A clip-path
+   wipe reads as a left-to-right sweep across a word, rather than the whole word popping in at
+   once, and consecutive words mounting a beat apart carries that sweep across the line. */
 .feed-reveal-word {
-  animation: feed-reveal-word-in 200ms ease-out both;
+  animation: feed-reveal-word-in 260ms ease-out both;
 }
 
 @keyframes feed-reveal-word-in {
   from {
     opacity: 0;
-    transform: translateY(2px);
+    clip-path: inset(0 100% 0 0);
+  }
+  60% {
+    opacity: 1;
   }
 }
 
