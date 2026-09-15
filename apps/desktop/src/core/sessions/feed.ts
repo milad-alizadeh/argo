@@ -56,7 +56,35 @@ export function rowsOfRecord(
     }
     return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   })
-  return groupToolRuns(rows)
+  return rows
+}
+
+// Tool results are deliberately silent in the Feed: they fill in the Tool Call that already drew
+// the command. Other silent messages are deliveries in their own right, so they close a Tool run
+// even though nothing from them is shown.
+export function isHiddenToolRunBoundary(record: TranscriptRecord, rows: SessionFeedRow[]) {
+  return (
+    rows.length === 0 &&
+    ((record.kind === 'message' && (record.sidechain || (record.toolResults?.length ?? 0) === 0)) ||
+      (record.kind === 'trace' && record.boundary === true))
+  )
+}
+
+export function collectFeedRows(records: { record: TranscriptRecord; rows: SessionFeedRow[] }[]) {
+  const rows: SessionFeedRow[] = []
+  const breakBeforeIds = new Set<string>()
+  let hiddenDelivery = false
+  for (const projected of records) {
+    if (isHiddenToolRunBoundary(projected.record, projected.rows)) {
+      hiddenDelivery = true
+      continue
+    }
+    if (projected.rows.length === 0) continue
+    if (hiddenDelivery) breakBeforeIds.add(projected.rows[0]?.id ?? '')
+    hiddenDelivery = false
+    rows.push(...projected.rows)
+  }
+  return { rows, breakBeforeIds }
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -81,13 +109,12 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
         (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
       ),
   )
-  return groupDelegations(
-    withoutRepeatedBreaks(
-      chain.files.flatMap((file, fileIndex) =>
-        file.records.flatMap((record, recordIndex) =>
-          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
-        ),
-      ),
-    ),
+  const projected = chain.files.flatMap((file, fileIndex) =>
+    file.records.map((record, recordIndex) => ({
+      record,
+      rows: rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+    })),
   )
+  const { rows, breakBeforeIds } = collectFeedRows(projected)
+  return groupDelegations(groupToolRuns(withoutRepeatedBreaks(rows), breakBeforeIds))
 }
