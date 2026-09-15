@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseTranscriptLine } from './records'
 
-test('reads a background task notification as Shell activity, not the raw envelope', () => {
+test('reads a background task notification as Shell activity, not raw envelope prose', () => {
   const line = JSON.stringify({
     type: 'user',
     uuid: 'task-1',
@@ -23,7 +23,7 @@ test('reads a background task notification as Shell activity, not the raw envelo
   })
 })
 
-test('keeps a background task status when its notification carries no summary', () => {
+test('keeps a background task status without inventing a summary', () => {
   const line = JSON.stringify({
     type: 'user',
     uuid: 'task-2',

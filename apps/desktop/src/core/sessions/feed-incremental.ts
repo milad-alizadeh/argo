@@ -8,7 +8,6 @@
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
 import { rowsOfRecord, withoutRepeatedBreaks } from './feed'
-import { groupToolRuns } from './tool-groups'
 import {
   advancedCursors,
   type FileCursor,
@@ -19,6 +18,7 @@ import {
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
 import type { ToolResult } from './tool-feed'
+import { groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
   chainId: string

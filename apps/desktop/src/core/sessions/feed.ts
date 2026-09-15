@@ -83,11 +83,11 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
   )
   return groupDelegations(
     withoutRepeatedBreaks(
-    chain.files.flatMap((file, fileIndex) =>
-      file.records.flatMap((record, recordIndex) =>
-        rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+      chain.files.flatMap((file, fileIndex) =>
+        file.records.flatMap((record, recordIndex) =>
+          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+        ),
       ),
-    ),
     ),
   )
 }
