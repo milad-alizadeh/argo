@@ -26,6 +26,10 @@ export async function createPackagedSessionHarness(
   const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const fakeCodex = await writeFakeCodex(root)
   let application: Awaited<ReturnType<typeof electron.launch>> | undefined
+  // A ring buffer of renderer console output, so a failure can print what the page said right
+  // before it broke instead of sending a reader back to a headless re-run (#2201).
+  const RECENT_CONSOLE_LINES = 50
+  let recentConsole: string[] = []
 
   const launch = async () => {
     application = await electron.launch({
@@ -45,6 +49,15 @@ export async function createPackagedSessionHarness(
     })
     const page = await application.firstWindow()
     page.setDefaultTimeout(30_000)
+    recentConsole = []
+    page.on('console', (message) => {
+      recentConsole.push(`[${message.type()}] ${message.text()}`)
+      if (recentConsole.length > RECENT_CONSOLE_LINES) recentConsole.shift()
+    })
+    page.on('pageerror', (error) => {
+      recentConsole.push(`[pageerror] ${error.stack ?? error.message}`)
+      if (recentConsole.length > RECENT_CONSOLE_LINES) recentConsole.shift()
+    })
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
@@ -69,5 +82,6 @@ export async function createPackagedSessionHarness(
     restart,
     close: () => application?.close(),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
+    recentConsole: () => recentConsole,
   }
 }
