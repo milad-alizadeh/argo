@@ -1029,9 +1029,10 @@ export const SmoothedStreamingTextSettled: Story = {
   },
 }
 
-const scrollAwayStreamingText = Array.from({ length: 400 }, (_unused, index) => `word${index}`).join(
-  ' ',
-)
+const scrollAwayStreamingText = Array.from(
+  { length: 400 },
+  (_unused, index) => `word${index}`,
+).join(' ')
 const scrollAwayFillerRows = Array.from({ length: 120 }, (_unused, index) => ({
   shape: 'prose' as const,
   id: `scroll-away-filler-${index}`,

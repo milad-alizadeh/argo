@@ -1,15 +1,13 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
-import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
-import { FeedDelegation } from './FeedDelegation'
-import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
+import { FeedPrompt, feedRowContent } from './feed-row-fallback'
 import { type Reveal, useRevealAnimation } from './reveal'
-import { type RevealCache, useStreamingText } from './streaming-text'
+import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
@@ -41,11 +39,11 @@ export function FeedRow({
   const hasStreamed = useRef(streaming)
   if (streaming) hasStreamed.current = true
   const rowReveal = streaming ? undefined : reveal
+  const resume: RevealResume = { rowId: row.id, cache: revealCache }
   const text = useStreamingText(
     row.shape === 'prose' && row.role === 'assistant' ? row.text : '',
     streaming,
-    row.id,
-    revealCache,
+    resume,
   )
   useRevealAnimation(element, rowReveal)
   return (
@@ -128,44 +126,5 @@ function FeedRowContent({
       )
     default:
       return feedRowContent(row)
-  }
-}
-
-function PlainText({ text }: { text: string }) {
-  return <p className="whitespace-pre-wrap break-words">{text}</p>
-}
-
-function FeedPrompt({ text }: { text: string }) {
-  return (
-    <p
-      className="max-w-full rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
-      data-slot="bubble"
-      data-variant="muted"
-    >
-      <span className="sr-only">You</span>
-      <PromptText text={text} />
-    </p>
-  )
-}
-
-function feedRowContent(
-  row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' | 'ask' }>,
-) {
-  switch (row.shape) {
-    case 'thought':
-      return <PlainText text={row.text} />
-    case 'command-output':
-      return <PlainText text={row.text} />
-    case 'event':
-      return <FeedEvent row={row} />
-    case 'delegation':
-    case 'delegation-group':
-      return <FeedDelegation row={row} />
-    case 'source':
-      return <p>{row.label}</p>
-    case 'marker':
-      return <p>{row.marker === 'compacted' ? 'Conversation compacted' : 'Interrupted'}</p>
-    case 'unreadable':
-      return <p>Part of this transcript is damaged, so Argo cannot show it.</p>
   }
 }

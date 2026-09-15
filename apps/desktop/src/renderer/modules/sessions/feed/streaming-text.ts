@@ -17,6 +17,9 @@ export type RevealState = { text: string; progress: number }
 // than restart from empty when the reader scrolls back (#2100).
 export type RevealCache = Map<string, RevealState>
 
+// Where a row's reveal resumes from across its own remounts.
+export type RevealResume = { rowId: string; cache: RevealCache }
+
 // `target` is the latest known text; `shown` is what was last drawn, and at what `progress`. A
 // `target` that no longer extends `shown.text` (an edit, not an append) snaps rather than
 // replays, since there is no shared prefix left to walk from.
@@ -46,13 +49,9 @@ function initialReveal(text: string, streaming: boolean): RevealState {
 }
 
 // The visible text is a reading aid, not a fact about the Message (CONTEXT.md L3 · Message), but
-// it survives this row's own remounts through `cache`, keyed by `rowId`.
-export function useStreamingText(
-  text: string,
-  streaming: boolean,
-  rowId: string,
-  cache: RevealCache,
-) {
+// it survives this row's own remounts through `resume.cache`, keyed by `resume.rowId`.
+export function useStreamingText(text: string, streaming: boolean, resume: RevealResume) {
+  const { rowId, cache } = resume
   const [visibleText, setVisibleText] = useState(
     () => (cache.get(rowId) ?? initialReveal(text, streaming)).text,
   )
