@@ -34,10 +34,6 @@ function useInspectorReadiness({
   return { isInspectorReady, synchronizeReady, setIsInspectorReady }
 }
 
-function panelIsCollapsed(panel: ReturnType<typeof usePanelRef>) {
-  return panel.current?.isCollapsed() ?? false
-}
-
 export function useInspectorPanels(
   sizes: InspectorSizes,
   reveal: unknown,
@@ -60,7 +56,7 @@ export function useInspectorPanels(
   }
 
   const open = () => {
-    setIsInspectorReady(false)
+    setIsInspectorReady(true)
     inspectorPanel.current?.expand()
     inspectorPanel.current?.resize(readCssSize(sizes.inspector))
     updateState('open')
@@ -68,8 +64,8 @@ export function useInspectorPanels(
   const opener = useRef(open)
   opener.current = open
   useLayoutEffect(() => {
-    if (reveal != null && panelIsCollapsed(inspectorPanel)) opener.current()
-  }, [inspectorPanel, reveal])
+    if (reveal != null && stateRef.current === 'collapsed') opener.current()
+  }, [reveal])
   return {
     inspectorElement,
     inspectorPanel,
@@ -78,6 +74,7 @@ export function useInspectorPanels(
     isInspectorReady,
     synchronizeCollapsed: () => {
       if (inspectorPanel.current?.isCollapsed()) {
+        if (stateRef.current !== 'collapsed') return
         setIsInspectorReady(false)
         updateState('collapsed')
       } else {

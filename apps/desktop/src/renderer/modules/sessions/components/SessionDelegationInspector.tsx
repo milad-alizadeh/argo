@@ -30,7 +30,7 @@ export function SessionDelegationInspector({
       aria-label={t('subagent')}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <section aria-label={t('historyLabel')} className="feed min-h-0 flex-1">
+      <div className="feed min-h-0 flex-1">
         {feed === null ? null : (
           <FeedDocument
             active={true}
@@ -51,7 +51,7 @@ export function SessionDelegationInspector({
             turnMarker={null}
           />
         )}
-      </section>
+      </div>
     </section>
   )
 }

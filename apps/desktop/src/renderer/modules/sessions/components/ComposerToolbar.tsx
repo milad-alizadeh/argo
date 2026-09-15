@@ -1,6 +1,6 @@
 import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
 import { ArrowUp, Paperclip, Plus, Square, WandSparkles } from 'lucide-react'
-import type { Ref, RefObject } from 'react'
+import type { RefObject } from 'react'
 
 import { Button } from '../../../components/ui/button'
 import {
@@ -86,7 +86,7 @@ export function ComposerToolbar({
   setup: TurnSetupControlProps | null
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
-  interruptRef: Ref<HTMLButtonElement>
+  interruptRef: RefObject<HTMLButtonElement | null>
 }) {
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">

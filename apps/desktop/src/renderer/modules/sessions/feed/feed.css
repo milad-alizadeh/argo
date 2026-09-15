@@ -39,15 +39,15 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
 }
 
 .feed__content {
+  box-sizing: content-box;
   position: relative;
   width: 100%;
   max-width: var(--size-session-column);
   margin-inline: auto;
-  padding: var(--spacing-snug) 0;
+  padding: var(--spacing-snug) 0 var(--spacing-session-feed-composer-inset);
   overflow-anchor: none;
 }
 
