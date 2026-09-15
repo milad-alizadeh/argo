@@ -56,7 +56,7 @@ export function rowsOfRecord(
     }
     return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   })
-  return groupToolRuns(rows)
+  return rows
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -82,10 +82,12 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
       ),
   )
   return groupDelegations(
-    withoutRepeatedBreaks(
-      chain.files.flatMap((file, fileIndex) =>
-        file.records.flatMap((record, recordIndex) =>
-          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+    groupToolRuns(
+      withoutRepeatedBreaks(
+        chain.files.flatMap((file, fileIndex) =>
+          file.records.flatMap((record, recordIndex) =>
+            rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+          ),
         ),
       ),
     ),

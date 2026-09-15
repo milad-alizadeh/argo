@@ -71,21 +71,18 @@ test('leaves a subagent turn out of the Session history', async () => {
   )
 })
 
-test('groups only the commands emitted by one Claude tool run', async () => {
+test('merges consecutive tool runs with nothing rendered between them', async () => {
   const rows = await feedOf(['commandRuns'])
   assert.deepEqual(
     rows.map((row) => row.shape),
-    ['prose', 'tool-group', 'tool-group'],
+    ['prose', 'tool-group'],
   )
-  const groups = rows.filter(
+  const [group] = rows.filter(
     (row): row is Extract<(typeof rows)[number], { shape: 'tool-group' }> =>
       row.shape === 'tool-group',
   )
   assert.deepEqual(
-    groups.map(({ label, calls }) => ({ label, calls: calls.map(({ text }) => text) })),
-    [
-      { label: 'Ran 2 commands', calls: ['bun test', 'bun run typecheck'] },
-      { label: 'Ran a command', calls: ['bunx biome check .'] },
-    ],
+    { label: group?.label, calls: group?.calls.map(({ text }) => text) },
+    { label: 'Ran 3 commands', calls: ['bun test', 'bun run typecheck', 'bunx biome check .'] },
   )
 })
