@@ -303,4 +303,4 @@ compared against 1.5 times it, the ratio #1736's 12.5 ms holds to its 120 Hz ref
 
 Only a run on the 120 Hz reference panel is judged. Anywhere else the `verdict` field reads
 `unjudged`, the command exits zero, and `withinCeiling` carries the comparison for the reader.
-The judged run is still the human's to make on the reference Mac. CI probe for #2218.
+The judged run is still the human's to make on the reference Mac.
