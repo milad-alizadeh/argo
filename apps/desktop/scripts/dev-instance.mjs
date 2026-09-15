@@ -6,6 +6,8 @@ import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { startControlServer } from './dev-control-server.mjs'
+import { stopElectronProcess, stopForgeProcess } from './dev-launch-stop.mjs'
 
 const DESKTOP_ROOT = path.resolve(import.meta.dirname, '..')
 const REPOSITORY_ROOT = path.resolve(DESKTOP_ROOT, '..', '..')
@@ -76,37 +78,7 @@ export async function assertPortAvailable(port, identity) {
   await assertPortAvailableOnHost(port, '::1', identity)
 }
 
-export function startControlServer(controlFile, controlToken, stop) {
-  let electronProcessId = null
-  const server = createServer((socket) => {
-    socket.once('data', async (command) => {
-      const [verb, processId, token] = command.toString().trim().split(' ')
-      if (verb === 'ready' && token === controlToken && /^\d+$/.test(processId)) {
-        electronProcessId = Number(processId)
-        socket.end('ready')
-        return
-      }
-      if (
-        verb !== 'stop' ||
-        !/^\d+$/.test(processId) ||
-        electronProcessId !== Number(processId)
-      ) {
-        socket.end('invalid command')
-        return
-      }
-      try {
-        await stop(electronProcessId)
-        socket.end('stopped')
-      } catch {
-        socket.end('failed')
-      }
-    })
-  })
-  return new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(controlFile, () => resolve(server))
-  })
-}
+export { startControlServer } from './dev-control-server.mjs'
 
 function runLinker() {
   const linker = spawnSync(process.execPath, ['scripts/link-hoisted-electron.mjs'], {
@@ -149,26 +121,8 @@ async function main() {
   let stopping = false
   const stop = async (electronProcessId) => {
     stopping = true
-    if (electronProcessId) {
-      try {
-        process.kill(electronProcessId, 'SIGTERM')
-      } catch (error) {
-        if (!error || typeof error !== 'object' || error.code !== 'ESRCH') throw error
-      }
-      const deadline = Date.now() + 5_000
-      while (true) {
-        try {
-          process.kill(electronProcessId, 0)
-        } catch (error) {
-          if (error && typeof error === 'object' && error.code === 'ESRCH') break
-          throw error
-        }
-        if (Date.now() >= deadline) throw new Error('Recorded Electron process did not exit.')
-        await new Promise((resolve) => setTimeout(resolve, 50))
-      }
-    }
-    if (process.platform === 'win32' || !child.pid) child.kill('SIGTERM')
-    else process.kill(-child.pid, 'SIGTERM')
+    await stopElectronProcess(electronProcessId)
+    stopForgeProcess(child)
   }
   const controlServer = await startControlServer(instance.controlFile, controlToken, stop)
   process.once('SIGINT', () => void stop())

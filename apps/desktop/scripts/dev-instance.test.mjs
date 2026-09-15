@@ -52,38 +52,38 @@ describe('desktop development instances', () => {
       )
     }
   })
+})
 
-  function request(controlFile, command) {
-    return new Promise((resolve, reject) => {
-      const socket = createConnection(controlFile)
-      socket.once('error', reject)
-      socket.once('connect', () => socket.write(command))
-      socket.once('data', (reply) => {
-        resolve(reply.toString())
-        socket.end()
-      })
+function request(controlFile, command) {
+  return new Promise((resolve, reject) => {
+    const socket = createConnection(controlFile)
+    socket.once('error', reject)
+    socket.once('connect', () => socket.write(command))
+    socket.once('data', (reply) => {
+      resolve(reply.toString())
+      socket.end()
     })
-  }
-
-  test('stops only the Electron process that the live launcher registered', async () => {
-    const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-desktop-dev-'))
-    const controlFile = path.join(directory, 'control.sock')
-    let stopped = false
-    const server = await startControlServer(controlFile, 'proof-token', () => {
-      stopped = true
-    })
-
-    try {
-      expect(await request(controlFile, 'stop 43')).toBe('invalid command')
-      expect(stopped).toBe(false)
-      expect(await request(controlFile, 'ready 43 proof-token')).toBe('ready')
-      await stopDevelopmentInstance(controlFile, 43)
-      expect(stopped).toBe(true)
-    } finally {
-      await new Promise((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      )
-      await rm(directory, { recursive: true, force: true })
-    }
   })
+}
+
+test('stops only the Electron process that the live launcher registered', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-desktop-dev-'))
+  const controlFile = path.join(directory, 'control.sock')
+  let stopped = false
+  const server = await startControlServer(controlFile, 'proof-token', () => {
+    stopped = true
+  })
+
+  try {
+    expect(await request(controlFile, 'stop 43')).toBe('invalid command')
+    expect(stopped).toBe(false)
+    expect(await request(controlFile, 'ready 43 proof-token')).toBe('ready')
+    await stopDevelopmentInstance(controlFile, 43)
+    expect(stopped).toBe(true)
+  } finally {
+    await new Promise((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    )
+    await rm(directory, { recursive: true, force: true })
+  }
 })
