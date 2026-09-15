@@ -21,7 +21,14 @@ export function rowsOfRecord(
 ): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
-    return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
+    return [
+      {
+        shape: 'marker',
+        id: `${record.uuid}:compacted`,
+        marker: 'compacted',
+        summary: record.summary ?? null,
+      },
+    ]
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
@@ -47,7 +54,8 @@ export function rowsOfRecord(
     if (block.shape === 'prose')
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
     if (block.shape === 'thought') return [{ shape: 'thought', id, text: block.text }]
-    if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
+    if (block.shape === 'marker')
+      return [{ shape: 'marker', id, marker: block.marker, summary: null }]
     if (block.shape === 'event')
       return [{ shape: 'event', id, event: block.event, text: block.text }]
     if (block.shape === 'tool') {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { openSessionByClick } from './session-gestures'
+import { openArchivedSection, openSessionByClick } from './session-gestures'
 import { readRosterIds } from './session-roster-facts'
 
 async function waitForActiveSessions(page, expected) {
@@ -17,7 +17,7 @@ async function proveVisibleNames(page) {
   await page.waitForSelector('.feed__viewport[data-session="harnessNoise"] [data-feed-row]')
   assert.equal(
     await page
-      .locator('.feed__viewport [data-feed-row]', {
+      .locator('.feed__viewport[data-session="harnessNoise"] [data-feed-row]', {
         hasText: 'Set effort level to medium',
       })
       .count(),
@@ -36,7 +36,11 @@ async function proveVisibleNames(page) {
   )
   await page.waitForSelector('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]')
   assert.equal(
-    await page.locator('.feed__viewport [data-feed-row]', { hasText: 'Checking...' }).count(),
+    await page
+      .locator('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]', {
+        hasText: 'Checking...',
+      })
+      .count(),
     1,
   )
 }
@@ -54,7 +58,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
   )
   assert.deepEqual(await readRosterIds(page), before)
   const updated = await page.evaluate(async () => {
-    const reply = await window.argo.listSessions()
+    const reply = await window.argo.listSessions({ projectRoot: null })
     return reply.type === 'session.listed'
       ? reply.sessions.find((session) => session.id === 'prose')
       : null
@@ -81,7 +85,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 }
 
 async function proveArchiveOrderAndFocus(page, mutations, withParent) {
-  await page.locator('.roster__archived [data-slot="collapsible-trigger"]').click()
+  await openArchivedSection(page)
   await page.locator('nav[aria-label="Archived"] button[data-session-id="plannedWork"]').waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()

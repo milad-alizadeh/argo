@@ -7,6 +7,7 @@ import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/se
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
+import { createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
 import { proveSessionCreatedByClick } from './session-create-case'
@@ -15,8 +16,8 @@ import { proveSessionDiagram } from './session-diagram-case'
 import {
   appendProse,
   growCodexTranscript,
-  openSessionsScreen,
   removeProse,
+  selectProofProject,
   streamProse,
 } from './session-feed-fixture'
 import { proveFormattedFeed } from './session-formatted-feed-case'
@@ -36,7 +37,7 @@ import { proveSessionShell } from './session-shell-cases'
 import { completeWatch, writeWatchOutput } from './session-shell-fixture'
 import { proveSubagentFeed } from './session-subagent-feed-case'
 import { proveToolCalls } from './session-tool-calls-case'
-import { proveTurnSetup } from './session-turn-setup-cases'
+import { proveComposerMemory, proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 let delayedRoot: string | undefined
@@ -48,12 +49,11 @@ try {
   const { fixture, launch, restart, isPackaged } = started
   let page = await launch()
   assert.equal(await isPackaged(), true)
-  // Each passing case records its name.
-  const ran = async (names, prove) => {
-    const reading = await prove()
-    cases.push(...names)
-    return reading
-  }
+  const ran = createCaseRunner(
+    cases,
+    () => page,
+    () => harness,
+  )
   await ran(['session-roster-contract'], () => proveContract(page))
   await ran(['session-shell'], () => proveSessionShell(page))
   await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
@@ -106,6 +106,13 @@ try {
       updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
     }),
   )
+  // Every case above reads `/Users/x` fixtures a selected Project scopes out (#2204); every case
+  // below starts a Session, which needs one.
+  await selectProofProject(fixture.userData, fixture.project)
+  page = await restart()
+  await ran(['session-composer-memory'], () =>
+    proveComposerMemory(page, fixture.claudeTranscripts, fixture.project),
+  )
   // Before the resume cases, for the reason session-create-case.ts records.
   await ran(['session-created-by-click'], () =>
     proveSessionCreatedByClick(page, fixture.claudeTranscripts),
@@ -127,8 +134,8 @@ try {
   delayedRoot = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
   const delayed = await createPackagedSessionHarness(delayedRoot, { replyDelayMs: 2_000 })
   harness = delayed
+  await selectProofProject(delayed.fixture.userData, delayed.fixture.project)
   page = await delayed.launch()
-  await openSessionsScreen(page)
   await ran(['session-reply-wait'], () => proveReplyWait(page, delayed.fixture.claudeTranscripts))
   await ran(['session-duplicate-send'], () =>
     proveDuplicateSend(page, delayed.fixture.claudeTranscripts),

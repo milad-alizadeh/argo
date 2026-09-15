@@ -13,6 +13,7 @@ import { HarnessLogo } from '../harness/HarnessLogo'
 import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesses'
 import { PromptText } from '../prompt/PromptText'
 import type { Session } from '../types'
+import { sessionPostureLocksAnswer } from '../types'
 import { SessionReferenceText } from './SessionReference'
 import { SessionMetadata } from './SessionRosterMetadata'
 
@@ -51,7 +52,14 @@ const BLOCKED_BADGE_LABELS: Partial<Record<Session['status'], string>> = {
   permission: 'Permission Approval',
 }
 
+// An `asking` Session whose posture locks the answer affordance (#2205) cannot take an answer
+// here, whatever its transcript shows.
+function unanswerableHere(session: Session): boolean {
+  return session.status === 'asking' && sessionPostureLocksAnswer(session.posture)
+}
+
 function SessionBlockedBadge({ session }: { session: Session }) {
+  if (unanswerableHere(session)) return null
   const label = BLOCKED_BADGE_LABELS[session.status]
   if (label === undefined) return null
   return (
@@ -61,14 +69,15 @@ function SessionBlockedBadge({ session }: { session: Session }) {
   )
 }
 
-// Another live Argo window holds this Session's channel (ADR-0040): Send is refused, so the
-// fact goes in text beside the title rather than only in a tooltip (apps/desktop/AGENTS.md
-// "Accessible names" — a mark that is not a control).
+// Another live Argo window holds this Session's channel (ADR-0040), or it is asking a question
+// from a PTY Argo never opened (#2205): either way Send is refused, so the fact goes in text
+// beside the title rather than only in a tooltip (apps/desktop/AGENTS.md "Accessible names" — a
+// mark that is not a control).
 const OPEN_ELSEWHERE_MESSAGE =
   'This session is open in another app. Close it there to continue it in Argo.'
 
 function SessionLockedMark({ session }: { session: Session }) {
-  if (session.locked !== true) return null
+  if (session.locked !== true && !unanswerableHere(session)) return null
   return (
     <span className="inline-flex shrink-0 items-center" title={OPEN_ELSEWHERE_MESSAGE}>
       <Lock aria-hidden className="size-3.5 text-faint" />

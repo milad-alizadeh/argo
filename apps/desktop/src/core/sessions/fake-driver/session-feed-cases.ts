@@ -134,6 +134,6 @@ export async function proveRendererAuthority(page, application) {
     await BrowserWindow.getAllWindows()[0].loadURL('data:text/html,<h1>Untrusted page</h1>')
   })
   await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
-  const reply = await page.evaluate(() => window.argo.listSessions())
+  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.code, 'access-denied')
 }

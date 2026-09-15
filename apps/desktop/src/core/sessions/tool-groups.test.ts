@@ -27,7 +27,7 @@ function prose(id: string): SessionFeedRow {
 }
 
 function marker(id: string): SessionFeedRow {
-  return { shape: 'marker', id, marker: 'interrupted' }
+  return { shape: 'marker', id, marker: 'interrupted', summary: null }
 }
 
 function group(rows: SessionFeedRow[]) {

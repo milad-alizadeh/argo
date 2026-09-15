@@ -93,7 +93,7 @@ export async function appendGarbledCodexLine({
 }
 
 export function listing(requestId = 'list-1') {
-  return { version: 1, type: 'session.list', requestId } as const
+  return { version: 1, type: 'session.list', requestId, projectRoot: null } as const
 }
 
 export function feedRequest(

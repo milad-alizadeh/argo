@@ -86,8 +86,8 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
     )
 
     // Hit testing over a Roster row: an overlay or portal left mounted over the window would
-    // answer here instead of the row itself.
-    const row = rowFor(canvasElement, other.id)
+    // answer here instead of the row itself. The Roster read can land after the Feed's spinner.
+    const row = await waitFor(() => rowFor(canvasElement, other.id))
     const box = row.getBoundingClientRect()
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
     await expect(row.contains(hit)).toBe(true)

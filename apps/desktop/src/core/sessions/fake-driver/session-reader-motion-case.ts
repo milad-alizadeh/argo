@@ -1,20 +1,5 @@
 import assert from 'node:assert/strict'
-
-async function offsetOf(page, anchor) {
-  return page.evaluate((id) => {
-    const viewport = document.querySelector('.feed__viewport')
-    const row = viewport.querySelector(`[data-feed-row="${id}"]`)
-    return row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
-  }, anchor)
-}
-
-async function waitForRevision(page, previous) {
-  await page.waitForFunction((revision) => {
-    return (
-      document.querySelector('.feed__document[data-active="true"]')?.dataset.revision !== revision
-    )
-  }, previous)
-}
+import { offsetOf, viewportAnchor, waitForRevision } from './feed-selectors'
 
 async function scrollViewport(page) {
   const viewport = page.locator('.feed__document[data-active="true"] .feed__viewport')
@@ -34,20 +19,6 @@ async function scrollViewport(page) {
       await motion
     },
   }
-}
-
-async function viewportAnchor(page) {
-  return page.evaluate(() => {
-    const viewport = document.querySelector('.feed__viewport')
-    const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
-      (candidate) =>
-        candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
-    )
-    return {
-      anchor: row.dataset.feedRow,
-      offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
-    }
-  })
 }
 
 // The document remains unchanged while the viewport itself is moving. Once it stops, the next

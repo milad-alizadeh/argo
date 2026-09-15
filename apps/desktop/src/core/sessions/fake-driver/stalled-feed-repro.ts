@@ -115,6 +115,7 @@ const rosterQuery = async () => {
       version: 1,
       type: 'session.list',
       requestId: `list-${rosterPolls}`,
+      projectRoot: null,
     })
     rosterPolls += 1
     await new Promise((resolve) => setTimeout(resolve, POLL_MS))

@@ -51,7 +51,7 @@ test('the mirror includes Session tokens in declaration order', () => {
     '--color-traffic-light-close: #ff5f57;',
     '--color-traffic-light-minimize: #febc2e;',
     '--color-traffic-light-zoom: #28c840;',
-    '--text-session-body: var(--text-sm, 0.875rem);',
+    '--text-session-body: var(--text-base, 1rem);',
   ]) {
     assert.equal(mirror.includes(declaration), true, declaration)
   }

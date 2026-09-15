@@ -32,6 +32,7 @@ export function feedContent({
   onJumpToLatestChange,
   DrawnRow,
   revealsFor,
+  streamingRowId,
 }: {
   active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -42,6 +43,7 @@ export function feedContent({
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  streamingRowId: string | null
 }) {
   if (isRunning && (settled === null || settled.rows.length === 0)) {
     return stalled ? <StalledFeed onRetry={onRetry} posture={posture} /> : <RunningFeed />
@@ -67,6 +69,7 @@ export function feedContent({
       FeedRow={DrawnRow}
       onJumpToLatestChange={onJumpToLatestChange}
       revealsFor={revealsFor}
+      streamingRowId={streamingRowId}
     />
   )
 }

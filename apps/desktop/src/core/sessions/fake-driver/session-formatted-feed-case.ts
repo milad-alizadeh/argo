@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { ACTIVE_FEED } from './feed-selectors'
 
 type FormattedFixture = {
   root: string
@@ -10,7 +11,6 @@ type FormattedFixture = {
 }
 
 const SETTLE_TIMEOUT_MS = 10_000
-const ACTIVE_FEED = '.feed__document[data-active="true"]'
 const PICTURE = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="213"><rect width="320" height="213" fill="#0ea5e9"/></svg>`
 const DATA_PICTURE = `data:image/svg+xml,${encodeURIComponent(PICTURE)}`
 
