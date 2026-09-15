@@ -7,12 +7,10 @@ import { GalleryImage, GalleryParagraph } from './FeedMarkdownGallery'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 import { DiagramEvidence, type DiagramEvidenceContextValue, MermaidFence } from './MermaidFence'
 import { feedUrlTransform } from './markdownUrls'
-import { remarkRevealWords } from './remarkRevealWords'
 
 type MarkdownNode = ExtraProps['node']
 
 const REMARK_PLUGINS = [remarkGfm]
-const STREAMING_REMARK_PLUGINS = [remarkGfm, remarkRevealWords]
 // The wrapper carries `type-prose`: on the heading itself its doubled selector drops the weight.
 const HEADING_CLASS = 'mb-2 font-medium'
 const LANGUAGE_CLASS = 'language-'
@@ -141,13 +139,11 @@ export function FeedMarkdown({
   rowId,
   activeEvidenceId = null,
   onOpenEvidence,
-  streaming = false,
 }: {
   text: string
   rowId?: string
   activeEvidenceId?: string | null
   onOpenEvidence?: (evidence: SessionDiagramEvidence) => void
-  streaming?: boolean
 }) {
   const diagramEvidence: DiagramEvidenceContextValue | null =
     rowId === undefined || onOpenEvidence === undefined
@@ -157,7 +153,7 @@ export function FeedMarkdown({
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">
       <DiagramEvidence.Provider value={diagramEvidence}>
         <Markdown
-          remarkPlugins={streaming ? STREAMING_REMARK_PLUGINS : REMARK_PLUGINS}
+          remarkPlugins={REMARK_PLUGINS}
           components={COMPONENTS}
           urlTransform={feedUrlTransform}
         >
