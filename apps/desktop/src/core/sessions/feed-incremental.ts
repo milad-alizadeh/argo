@@ -4,7 +4,7 @@
 // is not part of a trailing Tool Call or damaged-line run. Frozen rows are never rebuilt.
 import type { SessionChain } from './chains'
 import { groupDelegations } from './delegation-groups'
-import { isHiddenToolRunBoundary, rowsOfRecord, withoutRepeatedBreaks } from './feed'
+import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {
   advancedCursors,
   type FileCursor,
@@ -36,22 +36,12 @@ function openRecordsSince(chain: SessionChain, state: FeedProjectionState | unde
 // The pre-merge row list for the open records, each tagged with the 0-based index (into
 // `records`) of the record that drew it, so freezing can tell which records a frozen row covers.
 function positionedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
-  const rows: SessionFeedRow[] = []
-  const sources: number[] = []
-  const breakBeforeIds = new Set<string>()
-  let hiddenDelivery = false
-  for (const [source, { record, position }] of records.entries()) {
-    const recordRows = rowsOfRecord(record, position, results)
-    if (isHiddenToolRunBoundary(record, recordRows)) {
-      hiddenDelivery = true
-      continue
-    }
-    if (recordRows.length === 0) continue
-    if (hiddenDelivery) breakBeforeIds.add(recordRows[0]?.id ?? '')
-    hiddenDelivery = false
-    rows.push(...recordRows)
-    sources.push(...recordRows.map(() => source))
-  }
+  const projected = records.map(({ record, position }) => ({
+    record,
+    rows: rowsOfRecord(record, position, results),
+  }))
+  const { rows, breakBeforeIds } = collectFeedRows(projected)
+  const sources = projected.flatMap(({ rows }, source) => rows.map(() => source))
   return { rows, sources, breakBeforeIds }
 }
 
