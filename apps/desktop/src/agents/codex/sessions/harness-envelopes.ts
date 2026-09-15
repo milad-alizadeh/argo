@@ -2,6 +2,13 @@ import { isIdentifier } from '@/boundary'
 import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
 import { taggedField } from '../../envelope-tags'
 
+// The envelopes a user message can carry that `userRecord` reads.
+export const USER_HARNESS_ENVELOPES = new Set([
+  'heartbeat',
+  'realtime_delegation',
+  'in-app-browser-context',
+])
+
 function wholeEnvelope(text: string, name: string): string | null {
   return new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>([\\s\\S]*)</${name}>\\s*$`).exec(text)?.[1] ?? null
 }

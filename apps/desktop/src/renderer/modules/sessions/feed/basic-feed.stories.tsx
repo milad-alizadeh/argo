@@ -308,14 +308,40 @@ const eventFeed = {
   revision: 'events-one',
   sessionId: 'events',
   rows: [
-    { shape: 'event' as const, id: 'event-status', event: 'status' as const, text: 'running' },
-    { shape: 'event' as const, id: 'event-transcript', event: 'transcript' as const, text: null },
-    { shape: 'event' as const, id: 'event-context', event: 'context' as const, text: null },
+    {
+      shape: 'event' as const,
+      id: 'event-status',
+      event: 'status' as const,
+      text: 'running',
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-transcript',
+      event: 'transcript' as const,
+      text: null,
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-context',
+      event: 'context' as const,
+      text: null,
+      raw: null,
+    },
     {
       shape: 'event' as const,
       id: 'event-command',
       event: 'command' as const,
       text: commandReceipt,
+      raw: null,
+    },
+    {
+      shape: 'event' as const,
+      id: 'event-status-raw',
+      event: 'status' as const,
+      text: 'starting',
+      raw: '<status>starting</status>',
     },
   ],
 } satisfies SessionFeed
@@ -324,14 +350,23 @@ export const ProtocolEvents: Story = {
   args: { feed: eventFeed, selectedSessionId: 'events' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Status updated')).toBeVisible()
+    await expect(canvas.getAllByText('Status updated')).toHaveLength(2)
     await expect(canvas.getByText('running')).toBeVisible()
     await expect(canvas.getByText('Transcript delivered')).toBeVisible()
     await expect(canvas.getByText('System context updated')).toBeVisible()
     await expect(canvas.getByText('Command received')).toBeVisible()
     await expect(canvas.getByText(commandReceipt)).toBeVisible()
     await expect(canvas.queryByText('<status>running</status>')).toBeNull()
-    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(5)
+
+    const rawEvent = canvasElement.querySelector('[data-feed-row="event-status-raw"]')
+    if (rawEvent === null) throw new Error('Expected the raw-protocol event row to render.')
+    const rawEventCanvas = within(rawEvent as HTMLElement)
+    const summary = rawEventCanvas.getByText('Protocol text')
+    const rawText = rawEventCanvas.getByText('<status>starting</status>')
+    await expect(rawText).not.toBeVisible()
+    await userEvent.click(summary)
+    await expect(rawText).toBeVisible()
   },
 }
 

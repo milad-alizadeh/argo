@@ -1,5 +1,6 @@
 import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
+import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
@@ -93,22 +94,43 @@ function event(record: Record<string, unknown>, payload: Record<string, unknown>
 }
 
 // The assistant message keeps the id its `item/agentMessage/delta` notifications streamed under.
-// Codex also writes injected context as user and developer messages here, so only the assistant's
-// own are read; the person's prompt is the `user_message` event.
+// Codex also writes injected context as user and developer messages here; `currentUserBlocks`
+// tells the person's own words from the harness's, so both roles are read rather than dropped.
 function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message' || payload.role !== 'assistant') return null
+  if (payload.type !== 'message') return null
   if (typeof payload.id !== 'string') return null
-  const blocks = messageBlocks(payload.content, ['output_text'])
-  if (blocks === null) return null
-  return messageRecord(record, {
-    uuid: payload.id,
-    role: 'assistant',
-    originSessionId: null,
-    blocks,
-  })
+  if (payload.role === 'assistant') {
+    const blocks = messageBlocks(payload.content, ['output_text'])
+    if (blocks === null) return null
+    return messageRecord(record, {
+      uuid: payload.id,
+      role: 'assistant',
+      originSessionId: null,
+      blocks,
+    })
+  }
+  if (payload.role !== 'user' && payload.role !== 'developer') return null
+  const blocks = currentUserBlocks(payload.content, payload.role)
+  if (blocks === null || blocks.length === 0) return null
+  const uuid = `${MODEL_INPUT_PREFIX}${payload.id}`
+  return messageRecord(record, { uuid, role: 'user', originSessionId: null, blocks })
+}
+
+// Codex desktop writes each prompt twice: this model-input copy, then the `UserMessage` item the
+// person sees, one ordinal later and under another id. The input copy also carries injected context.
+const MODEL_INPUT_PREFIX = 'model-input:'
+
+// A thread with its own reader copy of a prompt keeps only those; one without keeps its input copies.
+export function withoutModelInputCopies(records: TranscriptRecord[]): TranscriptRecord[] {
+  const isInputCopy = (record: TranscriptRecord) =>
+    'uuid' in record && record.uuid.startsWith(MODEL_INPUT_PREFIX)
+  const hasReaderCopy = records.some(
+    (record) => record.kind === 'message' && record.role === 'user' && !isInputCopy(record),
+  )
+  return hasReaderCopy ? records.filter((record) => !isInputCopy(record)) : records
 }
 
 // A thread Codex dispatched itself, such as a spawned subagent or the `guardian` reviewer that judges

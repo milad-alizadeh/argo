@@ -32,7 +32,7 @@ export function rowsOfRecord(
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
-    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text }]
+    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text, raw: null }]
   if (record.kind === 'delegation')
     return [
       {
@@ -78,7 +78,7 @@ function rowsOfBlock({
     case 'marker':
       return [{ shape: 'marker', id, marker: block.marker, summary: null }]
     case 'event':
-      return [{ shape: 'event', id, event: block.event, text: block.text }]
+      return [{ shape: 'event', id, event: block.event, text: block.text, raw: block.raw ?? null }]
     case 'tool': {
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)
