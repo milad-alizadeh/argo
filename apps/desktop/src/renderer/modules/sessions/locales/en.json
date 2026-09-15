@@ -103,7 +103,7 @@
   },
   "archived": "Archived",
   "bulkSelect": {
-    "selectRow": "Select {{title}}",
+    "selected": "Selected",
     "count_one": "{{count}} Session selected",
     "count_other": "{{count}} Sessions selected",
     "archive": "Archive",
