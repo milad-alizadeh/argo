@@ -186,6 +186,65 @@ export const TaskNotification: Story = {
   },
 }
 
+const delegationFeed = {
+  ...feed,
+  chainId: 'delegations',
+  revision: 'delegations-one',
+  sessionId: 'delegations',
+  rows: [
+    {
+      shape: 'delegation' as const,
+      id: 'agent-review',
+      actor: 'agent' as const,
+      action: 'Review the Feed card for keyboard access.',
+      status: 'running',
+      progress: 'Checking focus and motion',
+      groupId: 'review',
+    },
+    {
+      shape: 'delegation-group' as const,
+      id: 'delegation:build',
+      actor: 'shell' as const,
+      groupId: 'build',
+      entries: [
+        {
+          shape: 'delegation' as const,
+          id: 'shell-build-start',
+          actor: 'shell' as const,
+          action: 'Started bun run build',
+          status: 'running',
+          progress: null,
+          groupId: 'build',
+        },
+        {
+          shape: 'delegation' as const,
+          id: 'shell-build-end',
+          actor: 'shell' as const,
+          action: 'Build completed',
+          status: 'completed',
+          progress: null,
+          groupId: 'build',
+        },
+      ],
+    },
+  ],
+} satisfies SessionFeed
+
+export const DelegationCards: Story = {
+  args: { feed: delegationFeed, selectedSessionId: 'delegations' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const agent = canvas.getByRole('region', { name: 'Agent delegation' })
+    await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
+    await expect(agent).toHaveTextContent('running')
+    const shell = canvas.getByRole('region', { name: 'Shell activity' })
+    await expect(shell).toHaveTextContent('Started bun run build')
+    await expect(shell).toHaveTextContent('Build completed')
+    await expect(shell).toHaveTextContent('completed')
+    await expect(canvasElement.querySelectorAll('[data-slot="feed-delegation"]')).toHaveLength(2)
+  },
+}
+
 const commandReceipt =
   '/implement 2178 --focus feed protocol event accessibility and command grouping'
 

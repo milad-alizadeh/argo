@@ -1,4 +1,5 @@
 import type { SessionChain } from './chains'
+import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
 import { type ToolResult, toolRows } from './tool-feed'
 import { groupToolRuns } from './tool-groups'
@@ -25,6 +26,18 @@ export function rowsOfRecord(
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
     return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text }]
+  if (record.kind === 'delegation')
+    return [
+      {
+        shape: 'delegation',
+        id: record.uuid,
+        actor: record.actor,
+        action: record.action,
+        status: record.status,
+        progress: record.progress,
+        groupId: record.groupId,
+      },
+    ]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
@@ -68,10 +81,12 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
         (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
       ),
   )
-  return withoutRepeatedBreaks(
-    chain.files.flatMap((file, fileIndex) =>
-      file.records.flatMap((record, recordIndex) =>
-        rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+  return groupDelegations(
+    withoutRepeatedBreaks(
+      chain.files.flatMap((file, fileIndex) =>
+        file.records.flatMap((record, recordIndex) =>
+          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
+        ),
       ),
     ),
   )

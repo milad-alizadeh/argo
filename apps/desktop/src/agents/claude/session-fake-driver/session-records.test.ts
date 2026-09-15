@@ -93,6 +93,42 @@ test('keeps local command output out of the prompt path', async () => {
   assert.equal(file.openingPrompt, '/effort')
 })
 
+test('reads harness delegation and related Shell updates without protocol markup', async () => {
+  const file = await fixtureFile('harnessNoise')
+  assert.deepEqual(
+    file.records.filter((record) => record.kind === 'delegation'),
+    [
+      {
+        kind: 'delegation',
+        uuid: 'u-delegation',
+        actor: 'agent',
+        action: 'Review the Feed card for keyboard access.',
+        status: 'running',
+        progress: 'Checking focus and motion',
+        groupId: 'feed-review',
+      },
+      {
+        kind: 'delegation',
+        uuid: 'u-shell-start',
+        actor: 'shell',
+        action: 'Started bun run build',
+        status: 'running',
+        progress: null,
+        groupId: 'build',
+      },
+      {
+        kind: 'delegation',
+        uuid: 'u-shell-end',
+        actor: 'shell',
+        action: 'Build completed',
+        status: 'completed',
+        progress: null,
+        groupId: 'build',
+      },
+    ],
+  )
+})
+
 test('skips bookkeeping records and reads a resume link', () => {
   assert.equal(parseTranscriptLine('{"type":"mode","mode":"default"}'), null)
   assert.equal(parseTranscriptLine('   '), null)

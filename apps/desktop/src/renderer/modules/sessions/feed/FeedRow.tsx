@@ -3,6 +3,7 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
+import { FeedDelegation } from './FeedDelegation'
 import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
@@ -133,6 +134,9 @@ function feedRowContent(
       return <PlainText text={row.text} />
     case 'event':
       return <FeedEvent row={row} />
+    case 'delegation':
+    case 'delegation-group':
+      return <FeedDelegation row={row} />
     case 'source':
       return <p>{row.label}</p>
     case 'marker':
