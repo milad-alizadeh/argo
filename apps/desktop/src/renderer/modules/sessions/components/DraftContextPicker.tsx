@@ -25,7 +25,9 @@ export function DraftContextPicker({
       onClose={onClose}
       onSelectTicket={(ticket) => {
         onAddTicket(ticket)
-        editorRef.current?.update(() => {
+        const editor = editorRef.current
+        editor?.focus()
+        editor?.update(() => {
           const selection = $getSelection()
           if (!$isRangeSelection(selection)) return
           selection.insertText(' ')
