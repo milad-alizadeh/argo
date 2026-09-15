@@ -35,6 +35,17 @@ async function completeCompactions(
   }
 }
 
+function withHandoffEdges(
+  rows: SessionRosterRow[],
+  handoffEdges: ((sessionId: string) => { to: string | null; from: string | null }) | undefined,
+) {
+  if (handoffEdges === undefined) return rows
+  return rows.map((row) => {
+    const edges = handoffEdges(row.id)
+    return { ...row, handoffTo: edges.to, handoffFrom: edges.from }
+  })
+}
+
 // Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
 // Claude desktop app's own store, which is where the archive flag already lives. `archive` is
 // optional: a machine without that app installed reads no archived Sessions rather than failing.
@@ -70,16 +81,7 @@ export function claudeSessionSource(roots: {
         readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
         begin: roots.beginCompaction,
       })
-      const merged = { ...roster, rows }
-      const handoffEdges = roots.handoffEdges
-      if (handoffEdges === undefined) return merged
-      return {
-        ...merged,
-        rows: merged.rows.map((row) => {
-          const edges = handoffEdges(row.id)
-          return { ...row, handoffTo: edges.to, handoffFrom: edges.from }
-        }),
-      }
+      return { ...roster, rows: withHandoffEdges(rows, roots.handoffEdges) }
     },
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
