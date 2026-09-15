@@ -20,6 +20,10 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
     element.scrollTop = 0
     element.dispatchEvent(new Event('scroll'))
   })
+  // Commands render inside a closed tool group. Open the mounted group before looking for its
+  // evidence row; querying the row first cannot make a virtualized, collapsed child exist.
+  await page.getByRole('button', { name: 'Ran a command' }).waitFor()
+  await page.getByRole('button', { name: 'Ran a command' }).click()
   const finishedCommand = page.locator('[data-feed-evidence-id="sh-call-done"]')
   await finishedCommand.waitFor()
   await finishedCommand.click()
