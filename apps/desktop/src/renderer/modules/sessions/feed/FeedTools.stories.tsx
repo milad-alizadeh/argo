@@ -13,6 +13,21 @@ const command = {
   text: 'bun test composer',
 }
 
+const unclassified = {
+  shape: 'tool' as const,
+  id: 'unclassified',
+  kind: 'tool' as const,
+  label: 'Called an unclassified tool',
+  detail: null,
+  status: 'succeeded' as const,
+  evidence: {
+    kind: 'output' as const,
+    title: 'Called an unclassified tool',
+    source: '{"ok":true}',
+  },
+  text: null,
+}
+
 const edited = {
   shape: 'tool' as const,
   id: 'edit',
@@ -26,6 +41,7 @@ const edited = {
 
 const openToolGroups = new ToolGroupState()
 openToolGroups.setOpen('tool-group:command', true)
+openToolGroups.setOpen('tool-group:unclassified', true)
 openToolGroups.setOpen('tool-group:one:two', true)
 const closedToolGroups = new ToolGroupState()
 
@@ -67,6 +83,22 @@ export const CommandGroupOfOne = {
         id: 'tool-group:command',
         label: 'Ran a command',
         calls: [command],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={openToolGroups}
+    />
+  ),
+}
+
+export const UnclassifiedToolGroupOfOne = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:unclassified',
+        label: 'Called a tool',
+        calls: [unclassified],
       }}
       activeEvidenceId={null}
       onOpen={() => {}}
