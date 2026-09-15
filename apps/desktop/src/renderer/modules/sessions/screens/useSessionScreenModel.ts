@@ -47,6 +47,10 @@ export function useSessionScreenModel() {
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
+  const pickWork = (selection: WorkSelection) => {
+    setEvidence(null)
+    pick(selection)
+  }
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,
@@ -78,7 +82,7 @@ export function useSessionScreenModel() {
     permission,
     question,
     work,
-    pick,
+    pick: pickWork,
     workReveal,
     shell,
     delegation,

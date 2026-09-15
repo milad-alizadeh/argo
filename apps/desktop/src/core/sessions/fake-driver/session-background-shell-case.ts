@@ -14,6 +14,10 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   // No Subagent here, so the header carries the Shell button alone.
   assert.equal(await page.getByRole('button', { name: /^Subagents/ }).count(), 0)
 
+  // A work pick replaces the evidence already open in the inspector.
+  await page.locator('[data-feed-evidence-id="sh-call-package"]').click()
+  await page.getByText('apps/desktop/package.json').last().waitFor()
+
   await shellButton.click()
   const running = page.getByRole('menuitem', { name: /npm run watch/ })
   await running.waitFor()
@@ -22,6 +26,9 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   const pane = page.locator('section[aria-label="Background Shell"]')
   await pane.waitFor()
   await page.getByText('rebuilt in 240ms').waitFor()
+  await shellButton.click()
+  assert.equal(await running.getAttribute('aria-current'), 'true')
+  await page.keyboard.press('Escape')
 
   await writeOutput('watching for changes\nrebuilt in 240ms\nwatcher stopped\n')
   await complete()
