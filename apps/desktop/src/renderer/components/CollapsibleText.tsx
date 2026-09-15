@@ -23,14 +23,16 @@ export function CollapsibleText({
   open?: boolean
   title: ReactNode
 }) {
+  const state = open === undefined ? { defaultOpen } : { open }
+
   return (
-    <Collapsible defaultOpen={defaultOpen} className="mb-0" onOpenChange={onOpenChange} open={open}>
+    <Collapsible {...state} className="mb-0" onOpenChange={onOpenChange}>
       <CollapsibleTrigger className="group flex w-full items-center gap-2 py-1 type-body text-muted-foreground transition-colors hover:text-foreground">
         <Icon className="!size-(--size-icon-inline) shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
-        <ChevronRightIcon className="!size-(--size-icon-inline) shrink-0 transition-transform group-data-[panel-open]:rotate-90" />
+        <ChevronRightIcon className="!size-(--size-icon-inline) shrink-0 transition-transform group-data-[panel-open]:rotate-90 motion-reduce:transition-none" />
       </CollapsibleTrigger>
-      <CollapsibleContent className="type-body text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden type-body text-popover-foreground outline-none transition-[height,opacity,transform] duration-200 ease-out data-[starting-style]:h-0 data-[starting-style]:-translate-y-2 data-[starting-style]:opacity-0 data-[ending-style]:h-0 data-[ending-style]:-translate-y-2 data-[ending-style]:opacity-0 motion-reduce:transition-none">
         <div
           className={
             contentVariant === 'line'

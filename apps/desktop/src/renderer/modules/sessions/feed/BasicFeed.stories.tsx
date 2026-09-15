@@ -219,7 +219,14 @@ const toolFeed = {
           label: 'Ran a command',
           detail: null,
           status: 'succeeded' as const,
-          evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
+          evidence: {
+            kind: 'output' as const,
+            title: 'bun test composer',
+            source: Array.from(
+              { length: 48 },
+              (_unused, index) => `command output ${index + 1}`,
+            ).join('\n'),
+          },
           text: 'bun test composer',
         },
         {
@@ -241,7 +248,10 @@ export const GroupedToolCalls: Story = {
   args: { feed: toolFeed, selectedSessionId: 'tools' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const group = await canvas.findByRole('button', { name: 'Ran a command, edited a file' })
+    const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
+    await expect(group).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByText('command output 1')).toBeNull()
+    const groupTop = group.getBoundingClientRect().top
     await userEvent.click(group)
     const commandText = await canvas.findByText((_content, node) => {
       const isMatch = node?.textContent === 'bun test composer'
@@ -253,8 +263,14 @@ export const GroupedToolCalls: Story = {
     })
     const call = await canvas.findByRole('button', { name: /Edited Composer.tsx/ })
     await expect(group).toHaveClass('type-body')
-    await expect(commandText).toBeVisible()
+    await waitFor(() => expect(commandText).toBeVisible())
+    const panel = commandText.closest('[data-slot="collapsible-content"]')
+    await expect(panel).toHaveClass('transition-[height,opacity,transform]')
+    await expect(Math.abs(group.getBoundingClientRect().top - groupTop)).toBeLessThan(1)
     await expect(call).toHaveClass('type-body')
+    await userEvent.click(group)
+    await waitFor(() => expect(canvas.queryByText('command output 1')).toBeNull())
+    await expect(Math.abs(group.getBoundingClientRect().top - groupTop)).toBeLessThan(1)
   },
 }
 
@@ -448,6 +464,30 @@ function HistoryPrependHarness() {
   )
 }
 
+// TanStack keeps an earlier reading position when a reply arrives, then its own scrollToEnd
+// action renders the new tail. This covers the one Feed viewport controller's contract.
+export const HistoryDoesNotFollowStreamingReply: Story = {
+  render: () => <HistoryScrollHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    await expect(drawnRows(canvasElement).length).toBeLessThan(historyRows.length)
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await canvas.findByRole('button', { name: 'Jump to latest' })
+
+    const scrollHeight = history.scrollHeight
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
+    await expect(history.scrollTop).toBe(0)
+    const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
+    await expect(latest.querySelector('svg')).toBeVisible()
+    await userEvent.click(latest)
+    await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
+    await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+  },
+}
 export const HistoryFollowsStreamingReplyAtLatest: Story = {
   render: () => <HistoryScrollHarness />,
   play: async ({ canvasElement }) => {
