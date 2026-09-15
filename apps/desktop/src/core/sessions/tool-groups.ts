@@ -2,6 +2,24 @@ import type { SessionFeedRow } from './models'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 
+// Group ids cross the Session IPC boundary, where identifiers are deliberately capped at 256
+// characters. A run can hold many ordinary UUID-length tool calls, so joining every id makes a
+// valid Feed fail its whole reply contract. These two independent 32-bit passes keep the id
+// deterministic and bounded without depending on Node APIs (this module is also renderer-safe).
+function groupFingerprint(value: string, seed: number) {
+  let hash = seed
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+function toolGroupId(calls: ToolRow[]) {
+  const callIds = calls.map(({ id }) => id).join('\u001f')
+  return `tool-group:${groupFingerprint(callIds, 0x811c9dc5)}${groupFingerprint(callIds, 0x9e3779b9)}`
+}
+
 // Everything a tool kind needs for grouping: where its content routes once opened, the words its
 // count reads with, and where it falls in a mixed summary (a command count leads, since it is
 // the kind a group exists to read inline; the rest follow in the order below). One table, so
@@ -59,7 +77,7 @@ export function groupToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
     while (rows[index]?.shape === 'tool') calls.push(rows[index++] as ToolRow)
     grouped.push({
       shape: 'tool-group',
-      id: `tool-group:${calls.map(({ id }) => id).join(':')}`,
+      id: toolGroupId(calls),
       label: toolGroupLabel(calls),
       calls,
     })
