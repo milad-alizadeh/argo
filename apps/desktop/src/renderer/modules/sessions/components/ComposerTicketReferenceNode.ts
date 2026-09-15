@@ -39,8 +39,7 @@ export class ComposerTicketReferenceNode extends TextNode {
     icon.className = 'mr-1 inline-block size-3.5 align-middle dark:invert'
     icon.contentEditable = 'false'
     icon.src = ticketProviderIconSource[this.__provider]
-    element.className =
-      'mx-0.5 cursor-pointer text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground'
+    element.className = 'mx-0.5 cursor-pointer font-semibold text-foreground'
     element.dataset.ticketKey = this.getTextContent()
     element.setAttribute('role', 'link')
     element.tabIndex = 0
