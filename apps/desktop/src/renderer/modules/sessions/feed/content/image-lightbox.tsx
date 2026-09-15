@@ -18,6 +18,8 @@ export type FeedImageSource = {
   source: string
   title: string
   alt: string
+  // The trigger's name when the title reads wrong inside `image.open`'s sentence.
+  openLabel?: string
   // Intrinsic size where it is known. A transcript image carries none, so the gallery's fixed
   // height is what reserves its box (ADR-0035 rule 3).
   size?: ImageSize
@@ -115,7 +117,7 @@ export function ImageLightbox({
           <button
             type="button"
             className={triggerClass(compact, loading)}
-            aria-label={t('image.open', { title: image.title })}
+            aria-label={image.openLabel ?? t('image.open', { title: image.title })}
             data-state={loading ? 'loading' : 'loaded'}
             onPointerDown={transition.captureSourceBounds}
           />

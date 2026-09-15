@@ -97,6 +97,7 @@
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
   "promptSender": "You",
   "promptImage": "Attached image {{number}}",
+  "promptImageOpen": "Open attached image {{number}}",
   "image": {
     "fallbackTitle": "Image",
     "unavailable": "Image unavailable",

@@ -44,10 +44,12 @@ export function FeedMissingImage({
 export function FeedImage({
   source,
   alt,
+  openLabel,
   compact = false,
 }: {
   source: string
   alt: string
+  openLabel?: string
   compact?: boolean
 }) {
   const { t } = useTranslation('sessions')
@@ -59,7 +61,7 @@ export function FeedImage({
   if (state === 'failed') return <FeedMissingImage compact={compact} label={alt} />
   return (
     <ImageLightbox
-      image={{ source, alt, title: alt || t('image.fallbackTitle'), previewSize }}
+      image={{ source, alt, openLabel, title: alt || t('image.fallbackTitle'), previewSize }}
       compact={compact}
       loading={state === 'loading'}
       onLoad={(event) => {

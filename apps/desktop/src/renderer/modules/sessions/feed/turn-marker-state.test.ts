@@ -1,9 +1,15 @@
 import { expect, test } from 'bun:test'
 import type { TurnMarkerEntry, TurnMarkerRow } from './turn-marker-state'
-import { optimisticRowFor, stageFor, turnEnded, turnMarkerView } from './turn-marker-state'
+import {
+  optimisticRowFor,
+  promptOf,
+  stageFor,
+  turnEnded,
+  turnMarkerView,
+} from './turn-marker-state'
 
 function entry(overrides: Partial<TurnMarkerEntry> = {}): TurnMarkerEntry {
-  return { stage: 'live', since: null, startedAt: 1000, prompt: 'hello', ...overrides }
+  return { stage: 'live', since: null, startedAt: 1000, prompt: 'hello', images: [], ...overrides }
 }
 
 function row(overrides: Partial<TurnMarkerRow> = {}): TurnMarkerRow {
@@ -74,6 +80,24 @@ test('optimisticRowFor shows the prompt until the record settles', () => {
     id: 'optimistic-turn:1000',
     role: 'user',
     text: 'do the thing',
+  })
+})
+
+test('optimisticRowFor draws the images a Send attached, before the record arrives', () => {
+  const sent = promptOf({
+    prompt: 'compare',
+    attachments: [
+      { path: '/Users/x/Screenshot at 06.44.png', kind: 'image' },
+      { path: '/Users/x/notes.md', kind: 'file' },
+    ],
+  })
+  const shown = optimisticRowFor(entry(sent), row({ turnStartedAt: null }))
+  expect(shown).toEqual({
+    shape: 'prose',
+    id: 'optimistic-turn:1000',
+    role: 'user',
+    text: 'compare',
+    images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
   })
 })
 

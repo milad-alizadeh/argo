@@ -6,16 +6,21 @@ import type { ContentBlock } from '@/core/sessions/transcript'
 const PASTED_PLACEHOLDER = /\[Image #\d+\] ?/g
 const EDGE_PLACEHOLDERS = /^(?:\[Image #\d+\]\s*)+|(?:\s*\[Image #\d+\])+\s*$/g
 
-// Claude's own `@path` file mention; the CLI attaches the image it names.
-const MENTION = /(?<=^|\s)@(\/\S+)/g
+// Claude Code 2.1.272's own file mention, `@"a b.png"` or `@/a.png`, which drops a trailing
+// punctuation mark from the unquoted form; only absolute paths are drawn.
+const MENTION = /(?<=^|[\s。、？！])@(?:"(\/[^"]+)"|(\/\S+)\b)/g
+const APPENDED_TOKEN = /@(?:"(\/[^"]+)"|(\/\S+))/g
 
 // The mentions `embedAttachments` appends: the whole prompt, or a run after a blank line.
-const APPENDED_MENTIONS = /(?:^|\n\n)(@\/\S+(?: @\/\S+)*)\s*$/
+const APPENDED_MENTIONS = new RegExp(
+  `(?:^|\\n\\n)(${APPENDED_TOKEN.source}(?: ${APPENDED_TOKEN.source})*)\\s*$`,
+)
 
 const isImagePath = (path: string) => attachmentKindOf(path) === 'image'
 
 function mentionedImages(text: string): string[] {
-  return [...text.matchAll(MENTION)].flatMap(([, path = '']) => {
+  return [...text.matchAll(MENTION)].flatMap(([, quoted, bare]) => {
+    const path = quoted ?? bare ?? ''
     const url = isImagePath(path) ? fileImageUrl(path) : null
     return url === null ? [] : [url]
   })
@@ -25,7 +30,9 @@ function mentionedImages(text: string): string[] {
 function withoutAppendedImages(text: string): string {
   const run = APPENDED_MENTIONS.exec(text)
   if (run === null) return text
-  const kept = (run[1] ?? '').split(' ').filter((token) => !isImagePath(token.slice(1)))
+  const kept = [...(run[1] ?? '').matchAll(APPENDED_TOKEN)]
+    .filter(([, quoted, bare]) => !isImagePath(quoted ?? bare ?? ''))
+    .map(([token]) => token)
   const head = text.slice(0, run.index)
   return kept.length === 0
     ? head

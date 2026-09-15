@@ -3,7 +3,7 @@ import type { NavigateFunction } from 'react-router'
 import type { SessionAttachmentInput } from '@/core/sessions/attachments-contract'
 import type { Cockpit } from '../../projects/hooks/use-projects'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { stageFor } from '../feed/turn-marker-state'
+import { promptOf, stageFor } from '../feed/turn-marker-state'
 import type { SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
@@ -108,7 +108,7 @@ export async function sendToSessionIdentity(deps: SendDeps, sessionId: string, t
   marker.begin(sessionId, {
     stage: stageFor('session', row?.posture ?? null),
     since,
-    prompt: turn.prompt,
+    ...promptOf(turn),
   })
   const sent = await sendToSelected({
     queryClient,
@@ -130,7 +130,7 @@ export async function sendToDraftIdentity(
 ) {
   const { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn } = deps
   const key = composerIdentityKey(identity)
-  marker.begin(key, { stage: 'starting', since: null, prompt: turn.prompt })
+  marker.begin(key, { stage: 'starting', since: null, ...promptOf(turn) })
   const sent = await sendToNewSession({
     cli,
     cockpit,

@@ -19,6 +19,15 @@ test('joins multiple @path mentions with a space, in attachment order', () => {
   )
 })
 
+test('quotes a path with a space so Claude Code reads it whole', () => {
+  assert.equal(
+    embedAttachments('', [
+      { path: '/Users/x/Screenshot 2026-09-15 at 06.44.50.png', kind: 'image' },
+    ]),
+    '@"/Users/x/Screenshot 2026-09-15 at 06.44.50.png"',
+  )
+})
+
 test('returns the draft unchanged when there are no attachments', () => {
   assert.equal(embedAttachments('Review this.', []), 'Review this.')
 })

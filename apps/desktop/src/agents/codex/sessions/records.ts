@@ -2,7 +2,7 @@ import { isRecord } from '@/boundary'
 import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
 import { readHarnessEnvelopes } from './harness-envelopes'
-import { readImage } from './prompt-images'
+import { promptEventImages, readImage } from './prompt-images'
 
 function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
   if (!Array.isArray(value)) return null
@@ -84,7 +84,7 @@ function promptMessage(
     uuid: `user:${record.timestamp}`,
     role: 'user',
     originSessionId: null,
-    blocks: [{ shape: 'prose', text: payload.message }],
+    blocks: [{ shape: 'prose', text: payload.message }, ...promptEventImages(payload)],
   })
 }
 

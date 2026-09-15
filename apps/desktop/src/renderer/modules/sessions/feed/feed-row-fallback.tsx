@@ -40,7 +40,13 @@ export function FeedPrompt({
       {images.length === 0 ? null : (
         <div className="flex flex-wrap justify-end gap-(--spacing-tight)">
           {keyedImages(images).map(({ url, key, number }) => (
-            <FeedImage alt={t('promptImage', { number })} compact key={key} source={url} />
+            <FeedImage
+              alt={t('promptImage', { number })}
+              openLabel={t('promptImageOpen', { number })}
+              compact
+              key={key}
+              source={url}
+            />
           ))}
         </div>
       )}

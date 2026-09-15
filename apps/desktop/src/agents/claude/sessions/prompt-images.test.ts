@@ -88,6 +88,24 @@ for (const text of ['Compare @/Users/x/a.png with the design', 'Look at @/Users/
   })
 }
 
+test('draws an attached file whose path has a space, from its quoted mention', () => {
+  const rows = promptRows('Look.\n\n@"/Users/x/Screenshot at 06.44.png" @/Users/x/notes.md')
+  assert.deepEqual(rows, [
+    {
+      shape: 'prose',
+      id: 'prompt-1:0',
+      role: 'user',
+      text: 'Look.\n\n@/Users/x/notes.md',
+      images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
+    },
+  ])
+})
+
+test('draws an image mentioned before a full stop, as Claude Code attaches it', () => {
+  const rows = promptRows('Compare @/Users/x/a.png.')
+  assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, ['file:///Users/x/a.png'])
+})
+
 test('keeps the words around a pasted placeholder as the person wrote them', () => {
   const rows = promptRows([{ type: 'text', text: '    indented\n[Image #2] see' }, pasted(PIXEL)])
   assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, '    indented\nsee')

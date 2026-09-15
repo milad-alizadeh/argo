@@ -425,7 +425,7 @@ export const PromptWithImages: Story = {
     const [prompt, , imagesAlone] = drawnRows(canvasElement)
     const bubble = prompt?.querySelector<HTMLElement>('[data-slot="bubble"]')
     const thumbnail = within(bubble as HTMLElement).getByRole('button', {
-      name: 'Open Attached image 1 in lightbox',
+      name: 'Open attached image 1',
     })
     await waitFor(() => expect(thumbnail).toHaveAttribute('data-state', 'loaded'))
     const side = Number.parseFloat(
