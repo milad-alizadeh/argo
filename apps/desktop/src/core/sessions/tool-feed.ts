@@ -50,9 +50,18 @@ function toolPresentation(call: ToolCall) {
   return (
     TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
       kind: 'tool' as const,
-      label: 'Called an unclassified tool',
+      label: `Called ${call.name}`,
     }
   )
+}
+
+// A tool no row knows still shows what it was asked: a lone string argument as itself, else the input.
+function unclassifiedText(input: ToolCall['input']): string | null {
+  const values = Object.values(input)
+  if (values.length === 0) return null
+  const [only] = values
+  if (values.length === 1 && typeof only === 'string') return only
+  return JSON.stringify(input, null, 2)
 }
 
 const lineCount = (text: string) => text.split('\n').length
@@ -92,7 +101,8 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
-  return call.name === 'Skill' ? (skillBodies.get(call.id) ?? null) : null
+  if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
+  return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
 }
 
 function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {
