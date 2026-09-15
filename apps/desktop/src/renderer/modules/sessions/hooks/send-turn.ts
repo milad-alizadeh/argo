@@ -8,7 +8,7 @@ import type { SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
-import type { SessionsListed } from '../types'
+import type { SessionRoster } from '../types'
 import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composer-identity'
 import type { Failure } from './use-session-composer-actions'
 import { sendMessage } from './use-session-composer-actions'
@@ -96,7 +96,7 @@ export type SendDeps = {
   cockpit: Cockpit
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
-  roster: SessionsListed | null
+  roster: SessionRoster | null
   marker: TurnMarkerApi
   send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
