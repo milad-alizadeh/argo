@@ -188,6 +188,7 @@
     "copyRun": "Copy command and result",
     "noOutput": "No output"
   },
+  "feedLoading": "Loading this Session",
   "rail": {
     "backgroundAgents": "Background agents",
     "shellSection": "Shell",

@@ -7,9 +7,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Spinner } from '../../../components/ui/spinner'
 import { sessionFailureState } from '../session-failure-state'
 import type { SessionError } from '../types'
+import { FeedLoading } from './feed-loading'
 import { StalledFeed } from './stalled-feed'
 
 export function Standing({
@@ -51,9 +51,5 @@ export function Standing({
       </Empty>
     )
   if (stalled) return <StalledFeed posture={posture} onRetry={onRetry} />
-  return (
-    <section className="grid h-full place-items-center" data-state="loading">
-      <Spinner className="size-6" />
-    </section>
-  )
+  return <FeedLoading state="loading" />
 }
