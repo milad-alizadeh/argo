@@ -86,9 +86,10 @@ function FeedViewport({
   setViewport,
   virtualizer,
 }: FeedViewportProps) {
+  const { t } = useTranslation('sessions')
   return (
     <section
-      aria-label="Session history"
+      aria-label={t('historyLabel')}
       className="feed__viewport"
       data-reading-revision={settled.reading.revision}
       data-session={settled.reading.sessionId}
