@@ -20,11 +20,9 @@ function cyclePickerFocus(event: KeyboardEvent<HTMLDivElement>, picker: HTMLDivE
 
 export function useContextPickerFocus(onClose: () => void) {
   const pickerRef = useRef<HTMLDivElement>(null)
-  const searchRef = useRef<HTMLInputElement>(null)
-  useEffect(() => searchRef.current?.focus(), [])
+  useEffect(() => pickerRef.current?.querySelector<HTMLElement>('button:not([disabled])')?.focus(), [])
   return {
     pickerRef,
-    searchRef,
     onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Escape') {
         event.preventDefault()

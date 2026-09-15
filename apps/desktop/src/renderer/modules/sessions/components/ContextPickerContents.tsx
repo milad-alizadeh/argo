@@ -1,4 +1,4 @@
-import { Ban, File, Folder } from 'lucide-react'
+import { Ban, Folder } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
@@ -41,7 +41,7 @@ function TicketResult({
       {ticket.blocked ? (
         <span className="flex shrink-0 items-center gap-1 text-danger type-meta">
           <Ban aria-hidden="true" className="size-3.5" />
-          <span>{t('composer.contextPicker.blocked')}</span>
+          <span className="sr-only">{t('composer.contextPicker.blocked')}</span>
         </span>
       ) : null}
     </button>
@@ -68,8 +68,7 @@ export function ContextPickerContents({
           onClick={onAttach}
           type="button"
         >
-          <File aria-hidden="true" className="size-4" />
-          <Folder aria-hidden="true" className="-ml-2 size-4" />
+          <Folder aria-hidden="true" className="size-4" />
           <span className="type-label">{t('composer.contextPicker.filesAndFolders')}</span>
         </button>
       </div>

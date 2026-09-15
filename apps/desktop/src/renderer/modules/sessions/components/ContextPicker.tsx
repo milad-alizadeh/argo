@@ -1,5 +1,3 @@
-import { Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ContextPickerContents, type TicketChoice } from './ContextPickerContents'
@@ -64,18 +62,12 @@ export function ContextPicker({
   onSelectTicket: (ticket: TicketChoice) => void
 }) {
   const { t } = useTranslation('sessions')
-  const [query, setQuery] = useState('')
   const focus = useContextPickerFocus(onClose)
   const tickets = TICKETS.map(({ statusKey, titleKey, ...ticket }) => ({
     ...ticket,
     status: t(statusKey),
     title: t(titleKey),
   }))
-  const shownTickets = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    if (normalized === '') return tickets.filter((ticket) => !ticket.terminal)
-    return tickets.filter(({ key, title }) => `${key} ${title}`.toLowerCase().includes(normalized))
-  }, [query, tickets])
   const providerLabel = (provider: TicketChoice['provider']) =>
     t(`composer.contextPicker.provider.${provider}`)
   return (
@@ -87,30 +79,11 @@ export function ContextPicker({
       ref={focus.pickerRef}
       role="dialog"
     >
-      <div className="mb-(--spacing-shell-item) flex items-center gap-(--spacing-shell-item)">
-        <Search aria-hidden="true" className="size-4 text-muted-foreground" />
-        <input
-          aria-label={t('composer.contextPicker.search')}
-          className="min-w-0 flex-1 bg-transparent type-body outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t('composer.contextPicker.searchPlaceholder')}
-          ref={focus.searchRef}
-          value={query}
-        />
-        <button
-          aria-label={t('composer.contextPicker.close')}
-          className="rounded-sm p-1 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-          onClick={onClose}
-          type="button"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
       <ContextPickerContents
         onAttach={onAttach}
         onSelectTicket={onSelectTicket}
         providerLabel={providerLabel}
-        tickets={shownTickets}
+        tickets={tickets.filter((ticket) => !ticket.terminal)}
       />
     </div>
   )

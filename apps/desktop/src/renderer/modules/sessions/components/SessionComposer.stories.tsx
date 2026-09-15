@@ -947,9 +947,8 @@ export const SharedContextPicker: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
     const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
-    await expect(within(picker).getByRole('textbox', { name: 'Search context' })).toHaveFocus()
+    await expect(within(picker).getByRole('button', { name: 'Files & folders' })).toHaveFocus()
     await expect(within(picker).getByText('ENG-42')).toBeVisible()
-    await expect(within(picker).getByText('Blocked')).toBeVisible()
     await expect(within(picker).queryByText('ENG-9')).toBeNull()
     await expect(within(picker).getByRole('button', { name: /Goals.*Coming soon/ })).toBeDisabled()
 
@@ -962,25 +961,6 @@ export const SharedContextPicker: Story = {
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-ticket-key="ENG-42"]')).toBeNull(),
     )
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
-    const keyboardPicker = await within(document.body).findByRole('dialog', {
-      name: 'Context picker',
-    })
-    const search = within(keyboardPicker).getByRole('textbox', { name: 'Search context' })
-    await expect(search).toHaveFocus()
-    await userEvent.type(search, 'ENG-9')
-    await expect(within(keyboardPicker).getByText('ENG-9')).toBeVisible()
-    await expect(within(keyboardPicker).getByText('Terminal · Done')).toBeVisible()
-    await expect(within(keyboardPicker).queryByText('Blocked')).toBeNull()
-
-    await userEvent.click(
-      within(keyboardPicker).getByRole('button', { name: /ENG-9.*Store the refresh token/ }),
-    )
-    await waitFor(() =>
-      expect(canvasElement.querySelector('[data-ticket-key="ENG-9"]')).not.toBeNull(),
-    )
-    await expect(canvas.getByLabelText('Message')).toHaveFocus()
   },
 }
 
