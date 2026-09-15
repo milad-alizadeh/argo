@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
-import type { TurnSetupControlProps } from '../components/run-setup-menu'
+import type { TurnSetupControlProps } from '../components/composer/run-setup-menu'
 import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
 import {
   refusalOf,

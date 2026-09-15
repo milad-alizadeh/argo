@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { type DriveSessionErrorCode, driveSessionError } from '@/core/sessions/contract'
 import { CockpitShell } from '../../cockpit/components/cockpit-shell'
-import { SessionsSidebar } from '../components/sessions-sidebar'
+import { SessionsSidebar } from '../components/roster/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 

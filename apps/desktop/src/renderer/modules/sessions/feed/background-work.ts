@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 import { SHELL_STATES, type ShellState } from '@/core/sessions/models'
-import { delegationState, type SessionWork, type WorkState } from '../components/session-work'
+import { delegationState, type SessionWork, type WorkState } from '../components/work/session-work'
 import type { SessionFeedRow } from '../types'
 
 export type BackgroundWorkLinks = {

@@ -1,7 +1,7 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '../../projects/hooks/use-projects'
-import type { Send } from '../components/use-send'
+import type { Send } from '../components/composer/use-send'
 import type { SessionCli } from '../harness/harnesses'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionsListed } from '../types'
