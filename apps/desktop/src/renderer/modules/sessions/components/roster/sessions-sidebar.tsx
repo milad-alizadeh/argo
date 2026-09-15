@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../../components/ui/empty'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
-import { BulkActionBar } from './bulk-action-bar'
 import { RenameDialog } from './rename-dialog'
 import { RosterLoading, rosterState, SessionsSidebarHeader } from './sessions-sidebar-chrome'
 import { SidebarRows } from './sidebar-rows'
@@ -79,7 +78,7 @@ export function SessionsSidebarContent({
   const sessions = roster?.sessions ?? []
   const visible = filteredSessions(sessions, search)
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
-  const selection = useRosterSelection(visibleIds)
+  const selection = useRosterSelection(visibleIds, selectedSessionId)
   const { setFocusedSessionId, tabStop } = useRosterFocus(sidebar, visible, selectedSessionId)
   const state = rosterState(roster, rosterError, sessions.length)
   const rosterRequestId = roster?.requestId
@@ -100,6 +99,11 @@ export function SessionsSidebarContent({
       {roster === null && rosterError === null ? <RosterLoading /> : null}
       {roster !== null && sessions.length === 0 ? <NoSessionsFound /> : null}
       <SidebarRows
+        onArchive={(sessionId) => {
+          const bulk = selection.selectedIds.has(sessionId)
+          onArchiveSelected(bulk ? [...selection.selectedIds] : [sessionId])
+          if (bulk) selection.clear()
+        }}
         onFocus={setFocusedSessionId}
         onRename={setRenameTarget}
         onOpenTicket={onOpenTicket}
@@ -116,16 +120,6 @@ export function SessionsSidebarContent({
         tabStop={tabStop}
         visible={visible}
       />
-      {selection.selectedIds.size > 0 ? (
-        <BulkActionBar
-          onArchive={() => {
-            onArchiveSelected([...selection.selectedIds])
-            selection.clear()
-          }}
-          onClear={selection.clear}
-          selectedCount={selection.selectedIds.size}
-        />
-      ) : null}
       <RenameDialog
         onRename={async (session, name) => {
           const accepted = await onRename(session, name)

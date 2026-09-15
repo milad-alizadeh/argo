@@ -1,10 +1,11 @@
 import type { SelectionModifier } from '../../state/roster-selection'
-import { EMPTY_ROSTER_SELECTION } from '../../state/roster-selection'
-import type { SessionId, SessionsListed } from '../../types'
-import { ArchivedSessions } from './archived-sessions'
-import { SessionRosterList } from './session-roster-list'
+import type { Session, SessionId, SessionsListed } from '../../types'
+import { rosterRows } from './roster-rows'
+import { RosterVirtualList } from './roster-virtual-list'
+import { useArchivedSection } from './use-archived-section'
 
 export function SidebarRows({
+  onArchive,
   onFocus,
   onRename,
   onOpenTicket,
@@ -18,11 +19,12 @@ export function SidebarRows({
   tabStop,
   visible,
 }: {
+  onArchive: (sessionId: SessionId) => void
   onFocus: (sessionId: SessionId) => void
-  onRename: (session: SessionsListed['sessions'][number]) => void
-  onOpenTicket: (session: SessionsListed['sessions'][number]) => void
-  onLinkTicket: (session: SessionsListed['sessions'][number]) => void
-  onUnlinkTicket: (session: SessionsListed['sessions'][number]) => void
+  onRename: (session: Session) => void
+  onOpenTicket: (session: Session) => void
+  onLinkTicket: (session: Session) => void
+  onUnlinkTicket: (session: Session) => void
   onSelect: (sessionId: SessionId) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
   renamedTitles: Record<string, string>
@@ -31,44 +33,28 @@ export function SidebarRows({
   tabStop: SessionId | null
   visible: SessionsListed['sessions']
 }) {
-  const rosterList = (
-    items: SessionsListed['sessions'],
-    label: string,
-    selection: { selectable: boolean; onToggleSelect: typeof onToggleSelect },
-  ) => (
-    <SessionRosterList
-      items={items}
-      label={label}
+  const visibleSessionIds = visible.map((session) => session.id)
+  const archived = useArchivedSection(selectedSessionId, visibleSessionIds)
+  const rows = rosterRows({ active: visible, archivedOpen: archived.open, archived })
+
+  return (
+    <RosterVirtualList
+      label="Sessions"
+      onArchive={onArchive}
+      onFetchNextPage={archived.fetchNextPage}
       onFocus={onFocus}
-      onRename={onRename}
-      onOpenTicket={onOpenTicket}
       onLinkTicket={onLinkTicket}
-      onUnlinkTicket={onUnlinkTicket}
+      onOpenTicket={onOpenTicket}
+      onRename={onRename}
       onSelect={onSelect}
-      onToggleSelect={selection.onToggleSelect}
+      onToggleArchived={() => archived.setOpen((open) => !open)}
+      onToggleSelect={onToggleSelect}
+      onUnlinkTicket={onUnlinkTicket}
       renamedTitles={renamedTitles}
-      selectable={selection.selectable}
-      selectedIds={selection.selectable ? selectedIds : EMPTY_ROSTER_SELECTION.ids}
+      rows={rows}
+      selectedIds={selectedIds}
       selectedSessionId={selectedSessionId}
       tabStop={tabStop}
     />
-  )
-  const activeList = (items: SessionsListed['sessions'], label: string) =>
-    rosterList(items, label, { selectable: true, onToggleSelect })
-  // The Archived section stays the read-only recovery path (#1593): it never grows a checkbox,
-  // so it takes the same row component with selection wired off rather than a second one.
-  const archivedList = (items: SessionsListed['sessions'], label: string) =>
-    rosterList(items, label, { selectable: false, onToggleSelect: () => {} })
-  return (
-    <>
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3">
-        {activeList(visible, 'Sessions')}
-      </div>
-      <ArchivedSessions
-        rows={archivedList}
-        selectedSessionId={selectedSessionId}
-        visibleSessionIds={visible.map((session) => session.id)}
-      />
-    </>
   )
 }

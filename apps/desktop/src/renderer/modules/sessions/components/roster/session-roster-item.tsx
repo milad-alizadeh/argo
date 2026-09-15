@@ -1,3 +1,4 @@
+import { Archive } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -7,6 +8,7 @@ import {
   ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/renderer/components/ui/context-menu'
 import { HarnessLogo } from '../../harness/harness-logo'
@@ -54,6 +56,7 @@ function rowHighlightOf(checked: boolean, selected: boolean): string {
 
 export function SessionRosterItem({
   checked,
+  onArchive,
   onFocus,
   onSelect,
   onRename,
@@ -67,6 +70,7 @@ export function SessionRosterItem({
   tabIndex,
 }: {
   checked: boolean
+  onArchive?: () => void
   onFocus: () => void
   onSelect: () => void
   onRename: () => void
@@ -93,7 +97,7 @@ export function SessionRosterItem({
     onSelect()
   }
   return (
-    <li className="min-w-0">
+    <div className="min-w-0">
       <ContextMenu>
         <ContextMenuTrigger
           render={
@@ -156,9 +160,18 @@ export function SessionRosterItem({
                 {t('contextMenu.linkTicket')}
               </ContextMenuItem>
             )}
+            {onArchive ? (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={onArchive}>
+                  <Archive aria-hidden="true" />
+                  {t('bulkSelect.archive')}
+                </ContextMenuItem>
+              </>
+            ) : null}
           </ContextMenuGroup>
         </ContextMenuContent>
       </ContextMenu>
-    </li>
+    </div>
   )
 }
