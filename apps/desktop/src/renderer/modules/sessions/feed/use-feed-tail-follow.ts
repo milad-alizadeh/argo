@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 
 const TAIL_THRESHOLD_PX = 80
 
-export function useFeedTailFollow(sessionId: string) {
+export function useFeedTailFollow(sessionId: string, active: boolean) {
   const [atLatest, setAtLatest] = useState(true)
   const [initiallyPositionedSessionId, setInitiallyPositionedSessionId] = useState<string | null>(
     null,
@@ -15,13 +15,14 @@ export function useFeedTailFollow(sessionId: string) {
   }, [sessionId])
   const onChange = useCallback(
     (instance: Virtualizer<HTMLElement, Element>) => {
-      if (awaitingInitialPosition) return
+      // An inactive document measures 0x0, which reads as "at the end" and would lose the reader.
+      if (awaitingInitialPosition || !active) return
       setAtLatest((current) => {
         const next = instance.isAtEnd(TAIL_THRESHOLD_PX)
         return current === next ? current : next
       })
     },
-    [awaitingInitialPosition],
+    [active, awaitingInitialPosition],
   )
   return {
     atLatest,

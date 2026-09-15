@@ -9,7 +9,7 @@ import {
 type Restart = () => Promise<Page>
 
 async function rosterRow(page: Page, sessionId: string) {
-  const reply = await page.evaluate(() => window.argo.listSessions())
+  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
   return reply.sessions.filter((session: { id: string }) => session.id === sessionId)
 }

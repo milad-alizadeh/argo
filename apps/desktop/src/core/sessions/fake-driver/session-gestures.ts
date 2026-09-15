@@ -46,10 +46,14 @@ export async function openSessionByClick(page: Page, sessionId: string) {
 
 // An archived Session is behind the Archived disclosure, which a person opens before clicking its
 // row. The disclosure can already be open, so this reads it rather than toggling it blind.
-export async function openArchivedSessionByClick(page: Page, sessionId: string) {
+export async function openArchivedSection(page: Page) {
   const disclosure = page.locator(`${ARCHIVED} [data-slot="collapsible-trigger"]`)
   await disclosure.waitFor()
   if ((await disclosure.getAttribute('aria-expanded')) !== 'true') await disclosure.click()
+}
+
+export async function openArchivedSessionByClick(page: Page, sessionId: string) {
+  await openArchivedSection(page)
   await page.locator(`nav[aria-label="Archived"] button[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
 }
@@ -80,7 +84,7 @@ export async function chooseHarness(page: Page, cli: SessionCli) {
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
-  const reply = await page.evaluate(() => window.argo.listSessions())
+  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
   return reply.sessions.map(({ id }: { id: string }) => id)
 }

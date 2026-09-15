@@ -1,3 +1,4 @@
+import { realpath } from 'node:fs/promises'
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
@@ -23,6 +24,22 @@ import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
 export type { FeedOverlay, SessionSource } from './session-source'
+
+// A Project's root as registered and as the CLI records it: a CLI's cwd has symlinks resolved
+// (macOS `/var` is `/private/var`). `null` means no Project is open, so nothing is filtered out.
+async function projectRootsOf(projectRoot: string | null): Promise<string[] | null> {
+  if (projectRoot === null) return null
+  const resolved = await realpath(projectRoot).catch(() => projectRoot)
+  return resolved === projectRoot ? [projectRoot] : [projectRoot, resolved]
+}
+
+// A Session belongs to a Project when its cwd is the Project's root or a path under it (a
+// worktree, a monorepo subfolder).
+function belongsToProject(cwd: string | null, roots: string[] | null): boolean {
+  if (roots === null) return true
+  if (cwd === null) return false
+  return roots.some((root) => cwd === root || cwd.startsWith(`${root}/`))
+}
 
 async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
   try {
@@ -112,10 +129,12 @@ export function createSessionReader(
       const reply = combineDiscoveries(discovered, parsed.data.requestId)
       if (reply.type !== 'session.listed') return reply
       ownership.rememberDiscoveries(reply.sessions)
+      const roots = await projectRootsOf(parsed.data.projectRoot)
+      const scoped = reply.sessions.filter((session) => belongsToProject(session.cwd, roots))
       // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
       // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
       const sessions = await Promise.all(
-        reply.sessions.map(async (session) => ({
+        scoped.map(async (session) => ({
           ...session,
           ticket: await ticketLinks.linkFor(session.id),
         })),

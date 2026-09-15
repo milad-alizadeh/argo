@@ -5,20 +5,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-
-async function rosterRow(page, sessionId) {
-  const reply = await page.evaluate(() => window.argo.listSessions())
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.filter((session) => session.id === sessionId)
-}
-
-async function waitFor(condition, timeout = 10_000) {
-  const deadline = Date.now() + timeout
-  while (!(await condition())) {
-    if (Date.now() > deadline) throw new Error('The fake claude never wrote its transcript.')
-    await new Promise((resolve) => setTimeout(resolve, 100))
-  }
-}
+import { rosterRow, waitFor } from './session-proof-helpers'
 
 export async function proveClaudeRename(page, { project, transcripts }) {
   const started = await page.evaluate(
@@ -52,7 +39,7 @@ export async function proveClaudeRename(page, { project, transcripts }) {
     (await readFile(transcript, 'utf8')).includes('"customTitle":"Ticket: fix the roster badge"'),
   )
   await page.waitForFunction(async (id) => {
-    const reply = await window.argo.listSessions()
+    const reply = await window.argo.listSessions({ projectRoot: null })
     const sessions = reply.type === 'session.listed' ? reply.sessions : []
     const [row] = sessions.filter((session) => session.id === id)
     return row?.title?.source === 'custom'

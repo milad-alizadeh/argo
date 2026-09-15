@@ -4,27 +4,13 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { writeFixtureTree } from './session-fixture-files'
-import { fixtureRoot } from './session-fixtures'
-
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-
-function listSessions(value: unknown, root: string) {
-  return createClaudeSessionReader({ transcripts: root }).listSessions(value)
-}
-
-const LATER_TURN = `${JSON.stringify({
-  type: 'assistant',
-  uuid: 'e-a-2',
-  parentUuid: 'e-a-1',
-  timestamp: '2026-09-01T08:00:00.000Z',
-  message: {
-    role: 'assistant',
-    stop_reason: 'end_turn',
-    content: [{ type: 'text', text: 'Done.' }],
-  },
-})}\n`
+import {
+  fixtureRoot,
+  LATER_TURN,
+  unscopedListing as listing,
+  listSessions,
+} from './session-fixtures'
 
 // Reading a Roster and then opening a Feed are two passes over the same tree, and only the
 // parsing is kept between them. What is kept is keyed on the mtime it was read at, so a file

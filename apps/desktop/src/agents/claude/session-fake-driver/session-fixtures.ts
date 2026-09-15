@@ -5,8 +5,32 @@ import os from 'node:os'
 import path from 'node:path'
 import { fixtureLines, writeFixtureTree } from '@/core/sessions/fake-driver/session-fixture-files'
 import { stitchChains } from '../sessions/chains.ts'
+import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { projectRosterRow } from '../sessions/roster.ts'
 import { readTranscriptFile } from '../sessions/transcript-file.ts'
+
+export const unscopedListing = {
+  version: 1,
+  type: 'session.list',
+  requestId: 'list-1',
+  projectRoot: null,
+}
+
+export function listSessions(value: unknown, root: string) {
+  return createClaudeSessionReader({ transcripts: root }).listSessions(value)
+}
+
+export const LATER_TURN = `${JSON.stringify({
+  type: 'assistant',
+  uuid: 'e-a-2',
+  parentUuid: 'e-a-1',
+  timestamp: '2026-09-01T08:00:00.000Z',
+  message: {
+    role: 'assistant',
+    stop_reason: 'end_turn',
+    content: [{ type: 'text', text: 'Done.' }],
+  },
+})}\n`
 
 export async function fixtureFile(name) {
   return readTranscriptFile(`/fixtures/${name}.jsonl`, {

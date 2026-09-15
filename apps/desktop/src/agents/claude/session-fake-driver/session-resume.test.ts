@@ -6,7 +6,7 @@ import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
 import { claudeResumeTarget } from '../sessions/resume-target.ts'
 import { fixtureRoot } from './session-fixtures'
 
-const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
+const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 
 async function rosterOf(reader: ReturnType<typeof createClaudeSessionReader>) {
   const reply = sessionListReplySchema.parse(await reader.listSessions(listing))

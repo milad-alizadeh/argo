@@ -21,6 +21,13 @@
     },
     "retry": "Retry"
   },
+  "question": {
+    "needed": "Your input is needed",
+    "locked": {
+      "title": "This session is open in another app",
+      "description": "Close it there to answer from Argo."
+    }
+  },
   "feedLabel": "Session Feed",
   "feedRegionLabel": "Session feed",
   "workspaceLabel": "Session workspace",
@@ -87,6 +94,11 @@
     }
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "promptSender": "You",
+  "streaming": {
+    "responding": "Assistant is responding.",
+    "complete": "Assistant response complete."
+  },
   "archived": "Archived",
   "empty": {
     "unselected": {
