@@ -27,7 +27,7 @@ export function rowsOfRecord(
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  return record.blocks.flatMap((block, index): SessionFeedRow[] => {
+  const rows = record.blocks.flatMap((block, index): SessionFeedRow[] => {
     const id = `${record.uuid}:${index}`
     if (block.shape === 'prose')
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
@@ -39,6 +39,7 @@ export function rowsOfRecord(
     }
     return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   })
+  return groupToolRuns(rows)
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -63,12 +64,10 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
         (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
       ),
   )
-  return groupToolRuns(
-    withoutRepeatedBreaks(
-      chain.files.flatMap((file, fileIndex) =>
-        file.records.flatMap((record, recordIndex) =>
-          rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
-        ),
+  return withoutRepeatedBreaks(
+    chain.files.flatMap((file, fileIndex) =>
+      file.records.flatMap((record, recordIndex) =>
+        rowsOfRecord(record, `${fileIndex}:${recordIndex}`, results),
       ),
     ),
   )

@@ -274,6 +274,69 @@ export const GroupedToolCalls: Story = {
   },
 }
 
+// commandRuns.jsonl has adjacent Claude runs; each assistant record owns a distinct Feed block.
+const separateToolRunsFeed = {
+  ...feed,
+  chainId: 'command-runs',
+  revision: 'command-runs-one',
+  sessionId: 'command-runs',
+  rows: [
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:run-one',
+      label: 'Ran 2 commands',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'run-one-test',
+          kind: 'command' as const,
+          label: 'Ran bun test',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: null,
+          text: 'bun test',
+        },
+        {
+          shape: 'tool' as const,
+          id: 'run-one-types',
+          kind: 'command' as const,
+          label: 'Ran bun run typecheck',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: null,
+          text: 'bun run typecheck',
+        },
+      ],
+    },
+    {
+      shape: 'tool-group' as const,
+      id: 'tool-group:run-two',
+      label: 'Ran a command',
+      calls: [
+        {
+          shape: 'tool' as const,
+          id: 'run-two-format',
+          kind: 'command' as const,
+          label: 'Ran bunx biome check .',
+          detail: null,
+          status: 'succeeded' as const,
+          evidence: null,
+          text: 'bunx biome check .',
+        },
+      ],
+    },
+  ],
+} satisfies SessionFeed
+
+export const SeparateToolRuns: Story = {
+  args: { feed: separateToolRunsFeed, selectedSessionId: 'command-runs' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Ran 2 commands' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
+  },
+}
+
 const streamingFeed = {
   ...feed,
   sessionId: 'streaming',

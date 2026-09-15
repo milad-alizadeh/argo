@@ -17,7 +17,6 @@ import {
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
 import type { ToolResult } from './tool-feed'
-import { groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
   chainId: string
@@ -49,27 +48,6 @@ function positionedRows(records: PositionedRecord[], results: Map<string, ToolRe
   return { rows, sources }
 }
 
-// `groupToolRuns` and `withoutRepeatedBreaks` merge runs of matching shape; this walks the same
-// runs, purely by shape, to say which pre-merge rows (by their source) fold into each output row.
-function mergedRunSources(shapes: readonly string[], mergeable: string): number[][] {
-  const groups: number[][] = []
-  let index = 0
-  while (index < shapes.length) {
-    if (shapes[index] !== mergeable) {
-      groups.push([index])
-      index += 1
-      continue
-    }
-    const run: number[] = []
-    while (shapes[index] === mergeable) {
-      run.push(index)
-      index += 1
-    }
-    groups.push(run)
-  }
-  return groups
-}
-
 function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult>) {
   const { rows: preRows, sources: preSources } = positionedRows(records, results)
   const deduped = withoutRepeatedBreaks(preRows)
@@ -78,15 +56,7 @@ function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult
       ? [preSources[index]]
       : [],
   )
-  const grouped = groupToolRuns(deduped)
-  const groups = mergedRunSources(
-    deduped.map((row) => row.shape),
-    'tool',
-  )
-  const groupedSources = groups.map((group) =>
-    Math.min(...group.map((index) => dedupedSources[index] ?? Number.POSITIVE_INFINITY)),
-  )
-  return grouped.map((row, index) => ({ row, source: groupedSources[index] ?? 0 }))
+  return deduped.map((row, index) => ({ row, source: dedupedSources[index] ?? 0 }))
 }
 
 // Everything is safe to freeze except a Tool Call still missing a result, and a trailing run of

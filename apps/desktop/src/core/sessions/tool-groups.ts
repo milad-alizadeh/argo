@@ -61,9 +61,7 @@ function toolGroupLabel(calls: ToolRow[]) {
   return kinds.map((kind, index) => countPhrase(kind, counts[kind], index === 0)).join(', ')
 }
 
-// Every consecutive run of tool calls becomes one group, a lone call included: the same
-// inline-or-evidence-panel routing rule then applies whether the group holds one call or many,
-// so rendering never special-cases the one-call run.
+// A caller supplies one transcript tool run; routing then applies whether it holds one call or many.
 export function groupToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
   const grouped: SessionFeedRow[] = []
   for (let index = 0; index < rows.length; ) {
