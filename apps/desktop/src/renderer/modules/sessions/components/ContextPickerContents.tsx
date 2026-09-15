@@ -27,6 +27,7 @@ function TicketResult({
   return (
     <button
       className="flex w-full items-center gap-(--spacing-shell-item) rounded-lg px-(--spacing-shell-inset) py-(--spacing-shell-item) text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+      data-context-ticket="true"
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => onSelect(ticket)}
       type="button"

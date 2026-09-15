@@ -3,9 +3,12 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_HIGH,
+  KEY_DOWN_COMMAND,
   type LexicalEditor,
 } from 'lexical'
 import type { RefObject } from 'react'
+import { useEffect } from 'react'
 
 import type { ComposerTicketContext } from '../state/useComposerStore'
 import { $createComposerTicketReferenceNode } from './ComposerTicketReferenceNode'
@@ -27,6 +30,24 @@ export function DraftContextPicker({
 }) {
   const reference = activeReference(draft.trimEnd())
   const query = reference?.trigger === '@' ? reference.query : ''
+  useEffect(() => {
+    const editor = editorRef.current
+    if (editor === null) return
+    return editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event) => {
+        if (event.key !== 'Enter' || reference?.trigger !== '@') return false
+        const firstTicket = document.querySelector<HTMLButtonElement>(
+          '[data-context-ticket="true"]',
+        )
+        if (firstTicket === null) return false
+        event.preventDefault()
+        firstTicket.click()
+        return true
+      },
+      COMMAND_PRIORITY_HIGH,
+    )
+  }, [editorRef, reference?.trigger])
   return (
     <ContextPicker
       onAttach={() => {
