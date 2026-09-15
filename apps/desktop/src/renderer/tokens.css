@@ -94,7 +94,6 @@
     var(--spacing-session-composer-bottom) +
     var(--spacing-hair)
   );
-  --size-session-composer-fade-depth: calc(var(--spacing-shell-section) * 3);
   --spacing-session-feed-composer-inset: calc(
     var(--size-session-composer-overlay) +
     var(--spacing-snug)

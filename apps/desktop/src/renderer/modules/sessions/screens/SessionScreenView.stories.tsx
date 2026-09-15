@@ -165,7 +165,13 @@ function ReviewInspectorBar({
   return null
 }
 
-function ReviewScreen({ initialSessionId = 'composer-review' }: { initialSessionId?: string }) {
+function ReviewScreen({
+  initialSessionId = 'composer-review',
+  showPlan = true,
+}: {
+  initialSessionId?: string
+  showPlan?: boolean
+}) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
@@ -187,7 +193,7 @@ function ReviewScreen({ initialSessionId = 'composer-review' }: { initialSession
         composer={
           <SessionComposer
             onSend={async () => true}
-            plan={session.plan}
+            plan={showPlan ? session.plan : null}
             sessionId={selectedSessionId}
           />
         }
@@ -253,7 +259,7 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
-function expectContextBarInset(canvasElement: HTMLElement) {
+function expectComposerFade(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const workspace = within(canvasElement).getByLabelText('Session workspace')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
@@ -275,11 +281,28 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
+  const workspaceBounds = workspace.getBoundingClientRect()
   const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.bottom).toBeCloseTo(composerBounds.top, 1)
-  expect(fade.className).toContain('h-(--size-session-composer-fade-depth)')
-  expect(fadeBounds.height).toBeGreaterThan(0)
-  expect(fadeBounds.top).toBeLessThan(composerBounds.top)
+  expect(fadeBounds.top).toBeCloseTo(composerBounds.top, 1)
+  expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
+  expect(fadeBounds.height).toBeCloseTo(composerBounds.height, 1)
+  expect(getComputedStyle(fade).pointerEvents).toBe('none')
+}
+
+async function expectComposerRemainsInteractive(canvasElement: HTMLElement, lines = 1) {
+  const canvas = within(canvasElement)
+  const composer = canvas.getByLabelText('Session composer')
+  const message = canvas.getByLabelText('Message')
+  const before = composer.getBoundingClientRect().height
+
+  await userEvent.click(message)
+  await userEvent.type(
+    message,
+    'Check the composer interaction.{Shift>}{Enter}{/Shift}'.repeat(lines),
+  )
+  await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
+
+  if (lines > 1) expect(composer.getBoundingClientRect().height).toBeGreaterThan(before)
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -441,7 +464,7 @@ export const ComposerStaysFixed: Story = {
       ),
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
-    expectContextBarInset(canvasElement)
+    expectComposerFade(canvasElement)
   },
 }
 
@@ -459,9 +482,8 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const ComposerFadeLight: Story = {
-  globals: { theme: 'light' },
-  render: () => <ReviewScreen />,
+export const ComposerFadeNormal: Story = {
+  render: () => <ReviewScreen showPlan={false} />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -469,12 +491,12 @@ export const ComposerFadeLight: Story = {
         'composer-review',
       ),
     )
-    expectContextBarInset(canvasElement)
+    await expectComposerRemainsInteractive(canvasElement)
+    expectComposerFade(canvasElement)
   },
 }
 
-export const ComposerFadeDark: Story = {
-  globals: { theme: 'dark' },
+export const ComposerFadeTall: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -483,7 +505,8 @@ export const ComposerFadeDark: Story = {
         'composer-review',
       ),
     )
-    expectContextBarInset(canvasElement)
+    await expectComposerRemainsInteractive(canvasElement, 10)
+    expectComposerFade(canvasElement)
   },
 }
 

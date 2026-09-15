@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
@@ -36,26 +36,19 @@ function ComposerFade() {
     <div
       aria-hidden="true"
       data-component="SessionComposerFade"
-      className="pointer-events-none absolute inset-x-0 bottom-full h-(--size-session-composer-fade-depth) bg-[image:var(--gradient-session-composer-fade)]"
+      className="pointer-events-none absolute inset-0 bg-[image:var(--gradient-session-composer-fade)]"
     />
   )
 }
 
 // Unmounted rather than hidden: a Session with nothing selected has no composer at all (#2105).
-function ComposerSection({
-  composer,
-  sectionRef,
-}: {
-  composer: ReactNode | null
-  sectionRef: React.RefObject<HTMLElement | null>
-}) {
+function ComposerSection({ composer }: { composer: ReactNode | null }) {
   const { t } = useTranslation('sessions')
   if (composer === null) return null
   return (
     <section
       aria-label={t('composerRegionLabel')}
       className="absolute inset-x-0 bottom-0 z-20 isolate"
-      ref={sectionRef}
     >
       <ComposerFade />
       {composer}
@@ -86,7 +79,6 @@ export function SessionWorkspace({
   answeringQuestionId,
   questionFailure,
 }: SessionWorkspaceProps) {
-  const composerElement = useRef<HTMLElement>(null)
   const { t } = useTranslation('sessions')
 
   return (
@@ -118,7 +110,7 @@ export function SessionWorkspace({
           turnMarker={turnMarker}
         />
       </section>
-      <ComposerSection composer={composer} sectionRef={composerElement} />
+      <ComposerSection composer={composer} />
     </section>
   )
 }
