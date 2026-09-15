@@ -65,6 +65,22 @@ test('an Edit call carries its diff evidence before the result lands', () => {
   assert.deepEqual(row.lineCounts, { added: 3, removed: 2 })
 })
 
+test('a Write call opens as a diff of added lines, never its result text', () => {
+  const results = new Map<string, ToolResult>([
+    ['call-1', { content: 'File created successfully at: src/new.ts', failed: false }],
+  ])
+  const row = onlyToolRow(
+    [call({ id: 'call-1', name: 'Write', input: { file_path: 'src/new.ts', content: 'a\nb' } })],
+    results,
+  )
+  assert.deepEqual(row.evidence, {
+    kind: 'diff',
+    title: 'Created src/new.ts',
+    source: '@@ -0,0 +1,2 @@\n+a\n+b',
+  })
+  assert.deepEqual(row.lineCounts, { added: 2, removed: 0 })
+})
+
 test('a Read call with no result yet has no evidence to open', () => {
   const row = onlyToolRow(
     [call({ id: 'call-1', name: 'Read', input: { file_path: 'src/app.ts' } })],

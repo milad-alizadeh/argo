@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
 import type { ToolCall } from './transcript'
-import { unifiedPatch } from './unified-patch'
+import { createdPatch, unifiedPatch } from './unified-patch'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
@@ -30,7 +30,7 @@ const TOOL_DETAILS = {
   }),
 } as const
 
-const EVIDENCE_KINDS = { Bash: 'output', Edit: 'diff', Read: 'document' } as const
+const EVIDENCE_KINDS = { Bash: 'output', Read: 'document' } as const
 
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
@@ -55,16 +55,19 @@ function toolPresentation(call: ToolCall) {
   )
 }
 
-function lineCounts(call: ToolCall): ToolRow['lineCounts'] {
-  if (
-    call.name === 'Edit' &&
-    typeof call.input.old_string === 'string' &&
-    typeof call.input.new_string === 'string'
-  ) {
+const lineCount = (text: string) => text.split('\n').length
+
+// An Edit or a Write carries its change in its own input, so its diff is ready before the result.
+function fileChange(call: ToolCall) {
+  const { old_string: oldText, new_string: newText, content } = call.input
+  if (call.name === 'Edit' && typeof oldText === 'string' && typeof newText === 'string') {
     return {
-      added: call.input.new_string.split('\n').length,
-      removed: call.input.old_string.split('\n').length,
+      patch: unifiedPatch(oldText, newText),
+      lineCounts: { added: lineCount(newText), removed: lineCount(oldText) },
     }
+  }
+  if (call.name === 'Write' && typeof content === 'string') {
+    return { patch: createdPatch(content), lineCounts: { added: lineCount(content), removed: 0 } }
   }
   return null
 }
@@ -74,12 +77,9 @@ function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['ev
   // the skill body, carried through `text` (see `toolText`), not the evidence panel.
   if (call.name === 'Skill') return null
   const presentation = toolPresentation(call)
-  const source =
-    call.name === 'Edit' &&
-    typeof call.input.old_string === 'string' &&
-    typeof call.input.new_string === 'string'
-      ? unifiedPatch(call.input.old_string, call.input.new_string)
-      : (result?.content ?? null)
+  const change = fileChange(call)
+  if (change !== null) return { kind: 'diff', title: presentation.label, source: change.patch }
+  const source = result?.content ?? null
   if (source === null) return null
   const kind = EVIDENCE_KINDS[call.name as keyof typeof EVIDENCE_KINDS] ?? 'output'
   return { kind, title: presentation.label, source }
@@ -101,7 +101,7 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRo
     shape: 'tool',
     id: call.id,
     ...toolPresentation(call),
-    lineCounts: lineCounts(call),
+    lineCounts: fileChange(call)?.lineCounts ?? null,
     status: toolStatus(result),
     evidence: evidenceOf(call, result),
     text: toolText(call, skillBodies),
