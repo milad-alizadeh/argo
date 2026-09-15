@@ -1,7 +1,8 @@
-import { Check } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/core/sessions/question'
-import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import {
   Questionnaire,
   QuestionnaireChoice,
@@ -89,15 +90,43 @@ function QuestionField({
   )
 }
 
+// Argo holds no channel to a Session it did not spawn, so it cannot write an answer into
+// whatever process is actually waiting on this question — a PTY open in another app, most
+// often (#2205). The question itself stays readable, with no radio or submit to act on it.
+function FeedQuestionLocked({ row }: { row: AskRow }) {
+  const { t } = useTranslation('sessions')
+  return (
+    <div
+      className={`${FEED_CARD_RADIUS_CLASS} space-y-3 border bg-card p-4`}
+      data-component="FeedQuestion"
+    >
+      <p className="type-meta text-muted-foreground">{t('question.needed')}</p>
+      {row.questions.map((question) => (
+        <div key={question.question} className="space-y-1">
+          {question.header ? <p className="type-heading">{question.header}</p> : null}
+          <p className="type-body">{question.question}</p>
+        </div>
+      ))}
+      <Alert className="border-0 bg-transparent p-0">
+        <Lock aria-hidden />
+        <AlertTitle>{t('question.locked.title')}</AlertTitle>
+        <AlertDescription>{t('question.locked.description')}</AlertDescription>
+      </Alert>
+    </div>
+  )
+}
+
 export function FeedQuestion({
   row,
   answering,
   failure,
+  locked,
   onAnswer,
 }: {
   row: AskRow
   answering: boolean
   failure: string | null
+  locked: boolean
   onAnswer: (questionId: string, answers: QuestionAnswer[]) => void
 }) {
   const [selections, setSelections] = useState<Record<number, string[]>>({})
@@ -111,6 +140,8 @@ export function FeedQuestion({
       </div>
     )
   }
+
+  if (locked) return <FeedQuestionLocked row={row} />
 
   if (row.unsupported !== null) {
     return (

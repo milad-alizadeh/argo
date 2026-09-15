@@ -50,7 +50,7 @@ export function AnchoredFeed({
   streamingRowId,
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
-  const tailFollow = useFeedTailFollow(settled.reading.sessionId, viewport)
+  const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
   const virtualizer = useVirtualizer({
     // End anchoring is only correct while the reader is following the tail.
     // While they are reading history, retain their actual reading position as
@@ -71,6 +71,8 @@ export function AnchoredFeed({
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   useInitialFeedPosition({
+    active,
+    following: tailFollow.atLatest,
     onPositioned: tailFollow.markInitiallyPositioned,
     sessionId: settled.reading.sessionId,
     viewport,

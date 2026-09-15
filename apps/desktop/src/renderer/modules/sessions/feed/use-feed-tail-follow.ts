@@ -4,7 +4,10 @@ import { useDisclosureHold } from './use-disclosure-hold'
 
 const TAIL_THRESHOLD_PX = 80
 
-export function useFeedTailFollow(sessionId: string, viewport: HTMLElement | null) {
+export function useFeedTailFollow(
+  sessionId: string,
+  { active, viewport }: { active: boolean; viewport: HTMLElement | null },
+) {
   const [atLatest, setAtLatest] = useState(true)
   const [initiallyPositionedSessionId, setInitiallyPositionedSessionId] = useState<string | null>(
     null,
@@ -18,13 +21,14 @@ export function useFeedTailFollow(sessionId: string, viewport: HTMLElement | nul
   const onChange = useCallback(
     (instance: Virtualizer<HTMLElement, Element>) => {
       latest.current = instance
-      if (awaitingInitialPosition) return
+      // An inactive document measures 0x0, which reads as "at the end" and would lose the reader.
+      if (awaitingInitialPosition || !active) return
       setAtLatest((current) => {
         const next = instance.isAtEnd(TAIL_THRESHOLD_PX)
         return current === next ? current : next
       })
     },
-    [awaitingInitialPosition],
+    [active, awaitingInitialPosition],
   )
   const holding = useDisclosureHold(viewport, () => {
     if (latest.current !== null) onChange(latest.current)

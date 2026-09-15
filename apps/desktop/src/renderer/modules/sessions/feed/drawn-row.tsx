@@ -24,6 +24,9 @@ type DrawnRowInputs = {
   onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
+  // Argo can only write an answer into a Session whose channel it currently holds (#2205); every
+  // other posture draws the ask row locked, whatever the transcript says.
+  questionLocked: boolean
 }
 
 // One component for the life of the deck: a new one each render would remount every row and
@@ -46,6 +49,7 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
   failureFor.current =
     typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure
   const sessionId = inputs.sessionId
+  const questionLocked = inputs.questionLocked
   const onOpenEvidence = useCallback(
     (evidence: SessionEvidence) => openEvidence.current(evidence),
     [],
@@ -68,8 +72,9 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
         onAnswerQuestion={onAnswerQuestion}
         answering={answeringId.current === props.row.id}
         questionFailure={questionFailure(props.row.id)}
+        questionLocked={questionLocked}
       />
     ),
-    [onAnswerQuestion, onOpenEvidence, questionFailure, toolGroups, revealCache],
+    [onAnswerQuestion, onOpenEvidence, questionFailure, questionLocked, toolGroups, revealCache],
   )
 }

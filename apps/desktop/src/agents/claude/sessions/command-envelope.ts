@@ -151,6 +151,11 @@ export function readCommandEnvelope(
       callId: identifierTag(text, 'tool-use-id'),
     }
   }
+  // The harness re-delivers the compaction summary as a synthetic user turn so the model can
+  // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows
+  // rather than letting it fall through to a prose prompt bubble (#2206).
+  if (text.startsWith('This session is being continued from a previous conversation'))
+    return { kind: 'compaction-summary', uuid: message.uuid, text }
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null
   if (prompt === null) return { kind: 'trace', uuid: message.uuid }

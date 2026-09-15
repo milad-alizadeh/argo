@@ -98,7 +98,12 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   }),
   delegationRowSchema,
   delegationGroupSchema,
-  z.strictObject({ shape: z.literal('marker'), id: identifierSchema, marker: feedMarkerSchema }),
+  z.strictObject({
+    shape: z.literal('marker'),
+    id: identifierSchema,
+    marker: feedMarkerSchema,
+    summary: z.string().nullable(),
+  }),
   z.strictObject({
     shape: z.literal('source'),
     id: identifierSchema,

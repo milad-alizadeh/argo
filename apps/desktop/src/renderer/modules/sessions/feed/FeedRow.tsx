@@ -21,6 +21,7 @@ export type FeedRowProps = {
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
+  questionLocked: boolean
 }
 
 export function FeedRow({
@@ -34,6 +35,7 @@ export function FeedRow({
   onAnswerQuestion,
   answering,
   questionFailure,
+  questionLocked,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
   const hasStreamed = useRef(streaming)
@@ -62,6 +64,7 @@ export function FeedRow({
         onAnswerQuestion={onAnswerQuestion}
         answering={answering}
         questionFailure={questionFailure}
+        questionLocked={questionLocked}
         row={row}
         streamingText={text}
       />
@@ -87,6 +90,7 @@ function FeedRowContent({
   onAnswerQuestion,
   answering,
   questionFailure,
+  questionLocked,
   streamingText,
 }: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & { streamingText: string }) {
   switch (row.shape) {
@@ -121,6 +125,7 @@ function FeedRowContent({
           row={row}
           answering={answering}
           failure={questionFailure}
+          locked={questionLocked}
           onAnswer={onAnswerQuestion}
         />
       )

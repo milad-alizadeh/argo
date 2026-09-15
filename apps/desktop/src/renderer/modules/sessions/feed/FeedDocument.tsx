@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
+import { sessionPostureLocksAnswer } from '../types'
 import { CompactionMarker } from './CompactionMarker'
 import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
@@ -102,6 +103,7 @@ export function FeedDocument({
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
+    questionLocked: sessionPostureLocksAnswer(posture),
   })
   const lastRow = feed.rows[feed.rows.length - 1]
   const streamingRowId =

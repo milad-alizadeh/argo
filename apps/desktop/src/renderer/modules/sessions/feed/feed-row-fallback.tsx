@@ -3,6 +3,7 @@ import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedDelegation } from './FeedDelegation'
 import { FeedEvent } from './FeedEvent'
+import { FeedMarker } from './FeedMarker'
 
 export function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
@@ -52,7 +53,7 @@ export function FeedRowFallback({
     case 'source':
       return <p>{row.label}</p>
     case 'marker':
-      return <p>{row.marker === 'compacted' ? t('marks.compacted') : t('marks.interrupted')}</p>
+      return <FeedMarker row={row} />
     case 'unreadable':
       return <p>{t('rowUnreadable')}</p>
   }
