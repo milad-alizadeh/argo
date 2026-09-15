@@ -105,6 +105,7 @@ export function readShellCommands(
         {
           id: call.id,
           command: text(call.input.command)?.trim().split('\n', 1).join('') ?? null,
+          label: text(call.input.description),
           background: receipt !== undefined || call.input.run_in_background === true,
           state: notification?.state ?? ('running' as const),
           startedAt: times.started.get(call.id) ?? null,

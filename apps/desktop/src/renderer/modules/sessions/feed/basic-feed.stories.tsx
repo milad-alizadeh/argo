@@ -237,6 +237,7 @@ const delegationFeed = {
 const BUILD_COMMAND = {
   id: 'call-build',
   command: 'bun run build',
+  label: null,
   background: true,
   state: 'completed' as const,
   startedAt: '2026-09-02T08:00:00.000Z',

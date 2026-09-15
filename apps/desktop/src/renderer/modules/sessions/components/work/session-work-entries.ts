@@ -8,7 +8,7 @@ import { delegationState, spentTokens, WORK_STATE_MARKS, workDuration } from './
 export type WorkEntry = {
   id: string
   title: string
-  // A command is the text the CLI was given, so it is read as code. A Subagent's label is prose.
+  // Raw command text is read as code; a derived label, Subagent or Shell, is prose.
   monospace: boolean
   running: boolean
   mark: string
@@ -49,8 +49,8 @@ export function shellEntries(
 ): WorkEntry[] {
   return shell.map((command) => ({
     id: command.id,
-    title: command.command ?? command.id,
-    monospace: true,
+    title: command.label ?? command.command ?? command.id,
+    monospace: command.label === null,
     running: command.state === 'running',
     mark: WORK_STATE_MARKS[command.state],
     state: t(`workState.${command.state}`),
