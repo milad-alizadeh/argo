@@ -1,4 +1,5 @@
 import { File, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { attachmentKindOf } from '@/core/sessions/attachments-contract'
 import {
@@ -22,10 +23,6 @@ function parseFilename(path: string): { title: string; extension: string | null 
   return { title: name.slice(0, separator), extension: name.slice(separator + 1) }
 }
 
-function fileType(extension: string | null): string {
-  return extension ? `${extension.toUpperCase()} file` : 'File'
-}
-
 // POSIX only: the managed drivers this reads paths from run on macOS today (#1894, #1892 track
 // Linux and Windows separately).
 function fileUrl(path: string): string {
@@ -38,6 +35,7 @@ export type ComposerAttachmentsProps = {
 }
 
 export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmentsProps) {
+  const { t } = useTranslation('sessions')
   if (attachments.length === 0) return null
   return (
     <AttachmentGroup className="flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) p-(--spacing-composer-attachment-gutter)">
@@ -70,12 +68,14 @@ export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmen
                 {title}
               </AttachmentTitle>
               <AttachmentDescription className="type-meta">
-                {attachment.status === 'error' ? 'Not found' : fileType(extension)}
+                {attachment.status === 'error'
+                  ? t('composer.attachment.notFound')
+                  : t('composer.attachment.fileType', { extension: extension?.toUpperCase() })}
               </AttachmentDescription>
             </AttachmentContent>
             <AttachmentActions className="absolute top-0 right-0">
               <AttachmentAction
-                aria-label={`Remove ${title}`}
+                aria-label={t('composer.attachment.remove', { title })}
                 onClick={() => onRemove(attachment.id)}
               >
                 <X />

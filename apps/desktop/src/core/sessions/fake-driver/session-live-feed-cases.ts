@@ -55,9 +55,7 @@ async function tailReading(page) {
     const viewport = document.querySelector('.feed__viewport')
     return {
       fromTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop,
-      unstated: [...viewport.querySelectorAll('[data-feed-row]')].filter(
-        (row) => row.style.height === '',
-      ).length,
+      hasMeasuredClone: document.querySelector('.feed__measured') !== null,
     }
   })
 }
@@ -93,14 +91,12 @@ async function proveTail(page, fixture: LiveFixture, before) {
   await waitForRowCount(page, before.rows + 2)
   const tail = await tailReading(page)
   assert.equal(tail.fromTail <= 1, true)
-  assert.equal(tail.unstated, 0)
+  assert.equal(tail.hasMeasuredClone, false)
   return { tail, streamed }
 }
 
-// ADR-0033 rule 5: an appended row is measured before it enters the viewport. The scroller owns
-// the two reader positions: it follows while at the tail and holds the chosen row while the
-// reader has moved above it. The second half also proves that a kept Session is not remounted on
-// a switch, which would reset its chosen row to the tail.
+// The virtualizer owns the two reader positions: it follows at the tail and holds the chosen row
+// while the reader has moved above it. A kept Session must not remount on a switch.
 export async function proveLiveFeed(page, fixture: LiveFixture) {
   await fixture.stream(
     fixture.transcripts,

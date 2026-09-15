@@ -1,10 +1,15 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { questionSchema } from './question'
+import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from './transcript'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)
 export type FeedMarker = z.infer<typeof feedMarkerSchema>
+
+export { TRANSCRIPT_EVENT_KINDS as FEED_EVENT_KINDS }
+export const feedEventKindSchema = z.enum(TRANSCRIPT_EVENT_KINDS)
+export type FeedEventKind = TranscriptEventKind
 
 const toolEvidenceSchema = z
   .discriminatedUnion('kind', [
@@ -21,9 +26,46 @@ const toolCallSchema = z.strictObject({
   detail: z.string().nullable(),
   status: z.enum(['succeeded', 'failed', 'running']),
   evidence: toolEvidenceSchema,
+  // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
+  // kind routed to the evidence panel, which reads the call through `evidence` instead.
+  text: z.string().nullable(),
 })
 
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
+
+const delegationRowSchema = z.strictObject({
+  shape: z.literal('delegation'),
+  id: identifierSchema,
+  actor: z.enum(['agent', 'shell']),
+  action: z.string().nullable(),
+  status: z.string().nullable(),
+  progress: z.string().nullable(),
+  groupId: identifierSchema.nullable(),
+})
+
+const shellDelegationEntrySchema = delegationRowSchema.extend({
+  actor: z.literal('shell'),
+  groupId: identifierSchema,
+})
+
+const delegationGroupSchema = z
+  .strictObject({
+    shape: z.literal('delegation-group'),
+    id: identifierSchema,
+    actor: z.literal('shell'),
+    groupId: identifierSchema,
+    entries: z.array(shellDelegationEntrySchema).min(1),
+  })
+  .superRefine((group, context) => {
+    group.entries.forEach((entry, index) => {
+      if (entry.groupId !== group.groupId)
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'A Shell activity entry must use its enclosing group id.',
+          path: ['entries', index, 'groupId'],
+        })
+    })
+  })
 
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   toolRowSchema,
@@ -41,6 +83,14 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   }),
   z.strictObject({ shape: z.literal('thought'), id: identifierSchema, text: z.string() }),
   z.strictObject({ shape: z.literal('command-output'), id: identifierSchema, text: z.string() }),
+  z.strictObject({
+    shape: z.literal('event'),
+    id: identifierSchema,
+    event: feedEventKindSchema,
+    text: z.string().nullable(),
+  }),
+  delegationRowSchema,
+  delegationGroupSchema,
   z.strictObject({ shape: z.literal('marker'), id: identifierSchema, marker: feedMarkerSchema }),
   z.strictObject({
     shape: z.literal('source'),

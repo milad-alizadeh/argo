@@ -55,7 +55,7 @@ function SessionBlockedBadge({ session }: { session: Session }) {
   const label = BLOCKED_BADGE_LABELS[session.status]
   if (label === undefined) return null
   return (
-    <Badge className="border-warn/40 text-warn" variant="outline">
+    <Badge className="border-warn/40 text-warn" size="compact" variant="outline">
       {label}
     </Badge>
   )
@@ -77,8 +77,8 @@ function SessionLockedMark({ session }: { session: Session }) {
   )
 }
 
-function activitySummary(session: Session): string {
-  if (session.activity === null) return session.status
+function activitySummary(session: Session): string | null {
+  if (session.activity === null) return null
   return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
 }
 
@@ -107,6 +107,7 @@ export function SessionRosterItem({
   session: Session
   tabIndex: number
 }) {
+  const activity = activitySummary(session)
   return (
     <li className="min-w-0">
       <ContextMenu>
@@ -131,7 +132,7 @@ export function SessionRosterItem({
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="block min-w-0 truncate type-heading font-medium text-foreground">
+                    <span className="block min-w-0 truncate type-label font-medium text-foreground">
                       <PromptText
                         interactiveLinks={false}
                         renderText={(value) => (
@@ -143,9 +144,11 @@ export function SessionRosterItem({
                     <SessionBlockedBadge session={session} />
                     <SessionLockedMark session={session} />
                   </span>
-                  <span className="mt-0.5 block truncate type-meta text-faint">
-                    {activitySummary(session)}
-                  </span>
+                  {activity === null ? null : (
+                    <span className="mt-0.5 block truncate type-roster-meta text-faint">
+                      {activity}
+                    </span>
+                  )}
                   <SessionMetadata session={session} />
                 </span>
               </span>

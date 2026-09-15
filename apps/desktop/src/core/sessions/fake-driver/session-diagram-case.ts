@@ -42,7 +42,7 @@ function rowOffset(page, id) {
       if (!container || !row) return null
       return row.getBoundingClientRect().top - container.getBoundingClientRect().top
     },
-    { viewport: ACTIVE_VIEWPORT, rowId: id },
+    { viewport: ACTIVE_VIEWPORT, rowId: `${id}:0` },
   )
 }
 
@@ -84,6 +84,7 @@ export async function proveSessionDiagram(page, fixture: DiagramFixture) {
   // row on-screen.
   await expand.scrollIntoViewIfNeeded()
   const before = await rowOffset(page, DIAGRAM_ROW)
+  assert.notEqual(before, null)
 
   await expand.click()
   const inspector = page.locator('[aria-label="Diagram inspector"]')

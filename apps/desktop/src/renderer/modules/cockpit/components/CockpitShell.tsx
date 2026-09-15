@@ -26,10 +26,15 @@ type SidebarHeaderProps = {
   toggleRef: RefObject<HTMLButtonElement | null>
 }
 
+type SidebarToggleProps = Pick<SidebarHeaderProps, 'onToggle' | 'toggleRef'>
+
 function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
   const { t } = useTranslation('cockpit')
   return (
-    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 px-(--spacing-shell-gutter)">
+    <header
+      data-component="CockpitSidebarHeader"
+      className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 px-(--spacing-shell-gutter)"
+    >
       <Button
         aria-label={t('shell.collapseSidebar')}
         variant="ghost"
@@ -45,14 +50,64 @@ function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
   )
 }
 
+function CollapsedSidebarControl({ onToggle, toggleRef }: SidebarToggleProps) {
+  const { t } = useTranslation('cockpit')
+  return (
+    <div
+      data-component="CockpitCollapsedSidebarControl"
+      className="absolute top-0 left-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center"
+    >
+      <Button
+        aria-label={t('shell.openSidebar')}
+        variant="ghost"
+        size="icon-sm"
+        ref={toggleRef}
+        onClick={onToggle}
+      >
+        <PanelLeftIcon />
+      </Button>
+    </div>
+  )
+}
+
+function CockpitSidebar({
+  header,
+  isCollapsed,
+  onToggle,
+  sidebar,
+  toggleRef,
+}: SidebarHeaderProps & { isCollapsed: boolean; sidebar: ReactNode }) {
+  if (isCollapsed) return null
+  return (
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
+      <SidebarHeader header={header} onToggle={onToggle} toggleRef={toggleRef} />
+      <div className="min-h-0 flex-1">{sidebar}</div>
+    </aside>
+  )
+}
+
+function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
+  return (
+    <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col">
+      <div
+        data-component="CockpitRailChrome"
+        className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar"
+      />
+      <aside className="min-h-0 flex-1 border-r border-border/60">
+        {rail ?? <CockpitNavigationRail />}
+      </aside>
+    </div>
+  )
+}
+
 export function CockpitShell({
   rail,
   sidebar,
   header = <ProjectSwitcher />,
   children,
 }: CockpitShellProps) {
-  const { t } = useTranslation('cockpit')
   const sidebarPanelRef = usePanelRef()
+  const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
   const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')
   const sidebarMaximumWidth = readCssSize('--size-cockpit-sidebar-max')
   const contentMinimumWidth = readCssSize('--size-cockpit-content-min')
@@ -85,45 +140,41 @@ export function CockpitShell({
 
   return (
     <div className="relative flex h-full min-h-0 overflow-hidden bg-background">
-      <aside className="w-(--size-navigation-rail) shrink-0 border-r border-border/60">
-        {rail ?? <CockpitNavigationRail />}
-      </aside>
+      <CockpitRail rail={rail} />
       <ResizablePanelGroup
         orientation="horizontal"
         className="relative min-w-0 flex-1"
         onLayoutChanged={synchronizeSidebarCollapsed}
       >
         {isSidebarCollapsed ? (
-          <div className="absolute top-0 left-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center gap-(--spacing-shell-tight)">
-            <Button
-              aria-label={t('shell.openSidebar')}
-              variant="ghost"
-              size="icon-sm"
-              ref={sidebarToggleRef}
-              onClick={toggleSidebar}
-            >
-              <PanelLeftIcon />
-            </Button>
-            <div className="min-w-0">{header}</div>
-          </div>
+          <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
         ) : null}
         <ResizablePanel
           id="cockpit-sidebar"
           collapsible
           collapsedSize={0}
-          defaultSize={sidebarMinimumWidth}
+          defaultSize={sidebarDefaultWidth}
           minSize={sidebarMinimumWidth}
           maxSize={sidebarMaximumWidth}
           panelRef={sidebarPanelRef}
         >
-          <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
-            <SidebarHeader header={header} onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
-            <div className="min-h-0 flex-1">{sidebar}</div>
-          </aside>
+          <CockpitSidebar
+            header={header}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+            sidebar={sidebar}
+            toggleRef={sidebarToggleRef}
+          />
         </ResizablePanel>
         <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
         <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-          <div className="relative h-full min-w-0 overflow-hidden bg-background">{children}</div>
+          <div
+            data-component="CockpitContent"
+            data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+            className="relative h-full min-w-0 overflow-hidden bg-background"
+          >
+            {children}
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

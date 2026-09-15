@@ -17,6 +17,7 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
   const usage = useQuery<Record<string, number | null>>({
     queryKey: sessionDelegationUsageQueryKey(sessionId ?? ''),
     enabled: sessionId !== null,
+    gcTime: 0,
     placeholderData: (previous) => previous,
     refetchInterval: live ? SESSION_REFRESH_MS : false,
     retry: false,
@@ -37,6 +38,7 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
   const output = useQuery<string | null>({
     queryKey: sessionShellOutputQueryKey(sessionId ?? '', shellId ?? '', live),
     enabled: sessionId !== null && shellId !== null,
+    gcTime: 0,
     placeholderData: (previous) => previous,
     refetchInterval: live ? SESSION_REFRESH_MS : false,
     retry: false,

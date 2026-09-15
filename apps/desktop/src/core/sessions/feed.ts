@@ -1,6 +1,8 @@
 import type { SessionChain } from './chains'
+import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
-import { groupToolRuns, type ToolResult, toolRows } from './tool-feed'
+import { type ToolResult, toolRows } from './tool-feed'
+import { groupToolRuns } from './tool-groups'
 import type { TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
@@ -22,22 +24,39 @@ export function rowsOfRecord(
     return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
+  if (record.kind === 'event')
+    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text }]
+  if (record.kind === 'delegation')
+    return [
+      {
+        shape: 'delegation',
+        id: record.uuid,
+        actor: record.actor,
+        action: record.action,
+        status: record.status,
+        progress: record.progress,
+        groupId: record.groupId,
+      },
+    ]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  return record.blocks.flatMap((block, index): SessionFeedRow[] => {
+  const rows = record.blocks.flatMap((block, index): SessionFeedRow[] => {
     const id = `${record.uuid}:${index}`
     if (block.shape === 'prose')
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
     if (block.shape === 'thought') return [{ shape: 'thought', id, text: block.text }]
     if (block.shape === 'marker') return [{ shape: 'marker', id, marker: block.marker }]
+    if (block.shape === 'event')
+      return [{ shape: 'event', id, event: block.event, text: block.text }]
     if (block.shape === 'tool') {
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], results)
     }
     return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   })
+  return groupToolRuns(rows)
 }
 
 // A run of damaged lines is one break in the history, not one per line. The transcript can hold
@@ -62,7 +81,7 @@ export function projectFeed(chain: SessionChain): SessionFeedRow[] {
         (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
       ),
   )
-  return groupToolRuns(
+  return groupDelegations(
     withoutRepeatedBreaks(
       chain.files.flatMap((file, fileIndex) =>
         file.records.flatMap((record, recordIndex) =>

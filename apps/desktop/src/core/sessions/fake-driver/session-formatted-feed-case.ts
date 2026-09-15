@@ -1,8 +1,4 @@
-// The formatted half of the packaged Session proof (#1835): an assistant turn written in Markdown
-// arrives while the reader is at the tail, and its code highlighting, image loads and image
-// failures finish after the row is drawn without moving the reader or outgrowing the row's
-// measured height (ADR-0035). It runs in the shipped app because the renderer's CSP decides which
-// images load, and only the packaged page carries the policy it ships with.
+// The packaged CSP determines which images load; the Feed must remain at the tail as they settle.
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -35,37 +31,29 @@ step one: attach an image
 Raw HTML stays text: <script>window.feedHacked = true</script>`
 }
 
-// A long plain turn after the formatted one, so the reader's first visible row sits below it and
-// any growth in the formatted row would push that row down.
+// A long plain turn after the formatted one keeps the formatted turn outside the reader's tail.
 const FOLLOWING_TURN = 'The reader holds this row while the turn above it finishes. '.repeat(120)
 
-function drawnRowCount(page) {
-  return page.evaluate(
-    (feed) => document.querySelectorAll(`${feed} .feed__viewport [data-feed-row]`).length,
-    ACTIVE_FEED,
-  )
-}
-
-// Read on the first frame both new rows are drawn, before anything asynchronous inside them ran.
-async function firstDrawn(page, count) {
+// Read the formatted row's first frame before anything asynchronous inside it ran.
+async function firstDrawn(page) {
   const handle = await page.waitForFunction(
-    ({ feed, expected }) => {
+    (feed) => {
       const viewport = document.querySelector(`${feed} .feed__viewport`)
       const rows = [...(viewport?.querySelectorAll('[data-feed-row]') ?? [])]
-      if (rows.length !== expected) return null
-      const anchor = rows.find(
-        (row) => row.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
-      )
-      const formatted = rows.at(-2)
+      const formatted = rows.find((row) => row.dataset.feedRow === 'p-formatted:0')
+      if (
+        formatted === undefined ||
+        formatted.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top
+      ) {
+        return null
+      }
       return {
-        anchor: anchor.dataset.feedRow,
         formatted: formatted.dataset.feedRow,
-        offset: anchor.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
         highlightedAtDraw: formatted.querySelector('code[data-highlighted="true"]') !== null,
         loadingAtDraw: formatted.querySelectorAll('button[data-state="loading"]').length,
       }
     },
-    { feed: ACTIVE_FEED, expected: count },
+    ACTIVE_FEED,
     { timeout: SETTLE_TIMEOUT_MS, polling: 'raf' },
   )
   return handle.jsonValue()
@@ -74,9 +62,13 @@ async function firstDrawn(page, count) {
 async function settledReading(page, drawn) {
   await page.waitForFunction(
     ({ feed, id }) => {
+      const viewport = document.querySelector(`${feed} .feed__viewport`)
       const row = document.querySelector(`${feed} .feed__viewport [data-feed-row="${id}"]`)
       return (
-        row?.querySelector('code[data-highlighted="true"]') !== null &&
+        row !== null &&
+        viewport !== null &&
+        viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 1 &&
+        row.querySelector('code[data-highlighted="true"]') !== null &&
         row.querySelectorAll('button[data-state="loaded"]').length === 2 &&
         row.querySelectorAll('figure').length === 2
       )
@@ -85,20 +77,13 @@ async function settledReading(page, drawn) {
     { timeout: SETTLE_TIMEOUT_MS },
   )
   return page.evaluate(
-    ({ feed, formatted, anchor }) => {
+    ({ feed, formatted }) => {
       const viewport = document.querySelector(`${feed} .feed__viewport`)
       const row = viewport.querySelector(`[data-feed-row="${formatted}"]`)
-      const measured = document.querySelector(
-        `${feed} .feed__measured [data-feed-row="${formatted}"]`,
-      )
       const links = [...row.querySelectorAll('a')]
       return {
-        offset:
-          viewport.querySelector(`[data-feed-row="${anchor}"]`).getBoundingClientRect().top -
-          viewport.getBoundingClientRect().top,
-        stated: Number.parseFloat(row.style.height),
-        natural: measured.getBoundingClientRect().height,
-        overflow: row.scrollHeight - row.clientHeight,
+        fromTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop,
+        height: row.getBoundingClientRect().height,
         languages: [...row.querySelectorAll('[data-language]')].map((code) =>
           code.getAttribute('data-language'),
         ),
@@ -117,16 +102,13 @@ async function settledReading(page, drawn) {
 export async function proveFormattedFeed(page, fixture: FormattedFixture) {
   const localPicture = path.join(fixture.root, 'formatted-picture.svg')
   await writeFile(localPicture, PICTURE)
-  const before = await drawnRowCount(page)
   await fixture.append(fixture.transcripts, 'p-formatted', formattedTurn(localPicture))
   await fixture.append(fixture.transcripts, 'p-formatted-after', FOLLOWING_TURN)
-  const drawn = await firstDrawn(page, before + 2)
+  const drawn = await firstDrawn(page)
   const settled = await settledReading(page, drawn)
 
-  assert.notEqual(drawn.anchor, drawn.formatted)
-  assert.equal(Math.abs(settled.offset - drawn.offset) <= 1, true)
-  assert.equal(Math.abs(settled.stated - settled.natural) <= 0.5, true)
-  assert.equal(settled.overflow, 0)
+  assert.equal(settled.fromTail <= 1, true)
+  assert.equal(settled.height > 0, true)
   assert.deepEqual(settled.languages, ['typescript', 'plain'])
   assert.deepEqual(settled.unavailable, [
     'Image unavailableA missing picture',
@@ -139,10 +121,9 @@ export async function proveFormattedFeed(page, fixture: FormattedFixture) {
   assert.equal(settled.scripts, 0)
   assert.equal(settled.rawHtmlText, true)
   assert.equal(settled.hacked, false)
-  // Printed, not asserted: whether highlighting or a load was still pending at the first frame
-  // depends on the machine, and the anchor holds either way.
+  // Highlighting and image loads may finish before the first sampled frame.
   return {
-    anchoredMotion: settled.offset - drawn.offset,
+    fromTail: settled.fromTail,
     highlightedAtDraw: drawn.highlightedAtDraw,
     loadingAtDraw: drawn.loadingAtDraw,
   }

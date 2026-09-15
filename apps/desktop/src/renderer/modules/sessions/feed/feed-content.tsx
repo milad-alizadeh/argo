@@ -11,6 +11,7 @@ import { Spinner } from '../../../components/ui/spinner'
 import { AnchoredFeed } from './AnchoredFeed'
 import type { DrawnRowProps } from './drawn-row'
 import type { Reveal } from './reveal'
+import { StalledFeed } from './StalledFeed'
 import type { Settled, useSettledFeed } from './useSettledFeed'
 
 function RunningFeed() {
@@ -22,20 +23,32 @@ function RunningFeed() {
 }
 
 export function feedContent({
+  active,
   settled,
   isRunning,
+  stalled,
+  posture,
+  onRetry,
+  onJumpToLatestChange,
   DrawnRow,
   revealsFor,
   streamingRowId,
 }: {
+  active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
+  stalled: boolean
+  posture: 'managed' | 'external' | null
+  onRetry: () => void
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
 }) {
-  if (settled === null) return isRunning ? <RunningFeed /> : null
-  if (settled.rows.length === 0 && isRunning) return <RunningFeed />
+  if (isRunning && (settled === null || settled.rows.length === 0)) {
+    return stalled ? <StalledFeed onRetry={onRetry} posture={posture} /> : <RunningFeed />
+  }
+  if (settled === null) return null
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">
@@ -50,9 +63,11 @@ export function feedContent({
     )
   return (
     <AnchoredFeed
+      active={active}
       rows={settled.rows}
       settled={settled}
       FeedRow={DrawnRow}
+      onJumpToLatestChange={onJumpToLatestChange}
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}
     />

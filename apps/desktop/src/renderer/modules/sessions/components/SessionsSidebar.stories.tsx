@@ -94,15 +94,22 @@ export const Discovered: Story = {
   render: (args) => <RoutedRoster {...args} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
+    const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
+    await expect(search).toHaveAttribute('placeholder', 'Search Sessions…')
+    await expect(search).toHaveStyle({ fontSize: '12px', lineHeight: '16px' })
     await expect(canvas.getByRole('button', { name: 'New Session' })).toBeEnabled()
-    await expect(canvas.getByRole('button', { name: 'Find a Session' })).toBeDisabled()
     const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(row).toHaveAccessibleName(/Idle/)
     await expect(row.querySelector('svg')).not.toBeNull()
     await userEvent.click(row)
     await expect(args.onSelect).toHaveBeenCalledWith('prose')
     await expect(row).toHaveAttribute('aria-current', 'page')
+    const newSessionIcon = canvas.getByRole('button', { name: 'New Session' }).querySelector('svg')
+    if (newSessionIcon === null) throw new Error('The New Session icon is absent.')
+    expect(newSessionIcon.getBoundingClientRect().right).toBeCloseTo(
+      row.getBoundingClientRect().right,
+      1,
+    )
     await userEvent.keyboard('{ArrowDown}')
     const second = canvas.getByRole('button', { name: /A second Session/ })
     await expect(second).toHaveFocus()
@@ -127,6 +134,10 @@ export const Discovered: Story = {
     await expect(
       canvas.getAllByRole('button').filter((button) => button.dataset.sessionId),
     ).toHaveLength(2)
+    await userEvent.click(search)
+    await userEvent.keyboard('second')
+    await expect(canvas.queryByRole('button', { name: /Keep the roster stable/ })).toBeNull()
+    await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeInTheDocument()
   },
 }
 
@@ -139,8 +150,33 @@ export const CommandTitledSession: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    const reference = canvas.getByText('/implement').closest('span.inline-flex')
+    await expect(reference?.querySelector('svg')).not.toBeNull()
     await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
+  },
+}
+
+// Optional activity metadata must not present `unknown` status as an activity summary.
+export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [
+        {
+          ...session,
+          activity: null,
+          status: 'unknown',
+          title: { text: 'A Session with no observed activity', source: 'first-prompt' },
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const unknown = canvas.getAllByText('Unknown')
+    await expect(unknown).toHaveLength(1)
+    await expect(unknown[0]).toHaveClass('sr-only')
+    await expect(canvas.queryByText('unknown')).toBeNull()
   },
 }
 
@@ -207,7 +243,8 @@ export const PendingBadges: Story = {
     const wantsAnswer = canvas.getByRole('button', { name: /A question is waiting/ })
     await expect(within(wantsAnswer).getByText('Answer')).toBeVisible()
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
-    await expect(within(wantsPermission).getByText('Permission Approval')).toBeVisible()
+    const permissionBadge = within(wantsPermission).getByText('Permission Approval')
+    await expect(permissionBadge).toHaveStyle({ fontSize: '12px', height: '16px' })
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(within(idle).queryByText('Answer')).toBeNull()
     await expect(within(idle).queryByText('Permission Approval')).toBeNull()

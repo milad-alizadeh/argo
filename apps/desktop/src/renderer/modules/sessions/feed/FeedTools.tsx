@@ -8,9 +8,23 @@ import {
   Wrench,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockFilename,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from '@/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
 import { TaskItem } from '@/components/ai-elements/task'
+import { TOOL_CONTENT_ROUTE } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import type { SessionFeedRow } from '../types'
+import { CodeLanguageIcon } from './content/CodeLanguageIcon'
+import { codeLanguageLabel, detectCodeLanguage } from './content/codeLanguage'
+import { FEED_CARD_RADIUS_CLASS } from './content/feedSurface'
+import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
@@ -85,26 +99,66 @@ export function FeedToolLine({
   )
 }
 
+// One command run reads as one code block despite the transcript's separate invocation and result messages.
+function FeedInlineCommand({ call }: { call: ToolCall | ToolRow }) {
+  const { t } = useTranslation('sessions')
+  const result = call.evidence?.kind === 'output' ? call.evidence.source : null
+  const source = [call.text, result].filter((part) => part !== null).join('\n')
+  const language = detectCodeLanguage(call.text ?? '', 'bash')
+  const languageLabel = codeLanguageLabel(language)
+  return (
+    <CodeBlock
+      code={source}
+      language={language?.grammar ?? null}
+      className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
+    >
+      <CodeBlockHeader className="bg-muted type-meta">
+        <CodeBlockTitle>
+          <span aria-hidden="true">
+            <CodeLanguageIcon language={language} />
+          </span>
+          <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
+        </CodeBlockTitle>
+        <CodeBlockActions>
+          {call.status === 'failed' ? (
+            <span className="text-destructive">{t('tools.failed')}</span>
+          ) : (
+            <StatusIcon status={call.status} />
+          )}
+          <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
+        </CodeBlockActions>
+      </CodeBlockHeader>
+    </CodeBlock>
+  )
+}
+
 export function FeedToolGroup({
   group,
   activeEvidenceId,
-  open,
   onOpen,
-  onOpenChange,
+  toolGroups,
 }: {
   group: Extract<SessionFeedRow, { shape: 'tool-group' }>
   activeEvidenceId: string | null
-  open: boolean
   onOpen: (row: ToolRow) => void
-  onOpenChange: (open: boolean) => void
+  toolGroups: ToolGroupState
 }) {
+  const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
+  // A code block already draws its own border, which would clash with the connecting line; a
+  // group of evidence-panel rows alone keeps the line, matching every collapsible outside a group.
+  const hasInlineCall = group.calls.some((call) => TOOL_CONTENT_ROUTE[call.kind] === 'inline')
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
         <TaskItem key={call.id}>
-          <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
+          {TOOL_CONTENT_ROUTE[call.kind] === 'inline' ? (
+            <FeedInlineCommand call={call} />
+          ) : (
+            <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
+          )}
         </TaskItem>
       ))}
+      contentVariant={hasInlineCall ? 'plain' : 'line'}
       icon={TerminalIcon}
       onOpenChange={onOpenChange}
       open={open}

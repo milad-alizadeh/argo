@@ -31,7 +31,8 @@ function ContextBarFrame({ width }: { width: string }) {
 }
 
 export const MeterAndLabels: Story = {
-  render: () => <ContextBarFrame width="56rem" />,
+  parameters: { viewport: { defaultViewport: 'desktop' } },
+  render: () => <ContextBarFrame width="75rem" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
@@ -65,6 +66,21 @@ export const ProgressIconAndLabels: Story = {
     await expect(canvas.getByLabelText(/Context 148k tokens/)).toBeVisible()
     await expect(canvas.getByText('Compact')).toBeVisible()
     await expect(canvas.getByText('Handoff')).toBeVisible()
+  },
+}
+
+export const LabelsWaitForTheFullLayout: Story = {
+  render: () => <ContextBarFrame width="55rem" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
+
+    await expect(canvas.getByLabelText(/Context 148k tokens/)).toBeVisible()
+    await expect(canvas.getByText('Compact')).toBeVisible()
+    await expect(canvas.getByText('Handoff')).toBeVisible()
+    if (bar === null) throw new Error('The context bar is absent.')
+
+    expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth)
   },
 }
 

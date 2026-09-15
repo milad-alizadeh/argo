@@ -6,7 +6,7 @@ import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
-import { discoverSessions, readSessionFiles } from './discover'
+import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
@@ -73,6 +73,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       return mergeManagedRoster(discovered, options?.roster?.() ?? [])
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
+    disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     projectFeed,
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,

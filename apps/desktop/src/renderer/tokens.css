@@ -43,6 +43,8 @@
   --text-code: 12px;
   /* rowMeta and badge, the two rungs under the row title. The title itself is `--text-body`. */
   --text-meta: 11px;
+  --text-navigation-label: 10px;
+  --text-navigation-label--line-height: 14px;
   --text-badge: 10px;
   /* The pane eyebrows (`Sessions`, `Background Agents`) and the rail's chip labels, from the
      layout prototype. */
@@ -74,7 +76,7 @@
      reading column, and the Roster widens no further than its maximum. */
   --size-session-roster-max: 460px;
   --size-session-feed-min: 360px;
-  --size-session-column: 896px;
+  --size-session-column: 48rem;
   --size-queue-row: 44px;
   --size-composer-field: 56px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
@@ -152,7 +154,8 @@
   --text-control: 12px;
   --text-control--line-height: 16px;
   --size-chrome-bar: 52px;
-  --size-navigation-rail: 88px;
+  --size-navigation-rail: 64px;
+  --inset-navigation-rail-item-top: calc((var(--size-chrome-bar) - var(--size-control)) / 2);
   --size-cockpit-sidebar-default: 368px;
   --size-cockpit-sidebar-min: 240px;
   --size-cockpit-sidebar-max: 460px;
@@ -232,6 +235,7 @@
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
   --size-icon-meta: 14px;
+  --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-feed-attachment-preview: 80px;

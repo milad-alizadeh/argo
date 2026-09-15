@@ -69,7 +69,9 @@ type Story = StoryObj<typeof SessionScreenView>
 
 async function sendDraft(canvasElement: HTMLElement, draft: string) {
   const canvas = within(canvasElement)
-  await waitFor(() => expect(canvas.getByText('Storybook Session Feed.')).toBeInTheDocument())
+  await waitFor(() =>
+    expect(canvas.getAllByText('Storybook Session Feed.').length).toBeGreaterThan(0),
+  )
   const composer = canvas.getByLabelText('Message')
   await userEvent.click(composer)
   await userEvent.type(composer, draft)

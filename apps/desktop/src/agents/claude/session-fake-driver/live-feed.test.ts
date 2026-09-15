@@ -45,7 +45,7 @@ test('replaces each draft with its transcript row, once and under the same id, a
   assert.deepEqual(said(between.rows).slice(1), [ducks, geese])
   assert.deepEqual(
     between.rows?.map((row) => row.id),
-    ['prompt-1:0', 'display:ducks', 'toolu-read', 'display:geese'],
+    ['prompt-1:0', 'display:ducks', 'tool-group:db59a7811ed4e4d5', 'display:geese'],
   )
   assert.deepEqual(said(landed.rows).slice(1), [
     ducks,

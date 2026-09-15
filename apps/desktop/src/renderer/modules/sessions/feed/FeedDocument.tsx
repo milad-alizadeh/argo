@@ -1,14 +1,24 @@
+import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { CompactionMarker } from './CompactionMarker'
-import { useDrawnRow, useToolGroups } from './drawn-row'
-import { FeedRow } from './FeedRow'
+import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
 import { TurnMarker } from './TurnMarker'
+import { ToolGroupState } from './tool-group-state'
 import type { TurnMarkerView } from './turn-marker'
 import { useSettledFeed } from './useSettledFeed'
+
+// Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
+export type FeedQuestionHandlers = {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
+  stallTimeoutMs?: number
+}
 
 type FeedDocumentProps = {
   active: boolean
@@ -18,15 +28,15 @@ type FeedDocumentProps = {
   compactionTokens: string | null
   handoffStartedAt: string | null
   handoffTo: string | null
+  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
   feed: SessionFeed
   isRunning: boolean
+  posture: 'managed' | 'external' | null
   turnMarker: TurnMarkerView | null
-  onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
-}
+} & FeedQuestionHandlers
+
+function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 
 function compactionMarker(
   startedAt: string | null,
@@ -59,30 +69,33 @@ export function FeedDocument({
   compactionTokens,
   handoffStartedAt,
   handoffTo,
+  onJumpToLatestChange = ignoreJumpToLatestChange,
   onOpenSession,
   feed,
   isRunning,
+  posture,
   turnMarker,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
+  stallTimeoutMs,
 }: FeedDocumentProps) {
-  const { onOpenToolGroup, openToolGroups } = useToolGroups()
-  const layoutRevision = `${feed.revision}:${[...openToolGroups].sort().join(':')}`
-  const { column, measured, settled } = useSettledFeed({
+  const toolGroups = useRef(new ToolGroupState()).current
+  const { column, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
-    revision: layoutRevision,
+    revision: feed.revision,
     rows: feed.rows,
+    isRunning,
+    stallTimeoutMs,
   })
   const revealsFor = useReveals()
   const DrawnRow = useDrawnRow({
     sessionId: feed.sessionId,
     activeEvidenceId,
     onOpenEvidence,
-    openToolGroups,
-    onOpenToolGroup,
+    toolGroups,
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
@@ -90,33 +103,27 @@ export function FeedDocument({
   const lastRow = feed.rows[feed.rows.length - 1]
   const streamingRowId =
     isRunning && lastRow?.shape === 'prose' && lastRow.role === 'assistant' ? lastRow.id : null
-  const content = feedContent({ settled, isRunning, DrawnRow, revealsFor, streamingRowId })
+  const content = feedContent({
+    active,
+    settled,
+    isRunning,
+    stalled,
+    posture,
+    onRetry: retry,
+    onJumpToLatestChange,
+    DrawnRow,
+    revealsFor,
+    streamingRowId,
+  })
 
   return (
     <div
       className="feed__document"
       data-active={active}
-      data-measure-ms={settled?.measuredMs}
       data-revision={settled?.reading.revision}
-      data-settle-ms={settled?.settledMs}
       inert={!active}
     >
       <div className="feed__column" ref={column}>
-        <div aria-hidden="true" className="feed__measured" ref={measured}>
-          {feed.rows.map((row) => (
-            <FeedRow
-              key={row.id}
-              activeEvidenceId={activeEvidenceId}
-              onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={onOpenToolGroup}
-              openToolGroups={openToolGroups}
-              onAnswerQuestion={() => {}}
-              answeringQuestionId={null}
-              questionFailure={() => null}
-              row={row}
-            />
-          ))}
-        </div>
         {content}
         {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
         {handoffMarker(handoffStartedAt, handoffTo, onOpenSession)}

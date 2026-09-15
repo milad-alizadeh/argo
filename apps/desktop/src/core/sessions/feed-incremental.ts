@@ -6,6 +6,7 @@
 // poll, which is why an unresolved Tool Call near the start of a long chain can hold the cost up:
 // correct before fast, and the CLIs resolve a call within a message or two in practice.
 import type { SessionChain } from './chains'
+import { groupDelegations } from './delegation-groups'
 import { rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {
   advancedCursors,
@@ -16,7 +17,8 @@ import {
   updatedResults,
 } from './feed-incremental-cursor'
 import type { SessionFeedRow } from './models'
-import { groupToolRuns, type ToolResult } from './tool-feed'
+import type { ToolResult } from './tool-feed'
+import { groupToolRuns } from './tool-groups'
 
 export type FeedProjectionState = {
   chainId: string
@@ -85,7 +87,16 @@ function mergedRows(records: PositionedRecord[], results: Map<string, ToolResult
   const groupedSources = groups.map((group) =>
     Math.min(...group.map((index) => dedupedSources[index] ?? Number.POSITIVE_INFINITY)),
   )
-  return grouped.map((row, index) => ({ row, source: groupedSources[index] ?? 0 }))
+  const sourcesByRowId = new Map(
+    grouped.map((row, index) => [row.id, groupedSources[index] ?? 0] as const),
+  )
+  return groupDelegations(grouped).map((row) => ({
+    row,
+    source:
+      row.shape === 'delegation-group'
+        ? Math.min(...row.entries.map((entry) => sourcesByRowId.get(entry.id) ?? 0))
+        : (sourcesByRowId.get(row.id) ?? 0),
+  }))
 }
 
 // Everything is safe to freeze except a Tool Call still missing a result, and a trailing run of

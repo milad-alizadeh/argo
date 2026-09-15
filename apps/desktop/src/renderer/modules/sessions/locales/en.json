@@ -5,20 +5,65 @@
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "newSession": "New Session",
+  "searchSessions": "Search Sessions",
+  "subagent": "Subagent",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "errors": {
     "roster": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."
   },
+  "stalled": {
+    "title": "Could not load this Session",
+    "description": {
+      "managed": "Argo tried to load the history for this Session, but the load did not finish.",
+      "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
+    },
+    "retry": "Retry"
+  },
   "feedLabel": "Session Feed",
+  "feedRegionLabel": "Session feed",
+  "workspaceLabel": "Session workspace",
+  "composerRegionLabel": "Session composer",
   "historyLabel": "Session history",
+  "jumpToLatest": "Jump to latest",
   "composer": {
     "label": "Session input",
     "message": "Message",
     "placeholder": "Direct the next move…",
     "plan": "Step {{current}}/{{total}}",
     "addContext": "Add context",
+    "contextPicker": {
+      "label": "Context picker",
+      "search": "Search context",
+      "searchPlaceholder": "Search Tickets",
+      "close": "Close context picker",
+      "filesAndFolders": "Files & folders",
+      "tickets": "Tickets",
+      "goals": "Goals",
+      "comingSoon": "Coming soon",
+      "blocked": "Blocked",
+      "terminal": "Terminal · {{status}}",
+      "removeTicket": "Remove {{key}}",
+      "openTicket": "Open {{key}}",
+      "selectedTickets": "Selected Tickets",
+      "provider": { "github": "GitHub", "linear": "Linear" },
+      "ticket": {
+        "sharedPicker": "Add a shared context picker to the Session composer",
+        "composerSync": "Keep the Composer draft in sync",
+        "refreshToken": "Store the refresh token",
+        "ticketsPrototype": "Prototype the Tickets room",
+        "open": "Open",
+        "inProgress": "In Progress",
+        "done": "Done",
+        "closed": "Closed"
+      }
+    },
+    "attachment": {
+      "fileType": "{{extension}} file",
+      "notFound": "Not found",
+      "remove": "Remove {{title}}"
+    },
     "attach": "Attach a file",
     "dictate": "Dictate",
     "send": "Send",
@@ -70,6 +115,25 @@
     "compacted": "Conversation compacted",
     "interrupted": "Interrupted"
   },
+  "events": {
+    "command": { "label": "Command received" },
+    "context": { "label": "System context updated" },
+    "status": { "label": "Status updated" },
+    "transcript": { "label": "Transcript delivered" }
+  },
+  "delegation": {
+    "agent": { "label": "Agent delegation" },
+    "shell": { "label": "Shell activity" }
+  },
+  "diff": {
+    "readingFile": "Reading current file…",
+    "fileUnavailable": "Current file is unavailable.",
+    "copyFile": "Copy file",
+    "currentFile": "Current file",
+    "diff": "Diff",
+    "label": "File diff",
+    "copyDiff": "Copy diff"
+  },
   "row": {
     "activity": "Ran {{tool}} {{target}}",
     "activityBare": "Ran {{tool}}",
@@ -81,6 +145,10 @@
   },
   "facts": {
     "placeUnknown": "working directory unknown"
+  },
+  "tools": {
+    "failed": "Failed",
+    "copyRun": "Copy command and result"
   },
   "rail": {
     "backgroundAgents": "Background agents",

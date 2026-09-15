@@ -71,8 +71,11 @@ test('reads slash commands as the words the person typed', async () => {
   const prompts = file.records
     .filter((record) => record.kind === 'message' && record.role === 'user')
     .flatMap((record) => record.blocks)
-    .filter((block) => block.shape === 'prose')
-    .map((block) => block.text)
+    .flatMap((block) =>
+      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+        ? [block.text]
+        : [],
+    )
 
   assert.deepEqual(prompts, [
     '/effort',
@@ -88,6 +91,42 @@ test('keeps local command output out of the prompt path', async () => {
   )
   assert.equal(commandOutput?.text, 'Set effort level to medium')
   assert.equal(file.openingPrompt, '/effort')
+})
+
+test('reads harness delegation and related Shell updates without protocol markup', async () => {
+  const file = await fixtureFile('harnessNoise')
+  assert.deepEqual(
+    file.records.filter((record) => record.kind === 'delegation'),
+    [
+      {
+        kind: 'delegation',
+        uuid: 'u-delegation',
+        actor: 'agent',
+        action: 'Review the Feed card for keyboard access.',
+        status: 'running',
+        progress: 'Checking focus and motion',
+        groupId: 'feed-review',
+      },
+      {
+        kind: 'delegation',
+        uuid: 'u-shell-start',
+        actor: 'shell',
+        action: 'Started bun run build',
+        status: 'running',
+        progress: null,
+        groupId: 'build',
+      },
+      {
+        kind: 'delegation',
+        uuid: 'u-shell-end',
+        actor: 'shell',
+        action: 'Build completed',
+        status: 'completed',
+        progress: null,
+        groupId: 'build',
+      },
+    ],
+  )
 })
 
 test('skips bookkeeping records and reads a resume link', () => {

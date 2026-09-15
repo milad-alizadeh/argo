@@ -3,36 +3,35 @@ import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { PromptText } from '../prompt/PromptText'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedMarkdown } from './content/FeedMarkdown'
+import { FeedDelegation } from './FeedDelegation'
+import { FeedEvent } from './FeedEvent'
 import { FeedQuestion } from './FeedQuestion'
 import { FeedToolGroup, FeedToolLine } from './FeedTools'
 import { type Reveal, useRevealAnimation } from './reveal'
 import { useStreamingText } from './streaming-text'
+import type { ToolGroupState } from './tool-group-state'
 
 export type FeedRowProps = {
   row: SessionFeedRow
-  height?: number
   reveal?: Reveal
   streaming?: boolean
   activeEvidenceId: string | null
-  openToolGroups: ReadonlySet<string>
-  onOpenToolGroup: (id: string, open: boolean) => void
+  toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
-  answeringQuestionId: string | null
-  questionFailure: (questionId: string) => string | null
+  answering: boolean
+  questionFailure: string | null
 }
 
 export function FeedRow({
   row,
-  height,
   reveal,
   streaming = false,
   activeEvidenceId,
   onOpenEvidence,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
 }: FeedRowProps) {
   const element = useRef<HTMLElement>(null)
@@ -51,16 +50,14 @@ export function FeedRow({
       data-revealing={rowReveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
       ref={element}
-      style={height === undefined || height === 0 ? undefined : { height: `${height}px` }}
     >
       <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
         activeEvidenceId={activeEvidenceId}
-        onOpenToolGroup={onOpenToolGroup}
-        openToolGroups={openToolGroups}
+        toolGroups={toolGroups}
         onAnswerQuestion={onAnswerQuestion}
-        answeringQuestionId={answeringQuestionId}
+        answering={answering}
         questionFailure={questionFailure}
         row={row}
         streamingText={text}
@@ -82,14 +79,16 @@ function FeedRowContent({
   row,
   onOpenEvidence,
   activeEvidenceId,
-  openToolGroups,
-  onOpenToolGroup,
+  toolGroups,
   onAnswerQuestion,
-  answeringQuestionId,
+  answering,
   questionFailure,
   streamingText,
-}: Omit<FeedRowProps, 'height'> & { streamingText: string }) {
+}: FeedRowProps & { streamingText: string }) {
   switch (row.shape) {
+    // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
+    // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
+    // shared `ToolRow` type, which `tool-group.calls` still uses.
     case 'tool':
       return <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
     case 'tool-group':
@@ -98,8 +97,7 @@ function FeedRowContent({
           group={row}
           activeEvidenceId={activeEvidenceId}
           onOpen={onOpenEvidence}
-          onOpenChange={(open) => onOpenToolGroup(row.id, open)}
-          open={openToolGroups.has(row.id)}
+          toolGroups={toolGroups}
         />
       )
     case 'prose':
@@ -117,8 +115,8 @@ function FeedRowContent({
       return (
         <FeedQuestion
           row={row}
-          answering={answeringQuestionId === row.id}
-          failure={questionFailure(row.id)}
+          answering={answering}
+          failure={questionFailure}
           onAnswer={onAnswerQuestion}
         />
       )
@@ -152,6 +150,11 @@ function feedRowContent(
       return <PlainText text={row.text} />
     case 'command-output':
       return <PlainText text={row.text} />
+    case 'event':
+      return <FeedEvent row={row} />
+    case 'delegation':
+    case 'delegation-group':
+      return <FeedDelegation row={row} />
     case 'source':
       return <p>{row.label}</p>
     case 'marker':

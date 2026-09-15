@@ -33,6 +33,7 @@ async function prepare(root) {
 const SURFACE = [
   'awaitAccount',
   'cancelAccount',
+  'cancelSessionFeed',
   'chooseSessionAttachments',
   'compactSession',
   'connectAccount',
@@ -63,6 +64,7 @@ const SURFACE = [
   'readSessionFeed',
   'readSessionPermission',
   'readShellOutput',
+  'readWorkspaceFile',
   'registerProject',
   'relocateProject',
   'renameSession',

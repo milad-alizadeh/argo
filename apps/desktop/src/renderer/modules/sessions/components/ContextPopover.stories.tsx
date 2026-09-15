@@ -43,6 +43,12 @@ type Story = StoryObj<typeof ContextPopover>
 
 const fake = fakeCodexCompaction(DEFAULT_AUTO_COMPACT_LIMIT)
 
+export const StorybookHostSupportsAutoCompact: Story = {
+  play: async () => {
+    await expect(window.argo.getCodexAutoCompactLimit()).resolves.toBe(DEFAULT_AUTO_COMPACT_LIMIT)
+  },
+}
+
 export const AutoCompactWritesToCodexConfig: Story = {
   beforeEach: fake.beforeEach,
   play: async ({ canvasElement }) => {

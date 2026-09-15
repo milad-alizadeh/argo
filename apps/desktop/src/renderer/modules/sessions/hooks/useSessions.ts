@@ -16,7 +16,7 @@ import {
   useSessionCreationStore,
 } from '../state/useSessionCreationStore'
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
-import { sessionFeedQuery } from './sessionFeedQuery'
+import { retrySessionFeed, sessionFeedQuery } from './sessionFeedQuery'
 
 let rosterOrder: SessionId[] = []
 
@@ -67,10 +67,17 @@ function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
 // roster in for a result it may throw away.
 export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
   const queryClient = useQueryClient()
+  const selectedFeedId = readableSessionId(selectedSessionId)
   const roster = useRosterQuery(selectedSessionId, rosterEnabled)
-  const feed = useQuery<SessionFeed | null, SessionContractError>(
-    sessionFeedQuery(queryClient, readableSessionId(selectedSessionId), null),
-  )
+  const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
+  const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
+
+  // An already-settled read has no in-flight abort to notify the main process. Release it here
+  // as well, so a Session switch or close drops its Feed rows and measurement state immediately.
+  useEffect(() => {
+    if (selectedFeedId === null) return
+    return () => void window.argo.cancelSessionFeed({ sessionId: selectedFeedId })
+  }, [selectedFeedId])
 
   const pending = useSessionCreationStore((state) => state.pending)
   const rosterData = roster.error === null ? (roster.data ?? null) : null
@@ -96,5 +103,7 @@ export function useSessions(selectedSessionId: SessionId | null, rosterEnabled =
     feed: feed.data ?? null,
     feedError: feed.failureCount > 1 ? feed.error : null,
     reread: () => invalidateSessionRoster(queryClient),
+    // Cancel a read that never answers (#2102), because TanStack reuses a pending query without cached data.
+    retryFeed: () => void retrySessionFeed(queryClient, feedQuery.queryKey, feed.refetch),
   }
 }

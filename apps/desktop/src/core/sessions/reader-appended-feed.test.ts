@@ -33,7 +33,7 @@ async function openedFeed(context: Parameters<typeof tempRoot>[0], text: string)
   return { root, next }
 }
 
-function texts(rows: { shape: string; text?: string }[]) {
+function texts(rows: { shape: string; text?: string | null }[]) {
   return rows.map((row) => (row.shape === 'prose' ? row.text : row.shape))
 }
 

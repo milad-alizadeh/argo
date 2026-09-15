@@ -71,7 +71,8 @@ export async function deselectSession(page: Page) {
 // The harness tabs inside the run setup popover, dismissed the way a person dismisses it.
 export async function chooseHarness(page: Page, cli: SessionCli) {
   await page.locator(RUN_SETUP).click()
-  await page.getByRole('tab', { name: HARNESS_TABS[cli] }).click()
+  // Keyboard tab selection remains valid while the run-setup surface re-renders its controls.
+  await page.getByRole('tab', { name: HARNESS_TABS[cli] }).press('Enter')
   await page.keyboard.press('Escape')
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }

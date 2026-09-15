@@ -22,7 +22,7 @@ function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; per
       <Tooltip>
         <TooltipTrigger
           render={
-            <span className="relative hidden min-w-28 flex-1 @[40rem]:block">
+            <span className="relative hidden min-w-28 flex-1 @[56rem]:block">
               <button
                 aria-label={description}
                 className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
@@ -70,13 +70,13 @@ export function SessionContextBar({
 
   return (
     <div
-      className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[40rem]:gap-3 @[40rem]:px-4"
+      className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
-      <div className="shrink-0 border-r border-border/60 pr-2 @[40rem]:pr-4">
+      <div className="shrink-0 border-r border-border/60 pr-2 @[56rem]:pr-4">
         <UsagePopover harness={harness ?? 'codex'} />
       </div>
-      <div className="shrink-0 @[40rem]:hidden">
+      <div className="shrink-0 @[56rem]:hidden">
         <ContextPopover
           compact
           harness={harness ?? 'codex'}
@@ -84,7 +84,7 @@ export function SessionContextBar({
           usedTokens={usedTokens}
         />
       </div>
-      <div className="hidden shrink-0 @[40rem]:block">
+      <div className="hidden shrink-0 @[56rem]:block">
         <ContextPopover
           harness={harness ?? 'codex'}
           labelled

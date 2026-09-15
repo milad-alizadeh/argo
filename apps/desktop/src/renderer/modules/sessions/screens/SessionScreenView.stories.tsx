@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
-import { Button } from '../../../components/ui/button'
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
 import { SessionComposer } from '../components/SessionComposer'
 import { SessionInspector } from '../components/SessionInspector'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { SessionWorkButtons } from '../components/SessionWorkButtons'
+import { SessionWorkInspectorHeader } from '../components/SessionWorkInspectorHeader'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
 import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
@@ -20,7 +20,7 @@ const SESSION_ROSTER = [
     posture: 'external',
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
     status: 'running',
-    cwd: '/workspace/argo',
+    cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
     branch: 'argo/#1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
     turnStartedAt: '2026-09-13T15:42:00Z',
@@ -72,7 +72,12 @@ const SESSION_ROSTER = [
 ] satisfies Session[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
-const SCROLL_HISTORY_TO_START_LABEL = 'Scroll Session history to start'
+const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `jump-to-latest-${index}`,
+  role: 'assistant' as const,
+  text: `History row ${index + 1} keeps the Jump to latest control visible while the reader is away from the end.`,
+}))
 
 function feedFor(sessionId: string) {
   return {
@@ -142,6 +147,7 @@ function ReviewInspector({
       delegation={delegation}
       delegationFeed={delegation === null ? null : feedFor(delegation.id)}
       evidence={null}
+      sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
@@ -151,13 +157,35 @@ function ReviewInspector({
   )
 }
 
-function ReviewScreen() {
-  const [selectedSessionId, setSelectedSessionId] = useState('composer-review')
+function ReviewInspectorBar({
+  delegation,
+  shell,
+}: {
+  delegation: SessionDelegation | null
+  shell: SessionShellCommand | null
+}) {
+  if (shell !== null) return <SessionWorkInspectorHeader work={{ kind: 'shell', command: shell }} />
+  if (delegation !== null) {
+    return <SessionWorkInspectorHeader work={{ kind: 'delegation', delegation }} />
+  }
+  return null
+}
+
+function ReviewScreen({
+  initialSessionId = 'composer-review',
+  rows = null,
+  showPlan = true,
+}: {
+  initialSessionId?: string
+  rows?: SessionFeed['rows'] | null
+  showPlan?: boolean
+}) {
+  const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
-  const feed = feedFor(selectedSessionId)
+  const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
@@ -173,12 +201,13 @@ function ReviewScreen() {
         composer={
           <SessionComposer
             onSend={async () => true}
-            plan={session.plan}
+            plan={showPlan ? session.plan : null}
             sessionId={selectedSessionId}
           />
         }
         feed={feed}
         feedError={null}
+        onRetryFeed={() => {}}
         headerControls={
           <SessionWorkButtons
             delegations={session.delegations}
@@ -189,7 +218,10 @@ function ReviewScreen() {
             shell={session.shell}
           />
         }
+        session={session}
         inspector={<ReviewInspector delegation={delegation} shell={shell} />}
+        inspectorBar={<ReviewInspectorBar delegation={delegation} shell={shell} />}
+        defaultInspectorCollapsed
         inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
         isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
@@ -200,28 +232,6 @@ function ReviewScreen() {
         selectedSessionId={selectedSessionId}
       />
     </CockpitShell>
-  )
-}
-
-function ScrollableReviewScreen() {
-  const scrollHistoryToStart = () => {
-    document
-      .querySelector<HTMLElement>(`[aria-label="${SESSION_HISTORY_LABEL}"]`)
-      ?.scrollTo({ top: 0 })
-  }
-
-  return (
-    <div className="relative h-full">
-      <ReviewScreen />
-      <Button
-        className="absolute top-2 left-2 z-10"
-        type="button"
-        variant="secondary"
-        onClick={scrollHistoryToStart}
-      >
-        {SCROLL_HISTORY_TO_START_LABEL}
-      </Button>
-    </div>
   )
 }
 
@@ -246,23 +256,12 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const before = composer.getBoundingClientRect()
-  const activeDocument = canvasElement.querySelector<HTMLElement>(
-    '.feed__document[data-active="true"]',
-  )
-  if (activeDocument === null) throw new Error('The active feed document is absent.')
-  const viewport = activeDocument.querySelector<HTMLElement>('.feed__viewport')
-  if (viewport === null) throw new Error('The active feed viewport is absent.')
-  const finalFeedLine = within(viewport).getByText(
-    'The transcript keeps the feed, plan, and composer visible together.',
-  )
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
   expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
-  expect(finalFeedLine.getBoundingClientRect().bottom).toBeLessThanOrEqual(before.top)
-  await userEvent.click(
-    within(canvasElement).getByRole('button', { name: SCROLL_HISTORY_TO_START_LABEL }),
-  )
+  history.scrollTo({ top: 0 })
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
@@ -290,11 +289,94 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
   const composerBounds = composer.getBoundingClientRect()
-  expect(fade.getBoundingClientRect().top).toBeCloseTo(composerBounds.top, 1)
-  expect(fade.getBoundingClientRect().bottom).toBeCloseTo(
-    workspace.getBoundingClientRect().bottom,
+  const workspaceBounds = workspace.getBoundingClientRect()
+  const fadeBounds = fade.getBoundingClientRect()
+  expect(fadeBounds.top).toBeCloseTo(composerBounds.top, 1)
+  expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
+  expect(fadeBounds.height).toBeCloseTo(composerBounds.height, 1)
+  expect(getComputedStyle(fade).pointerEvents).toBe('none')
+}
+
+async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const history = await canvas.findByLabelText(SESSION_HISTORY_LABEL)
+  await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+  history.scrollTo({ top: 0 })
+  fireEvent.scroll(history)
+  const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
+  const composer = canvas.getByLabelText('Session composer')
+  const latestBounds = latest.getBoundingClientRect()
+  const composerBounds = composer.getBoundingClientRect()
+  expect(latestBounds.left + latestBounds.width / 2).toBeCloseTo(
+    composerBounds.left + composerBounds.width / 2,
     1,
   )
+  expect(latestBounds.bottom).toBeLessThanOrEqual(composerBounds.top)
+  await userEvent.click(latest)
+  await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+}
+
+function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const headerControls = canvasElement.querySelector<HTMLElement>(
+    '[data-component="SessionHeaderControls"]',
+  )
+  const subagents = canvas.getByRole('button', { name: /^Subagents/ })
+  const shell = canvas.getByRole('button', { name: /^Shell/ })
+  const inspector = canvas.getByRole('button', { name: 'Open Session inspector' })
+  if (headerControls === null) throw new Error('The Session header controls are absent.')
+
+  expect(subagents).toHaveAccessibleName(/^Subagents/)
+  expect(shell).toHaveAccessibleName(/^Shell/)
+  expect(headerControls.getBoundingClientRect().right).toBeLessThanOrEqual(
+    inspector.getBoundingClientRect().left -
+      Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap')),
+  )
+}
+
+function expectSharedReadingColumn(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+  const composer = canvas.getByLabelText('Session composer')
+  const feedColumn = history.querySelector<HTMLElement>('.feed__content')
+  const composerColumn = composer.querySelector<HTMLElement>('form')
+  if (feedColumn === null || composerColumn === null)
+    throw new Error('The shared reading column is absent.')
+  const maximum = 48 * Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+  expect(feedColumn.getBoundingClientRect().width).toBeLessThanOrEqual(maximum)
+  expect(
+    Math.abs(
+      composerColumn.getBoundingClientRect().width - feedColumn.getBoundingClientRect().width,
+    ),
+  ).toBeLessThanOrEqual(2)
+  expect(feedColumn.getBoundingClientRect().left).toBeCloseTo(
+    history.getBoundingClientRect().left +
+      (history.getBoundingClientRect().width - feedColumn.getBoundingClientRect().width) / 2,
+    1,
+  )
+}
+
+async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+  const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+  const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
+  expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+    opener.getBoundingClientRect().right +
+      Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+  )
+  await userEvent.click(opener)
+  await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
+}
+
+async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+  await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
+  const shellInspector = canvas.getByRole('region', { name: 'Background Shell' })
+  await expect(shellInspector).toBeVisible()
+  await expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible()
 }
 
 const meta: Meta<typeof SessionScreenView> = {
@@ -315,6 +397,14 @@ const meta: Meta<typeof SessionScreenView> = {
 export default meta
 type Story = StoryObj<typeof SessionScreenView>
 
+async function pickSubagent(canvas: ReturnType<typeof within>) {
+  await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+  await waitFor(() =>
+    expect(screen.queryByRole('menuitem', { name: /Interface review/ })).toBeNull(),
+  )
+}
+
 export const Open: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
@@ -323,6 +413,12 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('button', { name: /Finish Session composer review/ }),
     ).toHaveAttribute('aria-current', 'page')
+    await expect(
+      canvas.getByRole('heading', { name: 'Finish Session composer review' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectHeaderActionsAtTrailingEdge(canvasElement)
+    await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
@@ -342,17 +438,35 @@ export const Open: Story = {
     expectSessionsSidebarIsOpen(canvasElement)
 
     // Picking a Subagent in the header opens the collapsed inspector on its transcript.
-    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
-    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await pickSubagent(canvas)
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
+    const inspector = canvas.getByRole('region', { name: 'Subagent' })
+    await expect(inspector).toBeVisible()
+    expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
     await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
+    )
+    await pickSubagent(canvas)
+    const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
+    await expect(reopenedInspector).toBeVisible()
+    expect(reopenedInspector.getBoundingClientRect().width).toBeGreaterThan(0)
+    const subagentMessage = within(reopenedInspector)
+      .getAllByText('Use the approved prototype to review the Session composer in context.')
+      .find((message) => message.getBoundingClientRect().height > 0)
+    if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
+    await expect(subagentMessage).toBeVisible()
+
+    await expectShellReopensWithOutput(canvasElement)
   },
 }
 
 export const ComposerStaysFixed: Story = {
-  render: () => <ScrollableReviewScreen />,
+  render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -362,5 +476,88 @@ export const ComposerStaysFixed: Story = {
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
     expectContextBarInset(canvasElement)
+  },
+}
+
+export const WideSharedReadingColumn: Story = {
+  parameters: { viewport: { defaultViewport: 'desktop' } },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectSharedReadingColumn(canvasElement)
+  },
+}
+
+export const ComposerFadeLight: Story = {
+  globals: { theme: 'light' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const ComposerFadeDark: Story = {
+  globals: { theme: 'dark' },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectContextBarInset(canvasElement)
+  },
+}
+
+export const JumpToLatestInExpandedComposerFade: Story = {
+  render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    await expectJumpToLatestInComposerFade(canvasElement)
+  },
+}
+
+export const JumpToLatestInNormalComposerFade: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    await expectJumpToLatestInComposerFade(canvasElement)
+  },
+}
+
+export const SharedCheckout: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
+    ).toBeVisible()
+    expect(canvas.queryByText('ticket-1846-composer')).not.toBeInTheDocument()
+  },
+}
+
+export const NarrowHeader: Story = {
+  render: () => (
+    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
+      <ReviewScreen />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('heading', { name: 'Finish Session composer review' }),
+    ).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectHeaderActionsAtTrailingEdge(canvasElement)
   },
 }

@@ -7,8 +7,9 @@ export const ROSTER_FILE_LIMIT = 200
 const CHUNK_BYTES = 1024 * 1024
 // The bytes just before the parsed end that must still be there for a file to count as appended to.
 const SEAM_BYTES = 64
-// Two files a chain for each of the six Feeds the reader keeps (KEPT_FEED_LIMIT).
-const HELD_FILE_LIMIT = 12
+// Full records belong to the selected Feed only. A short LRU preserves append parsing across its
+// immediate poll without turning recently visited Sessions into an in-memory history.
+const HELD_FILE_LIMIT = 2
 const NEWLINE = 0x0a
 
 // Where parsing stopped: the byte after the last full line, and the bytes just before it.
@@ -90,7 +91,7 @@ function hold(held: Map<string, HeldTranscript>, filePath: string, transcript: H
 // (#2145) — `HELD_FILE_LIMIT`'s LRU eviction is what bounds the memory this costs.
 export function createTranscriptRecordReader(parse: TranscriptParser) {
   const held = new Map<string, HeldTranscript>()
-  return async function readRecords(filePath: string) {
+  async function readRecords(filePath: string) {
     const handle = await open(filePath, 'r')
     try {
       const { ino, size } = await handle.stat()
@@ -106,5 +107,11 @@ export function createTranscriptRecordReader(parse: TranscriptParser) {
     } finally {
       await handle.close()
     }
+  }
+  return {
+    clear: (filePaths: readonly string[]) => {
+      for (const filePath of filePaths) held.delete(filePath)
+    },
+    readRecords,
   }
 }

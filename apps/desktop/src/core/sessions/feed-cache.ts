@@ -13,7 +13,7 @@ export type HeldFeed = {
   stamps: string
 }
 
-const KEPT_FEED_LIMIT = 6
+const KEPT_FEED_LIMIT = 1
 
 async function chainStamps(paths: readonly string[]): Promise<string> {
   const watched = [...new Set(paths.flatMap((file) => [file, path.dirname(file)]))]
@@ -76,12 +76,15 @@ const SETTLING_READS = 4
 export async function stableChain(
   source: { readSessionFiles: (sessionId: string) => Promise<SessionChain | null> },
   sessionId: string,
-  startingPaths: readonly string[],
+  options: { startingPaths: readonly string[]; signal?: AbortSignal },
 ): Promise<{ chain: SessionChain; stamps: string } | null> {
+  const { startingPaths, signal } = options
   let paths = startingPaths
   let unsettledRead: { chain: SessionChain; stamps: string } | null = null
   for (let read = 0; read < SETTLING_READS; read += 1) {
+    signal?.throwIfAborted()
     const before = await chainStamps(paths)
+    signal?.throwIfAborted()
     const chain = await source.readSessionFiles(sessionId)
     if (chain === null) return null
     paths = chain.files.map((file) => file.path)
@@ -104,5 +107,14 @@ export function keepFeed({ feeds, projections }: FeedCaches, key: string, feed: 
     if (oldest === undefined) return
     feeds.delete(oldest)
     projections.delete(oldest)
+  }
+}
+
+export function disposeFeed({ feeds, projections }: FeedCaches, sessionId: string) {
+  for (const key of feeds.keys()) {
+    if (key === sessionId || key.startsWith(`${sessionId}#`)) {
+      feeds.delete(key)
+      projections.delete(key)
+    }
   }
 }

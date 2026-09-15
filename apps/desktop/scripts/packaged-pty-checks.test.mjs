@@ -81,6 +81,7 @@ describe('the root command surface', () => {
   const root = () => json(path.join(repoRoot, 'package.json'))
   const desktop = () => json(path.join(desktopRoot, 'package.json'))
   const turbo = () => json(path.join(repoRoot, 'turbo.json'))
+  const developmentLauncher = () => read(path.join(desktopRoot, 'scripts', 'dev-instance.mjs'))
 
   test('routes the release build through one uncached desktop task', () => {
     expect(root().scripts.build).toBe('turbo run build --filter=@argo/desktop')
@@ -96,17 +97,21 @@ describe('the root command surface', () => {
     expect(root().scripts.storybook).toBe('turbo run storybook')
     expect(turbo().tasks.dev).toEqual({ cache: false, persistent: true })
     expect(turbo().tasks.storybook).toEqual({ cache: false, persistent: true })
-    expect(desktop().scripts.dev).toContain('electron-forge start')
+    expect(desktop().scripts.dev).toBe('node scripts/dev-instance.mjs')
     expect(desktop().scripts.storybook).toBe('storybook dev -p 6006')
   })
 
-  // Without the link `electron-forge start` cannot find Electron; why is the script's own header.
+  test('passes an explicitly selected desktop development port through Turbo', () => {
+    expect(turbo().globalPassThroughEnv).toContain('ARGO_DESKTOP_DEV_PORT')
+  })
+
+  // The launcher owns the link because it starts Forge after selecting an isolated instance.
   test('links the hoisted Electron before Forge starts', () => {
-    const dev = desktop().scripts.dev
+    const launcher = developmentLauncher()
     // A bare index comparison would pass on a missing link script, whose -1 sorts first.
-    const linked = dev.indexOf('scripts/link-hoisted-electron.mjs')
+    const linked = launcher.indexOf('scripts/link-hoisted-electron.mjs')
     expect(linked).toBeGreaterThan(-1)
-    expect(linked).toBeLessThan(dev.indexOf('electron-forge start'))
+    expect(linked).toBeLessThan(launcher.indexOf("spawn('electron-forge'"))
     expect(existsSync(path.join(desktopRoot, 'scripts', 'link-hoisted-electron.mjs'))).toBe(true)
   })
 

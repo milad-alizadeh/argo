@@ -63,4 +63,4 @@ const reader = createTranscriptDiscoverer({
   normalizeRecords,
 })
 
-export const { discoverSessions, readSessionFiles } = reader
+export const { clearFullRecords, discoverSessions, readSessionFiles } = reader

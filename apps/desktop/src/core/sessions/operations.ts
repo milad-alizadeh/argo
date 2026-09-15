@@ -7,8 +7,6 @@ import {
   sessionCompactRequestSchema,
   sessionDelegationUsageReplySchema,
   sessionDelegationUsageRequestSchema,
-  sessionFeedReplySchema,
-  sessionFeedRequestSchema,
   sessionHandoffRequestSchema,
   sessionInterruptRequestSchema,
   sessionListReplySchema,
@@ -29,6 +27,7 @@ import {
   sessionTicketConnectRequestSchema,
   sessionTicketDisconnectRequestSchema,
 } from './contract'
+import { SESSION_READ_OPERATIONS } from './read-operations'
 
 // One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
 // sessionId, routed by the Session's owner.
@@ -45,12 +44,7 @@ export const SESSION_OPERATIONS = {
     request: sessionArchiveListRequestSchema,
     reply: sessionArchiveListReplySchema,
   },
-  feed: {
-    name: 'session.feed',
-    channel: 'argo:session:feed',
-    request: sessionFeedRequestSchema,
-    reply: sessionFeedReplySchema,
-  },
+  ...SESSION_READ_OPERATIONS,
   shellOutput: {
     name: 'session.shell.output',
     channel: 'argo:session:shell:output',
