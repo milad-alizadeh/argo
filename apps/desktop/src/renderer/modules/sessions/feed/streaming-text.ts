@@ -9,16 +9,17 @@ function wordEnds(text: string) {
   return [...text.matchAll(/\S+\s*/g)].map((match) => (match.index ?? 0) + match[0].length)
 }
 
-export type Advanced = { text: string; progress: number }
+// `progress` counts whole words revealed of `text`.
+export type RevealState = { text: string; progress: number }
 
-// `progress` counts whole words revealed of `target`; `shown` is what was last drawn and at what
-// progress. A `target` that no longer extends `shown.text` (an edit, not an append) snaps rather
-// than replays, since there is no shared prefix left to walk from.
+// `target` is the latest known text; `shown` is what was last drawn, and at what `progress`. A
+// `target` that no longer extends `shown.text` (an edit, not an append) snaps rather than
+// replays, since there is no shared prefix left to walk from.
 export function advanceVisibleText(
-  shown: Advanced,
+  shown: RevealState,
   target: string,
   elapsedSeconds: number,
-): Advanced {
+): RevealState {
   const ends = wordEnds(target)
   if (!target.startsWith(shown.text)) return { text: target, progress: ends.length }
   const wordsPerSecond = Math.max(
