@@ -15,7 +15,14 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   assert.equal(await page.getByRole('button', { name: /^Subagents/ }).count(), 0)
 
   // A work pick replaces the evidence already open in the inspector.
-  await page.locator('[data-feed-evidence-id="sh-call-done"]').click()
+  const history = page.locator('.feed__viewport[data-session="shellRunning"]')
+  await history.evaluate((element) => {
+    element.scrollTop = 0
+    element.dispatchEvent(new Event('scroll'))
+  })
+  const finishedCommand = page.locator('[data-feed-evidence-id="sh-call-done"]')
+  await finishedCommand.waitFor()
+  await finishedCommand.click()
   await page.getByText('git status --short').last().waitFor()
 
   await shellButton.click()
