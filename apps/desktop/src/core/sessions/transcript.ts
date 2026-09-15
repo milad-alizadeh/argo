@@ -66,6 +66,8 @@ export type TranscriptRecord =
       groupId: string | null
       // The Shell call a background task's notification names, so its block can open that command.
       callId: string | null
+      // A notice delivered while the Session was idle is a user record, so it carries the ending.
+      ending?: BackgroundTaskRecord
     }
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
@@ -81,16 +83,18 @@ export type TranscriptRecord =
   // `compact_boundary` it belongs to; `readTranscriptFile` folds it into that record and this
   // kind never reaches a row on its own (#2206).
   | { kind: 'compaction-summary'; uuid: string; text: string }
-  | {
-      kind: 'background-task'
-      taskId: string
-      callId: string
-      outputPath: string | null
-      state: BackgroundState
-      summary: string | null
-      timestamp: string | null
-    }
+  | BackgroundTaskRecord
   | { kind: 'unreadable'; line: string }
+
+export type BackgroundTaskRecord = {
+  kind: 'background-task'
+  taskId: string
+  callId: string
+  outputPath: string | null
+  state: BackgroundState
+  summary: string | null
+  timestamp: string | null
+}
 
 export type TranscriptFile = {
   path: string

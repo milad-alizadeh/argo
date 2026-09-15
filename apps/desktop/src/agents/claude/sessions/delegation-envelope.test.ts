@@ -20,6 +20,15 @@ test('reads a background task notification as its readable name, not raw envelop
     progress: null,
     groupId: 'a1',
     callId: 'toolu_1',
+    ending: {
+      kind: 'background-task',
+      taskId: 'a1',
+      callId: 'toolu_1',
+      outputPath: null,
+      state: 'completed',
+      summary: 'Background command "Install dependencies" completed (exit code 0)',
+      timestamp: null,
+    },
   })
 })
 
