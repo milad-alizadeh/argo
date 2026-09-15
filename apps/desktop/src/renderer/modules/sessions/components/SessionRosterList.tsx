@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from 'react'
+import type { SelectionModifier } from '../state/roster-selection'
 import type { Session, SessionId } from '../types'
 import { SessionRosterItem } from './SessionRosterItem'
 
@@ -11,14 +12,19 @@ type Props = {
   onLinkTicket: (session: Session) => void
   onUnlinkTicket: (session: Session) => void
   onSelect: (sessionId: SessionId) => void
+  onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
   renamedTitles: Record<string, string>
+  selectable: boolean
+  selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
 }
 
 function moveFocus(event: KeyboardEvent<HTMLUListElement>) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
-  const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button')]
+  const buttons = [
+    ...event.currentTarget.querySelectorAll<HTMLButtonElement>('button[data-session-id]'),
+  ]
   const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
   if (current === -1) return
   event.preventDefault()
@@ -40,7 +46,10 @@ export function SessionRosterList({
   onLinkTicket,
   onUnlinkTicket,
   onSelect,
+  onToggleSelect,
   renamedTitles,
+  selectable,
+  selectedIds,
   selectedSessionId,
   tabStop,
 }: Props) {
@@ -55,6 +64,7 @@ export function SessionRosterList({
               : { ...session, title: { text: title, source: 'custom' as const } }
           return (
             <SessionRosterItem
+              checked={selectable && selectedIds.has(session.id)}
               key={session.id}
               onFocus={() => onFocus(session.id)}
               onRename={() => onRename(renamed)}
@@ -62,6 +72,8 @@ export function SessionRosterList({
               onLinkTicket={() => onLinkTicket(renamed)}
               onUnlinkTicket={() => onUnlinkTicket(renamed)}
               onSelect={() => onSelect(session.id)}
+              onToggleSelect={(modifier) => onToggleSelect(session.id, modifier)}
+              selectable={selectable}
               selected={session.id === selectedSessionId}
               session={renamed}
               tabIndex={session.id === tabStop ? 0 : -1}

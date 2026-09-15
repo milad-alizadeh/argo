@@ -41,6 +41,11 @@ export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 // The Sessions the fixture store says the reader archived.
 const ARCHIVED = ['plannedWork']
 
+// A Session the desktop app already tracks but has not archived (#2194): its store row exists so
+// a bulk-archive round trip has a real file to flip, the way the write only ever mutates a row the
+// app already wrote rather than inventing one.
+const TRACKED_UNARCHIVED = ['harnessNoise']
+
 const shotsIndex = process.argv.indexOf('--shots')
 export const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
 
@@ -109,6 +114,7 @@ export async function prepare(root) {
   })
   const archive = path.join(root, 'archive')
   await writeArchiveStore(archive, ARCHIVED)
+  await writeArchiveStore(archive, TRACKED_UNARCHIVED, { archived: false })
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
   const project = path.join(root, 'project')

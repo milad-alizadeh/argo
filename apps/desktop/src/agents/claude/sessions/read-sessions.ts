@@ -1,5 +1,6 @@
-// The Claude source the shared Session reader drives (#2025). Everything this slice touches is
-// read-only: it observes transcripts and writes nothing back to them.
+// The Claude source the shared Session reader drives (#2025). Transcripts are read-only. The one
+// exception is the archive flag (#2194): `setArchivedSessions` writes it back into the Claude
+// desktop app's own store, the same file `discoverArchivedSessions` reads (`sessions/archive.ts`).
 import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
@@ -11,6 +12,7 @@ import {
   discoverArchivedSessions,
   discoverSessions,
   readSessionFiles,
+  setArchivedSessions,
 } from './discover'
 import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
@@ -89,6 +91,11 @@ export function claudeSessionSource(roots: {
       archiveRoot === undefined
         ? undefined
         : (options) => discoverArchivedSessions(roots.transcripts, archiveRoot, options),
+    setArchived:
+      archiveRoot === undefined
+        ? undefined
+        : ({ ids, archived }) =>
+            setArchivedSessions(roots.transcripts, archiveRoot, { ids, archived }),
     overlayFor:
       liveMessages === undefined
         ? undefined

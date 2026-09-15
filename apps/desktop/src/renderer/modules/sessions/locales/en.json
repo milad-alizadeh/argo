@@ -100,6 +100,21 @@
     "complete": "Assistant response complete."
   },
   "archived": "Archived",
+  "bulkSelect": {
+    "selectRow": "Select {{title}}",
+    "count_one": "{{count}} Session selected",
+    "count_other": "{{count}} Sessions selected",
+    "archive": "Archive",
+    "clear": "Clear selection",
+    "archiving": "Archiving…",
+    "archived_one": "Archived {{count}} Session",
+    "archived_other": "Archived {{count}} Sessions",
+    "undo": "Undo",
+    "restored_one": "Restored {{count}} Session",
+    "restored_other": "Restored {{count}} Sessions",
+    "partialFailure": "Argo could not archive every selected Session.",
+    "failure": "Argo could not archive the selected Sessions."
+  },
   "empty": {
     "unselected": {
       "title": "No Session selected",

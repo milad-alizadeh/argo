@@ -1,6 +1,9 @@
 import { Lock } from 'lucide-react'
+import type { MouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/renderer/components/ui/badge'
+import { Checkbox } from '@/renderer/components/ui/checkbox'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,10 +15,21 @@ import {
 import { HarnessLogo } from '../harness/HarnessLogo'
 import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../harness/harnesses'
 import { PromptText } from '../prompt/PromptText'
+import type { SelectionModifier } from '../state/roster-selection'
 import type { Session } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
 import { SessionReferenceText } from './SessionReference'
 import { SessionMetadata } from './SessionRosterMetadata'
+
+function selectionModifierOf(event: {
+  shiftKey: boolean
+  metaKey: boolean
+  ctrlKey: boolean
+}): SelectionModifier {
+  if (event.shiftKey) return 'range'
+  if (event.metaKey || event.ctrlKey) return 'additive'
+  return 'plain'
+}
 
 const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',
@@ -96,27 +110,35 @@ function sessionName(session: Session): string {
 }
 
 export function SessionRosterItem({
+  checked,
   onFocus,
   onSelect,
   onRename,
   onOpenTicket,
   onLinkTicket,
   onUnlinkTicket,
+  onToggleSelect,
+  selectable,
   selected,
   session,
   tabIndex,
 }: {
+  checked: boolean
   onFocus: () => void
   onSelect: () => void
   onRename: () => void
   onOpenTicket: () => void
   onLinkTicket: () => void
   onUnlinkTicket: () => void
+  onToggleSelect: (modifier: SelectionModifier) => void
+  selectable: boolean
   selected: boolean
   session: Session
   tabIndex: number
 }) {
+  const { t } = useTranslation('sessions')
   const activity = activitySummary(session)
+  const name = sessionName(session)
   return (
     <li className="min-w-0">
       <ContextMenu>
@@ -124,14 +146,25 @@ export function SessionRosterItem({
           render={
             <button
               aria-current={selected ? 'page' : undefined}
-              className={`w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
+              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${selected ? 'bg-muted text-foreground' : ''}`}
               data-session-id={session.id}
               onClick={onSelect}
               onFocus={onFocus}
               tabIndex={tabIndex}
               type="button"
             >
-              <span className="flex items-start gap-2">
+              {selectable ? (
+                <Checkbox
+                  aria-label={t('bulkSelect.selectRow', { title: name })}
+                  checked={checked}
+                  className="mt-1 shrink-0"
+                  onClick={(event: MouseEvent) => {
+                    event.stopPropagation()
+                    onToggleSelect(selectionModifierOf(event))
+                  }}
+                />
+              ) : null}
+              <span className="flex min-w-0 flex-1 items-start gap-2">
                 <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
                   {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
                   <span

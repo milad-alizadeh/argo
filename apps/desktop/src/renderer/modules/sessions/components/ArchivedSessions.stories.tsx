@@ -61,7 +61,10 @@ const meta: Meta<typeof ArchivedSessions> = {
         onLinkTicket={fn()}
         onUnlinkTicket={fn()}
         onSelect={fn()}
+        onToggleSelect={fn()}
         renamedTitles={{}}
+        selectable={false}
+        selectedIds={new Set()}
         selectedSessionId={null}
         tabStop={null}
       />
