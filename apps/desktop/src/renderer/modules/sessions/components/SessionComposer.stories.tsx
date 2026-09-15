@@ -560,8 +560,8 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
-    await userEvent.type(composer, 'Read /argo')
-    const option = await canvas.findByRole('option', { name: /Argo Session plugin/ })
+    await userEvent.type(composer, 'Read /implement')
+    const option = await canvas.findByRole('option', { name: /Implement/ })
     const menu = option.closest('[role="listbox"]')
     const card = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
     if (!menu || !card) throw new Error('Reference menu or Composer card is missing.')
@@ -573,7 +573,7 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
 
     await expect(canvas.queryByRole('option')).toBeNull()
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read @argo-plugin$/)
+    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read \/implement$/)
   },
 }
 
