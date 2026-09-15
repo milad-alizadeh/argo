@@ -144,7 +144,7 @@ export function SessionRosterItem({
                 <span className="sr-only">{STATUS_LABELS[session.status]}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="block min-w-0 truncate type-label font-medium text-foreground">
+                    <span className="block min-w-0 truncate type-heading font-medium text-foreground">
                       <PromptText
                         interactiveLinks={false}
                         renderText={(value) => (
@@ -157,9 +157,7 @@ export function SessionRosterItem({
                     <SessionLockedMark session={session} />
                   </span>
                   {activity === null ? null : (
-                    <span className="mt-0.5 block truncate type-roster-meta text-faint">
-                      {activity}
-                    </span>
+                    <span className="mt-0.5 block truncate type-meta text-faint">{activity}</span>
                   )}
                   <SessionMetadata session={session} />
                 </span>

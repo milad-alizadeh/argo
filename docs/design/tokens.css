@@ -80,7 +80,7 @@
   --size-state-dot: 6px;
   --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
   --size-subagent-dot: 4px;
-  --size-plan-bar: 3px;
+  --size-plan-bar: 4px;
   --text-tally: 9px;
   --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
   --shadow-state-outline: inset 0 0 0 1px var(--color-off);
@@ -179,7 +179,6 @@
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
   --size-icon-meta: 14px;
-  --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-icon-text: 1em;

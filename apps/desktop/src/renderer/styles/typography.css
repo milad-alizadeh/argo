@@ -51,13 +51,6 @@
     letter-spacing: var(--text-meta-tracking);
   }
 
-  .type-roster-meta.type-roster-meta {
-    font-size: var(--text-meta);
-    line-height: var(--text-meta--line-height);
-    font-weight: var(--text-meta-weight);
-    letter-spacing: var(--text-meta-tracking);
-  }
-
   .type-code.type-code,
   .type-code-content :is(code, pre) {
     font-size: var(--text-session-code);

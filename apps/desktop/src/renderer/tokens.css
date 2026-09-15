@@ -130,7 +130,7 @@
   /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
      in the Session's own column. */
   --size-subagent-dot: 4px;
-  --size-plan-bar: 3px;
+  --size-plan-bar: 4px;
   /* The count under a stack of Subagent dots: the one figure on the row smaller than `--text-badge`,
      because it is texture the eye only reads when it stops on the column. */
   --text-tally: 9px;
@@ -239,7 +239,6 @@
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
   --size-icon-meta: 14px;
-  --size-icon-roster-meta: 12px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-icon-text: 1em; /* an icon set in running text, at the size of its words */
