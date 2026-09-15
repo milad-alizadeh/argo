@@ -6,6 +6,7 @@ import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
 import { HandoffCompletedMarker, HandoffMarker } from './HandoffMarker'
 import { useReveals } from './reveal'
+import type { RevealCache } from './streaming-text'
 import { TurnMarker } from './TurnMarker'
 import { ToolGroupState } from './tool-group-state'
 import type { TurnMarkerView } from './turn-marker'
@@ -82,6 +83,7 @@ export function FeedDocument({
   stallTimeoutMs,
 }: FeedDocumentProps) {
   const toolGroups = useRef(new ToolGroupState()).current
+  const revealCache = useRef<RevealCache>(new Map()).current
   const { column, settled, stalled, retry } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
@@ -96,10 +98,14 @@ export function FeedDocument({
     activeEvidenceId,
     onOpenEvidence,
     toolGroups,
+    revealCache,
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
   })
+  const lastRow = feed.rows[feed.rows.length - 1]
+  const streamingRowId =
+    isRunning && lastRow?.shape === 'prose' && lastRow.role === 'assistant' ? lastRow.id : null
   const content = feedContent({
     active,
     settled,
@@ -110,6 +116,7 @@ export function FeedDocument({
     onJumpToLatestChange,
     DrawnRow,
     revealsFor,
+    streamingRowId,
   })
 
   return (

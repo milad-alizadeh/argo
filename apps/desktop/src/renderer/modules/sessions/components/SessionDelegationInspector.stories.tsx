@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 
 import { sessionDelegation } from '../session-fixtures'
 import type { SessionFeed } from '../types'
@@ -89,9 +89,15 @@ export const RunningSubagent: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Interface review')).toBeVisible()
     await expect(canvas.getByText('Running · 5m 0s · 4.2k tokens')).toBeVisible()
-    await expect(
-      canvas.getByText('The two work buttons take the control size and the meta typography role.'),
-    ).toBeVisible()
+    // The delegation is running, so the last assistant row streams its text in over time rather
+    // than showing the full sentence on the first render.
+    await waitFor(
+      () =>
+        expect(canvasElement.querySelector('[data-feed-row="answer"] p')?.textContent).toBe(
+          'The two work buttons take the control size and the meta typography role.',
+        ),
+      { timeout: 3000 },
+    )
     const inspector = canvas.getByLabelText('Subagent')
     const history = canvas.getByLabelText('Session history')
     expect(history.getBoundingClientRect().bottom).toBe(inspector.getBoundingClientRect().bottom)

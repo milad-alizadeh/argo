@@ -32,6 +32,38 @@ test('EnterWorktree without a path cannot reach the convention, so it is refused
   assert.match(decision.reason, /git worktree add/)
 })
 
+test('EnterWorktree refusal fills in the real N-slug the name already carried', () => {
+  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
+  const decision = decideName({
+    toolName: 'EnterWorktree',
+    toolInput: { name: '2101-live-gap-investigation' },
+    isAgent: true,
+  })
+  assert.equal(decision.block, true)
+  assert.match(
+    decision.reason,
+    /git worktree add -b 'argo\/#2101-live-gap-investigation' \.claude\/worktrees\/ticket-2101-live-gap-investigation/,
+  )
+  assert.match(
+    decision.reason,
+    /EnterWorktree \{ path: "\.claude\/worktrees\/ticket-2101-live-gap-investigation" \}/,
+  )
+})
+
+test('EnterWorktree refusal falls back to the template for a name it cannot parse', () => {
+  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
+  const decision = decideName({
+    toolName: 'EnterWorktree',
+    toolInput: { name: 'Not_A_Slug!' },
+    isAgent: true,
+  })
+  assert.equal(decision.block, true)
+  assert.match(
+    decision.reason,
+    /git worktree add -b argo\/#<N>-<slug> \.claude\/worktrees\/ticket-<N>-<slug>/,
+  )
+})
+
 test('an on-convention worktree add passes', () => {
   configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
   assert.equal(
