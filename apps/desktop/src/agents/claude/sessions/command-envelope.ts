@@ -159,6 +159,8 @@ export function readCommandEnvelope(
     return { kind: 'compaction-summary', uuid: message.uuid, text }
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null
-  if (prompt === null) return { kind: 'trace', uuid: message.uuid }
+  // The CLI echoes `/compact` after the boundary; the person's own `/compact` prompt precedes it.
+  if (prompt === null || prompt.split(' ')[0] === '/compact')
+    return { kind: 'trace', uuid: message.uuid }
   return { ...message, blocks: [{ shape: 'event', event: 'command', text: prompt }] }
 }

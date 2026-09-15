@@ -33,6 +33,7 @@ export function feedContent({
   DrawnRow,
   revealsFor,
   streamingRowId,
+  tail,
 }: {
   active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -44,11 +45,19 @@ export function feedContent({
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
+  tail: ReactNode
 }) {
   if (isRunning && (settled === null || settled.rows.length === 0)) {
-    return stalled ? <StalledFeed onRetry={onRetry} posture={posture} /> : <RunningFeed />
+    return stalled ? (
+      <StalledFeed onRetry={onRetry} posture={posture} />
+    ) : (
+      <>
+        <RunningFeed />
+        {tail}
+      </>
+    )
   }
-  if (settled === null) return null
+  if (settled === null) return tail
   if (settled.rows.length === 0)
     return (
       <Empty className="h-full border-0">
@@ -70,6 +79,7 @@ export function feedContent({
       onJumpToLatestChange={onJumpToLatestChange}
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}
+      tail={tail}
     />
   )
 }
