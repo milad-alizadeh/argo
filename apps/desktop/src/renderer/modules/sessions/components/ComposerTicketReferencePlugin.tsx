@@ -4,6 +4,7 @@ import type { EntityMatch } from '@lexical/text'
 import {
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
@@ -61,6 +62,15 @@ export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTi
         KEY_BACKSPACE_COMMAND,
         () => {
           const selection = $getSelection()
+          if ($isNodeSelection(selection)) {
+            const ticket = selection
+              .getNodes()
+              .find((node) => node instanceof ComposerTicketReferenceNode)
+            if (ticket !== undefined) {
+              ticket.remove()
+              return true
+            }
+          }
           if (!$isRangeSelection(selection) || !selection.isCollapsed()) return false
           const node = selection.anchor.getNode()
           const ticket = ticketBeforeCursor(node, selection.anchor.offset)
