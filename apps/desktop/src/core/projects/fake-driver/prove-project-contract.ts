@@ -41,6 +41,7 @@ const SURFACE = [
   'connectSource',
   'decideSessionPermission',
   'decideSessionQuestion',
+  'development',
   'disconnectAccount',
   'disconnectSessionTicket',
   'disconnectSource',
