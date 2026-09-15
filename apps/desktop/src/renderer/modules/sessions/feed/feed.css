@@ -1,7 +1,4 @@
-/* The Feed's own geometry. These properties are here rather than in utility classes because they
-   are the ones no utility expresses and the ones ADR-0033 is written about: the measurement
-   container's containment, the gutter both scroll boxes reserve, and the padding a measured row
-   is measured with. Every value is read from a token. */
+/* The Feed's own geometry. Every production value comes from a token. */
 
 .feed {
   position: relative;
@@ -28,40 +25,40 @@
   min-height: 0;
 }
 
-/* The measurement container of ADR-0033 rule 3. Under size containment it measures 0 px itself
-   and paints nothing, while every row inside keeps its real height. It reserves a scrollbar
-   gutter because the viewport below reserves one: where the platform draws a scrollbar that takes
-   layout width, a row measured at the full column width would be measured wider than it is ever
-   drawn, and every height read here would be a height for a line count the Feed never has. */
-.feed__measured {
-  content-visibility: hidden;
-  width: 100%;
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
-}
-
 .feed__scroller,
 .feed__viewport {
+  scroll-padding-block: var(--spacing-snug);
   min-height: 0;
   height: 100%;
+}
+
+.feed__scroller {
+  position: relative;
 }
 
 .feed__viewport {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
 }
 
 .feed__content {
-  padding: var(--spacing-snug) 0;
+  position: relative;
+  width: 100%;
+  max-width: var(--size-session-column);
+  margin-inline: auto;
   overflow-anchor: none;
+}
+
+.feed__jump-to-latest {
+  position: absolute;
+  right: var(--spacing-wide);
+  bottom: calc(var(--spacing-session-feed-composer-inset) + var(--spacing-wide));
 }
 
 .feed-row {
   padding: var(--spacing-tight) var(--spacing-wide);
-  /* The body rung the Roster's titles are set in. Stated here rather than inherited, because the
-     measurement container and the viewport must lay a row out in the same size. */
+  /* The body rung the Roster's titles are set in. */
   font-size: var(--text-body);
   /* Rule 8: selection is a layer, and prose is selectable text. */
   user-select: text;

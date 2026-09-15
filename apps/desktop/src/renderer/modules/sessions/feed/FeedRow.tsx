@@ -9,7 +9,6 @@ import { type Reveal, useRevealAnimation } from './reveal'
 
 export type FeedRowProps = {
   row: SessionFeedRow
-  height?: number
   reveal?: Reveal
   activeEvidenceId: string | null
   openToolGroups: ReadonlySet<string>
@@ -22,7 +21,6 @@ export type FeedRowProps = {
 
 export function FeedRow({
   row,
-  height,
   reveal,
   activeEvidenceId,
   onOpenEvidence,
@@ -41,7 +39,6 @@ export function FeedRow({
       data-revealing={reveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
       ref={element}
-      style={height === undefined || height === 0 ? undefined : { height: `${height}px` }}
     >
       <FeedRowContent
         onOpenEvidence={onOpenEvidence}
@@ -66,7 +63,7 @@ function FeedRowContent({
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
-}: Omit<FeedRowProps, 'height'>) {
+}: FeedRowProps) {
   switch (row.shape) {
     // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
     // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the

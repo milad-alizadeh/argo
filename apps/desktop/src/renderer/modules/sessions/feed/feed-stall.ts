@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react'
 // passes a shortened value in a story or test rather than waiting on this real bound.
 export const FEED_STALL_TIMEOUT_MS = 8000
 
-// Shared by the two places a Feed can sit waiting with nothing to show: BasicFeed's Standing
-// state, before any Feed has arrived, and useSettledFeed's settle pipeline, once one has.
+// Shared by the two places a Feed can sit waiting with nothing to show: BasicFeed's standing
+// state and a running Session whose first Feed has not arrived.
 // `awaiting` names the attempt: a plain boolean cannot restart the bound on a retry or a Session
 // switch, since it reads the same both before and after selecting a different Session that is
 // also still awaiting (cancel-on-navigate, #2102) — so a caller with nothing to show passes an

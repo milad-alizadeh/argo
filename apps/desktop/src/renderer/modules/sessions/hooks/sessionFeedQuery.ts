@@ -22,6 +22,10 @@ export function sessionFeedQuery(
         ? ['sessions', 'feed', null, delegationId]
         : sessionFeedQueryKey(sessionId, delegationId),
     enabled: sessionId !== null,
+    // A Feed belongs only to the active reader. Once its observer leaves on a Session switch,
+    // React Query immediately drops the transcript and aborts its in-flight reader work. This
+    // avoids an async manual cleanup that could race a rapid A -> B -> A switch.
+    gcTime: 0,
     refetchInterval: SESSION_REFRESH_MS,
     retry: false,
     queryFn: async ({ signal }) => {

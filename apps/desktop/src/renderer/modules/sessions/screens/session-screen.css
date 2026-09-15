@@ -15,6 +15,6 @@
   margin-inline-end: var(--inset-session-inspector-toggle);
 }
 
-.session-screen__feed .feed__content {
-  padding-bottom: var(--spacing-session-feed-composer-inset);
+.session-screen__feed .feed__viewport {
+  scroll-padding-bottom: var(--spacing-session-feed-composer-inset);
 }

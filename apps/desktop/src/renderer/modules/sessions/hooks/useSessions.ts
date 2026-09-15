@@ -67,9 +67,10 @@ function useRosterQuery(selectedSessionId: SessionId | null, enabled: boolean) {
 // roster in for a result it may throw away.
 export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
   const queryClient = useQueryClient()
+  const selectedFeedId = readableSessionId(selectedSessionId)
   const roster = useRosterQuery(selectedSessionId, rosterEnabled)
   const feed = useQuery<SessionFeed | null, SessionContractError>(
-    sessionFeedQuery(queryClient, readableSessionId(selectedSessionId), null),
+    sessionFeedQuery(queryClient, selectedFeedId, null),
   )
 
   const pending = useSessionCreationStore((state) => state.pending)

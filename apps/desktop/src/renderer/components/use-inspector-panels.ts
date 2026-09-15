@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { readCssSize } from '../lib/read-css-size'
@@ -7,6 +7,30 @@ type InspectorState = 'open' | 'collapsed' | 'expanded'
 
 // CSS size tokens, read at render so a token change moves the split.
 export type InspectorSizes = { inspector: string; inspectorMin: string; workspaceMin: string }
+
+function useInspectorReadiness({
+  defaultCollapsed,
+  element,
+  state,
+}: {
+  defaultCollapsed: boolean
+  element: RefObject<HTMLElement | null>
+  state: InspectorState
+}) {
+  const [isInspectorReady, setIsInspectorReady] = useState(!defaultCollapsed)
+  const synchronizeReady = useCallback(() => {
+    const width = element.current?.getBoundingClientRect().width ?? 0
+    setIsInspectorReady(width > 0)
+  }, [element])
+  useLayoutEffect(() => {
+    if (state === 'collapsed' || element.current === null) return
+    const observer = new ResizeObserver(synchronizeReady)
+    observer.observe(element.current)
+    synchronizeReady()
+    return () => observer.disconnect()
+  }, [element, state, synchronizeReady])
+  return { isInspectorReady, synchronizeReady, setIsInspectorReady }
+}
 
 export function useInspectorPanels(
   sizes: InspectorSizes,
@@ -18,14 +42,18 @@ export function useInspectorPanels(
   const inspectorElement = useRef<HTMLElement>(null)
   const [state, setState] = useState<InspectorState>(defaultCollapsed ? 'collapsed' : 'open')
   const stateRef = useRef<InspectorState>(defaultCollapsed ? 'collapsed' : 'open')
-  const [isInspectorReady, setIsInspectorReady] = useState(!defaultCollapsed)
+  const { isInspectorReady, setIsInspectorReady, synchronizeReady } = useInspectorReadiness({
+    defaultCollapsed,
+    element: inspectorElement,
+    state,
+  })
   const updateState = (next: InspectorState) => {
     stateRef.current = next
     setState(next)
   }
 
   const open = () => {
-    setIsInspectorReady(false)
+    setIsInspectorReady(true)
     inspectorPanel.current?.expand()
     inspectorPanel.current?.resize(readCssSize(sizes.inspector))
     updateState('open')
@@ -35,20 +63,6 @@ export function useInspectorPanels(
   useLayoutEffect(() => {
     if (reveal != null && stateRef.current === 'collapsed') opener.current()
   }, [reveal])
-  useLayoutEffect(() => {
-    if (state === 'collapsed') return
-    const element = inspectorElement.current
-    if (element === null) return
-    const minimumWidth = readCssSize(sizes.inspectorMin)
-    const showWhenSized = () => {
-      if (element.getBoundingClientRect().width >= minimumWidth) setIsInspectorReady(true)
-    }
-    const observer = new ResizeObserver(showWhenSized)
-    observer.observe(element)
-    showWhenSized()
-    return () => observer.disconnect()
-  }, [sizes.inspectorMin, state])
-
   return {
     inspectorElement,
     inspectorPanel,
@@ -57,9 +71,13 @@ export function useInspectorPanels(
     isInspectorReady,
     synchronizeCollapsed: () => {
       if (inspectorPanel.current?.isCollapsed()) {
+        if (stateRef.current !== 'collapsed') return
         setIsInspectorReady(false)
         updateState('collapsed')
-      } else updateState(stateRef.current === 'expanded' ? 'expanded' : 'open')
+      } else {
+        synchronizeReady()
+        updateState(stateRef.current === 'expanded' ? 'expanded' : 'open')
+      }
     },
     toggle: () => {
       if (state === 'collapsed') return open()

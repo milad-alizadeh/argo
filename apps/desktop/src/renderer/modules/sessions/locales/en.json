@@ -26,6 +26,7 @@
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",
   "historyLabel": "Session history",
+  "jumpToLatest": "Jump to latest",
   "composer": {
     "label": "Session input",
     "message": "Message",

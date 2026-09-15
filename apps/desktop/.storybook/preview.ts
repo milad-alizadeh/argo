@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
 
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/agents/codex/compaction/compaction'
 import '../src/renderer/i18n/config'
 import { AppQueryProvider } from '../src/renderer/app-query-provider'
 import { sessionRosterRow } from '../src/renderer/modules/sessions/session-fixtures'
@@ -13,6 +14,7 @@ import { ticketsHost } from './tickets-host'
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
 const host = window
+let codexAutoCompactLimit = DEFAULT_AUTO_COMPACT_LIMIT
 const storybookSession = sessionRosterRow({
   id: 'storybook-session',
   posture: 'external',
@@ -25,6 +27,11 @@ host.argo = {
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
+  getCodexAutoCompactLimit: () => Promise.resolve(codexAutoCompactLimit),
+  setCodexAutoCompactLimit: (limit: number) => {
+    codexAutoCompactLimit = limit
+    return Promise.resolve(codexAutoCompactLimit)
+  },
   onCommand: subscribeToStorybookCommands,
   listSessions: () =>
     Promise.resolve({

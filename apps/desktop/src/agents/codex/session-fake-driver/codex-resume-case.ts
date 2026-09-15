@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import {
   createSessionByClick,
@@ -18,6 +19,16 @@ async function sendFromComposer(page: Page, text: string) {
   await composer.click()
   await page.keyboard.type(text)
   await page.keyboard.press('Enter')
+}
+
+async function managedRosterRow(page: Page, sessionId: string) {
+  const deadline = Date.now() + 30_000
+  while (Date.now() < deadline) {
+    const rows = await rosterRow(page, sessionId)
+    if (rows.some((row: { posture: string }) => row.posture === 'managed')) return rows
+    await setTimeout(100)
+  }
+  throw new Error(`Session ${sessionId} did not become managed after resuming.`)
 }
 
 export async function provePackagedCodexResume(page: Page, { restart }: { restart: Restart }) {
@@ -48,14 +59,7 @@ export async function provePackagedCodexResume(page: Page, { restart }: { restar
   // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the roster
   // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
   // rather than by the time the message is visible.
-  await relaunched.waitForFunction(async (id) => {
-    const reply = await window.argo.listSessions()
-    return reply.sessions.some(
-      (session: { id: string; posture: string }) =>
-        session.id === id && session.posture === 'managed',
-    )
-  }, sessionId)
-  const resumed = await rosterRow(relaunched, sessionId)
+  const resumed = await managedRosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),
     [{ id: sessionId, posture: 'managed' }],

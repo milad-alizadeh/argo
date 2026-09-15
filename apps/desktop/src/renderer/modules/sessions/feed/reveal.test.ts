@@ -3,13 +3,10 @@ import type { SessionFeedRow } from '../types'
 import { nextReveals } from './reveal'
 import type { Settled } from './useSettledFeed'
 
-function settled(rows: SessionFeedRow[], heights: Record<string, number>, width = 600): Settled {
+function settled(rows: SessionFeedRow[]): Settled {
   return {
-    reading: { sessionId: 'thread', revision: 'r', width, font: 'body', zoom: 1 },
+    reading: { sessionId: 'thread', revision: 'r' },
     rows,
-    heights: new Map(Object.entries(heights)),
-    measuredMs: 0,
-    settledMs: 0,
   }
 }
 
@@ -22,39 +19,30 @@ const reply = (text: string): SessionFeedRow => ({
 
 const toolRow: SessionFeedRow = { shape: 'prose', id: 'msg-2:0', role: 'assistant', text: 'Next.' }
 
-test('uncovers a growing draft from the height it was already shown at', () => {
-  const first = nextReveals(null, settled([reply('Ducks')], { 'msg-1:0': 40 }), 0)
+test('uncovers a growing draft from its previous estimated text height', () => {
+  const first = nextReveals(null, settled([reply('Ducks')]), 0)
   expect(first.reveals.size).toBe(0)
-  const grown = nextReveals(first.shown, settled([reply('Ducks glide.')], { 'msg-1:0': 64 }), 0)
-  expect(grown.reveals.get('msg-1:0')).toEqual({ fromPx: 40, toPx: 64, durationMs: 250 })
+  const grown = nextReveals(first.shown, settled([reply('Ducks '.repeat(24))]), 0)
+  expect(grown.reveals.get('msg-1:0')).toEqual({ fromPx: 24, toPx: 72, durationMs: 250 })
 })
 
-test('reveals nothing when only the width changed', () => {
-  const first = nextReveals(null, settled([reply('Ducks')], { 'msg-1:0': 40 }), 0)
-  const narrower = nextReveals(first.shown, settled([reply('Ducks')], { 'msg-1:0': 80 }, 300), 0)
-  expect(narrower.reveals.size).toBe(0)
+test('does not reveal an unchanged draft', () => {
+  const first = nextReveals(null, settled([reply('Ducks')]), 0)
+  const unchanged = nextReveals(first.shown, settled([reply('Ducks')]), 0)
+  expect(unchanged.reveals.size).toBe(0)
 })
 
 test('caps how long a long reply takes to uncover', () => {
-  const first = nextReveals(null, settled([], {}), 0)
-  const long = nextReveals(first.shown, settled([reply('A long reply.')], { 'msg-1:0': 5000 }), 0)
+  const first = nextReveals(null, settled([]), 0)
+  const long = nextReveals(first.shown, settled([reply('x'.repeat(10_000))]), 0)
   expect(long.reveals.get('msg-1:0')?.durationMs).toBe(1200)
 })
 
 test('lets a reveal play to its end when another row arrives under it', () => {
-  const first = nextReveals(null, settled([], {}), 0)
-  const arrived = nextReveals(
-    first.shown,
-    settled([reply('A long reply.')], { 'msg-1:0': 5000 }),
-    0,
-  )
-  const heights = { 'msg-1:0': 5000, 'msg-2:0': 20 }
-  const during = nextReveals(
-    arrived.shown,
-    settled([reply('A long reply.'), toolRow], heights),
-    500,
-  )
+  const first = nextReveals(null, settled([]), 0)
+  const arrived = nextReveals(first.shown, settled([reply('x'.repeat(10_000))]), 0)
+  const during = nextReveals(arrived.shown, settled([reply('x'.repeat(10_000)), toolRow]), 500)
   expect(during.reveals.get('msg-1:0')).toBe(arrived.reveals.get('msg-1:0'))
-  const after = nextReveals(during.shown, settled([reply('A long reply.'), toolRow], heights), 1300)
+  const after = nextReveals(during.shown, settled([reply('x'.repeat(10_000)), toolRow]), 1300)
   expect(after.reveals.has('msg-1:0')).toBe(false)
 })

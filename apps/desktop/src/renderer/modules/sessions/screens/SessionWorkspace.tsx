@@ -61,7 +61,7 @@ function ComposerSection({
       <ComposerFade top={fadeTop} />
       <section
         aria-label={t('composerRegionLabel')}
-        className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-shell-inset)"
+        className="absolute inset-x-0 bottom-0 z-20 isolate"
         ref={sectionRef}
       >
         {composer}
