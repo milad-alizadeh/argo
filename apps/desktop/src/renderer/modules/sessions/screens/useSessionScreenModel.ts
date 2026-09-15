@@ -24,13 +24,16 @@ function pickedIn(selection: WorkSelection, sessionId: string | null): WorkSelec
 }
 
 // Each pick counts, so picking the same row again reopens an inspector the reader collapsed.
-function useWorkPick(sessionId: string | null) {
+function useWorkPick(sessionId: string | null, onPick: () => void) {
   const [picked, setPicked] = useState({ selection: NOTHING_PICKED, count: 0 })
   const work = pickedIn(picked.selection, sessionId)
   const pickedId = work.delegationId ?? work.shellId
   return {
     work,
-    pick: (selection: WorkSelection) => setPicked(({ count }) => ({ selection, count: count + 1 })),
+    pick: (selection: WorkSelection) => {
+      onPick()
+      setPicked(({ count }) => ({ selection, count: count + 1 }))
+    },
     workReveal: pickedId === null ? null : `${pickedId}#${picked.count}`,
   }
 }
@@ -41,16 +44,12 @@ export function useSessionScreenModel() {
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  const { work, pick, workReveal } = useWorkPick(selectedSessionId)
+  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
+  const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { feed, feedError, roster, retryFeed } = useSessions(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
-  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
-  const pickWork = (selection: WorkSelection) => {
-    setEvidence(null)
-    pick(selection)
-  }
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
     cli: harness.cli,
@@ -82,7 +81,7 @@ export function useSessionScreenModel() {
     permission,
     question,
     work,
-    pick: pickWork,
+    pick,
     workReveal,
     shell,
     delegation,
