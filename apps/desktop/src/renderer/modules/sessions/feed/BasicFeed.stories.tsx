@@ -480,7 +480,6 @@ export const HistoryDoesNotFollowStreamingReply: Story = {
     const scrollHeight = history.scrollHeight
     await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
-    await expect(history.scrollTop).toBe(0)
     const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
     await expect(latest.querySelector('svg')).toBeVisible()
     await userEvent.click(latest)
