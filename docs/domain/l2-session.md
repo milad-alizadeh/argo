@@ -62,18 +62,21 @@
   as one it never spawned, which is #942.
 
 - **CLI title** — a name for the Session that the agent CLI itself holds, and that every surface
-  the CLI draws already shows. DERIVED: Argo reads it off the transcript and never owns it. Two
-  kinds, and the reader's outranks the summariser's whichever order they arrive in (#1623):
+  the CLI draws already shows. DERIVED: Argo reads it off the transcript, or for Codex off the
+  Codex app's own state (ADR-0042), and never owns it. Two kinds, and the reader's outranks the
+  summariser's whichever order they arrive in (#1623):
   - **summarised** — the CLI's own summariser wrote it, off the conversation. The `ai-title`
-    record.
+    record, and the thread name Codex Desktop keeps.
   - **custom** — a person typed it at the CLI's prompt. The `custom-title` record `/rename` writes,
     and what Argo's own mirror leaves behind when it types there (#1494).
 
-  The first prompt is an Argo-derived name. A name that a reader enters in Argo travels to the CLI.
+  The first prompt is an Argo-derived name: the first thing the Session was asked, without the
+  text the harness injects around it. A name that a reader enters in Argo travels to the CLI.
   It replaces a derived name because the reader chose it.
 
   Claude records a custom title after `/rename`. Codex 0.147.0 accepts `thread/name/set` and sends
-  `thread/name/updated`. Both CLIs therefore provide a native custom title.
+  `thread/name/updated`. Both CLIs therefore provide a native custom title. Codex keeps that name
+  in the same place as its own, so after a restart Argo reads it as `summarised` (ADR-0042).
 
   **Connecting a Ticket can rename the Session** (#2134), the same way a reader's own typed name
   does: Argo sends the Ticket's title through the existing rename path, and the CLI's own

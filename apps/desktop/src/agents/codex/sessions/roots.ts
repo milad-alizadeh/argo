@@ -5,3 +5,8 @@ import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/core/sessions/proof-protocol'
 export function codexTranscriptsRoot(home: string): string {
   return process.env[SESSION_CODEX_TRANSCRIPTS_ENV] ?? path.join(home, '.codex', 'sessions')
 }
+
+// Codex keeps its app state beside `sessions/`, so a proof's fixture root never reaches the real one.
+export function codexStatePath(transcriptsRoot: string): string {
+  return path.join(path.dirname(transcriptsRoot), 'state_5.sqlite')
+}

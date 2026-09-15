@@ -1,57 +1,26 @@
 import { isRecord } from '@/boundary'
-import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
+import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { currentUserBlocks } from './current-user-blocks'
-import { readHarnessEnvelopes } from './harness-envelopes'
+import { delegatedRequest } from './harness-envelopes'
+import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
-import { promptBlocks, promptEventImages, readImage } from './prompt-images'
+import { promptBlocks, promptEventImages } from './prompt-images'
 
-function messageBlocks(value: unknown, proseTypes: readonly string[]): ContentBlock[] | null {
-  if (!Array.isArray(value)) return null
-  return value.map((block): ContentBlock => {
-    const image = isRecord(block) ? readImage(block) : null
-    if (image !== null) return image
-    if (
-      isRecord(block) &&
-      typeof block.type === 'string' &&
-      proseTypes.includes(block.type) &&
-      typeof block.text === 'string'
-    ) {
-      return { shape: 'prose', text: block.text }
-    }
-    const label = isRecord(block) && typeof block.type === 'string' ? block.type : 'unfamiliar'
-    return { shape: 'source', label, source: JSON.stringify(block, null, 2) ?? String(block) }
-  })
-}
-
-function messageRecord(
+// Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
+function delegatedPrompt(
   record: Record<string, unknown>,
-  message: {
-    uuid: string
-    role: 'user' | 'assistant'
-    originSessionId: string | null
-    blocks: ContentBlock[]
-  },
-): TranscriptRecord {
-  return readHarnessEnvelopes({
-    kind: 'message',
-    uuid: message.uuid,
-    parentUuid: null,
-    originSessionId: message.originSessionId,
-    role: message.role,
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
-    entry: 'interactive',
-    stopReason: null,
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: message.blocks,
-    toolCalls: [],
-    toolResults: [],
-    answeredCalls: [],
-    usage: null,
+  payload: Record<string, unknown>,
+  item: Record<string, unknown>,
+): TranscriptRecord | null {
+  if (item.name !== 'create_thread' || typeof item.output !== 'string') return null
+  if (typeof item.id !== 'string') return null
+  const request = delegatedRequest(item.output)
+  if (request === null) return null
+  return messageRecord(record, {
+    uuid: item.id,
+    role: 'user',
+    originSessionId: typeof payload.thread_id === 'string' ? payload.thread_id : null,
+    blocks: [{ shape: 'prose', text: request }],
   })
 }
 
@@ -60,6 +29,7 @@ function itemMessage(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   const item = isRecord(payload.item) ? payload.item : null
+  if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'
   if (item?.type === 'AgentMessage') role = 'assistant'

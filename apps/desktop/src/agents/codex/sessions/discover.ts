@@ -4,9 +4,11 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import type { SessionRosterRow } from '@/core/sessions/models'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { withoutModelInputCopies } from './model-input-copies'
 import { parseCodexTranscriptLine } from './records'
+import type { ThreadNames } from './thread-names'
 
 export type Discovery = TranscriptDiscovery
 
@@ -64,4 +66,21 @@ const reader = createTranscriptDiscoverer({
   normalizeRecords,
 })
 
-export const { clearFullRecords, discoverSessions, readSessionFiles } = reader
+export const { clearFullRecords, readSessionFiles } = reader
+
+// Codex writes no thread name to a rollout, so its own name outranks the opening prompt (ADR-0042).
+// It reads as `summarised`: Codex names most threads itself, and a person's rename lands there too.
+function named(row: SessionRosterRow, names: ReadonlyMap<string, string>): SessionRosterRow {
+  const name = [row.id, ...row.retiredIds].map((id) => names.get(id)).find(Boolean)
+  return name === undefined ? row : { ...row, title: { text: name, source: 'summarised' } }
+}
+
+export async function discoverSessions(
+  root: string,
+  threadNames?: ThreadNames,
+): Promise<Discovery> {
+  const discovery = await reader.discoverSessions(root)
+  if (threadNames === undefined) return discovery
+  const names = threadNames(discovery.rows.flatMap((row) => [row.id, ...row.retiredIds]))
+  return { ...discovery, rows: discovery.rows.map((row) => named(row, names)) }
+}
