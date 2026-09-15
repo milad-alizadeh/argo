@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionFeedRow } from './feed-rows'
+import { sessionFeedReplySchema } from './feed-contract'
+import { type SessionFeedRow, sessionFeedRowSchema } from './feed-rows'
 import { toolRows } from './tool-feed'
 import { groupToolRuns, TOOL_CONTENT_ROUTE } from './tool-groups'
 import type { ToolCall } from './transcript'
@@ -77,4 +78,26 @@ test('a command routes inline and a file edit routes to the evidence panel', () 
   assert.equal(TOOL_CONTENT_ROUTE.created, 'evidence')
   assert.equal(TOOL_CONTENT_ROUTE.read, 'evidence')
   assert.equal(TOOL_CONTENT_ROUTE.tool, 'evidence')
+})
+
+test('a long tool run keeps its group id inside the Session feed contract', () => {
+  const calls = Array.from({ length: 12 }, (_, index) =>
+    bash(`123e4567-e89b-12d3-a456-426614174${String(index).padStart(3, '0')}`, 'bun test'),
+  )
+  const grouped = group(rowsFor(calls))
+
+  assert.equal(grouped.id.length <= 256, true)
+  assert.equal(sessionFeedRowSchema.safeParse(grouped).success, true)
+  assert.equal(
+    sessionFeedReplySchema.safeParse({
+      version: 1,
+      type: 'session.feed.read',
+      requestId: 'request-1',
+      sessionId: 'session-1',
+      chainId: 'session-1',
+      revision: 'revision-1',
+      rows: [grouped],
+    }).success,
+    true,
+  )
 })
