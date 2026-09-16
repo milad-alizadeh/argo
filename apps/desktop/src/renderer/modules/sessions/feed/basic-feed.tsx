@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { isOptimisticSessionId } from '../state/use-session-creation-store'
 import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
 import type { FeedQuestionHandlers } from './feed-document'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
@@ -55,7 +56,9 @@ export function BasicFeed({
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const [retryToken, setRetryToken] = useState(0)
-  const awaitingFeed = failure === null && selectedSessionId !== null && current === null
+  const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
+  const awaitingFeed =
+    failure === null && selectedSessionId !== null && !optimisticSession && current === null
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
@@ -92,7 +95,7 @@ export function BasicFeed({
   return (
     <section aria-label="Session Feed" className="feed">
       {ordered.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || current === null ? (
+      {failure !== null || (current === null && !optimisticSession) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}
