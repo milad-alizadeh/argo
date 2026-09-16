@@ -46,7 +46,6 @@ test('defines one app type scale without surface-specific aliases', () => {
   expect(tokens).toContain('--text-xs: var(--text-control)')
   expect(tokens).toContain('--text-control: var(--text-body)')
   expect(tokens).toContain('--text-control--line-height: var(--text-body--line-height)')
-  expect(tokens).toContain('--text-navigation-label: var(--text-control)')
   expect(tokens).toContain('--text-badge: var(--text-meta)')
   expect(button).toContain('px-2.5 text-xs in-data-[slot=button-group]')
   expect(tokens).toContain('--text-heading: 13px')

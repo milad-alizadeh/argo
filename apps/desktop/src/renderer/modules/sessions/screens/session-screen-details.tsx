@@ -143,7 +143,7 @@ function Failure({ message }: { message: string }) {
 function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
   const { t } = useTranslation('sessions')
   return (
-    <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-bottom)`}>
+    <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-ink-bottom)`}>
       <Alert>
         <Lock aria-hidden />
         <AlertTitle>{t('openElsewhere.title')}</AlertTitle>

@@ -1,4 +1,4 @@
-import { Bot, GitFork, Ticket } from 'lucide-react'
+import { Bot, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Session } from '../../types'
 import { sessionTiming } from './session-timing'
@@ -74,7 +74,7 @@ export function SessionMetadata({ session }: { session: Session }) {
       ) : null}
       {session.pullRequest !== null ? (
         <span className="inline-flex items-center gap-1">
-          <GitFork aria-hidden="true" />
+          <Ticket aria-hidden="true" />
           <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}

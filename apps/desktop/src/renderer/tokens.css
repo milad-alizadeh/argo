@@ -84,6 +84,15 @@
     var(--size-development-identity-bar) -
     var(--spacing-shell-item)
   );
+  --size-session-context-bar: 54px;
+  /* The context bar hangs out of the composer form, overlapping the card by one item, so the
+     composer's lowest ink clears the window by less than the form's own padding. A card that
+     replaces the whole composer matches that ink rather than the padding (#2273). */
+  --spacing-session-composer-ink-bottom: calc(
+    var(--spacing-session-composer-bottom) -
+    var(--size-session-context-bar) +
+    var(--spacing-shell-item)
+  );
   --size-session-composer-overlay: calc(
     var(--spacing-shell-section) +
     var(--size-composer-field) +
@@ -155,8 +164,6 @@
   --text-code--line-height: 18px;
   --text-control: var(--text-body);
   --text-control--line-height: var(--text-body--line-height);
-  --text-navigation-label: var(--text-control);
-  --text-navigation-label--line-height: var(--text-control--line-height);
   --text-badge: var(--text-meta);
   /* Generated shadcn primitives keep their rung names but resolve through the app scale. */
   --text-xs: var(--text-control);

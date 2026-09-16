@@ -17,7 +17,6 @@ export const TEXT_SIZES = [
   'meta',
   'meta-tracking',
   'meta-weight',
-  'navigation-label',
   'prose',
   'prose-tracking',
   'prose-weight',

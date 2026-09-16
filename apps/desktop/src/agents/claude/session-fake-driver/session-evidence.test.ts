@@ -26,8 +26,8 @@ function assertToolRows(reply) {
     group.calls.map(({ label, lineCounts, status }) => ({ label, lineCounts, status })),
     [
       { label: 'Ran bun test', lineCounts: null, status: 'succeeded' },
-      { label: 'Read src/app.ts', lineCounts: null, status: 'failed' },
-      { label: 'Edited src/app.ts', lineCounts: { added: 1, removed: 1 }, status: 'running' },
+      { label: 'Read app.ts', lineCounts: null, status: 'failed' },
+      { label: 'Edited app.ts', lineCounts: { added: 1, removed: 1 }, status: 'running' },
     ],
   )
   assert.equal(reply.rows[1]?.shape, 'prose')

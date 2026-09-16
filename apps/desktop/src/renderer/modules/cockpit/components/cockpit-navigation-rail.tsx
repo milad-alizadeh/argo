@@ -51,7 +51,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               type="button"
               aria-current={active ? 'page' : undefined}
               aria-label={label}
-              className="group flex flex-col items-center gap-1 type-control"
+              className="group flex flex-col items-center gap-1 type-meta"
               onClick={() => {
                 window.location.hash = DESTINATION_PATHS[itemDestination]
               }}
@@ -65,13 +65,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               >
                 <Icon />
               </span>
-              <span
-                className={
-                  active
-                    ? 'font-medium text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-foreground'
-                    : 'text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-muted-foreground'
-                }
-              >
+              <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
                 {label}
               </span>
             </button>
@@ -82,14 +76,12 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         <button
           type="button"
           aria-label={settingsLabel}
-          className="group flex flex-col items-center gap-1 type-control"
+          className="group flex flex-col items-center gap-1 type-meta"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Settings />
           </span>
-          <span className="text-[length:var(--text-navigation-label)] leading-[length:var(--text-navigation-label--line-height)] text-muted-foreground">
-            {settingsLabel}
-          </span>
+          <span className="text-muted-foreground">{settingsLabel}</span>
         </button>
       </div>
     </nav>

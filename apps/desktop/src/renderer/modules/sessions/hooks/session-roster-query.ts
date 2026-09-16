@@ -7,6 +7,7 @@ import {
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
 import { SESSION_REFRESH_MS, sessionRosterQueryKey } from '../session-queries'
+import { isOptimisticSessionId } from '../state/use-session-creation-store'
 import type { SessionId, SessionRoster, SessionsListed } from '../types'
 
 let rosterOrder: SessionId[] = []
@@ -43,7 +44,11 @@ export function sessionRosterQuery(
     queryKey: [...sessionRosterQueryKey, projectRoot],
     staleTime: Infinity,
     enabled,
-    refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
+    // A draft Session has no backend record, so it cannot reconcile from a Roster poll.
+    refetchInterval:
+      selectedSessionId === null || isOptimisticSessionId(selectedSessionId)
+        ? false
+        : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       const reply = await window.argo.listSessions({ projectRoot, cursor })

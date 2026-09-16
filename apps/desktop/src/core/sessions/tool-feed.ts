@@ -48,9 +48,12 @@ function skillTitle(slug: string): string {
   return [`${first[0]?.toUpperCase()}${first.slice(1)}`, ...rest].join(' ')
 }
 
+// A row names the file, never the path that reached it: every surface drawing this label is narrow
+// and the absolute path is both too long to read and the same prefix on every line (#2273).
 function filePath(call: ToolCall) {
-  if (typeof call.input.file_path !== 'string') return 'file'
-  return call.input.file_path
+  const path = call.input.file_path
+  if (typeof path !== 'string') return 'file'
+  return path.split('/').findLast((segment) => segment.length > 0) ?? path
 }
 
 // Every surface that names a Tool Call uses this label. The kind remains separate metadata so a

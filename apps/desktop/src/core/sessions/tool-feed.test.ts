@@ -100,7 +100,7 @@ test('a Write call opens as a diff of added lines, never its result text', () =>
   )
   assert.deepEqual(row.evidence, {
     kind: 'diff',
-    title: 'Created src/new.ts',
+    title: 'Created new.ts',
     source: '@@ -0,0 +1,2 @@\n+a\n+b',
   })
   assert.deepEqual(row.lineCounts, { added: 2, removed: 0 })
@@ -111,7 +111,21 @@ test('a Read call with no result yet has no evidence to open', () => {
     [call({ id: 'call-1', name: 'Read', input: { file_path: 'src/app.ts' } })],
     new Map(),
   )
-  assert.equal(row.label, 'Read src/app.ts')
+  assert.equal(row.label, 'Read app.ts')
   assert.equal(row.status, 'running')
   assert.equal(row.evidence, null)
+})
+
+test('names a file by its last segment, not the absolute path that reached it', () => {
+  for (const { name, label } of [
+    { name: 'Read', label: 'Read app.ts' },
+    { name: 'Edit', label: 'Edited app.ts' },
+    { name: 'Write', label: 'Created app.ts' },
+  ]) {
+    const row = onlyToolRow(
+      [call({ id: 'call-1', name, input: { file_path: '/Users/someone/project/src/app.ts' } })],
+      new Map(),
+    )
+    assert.equal(row.label, label)
+  }
 })
