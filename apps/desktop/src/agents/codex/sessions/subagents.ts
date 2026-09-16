@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { SessionChain } from '@/core/sessions/chains'
 import { transcriptFileFrom } from '@/core/sessions/transcript'
 import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
-import { transcriptPaths } from './discover'
+import { normalizeCodexMessageRecords, transcriptPaths } from './discover'
 import { parseCodexTranscriptLine } from './records'
 
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
@@ -15,7 +15,9 @@ export async function readDelegationChain(
     ({ name }) => name === `${delegationId}.jsonl`,
   )?.path
   if (filePath === undefined) return null
-  const records = await readRecords(filePath).catch(() => null)
+  const records = await readRecords(filePath)
+    .then(normalizeCodexMessageRecords)
+    .catch(() => null)
   if (records === null) return null
   return {
     id: delegationId,

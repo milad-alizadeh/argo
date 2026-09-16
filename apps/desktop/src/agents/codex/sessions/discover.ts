@@ -48,8 +48,12 @@ function droppingSubagentThreads(records: TranscriptRecord[]): TranscriptRecord[
   return isSubagentThread ? [] : records
 }
 
-function normalizeRecords(records: TranscriptRecord[]): TranscriptRecord[] {
-  return droppingSubagentThreads(withoutModelInputCopies(withoutDuplicateMessages(records)))
+export function normalizeCodexMessageRecords(records: TranscriptRecord[]): TranscriptRecord[] {
+  return withoutModelInputCopies(withoutDuplicateMessages(records))
+}
+
+export function normalizeCodexRecords(records: TranscriptRecord[]): TranscriptRecord[] {
+  return droppingSubagentThreads(normalizeCodexMessageRecords(records))
 }
 
 export async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
@@ -63,7 +67,7 @@ const reader = createTranscriptDiscoverer({
   cli: 'codex',
   transcriptPaths,
   parse: parseCodexTranscriptLine,
-  normalizeRecords,
+  normalizeRecords: normalizeCodexRecords,
 })
 
 export const { clearFullRecords, readSessionFiles } = reader
