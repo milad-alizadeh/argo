@@ -53,7 +53,9 @@ function filePath(call: ToolCall) {
   return call.input.file_path
 }
 
-function toolPresentation(call: ToolCall) {
+// Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
+// compact surface never has to rebuild reader-facing words from the CLI's execution type.
+export function toolPresentation(call: ToolCall) {
   return (
     TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
       kind: 'tool' as const,

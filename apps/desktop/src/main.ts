@@ -2,7 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { createConnection } from 'node:net'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, net, protocol } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { attachBridges } from './bridges'
 import { windowBackground } from './core/appearance/appearance'
@@ -10,8 +10,18 @@ import { applyStoredAppearance, readAppearance } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
 import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
+import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
 import { developmentInstance, developmentReadyRecord } from './development/instance'
+
+// Registering a privileged scheme is only valid before the app is ready (Electron's own
+// constraint), so this runs at module load, ahead of every other side effect below.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: ATTACHMENT_SCHEME,
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+])
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -130,6 +140,12 @@ void app.whenReady().then(async () => {
   // The stored choice is applied before the first window exists, so the frame is never drawn in
   // one appearance and corrected into the other.
   applyStoredAppearance(await readAppearance(app.getPath('userData')))
+  // Main-process `net.fetch` reads `file://` directly, unlike a renderer's own subresource
+  // requests, so this is immune to the restriction the scheme itself exists to route around.
+  protocol.handle(ATTACHMENT_SCHEME, (request) => {
+    const filePath = attachmentPathFromUrl(request.url)
+    return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
+  })
   createWindow()
 
   if (!ACCEPTANCE_ENABLED) return

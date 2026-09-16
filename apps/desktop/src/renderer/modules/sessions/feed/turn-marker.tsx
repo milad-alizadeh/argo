@@ -17,14 +17,26 @@ const TICK_MS = 100
 // The Turn Marker (#2099): what a running Turn is doing right now, with a live elapsed-time
 // counter that keeps counting across a phase change, because it is keyed on when the Turn
 // started, not on the phase showing it.
-export function TurnMarker({ phase, startedAt }: TurnMarkerView) {
+// `silent` keeps the marker's box while a live tail tool group says the same thing in its own
+// shimmer. Unmounting it instead changed the Feed's height every time the running Turn moved
+// between prose and a tool call, which the reader saw as a jump (#2241).
+export function TurnMarker({
+  phase,
+  startedAt,
+  silent = false,
+}: TurnMarkerView & { silent?: boolean }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), TICK_MS)
     return () => window.clearInterval(timer)
   }, [])
   return (
-    <Marker aria-label={PHASE_LABEL[phase]} className="py-2 type-body" role="status">
+    <Marker
+      aria-hidden={silent ? 'true' : undefined}
+      aria-label={silent ? undefined : PHASE_LABEL[phase]}
+      className={`py-2 type-body ${silent ? 'invisible' : ''}`}
+      role={silent ? undefined : 'status'}
+    >
       <MarkerIcon>
         <LoaderCircle className="animate-spin" />
       </MarkerIcon>

@@ -970,7 +970,10 @@ export const ImageAttachmentShowsAPreview: Story = {
 
     await attachViaMenu(canvas)
     await canvas.findByText('notes')
-    await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///repo/screenshot.png')
+    await expect(canvas.getByAltText('')).toHaveAttribute(
+      'src',
+      'argo-attachment://local/repo/screenshot.png',
+    )
     await expect(canvas.getByText('MD file')).toBeVisible()
     const attachmentGroup = canvasElement.querySelector('[data-slot="attachment-group"]')
     if (attachmentGroup === null) throw new Error('Attachment group did not render')
@@ -1032,7 +1035,10 @@ export const DragAndDropAttaches: Story = {
     )
 
     await expect(await canvas.findByText('diagram')).toBeVisible()
-    await expect(canvas.getByAltText('')).toHaveAttribute('src', 'file:///dropped/diagram.jpg')
+    await expect(canvas.getByAltText('')).toHaveAttribute(
+      'src',
+      'argo-attachment://local/dropped/diagram.jpg',
+    )
   },
 }
 

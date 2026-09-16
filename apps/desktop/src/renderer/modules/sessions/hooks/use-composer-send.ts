@@ -4,7 +4,7 @@ import type { Cockpit } from '../../projects/hooks/use-projects'
 import type { Send } from '../components/composer/use-send'
 import type { SessionCli } from '../harness/harnesses'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
-import type { SessionsListed } from '../types'
+import type { SessionRoster } from '../types'
 import type { ComposerIdentity } from './composer-identity'
 import { type SendDeps, sendToDraftIdentity, sendToSessionIdentity } from './send-turn'
 import type { Failure } from './use-session-composer-actions'
@@ -16,7 +16,7 @@ export function useComposerSend(request: {
   cockpit: Cockpit
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
-  roster: SessionsListed | null
+  roster: SessionRoster | null
   identity: ComposerIdentity
   marker: TurnMarkerApi
   send: ReturnType<typeof useSessionMutations>['send']

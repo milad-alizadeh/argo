@@ -16,6 +16,9 @@ export type {
   SessionsListed,
 }
 
+// The roster the renderer holds. The reply's envelope is left out, so that a poll which finds
+// nothing new hands back the roster already on screen rather than a new object (#2241).
+export type SessionRoster = Omit<SessionsListed, 'requestId' | 'type' | 'version'>
 export type Session = SessionsListed['sessions'][number]
 export type SessionId = Session['id']
 export type SessionFeedRow = SessionFeedRead['rows'][number]

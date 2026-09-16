@@ -24,7 +24,7 @@ const SESSION_ROSTER = [
     branch: 'argo/#1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
     turnStartedAt: '2026-09-13T15:42:00Z',
-    activity: { tool: 'Bash', target: 'bun run quality' },
+    activity: { label: 'Ran bun run quality', tool: 'Bash', target: 'bun run quality' },
     plan: {
       state: 'available',
       entries: [
@@ -65,7 +65,7 @@ const SESSION_ROSTER = [
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:18:00Z',
     turnStartedAt: '2026-09-13T15:15:00Z',
-    activity: { tool: 'Read', target: 'feed-document.tsx' },
+    activity: { label: 'Read feed-document.tsx', tool: 'Read', target: 'feed-document.tsx' },
     contextTokens: 18_000,
     spentTokens: 2_900,
   }),
@@ -120,9 +120,6 @@ function ReviewSidebar({
     <SessionsSidebarContent
       onSelect={onSelect}
       roster={{
-        version: 1,
-        type: 'session.listed',
-        requestId: 'screen-review-roster',
         sessions: SESSION_ROSTER,
         filesFound: SESSION_ROSTER.length,
         filesRead: SESSION_ROSTER.length,

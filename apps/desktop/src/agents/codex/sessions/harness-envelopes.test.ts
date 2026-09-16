@@ -75,7 +75,7 @@ test('draws the files a desktop prompt mentions as its attachments, not as text'
 test('draws a mentioned picture from its path when the prompt carries no image', () => {
   const record = userMessage(`${MENTIONED}\n## My request:\n\n`)
   assert.deepEqual(blocksOf(record), [
-    { shape: 'image', url: 'file:///var/folders/T/Screenshot%20at%2022.23.51.png' },
+    { shape: 'image', url: 'argo-attachment://local/var/folders/T/Screenshot%20at%2022.23.51.png' },
     { shape: 'file', path: '/Users/x/my notes.md' },
   ])
 })
