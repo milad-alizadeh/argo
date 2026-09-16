@@ -2,7 +2,8 @@ import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 
 import { useSessionCreationStore } from '../state/use-session-creation-store'
-import { type SendDeps, sendToDraftIdentity, sendToNewSession, sendToSelected } from './send-turn'
+import { sendToDraftIdentity } from './send-draft-turn'
+import { type SendDeps, sendToNewSession, sendToSelected } from './send-turn'
 import { COCKPIT, fakeMutation, PROJECT, SETUP } from './send-turn-fixtures'
 import { beginEntry, clearEntry, rekeyEntry, type TurnMarkerEntries } from './use-turn-marker'
 
@@ -112,4 +113,32 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
   expect(await first).toBe(true)
   expect([...marker.entries.keys()]).toEqual(['session-new'])
   expect(start.calls.length).toBe(1)
+})
+
+// A pending Composer moves its state to the real Session only after the Session id arrives.
+test('a Send from a pending Composer reports the real Session id after rekeying', async () => {
+  const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
+  const started: string[] = []
+  const marker = turnMarker()
+  const deps = {
+    cli: 'claude',
+    cockpit: COCKPIT,
+    navigate: () => undefined as never,
+    queryClient: new QueryClient(),
+    marker,
+    send: fakeMutation(async () => undefined) as never,
+    setFailure: () => {},
+    start: fakeMutation(async () => ({ sessionId: 'session-new' })) as never,
+    watchTurn: () => {},
+  } as unknown as SendDeps
+  const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
+
+  await sendToDraftIdentity(
+    { ...deps, onStarted: (sessionId) => started.push(sessionId) },
+    identity,
+    { prompt: 'hello', setup: null, attachments: [] },
+  )
+
+  expect(started).toEqual(['session-new'])
+  expect([...marker.entries.keys()]).toEqual(['session-new'])
 })

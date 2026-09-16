@@ -31,16 +31,16 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
     [
       {
         status: 'succeeded',
-        label: 'Called exec_command',
+        label: 'Ran bun test session-store.test.ts',
         text: 'bun test session-store.test.ts',
       },
       {
         status: 'succeeded',
-        label: 'Called exec',
+        label: 'Ran const found = tests.filter(t => t.failing); text(found);',
         text: 'const found = tests.filter(t => t.failing); text(found);',
       },
-      { status: 'failed', label: 'Called exec_command', text: 'bun run lint' },
-      { status: 'running', label: 'Called exec_command', text: 'bun run build' },
+      { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
+      { status: 'running', label: 'Ran bun run build', text: 'bun run build' },
     ],
   )
 })
@@ -49,7 +49,7 @@ test('names the roster activity line after the newest tool call, the same way it
   const reply = await listed(await reader(context))
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
-    label: 'Called exec_command',
+    label: 'Ran bun run build',
     tool: 'exec_command',
     target: null,
   })

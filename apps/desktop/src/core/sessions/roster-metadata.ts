@@ -13,9 +13,11 @@ function openingLine(blocks: ContentBlock[]): ContentBlock[] {
 
 function rosterToolInput(input: Record<string, unknown>): Record<string, unknown> {
   const fields = [
+    'cmd',
     'command',
     'description',
     'file_path',
+    'input',
     'notebook_path',
     'path',
     'pattern',

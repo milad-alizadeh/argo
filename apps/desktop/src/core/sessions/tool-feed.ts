@@ -35,6 +35,17 @@ const TOOL_DETAILS = {
     kind: 'skill' as const,
     label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
   }),
+  // Codex's own two shell tools: `exec_command`'s structured call carries its command on `cmd`,
+  // and a `custom_tool_call` named `exec` carries the model's bare script on `input` (see
+  // `readToolCall` in the Codex adapter). Both read as a command, the same as Claude's `Bash`.
+  exec_command: (call: ToolCall) => ({
+    kind: 'command' as const,
+    label: `Ran ${String(call.input.cmd ?? 'command').split('\n')[0]}`,
+  }),
+  exec: (call: ToolCall) => ({
+    kind: 'command' as const,
+    label: `Ran ${String(call.input.input ?? 'command').split('\n')[0]}`,
+  }),
 } as const
 
 const EVIDENCE_KINDS = { Bash: 'output', Read: 'document' } as const
@@ -113,6 +124,8 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
+  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
+  if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
 }
