@@ -48,7 +48,11 @@ test('names a running Bash call by its own description, not the raw command', ()
       },
     }),
   ])
-  assert.deepEqual(activity, { tool: 'Bash', target: 'Watch PR checks' })
+  assert.deepEqual(activity, {
+    label: 'Watch PR checks',
+    tool: 'Bash',
+    target: 'Watch PR checks',
+  })
 })
 
 test('names a running Bash call by its command when no description was given', () => {
@@ -56,5 +60,21 @@ test('names a running Bash call by its command when no description was given', (
     promptMessage(),
     callMessage({ id: 'call-1', name: 'Bash', input: { command: 'bun run quality' } }),
   ])
-  assert.deepEqual(activity, { tool: 'Bash', target: 'bun run quality' })
+  assert.deepEqual(activity, {
+    label: 'Ran bun run quality',
+    tool: 'Bash',
+    target: 'bun run quality',
+  })
+})
+
+test('uses the Feed label for a non-command tool while retaining its activity metadata', () => {
+  const activity = readActivity([
+    promptMessage(),
+    callMessage({ id: 'call-1', name: 'Read', input: { file_path: '/workspace/src/app.ts' } }),
+  ])
+  assert.deepEqual(activity, {
+    label: 'Read /workspace/src/app.ts',
+    tool: 'Read',
+    target: 'app.ts',
+  })
 })
