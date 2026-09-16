@@ -22,14 +22,11 @@ const DELEGATING_TOOLS = ['Task', 'Agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
 // come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
-// The tool whose input is the Plan (CONTEXT.md L3 · Plan). Each call writes the whole list, so
-// the newest one is the Plan and every earlier one is history.
+// The tool whose input is the Plan (CONTEXT.md L3 · Plan); the newest call owns the current Plan.
 const PLAN_TOOL = 'TodoWrite'
 
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
-// An agent-supplied description reads before the raw command it describes (a Bash call is the
-// one shape carrying both), so it wins whenever both fields are present.
 const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
 const TEXT_FIELDS = ['pattern', 'description', 'command', 'url', 'query']
 
@@ -60,6 +57,12 @@ export function readDelegations(
   notifications: BackgroundTask[],
 ): SessionDelegation[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
+  // A backgrounded call's receipt answers it at once; only its notification lands it (#2247).
+  const receipted = new Set(
+    messages
+      .flatMap((message) => message.toolResults ?? [])
+      .flatMap((result) => (result.background === undefined ? [] : [result.callId])),
+  )
   const times = callTimes(messages)
   const ended = endings(notifications)
   return calls(messages)
@@ -67,10 +70,8 @@ export function readDelegations(
     .map((call) => ({
       id: call.id,
       label: text(call.input.description),
-      landed: answered.has(call.id),
+      landed: receipted.has(call.id) ? ended.has(call.id) : answered.has(call.id),
       startedAt: times.started.get(call.id) ?? null,
-      // A Subagent sent to the background answers its call at once with a receipt, so the
-      // notification is what says when it actually stopped.
       endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
     }))
 }
@@ -122,14 +123,12 @@ export function readShellCommands(
 type PlanEntryInput = Omit<SessionPlanEntry, 'position'>
 
 function isPlanEntry(value: unknown): value is PlanEntryInput {
+  if (typeof value !== 'object' || value === null) return false
+  const entry = value as { content?: unknown; status?: unknown }
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { content?: unknown }).content === 'string' &&
-    (value as { content: string }).content.trim().length > 0 &&
-    PLAN_ENTRY_STATUSES.includes(
-      (value as { status?: unknown }).status as SessionPlanEntry['status'],
-    )
+    typeof entry.content === 'string' &&
+    entry.content.trim().length > 0 &&
+    PLAN_ENTRY_STATUSES.includes(entry.status as SessionPlanEntry['status'])
   )
 }
 
