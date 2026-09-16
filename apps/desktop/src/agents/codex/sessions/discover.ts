@@ -1,5 +1,6 @@
-import { readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { isRecord } from '@/boundary'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
@@ -75,14 +76,41 @@ const reader = createTranscriptDiscoverer({
 export const { clearFullRecords, readSessionFiles } = reader
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 
-function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, delegationId: string) {
-  const calls = chain?.files.flatMap((file) =>
-    file.records.flatMap((record) => (record.kind === 'message' ? record.toolCalls : [])),
+function spawnTaskName(line: string, delegationId: string): string | null {
+  let record: unknown
+  try {
+    record = JSON.parse(line)
+  } catch {
+    return null
+  }
+  if (!isRecord(record) || record.type !== 'response_item' || !isRecord(record.payload)) return null
+  const payload = record.payload
+  if (
+    payload.type !== 'function_call' ||
+    payload.call_id !== delegationId ||
+    payload.name !== 'spawn_agent' ||
+    typeof payload.arguments !== 'string'
   )
-  const call = calls?.find(
-    (candidate) => candidate.id === delegationId && candidate.name === 'spawn_agent',
-  )
-  return typeof call?.input.task_name === 'string' ? call.input.task_name : null
+    return null
+  try {
+    const input: unknown = JSON.parse(payload.arguments)
+    return isRecord(input) && typeof input.task_name === 'string' ? input.task_name : null
+  } catch {
+    return null
+  }
+}
+
+async function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, delegationId: string) {
+  for (const file of chain?.files ?? []) {
+    const text = await readFile(file.path, 'utf8').catch(() => null)
+    if (text === null) continue
+    const name = text
+      .split('\n')
+      .map((line) => spawnTaskName(line, delegationId))
+      .find((candidate) => candidate !== null)
+    if (name !== undefined) return name
+  }
+  return null
 }
 
 // Codex stores each spawned agent as a normal transcript, deliberately omitted from the Roster.
@@ -90,7 +118,7 @@ function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, delegatio
 // read that one transcript without teaching shared Session code about Codex's file format.
 export async function readDelegationFiles(root: string, sessionId: string, delegationId: string) {
   const parent = await readSessionFiles(root, sessionId)
-  const name = taskName(parent, delegationId)
+  const name = await taskName(parent, delegationId)
   if (name === null) return null
   const paths = await transcriptPaths(root)
   const matches = []
