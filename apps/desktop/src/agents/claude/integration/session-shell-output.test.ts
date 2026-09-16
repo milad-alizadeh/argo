@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createSessionReader } from '@/core/sessions/reader'
-import { pointShellOutputAtRoot, shellOutputRoot } from '../../../../mocks/sessions/shell.fixture'
+import { pointShellOutputAtRoot, shellOutputRoot } from '../../../../mocks/sessions/mock-shell-output'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
 

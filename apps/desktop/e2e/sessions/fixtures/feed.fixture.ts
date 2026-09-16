@@ -3,7 +3,6 @@
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { pointShellOutputAtRoot } from '../../../mocks/sessions/shell.fixture'
 import {
   CODEX_FIXTURES,
   fixturePath,
@@ -12,6 +11,7 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
+import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import { packagedTestCopy } from '../../packaged-app'
 
 export const FIXTURES = [

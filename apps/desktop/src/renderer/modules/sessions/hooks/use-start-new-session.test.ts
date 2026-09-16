@@ -1,8 +1,7 @@
 import { beforeEach, expect, test } from 'bun:test'
-
+import { mockStart, newSessionDeps, PROJECT } from '../../../../../mocks/sessions/mock-send-turn'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { sendToNewSession } from './send-turn'
-import { mockStart, newSessionDeps, PROJECT } from '../../../../../mocks/sessions/mock-send-turn'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

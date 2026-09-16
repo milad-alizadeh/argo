@@ -27,17 +27,8 @@ export async function sendToDraftIdentity(
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
   turn: TurnInput,
 ) {
-  const {
-    cli,
-    cockpit,
-    marker,
-    navigate,
-    onStarted,
-    queryClient,
-    setFailure,
-    start,
-    watchTurn,
-  } = deps
+  const { cli, cockpit, marker, navigate, onStarted, queryClient, setFailure, start, watchTurn } =
+    deps
   const key = composerIdentityKey(identity)
   // A duplicate Enter that the row drops must leave the first Send's Marker alone (#2229).
   let began = false

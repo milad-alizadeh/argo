@@ -3,12 +3,16 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
+import type {
+  SessionCliBackend,
+  SessionFixture,
+  SessionReply,
+} from '../../e2e/sessions/session-cli-backend'
 import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../src/core/sessions/proof-protocol'
 import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
 import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
 import { mockCodexCli } from '../cli/codex/mock-codex-cli'
 import type { MockCli } from '../cli/mock-cli'
-import type { SessionCliBackend, SessionFixture, SessionReply } from './session-cli-backend'
 
 // Long enough for a case to read the app's wait state before the mock answers (#2119).
 const SLOW_REPLY_MS = 2_000

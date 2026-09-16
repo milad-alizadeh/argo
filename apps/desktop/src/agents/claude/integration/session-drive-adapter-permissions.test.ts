@@ -4,9 +4,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { ClaudePermission } from '@/core/sessions/contract'
+import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
 import type { ClaudePermissionDecision } from '../drive/permission-gate'
 import { createClaudeDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
 
 test('reads the pending Permission the driver holds, mapped onto the shared Permission shape', async () => {
   const permission: ClaudePermission = {

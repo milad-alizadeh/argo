@@ -2,9 +2,15 @@ import assert from 'node:assert/strict'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
+import {
+  fixture,
+  list,
+  register,
+  registerElsewhere,
+  repository,
+} from '../../../mocks/projects/mock-registration'
 import { listProjects } from './list-projects'
 import { registerProject } from './register-project'
-import { fixture, list, register, registerElsewhere, repository } from '../../../mocks/projects/mock-registration'
 
 test('registering a folder creates one Project, selects it and writes it down', async (context) => {
   const setup = await fixture(context)
