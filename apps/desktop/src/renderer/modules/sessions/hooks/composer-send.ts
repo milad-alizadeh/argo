@@ -59,7 +59,6 @@ export function composerSend(options: ComposerSendOptions): Send {
             navigate,
             onStarted: (sessionId) => setDraft(sessionId, ''),
             queryClient,
-            send,
             setFailure,
             start,
             watchTurn,
