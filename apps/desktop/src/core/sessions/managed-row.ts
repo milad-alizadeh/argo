@@ -1,51 +1,8 @@
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionRosterRow, SessionTitle } from './models'
 import { TITLE_SOURCES } from './models'
+import { managedRosterRow, reconcileRosterRow } from './roster-row-definition'
 import { rollupSessionStatus } from './session-status-rollup'
-
-// `stronger-title` reads both rows and returns a title, so only `title` may carry it.
-type ReconciliationSource<Field extends keyof SessionRosterRow> = Field extends 'title'
-  ? 'held' | 'observed' | 'stronger-title'
-  : 'held' | 'observed'
-
-type SessionRosterReconciliation = {
-  [Field in keyof SessionRosterRow]: ReconciliationSource<Field>
-}
-
-export const sessionRosterReconciliation = {
-  id: 'observed',
-  retiredIds: 'observed',
-  cli: 'observed',
-  posture: 'held',
-  title: 'stronger-title',
-  status: 'observed',
-  entry: 'observed',
-  cwd: 'observed',
-  branch: 'observed',
-  locked: 'observed',
-  updatedAt: 'observed',
-  unreadableLines: 'observed',
-  originUnread: 'observed',
-  turnStartedAt: 'observed',
-  activity: 'observed',
-  plan: 'observed',
-  delegations: 'observed',
-  shell: 'observed',
-  pullRequest: 'observed',
-  ticket: 'observed',
-  archived: 'observed',
-  contextTokens: 'observed',
-  contextWindowTokens: 'observed',
-  spentTokens: 'observed',
-  compactionStartedAt: 'held',
-  compactionPercentage: 'held',
-  compactionTokens: 'held',
-  handoffStartedAt: 'held',
-  handoffFailure: 'held',
-  handoffTo: 'observed',
-  handoffFrom: 'observed',
-  setup: 'observed',
-} as const satisfies SessionRosterReconciliation
 
 function titleRank(title: SessionTitle | null): number {
   return title === null ? TITLE_SOURCES.length : TITLE_SOURCES.indexOf(title.source)
@@ -59,16 +16,7 @@ function strongerTitle(observed: SessionRosterRow, held: SessionRosterRow): Sess
 }
 
 function reconcileManagedRow(observed: SessionRosterRow, held: SessionRosterRow): SessionRosterRow {
-  const pick = {
-    held: (field: keyof SessionRosterRow) => held[field],
-    observed: (field: keyof SessionRosterRow) => observed[field],
-    'stronger-title': () => strongerTitle(observed, held),
-  } as const
-  return Object.fromEntries(
-    (
-      Object.entries(sessionRosterReconciliation) as [keyof SessionRosterRow, keyof typeof pick][]
-    ).map(([field, source]) => [field, pick[source](field)]),
-  ) as SessionRosterRow
+  return reconcileRosterRow(observed, held, () => strongerTitle(observed, held))
 }
 
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
@@ -91,40 +39,7 @@ export function managedRow(
     title?: SessionTitle
   },
 ): SessionRosterRow {
-  return {
-    id,
-    retiredIds: [],
-    cli: session.cli,
-    posture: 'managed',
-    title: session.title ?? { text: session.prompt, source: 'first-prompt' },
-    status: session.status,
-    entry: 'interactive',
-    cwd: session.cwd,
-    branch: null,
-    // The start time sorts a new Session to the top of the Roster until its transcript has one (#2002).
-    updatedAt: session.startedAt,
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    ticket: null,
-    archived: false,
-    contextTokens: null,
-    contextWindowTokens: null,
-    spentTokens: null,
-    compactionStartedAt: session.compactionStartedAt,
-    compactionPercentage: session.compactionPercentage,
-    compactionTokens: session.compactionTokens,
-    handoffStartedAt: session.handoffStartedAt,
-    handoffFailure: session.handoffFailure,
-    handoffTo: null,
-    handoffFrom: null,
-    setup: session.setup,
-  }
+  return managedRosterRow({ id, session })
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
