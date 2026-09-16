@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { projectFeed } from '@/core/sessions/feed'
-import { projectFeedIncrementally } from '@/core/sessions/feed-incremental'
+import { projectFeed } from '@/core/sessions/feed-incremental'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { parseTranscriptLine } from './records'
 
@@ -68,13 +67,13 @@ function chainWith(...records: TranscriptRecord[]) {
   }
 }
 
-function projectionsWith(delivery: ReturnType<typeof harnessDelivery>) {
+function projectionWith(delivery: ReturnType<typeof harnessDelivery>) {
   const chain = chainWith(
     commandMessage('command-1', 'call-1'),
     delivery,
     commandMessage('command-2', 'call-2'),
   )
-  return [projectFeed(chain), projectFeedIncrementally(chain, undefined).rows]
+  return projectFeed(chain, undefined).rows
 }
 
 test('keeps commands from distinct transcript events separate across a hidden delivery', () => {
@@ -82,23 +81,21 @@ test('keeps commands from distinct transcript events separate across a hidden de
     'delivery-2',
     '<skills_instructions>internal update</skills_instructions>',
   )
-  for (const rows of projectionsWith(delivery)) {
-    assert.equal(rows.length, 2)
-    assert.equal(rows[0]?.shape, 'tool-group')
-    assert.equal(rows[0]?.shape === 'tool-group' ? rows[0].calls.length : 0, 1)
-    assert.equal(rows[1]?.shape, 'tool-group')
-    assert.equal(rows[1]?.shape === 'tool-group' ? rows[1].calls.length : 0, 1)
-  }
+  const rows = projectionWith(delivery)
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0]?.shape, 'tool-group')
+  assert.equal(rows[0]?.shape === 'tool-group' ? rows[0].calls.length : 0, 1)
+  assert.equal(rows[1]?.shape, 'tool-group')
+  assert.equal(rows[1]?.shape === 'tool-group' ? rows[1].calls.length : 0, 1)
 })
 
 test('keeps a reader event between command groups', () => {
   const delivery = harnessDelivery('status-2', '<status>running</status>')
-  for (const rows of projectionsWith(delivery)) {
-    assert.deepEqual(
-      rows.map((row) => row.shape),
-      ['tool-group', 'event', 'tool-group'],
-    )
-  }
+  assert.deepEqual(projectionWith(delivery).map((row) => row.shape), [
+    'tool-group',
+    'event',
+    'tool-group',
+  ])
 })
 
 test('keeps a sidechain harness delivery out of the parent Feed', () => {
@@ -106,8 +103,7 @@ test('keeps a sidechain harness delivery out of the parent Feed', () => {
     sidechain: true,
   })
   const chain = chainWith(commandMessage('command-1', 'call-1'), delivery)
-  assert.deepEqual(
-    projectFeed(chain).map((row) => row.shape),
-    ['tool-group'],
-  )
+  assert.deepEqual(projectFeed(chain, undefined).rows.map((row) => row.shape), [
+    'tool-group',
+  ])
 })

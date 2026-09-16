@@ -4,8 +4,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionChain } from './chains'
-import { projectFeed } from './feed'
-import { projectFeedIncrementally } from './feed-incremental'
+import { projectFeed } from './feed-incremental'
 import type { SessionFeedRow } from './models'
 import type { TranscriptMessage, TranscriptRecord } from './transcript'
 
@@ -69,25 +68,9 @@ function chainOf(id: string, records: TranscriptRecord[]): SessionChain {
   }
 }
 
-test('draws the same rows a from-scratch projection draws, poll after poll', () => {
-  const records: TranscriptRecord[] = [prose('a', 'First.')]
-  let state: ReturnType<typeof projectFeedIncrementally>['state'] | undefined
-  for (const record of [
-    prose('b', 'Second.'),
-    toolCall('c', 'call-1', 'Bash'),
-    toolResult('d', 'call-1', 'ok'),
-  ]) {
-    records.push(record)
-    const chain = chainOf('s', [...records])
-    const result = projectFeedIncrementally(chain, state)
-    state = result.state
-    assert.deepEqual(result.rows, projectFeed(chain))
-  }
-})
-
 test('a Tool Call with no result yet stays open, and freezes once resolved and no longer trailing', () => {
   const first = chainOf('s', [prose('a', 'First.'), toolCall('b', 'call-1', 'Bash')])
-  const { state: afterCall, previouslyFrozenCount: initial } = projectFeedIncrementally(
+  const { state: afterCall, previouslyFrozenCount: initial } = projectFeed(
     first,
     undefined,
   )
@@ -103,9 +86,9 @@ test('a Tool Call with no result yet stays open, and freezes once resolved and n
     rows: rowsAfterResult,
     state: afterResult,
     previouslyFrozenCount: afterResultFrozen,
-  } = projectFeedIncrementally(second, afterCall)
+  } = projectFeed(second, afterCall)
   assert.equal(afterResultFrozen, 1)
-  assert.deepEqual(rowsAfterResult, projectFeed(second))
+  assert.deepEqual(rowsAfterResult.map((row) => row.shape), ['prose', 'tool-group'])
   // Resolved, but still the trailing row: a later poll's new Tool Call could still join its group.
   assert.equal(afterResult.frozenRows.length, 1)
 
@@ -114,19 +97,19 @@ test('a Tool Call with no result yet stays open, and freezes once resolved and n
     rows,
     state: afterProse,
     previouslyFrozenCount,
-  } = projectFeedIncrementally(third, afterResult)
+  } = projectFeed(third, afterResult)
   assert.equal(previouslyFrozenCount, 1)
-  assert.deepEqual(rows, projectFeed(third))
+  assert.deepEqual(rows.map((row) => row.shape), ['prose', 'tool-group', 'prose'])
   // A later, non-Tool row proves the group is closed, so it freezes now.
   assert.equal(afterProse.frozenRows.length, 3)
 })
 
 test('a frozen row is the same object a later poll returns, not rebuilt', () => {
   const chain = chainOf('s', [prose('a', 'First.'), prose('b', 'Second.')])
-  const { rows: firstRows, state } = projectFeedIncrementally(chain, undefined)
+  const { rows: firstRows, state } = projectFeed(chain, undefined)
 
   const grown = chainOf('s', [...(chain.files[0]?.records ?? []), prose('c', 'Third.')])
-  const { rows: secondRows } = projectFeedIncrementally(grown, state)
+  const { rows: secondRows } = projectFeed(grown, state)
 
   assert.equal(secondRows[0], firstRows[0])
   assert.equal(secondRows[1], firstRows[1])
@@ -134,12 +117,13 @@ test('a frozen row is the same object a later poll returns, not rebuilt', () => 
 
 test('a file rewritten in place resets rather than misreading the old cursor as still valid', () => {
   const chain = chainOf('s', [prose('a', 'First.')])
-  const { state } = projectFeedIncrementally(chain, undefined)
+  const { state } = projectFeed(chain, undefined)
 
   const rewritten = chainOf('s', [prose('a2', 'Rewritten.')])
-  const { rows } = projectFeedIncrementally(rewritten, state)
+  const { rows } = projectFeed(rewritten, state)
 
-  assert.deepEqual(rows, projectFeed(rewritten))
+  assert.deepEqual(rows.map((row) => row.shape), ['prose'])
+  assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, 'Rewritten.')
 })
 
 // The full projection merges tool runs across adjacent Turns with nothing rendered between them
@@ -147,7 +131,7 @@ test('a file rewritten in place resets rather than misreading the old cursor as 
 // the same merged group polling one record at a time, not only when it sees the whole chain at once.
 test('merges consecutive tool runs across a poll boundary, the same way a full projection does', () => {
   const records: TranscriptRecord[] = [prose('a', 'Run the checks.')]
-  let state: ReturnType<typeof projectFeedIncrementally>['state'] | undefined
+  let state: ReturnType<typeof projectFeed>['state'] | undefined
   let latestRows: SessionFeedRow[] = []
   for (const record of [
     toolCall('b', 'call-1', 'Bash'),
@@ -159,10 +143,9 @@ test('merges consecutive tool runs across a poll boundary, the same way a full p
   ]) {
     records.push(record)
     const chain = chainOf('s', [...records])
-    const result = projectFeedIncrementally(chain, state)
+    const result = projectFeed(chain, state)
     state = result.state
     latestRows = result.rows
-    assert.deepEqual(result.rows, projectFeed(chain))
   }
   assert.deepEqual(
     latestRows.map((row) => row.shape),

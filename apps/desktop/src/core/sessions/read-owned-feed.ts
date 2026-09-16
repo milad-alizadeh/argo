@@ -11,7 +11,7 @@ import {
   stableChain,
   unchangedReply,
 } from './feed-cache'
-import { type FeedProjectionState, projectFeedIncrementally } from './feed-incremental'
+import { type FeedProjectionState, projectFeed } from './feed-incremental'
 import type { SessionSource } from './session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
@@ -64,10 +64,7 @@ export async function readOwnedFeed(
     keepFeed({ feeds, projections }, key, held)
     return value.revision === held.revision ? unchangedReply(value, held) : feedReply(value, held)
   }
-  const { rows, previouslyFrozenCount, state } = projectFeedIncrementally(
-    chain,
-    projections.get(key),
-  )
+  const { rows, previouslyFrozenCount, state } = projectFeed(chain, projections.get(key))
   projections.set(key, state)
   const revision = feedRevision(chain.id, stamps)
   const next = {
