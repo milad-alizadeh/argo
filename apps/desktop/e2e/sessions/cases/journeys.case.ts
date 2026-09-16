@@ -26,12 +26,12 @@ export function defineSessionJourneyCases(request: SessionJourneyRequest) {
   const { backend, fixture, restart, box } = request
 
   test('session-composer-memory', async () => {
-    await proveComposerMemory(box.get(), fixture().claudeTranscripts, fixture().project)
+    await proveComposerMemory(box.get())
   })
 
   // Before the resume cases, for the reason create.case.ts records.
   test('session-created-by-click', async () => {
-    await proveSessionCreatedByClick(box.get(), backend, fixture().claudeTranscripts)
+    await proveSessionCreatedByClick(box.get(), backend)
   })
 
   test('session-claude-resume', async () => {
@@ -68,7 +68,7 @@ export function defineSessionJourneyCases(request: SessionJourneyRequest) {
   })
 
   test('session-duplicate-send', async () => {
-    await proveDuplicateSend(box.get(), backend, fixture().claudeTranscripts)
+    await proveDuplicateSend(box.get(), backend)
   })
 
   // Last, because naming the Codex row changes the title the cases above open it by.

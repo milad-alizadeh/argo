@@ -1,12 +1,12 @@
 import { appendFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd } from '../../../mocks/sessions/transcript-files'
 
-function transcriptRecord({ id, prompt, timestamp, uuid }) {
+function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
   return `${JSON.stringify({
     type: 'user',
     session_id: id,
-    cwd: '/Users/x/order',
+    cwd: proofCwd(transcripts, 'order'),
     timestamp,
     uuid,
     parentUuid: null,
@@ -16,7 +16,7 @@ function transcriptRecord({ id, prompt, timestamp, uuid }) {
 
 async function addReplacementChild(transcripts) {
   const link = JSON.stringify({ type: 'last-prompt', leafUuid: 'replacement-parent-answer' })
-  const prompt = transcriptRecord({
+  const prompt = transcriptRecord(transcripts, {
     id: 'replacementParent',
     prompt: 'Continue replacement work',
     timestamp: '2098-02-01T00:00:00.000Z',
@@ -26,7 +26,7 @@ async function addReplacementChild(transcripts) {
 }
 
 async function addReplacementParent(transcripts) {
-  const prompt = transcriptRecord({
+  const prompt = transcriptRecord(transcripts, {
     id: 'replacementParent',
     prompt: 'Start replacement work',
     timestamp: '2097-01-01T00:00:00.000Z',
@@ -35,7 +35,7 @@ async function addReplacementParent(transcripts) {
   const answer = JSON.stringify({
     type: 'assistant',
     session_id: 'replacementParent',
-    cwd: '/Users/x/order',
+    cwd: proofCwd(transcripts, 'order'),
     timestamp: '2097-01-01T00:00:01.000Z',
     uuid: 'replacement-parent-answer',
     parentUuid: 'replacement-parent-prompt',
@@ -61,7 +61,7 @@ async function addRecentSession(transcripts) {
   ]
   await Promise.all(
     sessions.map((session) =>
-      writeFile(fixturePath(transcripts, session.id), transcriptRecord(session)),
+      writeFile(fixturePath(transcripts, session.id), transcriptRecord(transcripts, session)),
     ),
   )
 }
@@ -81,7 +81,7 @@ async function updateProseRoster(transcripts) {
   const title = JSON.stringify({ type: 'custom-title', customTitle: 'Prose renamed in place' })
   const answer = JSON.stringify({
     type: 'assistant',
-    cwd: '/Users/x/prose',
+    cwd: proofCwd(transcripts, 'prose'),
     timestamp: '2098-01-01T00:00:00.000Z',
     uuid: 'p-renamed',
     parentUuid: 'p-turn-3',

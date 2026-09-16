@@ -2,7 +2,7 @@
 // the running command has written, and the notification the CLI appends when it ends.
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath } from './transcript-files'
+import { fixturePath, proofCwd } from './transcript-files'
 
 // The receipts in `shellRunning` name an absolute output file, the way the CLI's own do. The
 // fixture's path is rewritten into this run's own root, so two runs never share one file.
@@ -28,7 +28,7 @@ export async function completeWatch(transcripts, root) {
   await appendFile(
     fixturePath(transcripts, 'shellRunning'),
     `${JSON.stringify({
-      cwd: '/Users/x/shell',
+      cwd: proofCwd(transcripts, 'shell'),
       type: 'attachment',
       timestamp: '2026-09-02T08:06:10.000Z',
       uuid: 'sh-n-2',

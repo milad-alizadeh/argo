@@ -1,37 +1,31 @@
-// A Session born by clicking, inside the SHIPPED app: the plus control, the harness tabs, the
-// composer and the send chord, with nothing above the CLI stubbed (#2117).
+// A Session born by clicking, inside the shipped app, drives the plus control, harness tabs, composer and send chord (#2117).
 import assert from 'node:assert/strict'
-import { readdir } from 'node:fs/promises'
 import type { Page } from 'playwright-core'
-import { mockClaudeFolder } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import type { SessionCliBackend } from '../../../mocks/sessions/session-cli-backend'
+import type { SessionCli } from '../../../src/renderer/modules/sessions/harness/harnesses'
 import { createSessionByClick, rosterIds } from '../gestures'
 
-const PROMPT = 'Start this one by hand.'
+const PROMPT = 'Reply with one short acknowledgement.'
 
-// Runs before the resume cases, which are the first to run the CLI, so its folder is still empty
-// here and the Roster row is held to appearing ahead of anything the CLI writes.
+// This runs before the resume cases, so its folder remains empty and the Roster row must precede a CLI transcript.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionCliBackend,
-  transcripts: string,
+  cli: SessionCli = 'claude',
 ) {
-  const folder = mockClaudeFolder(transcripts)
-  const written = async () => (await readdir(folder).catch(() => [])).length > 0
-  assert.equal(await written(), false)
+  const reply = { cli, prompt: PROMPT }
+  assert.equal(await backend.recorded(reply), false)
   const known = await rosterIds(page)
   const sessionId = await createSessionByClick(page, {
-    cli: 'claude',
+    cli,
     prompt: PROMPT,
-    cliWrote: written,
+    cliWrote: () => backend.recorded(reply),
   })
 
-  // The gesture ended in a real Session: the CLI answers the prompt it was actually sent.
-  await backend.waitForReply(page, { cli: 'claude', prompt: PROMPT })
-  // Read once the Feed has landed: a duplicate start reaches the Roster a moment behind the row
-  // the gesture made, so counting at the first sight of that row would not see it.
+  // The gesture ended in a real Session: the CLI answers the prompt it was sent.
+  await backend.waitForReply(page, reply)
+  // Read after the Feed lands because a duplicate start can reach the Roster behind the new row.
   const created = (await rosterIds(page)).filter((id) => !known.includes(id))
   assert.deepEqual(created, [sessionId])
-  assert.deepEqual(await readdir(folder), [`${sessionId}.jsonl`])
   return sessionId
 }

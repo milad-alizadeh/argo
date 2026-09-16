@@ -13,6 +13,7 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { defineSessionJourneyCases } from './cases/journeys.case'
 import { proveLiveFeed } from './cases/live-feed.case'
+import { proveNoProjectWindow } from './cases/no-project.case'
 import { proveSessionPlan } from './cases/plan.case'
 import { proveSessionQuestion } from './cases/question.case'
 import { proveContract } from './cases/roster-contract.case'
@@ -54,14 +55,18 @@ describeSessionProof('packaged-session', backend, (run) => {
     expect(await isPackaged()).toBe(true)
   })
 
-  registerRosterAndShellCases(run, box)
-  registerFeedAndPlanCases(run, box)
+  test('session-no-project-window', async () => {
+    await proveNoProjectWindow(box.get())
+  })
 
-  // Every journey below starts a Session, which needs a selected Project (#2204).
+  // Every case below reads the Roster, which only a selected Project shows (#2307).
   test('select-project-and-restart', async () => {
     await selectProofProject(run.fixture.userData, run.fixture.project)
     box.set(await restart())
   })
+
+  registerRosterAndShellCases(run, box)
+  registerFeedAndPlanCases(run, box)
 
   defineSessionJourneyCases({ backend, fixture: () => run.fixture, restart, box })
 
@@ -77,8 +82,7 @@ describeSessionProof('packaged-session', backend, (run) => {
   })
 })
 
-// Every case here reads a `/Users/x` fixture a selected Project scopes out (#2204), so all of them
-// run before `select-project-and-restart` below.
+// The cases that read a seeded transcript a real CLI never writes, so they run on the mock backend alone.
 function registerRosterAndShellCases(run: SessionProofRun, box: PageBox) {
   test('session-roster-contract', async () => {
     await proveContract(box.get())
@@ -106,7 +110,7 @@ function registerRosterAndShellCases(run: SessionProofRun, box: PageBox) {
   })
 }
 
-// Continues the pre-Project group `registerRosterAndShellCases` starts.
+// Continues the fixture-only group `registerRosterAndShellCases` starts.
 function registerFeedAndPlanCases(run: SessionProofRun, box: PageBox) {
   test('session-question', async () => {
     await proveSessionQuestion(box.get())

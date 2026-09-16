@@ -26,6 +26,7 @@ export type AccountsPanelProps = {
   signIn: Omit<SignInPanelProps, 'providers'>
   disconnecting: string | null
   disconnectError: ContractFailure | null
+  onConnectSource?: (accountId: string) => void
   onDisconnect: (accountId: string) => void
 }
 
@@ -45,6 +46,7 @@ export function AccountsPanel({
   signIn,
   disconnecting,
   disconnectError,
+  onConnectSource,
   onDisconnect,
 }: AccountsPanelProps) {
   const { t } = useTranslation('accounts')
@@ -73,6 +75,11 @@ export function AccountsPanel({
               account={account}
               busy={disconnecting === account.id}
               key={account.id}
+              onConnectSource={
+                account.connections.length === 0 && onConnectSource
+                  ? () => onConnectSource(account.id)
+                  : undefined
+              }
               onDisconnect={() => onDisconnect(account.id)}
               onReconnect={() => signIn.start(account.provider)}
             />
@@ -98,7 +105,11 @@ function returnFocus(opener: Element | null): HTMLElement | true {
 }
 
 // Closing the dialog abandons a sign-in in progress, so no code outlives the screen that showed it.
-export function AccountsDialog() {
+export function AccountsDialog({
+  onConnectSource,
+}: {
+  onConnectSource?: (accountId: string) => void
+}) {
   const { t } = useTranslation('accounts')
   const { open, opener, setOpen } = useAccountsDialog()
   const accounts = useAccounts()
@@ -123,6 +134,14 @@ export function AccountsDialog() {
           disconnecting={disconnect.isPending ? (disconnect.variables ?? null) : null}
           listError={accounts.error}
           listing={accounts.data ?? null}
+          onConnectSource={
+            onConnectSource
+              ? (accountId) => {
+                  onConnectSource(accountId)
+                  onOpenChange(false)
+                }
+              : undefined
+          }
           onDisconnect={(accountId) => disconnect.mutate(accountId)}
           signIn={{ ...signIn, connected: signedIn(connected) }}
         />

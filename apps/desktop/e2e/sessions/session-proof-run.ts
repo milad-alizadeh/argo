@@ -4,10 +4,11 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionCliBackend, SessionFixture } from '../../mocks/sessions/session-cli-backend'
 import { feedStateSnapshot } from './feed-selectors'
+import { selectProofProject } from './fixtures/feed.fixture'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 
 type Harness = Awaited<ReturnType<typeof createPackagedSessionHarness>>
@@ -39,6 +40,15 @@ export function createPageBox(hold: SessionProofRun['hold']): PageBox {
       return hold(next)
     },
   }
+}
+
+// The first case of a journeys file: every journey starts a Session, which needs a selected Project (#2204).
+export function defineLaunchWithProject(run: SessionProofRun, box: PageBox) {
+  test('launch', async () => {
+    await selectProofProject(run.fixture.userData, run.fixture.project)
+    box.set(await run.launch())
+    expect(await run.isPackaged()).toBe(true)
+  })
 }
 
 // Wraps a packaged Session spec file in one serial describe block: one fixture root and one

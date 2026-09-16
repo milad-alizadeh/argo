@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath, replaceInFile } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/transcript-files'
 import { rosterRow, waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
 
@@ -43,9 +43,13 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     ['managed'],
   )
 
-  // externalBasic's fixture cwd (`/Users/x/proj`) is a display-only mock path; a real send
+  // externalBasic's fixture cwd is a folder under the Project that no one created; a real send
   // resumes a real process, so it needs a directory that exists on this machine.
-  await replaceInFile(fixturePath(transcripts, 'externalBasic'), '/Users/x/proj', project)
+  await replaceInFile(
+    fixturePath(transcripts, 'externalBasic'),
+    proofCwd(transcripts, 'proj'),
+    project,
+  )
 
   await openSessionByClick(relaunched, 'externalBasic')
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')

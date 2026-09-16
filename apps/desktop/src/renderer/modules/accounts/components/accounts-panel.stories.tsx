@@ -47,6 +47,7 @@ const meta: Meta<typeof AccountsPanel> = {
     signIn: idle,
     disconnecting: null,
     disconnectError: null,
+    onConnectSource: fn(),
     onDisconnect: fn(),
   } satisfies AccountsPanelProps,
 }
@@ -187,6 +188,15 @@ export const NoAccounts: Story = {
   args: { listing: listing([]) },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('No Account is connected.')).toBeInTheDocument()
+  },
+}
+
+export const NoTicketConnection: Story = {
+  args: { listing: listing([octocat]) },
+  play: async ({ args, canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
+    await userEvent.click(within(row).getByRole('button', { name: 'Connect a repository' }))
+    await expect(args.onConnectSource).toHaveBeenCalledWith('github:583231')
   },
 }
 

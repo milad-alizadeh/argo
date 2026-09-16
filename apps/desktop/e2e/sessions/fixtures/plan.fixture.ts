@@ -1,13 +1,13 @@
 import { appendFile } from 'node:fs/promises'
 
-import { fixturePath } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd } from '../../../mocks/sessions/transcript-files'
 
 type Link = { uuid: string; parentUuid: string }
 
-function taskCall(link: Link, call: { id: string; name: string; input: object }) {
+function taskCall(cwd: string, link: Link, call: { id: string; name: string; input: object }) {
   return {
     ...link,
-    cwd: '/Users/x/proj',
+    cwd,
     type: 'assistant',
     timestamp: '2026-08-30T10:06:00.000Z',
     message: {
@@ -20,8 +20,10 @@ function taskCall(link: Link, call: { id: string; name: string; input: object })
 
 // A current CLI adds the step with TaskCreate, whose result names its id, then starts it.
 export async function updatePlan(transcripts) {
+  const cwd = proofCwd(transcripts, 'proj')
   const records = [
     taskCall(
+      cwd,
       { uuid: 'pw-a-plan-create', parentUuid: 'pw-a-5' },
       {
         id: 'task-create-live',
@@ -30,7 +32,7 @@ export async function updatePlan(transcripts) {
       },
     ),
     {
-      cwd: '/Users/x/proj',
+      cwd,
       parentUuid: 'pw-a-plan-create',
       type: 'user',
       timestamp: '2026-08-30T10:06:01.000Z',
@@ -48,6 +50,7 @@ export async function updatePlan(transcripts) {
       },
     },
     taskCall(
+      cwd,
       { uuid: 'pw-a-plan-start', parentUuid: 'pw-u-plan-created' },
       {
         id: 'task-update-live',

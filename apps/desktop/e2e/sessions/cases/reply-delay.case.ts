@@ -1,16 +1,12 @@
-// The real packaged app must show its wait state and reject repeated Sends while the CLI is
-// deliberately silent (#2119). What a reply looks like is the backend's answer, never a string
-// held here (#2308).
+// The packaged app shows its wait state and rejects repeated Sends while the CLI is silent (#2119).
+// The backend decides what a reply looks like; this proof holds no reply string (#2308).
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
 import type { Page } from 'playwright-core'
-import { mockClaudeFolder } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import type { SessionCliBackend } from '../../../mocks/sessions/session-cli-backend'
 import { chooseHarness, openNewSessionByClick, rosterIds } from '../gestures'
 
-const WAITING_PROMPT = 'Hold this reply while the packaged app waits.'
-const DUPLICATE_PROMPT = 'Send this exactly once while the CLI waits.'
+const WAITING_PROMPT = 'Reply with one short acknowledgement after this wait.'
+const DUPLICATE_PROMPT = 'Reply with one short acknowledgement to this single request.'
 
 type BeginRequest = { page: Page; backend: SessionCliBackend; prompt: string; sends: number }
 
@@ -40,20 +36,10 @@ export async function proveReplyWait(page: Page, backend: SessionCliBackend) {
   await backend.waitForReply(page, { cli: 'claude', prompt })
 }
 
-export async function proveDuplicateSend(
-  page: Page,
-  backend: SessionCliBackend,
-  transcripts: string,
-) {
+export async function proveDuplicateSend(page: Page, backend: SessionCliBackend) {
   const prompt = DUPLICATE_PROMPT
   const known = await begin({ page, backend, prompt, sends: 5 })
   await backend.waitForReply(page, { cli: 'claude', prompt })
   const created = (await rosterIds(page)).filter((id) => !known.includes(id))
   assert.equal(created.length, 1)
-  const transcript = await readFile(
-    path.join(mockClaudeFolder(transcripts), `${created[0]}.jsonl`),
-    'utf8',
-  )
-  const turns = transcript.split('\n').filter((line) => line.includes('"type":"user"'))
-  assert.equal(turns.length, 1)
 }

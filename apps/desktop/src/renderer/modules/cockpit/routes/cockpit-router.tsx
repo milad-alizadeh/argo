@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
 import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
 
-import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/core/commands/shortcuts'
+import {
+  DESTINATION_PATHS,
+  DESTINATIONS,
+  navigateCommand,
+  REGISTER_PROJECT_COMMAND,
+} from '@/core/commands/shortcuts'
 
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
+import { EmptyProjectWindow } from '../../projects/components/empty-project-window'
+import { useProjects } from '../../projects/hooks/use-projects'
 import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
 import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
 import { SessionsPage } from '../../sessions/pages/sessions-page'
@@ -30,7 +37,17 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
   return typeof handle === 'object' && handle !== null && 'sidebar' in handle
 }
 
-function CockpitRouteLayout() {
+// The switcher that answers the add-Project chord is not mounted here, so this window answers it.
+function EmptyProjectScreen() {
+  const [cockpit, actions] = useProjects()
+  useCommands((command) => {
+    if (command === REGISTER_PROJECT_COMMAND) actions.open()
+  })
+  return <EmptyProjectWindow busy={cockpit.busy} onAdd={actions.open} />
+}
+
+export function CockpitRouteLayout() {
+  const [cockpit] = useProjects()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
     if (destination) window.location.hash = DESTINATION_PATHS[destination]
@@ -41,6 +58,7 @@ function CockpitRouteLayout() {
     null,
   )
 
+  if (cockpit.status === 'empty') return <EmptyProjectScreen />
   return (
     <CockpitShell
       footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}

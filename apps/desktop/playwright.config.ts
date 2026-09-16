@@ -25,5 +25,10 @@ export default defineConfig({
     { name: 'projects', testDir: 'e2e/projects' },
     { name: 'sessions', testDir: 'e2e/sessions' },
     { name: 'tickets', testDir: 'e2e/tickets' },
+    // Signed-in local CLIs only, never CI: `bun run e2e:real` sets the variable. A reply can take
+    // the real backend's whole 180s budget, so a case gets more than that.
+    ...(process.env.ARGO_E2E_REAL === '1'
+      ? [{ name: 'real-sessions', testDir: 'e2e/real-sessions', timeout: 240_000 }]
+      : []),
   ],
 })
