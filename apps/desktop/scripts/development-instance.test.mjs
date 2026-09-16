@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import path from 'node:path'
 import {
   developmentIdentity,
+  developmentIdentityArgument,
+  developmentIdentityFromArguments,
   developmentInstance,
   developmentReadyRecord,
 } from '../src/development/instance.ts'
@@ -74,5 +76,23 @@ describe('development instances', () => {
       windowId: 17,
       worktree: environment.ARGO_DESKTOP_WORKTREE,
     })
+  })
+})
+
+describe('development identity argument', () => {
+  test('passes the renderer identity through the Electron argument boundary', () => {
+    const identity = developmentIdentity(environment)
+    if (!identity) throw new Error('development identity was not created')
+
+    expect(
+      developmentIdentityFromArguments(['electron', developmentIdentityArgument(identity)]),
+    ).toEqual(identity)
+    expect(developmentIdentityFromArguments(['electron'])).toBeNull()
+    expect(
+      developmentIdentityFromArguments([
+        'electron',
+        '--argo-desktop-development-identity={"id":"instance"}',
+      ]),
+    ).toBeNull()
   })
 })

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { z } from 'zod'
 
 const INSTANCE_DIRECTORY_ENV = 'ARGO_DESKTOP_INSTANCE_DIRECTORY'
 const INSTANCE_ID_ENV = 'ARGO_DESKTOP_INSTANCE_ID'
@@ -10,6 +11,7 @@ const DEBUG_PORT_ENV = 'ARGO_DESKTOP_DEBUG_PORT'
 const WINDOW_TITLE_ENV = 'ARGO_DESKTOP_WINDOW_TITLE'
 const WORKTREE_ENV = 'ARGO_DESKTOP_WORKTREE'
 const BUILD_LABEL_ENV = 'ARGO_DESKTOP_BUILD_LABEL'
+const IDENTITY_ARGUMENT_PREFIX = '--argo-desktop-development-identity='
 
 export type DevelopmentIdentity = {
   id: string
@@ -17,6 +19,13 @@ export type DevelopmentIdentity = {
   title: string
   worktree: string
 }
+
+const developmentIdentitySchema = z.strictObject({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  title: z.string().min(1),
+  worktree: z.string().min(1),
+})
 
 export type DevelopmentInstance = {
   controlFile: string
@@ -119,6 +128,26 @@ export function developmentIdentity(
   const worktree = environment[WORKTREE_ENV]
   if (!id || !label || !title || !worktree) return null
   return { id, label, title, worktree: absolute(worktree, WORKTREE_ENV) }
+}
+
+export function developmentIdentityArgument(identity: DevelopmentIdentity): string {
+  return `${IDENTITY_ARGUMENT_PREFIX}${JSON.stringify(identity)}`
+}
+
+export function developmentIdentityFromArguments(
+  arguments_: readonly string[],
+): DevelopmentIdentity | null {
+  const argument = arguments_.find((value) => value.startsWith(IDENTITY_ARGUMENT_PREFIX))
+  if (!argument) return null
+
+  try {
+    const value: unknown = JSON.parse(argument.slice(IDENTITY_ARGUMENT_PREFIX.length))
+    const parsed = developmentIdentitySchema.safeParse(value)
+    if (!parsed.success) return null
+    return { ...parsed.data, worktree: absolute(parsed.data.worktree, WORKTREE_ENV) }
+  } catch {
+    return null
+  }
 }
 
 export function developmentReadyRecord(instance: DevelopmentInstance, windowId: number) {
