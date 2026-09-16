@@ -1,6 +1,6 @@
 import { appendFile } from 'node:fs/promises'
 
-import { fixturePath, proofCwd } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd } from '../../../mocks/sessions/mock-transcript-files'
 
 type Link = { uuid: string; parentUuid: string }
 

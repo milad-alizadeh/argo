@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-
+import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
 import type { ClaudeTurnRequest } from '../drive/deliver-turn.ts'
 import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { createClaudeDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { mockDriver, sessionId } from './drive-adapter-fixture.ts'
 
 const setup = { model: 'haiku', effort: 'low', mode: 'plan' } as const
 

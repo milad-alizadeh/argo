@@ -17,7 +17,6 @@ type DraftSendDeps = {
   navigate: NavigateFunction
   onStarted?: (sessionId: string) => void
   queryClient: ReturnType<typeof useQueryClient>
-  send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
@@ -28,18 +27,8 @@ export async function sendToDraftIdentity(
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
   turn: TurnInput,
 ) {
-  const {
-    cli,
-    cockpit,
-    marker,
-    navigate,
-    onStarted,
-    queryClient,
-    send,
-    setFailure,
-    start,
-    watchTurn,
-  } = deps
+  const { cli, cockpit, marker, navigate, onStarted, queryClient, setFailure, start, watchTurn } =
+    deps
   const key = composerIdentityKey(identity)
   // A duplicate Enter that the row drops must leave the first Send's Marker alone (#2229).
   let began = false
@@ -49,7 +38,6 @@ export async function sendToDraftIdentity(
     identity,
     navigate,
     queryClient,
-    send,
     setFailure,
     start,
     turn,

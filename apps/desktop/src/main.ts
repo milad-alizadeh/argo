@@ -1,5 +1,6 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { createConnection } from 'node:net'
+import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme, net, protocol } from 'electron'
@@ -178,7 +179,7 @@ void app.whenReady().then(async () => {
   // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
   // case: the driver outside fails the build if the process does not go away on its own.
   const { reportAcceptance, runAcceptance } = await import('./pty-acceptance')
-  const result = await runAcceptance(app.getPath('home'))
+  const result = await runAcceptance(os.homedir())
   await reportAcceptance(result)
   if (result.ok) app.quit()
   else app.exit(1)
