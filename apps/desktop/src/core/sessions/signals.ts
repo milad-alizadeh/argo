@@ -75,12 +75,16 @@ export function readDelegations(
   for (const record of records) {
     if (record.kind !== 'delegation' || record.actor !== 'agent' || record.groupId === null)
       continue
+    const previous = activities.get(record.groupId)
     activities.set(record.groupId, {
       id: record.groupId,
       label: record.action,
       landed: record.status === 'completed',
-      startedAt: null,
-      endedAt: null,
+      startedAt:
+        record.status === 'running'
+          ? (previous?.startedAt ?? record.timestamp ?? null)
+          : (previous?.startedAt ?? null),
+      endedAt: record.status === 'completed' ? (record.timestamp ?? null) : null,
     })
   }
   return [...delegations, ...activities.values()]

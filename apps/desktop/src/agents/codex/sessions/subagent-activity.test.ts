@@ -8,6 +8,7 @@ function subagentActivity(kind: string, agentThreadId: string, agentPath: string
   return parseCodexTranscriptLine(
     JSON.stringify({
       type: 'event_msg',
+      timestamp: `2026-09-16T16:3${kind === 'started' ? '8' : '9'}:00.000Z`,
       payload: {
         type: 'item_completed',
         item: {
@@ -26,6 +27,7 @@ test('reads Codex subagent activity as one Agent card entry', () => {
   assert.deepEqual(subagentActivity('started', 'thread-1', '/root/review_feed'), {
     kind: 'delegation',
     uuid: 'subagent-started',
+    timestamp: '2026-09-16T16:38:00.000Z',
     actor: 'agent',
     action: 'Review feed',
     status: 'running',
@@ -36,6 +38,7 @@ test('reads Codex subagent activity as one Agent card entry', () => {
   assert.deepEqual(subagentActivity('completed', 'thread-1', '/root/review_feed'), {
     kind: 'delegation',
     uuid: 'subagent-completed',
+    timestamp: '2026-09-16T16:39:00.000Z',
     actor: 'agent',
     action: 'Review feed',
     status: 'completed',

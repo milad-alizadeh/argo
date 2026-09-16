@@ -327,8 +327,8 @@ const delegationFeed = {
       id: 'agent-review',
       actor: 'agent' as const,
       action: 'Review the Feed card for keyboard access.',
-      status: 'running',
-      progress: 'Checking focus and motion',
+      status: 'completed',
+      progress: 'Keyboard access verified',
       groupId: 'review',
       callId: null,
     },
@@ -378,9 +378,9 @@ const BUILD_COMMAND = {
 const REVIEW_AGENT = {
   id: 'call-review',
   label: 'Review the Feed card for keyboard access.',
-  landed: false,
-  startedAt: new Date(Date.now() - 3 * 60_000).toISOString(),
-  endedAt: null,
+  landed: true,
+  startedAt: '2026-09-02T08:00:00.000Z',
+  endedAt: '2026-09-02T08:01:12.000Z',
 }
 
 // The Session screen's links, reduced to the command and the Subagent this Feed names.
@@ -410,10 +410,11 @@ export const DelegationCards: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const agent = canvas.getByRole('region', { name: 'Background Agent' })
-    await expect(agent).toHaveTextContent('Running Background Agent')
+    await expect(agent).toHaveTextContent('Done')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
-    await expect(agent).toHaveTextContent('Checking focus and motion')
+    await expect(agent).toHaveTextContent('Keyboard access verified')
     await expect(agent).toHaveTextContent('4.2k tokens')
+    await expect(agent).toHaveTextContent('1m 12s')
     await userEvent.click(within(agent).getByRole('button'))
     await expect(
       canvas.getByText('Opened Review the Feed card for keyboard access.'),

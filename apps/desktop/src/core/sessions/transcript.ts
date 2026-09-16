@@ -74,6 +74,7 @@ export type TranscriptRecord =
   | {
       kind: 'delegation'
       uuid: string
+      timestamp?: string | null
       actor: 'agent' | 'shell'
       action: string | null
       status: string | null

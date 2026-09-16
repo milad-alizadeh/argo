@@ -7,6 +7,7 @@ import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, nameThreads, readSessionFiles } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
+import { readDelegationTokens } from './subagent-tokens'
 import { readDelegationChain } from './subagents'
 import type { ThreadNames } from './thread-names'
 
@@ -93,6 +94,21 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     readDelegationFiles: (_sessionId, delegationId) => readDelegationChain(root, delegationId),
+    readDelegationUsage: async (sessionId) => {
+      const chain = await readSessionFiles(root, sessionId)
+      const delegationIds = [
+        ...new Set(
+          chain?.files
+            .flatMap((file) => file.records)
+            .flatMap((record) =>
+              record.kind === 'delegation' && record.actor === 'agent' && record.groupId !== null
+                ? [record.groupId]
+                : [],
+            ) ?? [],
+        ),
+      ]
+      return readDelegationTokens(root, delegationIds)
+    },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,

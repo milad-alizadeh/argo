@@ -1,4 +1,4 @@
-import { isIdentifier, isRecord } from '@/boundary'
+import { isRecord } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { taskStartedContextWindow } from './context-window'
 import { currentUserBlocks } from './current-user-blocks'
@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { subagentActivity } from './subagent-activity'
 import { readToolRecord } from './tool-calls'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
@@ -27,42 +28,12 @@ function delegatedPrompt(
   })
 }
 
-const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
-
-function agentLabel(agentPath: string): string | null {
-  const name = agentPath.split('/').findLast(Boolean)
-  const [first, ...rest] = name?.split(/[_-]+/).filter(Boolean) ?? []
-  return first === undefined
-    ? null
-    : `${first[0]?.toUpperCase()}${first.slice(1)}${rest.length === 0 ? '' : ` ${rest.join(' ')}`}`
-}
-
-function subagentActivity(item: Record<string, unknown>): TranscriptRecord | null {
-  if (item.type !== 'SubAgentActivity' || typeof item.id !== 'string' || !isIdentifier(item.id))
-    return null
-  if (typeof item.agent_thread_id !== 'string' || !isIdentifier(item.agent_thread_id)) return null
-  if (typeof item.agent_path !== 'string') return null
-  const status = SUBAGENT_ACTIVITY_STATUS[item.kind as keyof typeof SUBAGENT_ACTIVITY_STATUS]
-  if (status === undefined) return null
-  const action = agentLabel(item.agent_path)
-  return {
-    kind: 'delegation',
-    uuid: item.id,
-    actor: 'agent',
-    action,
-    status,
-    progress: null,
-    groupId: item.agent_thread_id,
-    callId: null,
-  }
-}
-
 function itemMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   const item = isRecord(payload.item) ? payload.item : null
-  if (item?.type === 'SubAgentActivity') return subagentActivity(item)
+  if (item?.type === 'SubAgentActivity') return subagentActivity(record, item)
   if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'
