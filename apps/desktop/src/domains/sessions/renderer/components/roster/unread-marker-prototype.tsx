@@ -14,7 +14,7 @@ export type UnreadMarkerPrototypeVariant = (typeof VARIANTS)[number]['key']
 let rememberedVariant: UnreadMarkerPrototypeVariant | null = null
 
 export function unreadMarkerPrototypeVariant(value: string | null) {
-  if (window.argo.development === null) return null
+  if (window.argo !== undefined && window.argo.development === null) return null
   return VARIANTS.find((variant) => variant.key === value)?.key ?? null
 }
 
