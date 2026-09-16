@@ -1,0 +1,110 @@
+.signature-loader[data-loader="braid"] > span:nth-child(-n + 2) {
+  position: absolute;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--loader-ink);
+  animation: var(--loader-animation, loader-braid) 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite
+    alternate;
+}
+.signature-loader[data-loader="braid"] > span:nth-child(2) {
+  animation-delay: -750ms;
+}
+.signature-loader[data-loader="wave"] {
+  gap: 2px;
+}
+.signature-loader[data-loader="wave"] > span {
+  width: 2px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--loader-ink);
+  animation: var(--loader-animation, loader-wave) 1.1s ease-in-out infinite;
+}
+.signature-loader[data-loader="wave"] > span:nth-child(2) {
+  animation-delay: 110ms;
+}
+.signature-loader[data-loader="wave"] > span:nth-child(3) {
+  animation-delay: 220ms;
+}
+.signature-loader[data-loader="wave"] > span:nth-child(4) {
+  animation-delay: 330ms;
+}
+.signature-loader[data-loader="matrix"] {
+  display: grid;
+  width: 11px;
+  height: 11px;
+  grid-template-columns: repeat(2, 4px);
+  gap: 3px;
+}
+.signature-loader[data-loader="matrix"] > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--loader-ink);
+  animation: var(--loader-animation, loader-phase) 1.4s ease-in-out infinite;
+}
+.signature-loader[data-loader="matrix"] > span:nth-child(2) {
+  animation-delay: 175ms;
+}
+.signature-loader[data-loader="matrix"] > span:nth-child(3) {
+  animation-delay: 525ms;
+}
+.signature-loader[data-loader="matrix"] > span:nth-child(4) {
+  animation-delay: 350ms;
+}
+.signature-loader[data-loader="chevrons"] {
+  gap: 1px;
+}
+.signature-loader[data-loader="chevrons"] > span:nth-child(-n + 2) {
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid var(--loader-ink);
+  border-bottom: 1px solid var(--loader-ink);
+  opacity: 0.2;
+  transform: rotate(-45deg);
+  animation: var(--loader-animation, loader-phase) 1.25s ease-in-out infinite;
+}
+.signature-loader[data-loader="chevrons"] > span:nth-child(2) {
+  animation-delay: 220ms;
+}
+.signature-loader[data-loader="cursor"]::before {
+  width: 11px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--loader-ink);
+  content: "";
+  animation: var(--loader-animation, loader-cursor) 1.05s steps(1, end) infinite;
+}
+
+@keyframes loader-braid {
+  from {
+    opacity: 0.3;
+    transform: translate(0, -3px);
+  }
+  to {
+    opacity: 0.82;
+    transform: translate(10px, 3px);
+  }
+}
+@keyframes loader-wave {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scaleY(0.4);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+}
+@keyframes loader-cursor {
+  0%,
+  48% {
+    opacity: 0.82;
+  }
+  49%,
+  100% {
+    opacity: 0.16;
+  }
+}

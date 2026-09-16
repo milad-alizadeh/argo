@@ -1,0 +1,120 @@
+.signature-loader[data-loader="diamond"]::before {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--loader-ink);
+  border-radius: 2px;
+  content: "";
+  animation: var(--loader-animation, loader-step) 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+}
+.signature-loader[data-loader="flip"]::before {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--loader-ink);
+  content: "";
+  animation: var(--loader-animation, loader-flip) 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.signature-loader[data-loader="twin-diamond"] {
+  gap: 3px;
+}
+.signature-loader[data-loader="twin-diamond"] > span:nth-child(-n + 2) {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--loader-ink);
+  border-radius: 1px;
+  transform: rotate(45deg);
+  animation: var(--loader-animation, loader-ping) 1.4s ease-in-out infinite;
+}
+.signature-loader[data-loader="twin-diamond"] > span:nth-child(2) {
+  animation-delay: 700ms;
+}
+.signature-loader[data-loader="pendulum"]::before {
+  position: absolute;
+  top: 1px;
+  width: 1px;
+  height: 9px;
+  background: var(--loader-faint);
+  content: "";
+  transform-origin: top;
+  animation: var(--loader-animation, loader-pendulum) 1.25s cubic-bezier(0.65, 0, 0.35, 1) infinite
+    alternate;
+}
+.signature-loader[data-loader="pendulum"]::after {
+  position: absolute;
+  bottom: 1px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--loader-ink);
+  content: "";
+  transform-origin: 2px -6px;
+  animation: var(--loader-animation, loader-pendulum) 1.25s cubic-bezier(0.65, 0, 0.35, 1) infinite
+    alternate;
+}
+.signature-loader[data-loader="fold"]::before,
+.signature-loader[data-loader="fold"]::after {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--loader-ink);
+  content: "";
+  animation: var(--loader-animation, loader-fold) 1.6s ease-in-out infinite;
+}
+.signature-loader[data-loader="fold"]::before {
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.signature-loader[data-loader="fold"]::after {
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+  animation-delay: 800ms;
+}
+
+@keyframes loader-step {
+  0%,
+  56% {
+    opacity: 0.42;
+    transform: rotate(45deg) scale(0.9);
+  }
+  76%,
+  100% {
+    opacity: 0.78;
+    transform: rotate(135deg) scale(1);
+  }
+}
+@keyframes loader-flip {
+  0%,
+  18% {
+    opacity: 0.28;
+    transform: scaleX(0.2) rotate(0);
+  }
+  48%,
+  68% {
+    opacity: 0.78;
+    transform: scaleX(1) rotate(90deg);
+  }
+  100% {
+    opacity: 0.28;
+    transform: scaleX(0.2) rotate(180deg);
+  }
+}
+@keyframes loader-pendulum {
+  from {
+    transform: rotate(-24deg);
+  }
+  to {
+    transform: rotate(24deg);
+  }
+}
+@keyframes loader-fold {
+  0%,
+  50%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.72) rotate(0);
+  }
+  25% {
+    opacity: 0.78;
+    transform: scale(1) rotate(90deg);
+  }
+}

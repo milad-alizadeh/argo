@@ -11,6 +11,7 @@ import { SessionReferenceText } from '../composer/references/session-reference'
 import { sessionName } from './roster-rows'
 import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'
+import { type SignatureLoaderKey, SignatureRunningLoader } from './running-loader-gallery-prototype'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
@@ -18,8 +19,8 @@ import {
   STATUS_MARKS,
 } from './session-roster-status'
 import {
-  UnreadMarkerPrototypeLeading,
-  UnreadMarkerPrototypeTrailing,
+  UnreadMarkerPrototypeRunning,
+  unreadMarkerPrototypeDot,
   useUnreadMarkerPrototypeVariant,
 } from './unread-marker-prototype'
 
@@ -68,6 +69,8 @@ export function SessionRosterItem({
   selected,
   session,
   tabIndex,
+  prototypeRunningLoader,
+  prototypeUnread,
 }: {
   archived: boolean
   checked: boolean
@@ -78,6 +81,8 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
+  prototypeRunningLoader?: SignatureLoaderKey
+  prototypeUnread?: boolean
 }) {
   const { t } = useTranslation('sessions')
   const unreadPrototype = useUnreadMarkerPrototypeVariant()
@@ -86,6 +91,12 @@ export function SessionRosterItem({
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
+  const running = session.status === 'running' || session.status === 'starting'
+  const prototypeDot = unreadMarkerPrototypeDot({
+    blocked: session.status === 'asking' || session.status === 'permission',
+    failed: session.status === 'ended' || session.status === 'stopped',
+    unread: prototypeUnread ?? unreadPrototype !== null,
+  })
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -100,7 +111,7 @@ export function SessionRosterItem({
     <div className="min-w-0">
       <button
         aria-current={selected ? 'page' : undefined}
-        className={`group flex w-full select-none items-start gap-2 rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
+        className={`group relative flex w-full select-none items-start gap-2 overflow-hidden rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
         data-archived={archived}
         data-session-id={session.id}
         onBlur={() => setPointerFocused(false)}
@@ -112,12 +123,11 @@ export function SessionRosterItem({
         type="button"
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
-          <UnreadMarkerPrototypeLeading variant={unreadPrototype} />
           <span className="roster-harness-mark">
             {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
           </span>
           <span
-            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${STATUS_MARKS[session.status]}`}
+            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}
           />
         </span>
         <span className="sr-only">{STATUS_LABELS[session.status]}</span>
@@ -144,8 +154,12 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
-            <UnreadMarkerPrototypeTrailing variant={unreadPrototype} />
-            {unreadPrototype === null || unreadPrototype === 'C' ? null : (
+            {running && prototypeRunningLoader !== undefined ? (
+              <SignatureRunningLoader loader={prototypeRunningLoader} />
+            ) : (
+              <UnreadMarkerPrototypeRunning running={running} variant={unreadPrototype} />
+            )}
+            {unreadPrototype === null || prototypeUnread === false ? null : (
               <span className="sr-only">Unread</span>
             )}
           </span>

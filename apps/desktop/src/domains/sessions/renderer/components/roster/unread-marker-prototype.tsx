@@ -1,12 +1,13 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
+import './unread-marker-prototype.css'
 
-// PROTOTYPE: three unread marker structures on the existing /sessions route, switched by ?variant=.
+// PROTOTYPE: three running markers beside a blue unread dot, switched by ?variant= on /sessions.
 const VARIANTS = [
-  { key: 'A', name: 'Trailing beacon' },
-  { key: 'B', name: 'Harness halo' },
-  { key: 'C', name: 'Inline label' },
+  { key: 'A', name: 'Comet' },
+  { key: 'B', name: 'Signal sweep' },
+  { key: 'C', name: 'Step diamond' },
 ] as const
 
 export type UnreadMarkerPrototypeVariant = (typeof VARIANTS)[number]['key']
@@ -75,7 +76,7 @@ export function UnreadMarkerPrototypeSwitcher() {
       </button>
       <span className="min-w-40 text-center type-meta">
         {variant?.key} · {variant?.name}
-        <span className="block opacity-70">visible rows simulate unread</span>
+        <span className="block opacity-70">blue is unread · motion is running</span>
       </span>
       <button
         aria-label="Next unread marker variant"
@@ -89,37 +90,25 @@ export function UnreadMarkerPrototypeSwitcher() {
   )
 }
 
-export function UnreadMarkerPrototypeLeading({
+export function UnreadMarkerPrototypeRunning({
+  running,
   variant,
 }: {
+  running: boolean
   variant: UnreadMarkerPrototypeVariant | null
 }) {
-  if (variant !== 'B') return null
-  return (
-    <span
-      aria-hidden="true"
-      className="absolute -inset-x-1 -inset-y-0.5 rounded-md ring-2 ring-[#3b82f6] dark:ring-[#60a5fa]"
-    />
-  )
+  if (!running || variant === null) return null
+  if (variant === 'A') return <span aria-hidden="true" className="running-comet" />
+  if (variant === 'B') return <span aria-hidden="true" className="running-sweep" />
+  return <span aria-hidden="true" className="running-step" />
 }
 
-export function UnreadMarkerPrototypeTrailing({
-  variant,
-}: {
-  variant: UnreadMarkerPrototypeVariant | null
+export function unreadMarkerPrototypeDot(options: {
+  blocked: boolean
+  failed: boolean
+  unread: boolean
 }) {
-  if (variant === 'A') {
-    return (
-      <span
-        aria-hidden="true"
-        className="ml-auto size-2.5 shrink-0 rounded-full bg-[#3b82f6] shadow-[0_0_0_2px_var(--sidebar)] dark:bg-[#60a5fa]"
-      />
-    )
-  }
-  if (variant !== 'C') return null
-  return (
-    <span className="ml-auto shrink-0 rounded-full bg-[#3b82f6]/12 px-2 py-0.5 type-meta text-[#2563eb] dark:bg-[#60a5fa]/15 dark:text-[#93c5fd]">
-      Unread
-    </span>
-  )
+  if (options.blocked) return 'bg-warn'
+  if (options.failed) return 'bg-danger'
+  return options.unread ? 'bg-plan shadow-[0_0_5px_var(--color-plan)]' : 'bg-idle'
 }

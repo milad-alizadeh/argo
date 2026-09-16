@@ -1,128 +1,190 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { MemoryRouter } from 'react-router'
+import { sessionRosterRow } from '../../session-fixtures'
 import {
-  UnreadMarkerPrototypeLeading,
-  UnreadMarkerPrototypeTrailing,
-  type UnreadMarkerPrototypeVariant,
-  unreadMarkerPrototypeVariant,
-} from './unread-marker-prototype'
+  isSignatureLoaderKey,
+  SIGNATURE_LOADERS,
+  type SignatureLoaderKey,
+  SignatureRunningLoader,
+} from './running-loader-gallery-prototype'
+import { SessionRosterItem } from './session-roster-item'
+import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
 
-const VARIANTS = [
-  { key: 'A', name: 'Trailing beacon' },
-  { key: 'B', name: 'Harness halo' },
-  { key: 'C', name: 'Inline label' },
+const FAMILIES = ['Orbital', 'Linear', 'Geometric', 'Signal'] as const
+
+const ROWS = [
+  {
+    session: sessionRosterRow({
+      id: 'running-read',
+      cli: 'codex',
+      cwd: '/Users/milad/Developer/argo',
+      posture: 'external',
+      status: 'running',
+      title: { text: 'Implement unread Session notifications', source: 'first-prompt' },
+    }),
+    unread: false,
+  },
+  {
+    session: sessionRosterRow({
+      id: 'running-unread',
+      cli: 'claude',
+      cwd: '/Users/milad/Developer/argo',
+      posture: 'external',
+      status: 'running',
+      title: { text: 'Review the state model', source: 'summarised' },
+    }),
+    unread: true,
+  },
+  {
+    session: sessionRosterRow({
+      id: 'idle-unread',
+      cli: 'codex',
+      cwd: '/Users/milad/Developer/argo',
+      posture: 'external',
+      status: 'idle',
+      title: { text: 'Refine Session filters', source: 'summarised' },
+    }),
+    unread: true,
+  },
+  {
+    session: sessionRosterRow({
+      id: 'idle-read',
+      cli: 'claude',
+      cwd: '/Users/milad/Developer/argo',
+      posture: 'external',
+      status: 'idle',
+      title: { text: 'Prepare release notes', source: 'summarised' },
+    }),
+    unread: false,
+  },
+  {
+    session: sessionRosterRow({
+      id: 'blocked-unread',
+      cli: 'codex',
+      cwd: '/Users/milad/Developer/argo',
+      posture: 'managed',
+      status: 'asking',
+      title: { text: 'Choose how to continue', source: 'summarised' },
+    }),
+    unread: true,
+  },
 ] as const
 
-const BROWSER_ROWS = [
-  { name: 'Refine the Session domain model', harness: 'C', detail: 'Codex · 2 min ago' },
-  { name: 'Fix the settings layout', harness: 'C', detail: 'Claude Code · 8 min ago' },
-  { name: 'Review the release workflow', harness: 'G', detail: 'Gemini · 24 min ago' },
-] as const
-
-function browserPrototypeVariant() {
+function loaderFromLocation(): SignatureLoaderKey {
   const query = window.location.hash.split('?')[1] ?? ''
-  return unreadMarkerPrototypeVariant(new URLSearchParams(query).get('variant')) ?? 'A'
+  const loader = new URLSearchParams(query).get('loader')
+  return isSignatureLoaderKey(loader) ? loader : 'comet'
 }
 
-// PROTOTYPE: browser-only shell for reviewing the marker without Electron's preload bridge.
-export function UnreadMarkerBrowserPrototype() {
-  const [variant, setVariant] = useState<UnreadMarkerPrototypeVariant>(browserPrototypeVariant)
-  const cycle = (step: number) => {
-    const index = VARIANTS.findIndex((candidate) => candidate.key === variant)
-    const next = VARIANTS[(index + step + VARIANTS.length) % VARIANTS.length]
-    if (next === undefined) return
-    setVariant(next.key)
-    window.history.replaceState(null, '', `#/sessions?variant=${next.key}`)
-  }
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') cycle(-1)
-      if (event.key === 'ArrowRight') cycle(1)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  })
-  const selected = VARIANTS.find((candidate) => candidate.key === variant)
+function replaceLoader(loader: SignatureLoaderKey) {
+  const query = window.location.hash.split('?')[1] ?? ''
+  const search = new URLSearchParams(query)
+  search.set('variant', 'A')
+  search.set('loader', loader)
+  window.history.replaceState(null, '', `#/sessions?${search.toString()}`)
+}
+
+function PrototypeRoster({ loader }: { loader: SignatureLoaderKey }) {
   return (
-    <main className="flex min-h-screen bg-background text-foreground">
-      <aside className="flex w-[22rem] shrink-0 flex-col border-r border-border bg-sidebar px-3 py-4">
-        <div className="mb-5 flex items-center justify-between px-2">
-          <div>
-            <p className="type-meta text-faint">PROJECT</p>
-            <h1 className="type-body font-semibold">Argo</h1>
-          </div>
-          <button className="rounded-md border border-border px-2.5 py-1 type-meta" type="button">
-            New Session
-          </button>
+    <MemoryRouter initialEntries={['/sessions?variant=A']}>
+      <aside
+        aria-label="Sessions"
+        className="flex h-dvh w-80 shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar"
+      >
+        <SessionsSidebarHeader
+          onNew={() => undefined}
+          onSearch={() => undefined}
+          onStatusChange={() => undefined}
+          search=""
+          status="active"
+        />
+        <div className="min-h-0 flex-1 overflow-hidden py-1">
+          {ROWS.map(({ session, unread }, index) => (
+            <SessionRosterItem
+              archived={false}
+              checked={false}
+              key={session.id}
+              onFocus={() => undefined}
+              onSelect={() => undefined}
+              onToggleSelect={() => undefined}
+              prototypeRunningLoader={loader}
+              prototypeUnread={unread}
+              selectable={false}
+              selected={index === 0}
+              session={session}
+              tabIndex={index === 0 ? 0 : -1}
+            />
+          ))}
         </div>
-        <nav aria-label="Session status" className="mb-3 flex gap-1 px-1">
-          {['Active', 'Unread', 'Archived', 'All'].map((label) => (
-            <button
-              className={`rounded-md px-2.5 py-1 type-meta ${label === 'Unread' ? 'bg-selected text-foreground' : 'text-faint'}`}
-              key={label}
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        <section aria-label="Unread Sessions" className="space-y-1">
-          {BROWSER_ROWS.map((row, index) => (
-            <button
-              className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left ${index === 0 ? 'bg-selected' : 'hover:bg-muted'}`}
-              key={row.name}
-              type="button"
-            >
-              <span aria-hidden className="relative mt-0.5 flex h-5 w-4 shrink-0 items-center">
-                <UnreadMarkerPrototypeLeading variant={variant} />
-                <span className="roster-harness-mark flex size-4 items-center justify-center rounded-sm bg-muted type-meta font-semibold">
-                  {row.harness}
-                </span>
-                <span className="absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full bg-positive" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate type-body font-medium">{row.name}</span>
-                  <UnreadMarkerPrototypeTrailing variant={variant} />
-                  {variant === 'C' ? null : <span className="sr-only">Unread</span>}
-                </span>
-                <span className="mt-0.5 block type-meta text-faint">{row.detail}</span>
-              </span>
-            </button>
-          ))}
-        </section>
       </aside>
-      <section className="flex min-w-0 flex-1 items-center justify-center bg-background p-12">
-        <div className="max-w-md text-center">
-          <p className="type-meta text-faint">UNREAD MARKER PROTOTYPE</p>
-          <h2 className="mt-2 text-2xl font-semibold">{selected?.name}</h2>
-          <p className="mt-2 type-body text-muted-foreground">
-            Compare the marker against the existing harness and status marks in the Session list.
-          </p>
+    </MemoryRouter>
+  )
+}
+
+function LoaderOption({
+  loader,
+  onSelect,
+  selected,
+}: {
+  loader: (typeof SIGNATURE_LOADERS)[number]
+  onSelect: (loader: SignatureLoaderKey) => void
+  selected: boolean
+}) {
+  return (
+    <button
+      aria-pressed={selected}
+      className={`group flex min-h-12 items-center gap-3 rounded-lg px-3 text-left transition-colors ${selected ? 'bg-selected text-foreground' : 'hover:bg-muted'}`}
+      onClick={() => onSelect(loader.key)}
+      type="button"
+    >
+      <span className="flex w-7 justify-center text-foreground">
+        <SignatureRunningLoader loader={loader.key} />
+      </span>
+      <span className="type-body font-medium">{loader.name}</span>
+    </button>
+  )
+}
+
+// PROTOTYPE: twenty running signatures beside the production Session roster.
+export function UnreadMarkerBrowserPrototype() {
+  const [selected, setSelected] = useState<SignatureLoaderKey>(loaderFromLocation)
+  const select = (loader: SignatureLoaderKey) => {
+    setSelected(loader)
+    replaceLoader(loader)
+  }
+  const selectedName = SIGNATURE_LOADERS.find((loader) => loader.key === selected)?.name
+  return (
+    <main className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <PrototypeRoster loader={selected} />
+      <section className="min-w-0 flex-1 overflow-y-auto px-8 py-7">
+        <header className="mb-7 flex items-end justify-between gap-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Choose Argo's running mark</h1>
+            <p className="mt-1 max-w-xl type-body text-muted-foreground">
+              Twenty roster-scale loaders. Blue remains unread, gray remains read, and yellow still
+              overrides both when a Session needs you.
+            </p>
+          </div>
+          <output className="shrink-0 type-meta text-faint">Selected: {selectedName}</output>
+        </header>
+        <div className="space-y-7">
+          {FAMILIES.map((family) => (
+            <section key={family}>
+              <h2 className="mb-2 type-meta font-medium text-faint">{family}</h2>
+              <div className="grid grid-cols-2 gap-1">
+                {SIGNATURE_LOADERS.filter((loader) => loader.family === family).map((loader) => (
+                  <LoaderOption
+                    key={loader.key}
+                    loader={loader}
+                    onSelect={select}
+                    selected={loader.key === selected}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
-      <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-foreground/15 bg-foreground px-2 py-1.5 text-background shadow-lg">
-        <button
-          aria-label="Previous unread marker variant"
-          className="rounded-full p-1"
-          onClick={() => cycle(-1)}
-          type="button"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-        </button>
-        <span className="min-w-40 text-center type-meta">
-          {selected?.key} · {selected?.name}
-          <span className="block opacity-70">Use left and right arrows</span>
-        </span>
-        <button
-          aria-label="Next unread marker variant"
-          className="rounded-full p-1"
-          onClick={() => cycle(1)}
-          type="button"
-        >
-          <ArrowRight aria-hidden className="size-4" />
-        </button>
-      </div>
     </main>
   )
 }
