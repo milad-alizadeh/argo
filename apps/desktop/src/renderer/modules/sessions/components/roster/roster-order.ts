@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useSessions } from '../../hooks/use-sessions'
 import { useRememberedRosterOrder, useRosterWindowStore } from '../../state/use-roster-window-store'
 import type { SessionId, SessionRoster, SessionsListed } from '../../types'
 
@@ -70,4 +71,12 @@ export function useRosterOrder(roster: SessionRoster | null, scope: string | nul
   }, [ordered, remember, scope])
 
   return ordered
+}
+
+// The one read the sidebar's row list is built from, and the one the restore-on-mount effect
+// consults to tell a stored id apart from an archived one: both share this query's cache, so
+// calling it twice never doubles the read.
+export function useOrderedSessions(projectRoot: string | null) {
+  const read = useSessions(null, true, projectRoot)
+  return { ...read, roster: useRosterOrder(read.roster, projectRoot) }
 }

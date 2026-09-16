@@ -1,65 +1,69 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type KeyboardEvent, useEffect, useRef } from 'react'
+import { memo, useRef } from 'react'
+import type { SelectionModifier } from '../../state/roster-selection'
 import type { SessionId } from '../../types'
+import { ArchivedSectionRow } from './archived-status-row'
+import { moveFocus } from './roster-arrow-keys'
 import { RosterContextMenu } from './roster-context-menu'
-import { RosterRowView } from './roster-row-view'
-import { ROSTER_ROW_HEIGHT, type RosterRow, type RosterRowHandlers } from './roster-rows'
+import {
+  ROSTER_ROW_HEIGHT,
+  type RosterRow,
+  type RosterRowHandlers,
+  renamedSession,
+} from './roster-rows'
+import { SessionRosterItem } from './session-roster-item'
+import { RosterLoadingMoreRow } from './sessions-sidebar-chrome'
+import { useSentinelFetch } from './use-roster-sentinel-fetch'
 
-function moveFocus(event: KeyboardEvent<HTMLUListElement>) {
-  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
-  const buttons = [
-    ...event.currentTarget.querySelectorAll<HTMLButtonElement>('button[data-session-id]'),
-  ]
-  const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
-  if (current === -1) return
-  event.preventDefault()
-  const nextByKey = {
-    ArrowDown: Math.min(current + 1, buttons.length - 1),
-    ArrowUp: Math.max(current - 1, 0),
-    End: buttons.length - 1,
-    Home: 0,
+// Memoized, because a read of the open Session re-renders an ancestor the roster shares with it, and
+// without this every mounted row re-rendered with it: 185291 renders in a 13-second idle recording,
+// when those reads still polled at 500ms. Nothing re-reads on a timer now (#2299, #2303), so the
+// reads are a CLI's writes, but a Session being driven writes several times a second.
+const RosterRowView = memo(function RosterRowView({
+  onFocus,
+  onSelect,
+  onToggleSelect,
+  renamedTitles,
+  row,
+  selectedIds,
+  selectedSessionId,
+  tabStop,
+}: {
+  onFocus: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId) => void
+  onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
+  renamedTitles: Record<string, string>
+  row: RosterRow
+  selectedIds: ReadonlySet<SessionId>
+  selectedSessionId: SessionId | null
+  tabStop: SessionId | null
+}) {
+  if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
+    return <div aria-hidden="true" />
   }
-  buttons[nextByKey[event.key as keyof typeof nextByKey]]?.focus()
-}
+  if (row.kind === 'rosterLoadingMore') return <RosterLoadingMoreRow />
+  if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
+  const { session, archived } = row
+  const selectable = !archived
+  return (
+    <SessionRosterItem
+      archived={archived}
+      checked={selectable && selectedIds.has(session.id)}
+      onFocus={() => onFocus(session.id)}
+      onSelect={() => onSelect(session.id)}
+      onToggleSelect={(modifier) => onToggleSelect(session.id, modifier)}
+      selectable={selectable}
+      selected={session.id === selectedSessionId}
+      session={renamedSession(session, renamedTitles)}
+      tabIndex={session.id === tabStop ? 0 : -1}
+    />
+  )
+})
 
 // Overscan generous enough to keep a roster's realistic session count fully mounted, so arrow-key
 // navigation (which walks the mounted buttons) behaves the same as the flat list it replaces;
 // windowing still kicks in for a roster large enough to exceed it.
 const OVERSCAN = 30
-
-// A sentinel row scrolling into view is the trigger to fetch its page's continuation; the roster and
-// the Archive each hold their own sentinel and fetch callback.
-//
-// The range is the virtualizer's visible range, never its mounted items: virtual-core applies the
-// overscan after computing that range (`defaultRangeExtractor`), so a sentinel 30 rows below the fold
-// is mounted and counted as reached. The roster then grew a page before the reader had scrolled at
-// all, and kept growing a page per read while the sentinel sat in the overscan band.
-//
-// The effect depends on the two indices rather than on the range object or the item array: both are
-// rebuilt on every render, so depending on either asked for the next page again each render for as
-// long as the sentinel stayed on screen (#2277).
-function useSentinelFetch(options: {
-  rows: readonly RosterRow[]
-  kind: RosterRow['kind']
-  range: { startIndex: number; endIndex: number } | null
-  onFetch: () => void
-}) {
-  const { rows, kind, range, onFetch } = options
-  const sentinelIndex = rows.findIndex((row) => row.kind === kind)
-  const start = range?.startIndex ?? -1
-  const end = range?.endIndex ?? -1
-  const reached = sentinelIndex !== -1 && sentinelIndex >= start && sentinelIndex <= end
-  // The callback is read through a ref rather than depended on: its identity changes on every render
-  // of the sidebar, so depending on it asked for a page per render while the sentinel stayed in view.
-  // The row count is a dependency, because a sentinel still visible after a page landed is a reader
-  // who has scrolled past everything loaded and wants the next one.
-  const latest = useRef(onFetch)
-  latest.current = onFetch
-  const loaded = rows.length
-  useEffect(() => {
-    if (reached && loaded > 0) latest.current()
-  }, [reached, loaded])
-}
 
 export function RosterVirtualList({
   label,
@@ -80,7 +84,6 @@ export function RosterVirtualList({
   tabStop,
 }: RosterRowHandlers & {
   label: string
-  onFetchMoreSessions: () => void
   onFetchNextPage: () => void
   renamedTitles: Record<string, string>
   rows: readonly RosterRow[]
