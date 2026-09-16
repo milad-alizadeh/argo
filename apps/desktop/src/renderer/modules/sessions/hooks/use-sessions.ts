@@ -35,8 +35,6 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
   return ordered
 }
 
-export type SessionRoster = SessionsListed | null
-
 // A poll must refresh only the window this reader has already loaded, never regrow it, so the
 // cursor that produced that window is held outside the query cache and resent unchanged on every
 // poll (#2239). `fetchMore` is the only thing that advances it, in response to a reader action

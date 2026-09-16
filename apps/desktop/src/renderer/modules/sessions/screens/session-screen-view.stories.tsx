@@ -242,9 +242,6 @@ function NewSessionScreen() {
           onNew={() => setSelectedSessionId('optimistic:new-session')}
           onSelect={setSelectedSessionId}
           roster={{
-            version: 1,
-            type: 'session.listed',
-            requestId: 'new-session-roster',
             sessions: [],
             filesFound: 0,
             filesRead: 0,

@@ -46,6 +46,7 @@ export function sessionRosterQuery(
             filesFound: reply.filesFound,
             filesRead: reply.filesRead,
             filesUnreadable: reply.filesUnreadable,
+            nextCursor: reply.nextCursor,
           }
         case 'session.error':
           return throwSessionContractError(reply)
