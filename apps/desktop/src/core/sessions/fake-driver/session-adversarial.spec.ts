@@ -24,37 +24,53 @@ describeSessionProof('session-adversarial', backend, (run) => {
 
   test('launch', async () => {
     await selectProofProject(run.fixture.userData, run.fixture.project)
-    box.set(await run.launch({ adversarialSeed: 'alpha' }))
+    box.set(await run.launch({ adversarialSeed: 'seed-42' }))
     expect(await run.isPackaged()).toBe(true)
   })
 
-  defineSessionJourneyCases({ backend, box, fixture: () => run.fixture, restart: run.restart })
+  test('replays jitter, split bytes, and failure through Codex', async () => {
+    const firstPrompt = 'Keep the adversarial reply complete.'
+    const failed = await createSessionByClick(box.get(), { cli: 'codex', prompt: firstPrompt })
+    await expect(box.get().getByText(`Fake Codex read: ${firstPrompt} 🦜`)).toBeVisible()
 
-  test('replays a jittered Codex reply split through UTF-8 bytes', async () => {
-    const prompt = 'Keep the adversarial reply complete.'
-    await createSessionByClick(box.get(), { cli: 'codex', prompt })
-    await expect(box.get().getByText(`Fake Codex read: ${prompt} 🦜`)).toBeVisible()
+    const composer = box.get().getByRole('textbox', { name: 'Message' })
+    await composer.click()
+    await box.get().keyboard.type('Fail this Turn.')
+    await box.get().keyboard.press('Enter')
+    await expect.poll(() => statusFor(box.get(), failed)).toBe('unknown')
+  })
+})
+
+describeSessionProof('session-adversarial-stall', backend, (run) => {
+  const box = createPageBox(run.hold)
+
+  test('launch', async () => {
+    await selectProofProject(run.fixture.userData, run.fixture.project)
+    box.set(await run.launch({ adversarialSeed: 'seed-5' }))
   })
 
-  test('shows the error and stalled readings from their replayed Codex turns', async () => {
-    box.set(await run.restart({ adversarialSeed: 'seed-0' }))
-    const failed = await createSessionByClick(box.get(), {
-      cli: 'codex',
-      prompt: 'Fail this Turn.',
-    })
-    await expect.poll(() => statusFor(box.get(), failed)).toBe('unknown')
-
-    box.set(await run.restart({ adversarialSeed: 'seed-6' }))
-    const stalled = await createSessionByClick(box.get(), {
-      cli: 'codex',
-      prompt: 'Stall this Turn.',
-    })
+  test('keeps a stalled Codex Turn visibly working', async () => {
+    const stalledPrompt = 'Start the stalled Session.'
+    const stalled = await createSessionByClick(box.get(), { cli: 'codex', prompt: stalledPrompt })
+    await expect(box.get().getByText(`Fake Codex read: ${stalledPrompt} 🦜`)).toBeVisible()
+    const composer = box.get().getByRole('textbox', { name: 'Message' })
+    await composer.click()
+    await box.get().keyboard.type('Stall this Turn.')
+    await box.get().keyboard.press('Enter')
     await expect.poll(() => statusFor(box.get(), stalled)).toBe('running')
     await expect(box.get().getByRole('status', { name: 'Working' })).toBeVisible()
   })
+})
+
+describeSessionProof('session-adversarial-permission', backend, (run) => {
+  const box = createPageBox(run.hold)
+
+  test('launch', async () => {
+    await selectProofProject(run.fixture.userData, run.fixture.project)
+    box.set(await run.launch({ adversarialSeed: 'seed-0' }))
+  })
 
   test('shows a seeded Claude Permission while the fake holds its queued Turn', async () => {
-    box.set(await run.restart({ adversarialSeed: 'seed-0' }))
     const sessionId = await createSessionByClick(box.get(), {
       cli: 'claude',
       prompt: 'Wait for Permission.',
@@ -72,4 +88,15 @@ describeSessionProof('session-adversarial', backend, (run) => {
       .poll(async () => (await readFile(transcript, 'utf8')).match(/"type":"user"/g)?.length)
       .toBe(2)
   })
+})
+
+describeSessionProof('session-adversarial-journeys', backend, (run) => {
+  const box = createPageBox(run.hold)
+
+  test('launch', async () => {
+    await selectProofProject(run.fixture.userData, run.fixture.project)
+    box.set(await run.launch({ adversarialSeed: 'alpha' }))
+  })
+
+  defineSessionJourneyCases({ backend, box, fixture: () => run.fixture, restart: run.restart })
 })
