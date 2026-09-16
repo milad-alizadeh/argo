@@ -1,39 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import {
-  invalidateSessionRoster,
-  SESSION_REFRESH_MS,
-  sessionRosterQueryKey,
-} from '../session-queries'
+import type { SessionContractError } from '../session-contract-error'
+import { invalidateSessionRoster } from '../session-queries'
 import {
   mergeOptimisticRow,
   readableSessionId,
   useSessionCreationStore,
 } from '../state/use-session-creation-store'
-import type { SessionFeed, SessionId, SessionsListed } from '../types'
+import type { SessionFeed, SessionId } from '../types'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
-
-let rosterOrder: SessionId[] = []
-
-function keepRosterOrder(sessions: SessionsListed['sessions']) {
-  const unmatched = [...sessions]
-  const ordered = rosterOrder.flatMap((rememberedId) => {
-    const index = unmatched.findIndex(
-      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
-    )
-    if (index === -1) return []
-    const session = unmatched.splice(index, 1)[0]
-    return session === undefined ? [] : [session]
-  })
-  ordered.push(...unmatched)
-  rosterOrder = ordered.map((session) => session.id)
-  return ordered
-}
+import { sessionRosterQuery } from './session-roster-query'
 
 // A poll must refresh only the window this reader has already loaded, never regrow it, so the
 // cursor that produced that window is held outside the query cache and resent unchanged on every
@@ -52,24 +28,7 @@ function useRosterQuery(
     cursorRef.current = null
   }
 
-  const query = useQuery<SessionsListed, SessionContractError>({
-    queryKey: [...sessionRosterQueryKey, projectRoot],
-    staleTime: Infinity,
-    enabled,
-    refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
-    retry: false,
-    queryFn: async () => {
-      const reply = await window.argo.listSessions({ projectRoot, cursor: cursorRef.current })
-      switch (reply.type) {
-        case 'session.listed':
-          return { ...reply, sessions: keepRosterOrder(reply.sessions) }
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
-  })
+  const query = useQuery(sessionRosterQuery(selectedSessionId, enabled, projectRoot, cursorRef.current))
 
   const nextCursor = query.data?.nextCursor ?? null
   return {

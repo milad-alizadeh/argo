@@ -30,6 +30,7 @@ export function sessionRosterQuery(
   selectedSessionId: SessionId | null,
   enabled: boolean,
   projectRoot: string | null,
+  cursor: string | null = null,
 ): UseQueryOptions<SessionRoster, SessionContractError> {
   return {
     queryKey: [...sessionRosterQueryKey, projectRoot],
@@ -38,7 +39,7 @@ export function sessionRosterQuery(
     refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
-      const reply = await window.argo.listSessions({ projectRoot })
+      const reply = await window.argo.listSessions({ projectRoot, cursor })
       switch (reply.type) {
         case 'session.listed':
           return {
