@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { proveCodexThreadName } from '../../../agents/codex/session-fake-driver/codex-thread-name-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { type CaseResults, createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
@@ -114,6 +115,10 @@ try {
   page = await restart({ replyDelayMs: 2_000 })
   await ran(['session-reply-wait'], () => proveReplyWait(page, fixture.claudeTranscripts))
   await ran(['session-duplicate-send'], () => proveDuplicateSend(page, fixture.claudeTranscripts))
+  // Naming the Codex row changes the title the cases above open it by, so it runs after them.
+  await ran(['session-codex-thread-name'], () =>
+    proveCodexThreadName(page, fixture.codexTranscripts),
+  )
   // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's own
   // exact Roster counts or ordering has to account for them.
   await ran(['session-roster-window'], async () => {

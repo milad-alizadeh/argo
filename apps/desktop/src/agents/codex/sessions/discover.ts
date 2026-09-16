@@ -5,10 +5,12 @@ import {
   ROSTER_PAGE_SIZE,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import type { SessionRosterRow } from '@/core/sessions/models'
 import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { withoutModelInputCopies } from './model-input-copies'
 import { parseCodexTranscriptLine } from './records'
+import type { ThreadNames } from './thread-names'
 
 export type Discovery = TranscriptDiscovery
 
@@ -68,12 +70,24 @@ const reader = createTranscriptDiscoverer({
 
 export const { clearFullRecords, readSessionFiles } = reader
 
+// Codex writes no thread name to a rollout, so its own name outranks the opening prompt (ADR-0042).
+// It reads as `summarised`: Codex names most threads itself, and a person's rename lands there too.
+function named(row: SessionRosterRow, names: ReadonlyMap<string, string>): SessionRosterRow {
+  const name = [row.id, ...row.retiredIds].map((id) => names.get(id)).find(Boolean)
+  return name === undefined ? row : { ...row, title: { text: name, source: 'summarised' } }
+}
+
+function namedRows(rows: SessionRosterRow[], threadNames: ThreadNames): SessionRosterRow[] {
+  const names = threadNames(rows.flatMap((row) => [row.id, ...row.retiredIds]))
+  return rows.map((row) => named(row, names))
+}
+
 // A Project's reply keeps growing the same bounded window discovery pages by until it holds a full
 // page of that Project's own Sessions, rather than stopping at a global window and discarding
 // whatever does not match (#2239).
 export async function discoverSessions(
   root: string,
-  options?: { cursor?: string | null; projectRoot?: string | null },
+  options?: { cursor?: string | null; projectRoot?: string | null; threadNames?: ThreadNames },
 ): Promise<Discovery> {
   const projectRoots = await projectRootsOf(options?.projectRoot)
   let cursor = options?.cursor ?? null
@@ -82,7 +96,8 @@ export async function discoverSessions(
     const rows = discovery.rows.filter((row) => belongsToProject(row.cwd, projectRoots))
     const exhausted = discovery.nextCursor === null
     if (projectRoots === null || rows.length >= ROSTER_PAGE_SIZE || exhausted) {
-      return { ...discovery, rows }
+      const named = options?.threadNames === undefined ? rows : namedRows(rows, options.threadNames)
+      return { ...discovery, rows: named }
     }
     cursor = discovery.nextCursor
   }

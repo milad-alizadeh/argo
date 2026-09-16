@@ -188,7 +188,11 @@ export const RosterStructure: Story = {
       sessions: [
         {
           ...session,
-          activity: { tool: 'Bash', target: 'RTK_DISABLED=1 gh pr checks 2062 --watch' },
+          activity: {
+            label: 'Watch PR checks',
+            tool: 'Bash',
+            target: 'RTK_DISABLED=1 gh pr checks 2062 --watch',
+          },
           status: 'running',
           turnStartedAt: '2026-09-14T03:30:00Z',
           plan: {
@@ -206,7 +210,8 @@ export const RosterStructure: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeVisible()
+    await expect(canvas.getByText('Watch PR checks')).toBeVisible()
+    await expect(canvas.queryByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeNull()
     await expect(canvas.getByText('#2062')).toBeVisible()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
     const timing = canvas.getByTitle(/^Running /)

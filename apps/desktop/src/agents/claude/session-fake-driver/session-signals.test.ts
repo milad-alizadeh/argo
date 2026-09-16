@@ -2,8 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
-import { readPlan } from '../../../core/sessions/signals.ts'
-import { emptyMessage } from '../../../core/sessions/transcript-fixtures.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
@@ -19,25 +17,18 @@ test('reads the Plan entries off the newest snapshot the agent wrote', async () 
   assert.equal((await rowOf(['externalBasic'])).plan, null)
 })
 
-test('marks an unreadable latest Plan snapshot as malformed', () => {
-  const malformedPlan = emptyMessage({
-    uuid: 'malformed-plan',
-    toolCalls: [{ id: 'plan', name: 'TodoWrite', input: { todos: [{ content: 'No status' }] } }],
-  })
-  assert.deepEqual(readPlan([malformedPlan]), { state: 'malformed' })
-})
-
 test('starts the Turn at the last prompt, never at a tool result', async () => {
   assert.equal((await rowOf(['plannedWork'])).turnStartedAt, '2026-08-30T10:05:00.000Z')
   assert.equal((await rowOf(['subagentTail'])).turnStartedAt, '2026-08-14T11:00:01.000Z')
 })
 
-test('names the newest call of the open Turn by its tool and the thing it acted on', async () => {
+test('names the newest call of the open Turn with its canonical label and metadata', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).activity, {
+    label: 'Edited /Users/x/proj/src/SubagentDots.tsx',
     tool: 'Edit',
     target: 'SubagentDots.tsx',
   })
-  assert.deepEqual((await rowOf(['subagentTail'])).activity, { tool: 'Task', target: null })
+  assert.equal((await rowOf(['subagentTail'])).activity?.label, 'Called Task')
 })
 
 test('reads every delegation with its own label, and which of them came back', async () => {

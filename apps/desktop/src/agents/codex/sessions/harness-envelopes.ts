@@ -93,6 +93,13 @@ function userRecord(message: TranscriptMessage): TranscriptRecord {
   return { ...message, blocks }
 }
 
+// A thread Codex's voice session opens through `codex_app.create_thread` writes no prompt: what
+// it was asked is the `<input>` of the `<codex_delegation>` that tool returns into it.
+export function delegatedRequest(output: string): string | null {
+  const delegation = wholeEnvelope(output, 'codex_delegation')
+  return delegation === null ? null : taggedField(delegation, 'input')
+}
+
 // Codex and its desktop app write their own machinery into message text as XML envelopes; this
 // reads each one as the Feed should show it instead of as the person's or the agent's words.
 export function readHarnessEnvelopes(message: TranscriptMessage): TranscriptRecord {
