@@ -1,6 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type KeyboardEvent, useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { SessionId } from '../../types'
 import { RosterRowView } from './roster-row-view'
 import type { RosterRow, RosterRowHandlers } from './roster-rows'

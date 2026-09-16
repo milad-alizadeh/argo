@@ -6,9 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
@@ -30,7 +27,6 @@ export function RosterFilterMenu({
   status: RosterStatus
 }) {
   const { t } = useTranslation('sessions')
-  const labelOf = (value: RosterStatus) => t(STATUS_LABELS[value])
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -41,26 +37,16 @@ export function RosterFilterMenu({
         }
       />
       <DropdownMenuContent align="end">
-        <DropdownMenuSub>
-          {/* The chosen status reads on the trigger, so the filter in force is legible without
-              opening the submenu. */}
-          <DropdownMenuSubTrigger>
-            {t('rosterStatusLabel')}
-            <span className="ml-auto pl-4 text-muted-foreground">{labelOf(status)}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              onValueChange={(value) => onStatusChange(value as RosterStatus)}
-              value={status}
-            >
-              {STATUSES.map((value) => (
-                <DropdownMenuRadioItem key={value} value={value}>
-                  {labelOf(value)}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <DropdownMenuRadioGroup
+          onValueChange={(value) => onStatusChange(value as RosterStatus)}
+          value={status}
+        >
+          {STATUSES.map((value) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              {t(STATUS_LABELS[value])}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
