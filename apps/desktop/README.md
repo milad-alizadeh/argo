@@ -287,6 +287,7 @@ Package arm64 first. All four commands run the copy, never the app you have inst
 | --- | --- |
 | `bun run test:packaged-project` | The verdict for the Project workflow, naming every case, as JSON. |
 | `bun run test:packaged-session` | The verdict for the Session Feed, naming every case, as JSON. |
+| `bun run test:packaged-journeys` | The verdict for the eight portable Session journeys alone, as JSON. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 

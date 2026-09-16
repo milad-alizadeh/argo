@@ -23,7 +23,7 @@ export type SessionJourneyRequest = {
   restart: Harness['restart']
 }
 
-async function proveResumeAndRename(request: SessionJourneyRequest): Promise<Page> {
+async function proveResumeAndRename(request: SessionJourneyRequest) {
   let { page } = request
   const { backend, fixture, ran, restart } = request
   await ran(['session-composer-memory'], () =>
@@ -51,7 +51,6 @@ async function proveResumeAndRename(request: SessionJourneyRequest): Promise<Pag
       transcripts: fixture.claudeTranscripts,
     }),
   )
-  return page
 }
 
 export async function proveSessionJourneys(request: SessionJourneyRequest): Promise<Page> {

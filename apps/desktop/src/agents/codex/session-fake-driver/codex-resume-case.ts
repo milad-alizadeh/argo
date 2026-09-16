@@ -9,6 +9,9 @@ import {
 
 type Restart = () => Promise<Page>
 
+const OPENING_PROMPT = 'Open the Codex resume proof.'
+const RESUMING_PROMPT = 'Carry on after the restart.'
+
 async function rosterRow(page: Page, sessionId: string) {
   const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
@@ -36,21 +39,18 @@ export async function provePackagedCodexResume(
   page: Page,
   { backend, restart }: { backend: SessionCliBackend; restart: Restart },
 ) {
-  const sessionId = await createSessionByClick(page, {
-    cli: 'codex',
-    prompt: 'Open the Codex resume proof.',
-  })
+  const sessionId = await createSessionByClick(page, { cli: 'codex', prompt: OPENING_PROMPT })
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
-  await history.getByText('Open the Codex resume proof.').waitFor()
+  await backend.waitForReply(relaunched, { cli: 'codex', prompt: OPENING_PROMPT })
 
-  await sendFromComposer(relaunched, 'Carry on after the restart.')
+  await sendFromComposer(relaunched, RESUMING_PROMPT)
   await backend
-    .waitForReply(relaunched, { cli: 'codex', prompt: 'Carry on after the restart.' })
+    .waitForReply(relaunched, { cli: 'codex', prompt: RESUMING_PROMPT })
     .catch(async (error) => {
       const rows = await history.locator('[data-feed-row]').allTextContents()
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()
