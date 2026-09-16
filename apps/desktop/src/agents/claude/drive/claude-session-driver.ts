@@ -3,6 +3,7 @@ import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
+import type { WatchedSource } from '@/core/watch/watch-source'
 import {
   beginCompaction,
   clearCompaction,
@@ -31,6 +32,7 @@ export type ClaudeSessionDriver = {
   roster: () => SessionRosterRow[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingPermission: (sessionId: string) => ClaudePermission | null
+  watchPermissions: WatchedSource
   decidePermission: DriverOptions['gate']['decide']
   decideQuestion: (
     sessionId: string,
@@ -139,6 +141,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     roster: () => roster(options, sessions),
     isLockedElsewhere: (sessionId) => options.ledger.standing(sessionId) === 'held-elsewhere',
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
+    watchPermissions: options.gate.watchPending,
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),
     decideQuestion: (sessionId, questionId, answers) =>

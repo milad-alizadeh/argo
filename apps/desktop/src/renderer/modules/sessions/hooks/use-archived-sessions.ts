@@ -1,15 +1,16 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
-import { SESSION_REFRESH_MS, sessionArchiveQueryKey } from '../session-queries'
+import { sessionArchiveQueryKey } from '../session-queries'
 import type { SessionArchiveListed, SessionId } from '../types'
 
 type ArchivePage = Pick<SessionArchiveListed, 'sessions' | 'nextCursor' | 'restored'>
 
-// Archived Sessions are read on demand, one page per fetch, rather than on every roster poll
+// Archived Sessions are read on demand, one page per fetch, rather than on every roster read
 // (#1593). `restoreId` asks the reader to hand back a Session's row even when it falls outside
 // the pages already loaded, so a previously selected archived Session can be shown restored
 // without paging through everything to find it.
@@ -17,11 +18,6 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
   const query = useInfiniteQuery<ArchivePage, SessionContractError>({
     queryKey: sessionArchiveQueryKey(restoreId),
     enabled,
-    // A restoreId asks for one specific Session's row (the one being viewed), so it is polled the
-    // same as the active roster's selected Session: an open plan or a running compaction still
-    // reads live even though the Session sits in the Archive. Browsing the paged list carries no
-    // restoreId and is read on demand only (#1593).
-    refetchInterval: restoreId === null ? false : SESSION_REFRESH_MS,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }) => {
@@ -39,6 +35,12 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
       }
     },
   })
+
+  // An archived Session's row sits under the same watched trees as an active one, so the row being
+  // viewed is read again when a CLI writes rather than twice a second. Each tick paid for a whole
+  // discovery pass, which made this the most expensive of the polls #2303 removed. Browsing the
+  // paged list carries no restoreId and stays read on demand, as it was under the poll.
+  useWatchedQueries('sessions', restoreId === null ? [] : [sessionArchiveQueryKey(restoreId)])
 
   const seen = new Set<string>()
   const sessions = (query.data?.pages.flatMap((page) => page.sessions) ?? []).filter((session) => {

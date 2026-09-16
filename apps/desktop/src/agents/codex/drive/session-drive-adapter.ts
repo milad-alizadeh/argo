@@ -65,10 +65,11 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
       return { error: 'not-drivable' }
     },
     // Codex Permissions are #1841, still out of scope: there is never a pending Permission to
-    // read, and a decision always answers that it is no longer waiting.
+    // read, nothing ever announces one, and a decision always answers that it is no longer waiting.
     async readPermission() {
       return { permission: null }
     },
+    watchPermissions: () => ({ close: () => {} }),
     async decidePermission() {
       return { error: 'stale-permission' }
     },

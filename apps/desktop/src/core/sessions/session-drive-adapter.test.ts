@@ -27,6 +27,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
       toolName: 'Bash',
       input: { command: 'bun test' },
     }),
+    watchPermissions: () => ({ close: () => {} }),
     decidePermission: () => true,
     isLockedElsewhere: () => false,
     decideQuestion: async () => true,

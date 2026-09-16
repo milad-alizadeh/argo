@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { BrowserWindow } from 'electron'
 import { registerWatching } from './bridge'
+import { failableOpener } from './failable-opener'
 import { WATCHED_CHANGED_CHANNEL } from './watch-contract'
-import { SETTLE_MS } from './watch-paths'
+import { SETTLE_MS, watchTrees } from './watch-paths'
 
 // Twice the settle window, so a message that has been sent has certainly arrived.
 const QUIET_MS = SETTLE_MS * 2
@@ -55,7 +56,7 @@ describe('telling a window its data changed', () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-wrote-'))
     const host = fakeWindow()
     try {
-      registerWatching(host.window, { sessions: [root] })
+      registerWatching(host.window, { sessions: [watchTrees([root])] })
       await armed(host, path.join(root, 'session.jsonl'))
       expect(host.sent[0]).toEqual({ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' })
     } finally {
@@ -68,7 +69,7 @@ describe('telling a window its data changed', () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-closed-'))
     const host = fakeWindow()
     try {
-      registerWatching(host.window, { sessions: [root] })
+      registerWatching(host.window, { sessions: [watchTrees([root])] })
       await armed(host, path.join(root, 'session.jsonl'))
       const before = host.sent.length
       host.close()
@@ -78,5 +79,60 @@ describe('telling a window its data changed', () => {
     } finally {
       await rm(root, { force: true, recursive: true })
     }
+  })
+})
+
+describe('telling a window about a watch that had to be opened again', () => {
+  test('carries a change announced after a dead watch reopened', async () => {
+    const host = fakeWindow()
+    const opener = failableOpener()
+    try {
+      registerWatching(host.window, { sessions: [watchTrees(['/transcripts'], opener.open)] })
+      opener.fail()
+      await quiet()
+      // Reopening is itself a change, because whatever the tree did while it was blind went unsaid.
+      expect(host.sent).toEqual([{ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' }])
+      opener.emit()
+      await quiet()
+      expect(host.sent.length).toBe(2)
+    } finally {
+      host.close()
+    }
+  })
+
+  test('carries a change under a root that only appeared after it was registered', async () => {
+    const parent = await mkdtemp(path.join(tmpdir(), 'argo-bridge-late-'))
+    const root = path.join(parent, 'transcripts')
+    const host = fakeWindow()
+    try {
+      registerWatching(host.window, { sessions: [watchTrees([root])] })
+      await mkdir(root)
+      await quiet()
+      await armed(host, path.join(root, 'session.jsonl'))
+      expect(host.sent[0]).toEqual({ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' })
+    } finally {
+      host.close()
+      await rm(parent, { force: true, recursive: true })
+    }
+  })
+})
+
+describe('telling a window about a source that is not a tree', () => {
+  test('names the topic for a source that watches no tree at all', () => {
+    const host = fakeWindow()
+    let announce: () => void = () => {}
+    let closed = false
+    registerWatching(host.window, {
+      sessions: [
+        (onChanged) => {
+          announce = onChanged
+          return { close: () => (closed = true) }
+        },
+      ],
+    })
+    announce()
+    expect(host.sent).toEqual([{ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' }])
+    host.close()
+    expect(closed).toBe(true)
   })
 })

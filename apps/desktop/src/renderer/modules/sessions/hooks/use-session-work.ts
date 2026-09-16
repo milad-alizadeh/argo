@@ -15,12 +15,12 @@ import { sessionFeedQuery } from './session-feed-query'
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
 export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
+  const queryKey = sessionDelegationUsageQueryKey(sessionId ?? '')
   const usage = useQuery<Record<string, number | null>>({
-    queryKey: sessionDelegationUsageQueryKey(sessionId ?? ''),
+    queryKey,
     enabled: sessionId !== null,
     gcTime: 0,
     placeholderData: (previous) => previous,
-    refetchInterval: live ? SESSION_REFRESH_MS : false,
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return {}
@@ -29,6 +29,9 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
       return Object.fromEntries(reply.usage.map(({ id, tokens }) => [id, tokens]))
     },
   })
+  // A Subagent's transcript is what carries its token count, and it sits under the same watched
+  // trees as its Session's own, so the count follows the write instead of a timer (#2303).
+  useWatchedQueries('sessions', live ? [queryKey] : [])
   return usage.data ?? {}
 }
 

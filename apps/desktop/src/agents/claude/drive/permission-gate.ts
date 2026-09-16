@@ -1,6 +1,7 @@
 import net from 'node:net'
 import { z } from 'zod'
 import type { ClaudePermission } from '@/core/sessions/contract'
+import type { WatchedSource } from '@/core/watch/watch-source'
 import { type CompanionPart, createSocketFolder } from './companion-plugin'
 import { similarityKey } from './permission-similarity'
 
@@ -11,12 +12,20 @@ export type ClaudePermissionGate = {
   open: (sessionId: string) => CompanionPart
   pending: (sessionId: string) => ClaudePermission | null
   decide: (sessionId: string, permissionId: string, decision: ClaudePermissionDecision) => boolean
+  // A Permission arrives over this gate's own socket, never as a write under a watched tree, so
+  // the reader learns of one only because the gate says so (#2303).
+  watchPending: WatchedSource
   close: () => void
 }
 
 type GateState = {
   waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>
   standing: Map<string, Set<string>>
+  listeners: Set<() => void>
+}
+
+function announce({ listeners }: GateState) {
+  for (const listener of listeners) listener()
 }
 
 const HOOK = `#!/bin/sh
@@ -68,17 +77,22 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
 
 // Each managed Session gets its own Unix socket, so a late answer cannot reach a different turn.
 export function createClaudePermissionGate(): ClaudePermissionGate {
-  const state: GateState = { waiting: new Map(), standing: new Map() }
+  const state: GateState = { waiting: new Map(), standing: new Map(), listeners: new Set() }
   const sockets = createSocketFolder('permission')
   return {
     open: (sessionId) => openPermissionGate(sockets.socketPath(sessionId), sessionId, state),
     pending(sessionId) {
       return state.waiting.get(sessionId)?.permission ?? null
     },
+    watchPending(onChanged) {
+      state.listeners.add(onChanged)
+      return { close: () => void state.listeners.delete(onChanged) }
+    },
     decide(sessionId, permissionId, decision) {
       const held = state.waiting.get(sessionId)
       if (!held || held.permission.id !== permissionId) return false
       state.waiting.delete(sessionId)
+      announce(state)
       if (decision === 'allowSimilar') {
         const rules = state.standing.get(sessionId) ?? new Set<string>()
         state.standing.set(sessionId, rules.add(similarityKey(held.permission)))
@@ -93,8 +107,9 @@ export function createClaudePermissionGate(): ClaudePermissionGate {
 function openPermissionGate(
   socketPath: string,
   sessionId: string,
-  { standing, waiting }: GateState,
+  state: GateState,
 ): CompanionPart {
+  const { standing, waiting } = state
   const server = net.createServer((socket) => {
     let received = ''
     socket.setEncoding('utf8')
@@ -119,6 +134,7 @@ function openPermissionGate(
       }
       waiting.set(sessionId, { permission, socket })
       socket.write('__ARGO_GATE_HELD__\n')
+      announce(state)
     })
   })
   // Without a listener a failed listen is an uncaught main-process exception; the hook then denies.
@@ -138,6 +154,7 @@ function openPermissionGate(
       waiting.delete(sessionId)
       standing.delete(sessionId)
       server.close()
+      if (held) announce(state)
     },
   }
 }

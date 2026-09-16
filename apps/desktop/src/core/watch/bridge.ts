@@ -1,22 +1,24 @@
 import type { BrowserWindow } from 'electron'
 import { WATCHED_CHANGED_CHANNEL, type WatchTopic } from './watch-contract'
-import { watchTrees } from './watch-paths'
+import type { WatchedSource } from './watch-source'
 
-// Which trees stand behind each topic. A module that wants its own topic adds its roots here and
-// names the topic in `WATCH_TOPICS`; nothing else in the watching changes.
-export type WatchedTopics = Partial<Record<WatchTopic, readonly string[]>>
+// What stands behind each topic. A tree watch is the usual source, and a topic may name several: a
+// module that wants its own topic adds its sources here and names the topic in `WATCH_TOPICS`.
+export type WatchedTopics = Partial<Record<WatchTopic, readonly WatchedSource[]>>
 
 // Tells one window that a body of data it may be showing has changed underneath it. This replaces
 // polling: the roster used to re-read every transcript file twice a second to notice a Session that
 // had been written by a CLI outside Argo.
 export function registerWatching(window: BrowserWindow, topics: WatchedTopics) {
-  const watched = Object.entries(topics).map(([topic, roots]) =>
-    watchTrees(roots, () => {
-      if (window.isDestroyed()) return
-      window.webContents.send(WATCHED_CHANGED_CHANNEL, topic)
-    }),
+  const watched = Object.entries(topics).flatMap(([topic, sources]) =>
+    sources.map((source) =>
+      source(() => {
+        if (window.isDestroyed()) return
+        window.webContents.send(WATCHED_CHANGED_CHANNEL, topic)
+      }),
+    ),
   )
   window.on('closed', () => {
-    for (const tree of watched) tree.close()
+    for (const subscription of watched) subscription.close()
   })
 }

@@ -20,7 +20,7 @@ function quiet() {
 async function armedWatch(name: string) {
   const root = await mkdtemp(path.join(tmpdir(), `argo-watch-${name}-`))
   let reported = 0
-  const watched = watchTrees([root], () => {
+  const watched = watchTrees([root])(() => {
     reported += 1
   })
   let counted = 0
@@ -84,7 +84,7 @@ describe('watching a tree', () => {
   test('watches the trees that exist when one of them does not', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-watch-present-'))
     let changes = 0
-    const watched = watchTrees([path.join(root, 'absent'), root], () => {
+    const watched = watchTrees([path.join(root, 'absent'), root])(() => {
       changes += 1
     })
     try {

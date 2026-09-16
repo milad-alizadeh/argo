@@ -1,11 +1,9 @@
 // Wiring every renderer bridge to a fresh window, split out of `main.ts` to stay under the
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import path from 'node:path'
-import { app, type BrowserWindow, shell } from 'electron'
+import { app, type BrowserWindow, powerMonitor, shell } from 'electron'
 import { installCompactionHook } from './agents/claude/compaction/compaction-hook'
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
-import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
-import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
   claudeArchiveRoot,
@@ -16,8 +14,6 @@ import {
 } from './agents/claude/sessions/roots'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
-import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
-import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
 import { codexStatePath, codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { codexThreadNames } from './agents/codex/sessions/state-store'
@@ -28,32 +24,15 @@ import { attachAppearanceBridge } from './core/appearance/bridge'
 import { attachProjectBridge } from './core/projects/bridge'
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CODEX_EXECUTABLE_ENV,
-} from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
+import type { SessionDriveAdapters } from './core/sessions/session-drive-adapter'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
+import { watchTrees } from './core/watch/watch-paths'
+import { watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
 import { providerEndpoints } from './providers/endpoints'
-
-function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
-  const claude = createSystemClaudeSessionDriver({
-    permissions: path.join(userData, 'claude-permission-plugins'),
-    ledger: path.join(userData, 'claude-session-ownership.json'),
-    transcripts: claudeTranscriptsRoot(home),
-    handoffBriefs: path.join(userData, 'claude-session-handoffs'),
-    handoffLedger: path.join(userData, 'claude-session-handoffs.json'),
-    executable: proofEnabled ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
-  })
-  const codex = createSystemCodexSessionDriver({
-    executable: proofEnabled ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
-    ownership: path.join(userData, 'codex-session-ownership.json'),
-    transcripts: codexTranscriptsRoot(home),
-  })
-  return { claude, codex }
-}
+import { createSessionAdapters, createSessionDrivers, type SessionDrivers } from './session-drivers'
 
 // ADR-0041: adds the `PreCompact` hook to the user's Claude settings, and names where it writes.
 function watchClaudeCompactions(home: string) {
@@ -73,11 +52,12 @@ function attachSessions(
     rendererURL: string
     home: string
     userData: string
-    drivers: ReturnType<typeof createSessionDrivers>
+    drivers: SessionDrivers
+    adapters: SessionDriveAdapters
     compactionStarts?: string
   },
 ) {
-  const { rendererURL, home, userData, drivers, compactionStarts } = request
+  const { rendererURL, home, userData, drivers, adapters, compactionStarts } = request
   const { claude, codex } = drivers
   const ticketLinks = createSessionTicketLinkStore(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
@@ -110,10 +90,7 @@ function attachSessions(
       ],
       ticketLinks,
     ),
-    adapters: {
-      claude: createClaudeDriveAdapter(claude),
-      codex: createCodexDriveAdapter(codex),
-    },
+    adapters,
     rendererURL,
   })
 }
@@ -125,17 +102,30 @@ export function attachBridges(
   const { userData, rendererURL, proofEnabled } = request
   const home = app.getPath('home')
   const drivers = createSessionDrivers(userData, home, proofEnabled)
+  const adapters = createSessionAdapters(drivers)
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
   attachProjectBridge(window, { userData, rendererURL })
-  attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
+  attachSessions(window, { rendererURL, home, userData, drivers, adapters, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   // A Session written by a CLI outside Argo reaches the roster because the trees the CLIs write to
-  // are watched, not because the roster re-reads them on a timer.
+  // are watched, not because the roster re-reads them on a timer. The archive store stands beside
+  // them: the roster and the Archived list are both read out of it, and a write to it does not
+  // always come from this window. Focus and resume stand beside the trees because FSEvents can lose
+  // events with no error and no closed handle (#2303).
   registerWatching(window, {
-    sessions: [claudeTranscriptsRoot(home), codexTranscriptsRoot(home)],
+    sessions: [
+      watchTrees([
+        claudeTranscriptsRoot(home),
+        codexTranscriptsRoot(home),
+        claudeArchiveRoot(home),
+      ]),
+      watchWindowFocus(window),
+      watchSystemResume(powerMonitor),
+    ],
+    permissions: Object.values(adapters).map((adapter) => adapter.watchPermissions),
   })
   attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({

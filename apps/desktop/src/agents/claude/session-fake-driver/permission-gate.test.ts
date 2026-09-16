@@ -7,13 +7,9 @@ import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 
-import { type CompanionPart, openCompanionPlugin } from '../drive/companion-plugin'
+import { openCompanionPlugin } from '../drive/companion-plugin'
 import { createClaudePermissionGate } from '../drive/permission-gate'
-
-// The hook script is what Claude Code runs, so the socket it dials is the one the gate must serve.
-function hookSocket(part: CompanionPart) {
-  return part.hook.script.match(/nc -U "([^"]+)"/)?.[1] ?? ''
-}
+import { hookSocketPath } from './hook-socket'
 
 const LONG_ROOT = path.join('Application Support', '@argo', 'desktop', 'claude-permission-plugins')
 
@@ -23,7 +19,7 @@ test('keeps the permission socket path inside the macOS limit', () => {
   const gate = createClaudePermissionGate()
   const opened = gate.open(randomUUID())
 
-  expect(Buffer.byteLength(hookSocket(opened))).toBeLessThan(104)
+  expect(Buffer.byteLength(hookSocketPath(opened))).toBeLessThan(104)
 
   opened.close()
   gate.close()
@@ -32,7 +28,7 @@ test('keeps the permission socket path inside the macOS limit', () => {
 test('removes its socket folder when the app closes the gate', () => {
   const gate = createClaudePermissionGate()
   const opened = gate.open(randomUUID())
-  const sockets = path.dirname(hookSocket(opened))
+  const sockets = path.dirname(hookSocketPath(opened))
 
   opened.close()
   gate.close()
@@ -90,7 +86,7 @@ function askGate(part: CompanionPart, command: string) {
     held = resolve
   })
   const reply = new Promise<string>((resolve, reject) => {
-    const socket = net.createConnection(hookSocket(part))
+    const socket = net.createConnection(hookSocketPath(part))
     socket.setEncoding('utf8')
     socket.once('connect', () =>
       socket.write(`${JSON.stringify({ tool_name: 'Bash', tool_input: { command } })}\n`),

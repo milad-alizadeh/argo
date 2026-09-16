@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { Permission, SessionPermissionDecisionRequest } from '@/core/sessions/contract'
+import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -13,11 +14,11 @@ export type PermissionAnswer = SessionPermissionDecisionRequest['decision']
 export function useSessionPermission(sessionId: string | null) {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const queryKey =
+    sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId)
   const permission = useQuery<Permission | null, SessionContractError>({
-    queryKey:
-      sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId),
+    queryKey,
     enabled: sessionId !== null,
-    refetchInterval: 500,
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return null
@@ -32,6 +33,9 @@ export function useSessionPermission(sessionId: string | null) {
       }
     },
   })
+  // A pending Permission holds the CLI still until the reader answers, so it has to appear at once.
+  // The gate that holds it announces on this topic, which is why asking twice a second is gone.
+  useWatchedQueries('permissions', [queryKey])
   const permissionDecision = usePermissionDecision()
   const decide = async (decision: PermissionAnswer) => {
     if (permission.data === null || permission.data === undefined) return false

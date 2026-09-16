@@ -31,6 +31,7 @@ function fakeClaudeDriver() {
       },
       interrupt: () => {},
       pendingPermission: () => null,
+      watchPermissions: () => ({ close: () => {} }),
       decidePermission: () => true,
       isLockedElsewhere: () => false,
       decideQuestion: async () => true,
