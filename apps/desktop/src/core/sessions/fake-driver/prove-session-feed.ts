@@ -119,16 +119,16 @@ try {
   await ran(['session-codex-thread-name'], () =>
     proveCodexThreadName(page, fixture.codexTranscripts),
   )
+  // Naming the Codex row changes the title that later cases open it by.
+  await ran(['session-codex-thread-name'], () =>
+    proveCodexThreadName(page, fixture.codexTranscripts),
+  )
   // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's own
   // exact Roster counts or ordering has to account for them.
   await ran(['session-roster-window'], async () => {
     await writeWindowFillerSessions(fixture.claudeTranscripts, fixture.project)
     await proveRosterWindow(page)
   })
-  // Naming the Codex row changes the title the cases above open it by.
-  await ran(['session-codex-thread-name'], () =>
-    proveCodexThreadName(page, fixture.codexTranscripts),
-  )
   await assertShippedFusesIntact()
   const timings = {
     total: Math.round(performance.now() - provingStarted),
