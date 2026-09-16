@@ -5,6 +5,7 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionDelegation } from '@/core/sessions/models'
 import { FeedDocument } from '../../feed/feed-document'
+import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionEvidence, SessionFeed } from '../../types'
 
 import '../../feed/feed.css'
@@ -33,22 +34,20 @@ export function SessionDelegationInspector({
       <div className="feed min-h-0 flex-1">
         {feed === null ? null : (
           <FeedDocument
-            active={true}
-            activeEvidenceId={activeEvidenceId}
-            answeringQuestionId={null}
-            compactionStartedAt={null}
-            compactionPercentage={null}
-            compactionTokens={null}
-            feed={feed}
-            handoffStartedAt={null}
-            handoffTo={null}
-            isRunning={!delegation.landed}
-            onAnswerQuestion={() => {}}
-            onOpenEvidence={onOpenEvidence}
-            onOpenSession={onOpenSession}
-            posture={null}
-            questionFailure={() => null}
-            turnMarker={null}
+            actions={{
+              active: true,
+              activeEvidenceId,
+              answeringQuestionId: null,
+              onAnswerQuestion: () => {},
+              onOpenEvidence,
+              onOpenSession,
+              questionFailure: () => null,
+            }}
+            liveFacts={{
+              ...INACTIVE_FEED_LIVE_FACTS,
+              isRunning: !delegation.landed,
+            }}
+            reading={feed}
           />
         )}
       </div>

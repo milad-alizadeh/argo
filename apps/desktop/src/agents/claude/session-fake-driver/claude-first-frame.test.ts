@@ -4,9 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
+import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { FIRST_FRAME_TIMEOUT_MS } from '../drive/first-frame.ts'
-import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import {
   fakePermissionGate,
   ledgerFile,
@@ -35,7 +35,7 @@ function fakeClaude(file: string) {
     },
     ledger: createOwnershipLedger({
       path: file,
-      owner: { pid: process.pid, registry: 'window-a' },
+      window: { pid: process.pid, registry: 'window-a' },
       isAlive: (pid) => pid === process.pid,
     }),
     resumeTarget: async () => ({ cwd: '/projects/argo', tipId: 'tip-session' }),

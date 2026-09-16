@@ -53,7 +53,7 @@ async function assertSealed(run: Run) {
 }
 
 export async function proveLinearConnect(run: Run) {
-  await run.page.getByRole('button', { name: 'Accounts', exact: true }).dispatchEvent('click')
+  await run.page.getByRole('button', { name: 'Accounts', exact: true }).click()
   const start = { scope: accountsDialog(run.page), name: 'Connect a Linear Account' }
   assert.equal(await signIn(run, start), `Connected ${ADA.name}.`)
   await ada(run).getByText(ADA.workspace).waitFor()
@@ -66,7 +66,7 @@ export async function proveLinearConnect(run: Run) {
   await team.fill('Secret')
   await run.page.getByText('No team matches.').waitFor()
   await team.fill('Eng')
-  await run.page.getByRole('option', { name: 'Engine' }).dispatchEvent('click')
+  await run.page.getByRole('option', { name: 'Engine' }).click()
   assert.equal(await team.inputValue(), 'Engine')
   await press(form, 'Connect team')
   await backlog(run.page).waitFor()
@@ -79,7 +79,7 @@ export async function proveLinearBacklog(run: Run) {
   await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
   await backlog(run.page)
     .getByRole('button', { name: /^ENG-1/ })
-    .dispatchEvent('click')
+    .click()
   const detail = run.page.getByRole('article', { name: 'Ticket ENG-1' })
   await detail.getByRole('heading', { name: 'Bind the mill' }).waitFor()
   await detail.getByText('The mill turns the cards.').waitFor()
@@ -120,7 +120,7 @@ export async function proveLinearExpired(run: Run) {
   await openRoom(run.page, 'atlas')
   await openRoom(run.page, 'tickets')
   await room(run).getByText(`The sign-in for ${ADA.name} expired`).waitFor()
-  await foot(run, 'Sign-in expired').dispatchEvent('click')
+  await foot(run, 'Sign-in expired').click()
   await ada(run).getByText('Sign-in expired', { exact: true }).waitFor()
   await ada(run).getByText('Linear would not renew it', { exact: false }).waitFor()
   await ada(run)
@@ -135,7 +135,7 @@ export async function proveLinearExpired(run: Run) {
 }
 
 export async function proveLinearDisconnect(run: Run) {
-  await foot(run, 'Connected').dispatchEvent('click')
+  await foot(run, 'Connected').click()
   await press(ada(run), 'Disconnect…')
   await press(ada(run), 'Disconnect')
   await ada(run).waitFor({ state: 'detached' })

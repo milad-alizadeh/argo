@@ -1,6 +1,5 @@
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { discoverRoster } from '@/core/sessions/discover-roster'
-import { projectFeed } from '@/core/sessions/feed'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
@@ -93,7 +92,6 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
-    projectFeed,
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,
