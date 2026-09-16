@@ -3,14 +3,21 @@ import type { SessionRosterRow, SessionTitle } from './models'
 import { TITLE_SOURCES } from './models'
 import { rollupSessionStatus } from './session-status-rollup'
 
-type ReconciliationSource = 'held' | 'observed' | 'stronger'
+// `stronger-title` reads both rows and returns a title, so only `title` may carry it.
+type ReconciliationSource<Field extends keyof SessionRosterRow> = Field extends 'title'
+  ? 'held' | 'observed' | 'stronger-title'
+  : 'held' | 'observed'
+
+type SessionRosterReconciliation = {
+  [Field in keyof SessionRosterRow]: ReconciliationSource<Field>
+}
 
 export const sessionRosterReconciliation = {
   id: 'observed',
   retiredIds: 'observed',
   cli: 'observed',
   posture: 'held',
-  title: 'stronger',
+  title: 'stronger-title',
   status: 'observed',
   entry: 'observed',
   cwd: 'observed',
@@ -37,7 +44,7 @@ export const sessionRosterReconciliation = {
   handoffTo: 'observed',
   handoffFrom: 'observed',
   setup: 'observed',
-} as const satisfies Record<keyof SessionRosterRow, ReconciliationSource>
+} as const satisfies SessionRosterReconciliation
 
 function titleRank(title: SessionTitle | null): number {
   return title === null ? TITLE_SOURCES.length : TITLE_SOURCES.indexOf(title.source)
@@ -54,14 +61,11 @@ function reconcileManagedRow(observed: SessionRosterRow, held: SessionRosterRow)
   const pick = {
     held: (field: keyof SessionRosterRow) => held[field],
     observed: (field: keyof SessionRosterRow) => observed[field],
-    stronger: () => strongerTitle(observed, held),
+    'stronger-title': () => strongerTitle(observed, held),
   } as const
   return Object.fromEntries(
     (
-      Object.entries(sessionRosterReconciliation) as [
-        keyof SessionRosterRow,
-        ReconciliationSource,
-      ][]
+      Object.entries(sessionRosterReconciliation) as [keyof SessionRosterRow, keyof typeof pick][]
     ).map(([field, source]) => [field, pick[source](field)]),
   ) as SessionRosterRow
 }

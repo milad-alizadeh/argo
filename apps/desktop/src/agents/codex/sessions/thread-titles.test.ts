@@ -1,64 +1,16 @@
 import { Database } from 'bun:sqlite'
 import assert from 'node:assert/strict'
-import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import os from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath } from 'node:url'
-import { sessionListReplySchema } from '@/core/sessions/contract'
-import { createCodexSessionReader } from './read-sessions'
-import { codexStatePath } from './roots'
-import { readThreadNames } from './thread-names'
-
-const CREATED_THREAD = 'codexCreatedThread'
-const FIXTURE = fileURLToPath(
-  new URL(
-    `../session-fake-driver/fixtures/sessions/rollout-${CREATED_THREAD}.jsonl`,
-    import.meta.url,
-  ),
-)
-const DELEGATED_REQUEST =
-  'Implement the approved Geist desktop typography contract for Argo issue #2235.'
-
-type Context = { after: (cleanup: () => Promise<void>) => void }
-
-// A Codex home as the desktop app lays it out: `sessions/` for rollouts, the state store beside it.
-async function codexHome(context: Context) {
-  const home = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-titles-'))
-  context.after(() => rm(home, { recursive: true, force: true }))
-  const transcripts = path.join(home, 'sessions')
-  const day = path.join(transcripts, '2026', '09', '15')
-  await mkdir(day, { recursive: true })
-  await copyFile(FIXTURE, path.join(day, `${CREATED_THREAD}.jsonl`))
-  return { transcripts, day, state: codexStatePath(transcripts) }
-}
-
-function writeStateStore(file: string, schema: string, rows: [string, string | null][]) {
-  const store = new Database(file, { create: true })
-  store.run(schema)
-  for (const [id, name] of rows)
-    store.run('INSERT INTO threads (id, name) VALUES (?, ?)', [id, name])
-  store.close()
-}
-
-const THREADS_SCHEMA = 'CREATE TABLE threads (id TEXT PRIMARY KEY, title TEXT, name TEXT)'
-const openReadOnly = (file: string) => new Database(file, { readonly: true })
-
-async function rosterTitles(transcripts: string, state: string) {
-  const reader = createCodexSessionReader(transcripts, {
-    threadNames: readThreadNames(state, openReadOnly),
-  })
-  const reply = sessionListReplySchema.parse(
-    await reader.listSessions({
-      version: 1,
-      type: 'session.list',
-      requestId: 'list-1',
-      projectRoot: null,
-    }),
-  )
-  assert.equal(reply.type, 'session.listed')
-  return Object.fromEntries(reply.sessions.map((session) => [session.id, session.title]))
-}
+import {
+  CREATED_THREAD,
+  codexHome,
+  DELEGATED_REQUEST,
+  rosterTitles,
+  THREADS_SCHEMA,
+  writeStateStore,
+} from './thread-title-fixtures'
 
 test('titles a Codex thread with the name Codex Desktop gave it', async (context) => {
   const { transcripts, state } = await codexHome(context)

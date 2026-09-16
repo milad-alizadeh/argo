@@ -6,7 +6,7 @@ import type { SessionRosterRow, SessionStatus, SessionTitle } from './models'
 
 const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'
-const FOUND_TITLE = 'Observed title'
+const OBSERVED_TITLE = 'Observed title'
 
 function row(id: string, status: SessionStatus): SessionRosterRow {
   return managedRow(id, {
@@ -88,9 +88,9 @@ test('keeps the current held fields when reconciling a managed row', () => {
 
 test('a managed Session shows the strongest title known for it, keeping its own on a tie', () => {
   const cases = [
-    { observed: 'summarised', held: 'first-prompt', wins: FOUND_TITLE },
-    { observed: 'custom', held: 'first-prompt', wins: FOUND_TITLE },
-    { observed: 'custom', held: 'summarised', wins: FOUND_TITLE },
+    { observed: 'summarised', held: 'first-prompt', wins: OBSERVED_TITLE },
+    { observed: 'custom', held: 'first-prompt', wins: OBSERVED_TITLE },
+    { observed: 'custom', held: 'summarised', wins: OBSERVED_TITLE },
     { observed: 'summarised', held: 'custom', wins: HELD_TITLE },
     { observed: 'first-prompt', held: 'custom', wins: HELD_TITLE },
     { observed: 'summarised', held: 'summarised', wins: HELD_TITLE },
@@ -98,15 +98,15 @@ test('a managed Session shows the strongest title known for it, keeping its own 
 
   for (const { observed, held, wins } of cases) {
     const merged = mergedTitle(
-      { text: FOUND_TITLE, source: observed },
+      { text: OBSERVED_TITLE, source: observed },
       { text: HELD_TITLE, source: held },
     )
-    assert.equal(merged?.text, wins)
+    assert.equal(merged?.text, wins, `observed ${observed} against held ${held}`)
   }
 })
 
 test('a managed Session shows whichever title exists when the other is missing', () => {
-  const found = { text: FOUND_TITLE, source: 'summarised' } as const
+  const found = { text: OBSERVED_TITLE, source: 'summarised' } as const
   const held = { text: HELD_TITLE, source: 'first-prompt' } as const
 
   assert.deepEqual(mergedTitle(null, held), held)
