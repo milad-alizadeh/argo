@@ -1,7 +1,19 @@
 // Filler Sessions for the packaged pagination proof (#2239): enough of them, all older than every
 // other fixture, to push the roster's bounded window past ROSTER_PAGE_SIZE.
-import { utimes, writeFile } from 'node:fs/promises'
+import { stat, utimes, writeFile } from 'node:fs/promises'
 import { fixturePath } from './session-fixture-files'
+
+// The packaged app's main process reads each file's mtime from its own `stat` call, in a
+// separate OS process from the one that just called `utimes` here. On a slow disk that write can
+// still be in flight when the app reads it, so this waits for a `stat` in THIS process to observe
+// the backdated time before returning, rather than trusting `utimes`'s own resolved promise.
+async function utimesSettled(file: string, at: Date) {
+  await utimes(file, at, at)
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if ((await stat(file)).mtime.getTime() === at.getTime()) return
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+}
 
 // One more than ROSTER_PAGE_SIZE, so the first Roster page always leaves at least one of these
 // unread and the last one always sits outside it.
@@ -31,6 +43,6 @@ export async function writeWindowFillerSessions(transcripts: string, cwd: string
         },
       })}\n`,
     )
-    await utimes(file, new Date(writtenAt), new Date(writtenAt))
+    await utimesSettled(file, new Date(writtenAt))
   }
 }
