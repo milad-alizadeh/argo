@@ -2,11 +2,15 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type {
+  SessionCliBackend,
+  SessionCliRun,
+  SessionFixture,
+} from '../../e2e/sessions/session-cli-backend'
 import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../src/core/sessions/proof-protocol'
 import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
 import { mockCodexCli } from '../cli/codex/mock-codex-cli'
 import { createMockSessionCliBackend } from './mock-session-cli-backend'
-import type { SessionCliBackend, SessionCliRun, SessionFixture } from './session-cli-backend'
 
 type Started = {
   root: string

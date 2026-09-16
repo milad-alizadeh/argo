@@ -1,6 +1,6 @@
 import { appendFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath, proofCwd } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd } from '../../../mocks/sessions/mock-transcript-files'
 
 function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
   return `${JSON.stringify({

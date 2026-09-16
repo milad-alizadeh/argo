@@ -15,7 +15,7 @@ export async function startNewSession(
     prompt: string
     setup: TurnSetup | null
     attachments: SessionAttachmentInput[]
-    start: ReturnType<typeof useSessionMutations>['start']
+    start: Pick<ReturnType<typeof useSessionMutations>['start'], 'mutateAsync'>
     setFailure: (failure: Failure | null) => void
   },
   callbacks: {

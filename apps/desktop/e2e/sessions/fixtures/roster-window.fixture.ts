@@ -2,7 +2,7 @@
 // other fixture, to push the roster's bounded window past ROSTER_PAGE_SIZE. Kept apart from
 // `feed.fixture.ts` so that file's own line count stays put.
 import { utimes, writeFile } from 'node:fs/promises'
-import { fixturePath } from '../../../mocks/sessions/transcript-files'
+import { fixturePath } from '../../../mocks/sessions/mock-transcript-files'
 
 // One more than ROSTER_PAGE_SIZE, so the first Roster page always leaves at least one of these
 // unread and the last one always sits outside it.

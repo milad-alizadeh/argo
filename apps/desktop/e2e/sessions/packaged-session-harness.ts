@@ -1,9 +1,4 @@
-import { _electron as electron, type Page } from 'playwright-core'
-import type {
-  SessionCliBackend,
-  SessionCliLaunch,
-  SessionCliRun,
-} from '../../mocks/sessions/session-cli-backend'
+import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../src/core/projects/proof-protocol'
 import {
@@ -15,6 +10,7 @@ import {
 } from '../../src/core/sessions/proof-protocol'
 import { appExecutable } from '../packaged-app'
 import { prepare } from './fixtures/feed.fixture'
+import type { SessionCliBackend, SessionCliLaunch, SessionCliRun } from './session-cli-backend'
 
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
@@ -69,11 +65,11 @@ async function timed<T>(launches: number[], start: () => Promise<T>) {
 export async function createPackagedSessionHarness(
   root: string,
   backend: SessionCliBackend,
-  options: { recordFailureTrace: boolean } = { recordFailureTrace: true },
+  launched: (application: ElectronApplication) => Promise<void>,
 ) {
   const fixture = await prepare(root)
   const run = await backend.start({ root, fixture })
-  let application: Awaited<ReturnType<typeof electron.launch>> | undefined
+  let application: ElectronApplication | undefined
   let recentConsole: string[] = []
   const launches: number[] = []
 
@@ -92,12 +88,7 @@ export async function createPackagedSessionHarness(
     page.setDefaultTimeout(backend.budgetMs)
     recentConsole = []
     keepRecentConsole(page, recentConsole)
-    // One trace recording per Electron process, segmented per Playwright test in
-    // `session-proof-run.ts`: it stops and restarts the recording at each test boundary so a
-    // failure writes only its own trace, and a restart mid-case simply starts recording again.
-    if (options.recordFailureTrace) {
-      await application.context().tracing.start({ screenshots: true, snapshots: true })
-    }
+    await launched(application)
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
@@ -126,6 +117,5 @@ export async function createPackagedSessionHarness(
     close: () => application?.close(),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
-    context: () => application?.context(),
   }
 }

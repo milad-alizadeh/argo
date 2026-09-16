@@ -2,8 +2,8 @@
 // The backend decides what a reply looks like; this proof holds no reply string (#2308).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import type { SessionCliBackend } from '../../../mocks/sessions/session-cli-backend'
 import { chooseHarness, openNewSessionByClick, rosterIds } from '../gestures'
+import type { SessionCliBackend } from '../session-cli-backend'
 
 const WAITING_PROMPT = 'Reply with one short acknowledgement after this wait.'
 const DUPLICATE_PROMPT = 'Reply with one short acknowledgement to this single request.'

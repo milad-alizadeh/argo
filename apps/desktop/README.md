@@ -313,7 +313,7 @@ Package arm64 first. Every command here runs the copy, never the app you have in
 | --- | --- |
 | `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
-| `bun run e2e:real` | Runs the portable Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. It is never a CI command. |
+| `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 
