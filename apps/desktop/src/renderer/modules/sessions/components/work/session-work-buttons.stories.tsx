@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, screen, userEvent, within } from 'storybook/test'
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 
 import { sessionDelegation, sessionShellCommand } from '../../session-fixtures'
 import { SessionWorkButtons } from './session-work-buttons'
@@ -99,8 +99,13 @@ export const ReadableAgentName: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 1' }))
-    const items = await screen.findAllByRole('menuitem', { name: /Standards review/ })
-    await expect(items.find((item) => item.checkVisibility())).toBeVisible()
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('menuitem', { name: /Standards review/ })
+          .some((item) => item.checkVisibility()),
+      ).toBe(true),
+    )
   },
 }
 
