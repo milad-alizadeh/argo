@@ -143,9 +143,6 @@ export function SessionContextBar({
       <SessionContextActions
         {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
       />
-      <SessionContextActions
-        {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
-      />
     </div>
   )
 }
