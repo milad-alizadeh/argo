@@ -34,7 +34,7 @@ function useRestoreSelectedSession(options: {
 
 // The sidebar is the only reader that shows the roster as a list, so the order it holds rows in is
 // its own concern rather than the read's.
-function useSidebarRoster(projectRoot: string | null) {
+function useOrderedRoster(projectRoot: string | null) {
   const read = useSessions(null, true, projectRoot)
   return { ...read, roster: useRosterOrder(read.roster, projectRoot) }
 }
@@ -44,7 +44,7 @@ export function SessionsSidebar() {
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const { roster, rosterError, hasMoreSessions, isFetchingMoreSessions, fetchMoreSessions } =
-    useSidebarRoster(cockpit.project?.path ?? null)
+    useOrderedRoster(cockpit.project?.path ?? null)
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)

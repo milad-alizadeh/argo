@@ -10,7 +10,7 @@ import {
   ContextMenuTrigger,
 } from '@/renderer/components/ui/context-menu'
 import type { Session } from '../../types'
-import { type RosterMenuHandlers, type RosterRow, renamedSession } from './roster-rows'
+import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
 
 type RosterMenuTarget = { session: Session; archived: boolean }
 
@@ -21,9 +21,11 @@ function targetOf(
 ): RosterMenuTarget | null {
   const row = element instanceof Element ? element.closest('[data-session-id]') : null
   const sessionId = row?.getAttribute('data-session-id') ?? null
-  const found = rows.find((entry) => entry.kind === 'session' && entry.session.id === sessionId)
-  if (found === undefined || found.kind !== 'session') return null
-  return { archived: found.archived, session: renamedSession(found.session, renamedTitles) }
+  for (const entry of rows) {
+    if (entry.kind !== 'session' || entry.session.id !== sessionId) continue
+    return { archived: entry.archived, session: renamedSession(entry.session, renamedTitles) }
+  }
+  return null
 }
 
 // One menu for the whole list, opened on the row under the pointer, rather than one menu per row. A
@@ -63,7 +65,7 @@ export function RosterContextMenu({
       </ContextMenuTrigger>
       {target === null ? null : (
         <ContextMenuContent
-          aria-label={`${target.session.title?.text ?? target.session.id} actions`}
+          aria-label={t('contextMenu.actions', { title: sessionName(target.session) })}
         >
           <ContextMenuGroup>
             <ContextMenuItem onClick={() => onRename(target.session)}>

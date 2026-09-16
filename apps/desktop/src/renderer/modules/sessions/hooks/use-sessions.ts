@@ -38,9 +38,8 @@ function useRosterQuery(
   return {
     query,
     hasMore: nextCursor !== null,
-    // `isPlaceholderData` is true while a larger window is in flight and the previous one is still
-    // on screen, which is both the guard against asking twice and what the list draws as its
-    // loading-more row.
+    // `isPlaceholderData` is true while a larger window is in flight and the previous one is still on
+    // screen, which is what the list draws as its loading-more row.
     isFetchingMore: query.isPlaceholderData,
     fetchMore: useCallback(() => {
       if (nextCursor === null) return

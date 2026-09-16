@@ -49,9 +49,16 @@ function useSentinelFetch(options: {
   const start = range?.startIndex ?? -1
   const end = range?.endIndex ?? -1
   const reached = sentinelIndex !== -1 && sentinelIndex >= start && sentinelIndex <= end
+  // The callback is read through a ref rather than depended on: its identity changes on every render
+  // of the sidebar, so depending on it asked for a page per render while the sentinel stayed in view.
+  // The row count is a dependency, because a sentinel still visible after a page landed is a reader
+  // who has scrolled past everything loaded and wants the next one.
+  const latest = useRef(onFetch)
+  latest.current = onFetch
+  const loaded = rows.length
   useEffect(() => {
-    if (reached) onFetch()
-  }, [reached, onFetch])
+    if (reached && loaded > 0) latest.current()
+  }, [reached, loaded])
 }
 
 export function RosterVirtualList({
@@ -95,7 +102,11 @@ export function RosterVirtualList({
   useSentinelFetch({ rows, kind: 'archivedSentinel', range, onFetch: onFetchNextPage })
 
   return (
-    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3" ref={scrollRef}>
+    <div
+      className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3"
+      data-slot="roster-scroll"
+      ref={scrollRef}
+    >
       <RosterContextMenu
         onArchive={onArchive}
         onLinkTicket={onLinkTicket}

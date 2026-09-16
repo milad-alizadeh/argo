@@ -7,6 +7,7 @@ import { PromptText } from '../../prompt/prompt-text'
 import type { SelectionModifier } from '../../state/roster-selection'
 import type { Session } from '../../types'
 import { SessionReferenceText } from '../composer/references/session-reference'
+import { sessionName } from './roster-rows'
 import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'
 import {
@@ -33,10 +34,6 @@ function knownCli(cli: string): cli is SessionCli {
 function activitySummary(session: Session): string | null {
   if (session.activity === null) return null
   return session.activity.label
-}
-
-function sessionName(session: Session): string {
-  return session.title?.text ?? session.id
 }
 
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is

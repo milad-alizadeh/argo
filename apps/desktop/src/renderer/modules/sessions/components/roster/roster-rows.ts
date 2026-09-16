@@ -20,6 +20,11 @@ export type RosterRowHandlers = RosterMenuHandlers & {
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
 }
 
+// What a reader calls a Session: the row's label, and the name of the menu that opens on it.
+export function sessionName(session: Session): string {
+  return session.title?.text ?? session.id
+}
+
 // The title a reader gave a Session in this window, which the read itself does not carry yet.
 export function renamedSession(session: Session, renamedTitles: Record<string, string>): Session {
   const title = renamedTitles[session.id]

@@ -6,10 +6,10 @@ import { type RosterRow, renamedSession } from './roster-rows'
 import { SessionRosterItem } from './session-roster-item'
 import { RosterLoadingMoreRow } from './sessions-sidebar-chrome'
 
-// Memoized, because the sidebar re-renders about thirteen times a second while nothing happens: the
-// open Session's feed and permission reads poll every 500ms (SESSION_REFRESH_MS) and re-render an
-// ancestor the roster shares with them. Without this every mounted row re-rendered on each of those
-// ticks: 185291 renders in a 13-second idle recording.
+// Memoized, because the sidebar re-renders twice a second while nothing happens: the open Session's
+// permission read polls every 500ms (SESSION_REFRESH_MS, #2299) and re-renders an ancestor the roster
+// shares with it. Without this every mounted row re-rendered on each of those ticks: 185291 renders
+// in a 13-second idle recording, when the Feed still polled at the same rate.
 export const RosterRowView = memo(function RosterRowView({
   onFocus,
   onSelect,

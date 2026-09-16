@@ -51,7 +51,9 @@ export function useSidebarRoster({
   const status = useRosterStatus()
   const setStatus = useRosterFilterStore((state) => state.setStatus)
   const sessions = roster?.sessions ?? NO_SESSIONS
-  const visible = filteredSessions(sessions, search)
+  // Memoized like every other value a row reads: a non-empty search built a new array on each render,
+  // which rebuilt the row list and re-rendered every memoized row while the reader was typing.
+  const visible = useMemo(() => filteredSessions(sessions, search), [sessions, search])
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)

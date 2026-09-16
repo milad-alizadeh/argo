@@ -82,11 +82,12 @@ export function SessionsSidebarHeader({
           value={search}
         />
       </InputGroup>
+      {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
+        <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
           <Plus />
         </Button>
-        <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
       </div>
     </header>
   )

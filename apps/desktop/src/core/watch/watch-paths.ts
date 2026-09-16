@@ -3,7 +3,7 @@ import { watch } from 'node:fs'
 // How long a burst of filesystem events is allowed to settle before one change is announced.
 // A CLI writing a transcript emits an event per appended chunk, so without this the renderer would
 // be told to read again several times a second while a Session is being written to.
-const SETTLE_MS = 400
+export const SETTLE_MS = 400
 
 export type WatchedTree = {
   close: () => void

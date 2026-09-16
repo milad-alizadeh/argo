@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionDelegation, sessionRosterRow } from '../../session-fixtures'
+import { useRosterFilterStore } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionsListed } from '../../types'
 import { SessionsSidebarContent, type SessionsSidebarContentProps } from './sessions-sidebar'
 
@@ -373,9 +374,6 @@ export const Loading: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
     await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(6)
-    // The Archive disclosure names a real empty/non-empty outcome, so it stays off the list
-    // until the roster resolves once (#2239): the unresolved skeleton never shows it.
-    await expect(canvas.queryByRole('button', { name: 'Archived' })).not.toBeInTheDocument()
   },
 }
 export const Empty: Story = {
@@ -388,9 +386,17 @@ export const Empty: Story = {
     ).not.toBeNull()
   },
 }
+// The Archive is a choice in the header's filter now, not a disclosure row in the list (#2239), so
+// every archived story reaches it the way a reader does. The menu renders in a portal.
+async function chooseStatus(canvasElement: HTMLElement, name: string) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Filter Sessions' }))
+  await userEvent.click(await within(document.body).findByRole('menuitemradio', { name }))
+}
+
 // The active Roster never carries an archived Session (#1593). Archived rows share the same
-// scrolled list as the active ones (#2194 follow-up), so opening the section adds its rows
-// straight into this list rather than a separately scrolled block.
+// scrolled list as the active ones (#2194 follow-up), so the filter adds its rows straight into
+// this list rather than a separately scrolled block.
 function withArchiveHost(
   handler: (request: { cursor: string | null; restoreId: string | null }) => Promise<unknown>,
 ) {
@@ -433,10 +439,7 @@ export const WithArchive: Story = {
     ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const disclosure = canvas.getByRole('button', { name: 'Archived' })
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
-    await userEvent.click(disclosure)
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    await chooseStatus(canvasElement, 'Archived')
     await waitFor(async () => {
       await expect(
         canvas.getByRole('button', { name: /Read the archived transcript/ }),
@@ -449,7 +452,7 @@ export const ArchiveEmpty: Story = {
   beforeEach: () => withArchiveHost(async () => archiveReply({})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await chooseStatus(canvasElement, 'Archived')
     await waitFor(() => expect(canvas.getByText('No archived Sessions')).toBeInTheDocument())
   },
 }
@@ -458,7 +461,7 @@ export const ArchiveLoading: Story = {
   beforeEach: () => withArchiveHost(() => new Promise(() => {})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await chooseStatus(canvasElement, 'Archived')
     await expect(
       canvas.getByRole('status', { name: 'Reading archived Sessions' }),
     ).toBeInTheDocument()
@@ -472,7 +475,7 @@ export const ArchiveFailure: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await chooseStatus(canvasElement, 'Archived')
     await waitFor(async () => {
       const alert = canvas.getByRole('alert')
       await expect(alert).toHaveTextContent('Unable to load archived Sessions')
@@ -480,8 +483,8 @@ export const ArchiveFailure: Story = {
   },
 }
 
-// Two pages, each holding one Session: opening the section reads the first, and scrolling to the
-// sentinel row reads the second on its own once it enters view, without repeating the first (#1593).
+// Two pages, each holding one Session: choosing the Archive reads the first, and the sentinel row
+// reads the second on its own once it enters view, without repeating the first (#1593).
 export const ArchiveLoadsFurtherPagesWithoutDuplicating: Story = {
   beforeEach: () =>
     withArchiveHost(async ({ cursor }) => {
@@ -491,10 +494,10 @@ export const ArchiveLoadsFurtherPagesWithoutDuplicating: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Archived' }))
+    await chooseStatus(canvasElement, 'All')
     await waitFor(async () => {
       const rows = canvas.getAllByRole('button').filter((button) => button.dataset.sessionId)
-      await expect(rows).toHaveLength(3)
+      await expect(rows).toHaveLength(4)
     })
   },
 }
@@ -514,12 +517,19 @@ export const ArchiveRestored: Story = {
     ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(async () => {
-      await expect(canvas.getByRole('button', { name: 'Archived' })).toHaveAttribute(
-        'aria-expanded',
-        'true',
-      )
-    })
+    // The reader asked for a Session that turns out to be archived, so the filter widens to All on
+    // its own rather than leaving the list under a status that excludes what is selected.
+    await waitFor(() =>
+      expect(
+        [...canvasElement.querySelectorAll('button[data-session-id]')].map(
+          (row) => row.getAttribute('data-session-id') ?? '',
+        ),
+      ).toContain('archived-first-session'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Filter Sessions' }))
+    await expect(
+      await within(document.body).findByRole('menuitemradio', { name: 'All' }),
+    ).toHaveAttribute('aria-checked', 'true')
   },
 }
 
@@ -544,5 +554,78 @@ export const Failure: Story = {
     await expect(alert).toHaveAttribute('data-slot', 'alert')
     await expect(alert).toHaveTextContent('Unable to load Sessions')
     await expect(alert).toHaveTextContent('Argo could not read these Sessions.')
+  },
+}
+
+// The roster's window grows when the reader reaches the bottom of what is loaded, and at no other
+// time. The sentinel row is what "reached" means, and it is mounted well before it is visible: the
+// virtualizer keeps 30 rows of overscan, so a sentinel below the fold used to count as reached and
+// the roster grew a page before the reader had scrolled at all (#2277).
+const manySessions = {
+  ...listed,
+  sessions: Array.from({ length: 40 }, (_, index) => ({
+    ...session,
+    id: `session-${index}`,
+    title: { text: `Session number ${index}`, source: 'first-prompt' as const },
+  })),
+  nextCursor: 'page-2',
+} satisfies SessionsListed
+
+// The status filter is one store for the whole window, and ArchiveRestored widens it, so a story
+// that reads the active roster says which status it starts from rather than inheriting one.
+function showingActiveSessions() {
+  useRosterFilterStore.setState({ status: 'active' })
+}
+
+function rosterScroll(canvasElement: HTMLElement) {
+  const scroll = canvasElement.querySelector<HTMLElement>('[data-slot="roster-scroll"]')
+  if (scroll === null) throw new Error('The roster has no scrolled container.')
+  return scroll
+}
+
+export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
+  beforeEach: showingActiveSessions,
+  args: { hasMoreSessions: true, onFetchMoreSessions: fn(), roster: manySessions },
+  play: async ({ args, canvasElement }) => {
+    const scroll = rosterScroll(canvasElement)
+    await expect(scroll.scrollTop).toBe(0)
+    await expect(args.onFetchMoreSessions).not.toHaveBeenCalled()
+    scroll.scrollTop = scroll.scrollHeight
+    scroll.dispatchEvent(new Event('scroll'))
+    await waitFor(() => expect(args.onFetchMoreSessions).toHaveBeenCalled())
+    // One arrival of the sentinel asks for one page: the callback's identity changes with the cursor
+    // the read returned, which used to ask again for as long as the sentinel stayed in view.
+    await expect(args.onFetchMoreSessions).toHaveBeenCalledTimes(1)
+  },
+}
+
+// A window shorter than the viewport leaves the sentinel visible with nothing to scroll, so it is
+// reached once and asks once, rather than growing the roster page after page on its own.
+export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
+  beforeEach: showingActiveSessions,
+  args: {
+    hasMoreSessions: true,
+    onFetchMoreSessions: fn(),
+    roster: { ...listed, nextCursor: 'page-2' },
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onFetchMoreSessions).toHaveBeenCalledTimes(1))
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    await expect(args.onFetchMoreSessions).toHaveBeenCalledTimes(1)
+  },
+}
+
+// The spinner stands where the rows it waits for will be: one Session row tall, at the bottom of the
+// list, with the spinner centered in it and no border of its own.
+export const GrowingTheWindow: Story = {
+  beforeEach: showingActiveSessions,
+  args: { hasMoreSessions: true, isFetchingMoreSessions: true, roster: manySessions },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const spinner = canvas.getByRole('status', { name: 'Loading more Sessions' })
+    await expect(spinner).toBeVisible()
+    await expect(spinner.getBoundingClientRect().height).toBe(56)
+    const rows = [...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li')]
+    await expect(rows.indexOf(spinner.closest('li') as HTMLLIElement)).toBe(rows.length - 1)
   },
 }
