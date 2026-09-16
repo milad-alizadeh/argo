@@ -189,8 +189,9 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Always-on task tracking | this skill, below | always | 2 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 3 |
+| Enable Codex native todo lists | this skill, below | Codex is installed | 2 |
+| Always-on task tracking | this skill, below | always | 3 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -199,6 +200,23 @@ Done when the user has answered the one question.
 
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
+
+### Enable Codex native todo lists
+
+When Codex is installed, ask whether to enable its native todo list. Explain that the list adds
+a small token overhead and only improves progress visibility. It does not change the work that
+Codex does. Recommend enabling it when the user wants visible task progress.
+
+If the user accepts, add this to `~/.codex/config.toml`, preserving unrelated configuration:
+
+```toml
+[tools.update_plan]
+enabled = true
+```
+
+Tell the user to restart Codex before they start a new session. If the user declines, do not
+change the Codex configuration. This setting enables `update_plan`; it is separate from Plan
+Mode.
 
 The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
