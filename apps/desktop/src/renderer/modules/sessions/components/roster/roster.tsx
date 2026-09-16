@@ -1,4 +1,5 @@
 import { type RefObject, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useRosterStatus } from '../../state/use-roster-filter-store'
 import type { Session, SessionId } from '../../types'
 import { RenameDialog } from './rename-dialog'
@@ -94,7 +95,7 @@ export function Roster({
   })
   return (
     <aside
-      aria-label="Sessions sidebar"
+      aria-label={useTranslation('sessions').t('sidebarLabel')}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
       data-state={rosterState(read.roster, read.rosterError, sessions.sessionCount)}
       ref={sidebar}
