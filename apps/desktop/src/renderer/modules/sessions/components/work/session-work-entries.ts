@@ -43,8 +43,8 @@ export function delegationEntries(
       mark: WORK_STATE_MARKS[state],
       state: t(`workState.${state}`),
       facts: joined([
-        workDuration(delegation.startedAt, delegation.endedAt, now),
         displayModel(usage[delegation.id]?.model ?? null),
+        workDuration(delegation.startedAt, delegation.endedAt, now),
         spentTokens(usage[delegation.id]?.tokens ?? null, t),
       ]),
     }

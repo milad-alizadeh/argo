@@ -110,13 +110,13 @@ export const RunningAndFinishedGroups: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     const running = await screen.findByRole('group', { name: 'Running' })
     const finished = screen.getByRole('group', { name: 'Finished' })
-    // Model, duration and spend remain visible; the colored mark carries the state.
+    // Model, duration and spend remain visible in the same order; the colored mark carries state.
     const runningItem = within(running).getByRole('menuitem', { name: /Interface review/ })
-    await expect(runningItem).toHaveTextContent('5m 0s · Claude Opus 5 · 18k tokens')
+    await expect(runningItem).toHaveTextContent('Claude Opus 5 · 5m 0s · 18k tokens')
     await expect(within(runningItem).getByText('Running')).toHaveClass('sr-only')
     expectDotAlignedWithTitle(runningItem)
     const finishedItem = within(finished).getByRole('menuitem', { name: /Find every caller/ })
-    await expect(finishedItem).toHaveTextContent('1m 12s · GPT 5.6 Terra · 2.7k tokens')
+    await expect(finishedItem).toHaveTextContent('GPT 5.6 Terra · 1m 12s · 2.7k tokens')
     await expect(within(finishedItem).getByText('Done')).toHaveClass('sr-only')
   },
 }

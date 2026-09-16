@@ -414,9 +414,7 @@ export const DelegationCards: Story = {
     await expect(within(agent).getByText('Done')).toHaveClass('sr-only')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
-    await expect(agent).toHaveTextContent('4.2k tokens')
-    await expect(agent).toHaveTextContent('GPT 5.6 Terra')
-    await expect(agent).toHaveTextContent('1m 12s')
+    await expect(agent).toHaveTextContent('GPT 5.6 Terra1m 12s4.2k tokens')
     await userEvent.click(within(agent).getByRole('button'))
     await expect(
       canvas.getByText('Opened Review the Feed card for keyboard access.'),

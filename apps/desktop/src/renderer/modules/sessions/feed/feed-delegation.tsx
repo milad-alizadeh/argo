@@ -3,8 +3,8 @@ import { Bot, ChevronRight, SquareTerminal } from 'lucide-react'
 import { type ReactNode, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  type SessionWork,
   displayModel,
+  type SessionWork,
   spentTokens,
   WORK_STATE_MARKS,
   type WorkState,
@@ -70,8 +70,8 @@ function WorkFacts({
     <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">
       {stateText === null ? null : <span className="sr-only">{stateText}</span>}
       {model === null ? null : <span>{model}</span>}
-      {tokens === null ? null : <span>{tokens}</span>}
       {elapsed === null ? null : <span>{elapsed}</span>}
+      {tokens === null ? null : <span>{tokens}</span>}
     </span>
   )
 }
