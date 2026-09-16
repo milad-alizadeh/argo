@@ -227,7 +227,6 @@ function ReviewScreen({
         answeringQuestionId={null}
         questionFailure={() => null}
         selectedSessionId={selectedSessionId}
-        stallTimeoutMs={50}
       />
     </CockpitShell>
   )
@@ -270,6 +269,7 @@ function NewSessionScreen() {
         onRetryFeed={() => {}}
         questionFailure={() => null}
         selectedSessionId={selectedSessionId}
+        stallTimeoutMs={50}
       />
     </CockpitShell>
   )
