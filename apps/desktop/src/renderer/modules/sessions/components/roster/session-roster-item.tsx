@@ -1,5 +1,5 @@
 import { Archive } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { HarnessLogo } from '../../harness/harness-logo'
@@ -69,8 +69,12 @@ export function SessionRosterItem({
   tabIndex: number
 }) {
   const { t } = useTranslation('sessions')
+  const [pointerFocused, setPointerFocused] = useState(false)
   const activity = activitySummary(session)
   const rowHighlight = rowHighlightOf(checked, selected, archived)
+  const focusHighlight = pointerFocused
+    ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
+    : 'focus-visible:ring-2 focus-visible:ring-ring'
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -85,11 +89,14 @@ export function SessionRosterItem({
     <div className="min-w-0">
       <button
         aria-current={selected ? 'page' : undefined}
-        className={`group flex w-full select-none items-start gap-2 rounded-lg px-2 py-2 text-left focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
+        className={`group flex w-full select-none items-start gap-2 rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
         data-archived={archived}
         data-session-id={session.id}
+        onBlur={() => setPointerFocused(false)}
         onClick={handleRowClick}
         onFocus={onFocus}
+        onKeyDown={() => setPointerFocused(false)}
+        onPointerDown={() => setPointerFocused(true)}
         tabIndex={tabIndex}
         type="button"
       >
