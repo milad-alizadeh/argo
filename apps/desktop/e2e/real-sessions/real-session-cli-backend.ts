@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { copyFile, mkdir } from 'node:fs/promises'
+import { copyFile, mkdir, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import type {
@@ -52,6 +52,11 @@ export async function prepareRealSessionHome(root: string, sourceHome: string) {
         `${REAL_CLIS[cli].label} authentication is unavailable: ${source} is missing.`,
       )
     }
+    for (const parts of REAL_CLIS[cli].linked) {
+      const linked = credentialPath(home, parts)
+      await mkdir(path.dirname(linked), { recursive: true })
+      await symlink(credentialPath(sourceHome, parts), linked)
+    }
   }
   return home
 }
@@ -65,11 +70,12 @@ function verifyRealSessionAuthentication(executables: Record<SessionCli, string>
             ([name]) => !REAL_CLI_UNSET_ENV.includes(name),
           ),
         ),
-        stdio: 'ignore',
+        stdio: 'pipe',
       })
-    } catch {
+    } catch (error) {
+      const output = String((error as { stderr?: Buffer }).stderr ?? '').trim()
       throw new Error(
-        `${REAL_CLIS[cli].label} authentication is unavailable. Sign in and run e2e:real again.`,
+        `${REAL_CLIS[cli].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
       )
     }
   }
