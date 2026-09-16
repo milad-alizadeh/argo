@@ -42,9 +42,10 @@ function Row({
         >
           {entry.title}
         </span>
-        <span className="block truncate type-meta text-muted-foreground">
-          {[entry.state, entry.facts].filter((fact) => fact !== '').join(' · ')}
-        </span>
+        <span className="sr-only">{entry.state}</span>
+        {entry.facts === '' ? null : (
+          <span className="block truncate type-meta text-muted-foreground">{entry.facts}</span>
+        )}
       </span>
     </DropdownMenuItem>
   )

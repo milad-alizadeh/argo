@@ -110,14 +110,14 @@ export const RunningAndFinishedGroups: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     const running = await screen.findByRole('group', { name: 'Running' })
     const finished = screen.getByRole('group', { name: 'Finished' })
-    // Model, duration and spend are the facts a Subagent row adds (#1582).
-    await expect(
-      within(running).getByRole('menuitem', { name: /Interface review/ }),
-    ).toHaveTextContent('Running · 5m 0s · Claude Opus 5 · 18k tokens')
-    expectDotAlignedWithTitle(within(running).getByRole('menuitem', { name: /Interface review/ }))
-    await expect(
-      within(finished).getByRole('menuitem', { name: /Find every caller/ }),
-    ).toHaveTextContent('Done · 1m 12s · GPT 5.6 Terra · 2.7k tokens')
+    // Model, duration and spend remain visible; the colored mark carries the state.
+    const runningItem = within(running).getByRole('menuitem', { name: /Interface review/ })
+    await expect(runningItem).toHaveTextContent('5m 0s · Claude Opus 5 · 18k tokens')
+    await expect(within(runningItem).getByText('Running')).toHaveClass('sr-only')
+    expectDotAlignedWithTitle(runningItem)
+    const finishedItem = within(finished).getByRole('menuitem', { name: /Find every caller/ })
+    await expect(finishedItem).toHaveTextContent('1m 12s · GPT 5.6 Terra · 2.7k tokens')
+    await expect(within(finishedItem).getByText('Done')).toHaveClass('sr-only')
   },
 }
 
@@ -128,7 +128,7 @@ export const ShellList: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Shell · 2' }))
     await expect(await screen.findByRole('menuitem', { name: /npm run watch/ })).toHaveTextContent(
-      'Running · 4m 30s',
+      '4m 30s',
     )
     await expect(screen.getByRole('menuitem', { name: /bun run build/ })).toHaveTextContent(
       'Completed',

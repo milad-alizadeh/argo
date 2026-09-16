@@ -411,6 +411,7 @@ export const DelegationCards: Story = {
     const canvas = within(canvasElement)
     const agent = canvas.getByRole('region', { name: 'Background Agent' })
     await expect(agent).toHaveTextContent('Done')
+    await expect(within(agent).getByText('Done')).toHaveClass('sr-only')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
     await expect(agent).toHaveTextContent('4.2k tokens')
