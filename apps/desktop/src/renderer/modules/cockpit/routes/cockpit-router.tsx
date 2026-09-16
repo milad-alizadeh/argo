@@ -7,6 +7,7 @@ import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
 import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
 import { SessionsPage } from '../../sessions/pages/sessions-page'
+import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
 import { SessionScreenView } from '../../sessions/screens/session-screen-view'
 import { TicketsSidebar } from '../../tickets/components/tickets-sidebar'
 import { TicketsPage } from '../../tickets/pages/tickets-page'
@@ -41,7 +42,15 @@ function CockpitRouteLayout() {
   )
 
   return (
-    <CockpitShell header={<ProjectSwitcher />} sidebar={sidebar}>
+    <CockpitShell
+      header={
+        <div className="flex min-w-0 items-center gap-(--spacing-shell-item)">
+          <DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />
+          <ProjectSwitcher />
+        </div>
+      }
+      sidebar={sidebar}
+    >
       <Outlet />
     </CockpitShell>
   )
