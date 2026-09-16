@@ -246,6 +246,7 @@ function NewSessionScreen() {
             filesFound: 0,
             filesRead: 0,
             filesUnreadable: 0,
+            nextCursor: null,
           }}
           rosterError={null}
           selectedSessionId={selectedSessionId}

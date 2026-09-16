@@ -29,7 +29,7 @@ function useRosterQuery(
   }
 
   const query = useQuery<SessionRoster, SessionContractError>(
-    sessionRosterQuery(selectedSessionId, enabled, projectRoot, cursorRef.current),
+    sessionRosterQuery(selectedSessionId, enabled, { projectRoot, cursor: cursorRef.current }),
   )
 
   const nextCursor = query.data?.nextCursor ?? null

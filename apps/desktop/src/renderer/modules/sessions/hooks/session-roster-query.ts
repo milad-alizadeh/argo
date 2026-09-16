@@ -29,9 +29,9 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 export function sessionRosterQuery(
   selectedSessionId: SessionId | null,
   enabled: boolean,
-  projectRoot: string | null,
-  cursor: string | null = null,
+  options: { projectRoot: string | null; cursor?: string | null },
 ): UseQueryOptions<SessionRoster, SessionContractError> {
+  const { projectRoot, cursor = null } = options
   return {
     queryKey: [...sessionRosterQueryKey, projectRoot],
     staleTime: Infinity,
