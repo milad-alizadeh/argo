@@ -203,20 +203,21 @@ report one line: what was installed, what was deferred.
 
 ### Enable Codex native todo lists
 
-When Codex is installed, ask whether to enable its native todo list. Explain that the list adds
-a small token overhead and only improves progress visibility. It does not change the work that
-Codex does. Recommend enabling it when the user wants visible task progress.
+When Codex is installed, the Phase 2 choice asks whether to enable its native todo list. Explain
+that the list adds a small token overhead and only improves progress visibility. It does not
+change the work that Codex does. Recommend enabling it when the user wants visible task progress.
 
-If the user accepts, add this to `~/.codex/config.toml`, preserving unrelated configuration:
+If the user selected the choice, add this to `~/.codex/config.toml`, preserving unrelated
+configuration:
 
 ```toml
 [tools.update_plan]
 enabled = true
 ```
 
-Tell the user to restart Codex before they start a new session. If the user declines, do not
-change the Codex configuration. This setting enables `update_plan`; it is separate from Plan
-Mode.
+Tell the user to restart Codex before they start a new session. If they did not select the choice,
+do not change the Codex configuration. This setting enables `update_plan`; it is separate from
+Plan Mode.
 
 The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
