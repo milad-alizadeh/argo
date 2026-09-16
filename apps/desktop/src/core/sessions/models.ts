@@ -145,9 +145,9 @@ export const sessionRosterRowSchema = z.strictObject({
   entry: sessionEntrySchema,
   cwd: z.string().nullable(),
   branch: z.string().nullable(),
-  // Another live Argo window on this machine holds this Session's channel now, so Send is refused
-  // and the Roster marks it read-only (ADR-0040, CONTEXT.md L2 · Session). Absent where no source
-  // reports live-channel ownership, which reads the same as `false`.
+  // Another process runs this Session live now (another Argo window, or the CLI in a terminal or
+  // another app), so the Roster marks it read-only and hides its composer (ADR-0040, CONTEXT.md
+  // L2 · Session). Absent where no source reports liveness, which reads the same as `false`.
   locked: z.boolean().optional(),
   updatedAt: z.string().nullable(),
   unreadableLines: z.number(),

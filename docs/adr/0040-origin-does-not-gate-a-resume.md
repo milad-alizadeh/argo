@@ -26,12 +26,18 @@ because a Session's origin does not change what Argo can do with it. A Session g
 `held-elsewhere` is the one case Send refuses (another live window on this machine holds the
 channel); everything else resumes.
 
+**A Session another process runs live is locked.** The ledger is one reading of that. Each CLI
+adapter adds its own from what the CLI records: a live `claude` process names its Session in
+`~/.claude/sessions/<pid>.json`, and a Codex rollout whose newest Turn opened and did not end,
+written in the last 30 minutes, is running elsewhere. A locked row shows a lock in the Roster
+and no composer. A `managed` row is never locked, and an `external` Session that no process runs
+stays resumable.
+
 **Posture stays binary.** `docs/domain/l2-session.md`'s `managed | external` axis gains no third
 value. A Session Argo drove before, then lost across a restart, reads `external` exactly like one
 it never touched — the Roster shows no distinction, because there is none left to show. Whether a
-particular `external` Session happens to be currently resumable or held-elsewhere-by-another-window
-is a drive-time fact, surfaced only when a Turn is sent (as a `SessionErrorCode`, e.g.
-`held-elsewhere`), not a Roster-visible posture.
+particular `external` Session is locked is a live fact the Roster reads on each pass, not a
+posture.
 
 Both CLI adapters carry the same shape: Claude already read a resume's target `cwd` off the
 transcript, independent of the ledger; Codex's ledger is rewritten to match (it previously stored
@@ -47,8 +53,9 @@ transcript, independent of the ledger; Codex's ledger is rewritten to match (it 
 
 ## Consequences
 
-- **A Session opened in another app or another Argo window is still locked**, exactly as before:
-  `held-elsewhere` is unchanged, because that grading was never about origin.
+- **A Session another process runs live is locked**: another Argo window (`held-elsewhere`), a
+  `claude` in a terminal or another app, or a Codex Turn another client is running. None of these
+  readings is about origin.
 - **A Session another Codex client or a bare terminal started is now resumable from Argo**, the
   same as any Session Argo lost across a restart. Taking it over is no longer a separate decision.
 - **The Claude and Codex ownership ledgers are now the same shape**: `bind(sessionId)`,

@@ -44,7 +44,8 @@ export type SessionSource = {
   // What each of this Session's Subagents spent, keyed by the call that spawned it.
   readDelegationUsage?: (sessionId: string) => Promise<{ id: string; tokens: number | null }[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
-  // Absent where the CLI keeps no ownership ledger, which the reader reads as never locked.
+  // Joined over any lock discovery already read off the CLI's own live record; absent where the
+  // CLI keeps no ownership ledger.
   isLockedElsewhere?: (sessionId: string) => boolean
   overlayFor?: (sessionId: string) => FeedOverlay | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>

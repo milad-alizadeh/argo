@@ -49,6 +49,31 @@ test('a failed Bash result still carries its output as evidence', () => {
   assert.equal(row.evidence?.source, 'boom\n')
 })
 
+test('a Bash call with a description labels itself with the description, not the command', () => {
+  const row = onlyToolRow(
+    [
+      call({
+        id: 'call-1',
+        name: 'Bash',
+        input: {
+          command: 'RTK_DISABLED=1 git diff --name-only',
+          description: 'Listing changed files',
+        },
+      }),
+    ],
+    new Map(),
+  )
+  assert.equal(row.label, 'Listing changed files')
+})
+
+test('a Bash call with no description falls back to the command, first line only', () => {
+  const row = onlyToolRow(
+    [call({ id: 'call-1', name: 'Bash', input: { command: 'bun test\nextra line' } })],
+    new Map(),
+  )
+  assert.equal(row.label, 'Ran bun test')
+})
+
 test('an Edit call carries its diff evidence before the result lands', () => {
   const row = onlyToolRow(
     [

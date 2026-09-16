@@ -22,8 +22,10 @@ const SHELL_TOOL = 'Bash'
 
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
+// An agent-supplied description reads before the raw command it describes (a Bash call is the
+// one shape carrying both), so it wins whenever both fields are present.
 const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
-const TEXT_FIELDS = ['pattern', 'command', 'url', 'description', 'query']
+const TEXT_FIELDS = ['pattern', 'description', 'command', 'url', 'query']
 
 function calls(messages: TranscriptMessage[]): ToolCall[] {
   return messages.flatMap((message) => message.toolCalls)
