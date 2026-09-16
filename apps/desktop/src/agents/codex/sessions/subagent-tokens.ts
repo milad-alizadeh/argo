@@ -1,10 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { isRecord } from '@/boundary'
+import type {
+  DelegationUsageFacts,
+  SessionDelegationUsage,
+} from '@/core/sessions/background-work-contract'
 import { transcriptPaths } from './discover'
 
-type DelegationFacts = { tokens: number | null; model: string | null }
-
-function delegationFacts(line: string): Partial<DelegationFacts> {
+function delegationFacts(line: string): Partial<DelegationUsageFacts> {
   let parsed: unknown
   try {
     parsed = JSON.parse(line)
@@ -32,10 +34,10 @@ function delegationFacts(line: string): Partial<DelegationFacts> {
   return { tokens: Math.max(0, input - cached) + output }
 }
 
-async function delegationFactsFromFile(filePath: string): Promise<DelegationFacts> {
+async function delegationFactsFromFile(filePath: string): Promise<Required<DelegationUsageFacts>> {
   const text = await readFile(filePath, 'utf8').catch(() => null)
   if (text === null) return { tokens: null, model: null }
-  const facts: DelegationFacts = { tokens: null, model: null }
+  const facts: Required<DelegationUsageFacts> = { tokens: null, model: null }
   for (const line of text.split('\n')) {
     const reported = delegationFacts(line)
     if (reported.tokens !== undefined) facts.tokens = reported.tokens
@@ -47,7 +49,7 @@ async function delegationFactsFromFile(filePath: string): Promise<DelegationFact
 export async function readDelegationTokens(
   root: string,
   delegationIds: readonly string[],
-): Promise<{ id: string; tokens: number | null; model: string | null }[]> {
+): Promise<SessionDelegationUsage[]> {
   const paths = await transcriptPaths(root)
   const pathsById = new Map(
     paths.map(({ name, path }) => [name.replace(/\.jsonl$/, ''), path] as const),

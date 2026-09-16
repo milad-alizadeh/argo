@@ -3,7 +3,6 @@ import { Bot, ChevronRight, SquareTerminal } from 'lucide-react'
 import { type ReactNode, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  displayModel,
   readableDelegationName,
   type SessionWork,
   spentTokens,
@@ -64,8 +63,8 @@ function WorkFacts({
   const now = useNow(state === 'running')
   const work = target?.kind === 'shell' ? target.command : (target?.delegation ?? null)
   const elapsed = work === null ? null : workDuration(work.startedAt, work.endedAt, now)
-  const tokens = spentTokens(target?.kind === 'delegation' ? target.tokens : null, t)
-  const model = target?.kind === 'delegation' ? displayModel(target.model) : null
+  const tokens = spentTokens(target?.kind === 'delegation' ? target.usage.tokens : null, t)
+  const model = target?.kind === 'delegation' ? (target.usage.model ?? null) : null
   const stateText = workStateText(state, status, t)
   return (
     <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">

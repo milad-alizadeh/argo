@@ -132,11 +132,11 @@ export const RunningAndFinishedGroups: Story = {
     const finished = screen.getByRole('group', { name: 'Finished' })
     // Model, duration and spend remain visible in the same order; the colored mark carries state.
     const runningItem = within(running).getByRole('menuitem', { name: /Interface review/ })
-    await expect(runningItem).toHaveTextContent('Claude Opus 5 · 5m 0s · 18k tokens')
+    await expect(runningItem).toHaveTextContent('claude-opus-5 · 5m 0s · 18k tokens')
     await expect(within(runningItem).getByText('Running')).toHaveClass('sr-only')
     expectDotAlignedWithTitle(runningItem)
     const finishedItem = within(finished).getByRole('menuitem', { name: /Find every caller/ })
-    await expect(finishedItem).toHaveTextContent('GPT 5.6 Terra · 1m 12s · 2.7k tokens')
+    await expect(finishedItem).toHaveTextContent('gpt-5.6-terra · 1m 12s · 2.7k tokens')
     await expect(within(finishedItem).getByText('Done')).toHaveClass('sr-only')
   },
 }

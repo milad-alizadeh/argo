@@ -2,6 +2,7 @@
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
+import type { DelegationUsageFacts } from '@/core/sessions/background-work-contract'
 import type { SessionDelegation, SessionShellCommand, ShellState } from '@/core/sessions/models'
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
@@ -9,8 +10,7 @@ export type SessionWork =
   | {
       kind: 'delegation'
       delegation: SessionDelegation
-      tokens: number | null
-      model: string | null
+      usage: DelegationUsageFacts
     }
   | { kind: 'shell'; command: SessionShellCommand }
 
@@ -70,17 +70,6 @@ export function compactTokens(tokens: number | null): string | null {
   if (tokens < 1000) return `${tokens}`
   if (tokens < 1_000_000) return scaled(tokens, 1000, 'k')
   return scaled(tokens, 1_000_000, 'M')
-}
-
-const MODEL_BRANDS: Record<string, string> = { claude: 'Claude', gpt: 'GPT' }
-
-// Transcript model ids are stable transport values. The reader sees the model's product name.
-export function displayModel(model: string | null): string | null {
-  if (model === null) return null
-  return model
-    .split('-')
-    .map((word) => MODEL_BRANDS[word] ?? `${word[0]?.toUpperCase() ?? ''}${word.slice(1)}`)
-    .join(' ')
 }
 
 export function spentTokens(tokens: number | null, t: TFunction<'sessions'>): string | null {

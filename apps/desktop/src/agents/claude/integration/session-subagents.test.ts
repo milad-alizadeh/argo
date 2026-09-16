@@ -65,6 +65,6 @@ test('reads what each Subagent spent from its own transcript', async (context) =
   })
   assert.equal(reply.type, 'session.delegation.usage.read')
   assert.deepEqual(reply.type === 'session.delegation.usage.read' ? reply.usage : null, [
-    { id: DELEGATION, tokens: 2700, model: null },
+    { id: DELEGATION, tokens: 2700 },
   ])
 })

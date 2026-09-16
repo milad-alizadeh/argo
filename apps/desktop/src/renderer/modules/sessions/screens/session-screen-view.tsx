@@ -46,7 +46,7 @@ function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {
         session?.delegations.findLast((entry) => name !== null && entry.label === name)
       if (delegation === undefined) return null
       const usage = model.delegationUsage[delegation.id] ?? { tokens: null, model: null }
-      return { kind: 'delegation', delegation, ...usage }
+      return { kind: 'delegation', delegation, usage }
     },
     open: (target) =>
       pick(
@@ -86,7 +86,7 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
         work={{
           kind: 'delegation',
           delegation: model.delegation,
-          ...(model.delegationUsage[model.delegation.id] ?? { tokens: null, model: null }),
+          usage: model.delegationUsage[model.delegation.id] ?? { tokens: null, model: null },
         }}
       />
     )

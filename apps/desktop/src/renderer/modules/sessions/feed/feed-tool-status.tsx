@@ -1,16 +1,20 @@
 import { LoaderCircle } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../types'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 
 export function StatusIcon({ status }: { status: ToolRow['status'] }) {
+  const { t } = useTranslation('sessions')
   switch (status) {
     case 'failed':
     case 'succeeded':
       return null
     case 'running':
-      return <StatusMark icon={LoaderCircle} label="In progress" className="animate-spin" />
+      return (
+        <StatusMark icon={LoaderCircle} label={t('workState.running')} className="animate-spin" />
+      )
   }
 }
 

@@ -39,20 +39,22 @@ export const sessionDelegationUsageRequestSchema = z.strictObject({
 })
 export type SessionDelegationUsageRequest = z.infer<typeof sessionDelegationUsageRequestSchema>
 
+export const sessionDelegationUsageSchema = z.strictObject({
+  id: identifierSchema,
+  tokens: z.number().nullable(),
+  model: z.string().nullable().optional(),
+})
+export type SessionDelegationUsage = z.infer<typeof sessionDelegationUsageSchema>
+export type DelegationUsageFacts = Omit<SessionDelegationUsage, 'id'>
+
 export const sessionDelegationUsageReadSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.delegation.usage.read'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
-  // One entry per Subagent whose transcript was read, keyed by the call that spawned it. Each
-  // fact is null where that transcript does not report it; no entry means no readable transcript.
-  usage: z.array(
-    z.strictObject({
-      id: identifierSchema,
-      tokens: z.number().nullable(),
-      model: z.string().nullable(),
-    }),
-  ),
+  // One entry per Subagent whose transcript was read, keyed by the call that spawned it. Tokens
+  // are null when absent. Model is absent when an adapter does not read it and null when unread.
+  usage: z.array(sessionDelegationUsageSchema),
 })
 export type SessionDelegationUsageRead = z.infer<typeof sessionDelegationUsageReadSchema>
 

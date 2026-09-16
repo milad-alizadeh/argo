@@ -3,6 +3,7 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
 // Argo owns that flag for every CLI at once (`storage/session-archive.ts`, #2315).
+import type { SessionDelegationUsage } from './background-work-contract'
 import type { SessionChain } from './chains'
 import type { SessionRenameReply, SessionRenameRequest } from './contract'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
@@ -40,9 +41,7 @@ export type SessionSource = {
   // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
   readDelegationFiles?: (sessionId: string, delegationId: string) => Promise<SessionChain | null>
   // What each of this Session's Subagents used, keyed by the call that spawned it.
-  readDelegationUsage?: (
-    sessionId: string,
-  ) => Promise<{ id: string; tokens: number | null; model: string | null }[]>
+  readDelegationUsage?: (sessionId: string) => Promise<SessionDelegationUsage[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
   // Joined over any lock discovery already read off the CLI's own live record; absent where the
   // CLI keeps no ownership ledger.

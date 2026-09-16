@@ -228,7 +228,7 @@ function ReviewInspectorBar({
   if (delegation !== null) {
     return (
       <SessionWorkInspectorHeader
-        work={{ kind: 'delegation', delegation, tokens: null, model: null }}
+        work={{ kind: 'delegation', delegation, usage: { tokens: null, model: null } }}
       />
     )
   }

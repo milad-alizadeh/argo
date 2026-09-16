@@ -69,8 +69,7 @@ function InspectorStory({
           work={{
             kind: 'delegation',
             delegation: args.delegation,
-            tokens: tokens ?? null,
-            model: null,
+            usage: { tokens: tokens ?? null, model: null },
           }}
         />
       </header>
