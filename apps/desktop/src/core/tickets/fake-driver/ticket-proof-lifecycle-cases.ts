@@ -41,7 +41,7 @@ export async function proveRevoked(run: Run, ran: Ran) {
   await ran(['revoked-access'], async () => {
     await room(run).getByText('GitHub no longer accepts octocat').waitFor()
     const foot = run.page.getByRole('button', { name: 'GitHub · octocat Access revoked' })
-    await foot.dispatchEvent('click')
+    await foot.click()
     const octocat = accountRow(run.page, 'octocat')
     await octocat.getByText('Access revoked').waitFor()
     await octocat
@@ -63,7 +63,7 @@ export async function proveRevoked(run: Run, ran: Ran) {
 // Closing #273 as not planned from its Detail reaches GitHub: the next read leaves it out.
 export async function proveChangeState(run: Run, ran: Ran) {
   await ran(['change-state'], async () => {
-    await backlog(run.page).getByRole('button', { name: /^#273/ }).dispatchEvent('click')
+    await backlog(run.page).getByRole('button', { name: /^#273/ }).click()
     const detail = run.page.getByRole('article', { name: 'Ticket #273' })
     await choose(run.page, detail.getByRole('button', { name: 'State: Open' }), {
       role: 'menuitemradio',
@@ -79,7 +79,7 @@ export async function proveChangeState(run: Run, ran: Ran) {
 }
 
 export async function proveDisconnect(run: Run, ran: Ran) {
-  await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).dispatchEvent('click')
+  await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).click()
   const octocat = accountRow(run.page, 'octocat')
   await ran(['disconnect'], async () => {
     await press(octocat, 'Disconnect…')

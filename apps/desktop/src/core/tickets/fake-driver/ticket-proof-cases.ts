@@ -66,7 +66,7 @@ export async function proveConnectRepository(run: Run, ran: Ran) {
   })
   await ran(['discoverSources'], async () => {
     await scope.fill('hello')
-    await run.page.getByRole('option', { name: 'octocat/hello-world' }).dispatchEvent('click')
+    await run.page.getByRole('option', { name: 'octocat/hello-world' }).click()
     assert.equal(await scope.inputValue(), 'octocat/hello-world')
     assert.equal(await storeText(run.fixture, 'connections.json'), '')
   })
@@ -87,7 +87,7 @@ export async function proveBacklog(run: Run, ran: Ran) {
     await backlog(run.page).getByText('All open · 3 Tickets').waitFor()
   })
   await ran(['detail'], async () => {
-    await backlog(run.page).getByRole('button', { name: /^#607/ }).dispatchEvent('click')
+    await backlog(run.page).getByRole('button', { name: /^#607/ }).click()
     const detail = run.page.getByRole('article', { name: 'Ticket #607' })
     await detail.getByRole('heading', { name: 'Wayfinder: the Tickets room, end to end' }).waitFor()
     await detail.getByText('The backlog in the deck and the Ticket beside it.').waitFor()
