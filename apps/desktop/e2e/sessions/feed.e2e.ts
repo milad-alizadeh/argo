@@ -1,5 +1,6 @@
 // The Session cases that read seeded transcripts, in order on one packaged launch (#1831, #1910).
 import { expect } from '@playwright/test'
+import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBackgroundShell } from './cases/background-shell.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
@@ -30,7 +31,6 @@ import {
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
-import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import type { PageBox, SessionProofRun } from './session-proof-run'
 import { createPageBox, describeSessionProof, test } from './session-proof-run'
 
