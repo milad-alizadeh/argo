@@ -30,6 +30,8 @@ export const SESSION_STATUSES = [
   'unknown',
 ] as const
 export const sessionStatusSchema = z.enum(SESSION_STATUSES)
+// Strongest first: `managed-row.ts` ranks two titles by this order, so reordering it changes which
+// title a managed Session shows.
 export const TITLE_SOURCES = ['custom', 'summarised', 'first-prompt'] as const
 export const titleSourceSchema = z.enum(TITLE_SOURCES)
 
