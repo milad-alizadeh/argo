@@ -7,14 +7,12 @@ import { installCompactionHook } from './agents/claude/compaction/compaction-hoo
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
-import { legacyArchivedSessionIds } from './agents/claude/sessions/legacy-archive'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-  legacyClaudeArchiveRoot,
 } from './agents/claude/sessions/roots'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
@@ -79,9 +77,7 @@ export function attachSessions(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
   )
   // Argo's own archive flag, for every harness at once (#2315).
-  const archive = createSessionArchiveStore(sessionArchivePath(userData), () =>
-    legacyArchivedSessionIds(legacyClaudeArchiveRoot(home)),
-  )
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   attachSessionBridge(window, {
     reader: createSessionReader(
       [

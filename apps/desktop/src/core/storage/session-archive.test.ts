@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionArchiveStore, isArchivedSession, sessionArchivePath } from './session-archive'
+import { createSessionArchiveStore, sessionArchivePath } from './session-archive'
 
 async function storePath(context: { after: (work: () => Promise<unknown>) => void }) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-store-'))
@@ -51,31 +51,4 @@ test('reads no archived Session from a document it cannot parse', async (context
   await writeFile(file, 'not json at all')
 
   assert.deepEqual([...(await store.archivedIds())], [])
-})
-
-test('imports the Claude desktop archive once into Argo storage', async (context) => {
-  const file = await storePath(context)
-  let reads = 0
-  const store = createSessionArchiveStore(file, async () => {
-    reads += 1
-    return new Set(['legacy-session'])
-  })
-
-  assert.deepEqual([...(await store.archivedIds())], ['legacy-session'])
-  assert.equal(reads, 1)
-
-  const reopened = createSessionArchiveStore(file, async () => {
-    reads += 1
-    return new Set(['ignored-later'])
-  })
-  assert.deepEqual([...(await reopened.archivedIds())], ['legacy-session'])
-  assert.equal(reads, 1)
-})
-
-test('keeps an imported retired id archived after its Session resumes', async (context) => {
-  const store = createSessionArchiveStore(await storePath(context), async () => new Set(['old-id']))
-
-  const archived = await store.archivedIds()
-
-  assert.ok(isArchivedSession({ id: 'current-id', retiredIds: ['old-id'] }, archived))
 })

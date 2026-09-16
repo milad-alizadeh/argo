@@ -1,3 +1,4 @@
+import { Archive } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -38,9 +39,10 @@ function activitySummary(session: Session): string | null {
 
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is
 // reachable", and a selected row has nothing left to say (#2273).
-function rowHighlightOf(checked: boolean, selected: boolean): string {
+function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean): string {
   if (checked) return 'bg-accent text-accent-foreground'
   if (selected) return 'bg-selected text-foreground'
+  if (archived) return 'border border-border/70 bg-muted/50 text-muted-foreground hover:bg-muted'
   return 'hover:bg-muted'
 }
 
@@ -69,7 +71,7 @@ export function SessionRosterItem({
 }) {
   const { t } = useTranslation('sessions')
   const activity = activitySummary(session)
-  const rowHighlight = rowHighlightOf(checked, selected)
+  const rowHighlight = rowHighlightOf(checked, selected, archived)
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -113,6 +115,15 @@ export function SessionRosterItem({
                 text={sessionName(session)}
               />
             </span>
+            {archived ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 type-meta font-medium text-muted-foreground"
+                data-slot="archived-session"
+              >
+                <Archive aria-hidden="true" className="size-3" />
+                {t('rosterStatusArchived')}
+              </span>
+            ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
           </span>

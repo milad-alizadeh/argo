@@ -74,10 +74,9 @@ async function proveArchiveOrderAndFocus(page, withParent) {
   await chooseRosterStatus(page, 'All')
   await page.locator(archivedRow('plannedWork')).waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
-  await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()
-  await page.evaluate(() =>
-    window.argo.setSessionsArchived({ sessionIds: ['askPending'], archived: true }),
-  )
+  const askPending = page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]')
+  await askPending.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Archive' }).click()
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
   await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
@@ -87,26 +86,44 @@ async function proveArchiveOrderAndFocus(page, withParent) {
     ),
     true,
   )
-  // The active list refreshes itself; the archived list is read on demand (#1593), so a live
-  // mutation only reaches it once the reader asks again, and picking the status again is that ask.
-  await chooseRosterStatus(page, 'Active')
-  await chooseRosterStatus(page, 'All')
-  await page.locator(archivedRow('askPending')).waitFor()
+  // The action removes the row from Active and exposes it as visibly archived in either view.
+  await chooseRosterStatus(page, 'Archived')
+  const archivedAskPending = page.locator(archivedRow('askPending'))
+  await expect(archivedAskPending).toBeVisible()
+  await expect(archivedAskPending.locator('[data-slot="archived-session"]')).toHaveText('Archived')
   const archivedAfter = await readRosterIds(page, 'Archived')
   assert.deepEqual(
     archivedAfter.filter((sessionId) => sessionId !== 'askPending'),
     archivedBefore,
   )
-  // The reader is showing All, so the archived row stayed in the list and kept its place in the
-  // roster's remembered order (`keepRosterOrder` in session-roster-query.ts). Restoring it therefore
-  // returns it to that place rather than to the head, where a newly discovered Session lands.
-  await page.evaluate(() =>
-    window.argo.setSessionsArchived({ sessionIds: ['askPending'], archived: false }),
-  )
-  await waitForActiveSessions(page, withParent)
-  assert.deepEqual(await readRosterIds(page), withParent)
-}
+  await chooseRosterStatus(page, 'All')
+  await expect(page.locator(archivedRow('askPending'))).toBeVisible()
 
+  // Shift extends the platform-selected row into an inclusive range; one action archives it all.
+  await chooseRosterStatus(page, 'Active')
+  const range = active.slice(0, 3)
+  const first = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${range[0]}"]`)
+  const last = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${range[2]}"]`)
+  await first.click({ modifiers: ['Meta'] })
+  await last.click({ modifiers: ['Shift'] })
+  for (const sessionId of range) {
+    await expect(
+      page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`),
+    ).toContainText('Selected')
+  }
+  await last.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Archive' }).click()
+  const remaining = active.filter((sessionId) => !range.includes(sessionId))
+  await waitForActiveSessions(page, remaining)
+  await chooseRosterStatus(page, 'Archived')
+  for (const sessionId of range) {
+    await expect(page.locator(archivedRow(sessionId))).toBeVisible()
+  }
+  await chooseRosterStatus(page, 'All')
+  for (const sessionId of range) {
+    await expect(page.locator(archivedRow(sessionId))).toBeVisible()
+  }
+}
 export async function proveStableRosterPolling(page, mutations) {
   await proveVisibleNames(page)
   const before = await proveUpdatedRowsStayPut(page, mutations)
