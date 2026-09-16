@@ -5,6 +5,7 @@ import { assistantAfterPrompt, createTranscriptMatcher } from './real-session-tr
 export const realCodexCli = {
   authentication: ['login', 'status'],
   credential: ['.codex', 'auth.json'],
+  linked: [],
   label: 'Codex',
   transcripts: (home: string) => path.join(home, '.codex', 'sessions'),
   replyAfterPrompt: (folder: string, prompt: string) =>
