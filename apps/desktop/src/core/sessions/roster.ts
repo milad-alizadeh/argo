@@ -9,11 +9,11 @@ import {
   type SessionTitle,
   TITLE_SOURCES,
 } from './models'
+import { readPlan } from './plan'
 import {
   type BackgroundTask,
   readActivity,
   readDelegations,
-  readPlan,
   readSetup,
   readShellCommands,
   readTurnStartedAt,
@@ -142,7 +142,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     originUnread: chain.originUnread,
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
-    plan: readPlan(messages),
+    plan: readPlan(chain.files.flatMap((file) => file.records)),
     delegations: readDelegations(messages, notifications),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),

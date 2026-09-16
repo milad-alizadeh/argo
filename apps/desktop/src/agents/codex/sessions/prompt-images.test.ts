@@ -36,7 +36,7 @@ test('draws the image file a bare prompt event attached inside its bubble', () =
       id: 'user:2026-09-15T10:00:00.000Z:0',
       role: 'user',
       text: 'Reply with the single word OK.',
-      images: ['file:///Users/x/dot.png'],
+      images: ['argo-attachment://local/Users/x/dot.png'],
     },
   ])
 })
@@ -45,7 +45,7 @@ test('draws inline image bytes a bare prompt event carries before its files', ()
   const rows = eventRows({ ...EXEC_PROMPT, images: ['data:image/png;base64,iVBORw0KGgo=', 'x'] })
   assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, [
     'data:image/png;base64,iVBORw0KGgo=',
-    'file:///Users/x/dot.png',
+    'argo-attachment://local/Users/x/dot.png',
   ])
 })
 
@@ -61,7 +61,10 @@ test('draws a prompt image and a local image file inside the prompt bubble', () 
       id: 'prompt-1:0',
       role: 'user',
       text: 'Fix the spacing',
-      images: ['data:image/png;base64,iVBORw0KGgo=', 'file:///Users/x/generated/a%20b.png'],
+      images: [
+        'data:image/png;base64,iVBORw0KGgo=',
+        'argo-attachment://local/Users/x/generated/a%20b.png',
+      ],
     },
   ])
 })
@@ -80,7 +83,7 @@ test('draws a TUI prompt image without the placeholder the TUI wrote for it', ()
   ])
   assert.deepEqual(rows[0]?.shape === 'prose' ? [rows[0].text, rows[0].images] : null, [
     'submit mixed',
-    ['file:///Users/x/a.png'],
+    ['argo-attachment://local/Users/x/a.png'],
   ])
 })
 
@@ -137,7 +140,7 @@ test('draws the files Argo marked in their own path items, not as words', () => 
       id: 'prompt-1:0',
       role: 'user',
       text: '/Users/x/typed.md',
-      images: ['file:///Users/x/a.png'],
+      images: ['argo-attachment://local/Users/x/a.png'],
       files: ['/Users/x/my notes.md'],
     },
   ])

@@ -111,6 +111,7 @@ test('a Read call with no result yet has no evidence to open', () => {
     [call({ id: 'call-1', name: 'Read', input: { file_path: 'src/app.ts' } })],
     new Map(),
   )
+  assert.equal(row.label, 'Read src/app.ts')
   assert.equal(row.status, 'running')
   assert.equal(row.evidence, null)
 })

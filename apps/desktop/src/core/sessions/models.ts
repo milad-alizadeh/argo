@@ -72,9 +72,10 @@ export const sessionPlanSchema = z.discriminatedUnion('state', [
 ])
 export type SessionPlan = z.infer<typeof sessionPlanSchema>
 
-// The newest Tool Call inside the open Turn: the tool's own name, and the one thing it acted on,
-// read off its input rather than summarised.
+// The newest Tool Call inside the open Turn: its canonical reader-facing label, plus the tool's
+// own name and the one thing it acted on as metadata.
 export const sessionActivitySchema = z.strictObject({
+  label: z.string(),
   tool: z.string(),
   target: z.string().nullable(),
 })

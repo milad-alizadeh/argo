@@ -110,7 +110,7 @@ test('optimisticRowFor draws the images and files a Send attached, before the re
     id: 'optimistic-turn:1000',
     role: 'user',
     text: 'compare',
-    images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
+    images: ['argo-attachment://local/Users/x/Screenshot%20at%2006.44.png'],
     files: ['/Users/x/notes.md'],
   })
 })
