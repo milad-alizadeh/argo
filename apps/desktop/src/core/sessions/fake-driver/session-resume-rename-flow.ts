@@ -1,5 +1,5 @@
-// Extracted from prove-session-feed.ts to keep that file under the line cap: the composer-memory,
-// create, resume and rename cases all run against the same Project-selected fixture in sequence.
+// The composer-memory, create, resume and rename cases all run against the same
+// Project-selected fixture in sequence.
 import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'

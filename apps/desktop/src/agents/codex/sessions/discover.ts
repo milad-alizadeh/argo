@@ -2,8 +2,10 @@ import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import {
   createTranscriptDiscoverer,
+  ROSTER_PAGE_SIZE,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { withoutModelInputCopies } from './model-input-copies'
 import { parseCodexTranscriptLine } from './records'
@@ -64,4 +66,24 @@ const reader = createTranscriptDiscoverer({
   normalizeRecords,
 })
 
-export const { clearFullRecords, discoverSessions, readSessionFiles } = reader
+export const { clearFullRecords, readSessionFiles } = reader
+
+// A Project's reply keeps growing the same bounded window discovery pages by until it holds a full
+// page of that Project's own Sessions, rather than stopping at a global window and discarding
+// whatever does not match (#2239).
+export async function discoverSessions(
+  root: string,
+  options?: { cursor?: string | null; projectRoot?: string | null },
+): Promise<Discovery> {
+  const projectRoots = await projectRootsOf(options?.projectRoot)
+  let cursor = options?.cursor ?? null
+  for (;;) {
+    const discovery = await reader.discoverSessions(root, { cursor })
+    const rows = discovery.rows.filter((row) => belongsToProject(row.cwd, projectRoots))
+    const exhausted = discovery.nextCursor === null
+    if (projectRoots === null || rows.length >= ROSTER_PAGE_SIZE || exhausted) {
+      return { ...discovery, rows }
+    }
+    cursor = discovery.nextCursor
+  }
+}

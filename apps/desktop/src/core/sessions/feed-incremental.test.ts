@@ -8,30 +8,7 @@ import { projectFeed } from './feed'
 import { projectFeedIncrementally } from './feed-incremental'
 import type { SessionFeedRow } from './models'
 import type { TranscriptMessage, TranscriptRecord } from './transcript'
-
-function message(overrides: Partial<TranscriptMessage> & { uuid: string }): TranscriptMessage {
-  return {
-    kind: 'message',
-    parentUuid: null,
-    originSessionId: null,
-    role: 'assistant',
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp: null,
-    entry: 'interactive',
-    stopReason: null,
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: [],
-    toolCalls: [],
-    toolResults: [],
-    answeredCalls: [],
-    usage: null,
-    ...overrides,
-  }
-}
+import { emptyMessage as message } from './transcript-fixtures'
 
 function prose(uuid: string, text: string): TranscriptMessage {
   return message({ uuid, blocks: [{ shape: 'prose', text }] })

@@ -1,5 +1,4 @@
-// The shared Session reader's Project scoping and bounded-window pagination (#2239), split out
-// of reader.test.ts to keep that file under the line cap.
+// The shared Session reader's Project scoping and bounded-window pagination (#2239).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'

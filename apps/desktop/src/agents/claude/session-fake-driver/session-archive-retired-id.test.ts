@@ -1,5 +1,4 @@
-// A resumed Session can be archived under an id it has since retired (#1593), split out of
-// session-discover-window.test.ts to keep that file under the line cap.
+// A resumed Session can be archived under an id it has since retired (#1593).
 import assert from 'node:assert/strict'
 import { mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'

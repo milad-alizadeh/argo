@@ -27,19 +27,26 @@ export function RosterRowView({
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
 }) {
-  if (row.kind === 'archivedToggle') {
-    return (
-      <ArchivedToggleRow
-        archivedLabel={archivedLabel}
-        onToggle={onToggleArchived}
-        open={row.open}
-      />
-    )
+  switch (row.kind) {
+    case 'archivedToggle':
+      return (
+        <ArchivedToggleRow
+          archivedLabel={archivedLabel}
+          onToggle={onToggleArchived}
+          open={row.open}
+        />
+      )
+    case 'archivedSentinel':
+    case 'rosterSentinel':
+      return <div aria-hidden="true" />
+    case 'archivedLoading':
+    case 'archivedError':
+    case 'archivedEmpty':
+    case 'archivedLoadingMore':
+      return <ArchivedSectionRow row={row} />
+    case 'session':
+      break
   }
-  if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
-    return <div aria-hidden="true" />
-  }
-  if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
 
   const session = row.session
   const title = renamedTitles[session.id]

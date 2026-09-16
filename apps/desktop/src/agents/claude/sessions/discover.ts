@@ -8,6 +8,7 @@ import {
   ROSTER_PAGE_SIZE,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
 import type { ArchivedSessionsPage } from '@/core/sessions/session-source'
 import { readArchivedSessions, writeArchivedSessionFlags } from './archive'
 import { parseTranscriptLine } from './records'
@@ -49,19 +50,30 @@ function isArchived(
 // can move a Session's id forward, and the store still names whichever id was current when the
 // reader archived it. The active Roster never carries an archived row (#1593): expanding Archive
 // asks discoverArchivedSessions below instead, on demand.
+//
+// A Project's reply keeps growing the same bounded window discovery pages by until it holds a full
+// page of that Project's own Sessions, rather than stopping at a global window and discarding
+// whatever does not match (#2239): the window is never scoped to a Project going in, since Project
+// membership is only known from a file's own parsed content, but growth continues on the Project's
+// behalf rather than a machine-wide one.
 export async function discoverSessions(
   root: string,
   archiveRoot?: string,
-  options?: { cursor?: string | null },
+  options?: { cursor?: string | null; projectRoot?: string | null },
 ): Promise<Discovery> {
-  const discovery = await reader.discoverSessions(root, options)
-  if (archiveRoot === undefined) return discovery
-  const archived = await readArchivedSessions(archiveRoot)
-  return {
-    ...discovery,
-    rows: discovery.rows
-      .map((row) => ({ ...row, archived: isArchived(row, archived) }))
-      .filter((row) => !row.archived),
+  const archived = archiveRoot === undefined ? null : await readArchivedSessions(archiveRoot)
+  const projectRoots = await projectRootsOf(options?.projectRoot)
+  let cursor = options?.cursor ?? null
+  for (;;) {
+    const discovery = await reader.discoverSessions(root, { cursor })
+    const rows = discovery.rows
+      .map((row) => (archived === null ? row : { ...row, archived: isArchived(row, archived) }))
+      .filter((row) => !row.archived && belongsToProject(row.cwd, projectRoots))
+    const exhausted = discovery.nextCursor === null
+    if (projectRoots === null || rows.length >= ROSTER_PAGE_SIZE || exhausted) {
+      return { ...discovery, rows }
+    }
+    cursor = discovery.nextCursor
   }
 }
 

@@ -1,6 +1,5 @@
 // Filler Sessions for the packaged pagination proof (#2239): enough of them, all older than every
-// other fixture, to push the roster's bounded window past ROSTER_PAGE_SIZE. Kept apart from
-// `session-feed-fixture.ts` so that file's own line count stays put.
+// other fixture, to push the roster's bounded window past ROSTER_PAGE_SIZE.
 import { utimes, writeFile } from 'node:fs/promises'
 import { fixturePath } from './session-fixture-files'
 

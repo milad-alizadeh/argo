@@ -98,8 +98,9 @@ async function discoverClaudeSessions(
     begin: roots.beginCompaction,
   })
   const withEdges = withHandoffEdges(rows, roots.handoffEdges)
-  // Project scope applies here, at this adapter's own discovery boundary (#2239), rather than
-  // after the shared reader has already merged every adapter's machine-wide list.
+  // `discoverSessions` above already grew its own bounded window on this Project's behalf
+  // (#2239); this filter's own job is scoping the managed rows merged in here, which never went
+  // through that disk-bounded read at all.
   const projectRoots = await projectRootsOf(options?.projectRoot)
   return {
     ...roster,
