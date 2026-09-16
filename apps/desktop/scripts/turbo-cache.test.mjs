@@ -98,13 +98,15 @@ describe('what turbo caches', () => {
 
 let dryRun
 function resolved(task) {
-  dryRun ??= JSON.parse(
-    spawnSync(
+  if (!dryRun) {
+    const run = spawnSync(
       'bun',
       ['run', 'turbo', 'run', 'build', ...PACKAGED_PROOFS, '--filter=@argo/desktop', '--dry=json'],
       { cwd: repoRoot, encoding: 'utf8' },
-    ).stdout,
-  ).tasks
+    )
+    if (run.status !== 0) throw new Error(`turbo's dry run exited ${run.status}:\n${run.stderr}`)
+    dryRun = JSON.parse(run.stdout).tasks
+  }
   const found = dryRun.find((candidate) => candidate.task === task)
   return { files: Object.keys(found.inputs), dependencies: found.dependencies }
 }

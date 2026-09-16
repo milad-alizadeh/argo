@@ -46,11 +46,16 @@ function* bundledFiles(appPath) {
     }
 }
 
+// A source copy keeps its path but not the title string, which only its import resolves to.
+const MOCK_SOURCE_PATH = /(^|\/)mocks\/cli\//
+
 export function mockCliFailures(appPath) {
   const failures = []
-  for (const { name, contents } of bundledFiles(appPath))
+  for (const { name, contents } of bundledFiles(appPath)) {
+    if (MOCK_SOURCE_PATH.test(name)) failures.push(`a mock CLI file is in the package, at ${name}`)
     for (const { cli, title } of MOCK_CLIS)
       if (contents.includes(title))
         failures.push(`the mock ${cli} CLI is in the package, in ${name}`)
+  }
   return failures
 }

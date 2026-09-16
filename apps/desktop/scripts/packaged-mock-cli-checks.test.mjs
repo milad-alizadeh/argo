@@ -10,11 +10,15 @@ import {
 } from '../mocks/cli/mock-cli-process-titles.mts'
 import { mockCliFailures } from './packaged-mock-cli-checks.mjs'
 
-async function fixtureApp({ bundled = '', unpacked = '' } = {}) {
+async function fixtureApp({ bundled = '', unpacked = '', copied = null } = {}) {
   const root = mkdtempSync(path.join(tmpdir(), 'argo-mock-cli-'))
   const source = path.join(root, 'app')
   mkdirSync(path.join(source, '.vite', 'build'), { recursive: true })
   writeFileSync(path.join(source, '.vite', 'build', 'main.js'), `console.log('argo')\n${bundled}`)
+  if (copied) {
+    mkdirSync(path.dirname(path.join(source, copied)), { recursive: true })
+    writeFileSync(path.join(source, copied), 'process.title = MOCK_CLAUDE_PROCESS_TITLE\n')
+  }
   const resources = path.join(root, 'Argo.app', 'Contents', 'Resources')
   mkdirSync(path.join(resources, 'app.asar.unpacked', 'node_modules', 'node-pty'), {
     recursive: true,
@@ -40,6 +44,15 @@ describe('mockCliFailures', () => {
     expect(failures).toHaveLength(1)
     expect(failures[0]).toContain(`mock ${cli} CLI`)
     expect(failures[0]).toContain('.vite/build/main.js')
+  })
+
+  test('fails a mock CLI source copied into the archive under its own path', async () => {
+    const failures = mockCliFailures(
+      await fixtureApp({ copied: 'mocks/cli/claude/mock-claude.ts' }),
+    )
+    expect(failures).toEqual([
+      'a mock CLI file is in the package, at app.asar/mocks/cli/claude/mock-claude.ts',
+    ])
   })
 
   test('fails a mock CLI left in the unpacked files', async () => {

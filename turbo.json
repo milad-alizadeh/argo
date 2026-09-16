@@ -80,7 +80,7 @@
         "tsconfig*.json",
         "package.json"
       ],
-      "env": ["CI"],
+      "env": ["CI", "ARGO_SESSION_SHOTS"],
       "outputs": []
     },
     "build:storybook": {
