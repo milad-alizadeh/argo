@@ -11,6 +11,7 @@ import { useSessionComposerState } from './use-session-composer-state'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
+  contextWindowTokens?: number | null
   developmentIdentity?: DevelopmentIdentity | null
   disabled?: boolean
   focusOnMount?: boolean
@@ -31,6 +32,7 @@ export type SessionComposerProps = {
 
 export function SessionComposer({
   contextTokens,
+  contextWindowTokens,
   developmentIdentity = null,
   disabled = false,
   focusOnMount = false,
@@ -58,6 +60,7 @@ export function SessionComposer({
       attachments={state.attachments}
       contextPickerOpen={contextPickerOpen}
       contextTokens={contextTokens}
+      contextWindowTokens={contextWindowTokens}
       disabled={disabled}
       developmentIdentity={developmentIdentity}
       draft={state.draft}
