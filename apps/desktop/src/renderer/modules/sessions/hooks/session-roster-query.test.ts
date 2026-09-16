@@ -54,6 +54,12 @@ async function pollTwice(secondTitle: string) {
 }
 
 describe('sessionRosterQuery', () => {
+  test('does not poll while an optimistic Session is selected', () => {
+    const options = sessionRosterQuery('optimistic:new-session', true, { projectRoot: null })
+
+    expect(options.refetchInterval).toBe(false)
+  })
+
   test('keeps the roster it already published when a poll finds the same Sessions', async () => {
     const { first, second } = await pollTwice('Read the Feed')
 
