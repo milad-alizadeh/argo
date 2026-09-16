@@ -48,12 +48,13 @@ test('starts the Turn at the last prompt, never at a tool result', async () => {
   assert.equal((await rowOf(['subagentTail'])).turnStartedAt, '2026-08-14T11:00:01.000Z')
 })
 
-test('names the newest call of the open Turn by its tool and the thing it acted on', async () => {
+test('names the newest call of the open Turn with its canonical label and metadata', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).activity, {
+    label: 'Edited /Users/x/proj/src/SubagentDots.tsx',
     tool: 'Edit',
     target: 'SubagentDots.tsx',
   })
-  assert.deepEqual((await rowOf(['subagentTail'])).activity, { tool: 'Task', target: null })
+  assert.equal((await rowOf(['subagentTail'])).activity?.label, 'Called Task')
 })
 
 test('reads every delegation with its own label, and which of them came back', async () => {

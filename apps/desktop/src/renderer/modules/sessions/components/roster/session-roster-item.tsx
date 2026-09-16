@@ -42,7 +42,7 @@ function knownCli(cli: string): cli is SessionCli {
 
 function activitySummary(session: Session): string | null {
   if (session.activity === null) return null
-  return [session.activity.tool, session.activity.target].filter(Boolean).join(' ')
+  return session.activity.label
 }
 
 function sessionName(session: Session): string {

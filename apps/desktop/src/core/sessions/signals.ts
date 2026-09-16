@@ -12,6 +12,7 @@ import {
   type SessionSetup,
   type SessionShellCommand,
 } from './models'
+import { toolPresentation } from './tool-feed'
 import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
@@ -191,5 +192,7 @@ function readTarget(input: Record<string, unknown>): string | null {
 // the Session did, not what it is doing, so a Turn that has made no call yet reads nothing.
 export function readActivity(messages: TranscriptMessage[]): SessionActivity | null {
   const call = calls(messages.slice(lastPromptIndex(messages) + 1)).at(-1)
-  return call === undefined ? null : { tool: call.name, target: readTarget(call.input) }
+  return call === undefined
+    ? null
+    : { label: toolPresentation(call).label, tool: call.name, target: readTarget(call.input) }
 }
