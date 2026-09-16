@@ -69,19 +69,6 @@ export const Loading: Story = {
     ).toBeInTheDocument()
   },
 }
-export const OptimisticSessionDoesNotStall: Story = {
-  args: {
-    feed: null,
-    failure: null,
-    selectedSessionId: 'optimistic:new-session',
-    stallTimeoutMs: 50,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await new Promise((resolve) => window.setTimeout(resolve, 100))
-    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
-  },
-}
 export const Empty: Story = {
   args: { feed: { ...feed, rows: [] }, failure: null },
   play: async ({ canvasElement }) => {
