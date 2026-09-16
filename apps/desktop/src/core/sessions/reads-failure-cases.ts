@@ -27,7 +27,6 @@ export function owningSource(capabilities: Partial<SessionSource> = {}): Session
       nextCursor: null,
     }),
     readSessionFiles: async () => null,
-    projectFeed: () => [],
     managedSessions: () => [
       managedRow(SESSION_ID, {
         cli: 'claude',
