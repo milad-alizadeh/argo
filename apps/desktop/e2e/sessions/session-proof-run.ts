@@ -4,11 +4,12 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { expect, test } from '@playwright/test'
+import { expect, type TestInfo, test } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionCliBackend, SessionFixture } from '../../mocks/sessions/session-cli-backend'
 import { feedStateSnapshot } from './feed-selectors'
 import { selectProofProject } from './fixtures/feed.fixture'
+import { JourneyPerformanceProfile, journeyProfileEnabled } from './journey-performance-profile'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 
 type Harness = Awaited<ReturnType<typeof createPackagedSessionHarness>>
@@ -51,6 +52,33 @@ export function defineLaunchWithProject(run: SessionProofRun, box: PageBox) {
   })
 }
 
+async function finishCase(harness: Harness, page: Page | undefined, testInfo: TestInfo) {
+  const context = harness.context()
+  if (!context) return
+  const failed = testInfo.status !== testInfo.expectedStatus
+  if (!failed) {
+    await context.tracing.stop()
+  } else {
+    const tracePath = testInfo.outputPath('trace.zip')
+    await context.tracing.stop({ path: tracePath })
+    await testInfo.attach('trace', { path: tracePath, contentType: 'application/zip' })
+    await testInfo.attach('feed-state', {
+      body: JSON.stringify(
+        await feedStateSnapshot(page).catch((error: unknown) => ({
+          snapshotFailed: String(error),
+        })),
+      ),
+      contentType: 'application/json',
+    })
+    await testInfo.attach('renderer-console', {
+      body: harness.recentConsole().join('\n'),
+      contentType: 'text/plain',
+    })
+  }
+  // A restart began its own recording; an unrestarted context needs the next case's recording.
+  await harness.context()?.tracing.start({ screenshots: true, snapshots: true })
+}
+
 // Wraps a packaged Session spec file in one serial describe block: one fixture root and one
 // harness, on one CLI backend, shared across every case the way a packaged launch's cost demands
 // (`packaged-session-harness.ts:34-42`). Playwright still gives each case its own test: a failure
@@ -66,43 +94,26 @@ export function describeSessionProof(
       let root: string
       let harness: Harness
       let page: Page | undefined
+      const profile = journeyProfileEnabled() ? new JourneyPerformanceProfile() : undefined
 
       test.beforeAll(async () => {
         root = await mkdtemp(path.join(os.tmpdir(), `argo-${name}-`))
-        harness = await createPackagedSessionHarness(root, backend)
+        harness = await createPackagedSessionHarness(root, backend, profile === undefined)
       })
 
       test.afterAll(async () => {
-        await harness?.close()
-        await rm(root, { recursive: true, force: true })
+        try {
+          await profile?.write()
+        } finally {
+          await harness?.close()
+          await rm(root, { recursive: true, force: true })
+        }
       })
 
       test.afterEach(async ({}, testInfo) => {
-        const context = harness.context()
-        if (!context) return
-        const failed = testInfo.status !== testInfo.expectedStatus
-        if (!failed) {
-          await context.tracing.stop()
-        } else {
-          const tracePath = testInfo.outputPath('trace.zip')
-          await context.tracing.stop({ path: tracePath })
-          await testInfo.attach('trace', { path: tracePath, contentType: 'application/zip' })
-          await testInfo.attach('feed-state', {
-            body: JSON.stringify(
-              await feedStateSnapshot(page).catch((error: unknown) => ({
-                snapshotFailed: String(error),
-              })),
-            ),
-            contentType: 'application/json',
-          })
-          await testInfo.attach('renderer-console', {
-            body: harness.recentConsole().join('\n'),
-            contentType: 'text/plain',
-          })
-        }
-        // A restart already opened a fresh recording (`packaged-session-harness.ts`); a context
-        // that ran unrestarted needs one for the next test.
-        await harness.context()?.tracing.start({ screenshots: true, snapshots: true })
+        profile?.recordCase(testInfo)
+        if (profile) return
+        await finishCase(harness, page, testInfo)
       })
 
       // `harness` is only assigned once `beforeAll` runs; every member below reads it lazily, at
@@ -114,8 +125,17 @@ export function describeSessionProof(
         get fixture() {
           return harness.fixture
         },
-        launch: (...arguments_) => harness.launch(...arguments_),
-        restart: (...arguments_) => harness.restart(...arguments_),
+        launch: async (...arguments_) => {
+          const next = await harness.launch(...arguments_)
+          await profile?.start(next)
+          return next
+        },
+        restart: async (...arguments_) => {
+          await profile?.stop()
+          const next = await harness.restart(...arguments_)
+          await profile?.start(next)
+          return next
+        },
         isPackaged: () => harness.isPackaged(),
         hold: (next) => {
           page = next

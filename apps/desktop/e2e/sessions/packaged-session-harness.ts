@@ -66,7 +66,11 @@ async function timed<T>(launches: number[], start: () => Promise<T>) {
 
 // Launches the packaged app against the CLIs the backend names, then restarts it in place so
 // roster/resume proof cases can exercise a fresh process without losing the fixture root.
-export async function createPackagedSessionHarness(root: string, backend: SessionCliBackend) {
+export async function createPackagedSessionHarness(
+  root: string,
+  backend: SessionCliBackend,
+  recordFailureTrace = true,
+) {
   const fixture = await prepare(root)
   const run = await backend.start({ root, fixture })
   let application: Awaited<ReturnType<typeof electron.launch>> | undefined
@@ -91,7 +95,9 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
     // One trace recording per Electron process, segmented per Playwright test in
     // `session-proof-run.ts`: it stops and restarts the recording at each test boundary so a
     // failure writes only its own trace, and a restart mid-case simply starts recording again.
-    await application.context().tracing.start({ screenshots: true, snapshots: true })
+    if (recordFailureTrace) {
+      await application.context().tracing.start({ screenshots: true, snapshots: true })
+    }
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
