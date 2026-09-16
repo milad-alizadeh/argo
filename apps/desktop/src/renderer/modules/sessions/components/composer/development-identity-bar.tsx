@@ -25,6 +25,9 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
       <span className="shrink-0 font-semibold uppercase tracking-wide">
         {t('development.shortLabel')}
       </span>
+      <span className="rounded-sm bg-background px-1.5 py-0.5 font-mono font-semibold text-foreground">
+        {identity.label}
+      </span>
       {ticket === null ? null : (
         <span
           className="min-w-0 truncate"
