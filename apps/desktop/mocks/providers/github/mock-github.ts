@@ -1,9 +1,11 @@
-// GitHub, as far as the cockpit calls it, on a loopback port. The provider is the one thing a test
-// here does not control and cannot afford live, so it is the one thing mockd: the unit tests and
-// the packaged proof both drive this server, and both leave the cockpit's own code running for real.
-import { createServer } from 'node:http'
-import type { AddressInfo } from 'node:net'
-import { type MockState, send } from './mock-exchange'
+// GitHub, as far as the cockpit calls it, on a fixed loopback origin, answered by Mock Service
+// Worker instead of a real socket. The provider is the one thing a test here does not control and
+// cannot afford live, so it is the one thing mockd; only this in-process suite drives it — the
+// packaged proof keeps its own real loopback server, since Mock Service Worker cannot reach a
+// process it was never loaded into.
+import { mountMockProvider, type NodeRoute } from '../msw-node-bridge'
+import type { MockState } from './mock-exchange'
+import { githubControls } from './mock-github-controls'
 import { answer } from './mock-routes'
 
 export type MockUser = { id: number; login: string }
@@ -52,10 +54,30 @@ export type MockGitHub = {
   close(): Promise<void>
 }
 
+// A fixed loopback-shaped origin, never actually dialed: Mock Service Worker intercepts a request
+// to it before any socket opens, so nothing needs to bind a free port.
+const MOCK_GITHUB_ORIGIN = 'http://127.0.0.1:41200'
+
+// The concrete request shapes the cockpit sends GitHub. Anything else on this origin is a call the
+// test never meant to stub, and Mock Service Worker aborts it by name rather than answer a quiet 404.
+const ROUTES = [
+  'POST /login/device/code',
+  'POST /login/oauth/access_token',
+  'GET /login/device',
+  'GET /user',
+  'GET /search/issues',
+  'GET /user/repos',
+  'GET /repos/:owner/:repo',
+  'GET /repos/:owner/:repo/issues',
+  'GET /repos/:owner/:repo/issues/:number/sub_issues',
+  'GET /repos/:owner/:repo/issues/:number/dependencies/blocked_by',
+  'PATCH /repos/:owner/:repo/issues/:number',
+]
+
 export async function startMockGitHub(): Promise<MockGitHub> {
   const requests: string[] = []
   const state: MockState = {
-    origin: '',
+    origin: MOCK_GITHUB_ORIGIN,
     signIn: { answer: 'declined', pending: 0, held: false },
     devices: new Map(),
     tokens: new Map(),
@@ -63,35 +85,15 @@ export async function startMockGitHub(): Promise<MockGitHub> {
     outage: 'none',
     serial: 0,
   }
-  const server = createServer((request, response) => {
-    requests.push(`${request.method} ${new URL(request.url ?? '/', 'http://x').pathname}`)
-    answer(state, request, response).catch(() => send(response, 500, { message: 'Mock failed' }))
-  })
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  const { port } = server.address() as AddressInfo
-  state.origin = `http://127.0.0.1:${port}`
+  const route: NodeRoute = (request, response) => answer(state, request, response)
+  const routes = Object.fromEntries(ROUTES.map((key) => [key, route]))
+  const retire = mountMockProvider({ origin: MOCK_GITHUB_ORIGIN, requests, routes })
   return {
     origin: state.origin,
     requests,
-    signIn(answer, pendingPolls = 1) {
-      state.signIn = { answer, pending: pendingPolls, held: false }
+    ...githubControls(state),
+    close: async () => {
+      retire()
     },
-    holdSignIn(answer) {
-      state.signIn = { answer, pending: 0, held: true }
-    },
-    addRepository(repository) {
-      state.repositories.set(repository.fullName.toLowerCase(), repository)
-    },
-    revoke(login) {
-      for (const [token, user] of state.tokens) if (user.login === login) state.tokens.delete(token)
-    },
-    outage(kind) {
-      state.outage = kind
-    },
-    close: () =>
-      new Promise((resolve) => {
-        server.closeAllConnections()
-        server.close(() => resolve())
-      }),
   }
 }

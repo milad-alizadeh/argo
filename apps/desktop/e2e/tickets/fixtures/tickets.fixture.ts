@@ -1,11 +1,13 @@
 // The packaged app, its own application data, a mock GitHub and a mock Linear, for the Ticket proof.
-// The providers are the one thing mockd; the cockpit, its stores and safeStorage all run for real.
+// The providers are the one thing mocked; the cockpit, its stores and safeStorage all run for real.
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
-import { type MockGitHub, startMockGitHub } from '../../../mocks/providers/github/mock-github'
-import { type MockLinear, startMockLinear } from '../../../mocks/providers/linear/mock-linear'
+import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
+import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
+import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
+import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/core/projects/proof-protocol'
 import {
@@ -78,9 +80,9 @@ export async function prepare(root: string): Promise<TicketFixture> {
       selectedId: 'project-1',
     }),
   )
-  const github = await startMockGitHub()
+  const github = await startMockGitHubLoopback()
   serveRepositories(github)
-  const linear = await startMockLinear()
+  const linear = await startMockLinearLoopback()
   serveTeams(linear)
   return { application, userData, noSessions, github, linear }
 }

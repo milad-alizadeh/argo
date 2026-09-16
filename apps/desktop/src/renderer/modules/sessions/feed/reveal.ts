@@ -1,5 +1,6 @@
 import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 import type { SessionFeedRow } from '../types'
+import { isFeedRowStreaming } from './feed-row-renderers'
 import type { Settled } from './use-settled-feed'
 
 // New agent text is uncovered top to bottom while the virtualizer corrects the mounted row's
@@ -21,7 +22,7 @@ type ShownRow = { text: string; height: number; playing?: { reveal: Reveal; ends
 export type Shown = { rows: Map<string, ShownRow> }
 
 function revealsText(row: SessionFeedRow): row is Extract<SessionFeedRow, { shape: 'prose' }> {
-  return row.shape === 'prose' && row.role === 'assistant'
+  return isFeedRowStreaming(row) && row.shape === 'prose'
 }
 
 function reveal(fromPx: number, toPx: number): Reveal {

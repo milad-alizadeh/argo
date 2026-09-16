@@ -1,11 +1,13 @@
-// Linear, as far as the cockpit calls it, on a loopback port: the consent page, the token endpoint
-// and the GraphQL reads. The provider is the one thing a test here does not control and cannot
-// afford live, so it is the one thing mockd; the unit tests and the packaged proof both drive it.
-import { createServer } from 'node:http'
-import type { AddressInfo } from 'node:net'
+// Linear, as far as the cockpit calls it, on a fixed loopback origin: the consent page, the token
+// endpoint and the GraphQL reads, answered by Mock Service Worker instead of a real socket. The
+// provider is the one thing a test here does not control and cannot afford live, so it is the one
+// thing mockd; only this in-process suite drives it — the packaged proof keeps its own real
+// loopback server, since Mock Service Worker cannot reach a process it was never loaded into.
+import { mountMockProvider, type NodeRoute } from '../msw-node-bridge'
+import { linearControls } from './mock-linear-controls'
 import { answerGraphQL } from './mock-linear-graphql'
 import { authorize, token } from './mock-linear-oauth'
-import { type MockLinearState, type Route, reply } from './mock-linear-state'
+import type { MockLinearState } from './mock-linear-state'
 
 export type MockLinearUser = { id: string; name: string; email: string; workspace: string }
 
@@ -55,16 +57,14 @@ export type MockLinear = {
   close(): Promise<void>
 }
 
-const ROUTES: Record<string, Route> = {
-  'GET /oauth/authorize': authorize,
-  'POST /oauth/token': token,
-  'POST /graphql': answerGraphQL,
-}
+// A fixed loopback-shaped origin, never actually dialed: Mock Service Worker intercepts a request
+// to it before any socket opens, so nothing needs to bind a free port.
+const MOCK_LINEAR_ORIGIN = 'http://127.0.0.1:41100'
 
 export async function startMockLinear(): Promise<MockLinear> {
   const requests: string[] = []
   const state: MockLinearState = {
-    origin: '',
+    origin: MOCK_LINEAR_ORIGIN,
     signIn: 'declined',
     codes: new Map(),
     access: new Map(),
@@ -74,46 +74,18 @@ export async function startMockLinear(): Promise<MockLinear> {
     lifetime: 86_399,
     serial: 0,
   }
-  const server = createServer((request, response) => {
-    const route = `${request.method} ${new URL(request.url ?? '/', 'http://x').pathname}`
-    requests.push(route)
-    const answer = ROUTES[route] ?? (() => reply(response, 404, { error: 'not_found' }))
-    Promise.resolve(answer(state, request, response)).catch(() =>
-      reply(response, 500, { error: 'mock_failed' }),
-    )
-  })
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  state.origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
-  const forUser = (userId: string, map: Map<string, { user: MockLinearUser }>) => {
-    for (const [key, grant] of map) if (grant.user.id === userId) map.delete(key)
+  const routes: Record<string, NodeRoute> = {
+    'GET /oauth/authorize': (request, response) => authorize(state, request, response),
+    'POST /oauth/token': (request, response) => token(state, request, response),
+    'POST /graphql': (request, response) => answerGraphQL(state, request, response),
   }
+  const retire = mountMockProvider({ origin: MOCK_LINEAR_ORIGIN, requests, routes })
   return {
     origin: state.origin,
     requests,
-    signIn: (answer) => {
-      state.signIn = answer
+    ...linearControls(state),
+    close: async () => {
+      retire()
     },
-    addTeam: (team) => {
-      state.teams.set(team.id, team)
-    },
-    tokenLifetime: (seconds) => {
-      state.lifetime = seconds
-    },
-    expire: (userId) => {
-      for (const grant of state.access.values()) if (grant.user.id === userId) grant.expiresAt = 0
-    },
-    revoke: (userId) => {
-      forUser(userId, state.access)
-      forUser(userId, state.refresh)
-    },
-    refuseRefresh: (userId) => forUser(userId, state.refresh),
-    outage: (kind) => {
-      state.outage = kind
-    },
-    close: () =>
-      new Promise((resolve) => {
-        server.closeAllConnections()
-        server.close(() => resolve())
-      }),
   }
 }

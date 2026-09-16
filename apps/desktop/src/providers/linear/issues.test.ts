@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
+import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
 import { ADA, HIDDEN, linear, signIn, TEAM } from './harness'
 import { readTicketPage } from './issues'
 import { checkTeam, listTeams } from './teams'
@@ -123,4 +124,9 @@ test('an access token past its lifetime is refused as unauthorized', async (cont
   const { accessToken } = await signIn(endpoints)
   mock.expire(ADA.id)
   assert.deepEqual(await listTeams(endpoints, accessToken), { ok: false, failure: 'unauthorized' })
+})
+
+test('a call to a route this mock never stubbed fails loudly, naming the request', async (context) => {
+  const [mock] = await linear(context)
+  await assertUnstubbedRequestFails(`${mock.origin}/oauth/revoke`)
 })

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { SessionFeed } from '../types'
 import { CompactionMarker } from './compaction-marker'
 import type { FeedLiveFacts } from './feed-live-facts'
+import { isFeedToolGroup } from './feed-row-renderers'
 import { HandoffCompletedMarker, HandoffMarker } from './handoff-marker'
 import { TurnMarker } from './turn-marker'
 import type { TurnMarkerView } from './turn-marker-state'
@@ -70,7 +71,8 @@ export function liveFeedTail(
     turnMarker: liveFacts.turnMarker,
     markerSilent:
       liveFacts.isRunning &&
-      lastRow?.shape === 'tool-group' &&
+      lastRow !== undefined &&
+      isFeedToolGroup(lastRow) &&
       liveFacts.turnMarker?.phase === 'working',
   })
 }
