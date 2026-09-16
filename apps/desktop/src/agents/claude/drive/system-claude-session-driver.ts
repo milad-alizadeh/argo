@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
 
+import { createOwnershipLedger, isProcessAlive } from '@/core/sessions/ownership-ledger'
 import { findExecutableOnLoginShellPath } from '../../executable-path'
 import { claudePendingQuestion } from '../sessions/pending-question'
 import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
 import { createHandoffLedger } from './handoff-ledger'
 import { createMessageDisplay } from './message-display'
-import { createOwnershipLedger, isProcessAlive } from './ownership-ledger'
 import { createClaudePermissionGate } from './permission-gate'
 
 function readHandoffBrief(briefPath: string): string | null {
@@ -26,7 +26,7 @@ export function createSystemClaudeSessionDriver(paths: {
   // Where a handing-off Session's brief lands, and the durable edge a completed handoff records.
   handoffBriefs: string
   handoffLedger: string
-  // A proof names its fake `claude` here; a person's launch finds the real one on the login PATH.
+  // A proof names its mock `claude` here; a person's launch finds the real one on the login PATH.
   executable?: string
 }) {
   const display = createMessageDisplay()
@@ -37,7 +37,7 @@ export function createSystemClaudeSessionDriver(paths: {
     now: () => new Date(),
     ledger: createOwnershipLedger({
       path: paths.ledger,
-      owner: { pid: process.pid, registry: randomUUID() },
+      window: { pid: process.pid, registry: randomUUID() },
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),

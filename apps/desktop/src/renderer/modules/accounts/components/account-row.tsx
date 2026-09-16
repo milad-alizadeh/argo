@@ -19,6 +19,7 @@ const STATE_PRESENTATION = {
 export type AccountRowProps = {
   account: AccountSummary
   busy: boolean
+  onConnectSource: (() => void) | undefined
   onDisconnect: () => void
   onReconnect: () => void
 }
@@ -79,13 +80,19 @@ type ConfirmProps = {
   onKeep: () => void
 }
 
-export function AccountRow({ account, busy, onDisconnect, onReconnect }: AccountRowProps) {
+export function AccountRow({
+  account,
+  busy,
+  onConnectSource,
+  onDisconnect,
+  onReconnect,
+}: AccountRowProps) {
   const { t } = useTranslation('accounts')
   const [confirming, setConfirming] = useState(false)
   const row = useRef<HTMLLIElement>(null)
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
-  const { name } = providerPresentation(account.provider)
+  const { name, scope } = providerPresentation(account.provider)
   const { variant, note } = STATE_PRESENTATION[account.state]
   const reason = note ? t(note, { provider: name }) : null
   return (
@@ -95,13 +102,15 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
       className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
     >
       <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
-        <span className="type-body min-w-0 truncate font-medium">{account.login}</span>
+        <span className="type-heading min-w-0 truncate">{account.login}</span>
         {account.workspace ? (
           <span className="type-meta min-w-0 truncate text-muted-foreground">
             {account.workspace}
           </span>
         ) : null}
-        <Badge variant={variant}>{t(`state.${account.state}`)}</Badge>
+        <Badge size="compact" variant={variant}>
+          {t(`state.${account.state}`)}
+        </Badge>
         <span className="flex-1" />
         {confirming ? null : (
           <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
@@ -110,6 +119,11 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
         )}
       </div>
       <Connections account={account} />
+      {account.state === 'connected' && account.connections.length === 0 && onConnectSource ? (
+        <Button onClick={onConnectSource} size="sm" variant="outline">
+          {t('row.connect', { scope: scope.one })}
+        </Button>
+      ) : null}
       {reason ? (
         <div className="grid justify-items-start gap-(--spacing-shell-item)">
           <p className="type-meta text-destructive">{reason}</p>

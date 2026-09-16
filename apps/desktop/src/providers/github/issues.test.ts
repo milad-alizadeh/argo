@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { FakeIssue } from './fake-driver/fake-github'
-import { github, OCTOCAT, signIn } from './harness'
+import type { MockIssue } from '../../../mocks/providers/github/mock-github'
+import { github, githubWithRepository, OCTOCAT, signIn } from './harness'
 import { readTicketPage } from './issues'
 import { checkRepository, isRepositoryScope } from './repository'
 
 test('a repository check names the repository by its canonical name', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
-  fake.addRepository({ fullName: 'Octo/Hello', visibleTo: [OCTOCAT.id], issues: [] })
-  fake.addRepository({
+  const [mock, endpoints] = await github(context)
+  mock.signIn(OCTOCAT)
+  mock.addRepository({ fullName: 'Octo/Hello', visibleTo: [OCTOCAT.id], issues: [] })
+  mock.addRepository({
     fullName: 'octo/quiet',
     visibleTo: [OCTOCAT.id],
     issues: [],
     hasIssues: false,
   })
-  fake.addRepository({ fullName: 'octo/secret', visibleTo: [], issues: [] })
+  mock.addRepository({ fullName: 'octo/secret', visibleTo: [], issues: [] })
   const token = await signIn(endpoints)
   assert.deepEqual(await checkRepository(endpoints, token, 'octo/hello'), {
     ok: true,
@@ -32,17 +32,17 @@ test('a repository check names the repository by its canonical name', async (con
 })
 
 test('a revoked token and a throttled one are told apart', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
-  fake.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: [] })
+  const [mock, endpoints] = await github(context)
+  mock.signIn(OCTOCAT)
+  mock.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: [] })
   const token = await signIn(endpoints)
-  fake.outage('rate-limited')
+  mock.outage('rate-limited')
   assert.deepEqual(await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST }), {
     ok: false,
     failure: 'rate-limited',
   })
-  fake.outage('none')
-  fake.revoke('octocat')
+  mock.outage('none')
+  mock.revoke('octocat')
   assert.deepEqual(await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST }), {
     ok: false,
     failure: 'unauthorized',
@@ -66,7 +66,7 @@ test('a repository scope is owner/name and nothing that could leave the path', (
 
 const FIRST = { query: '', page: 1 }
 
-const BACKLOG: FakeIssue[] = [
+const BACKLOG: MockIssue[] = [
   { number: 1, title: 'Parent', body: '  The whole thing.  ', children: [2, 3], type: 'PRD' },
   { number: 2, title: 'Open child', blockedBy: [3], labels: [{ name: 'prd', color: 'aa00ff' }] },
   { number: 3, title: 'Closed child', state: 'closed' },
@@ -74,9 +74,9 @@ const BACKLOG: FakeIssue[] = [
 ]
 
 test('open Tickets carry their body, hierarchy and dependencies, and a pull request is none of them', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
-  fake.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: BACKLOG })
+  const [mock, endpoints] = await github(context)
+  mock.signIn(OCTOCAT)
+  mock.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: BACKLOG })
   const read = await readTicketPage(endpoints, await signIn(endpoints), {
     scope: 'octo/hello',
     ...FIRST,
@@ -89,7 +89,7 @@ test('open Tickets carry their body, hierarchy and dependencies, and a pull requ
       tickets: [
         {
           key: '#1',
-          url: `${fake.origin}/octo/hello/issues/1`,
+          url: `${mock.origin}/octo/hello/issues/1`,
           title: 'Parent',
           body: 'The whole thing.',
           state: 'open',
@@ -106,7 +106,7 @@ test('open Tickets carry their body, hierarchy and dependencies, and a pull requ
         },
         {
           key: '#2',
-          url: `${fake.origin}/octo/hello/issues/2`,
+          url: `${mock.origin}/octo/hello/issues/2`,
           title: 'Open child',
           body: null,
           state: 'open',
@@ -121,19 +121,15 @@ test('open Tickets carry their body, hierarchy and dependencies, and a pull requ
       ],
     },
   })
-  assert.ok(!fake.requests.some((line) => line.includes('/issues/2/sub_issues')))
+  assert.ok(!mock.requests.some((line) => line.includes('/issues/2/sub_issues')))
 })
 
 test('a repository that serves no dependency facts reads as unknown, not unblocked', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
-  fake.addRepository({
-    fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+  const { endpoints, token } = await githubWithRepository(context, {
     issues: [{ number: 1, title: 'Alone' }],
     servesDependencies: false,
   })
-  const read = await readTicketPage(endpoints, await signIn(endpoints), {
+  const read = await readTicketPage(endpoints, token, {
     scope: 'octo/hello',
     ...FIRST,
   })

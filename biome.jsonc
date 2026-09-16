@@ -219,6 +219,20 @@
         }
       }
     },
+    // KIND: `test.beforeEach`/`test.afterEach` read their fixture list off the literal
+    // destructuring pattern in their first parameter (#2325): Playwright's own docs write a hook
+    // that needs none of them as `async ({}, testInfo) => {`, and a named parameter in its place
+    // breaks that reading rather than just going unused.
+    {
+      "includes": ["apps/desktop/e2e/sessions/session-proof-run.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noEmptyPattern": "off"
+          }
+        }
+      }
+    },
     // KIND: declarative catalogs the line ceiling does not apply to. A story is a named
     // state, not logic, so length here is coverage and the repetition between stories is the
     // point. No workspace writes stories today — the rule is the

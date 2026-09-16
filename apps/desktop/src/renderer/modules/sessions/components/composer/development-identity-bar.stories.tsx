@@ -48,7 +48,8 @@ export const LinkedTicket: Story = {
     await expect(canvas.getByText('Isolate desktop development launches')).toBeVisible()
     await expect(canvas.getByText(identity.worktree)).toBeVisible()
     // Two development apps are told apart by the instance, not by the branch they share.
-    await expect(canvas.getByText(identity.id)).toBeVisible()
+    await expect(canvas.getByText('-a1b2c3d4')).toBeVisible()
+    await expect(canvas.getByTitle(identity.id)).toBeVisible()
     await expect(bar).toHaveAttribute('data-development-instance', identity.id)
     await expect(bar).toHaveAttribute('data-ticket-key', '#2173')
   },
@@ -75,12 +76,9 @@ export const UnlinkedAtWindowMinimum: Story = {
   parameters: { fullWidth: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(LONG_INSTANCE.id)).toBeVisible()
-    // A real instance runs past 250px in this font. It shares the squeeze with the worktree path
-    // instead of taking its width outright, so the path still shows more than its first folder.
+    await expect(canvas.getByText('-3a340324')).toBeVisible()
     const worktree = canvas.getByText(LONG_INSTANCE.worktree)
     await expect(worktree.clientWidth).toBeGreaterThan(150)
-    // Truncated either way, so the whole id stays readable on hover.
     await expect(canvas.getByTitle(LONG_INSTANCE.id)).toBeInTheDocument()
   },
 }

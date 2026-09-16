@@ -40,13 +40,15 @@ Everything here is a fact about this repository. Process belongs to the skill th
 Before changing desktop Session observation, transcript discovery, or a CLI parser, read
 `docs/adr/0021-placement-is-declared-per-module.md` and
 `docs/adr/0024-session-drive-port-two-adapters.md`. A CLI owns one adapter under
-`apps/desktop/src/agents/<cli>/`: its filesystem layout, parser, fixtures, and proof cases live
-there. Shared Session code holds only the IPC contract and projections. Register an adapter once;
-do not branch on a CLI or filename in shared code.
+`apps/desktop/src/agents/<cli>/`: its filesystem layout and parser live there. Shared Session code
+holds only the IPC contract and projections. Register an adapter once, and keep shared code free
+of CLI and filename branches.
 
-`apps/desktop/scripts/` holds generated output and runtime wrappers. Product behavior and proof
-sources are TypeScript under `apps/desktop/src/`; the package build generates runnable `.mjs`
-drivers. Do not add product behavior to `scripts/`.
+Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
+the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per
+flow in `playwright.config.ts`, run by `bun run test:e2e`; add a flow as a project, never a script.
+`mocks/` holds mock CLIs, mock providers and their transcripts; `tools/` holds capture, measure
+and repro scripts. `apps/desktop/scripts/` holds runtime wrappers only.
 
 ## Gates
 

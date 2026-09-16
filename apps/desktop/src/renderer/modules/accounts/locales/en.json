@@ -22,6 +22,7 @@
       "linear": "Teams for {{login}}"
     },
     "noConnections": "No Project reads Tickets through this Account.",
+    "connect": "Connect a {{scope}}",
     "disconnect": "Disconnect…",
     "reconnect": "Reconnect"
   },

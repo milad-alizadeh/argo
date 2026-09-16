@@ -13,19 +13,15 @@ import type { SessionFeed, SessionId } from '../types'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 import { sessionRosterQuery } from './session-roster-query'
 
-// A poll must refresh only the window this reader has already loaded, never regrow it (#2239), and
-// every consumer of the roster must agree on which window that is: the cursor therefore lives in a
-// store all of them read, and in the query key, so growing the window is a different cached read
+// A refresh must refresh only the window this reader has already loaded, never regrow it (#2239),
+// and every consumer of the roster must agree on which window that is: the cursor therefore lives in
+// a store all of them read, and in the query key, so growing the window is a different cached read
 // rather than a refetch of the same one.
-function useRosterQuery(
-  selectedSessionId: SessionId | null,
-  enabled: boolean,
-  projectRoot: string | null,
-) {
+function useRosterQuery(enabled: boolean, projectRoot: string | null) {
   const cursor = useRosterWindowCursor(projectRoot)
   const grow = useRosterWindowStore((state) => state.grow)
   const queryClient = useQueryClient()
-  const query = useQuery(sessionRosterQuery(selectedSessionId, enabled, { projectRoot, cursor }))
+  const query = useQuery(sessionRosterQuery(enabled, { projectRoot, cursor }))
 
   // A Session written by a CLI outside Argo appears because the transcript trees are watched. The
   // roster used to notice it only by re-reading every file twice a second, and only while a Session
@@ -67,7 +63,7 @@ export function useSessions(
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
-  } = useRosterQuery(selectedSessionId, rosterEnabled, projectRoot)
+  } = useRosterQuery(rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   // The open Session's transcript lives under the same watched trees as every other, whether a CLI

@@ -1,13 +1,10 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useState } from 'react'
 import type { SessionFeedRow } from '../types'
+import { isFeedRowPrompt } from './feed-row-renderers'
 
 type Virtualizer = ReactVirtualizer<HTMLElement, Element>
 type Pin = { sessionId: string; id: string | null }
-
-function isPrompt(row: SessionFeedRow) {
-  return row.shape === 'prose' && row.role === 'user'
-}
 
 // Where the viewport sits with the prompt at its top, a scroll-padding gap above it.
 function promptTop(virtualizer: Virtualizer, index: number, gap: number) {
@@ -29,15 +26,15 @@ export function usePromptAtTop({
   virtualizer: Virtualizer
 }) {
   // Keyed by id, so earlier history arriving above the prompt does not read as a new one.
-  const latest = rows.findLast(isPrompt)?.id ?? null
+  const latest = rows.findLast(isFeedRowPrompt)?.id ?? null
   const [seen, setSeen] = useState<Pin>({ sessionId, id: latest })
   const [pin, setPin] = useState<(Pin & { index: number }) | null>(null)
   if (seen.sessionId !== sessionId || seen.id !== latest) {
     setSeen({ sessionId, id: latest })
     if (positioned && seen.sessionId === sessionId && latest !== null)
-      setPin({ sessionId, id: latest, index: rows.findLastIndex(isPrompt) })
+      setPin({ sessionId, id: latest, index: rows.findLastIndex(isFeedRowPrompt) })
   }
-  const index = pin?.sessionId === sessionId ? rows.findLastIndex(isPrompt) : -1
+  const index = pin?.sessionId === sessionId ? rows.findLastIndex(isFeedRowPrompt) : -1
   // By index, not offset: the virtualizer re-aims each frame as the rows it draws on the way
   // measure, where an offset from estimated heights stops short. `scrollPaddingStart` is the gap.
   useEffect(() => {

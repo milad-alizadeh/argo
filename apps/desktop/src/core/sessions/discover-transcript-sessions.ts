@@ -33,7 +33,10 @@ export type TranscriptDiscovery = {
   nextCursor: string | null
 }
 
-type Candidate = TranscriptPath & { writtenAt: number }
+// Size joins mtime in the cache key: a file appended to inside one mtime tick reads as unchanged
+// on a filesystem whose timestamps are coarser than the write, and the Roster then stops
+// following the transcript (seen on CI, #2241).
+type Candidate = TranscriptPath & { writtenAt: number; size: number }
 
 type TranscriptDiscoverySource = {
   cli: string
@@ -72,15 +75,15 @@ function createFileReader(source: TranscriptDiscoverySource): ReadFile {
 }
 
 function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile: ReadFile) {
-  const summaries = new Map<string, { writtenAt: number; file: TranscriptFile }>()
+  const summaries = new Map<string, { writtenAt: number; size: number; file: TranscriptFile }>()
 
   return async function summarise(root: string, windowSize: number) {
     const found = await source.transcriptPaths(root)
     const candidates: Candidate[] = await Promise.all(
-      found.map(async (file) => ({
-        ...file,
-        writtenAt: (await stat(file.path).catch(() => null))?.mtimeMs ?? 0,
-      })),
+      found.map(async (file) => {
+        const written = await stat(file.path).catch(() => null)
+        return { ...file, writtenAt: written?.mtimeMs ?? 0, size: written?.size ?? 0 }
+      }),
     )
     candidates.sort((left, right) => right.writtenAt - left.writtenAt)
     const recent = candidates.slice(0, windowSize)
@@ -88,7 +91,11 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
     let unreadable = 0
     for (const candidate of recent) {
       const held = summaries.get(candidate.path)
-      if (held !== undefined && held.writtenAt === candidate.writtenAt) {
+      if (
+        held !== undefined &&
+        held.writtenAt === candidate.writtenAt &&
+        held.size === candidate.size
+      ) {
         files.push(held.file)
         continue
       }
@@ -97,7 +104,11 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
         unreadable += 1
         continue
       }
-      summaries.set(candidate.path, { writtenAt: candidate.writtenAt, file: read })
+      summaries.set(candidate.path, {
+        writtenAt: candidate.writtenAt,
+        size: candidate.size,
+        file: read,
+      })
       files.push(read)
     }
     const reached = new Set(recent.map((candidate) => candidate.path))

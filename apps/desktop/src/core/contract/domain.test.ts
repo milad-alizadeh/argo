@@ -1,11 +1,11 @@
 // The whole channel, proved once against a throwaway domain: registration and client are driven
-// exactly as a real domain drives them, over the fake window in test-support.ts.
+// exactly as a real domain drives them, over the mock window in mocks/contract/mock-ipc-window.ts.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { z } from 'zod'
+import { createMockIpcWindow, RENDERER_URL } from '../../../mocks/contract/mock-ipc-window'
 import { createDomainClient, registerDomainHandlers } from './domain'
 import { errorFactory, errorSchema, message } from './messages'
-import { createFakeIpcWindow, RENDERER_URL } from './test-support'
 
 const ECHO_ERRORS = {
   'access-denied': 'Argo cannot do this from here.',
@@ -29,9 +29,9 @@ const OPERATIONS = {
 type Context = { refuse: string | null }
 
 function attach(context: Context = { refuse: null }) {
-  const fake = createFakeIpcWindow()
+  const mock = createMockIpcWindow()
   registerDomainHandlers({
-    window: fake.window,
+    window: mock.window,
     rendererURL: RENDERER_URL,
     operations: OPERATIONS,
     context,
@@ -48,7 +48,7 @@ function attach(context: Context = { refuse: null }) {
     },
     error: echoError,
   })
-  return fake
+  return mock
 }
 
 function client(invoke: (channel: string, request: unknown) => Promise<unknown>) {
@@ -56,21 +56,21 @@ function client(invoke: (channel: string, request: unknown) => Promise<unknown>)
 }
 
 test('answers a trusted, well formed request', async () => {
-  const fake = attach()
-  const said = await client(fake.trustedInvoke).say({ name: 'argo' })
+  const mock = attach()
+  const said = await client(mock.trustedInvoke).say({ name: 'argo' })
   assert.deepEqual(said, { version: 1, type: 'echo.said', requestId: said.requestId, name: 'argo' })
 })
 
 test('refuses an untrusted frame with access-denied, not the handler result', async () => {
-  const fake = attach()
-  const said = await client(fake.untrustedInvoke).say({ name: 'argo' })
+  const mock = attach()
+  const said = await client(mock.untrustedInvoke).say({ name: 'argo' })
   assert.equal(said.type, 'echo.error')
   assert.equal((said as { code: EchoErrorCode }).code, 'access-denied')
 })
 
 test('refuses a request naming another contract version', async () => {
-  const fake = attach()
-  const reply = await fake.trustedInvoke('test:echo:say', {
+  const mock = attach()
+  const reply = await mock.trustedInvoke('test:echo:say', {
     version: 2,
     type: 'echo.say',
     requestId: 'r1',
@@ -80,8 +80,8 @@ test('refuses a request naming another contract version', async () => {
 })
 
 test('refuses a malformed request before it reaches the handler', async () => {
-  const fake = attach()
-  const reply = await fake.trustedInvoke('test:echo:say', {
+  const mock = attach()
+  const reply = await mock.trustedInvoke('test:echo:say', {
     version: 1,
     type: 'echo.say',
     requestId: 'r1',
@@ -91,8 +91,8 @@ test('refuses a malformed request before it reaches the handler', async () => {
 })
 
 test('the handler receives the parsed request, not the raw value', async () => {
-  const fake = attach({ refuse: 'blocked' })
-  const reply = await fake.trustedInvoke('test:echo:say', {
+  const mock = attach({ refuse: 'blocked' })
+  const reply = await mock.trustedInvoke('test:echo:say', {
     version: 1,
     type: 'echo.say',
     requestId: 'r1',
@@ -127,6 +127,6 @@ test('a rejected invoke becomes connection-lost, not an exception', async () => 
 })
 
 test('each operation gets its own channel', () => {
-  const fake = attach()
-  assert.deepEqual(fake.channels(), ['test:echo:say'])
+  const mock = attach()
+  assert.deepEqual(mock.channels(), ['test:echo:say'])
 })

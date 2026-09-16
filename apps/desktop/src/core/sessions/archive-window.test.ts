@@ -5,10 +5,7 @@ import { mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import {
-  claudeRoot,
-  writeManySessions,
-} from '@/agents/claude/session-fake-driver/session-window-fixture'
+import { claudeRoot, writeManySessions } from '@/agents/claude/integration/session-window-fixture'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
 import { ARCHIVE_PAGE_LIMIT } from './archive-reads'

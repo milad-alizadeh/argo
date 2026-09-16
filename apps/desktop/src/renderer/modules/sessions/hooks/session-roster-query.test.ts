@@ -36,11 +36,11 @@ afterEach(() => {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
 })
 
-// Polls twice and hands back the roster each poll published.
-async function pollTwice(secondTitle: string) {
+// Reads twice and hands back the roster each read published.
+async function readTwice(secondTitle: string) {
   withListSessions(listedReply('request-1', 'Read the Feed'), listedReply('request-2', secondTitle))
   const client = new QueryClient()
-  const options = sessionRosterQuery('session-a', true, { projectRoot: null, cursor: null })
+  const options = sessionRosterQuery(true, { projectRoot: null, cursor: null })
   const observer = new QueryObserver(client, options)
   const unsubscribe = observer.subscribe(() => {})
 
@@ -54,34 +54,31 @@ async function pollTwice(secondTitle: string) {
 }
 
 describe('sessionRosterQuery', () => {
-  test('does not poll while an optimistic Session is selected', () => {
-    const options = sessionRosterQuery('optimistic:new-session', true, {
-      projectRoot: null,
-      cursor: null,
-    })
+  test('never reads the roster on a timer', () => {
+    const options = sessionRosterQuery(true, { projectRoot: null, cursor: null })
 
-    expect(options.refetchInterval).toBe(false)
+    expect(options.refetchInterval).toBeUndefined()
   })
 
-  test('keeps the roster it already published when a poll finds the same Sessions', async () => {
-    const { first, second } = await pollTwice('Read the Feed')
+  test('keeps the roster it already published when a read finds the same Sessions', async () => {
+    const { first, second } = await readTwice('Read the Feed')
 
     expect(second).toBe(first)
   })
 
   test('publishes a new roster when a Session changes', async () => {
-    const { first, second } = await pollTwice('Fix the Feed')
+    const { first, second } = await readTwice('Fix the Feed')
 
     expect(second).not.toBe(first)
     expect(second?.sessions[0]?.title.text).toBe('Fix the Feed')
   })
 
-  // Three hooks read the roster and all of them resolved to one key, so a poll still carrying the
+  // Three hooks read the roster and all of them resolved to one key, so a read still carrying the
   // cold cursor republished the first page over the wider window the reader had scrolled open and
   // the loaded rows disappeared. Two windows are two reads, so they cache apart.
   test('caches a grown window apart from the window it grew from', () => {
-    const cold = sessionRosterQuery('session-a', true, { projectRoot: null, cursor: null })
-    const grown = sessionRosterQuery('session-a', true, { projectRoot: null, cursor: '100' })
+    const cold = sessionRosterQuery(true, { projectRoot: null, cursor: null })
+    const grown = sessionRosterQuery(true, { projectRoot: null, cursor: '100' })
 
     expect(grown.queryKey).not.toEqual(cold.queryKey)
   })
@@ -89,7 +86,7 @@ describe('sessionRosterQuery', () => {
   test('asks for the window the cursor names rather than the one the last render held', async () => {
     const listSessions = withListSessions(listedReply('request-1', 'Read the Feed'))
     const client = new QueryClient()
-    const options = sessionRosterQuery('session-a', true, { projectRoot: null, cursor: '100' })
+    const options = sessionRosterQuery(true, { projectRoot: null, cursor: '100' })
     const observer = new QueryObserver(client, options)
     const unsubscribe = observer.subscribe(() => {})
 

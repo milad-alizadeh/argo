@@ -10,7 +10,10 @@ import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'codexHeartbeat'
 const FIXTURE = fileURLToPath(
-  new URL('../session-fake-driver/fixtures/sessions/rollout-codexHeartbeat.jsonl', import.meta.url),
+  new URL(
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexHeartbeat.jsonl',
+    import.meta.url,
+  ),
 )
 
 async function feed(
@@ -88,7 +91,10 @@ test('opens a thread the voice session created with its request, never the injec
   const session = 'codexCreatedThread'
   await copyFile(
     fileURLToPath(
-      new URL(`../session-fake-driver/fixtures/sessions/rollout-${session}.jsonl`, import.meta.url),
+      new URL(
+        `../../../../mocks/cli/codex/fixtures/sessions/rollout-${session}.jsonl`,
+        import.meta.url,
+      ),
     ),
     path.join(day, `${session}.jsonl`),
   )

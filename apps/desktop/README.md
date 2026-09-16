@@ -307,18 +307,23 @@ The Project-opening contract and its packaged test are recorded in
 The test crosses the packaged renderer, preload, and main process with isolated storage.
 It does not import Swift data.
 
-Package arm64 first. All four commands run the copy, never the app you have installed.
+Package arm64 first. Every command here runs the copy, never the app you have installed.
 
 | Command | What it produces |
 | --- | --- |
-| `bun run test:packaged-project` | The verdict for the Project workflow, naming every case, as JSON. |
-| `bun run test:packaged-session` | The verdict for the Session Feed, naming every case, as JSON. |
+| `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. |
+| `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
+| `bun run e2e:real` | Runs the portable Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. It is never a CI command. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 
-The packaged tests keep their windows hidden. The other two commands show it because Chromium
+Test assets sit outside `src/`. `e2e/<flow>/` holds `*.e2e.ts` files, their `cases/*.case.ts` and
+`fixtures/*.fixture.ts`. `mocks/` holds the mock CLIs, mock providers and their transcripts.
+`tools/` holds the capture, measure and repro scripts.
+
+The e2e flows keep their windows hidden. The capture and measure commands show it because Chromium
 throttles a hidden window. A capture and a frame reading from a hidden window measure the throttle.
-None of the four commands holds the real keyboard or the real mouse.
+None of these commands holds the real keyboard or the real mouse.
 
 ## Performance evidence
 

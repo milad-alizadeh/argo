@@ -11,7 +11,7 @@ export const LINEAR_SCOPES = ['read', 'write']
 export const LINEAR_REDIRECT_PORT = 51734
 
 // Linear serves the consent page from the web host and the token exchange and GraphQL from the API
-// host. A `redirectPort` of 0 takes whichever port is free, which only a proof's fake accepts.
+// host. A `redirectPort` of 0 takes whichever port is free, which only a proof's mock accepts.
 export type LinearEndpoints = { web: string; api: string; clientId: string; redirectPort: number }
 
 // Registering the OAuth App is the only step left: a client id here is what offers the sign-in.
@@ -27,7 +27,7 @@ export function linearEndpoints(clientId: string): LinearEndpoints | null {
 
 export const LINEAR_ENDPOINTS: LinearEndpoints | null = linearEndpoints(LINEAR_CLIENT_ID)
 
-// A packaged proof points both hosts at a fake on this machine.
+// A packaged proof points both hosts at a mock on this machine.
 export function linearProofEndpoints(origin: string | undefined): LinearEndpoints | null {
   if (!isLoopbackOrigin(origin)) return null
   return { web: origin, api: origin, clientId: 'argo-proof', redirectPort: 0 }

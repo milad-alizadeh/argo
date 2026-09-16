@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 import { connectTicket, disconnectTicket } from './use-session-ticket-link'
-import { fakeArgo, session, TICKET } from './use-session-ticket-link-fixtures'
+import { mockArgo, session, TICKET } from './use-session-ticket-link-fixtures'
 
 test('connecting a Ticket renames a first-prompt Session without asking', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
   expect(result.outcome).toEqual({
     renamed: true,
@@ -15,13 +15,13 @@ test('connecting a Ticket renames a first-prompt Session without asking', async 
 })
 
 test('connecting a Ticket renames a summarised Session without asking', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await connectTicket({ argo, session: session('summarised'), ticket: TICKET })
   expect(result.outcome.renamed).toBe(true)
 })
 
 test('connecting a Ticket with a custom title asks before renaming', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await connectTicket({ argo, session: session('custom'), ticket: TICKET })
   expect(result.outcome).toEqual({
     renamed: false,
@@ -33,7 +33,7 @@ test('connecting a Ticket with a custom title asks before renaming', async () =>
 })
 
 test('a confirmed rename on a custom title links and renames', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await connectTicket({
     argo,
     session: session('custom'),
@@ -45,7 +45,7 @@ test('a confirmed rename on a custom title links and renames', async () => {
 })
 
 test('refusing the rename on a custom title keeps the name', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const asked = await connectTicket({ argo, session: session('custom'), ticket: TICKET })
   expect(asked.outcome.needsRenameConfirmation).toBe(true)
   // A refusal never calls connect again with confirmedRename: true; the caller simply stops.
@@ -54,7 +54,7 @@ test('refusing the rename on a custom title keeps the name', async () => {
 })
 
 test('connecting a Ticket while a Turn is running links but does not send a rename', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await connectTicket({
     argo,
     session: session('first-prompt', 'running'),
@@ -71,7 +71,7 @@ test('connecting a Ticket while a Turn is running links but does not send a rena
 })
 
 test('a link write that the CLI refuses never calls rename', async () => {
-  const argo = fakeArgo({
+  const argo = mockArgo({
     connectSessionTicket: { type: 'session.error', code: 'unavailable', message: 'no ticket' },
   })
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
@@ -81,7 +81,7 @@ test('a link write that the CLI refuses never calls rename', async () => {
 })
 
 test('a rename the CLI refuses leaves the link in place and reports the failure', async () => {
-  const argo = fakeArgo({
+  const argo = mockArgo({
     renameSession: { type: 'session.error', code: 'unavailable', message: 'CLI busy' },
   })
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
@@ -96,7 +96,7 @@ test('a rename the CLI refuses leaves the link in place and reports the failure'
 })
 
 test('disconnecting a Ticket never renames the Session', async () => {
-  const argo = fakeArgo()
+  const argo = mockArgo()
   const result = await disconnectTicket(argo, 'session-1')
   expect(result).toEqual({ failure: null, invalidate: true })
   expect(argo.calls.renameSession).toEqual([])

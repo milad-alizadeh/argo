@@ -12,9 +12,10 @@ export type RosterMenuHandlers = {
   onUnlinkTicket: (session: Session) => void
 }
 
-// The row handlers RosterVirtualList threads down to RosterRowView unchanged (#2194 follow-up):
-// named once so the two components declare the shape a single time between them.
+// Every row-level handler the roster's render chain threads down, named once so no module between
+// Roster and the row it reaches re-declares the shape (#2284).
 export type RosterRowHandlers = RosterMenuHandlers & {
+  onFetchMoreSessions: () => void
   onFocus: (sessionId: SessionId) => void
   onSelect: (sessionId: SessionId) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void

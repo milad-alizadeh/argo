@@ -9,9 +9,9 @@ const NO_SESSIONS: SessionsListed['sessions'] = []
 const NO_TITLES: Record<string, string> = {}
 
 // A renamed title is shown locally, keyed by session id, until a roster read carries the same
-// title back through the transcript. Keying on the roster array's identity instead let a poll
+// title back through the transcript. Keying on the roster array's identity instead let a read
 // that changed nothing else revert the row, because the remembered order builds a new array on every
-// poll whether or not any Session actually changed (#2290).
+// read whether or not any Session actually changed (#2290).
 function pendingRenames(renamed: Record<string, string>, sessions: SessionsListed['sessions']) {
   const pending: Record<string, string> = {}
   for (const [sessionId, title] of Object.entries(renamed)) {

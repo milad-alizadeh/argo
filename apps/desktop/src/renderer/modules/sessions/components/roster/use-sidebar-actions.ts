@@ -9,7 +9,7 @@ export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
 // What a row's menu and a row's click do, each with one identity for as long as its inputs hold. The
 // roster's rows are memoized, so a handler rebuilt on every render would re-render all of them on
-// each 500ms poll tick of the open Session.
+// each read of the open Session.
 export function useSidebarActions(options: {
   disconnectTicket: (sessionId: string) => void
   projectPath: string | null

@@ -1,4 +1,4 @@
-// Shared fakes for use-session-ticket-link.test.ts: a fake window.argo and a Session builder,
+// Shared mocks for use-session-ticket-link.test.ts: a mock window.argo and a Session builder,
 // so each test states only the title source and Turn status it cares about.
 import { sessionRosterRow } from '../session-fixtures'
 import type { Session } from '../types'
@@ -24,7 +24,7 @@ export function session(source: TitleSource, status: 'idle' | 'running' = 'idle'
   })
 }
 
-export function fakeArgo(
+export function mockArgo(
   overrides: { connectSessionTicket?: unknown; renameSession?: unknown } = {},
 ) {
   const calls: { connectSessionTicket: unknown[]; renameSession: unknown[] } = {

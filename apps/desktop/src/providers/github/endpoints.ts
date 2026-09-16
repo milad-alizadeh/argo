@@ -14,7 +14,7 @@ export const GITHUB_ENDPOINTS: GitHubEndpoints = {
   api: 'https://api.github.com',
 }
 
-// A packaged proof points both hosts at a fake on this machine.
+// A packaged proof points both hosts at a mock on this machine.
 export function proofEndpoints(origin: string | undefined): GitHubEndpoints | null {
   return isLoopbackOrigin(origin) ? { web: origin, api: origin } : null
 }

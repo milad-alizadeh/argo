@@ -2,7 +2,6 @@
 // exception: archiving is Argo's own store, shared by every adapter (`core/sessions/archive-store.ts`).
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { discoverRoster } from '@/core/sessions/discover-roster'
-import { projectFeed } from '@/core/sessions/feed'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { SessionSource } from '@/core/sessions/reader'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
@@ -111,7 +110,6 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
       readDelegationChain(await readSessionFiles(roots.transcripts, sessionId), delegationId),
     readDelegationUsage: async (sessionId) =>
       readDelegationTokens(await readSessionFiles(roots.transcripts, sessionId)),
-    projectFeed,
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,

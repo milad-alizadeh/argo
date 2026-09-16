@@ -40,7 +40,7 @@ export function Standing({
     )
   if (!selected)
     return (
-      <Empty className="h-full border-0" data-state="unselected">
+      <Empty className="h-full" data-state="unselected">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <MessagesSquare aria-hidden="true" />

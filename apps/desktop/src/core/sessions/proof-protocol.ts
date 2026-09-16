@@ -7,6 +7,6 @@ export const SESSION_CODEX_TRANSCRIPTS_ENV = 'ARGO_CODEX_TRANSCRIPTS'
 export const SESSION_CLAUDE_EXECUTABLE_ENV = 'ARGO_CLAUDE_EXECUTABLE'
 export const SESSION_CODEX_EXECUTABLE_ENV = 'ARGO_CODEX_EXECUTABLE'
 
-// The reply gap a packaged proof gives both fake CLIs. Omitted means their current, immediate
+// The reply gap a packaged proof gives both mock CLIs. Omitted means their current, immediate
 // reply behavior, so the ordinary proof cases retain their existing timing.
-export const SESSION_FAKE_REPLY_DELAY_MS_ENV = 'ARGO_FAKE_REPLY_DELAY_MS'
+export const SESSION_MOCK_REPLY_DELAY_MS_ENV = 'ARGO_MOCK_REPLY_DELAY_MS'
