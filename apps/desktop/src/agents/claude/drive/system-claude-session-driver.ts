@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { createOwnershipLedger, isProcessAlive } from '@/core/sessions/ownership-ledger'
 import { claudePendingQuestion } from '../sessions/pending-question'
 import { claudeResumeTarget } from '../sessions/resume-target'
 import { createClaudeSessionDriver } from './claude-session-driver'
 import { createHandoffLedger } from './handoff-ledger'
 import { createMessageDisplay } from './message-display'
-import { createOwnershipLedger, isProcessAlive } from './ownership-ledger'
 import { createClaudePermissionGate } from './permission-gate'
 
 function readHandoffBrief(briefPath: string): string | null {
@@ -37,7 +37,7 @@ export function createSystemClaudeSessionDriver(paths: {
     now: () => new Date(),
     ledger: createOwnershipLedger({
       path: paths.ledger,
-      owner: { pid: process.pid, registry: randomUUID() },
+      window: { pid: process.pid, registry: randomUUID() },
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),

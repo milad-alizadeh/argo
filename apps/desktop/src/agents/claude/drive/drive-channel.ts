@@ -1,11 +1,11 @@
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
+import type { OwnershipLedger, OwnershipStanding } from '@/core/sessions/ownership-ledger'
 import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'
 import type { HandoffLedger } from './handoff-ledger'
 import type { LiveMessages } from './live-messages'
 import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
-import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 import type { ClaudePermissionGate } from './permission-gate'
 import { deliverAnswer } from './question-answer'
 

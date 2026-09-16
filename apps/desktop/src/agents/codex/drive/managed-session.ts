@@ -1,10 +1,10 @@
 import { managedRow } from '../../../core/sessions/managed-row'
 import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { OwnershipLedger } from '@/core/sessions/ownership-ledger'
 import type { CodexChannel } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'
 import { createLiveMessages, type LiveMessages } from './live-messages'
-import type { CodexOwnershipLedger } from './ownership-ledger'
 import type { PendingCodexQuestion } from './question-protocol'
 import { codexNotificationRecorder } from './record-notification'
 
@@ -30,7 +30,7 @@ export type ManagedSessionOptions = {
     executable: string,
     options: { cwd: string; env: NodeJS.ProcessEnv },
   ) => CodexChannel
-  ownership?: CodexOwnershipLedger
+  ownership?: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<{ cwd: string } | null>
 }
 

@@ -3,10 +3,10 @@ import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 
 import { findExecutableOnLoginShellPath } from '../../executable-path'
+import { createOwnershipLedger, isProcessAlive } from '@/core/sessions/ownership-ledger'
 import { codexResumeTarget } from '../sessions/resume-target'
 import { openCodexChannel } from './codex-channel'
 import { createCodexSessionDriver } from './codex-session-driver'
-import { createCodexOwnershipLedger, isProcessAlive } from './ownership-ledger'
 
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong
@@ -39,9 +39,9 @@ export function createSystemCodexSessionDriver(paths: {
   return createCodexSessionDriver({
     findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
     now: () => new Date(),
-    ownership: createCodexOwnershipLedger({
+    ownership: createOwnershipLedger({
       path: paths.ownership,
-      owner: { pid: process.pid, registry: randomUUID() },
+      window: { pid: process.pid, registry: randomUUID() },
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
