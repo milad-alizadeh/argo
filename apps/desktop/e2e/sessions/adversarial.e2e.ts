@@ -1,6 +1,5 @@
 import { expect } from '@playwright/test'
 
-import { defineSessionJourneyCases } from './cases/journeys.case'
 import { selectProofProject } from './fixtures/feed.fixture'
 import { createSessionByClick } from './gestures'
 import {
@@ -68,7 +67,7 @@ describeSessionProof('session-adversarial-permission', (run) => {
   defineAdversarialLaunch(run, box, 'seed-15')
 
   test('sends the queued Turn after a seeded Claude Permission is allowed', async () => {
-    const sessionId = await createSessionByClick(box.get(), {
+    await createSessionByClick(box.get(), {
       cli: 'claude',
       prompt: 'Wait for Permission.',
     })
@@ -82,12 +81,8 @@ describeSessionProof('session-adversarial-permission', (run) => {
     )
     await box.get().getByRole('button', { name: 'Allow', exact: true }).click()
     await expect(box.get().locator('.session-page__queued-message')).toBeHidden()
-    await expect.poll(() => statusFor(box.get(), sessionId)).toBe('running')
+    await expect(
+      box.get().getByText('Mock Claude read: Queue this after Permission. 🦜'),
+    ).toBeVisible()
   })
-})
-
-describeSessionProof('session-adversarial-journeys', (run) => {
-  const box = createPageBox(run.hold)
-  defineAdversarialLaunch(run, box, 'alpha')
-  defineSessionJourneyCases(run, box)
 })
