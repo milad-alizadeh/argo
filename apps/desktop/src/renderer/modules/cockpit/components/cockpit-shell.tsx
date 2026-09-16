@@ -17,6 +17,7 @@ type CockpitShellProps = {
   rail?: ReactNode
   sidebar: ReactNode
   header?: ReactNode
+  footer?: ReactNode
   children: ReactNode
 }
 
@@ -104,6 +105,7 @@ export function CockpitShell({
   rail,
   sidebar,
   header = <ProjectSwitcher />,
+  footer,
   children,
 }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
@@ -177,6 +179,7 @@ export function CockpitShell({
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      {footer ? <div className="absolute right-0 bottom-0 left-0 z-20 bg-background">{footer}</div> : null}
     </div>
   )
 }

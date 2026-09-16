@@ -43,12 +43,8 @@ function CockpitRouteLayout() {
 
   return (
     <CockpitShell
-      header={
-        <div className="flex min-w-0 items-center gap-(--spacing-shell-item)">
-          <DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />
-          <ProjectSwitcher />
-        </div>
-      }
+      footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}
+      header={<ProjectSwitcher />}
       sidebar={sidebar}
     >
       <Outlet />
