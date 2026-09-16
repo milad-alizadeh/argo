@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { readToolRecord } from './tool-calls'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
 function delegatedPrompt(
@@ -80,7 +81,7 @@ function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message') return readPlanCall(payload)
+  if (payload.type !== 'message') return readPlanCall(payload) ?? readToolRecord(record, payload)
   if (typeof payload.id !== 'string') return null
   if (payload.role === 'assistant') {
     const blocks = messageBlocks(payload.content, ['output_text'])
