@@ -3,8 +3,9 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import type { PlanEntryStatus, SessionPlan } from '@/core/sessions/models'
+import { createSessionReader } from '@/core/sessions/reader'
 import { listed, tempRoot } from '@/core/sessions/reader-test-helpers'
-import { createClaudeSessionReader } from './read-sessions'
+import { claudeSessionSource } from './read-sessions'
 
 const SESSION_ID = 'plan-session'
 const TIMESTAMP = '2026-09-15T10:00:00.000Z'
@@ -51,7 +52,7 @@ async function planOf(context: Parameters<typeof tempRoot>[0], records: unknown[
   await mkdir(path.join(root, 'project-one'))
   const lines = records.map((record) => `${JSON.stringify(record)}\n`)
   await writeFile(path.join(root, 'project-one', `${SESSION_ID}.jsonl`), lines.join(''))
-  const reply = await listed(createClaudeSessionReader({ transcripts: root }))
+  const reply = await listed(createSessionReader([claudeSessionSource({ transcripts: root })]))
   return reply?.sessions.find((session) => session.id === SESSION_ID)?.plan
 }
 

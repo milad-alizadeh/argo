@@ -1,9 +1,9 @@
 import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-
+import { createSessionReader } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/live-messages'
-import { createClaudeSessionReader } from '../sessions/read-sessions'
+import { claudeSessionSource } from '../sessions/read-sessions'
 
 const SESSION = 'c3b0f6a2-5d7e-4f7a-9d61-2f1f3c1d8e10'
 
@@ -66,7 +66,9 @@ function stamp() {
 }
 
 export function feedOf(live: () => LiveMessage[], root: string) {
-  const reader = createClaudeSessionReader({ transcripts: root, liveMessages: () => live() })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: root, liveMessages: () => live() }),
+  ])
   return async (revision: string | null = null) => {
     const reply = (await reader.readSessionFeed({
       version: 1,

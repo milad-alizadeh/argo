@@ -4,9 +4,10 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fixtureLines, writeFixtureTree } from '@/core/sessions/fake-driver/session-fixture-files'
-import { stitchChains } from '../sessions/chains.ts'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
-import { projectRosterRow } from '../sessions/roster.ts'
+import { createSessionReader } from '@/core/sessions/reader'
+import { stitchChains } from '../../../core/sessions/chains.ts'
+import { projectRosterRow } from '../../../core/sessions/roster.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { readTranscriptFile } from '../sessions/transcript-file.ts'
 
 export const unscopedListing = {
@@ -17,7 +18,9 @@ export const unscopedListing = {
 }
 
 export function listSessions(value: unknown, root: string, archive?: string) {
-  return createClaudeSessionReader({ transcripts: root, archive }).listSessions(value)
+  return createSessionReader([claudeSessionSource({ transcripts: root, archive })]).listSessions(
+    value,
+  )
 }
 
 export const LATER_TURN = `${JSON.stringify({

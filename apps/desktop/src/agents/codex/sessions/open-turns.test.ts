@@ -6,8 +6,9 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { createSessionReader } from '@/core/sessions/reader'
 import { listed } from '@/core/sessions/reader-test-helpers'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 const THREAD = '01a0b000-0000-7000-8000-000000000001'
 const FIXTURE = fileURLToPath(
@@ -46,7 +47,7 @@ async function rolloutRoot(context: { after: (cleanup: () => Promise<void>) => v
 
 function readerFor(root: string, roster?: () => SessionRosterRow[]) {
   // The ledger sees no other Argo window: any lock below comes from the rollout alone.
-  return createCodexSessionReader(root, { roster, isLockedElsewhere: () => false })
+  return createSessionReader([codexSessionSource(root, { roster, isLockedElsewhere: () => false })])
 }
 
 async function rows(reader: ReturnType<typeof readerFor>) {

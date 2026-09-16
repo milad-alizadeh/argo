@@ -6,7 +6,8 @@ import {
   pointShellOutputAtRoot,
   shellOutputRoot,
 } from '@/core/sessions/fake-driver/session-shell-fixture'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '@/core/sessions/reader'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
 
 function request(shellId: string) {
@@ -20,7 +21,9 @@ function request(shellId: string) {
 }
 
 async function readOutput(root: string, shellId: string) {
-  return createClaudeSessionReader({ transcripts: root }).readShellOutput(request(shellId))
+  return createSessionReader([claudeSessionSource({ transcripts: root })]).readShellOutput(
+    request(shellId),
+  )
 }
 
 test('reads a background Shell by its call, from the file the receipt named', async (context) => {
