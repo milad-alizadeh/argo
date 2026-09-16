@@ -1,8 +1,8 @@
 // Driving the PACKAGED cockpit from outside: the Project proof and the appearance capture share
 // it, so both agree on what a state, a control and a chosen folder are.
 //
-// Nothing here holds the real keyboard or mouse. Every key and click is dispatched into the
-// renderer over the debugging protocol, which is why these runs can be left alone.
+// Nothing here holds the real keyboard or mouse: every key and click goes into the renderer over
+// the debugging protocol, which is why these runs can be left alone.
 export const DECK = '[data-component="ProjectDeck"] [data-state]'
 export const CHROME_SUBJECT = '[data-component="ChromeBar"] span'
 
@@ -33,10 +33,8 @@ export function waitForDeck(page, state) {
   )
 }
 
-// `dispatchEvent` rather than a real click: the proof window is never shown, and an unpainted
-// window has nothing to hit-test. The component's own handler still runs.
 export function press(page, name) {
-  return page.getByRole('button', { name, exact: true }).dispatchEvent('click')
+  return page.getByRole('button', { name, exact: true }).click()
 }
 
 export function deckHeading(page) {
