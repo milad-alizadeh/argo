@@ -8,7 +8,10 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
 import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../../src/core/sessions/proof-protocol.ts'
+import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { askQuestion, handleAskReply } from './mock-ask-question.ts'
+
+process.title = MOCK_CODEX_PROCESS_TITLE
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE

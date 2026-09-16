@@ -32,14 +32,16 @@ export async function assertPackagedPty(outputPaths, appName) {
 // `out/Argo-darwin-arm64/` names the architecture; `/Applications/Argo.app` does not, so fall back
 // to reading the Mach-O header rather than refusing a perfectly good app.
 if (process.argv[1] === import.meta.filename) {
-  const appPath = process.argv[2]
-  if (!appPath) {
-    process.stderr.write('usage: assert-packaged-pty.mjs <path to Argo.app>\n')
-    process.exit(2)
-  }
+  // Imported here, never by the Forge hook, so the mocks stay out of what `build` hashes.
+  const { mockCliFailures } = await import('./packaged-mock-cli-checks.mjs')
+  const { packagedApp, SHIPPED_ARCHES } = await import('./packaged-app.mjs')
+  const appPath = process.argv[2] ?? packagedApp(SHIPPED_ARCHES[0])
   const arch = archOf(path.dirname(appPath)) ?? archOfBinary(appPath)
-  const failures = await packagedPtyFailures(appPath, arch)
-  if (failures.length === 0) process.stdout.write(`PASS ${appPath} (${arch})\n`)
-  else process.stderr.write(`${refusal(appPath, failures)}\n`)
-  process.exit(failures.length === 0 ? 0 : 1)
+  const ptyFailures = await packagedPtyFailures(appPath, arch)
+  const mockFailures = mockCliFailures(appPath)
+  if (ptyFailures.length > 0) process.stderr.write(`${refusal(appPath, ptyFailures)}\n`)
+  for (const failure of mockFailures) process.stderr.write(`${appPath}: ${failure}\n`)
+  const passed = ptyFailures.length === 0 && mockFailures.length === 0
+  if (passed) process.stdout.write(`PASS ${appPath} (${arch})\n`)
+  process.exit(passed ? 0 : 1)
 }

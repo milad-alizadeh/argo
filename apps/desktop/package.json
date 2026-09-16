@@ -15,7 +15,7 @@
     "build:storybook": "storybook build",
     "test:storybook": "vitest run --project=storybook-dark --project=storybook-light",
     "design:render": "node scripts/render-desktop-state.mjs",
-    "build": "bun run test:packaged-pty --arch arm64",
+    "build": "electron-forge package --arch arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json",
     "test:packaged-contents": "node scripts/assert-packaged-pty.mjs",
     "test:packaged-manifest": "bun run desktop:manifest",

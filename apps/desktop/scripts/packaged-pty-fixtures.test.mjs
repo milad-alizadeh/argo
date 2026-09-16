@@ -22,7 +22,7 @@ const repoRoot = path.resolve(desktopRoot, '..', '..')
 const read = (file) => readFileSync(file, 'utf8')
 
 // Bun's linker decides whether node-pty hoists to the repository root or sits under apps/desktop,
-// so probe both — the same rule `forgeBinary()` follows. Reading only one gives an ENOENT instead
+// so probe both — the same rule `electronBinary()` follows. Reading only one gives an ENOENT instead
 // of a legible verdict on a tree that is perfectly fine.
 function installedNodePty(...parts) {
   const roots = [desktopRoot, repoRoot].map((root) => path.join(root, 'node_modules', 'node-pty'))

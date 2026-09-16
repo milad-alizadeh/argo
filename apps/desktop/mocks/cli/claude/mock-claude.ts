@@ -5,6 +5,9 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../../src/core/sessions/proof-protocol.ts'
+import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+
+process.title = MOCK_CLAUDE_PROCESS_TITLE
 
 const ESCAPE = String.fromCharCode(27)
 // Long enough for the proof to read the running compaction before the boundary ends it; that read

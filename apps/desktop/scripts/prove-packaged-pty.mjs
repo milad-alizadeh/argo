@@ -5,22 +5,18 @@
 //   start, input, output, resize, interrupt, exactly-once exit, crash cleanup, app shutdown, and
 //   600 spawn/exit cycles at a flat descriptor count.
 //
-// A working dev server is not that proof, so nothing here runs `forge start`. It packages with
-// Forge — whose `postPackage` hook has already refused an app with no working PTY before this
-// gets to launch anything — then runs the real binary inside the .app and reads the JSON line the
-// main process writes plus the process exit code.
+// A working dev server is not that proof, so nothing here runs `forge start`. It runs the real
+// binary inside the .app that `build` packaged, and reads the JSON line the main process writes
+// plus the process exit code.
 //
-// Usage: node scripts/prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]
-//                                            [--json <file>]
+// Usage: node scripts/prove-packaged-pty.mjs [--arch arm64] [--skip-endurance] [--json <file>]
 import { existsSync, writeFileSync } from 'node:fs'
 import process from 'node:process'
 import { ACCEPTANCE_ENV, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
 import {
   appBinary,
   exitFailures,
-  forgeBinary,
   LAUNCH_TIMEOUT_MS,
-  PACKAGE_TIMEOUT_MS,
   packagedApp,
   readResult,
   resultFailures,
@@ -39,11 +35,10 @@ function valueAfter(argv, i, hint) {
 // An unrecognised flag is an error for the same reason, `--arch=x64` included.
 function parseArgs(argv) {
   const arches = []
-  const parsed = { skipPackage: false, skipEndurance: false, json: null }
+  const parsed = { skipEndurance: false, json: null }
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i]
-    if (flag === '--skip-package') parsed.skipPackage = true
-    else if (flag === '--skip-endurance') parsed.skipEndurance = true
+    if (flag === '--skip-endurance') parsed.skipEndurance = true
     else if (flag === '--arch') {
       arches.push(
         ...valueAfter(argv, i, '--arch needs a value, like --arch arm64')
@@ -59,30 +54,9 @@ function parseArgs(argv) {
   return { ...parsed, arches: arches.length > 0 ? arches : SHIPPED_ARCHES }
 }
 
-const USAGE =
-  'prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance] [--json <file>]'
+const USAGE = 'prove-packaged-pty.mjs [--arch arm64] [--skip-endurance] [--json <file>]'
 
-async function packageArch(arch) {
-  const packaged = await run(forgeBinary(), ['package', '--arch', arch], {
-    timeoutMs: PACKAGE_TIMEOUT_MS,
-  })
-  if (packaged.code === 0) return null
-  const timedOut = packaged.timedOut ? ' (timed out)' : ''
-  return {
-    arch,
-    ok: false,
-    stage: 'package',
-    failures: [`forge package --arch ${arch} exited ${packaged.code}${timedOut}`],
-    stderr: packaged.stderr.slice(-4000),
-  }
-}
-
-async function proveArch(arch, { skipPackage, skipEndurance }) {
-  if (!skipPackage) {
-    const failed = await packageArch(arch)
-    if (failed) return failed
-  }
-
+async function proveArch(arch, { skipEndurance }) {
   const binary = appBinary(arch)
   if (!existsSync(binary)) {
     return { arch, ok: false, stage: 'package', failures: [`no packaged binary at ${binary}`] }
@@ -109,11 +83,11 @@ async function proveArch(arch, { skipPackage, skipEndurance }) {
   }
 }
 
-const { arches, skipPackage, skipEndurance, json } = parseArgs(process.argv.slice(2))
+const { arches, skipEndurance, json } = parseArgs(process.argv.slice(2))
 const outcomes = []
 for (const arch of arches) {
   process.stdout.write(`\n=== proving ${arch} ===\n`)
-  const outcome = await proveArch(arch, { skipPackage, skipEndurance })
+  const outcome = await proveArch(arch, { skipEndurance })
   outcomes.push(outcome)
   process.stdout.write(`${outcome.ok ? 'PASS' : 'FAIL'} ${arch}\n`)
   if (outcome.ok) process.stdout.write(`Artifact: ${packagedApp(arch)}\n`)
