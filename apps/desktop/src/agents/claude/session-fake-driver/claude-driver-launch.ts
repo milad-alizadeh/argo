@@ -41,7 +41,7 @@ export async function handoffLedgerFile(context: TestContext) {
 
 // A gate that never raises a Permission, for a test with nothing to say about Permission behavior.
 // It still writes a real (inert) hook into the plugin, the way the real gate's `open` would.
-function fakePermissionGate(): ClaudePermissionGate {
+export function fakePermissionGate(): ClaudePermissionGate {
   return {
     open: () => ({
       hook: { event: 'PreToolUse', file: 'permission-hook.sh', script: '' },
@@ -49,6 +49,7 @@ function fakePermissionGate(): ClaudePermissionGate {
     }),
     pending: () => null,
     decide: () => false,
+    onChanged: () => () => {},
     close: () => {},
   }
 }

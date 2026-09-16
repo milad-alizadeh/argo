@@ -6,14 +6,15 @@ import { execFileSync } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-
+import type { SessionReader } from '@/core/sessions/bridge'
 import type { ClaudeTurnSetup } from '@/core/sessions/contract'
+import { createSessionReader } from '@/core/sessions/reader'
 import { createSystemClaudeSessionDriver } from '../drive/system-claude-session-driver'
-import { createClaudeSessionReader } from '../sessions/read-sessions'
+import { claudeSessionSource } from '../sessions/read-sessions'
 import { claudeTranscriptsRoot } from '../sessions/roots'
 
 type Row = { id: string; shape: string; role?: string; text?: string }
-type Reader = ReturnType<typeof createClaudeSessionReader>
+type Reader = SessionReader
 
 const PROMPT = 'Without using any tools, write twelve short numbered lines about ducks.'
 const SETUP: ClaudeTurnSetup = { model: 'haiku', effort: 'low', mode: 'manual' }
@@ -40,8 +41,10 @@ const driver = createSystemClaudeSessionDriver({
   ledger: path.join(folder, 'ownership.json'),
   transcripts,
 })
-const overlaid = createClaudeSessionReader({ transcripts, liveMessages: driver.liveMessages })
-const recorded = createClaudeSessionReader({ transcripts })
+const overlaid = createSessionReader([
+  claudeSessionSource({ transcripts, liveMessages: driver.liveMessages }),
+])
+const recorded = createSessionReader([claudeSessionSource({ transcripts })])
 try {
   const sessionId = driver.start({ cwd: process.cwd(), prompt: PROMPT, setup: SETUP })
   const drafts: string[] = []

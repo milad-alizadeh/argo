@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { createSessionReader } from '@/core/sessions/reader'
 import {
   appendCodexRecord,
   fed,
@@ -8,7 +9,7 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/core/sessions/reader-test-helpers'
-import { createCodexSessionReader } from '../sessions/read-sessions'
+import { codexSessionSource } from '../sessions/read-sessions'
 
 const SESSION = '01a0a6eb-56c8-7f93-8820-cc80e2f234d3'
 
@@ -29,7 +30,7 @@ test('a Codex compaction draws the compaction divider in the Feed', async (conte
       payload: { message: '', replacement_history: [] },
     },
   )
-  const reader = createCodexSessionReader(transcripts)
+  const reader = createSessionReader([codexSessionSource(transcripts)])
   await listed(reader)
 
   const reply = await fed(reader, feedRequest(SESSION))

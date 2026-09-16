@@ -3,7 +3,6 @@ import type { ClaudePermission } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { rollupSessionStatus } from '@/core/sessions/session-status-rollup'
-import type { WatchedSource } from '@/core/watch/watch-source'
 import {
   beginCompaction,
   clearCompaction,
@@ -15,6 +14,7 @@ import { channelActions, type DriverOptions, type ManagedSession } from './drive
 import { ClaudeSessionDriverError } from './driver-error'
 import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
 import type { LiveMessage } from './live-messages'
+import { claudeManagedStatus } from './managed-status'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -32,7 +32,9 @@ export type ClaudeSessionDriver = {
   roster: () => SessionRosterRow[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingPermission: (sessionId: string) => ClaudePermission | null
-  watchPermissions: WatchedSource
+  // #2299: the Session screen is told a Permission started or stopped waiting, rather than asking
+  // twice a second whether one is there.
+  onPermissionsChanged: DriverOptions['gate']['onChanged']
   decidePermission: DriverOptions['gate']['decide']
   decideQuestion: (
     sessionId: string,
@@ -111,10 +113,11 @@ function roster(options: DriverOptions, sessions: Sessions) {
       cli: 'claude',
       // No transcript floor participates in a live managed reading, so `unknown` — the honest
       // "nothing observed" floor — leaves the gate's own signal standing unopposed.
-      status: rollupSessionStatus('unknown', 'managed', {
-        kind: 'claude',
-        pendingPermission: options.gate.pending(id) !== null,
-      }),
+      status: rollupSessionStatus(
+        'unknown',
+        'managed',
+        claudeManagedStatus(options.gate.pending(id) !== null),
+      ),
       setup: session.applied,
       title: session.title,
     }),
@@ -141,7 +144,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     roster: () => roster(options, sessions),
     isLockedElsewhere: (sessionId) => options.ledger.standing(sessionId) === 'held-elsewhere',
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
-    watchPermissions: options.gate.watchPending,
+    onPermissionsChanged: (listener) => options.gate.onChanged(listener),
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),
     decideQuestion: (sessionId, questionId, answers) =>

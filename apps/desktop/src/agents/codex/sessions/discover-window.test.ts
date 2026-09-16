@@ -6,8 +6,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from '@/core/sessions/discover-transcript-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
 import { assertWindowGrowsToFarSession } from '@/core/sessions/window-proof-helpers'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 function codexMessage(text: string, updatedAt: string) {
   return `${JSON.stringify({
@@ -44,7 +45,7 @@ test('a Session outside the initial window is unread on first discovery, but rea
   context.after(() => rm(root, { recursive: true, force: true }))
   await writeManySessions(root, ROSTER_PAGE_SIZE + 10)
   const farId = `s${ROSTER_PAGE_SIZE + 5}`
-  const reader = createCodexSessionReader(root)
+  const reader = createSessionReader([codexSessionSource(root)])
 
   await assertWindowGrowsToFarSession(reader, farId)
 })

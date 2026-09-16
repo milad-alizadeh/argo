@@ -2,6 +2,7 @@ import type { SessionRosterRow } from '../../../core/sessions/models'
 import { rollupSessionStatus } from '../../../core/sessions/session-status-rollup'
 import { readCompletedCompaction, readStartedCompaction } from './compact-protocol'
 import type { LiveMessages } from './live-messages'
+import { codexManagedStatus } from './managed-status'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
 import type { PendingCodexQuestion } from './question-protocol'
@@ -49,18 +50,20 @@ export function recordCodexNotification({
   // "nothing observed" floor — leaves the protocol's own signal standing unopposed.
   const thread = readThreadStatus(message)
   if (thread?.threadId === sessionId) {
-    session.status = rollupSessionStatus('unknown', 'managed', {
-      kind: 'codex',
-      reading: { kind: 'thread', status: thread.status },
-    })
+    session.status = rollupSessionStatus(
+      'unknown',
+      'managed',
+      codexManagedStatus({ kind: 'thread', status: thread.status }),
+    )
     return false
   }
   const completed = readCompletedTurn(message)
   if (completed?.threadId === sessionId && completed.turn.status === 'failed') {
-    session.status = rollupSessionStatus('unknown', 'managed', {
-      kind: 'codex',
-      reading: { kind: 'turn-failed' },
-    })
+    session.status = rollupSessionStatus(
+      'unknown',
+      'managed',
+      codexManagedStatus({ kind: 'turn-failed' }),
+    )
     return false
   }
   // A compaction Argo requested already holds its start; an automatic one starts here.

@@ -1,13 +1,11 @@
-import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
+import { discoverRoster } from '@/core/sessions/discover-roster'
 import { projectFeed } from '@/core/sessions/feed'
-import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
-import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
-import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
+import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
-import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
+import { clearFullRecords, discoverSessions, nameThreads, readSessionFiles } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
 import type { ThreadNames } from './thread-names'
@@ -78,19 +76,20 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   return {
     cli: 'codex',
     discoverSessions: async (discoverOptions) => {
-      const [discovered, open] = await Promise.all([
-        discoverSessions(root, options?.threadNames, discoverOptions),
+      const [discovery, open] = await Promise.all([
+        discoverSessions(root, discoverOptions),
         openTurns(Date.now()),
       ])
-      const roster = mergeManagedRoster(discovered, options?.roster?.() ?? [])
-      const rows = joinOpenTurns(roster.rows, open)
-      // Project scope applies here, at this adapter's own discovery boundary (#2239), rather than
-      // after the shared reader has already merged every adapter's machine-wide list.
-      const projectRoots = await projectRootsOf(discoverOptions?.projectRoot)
-      return {
-        ...roster,
-        rows: rows.filter((row) => belongsToProject(row.cwd, projectRoots)),
-      }
+      const threadNames = options?.threadNames
+      return discoverRoster({
+        discovery,
+        managed: options?.roster?.() ?? [],
+        joins: {
+          observed: threadNames === undefined ? [] : [(rows) => nameThreads(rows, threadNames)],
+          merged: [(rows) => joinOpenTurns(rows, open)],
+        },
+        projectRoot: discoverOptions?.projectRoot,
+      })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
@@ -100,8 +99,4 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     rename: options?.rename,
     overlayFor,
   }
-}
-
-export function createCodexSessionReader(root: string, options?: ReaderOptions): SessionReader {
-  return createSessionReader([codexSessionSource(root, options)])
 }

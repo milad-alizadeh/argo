@@ -9,7 +9,7 @@ import type { WatchedSource } from './watch-source'
 export function watchWindowFocus(window: BrowserWindow): WatchedSource {
   return (onChanged) => {
     window.on('focus', onChanged)
-    return { close: () => void window.removeListener('focus', onChanged) }
+    return () => void window.removeListener('focus', onChanged)
   }
 }
 
@@ -18,6 +18,6 @@ export function watchWindowFocus(window: BrowserWindow): WatchedSource {
 export function watchSystemResume(powerMonitor: PowerMonitor): WatchedSource {
   return (onChanged) => {
     powerMonitor.on('resume', onChanged)
-    return { close: () => void powerMonitor.removeListener('resume', onChanged) }
+    return () => void powerMonitor.removeListener('resume', onChanged)
   }
 }

@@ -1,11 +1,10 @@
 // What the main process can tell the renderer has changed. A topic names a body of data, never a
-// path or a source: the renderer knows it must read the roster again, and nothing about where
-// Sessions are stored or which of the topic's sources spoke.
+// path: the renderer knows it must read the roster again, and nothing about where Sessions are
+// stored. Not every topic is a file either. A Permission lives in main-process memory, and the
+// renderer reads it back the same way whichever it is.
 export const WATCHED_CHANGED_CHANNEL = 'argo:watch:changed'
 
-// `sessions` is fed by the transcript trees the CLIs write to. `permissions` is fed by each drive
-// adapter instead, because a Permission arrives over the adapter's own channel and touches no tree.
-export const WATCH_TOPICS = ['sessions', 'permissions'] as const
+export const WATCH_TOPICS = ['permissions', 'sessions'] as const
 
 export type WatchTopic = (typeof WATCH_TOPICS)[number]
 

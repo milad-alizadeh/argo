@@ -4,8 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { createSessionReader } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'codexHeartbeat'
 const FIXTURE = fileURLToPath(
@@ -21,7 +22,7 @@ async function feed(
   const day = path.join(root, '2026', '09', '15')
   await mkdir(day, { recursive: true })
   await copyFile(FIXTURE, path.join(day, `${SESSION}.jsonl`))
-  const reader = createCodexSessionReader(root, { liveMessages: () => live })
+  const reader = createSessionReader([codexSessionSource(root, { liveMessages: () => live })])
   const reply = await reader.readSessionFeed({
     version: 1,
     type: 'session.feed',
@@ -91,7 +92,7 @@ test('opens a thread the voice session created with its request, never the injec
     ),
     path.join(day, `${session}.jsonl`),
   )
-  const reply = await createCodexSessionReader(root).readSessionFeed({
+  const reply = await createSessionReader([codexSessionSource(root)]).readSessionFeed({
     version: 1,
     type: 'session.feed',
     requestId: 'feed-1',

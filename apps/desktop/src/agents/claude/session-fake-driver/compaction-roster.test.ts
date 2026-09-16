@@ -2,9 +2,10 @@ import assert from 'node:assert/strict'
 import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import type { SessionReader } from '@/core/sessions/bridge'
 import { createSessionReader } from '@/core/sessions/reader'
 import { listed, tempRoot, writeClaudeTranscript } from '@/core/sessions/reader-test-helpers'
-import { claudeSessionSource, createClaudeSessionReader } from '../sessions/read-sessions'
+import { claudeSessionSource } from '../sessions/read-sessions'
 import { startedSession } from './claude-driver-launch.ts'
 
 const SESSION = 'session-a'
@@ -28,7 +29,9 @@ async function compactingSession(context: TestContext, startedAt = at(-MINUTE)) 
   const start = path.join(starts, '4242.json')
   await writeFile(start, JSON.stringify({ session_id: SESSION, hook_event_name: 'PreCompact' }))
   await utimes(start, startedAt, startedAt)
-  const reader = createClaudeSessionReader({ transcripts, compactionStarts: starts })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts, compactionStarts: starts }),
+  ])
   return { transcripts, starts, reader, startedAt }
 }
 
@@ -39,7 +42,7 @@ async function append(transcripts: string, record: Record<string, unknown>) {
   await utimes(file, at(MINUTE), at(MINUTE))
 }
 
-async function compactionStartedAt(reader: ReturnType<typeof createClaudeSessionReader>) {
+async function compactionStartedAt(reader: SessionReader) {
   const reply = await listed(reader)
   const row = reply?.sessions.find((session) => session.id === SESSION)
   assert.ok(row, 'The Session is missing from the Roster.')

@@ -1,7 +1,5 @@
 // One shape every CLI's drive adapter fills in (ADR-0024, #2030). Shared code calls only this
 // port; it never branches on which CLI it is talking to.
-
-import type { WatchedSource } from '../watch/watch-source'
 import type { SessionAttachmentInput } from './attachments-contract'
 import type { Permission, PermissionDecision } from './permission'
 import type { QuestionAnswer } from './question'
@@ -32,10 +30,6 @@ export type SessionDriveAdapter = {
   compact(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   handoff(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   readPermission(request: { sessionId: string }): Promise<{ permission: Permission | null }>
-  // Says when `readPermission` would answer differently. A Permission reaches Argo over the
-  // adapter's own channel rather than as a write under a watched tree, so without this the reader
-  // could only find one by asking on a timer (#2303).
-  watchPermissions: WatchedSource
   decidePermission(request: {
     sessionId: string
     permissionId: string

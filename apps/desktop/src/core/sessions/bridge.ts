@@ -21,6 +21,8 @@ import {
   type SessionRenameRequest,
   type SessionShellOutputReply,
   type SessionShellOutputRequest,
+  type SessionSkillReply,
+  type SessionSkillRequest,
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionError,
@@ -37,7 +39,6 @@ import {
   startSession,
 } from './drive'
 import { SESSION_OPERATIONS } from './operations'
-import { readSkillFile } from './read-skill-file'
 import type { SessionDriveAdapters } from './session-drive-adapter'
 
 export type SessionReader = {
@@ -46,6 +47,7 @@ export type SessionReader = {
   archiveSet(request: SessionArchiveSetRequest): Promise<SessionArchiveSetReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
   readWorkspaceFile(request: SessionFileRequest): Promise<SessionFileReply>
+  readSkillFile(request: SessionSkillRequest): Promise<SessionSkillReply>
   cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
   readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
@@ -98,7 +100,7 @@ export function attachSessionBridge(
       archiveSet: (request, context) => context.reader.archiveSet(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       file: (request, context) => context.reader.readWorkspaceFile(request),
-      skill: (request) => readSkillFile(request),
+      skill: (request, context) => context.reader.readSkillFile(request),
       cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       shellOutput: (request, context) => context.reader.readShellOutput(request),
       delegationUsage: (request, context) => context.reader.readDelegationUsage(request),

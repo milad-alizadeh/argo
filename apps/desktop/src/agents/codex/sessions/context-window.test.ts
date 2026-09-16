@@ -4,7 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '@/core/sessions/contract'
-import { createCodexSessionReader } from './read-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
+import { codexSessionSource } from './read-sessions'
 
 const listing = {
   version: 1 as const,
@@ -41,7 +42,7 @@ test('uses the context window Codex declares for the session', async (context) =
   )
 
   const reply = sessionListReplySchema.parse(
-    await createCodexSessionReader(root).listSessions(listing),
+    await createSessionReader([codexSessionSource(root)]).listSessions(listing),
   )
   if (reply.type !== 'session.listed') throw new Error('Expected the session listing.')
   assert.deepEqual(

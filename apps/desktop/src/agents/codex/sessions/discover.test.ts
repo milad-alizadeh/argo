@@ -5,7 +5,8 @@ import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
 import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
-import { createCodexSessionReader } from './read-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
+import { codexSessionSource } from './read-sessions'
 
 const listing = {
   version: 1 as const,
@@ -15,7 +16,7 @@ const listing = {
 }
 
 function listSessions(value: unknown, root: string) {
-  return createCodexSessionReader(root).listSessions(value as never)
+  return createSessionReader([codexSessionSource(root)]).listSessions(value as never)
 }
 
 function listed(reply: Awaited<ReturnType<typeof listSessions>>) {
@@ -124,7 +125,7 @@ test('excludes a subagent thread from the roster even though it holds assistant 
   // Excluded from the roster, but a direct feed read by id must still come back clean rather
   // than surfacing the dropped assistant message or throwing.
   const feed = sessionFeedReplySchema.parse(
-    await createCodexSessionReader(root).readSessionFeed({
+    await createSessionReader([codexSessionSource(root)]).readSessionFeed({
       version: 1,
       type: 'session.feed',
       requestId: 'feed-1',

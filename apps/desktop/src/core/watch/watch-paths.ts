@@ -52,12 +52,10 @@ export function watchTrees(
     }
 
     const opened = roots.map((root) => keepWatched(root, announce, open))
-    return {
-      close: () => {
-        closed = true
-        if (settling !== null) clearTimeout(settling)
-        for (const root of opened) root.close()
-      },
+    return () => {
+      closed = true
+      if (settling !== null) clearTimeout(settling)
+      for (const root of opened) root.close()
     }
   }
 }

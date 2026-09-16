@@ -6,8 +6,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from '@/core/sessions/discover-transcript-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
 import { assertWindowGrowsToFarSession } from '@/core/sessions/window-proof-helpers'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { writeArchiveStore } from './session-fixture-files'
 import { claudeRoot, writeManySessions } from './session-window-fixture'
 
@@ -15,7 +16,7 @@ test('a Session outside the initial window is unread on first discovery, but rea
   const root = await claudeRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 10)
   const farId = `s${ROSTER_PAGE_SIZE + 5}`
-  const reader = createClaudeSessionReader({ transcripts: root })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 
   await assertWindowGrowsToFarSession(reader, farId)
 })
@@ -29,7 +30,7 @@ test('pages the Archive within a bounded window rather than reading the whole tr
   context.after(() => rm(store, { recursive: true, force: true }))
   const archivedIds = Array.from({ length: ROSTER_PAGE_SIZE + 10 }, (_, index) => `s${index}`)
   await writeArchiveStore(store, archivedIds, { archived: true })
-  const reader = createClaudeSessionReader({ transcripts: root, archive: store })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root, archive: store })])
 
   const first = await reader.archiveList({
     version: 1,

@@ -1,26 +1,11 @@
-// `nativeTheme` only exists inside a running Electron process, so this is the one bridge test in
-// the suite that stands Electron itself in: nothing else in this run imports it. The stand-in is
-// registered before the dynamic imports below, since a static import of `./bridge` would resolve
-// the real `electron` package first.
+// `nativeTheme` only exists inside a running Electron process, so this bridge test stands Electron
+// in. The stand-in is shared with every other test that does, for the reason written beside it, and
+// it is registered before the dynamic imports below, since a static import of `./bridge` would
+// resolve the real `electron` package first.
 import { mock } from 'bun:test'
+import { electronStandIn } from '../contract/electron-stand-in'
 
-const theme = { themeSource: 'system' as 'system' | 'light' | 'dark', shouldUseDarkColors: true }
-
-mock.module('electron', () => ({
-  nativeTheme: {
-    get themeSource() {
-      return theme.themeSource
-    },
-    set themeSource(value: 'system' | 'light' | 'dark') {
-      theme.themeSource = value
-    },
-    get shouldUseDarkColors() {
-      return theme.shouldUseDarkColors
-    },
-    on: () => undefined,
-    off: () => undefined,
-  },
-}))
+mock.module('electron', () => electronStandIn)
 
 const [
   { mkdir, mkdtemp, readFile, rm, writeFile },

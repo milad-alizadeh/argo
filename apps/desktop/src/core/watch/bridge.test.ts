@@ -65,6 +65,26 @@ describe('telling a window its data changed', () => {
     }
   })
 
+  test('names a topic whose source is not a tree', () => {
+    const host = fakeWindow()
+    let changed = () => {}
+    let disposed = false
+    registerWatching(host.window, {
+      permissions: [
+        (announce) => {
+          changed = announce
+          return () => {
+            disposed = true
+          }
+        },
+      ],
+    })
+    changed()
+    expect(host.sent).toEqual([{ channel: WATCHED_CHANGED_CHANNEL, topic: 'permissions' }])
+    host.close()
+    expect(disposed).toBe(true)
+  })
+
   test('says nothing more once the window has closed', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-closed-'))
     const host = fakeWindow()
@@ -114,25 +134,5 @@ describe('telling a window about a watch that had to be opened again', () => {
       host.close()
       await rm(parent, { force: true, recursive: true })
     }
-  })
-})
-
-describe('telling a window about a source that is not a tree', () => {
-  test('names the topic for a source that watches no tree at all', () => {
-    const host = fakeWindow()
-    let announce: () => void = () => {}
-    let closed = false
-    registerWatching(host.window, {
-      sessions: [
-        (onChanged) => {
-          announce = onChanged
-          return { close: () => (closed = true) }
-        },
-      ],
-    })
-    announce()
-    expect(host.sent).toEqual([{ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' }])
-    host.close()
-    expect(closed).toBe(true)
   })
 })

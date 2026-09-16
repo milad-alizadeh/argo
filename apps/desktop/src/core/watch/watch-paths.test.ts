@@ -29,7 +29,7 @@ async function armedWatch(name: string) {
     await quiet()
   }
   if (reported === 0) {
-    watched.close()
+    watched()
     await rm(root, { force: true, recursive: true })
     throw new Error('the watch never reported a write under its own root')
   }
@@ -37,9 +37,9 @@ async function armedWatch(name: string) {
   return {
     root,
     changes: () => reported - counted,
-    close: watched.close,
+    close: watched,
     discard: async () => {
-      watched.close()
+      watched()
       await rm(root, { force: true, recursive: true })
     },
   }
@@ -94,7 +94,7 @@ describe('watching a tree', () => {
       }
       expect(changes).toBeGreaterThan(0)
     } finally {
-      watched.close()
+      watched()
       await rm(root, { force: true, recursive: true })
     }
   })

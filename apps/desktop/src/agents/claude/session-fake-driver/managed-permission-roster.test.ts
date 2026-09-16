@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { ClaudePermission } from '@/core/sessions/contract.ts'
+import type { SessionRosterRow } from '@/core/sessions/models'
+import { createSessionReader } from '@/core/sessions/reader'
 import { listed } from '@/core/sessions/reader-test-helpers'
 import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { launch, ledgerFile, OPENING } from './claude-driver-launch.ts'
 import { fixtureRoot } from './session-fixtures'
 
@@ -30,6 +32,10 @@ function heldPermissionGate(): ClaudePermissionGate & {
   }
 }
 
+function managedReader(root: string, roster: () => SessionRosterRow[]) {
+  return createSessionReader([claudeSessionSource({ transcripts: root, managedSessions: roster })])
+}
+
 function rowOf(reply: Awaited<ReturnType<typeof listed>>, sessionId: string) {
   return reply?.sessions.find((session) => session.id === sessionId)
 }
@@ -43,7 +49,7 @@ test('a managed Session with a transcript and a pending Permission reads `permis
     mintSessionId: () => 'externalBasic',
   })
   const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
-  const reader = createClaudeSessionReader({ transcripts: root, managedSessions: driver.roster })
+  const reader = managedReader(root, driver.roster)
 
   gate.raise({ id: 'permission-1', sessionId, toolName: 'Bash', input: { command: 'bun test' } })
   const pending = await listed(reader)
@@ -64,7 +70,7 @@ test('a managed Session that discovery found keeps the `managed` posture, and a 
   const root = await fixtureRoot(context, ['externalBasic'])
   const { driver } = launch(await ledgerFile(context), { mintSessionId: () => 'externalBasic' })
   const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
-  const reader = createClaudeSessionReader({ transcripts: root, managedSessions: driver.roster })
+  const reader = managedReader(root, driver.roster)
 
   const reply = await listed(reader)
   assert.deepEqual(
@@ -77,7 +83,7 @@ test('a managed Session with no transcript yet appears in the Roster with the `m
   const root = await fixtureRoot(context, [])
   const { driver } = launch(await ledgerFile(context))
   const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
-  const reader = createClaudeSessionReader({ transcripts: root, managedSessions: driver.roster })
+  const reader = managedReader(root, driver.roster)
 
   const reply = await listed(reader)
   assert.deepEqual(
@@ -88,7 +94,7 @@ test('a managed Session with no transcript yet appears in the Roster with the `m
 
 test('a Claude Session Argo does not currently drive still reads `external`', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
-  const reader = createClaudeSessionReader({ transcripts: root })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 
   const reply = await listed(reader)
   assert.equal(rowOf(reply, 'externalBasic')?.posture, 'external')

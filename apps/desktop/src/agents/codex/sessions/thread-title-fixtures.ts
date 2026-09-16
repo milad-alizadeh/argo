@@ -6,7 +6,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sessionListReplySchema } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { createCodexSessionReader } from './read-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
+import { codexSessionSource } from './read-sessions'
 import { codexStatePath } from './roots'
 import { readThreadNames } from './thread-names'
 
@@ -50,10 +51,12 @@ export async function rosterTitles(
   state: string,
   roster: SessionRosterRow[] = [],
 ) {
-  const reader = createCodexSessionReader(transcripts, {
-    threadNames: readThreadNames(state, openReadOnly),
-    roster: () => roster,
-  })
+  const reader = createSessionReader([
+    codexSessionSource(transcripts, {
+      threadNames: readThreadNames(state, openReadOnly),
+      roster: () => roster,
+    }),
+  ])
   const reply = sessionListReplySchema.parse(
     await reader.listSessions({
       version: 1,

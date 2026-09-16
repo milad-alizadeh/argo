@@ -1,6 +1,4 @@
-// Scoping one adapter's own rows to a Project, at that adapter's own discovery boundary (#2239):
-// applied inside each CLI's `discoverSessions`, before its rows ever reach the shared reader, so a
-// Project's reply is never a machine-wide list filtered down after the fact.
+// Scoping one adapter's own rows to a Project; `discover-roster.ts` is the one place it applies.
 import { realpath } from 'node:fs/promises'
 
 // A Project's root as registered and as the CLI records it: a CLI's cwd has symlinks resolved

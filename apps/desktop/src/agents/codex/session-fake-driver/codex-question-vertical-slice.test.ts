@@ -9,8 +9,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 import { decideSessionQuestion, startSession } from '@/core/sessions/drive.ts'
+import { createSessionReader } from '@/core/sessions/reader'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { createCodexSessionReader } from '../sessions/read-sessions.ts'
+import { codexSessionSource } from '../sessions/read-sessions.ts'
 import { driverBackedByFixture } from './fixture-driver.ts'
 
 async function until<Value>(read: () => Value | null, attempts = 50): Promise<Value> {
@@ -37,10 +38,12 @@ function decideRequest(requestId: string, sessionId: string, questionId: string)
 
 async function askRowFor(driver: ReturnType<typeof driverBackedByFixture>, sessionId: string) {
   const transcripts = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-question-slice-'))
-  const reader = createCodexSessionReader(transcripts, {
-    roster: driver.roster,
-    pendingQuestion: driver.pendingQuestion,
-  })
+  const reader = createSessionReader([
+    codexSessionSource(transcripts, {
+      roster: driver.roster,
+      pendingQuestion: driver.pendingQuestion,
+    }),
+  ])
   const feedReply = (await reader.readSessionFeed({
     version: 1,
     type: 'session.feed',

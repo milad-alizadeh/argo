@@ -33,8 +33,11 @@ export function useSessionPermission(sessionId: string | null) {
       }
     },
   })
-  // A pending Permission holds the CLI still until the reader answers, so it has to appear at once.
-  // The gate that holds it announces on this topic, which is why asking twice a second is gone.
+  // The main process is where a Permission appears and where a decision clears it, so it says when
+  // to read again (#2299). The topic carries no Session id: a window shows one Session, so another
+  // Session's Permission costs this screen one read. Unlike the transcript reads, no fallback poll
+  // stands behind it, because the push comes from the process holding the Permission, not from a
+  // file watch the OS can drop.
   useWatchedQueries('permissions', [queryKey])
   const permissionDecision = usePermissionDecision()
   const decide = async (decision: PermissionAnswer) => {

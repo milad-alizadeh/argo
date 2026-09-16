@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '../../../core/sessions/reader.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
 
 // The `Task` call in `subagentTail`, and the Subagent transcript its meta file joins to it.
@@ -18,9 +19,9 @@ function feedRequest(delegationId: string | null) {
 }
 
 async function readFeed(root: string, delegationId: string | null) {
-  const reply = await createClaudeSessionReader({ transcripts: root }).readSessionFeed(
-    feedRequest(delegationId),
-  )
+  const reply = await createSessionReader([
+    claudeSessionSource({ transcripts: root }),
+  ]).readSessionFeed(feedRequest(delegationId))
   assert.equal(reply.type, 'session.feed.read')
   return reply.type === 'session.feed.read' ? reply : null
 }
@@ -46,15 +47,17 @@ test("keeps the Session's own Feed separate from a Subagent's", async (context) 
 
 test('reads no Feed for a delegation the Session never recorded', async (context) => {
   const root = await fixtureRoot(context, ['subagentTail'])
-  const reply = await createClaudeSessionReader({ transcripts: root }).readSessionFeed(
-    feedRequest('no-such-call'),
-  )
+  const reply = await createSessionReader([
+    claudeSessionSource({ transcripts: root }),
+  ]).readSessionFeed(feedRequest('no-such-call'))
   assert.equal(reply.type, 'session.error')
 })
 
 test('reads what each Subagent spent from its own transcript', async (context) => {
   const root = await fixtureRoot(context, ['subagentTail'])
-  const reply = await createClaudeSessionReader({ transcripts: root }).readDelegationUsage({
+  const reply = await createSessionReader([
+    claudeSessionSource({ transcripts: root }),
+  ]).readDelegationUsage({
     version: 1,
     type: 'session.delegation.usage',
     requestId: 'usage-1',

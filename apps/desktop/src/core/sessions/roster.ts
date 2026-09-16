@@ -10,6 +10,7 @@ import {
   TITLE_SOURCES,
 } from './models'
 import { readPlan } from './plan'
+import { observedRosterRow } from './roster-row-definition'
 import {
   type BackgroundTask,
   readActivity,
@@ -125,36 +126,27 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
   const stamps = messages.flatMap((message) =>
     message.timestamp === null ? [] : [message.timestamp],
   )
-  return {
-    id: chain.id,
-    retiredIds: chain.retiredIds,
+  return observedRosterRow({
+    chain,
     cli,
-    posture: 'external',
+    messages,
+    notifications,
     title: readTitle(chain),
     status: readExternalStatus(messages),
     entry: readChainEntry(messages),
-    ...readPlace(chain, messages),
+    place: readPlace(chain, messages),
     updatedAt:
       stamps.length === 0
         ? null
         : stamps.reduce((latest, stamp) => (stamp > latest ? stamp : latest)),
-    unreadableLines: chain.files.reduce((total, file) => total + file.unreadableLines, 0),
-    originUnread: chain.originUnread,
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(chain.files.flatMap((file) => file.records)),
     delegations: readDelegations(messages, notifications),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
-    // Joined in by `reader.ts` from the owned Session → Ticket link store after this projection
-    // runs (CONTEXT.md L1 · Session → Ticket): no transcript record carries it.
-    ticket: null,
-    // Whether the reader archived this Session is not a transcript fact: it comes from the
-    // Claude desktop app's own store, joined in by `agents/claude/sessions/discover.ts` after
-    // this projection runs. Every other caller — Codex included — reads false.
-    archived: false,
-    ...readUsage(messages),
+    usage: readUsage(messages),
     contextWindowTokens: readContextWindowTokens(chain),
     setup: readSetup(messages),
-  }
+  })
 }

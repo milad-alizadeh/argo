@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '../../../core/sessions/reader.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { launch, ledgerFile, OPENING } from './claude-driver-launch.ts'
 import { fixtureRoot } from './session-fixtures'
 
@@ -20,7 +21,9 @@ test('answers an empty Feed for a managed Session whose transcript is not writte
     prompt: 'Inspect the failing test.',
     setup: OPENING,
   })
-  const reader = createClaudeSessionReader({ transcripts: root, managedSessions: driver.roster })
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: root, managedSessions: driver.roster }),
+  ])
   const reply = await reader.readSessionFeed({ ...feed, sessionId })
   assert.equal(reply.type, 'session.feed.read')
   assert.deepEqual({ chainId: reply.chainId, rows: reply.rows }, { chainId: sessionId, rows: [] })

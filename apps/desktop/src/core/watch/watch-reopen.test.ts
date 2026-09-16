@@ -34,7 +34,7 @@ describe('a watch that died', () => {
       await quiet()
       expect(changes).toBe(2)
     } finally {
-      watched.close()
+      watched()
     }
   })
 
@@ -53,7 +53,7 @@ describe('a watch that died', () => {
       // Without a backoff the first delay would repeat, giving one open every 50ms.
       expect(opener.opens).toBeLessThan(5)
     } finally {
-      watched.close()
+      watched()
     }
   })
 
@@ -61,7 +61,7 @@ describe('a watch that died', () => {
     const opener = failableOpener()
     const watched = watchTrees(['/transcripts'], opener.open)(() => {})
     opener.fail()
-    watched.close()
+    watched()
     await quiet(REOPEN_DELAYS_MS[0])
     expect(opener.opens).toBe(1)
   })
@@ -88,7 +88,7 @@ describe('a root that is not there yet', () => {
       }
       expect(changes).toBeGreaterThan(announced)
     } finally {
-      watched.close()
+      watched()
       await rm(parent, { force: true, recursive: true })
     }
   })

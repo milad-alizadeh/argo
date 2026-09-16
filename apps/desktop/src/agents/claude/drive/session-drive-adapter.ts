@@ -86,7 +86,6 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
       const permission = driver.pendingPermission(sessionId)
       return { permission: permission === null ? null : toPermission(permission) }
     },
-    watchPermissions: driver.watchPermissions,
     async decidePermission({ sessionId, permissionId, decision }) {
       if (!driver.decidePermission(sessionId, permissionId, CLAUDE_DECISIONS[decision])) {
         return { error: 'stale-permission' }
