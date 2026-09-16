@@ -5,6 +5,7 @@ import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-c
 import { describePackagedProof } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { selectProofProject } from './fixtures/feed.fixture'
+import { JourneyPerformanceProfile, journeyProfileEnabled } from './journey-performance-profile'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
 import type { SessionBackendOptions } from './session-backend-option'
@@ -66,13 +67,27 @@ export function describeSessionProof(name: string, body: (run: SessionProofRun) 
     let harness: Harness
     let backend: SessionCliBackend
     let page: Page | undefined
+    const profile = journeyProfileEnabled() ? new JourneyPerformanceProfile() : undefined
 
     test.beforeAll(async ({ backend: chosen }) => {
       backend = chosen
-      harness = await createPackagedSessionHarness(proof.root, backend, proof.trace)
+      // Playwright's own screenshot trace and the CDP CPU trace both attach to the page, so a
+      // profiled run skips the former and keeps only the timings and samples it asked for.
+      harness = await createPackagedSessionHarness(
+        proof.root,
+        backend,
+        profile ? async () => {} : proof.trace,
+      )
     })
     proof.teardown(async () => {
-      await harness?.close()
+      try {
+        await profile?.write()
+      } finally {
+        await harness?.close()
+      }
+    })
+    test.afterEach(async ({}, testInfo) => {
+      profile?.recordCase(testInfo)
     })
     proof.onFailure(async (testInfo) => {
       const snapshot = await feedStateSnapshot(page).catch((error: unknown) => ({
@@ -98,8 +113,17 @@ export function describeSessionProof(name: string, body: (run: SessionProofRun) 
       get backend() {
         return backend
       },
-      launch: (...arguments_) => harness.launch(...arguments_),
-      restart: (...arguments_) => harness.restart(...arguments_),
+      launch: async (...arguments_) => {
+        const next = await harness.launch(...arguments_)
+        await profile?.start(next)
+        return next
+      },
+      restart: async (...arguments_) => {
+        await profile?.stop()
+        const next = await harness.restart(...arguments_)
+        await profile?.start(next)
+        return next
+      },
       isPackaged: () => harness.isPackaged(),
       hold: (next) => {
         page = next
