@@ -31,9 +31,8 @@ export function sendToNewSession(request: {
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
-  send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
-  start: ReturnType<typeof useSessionMutations>['start']
+  start: Pick<ReturnType<typeof useSessionMutations>['start'], 'mutateAsync'>
   turn: TurnInput
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
   onSubmitted?: () => void

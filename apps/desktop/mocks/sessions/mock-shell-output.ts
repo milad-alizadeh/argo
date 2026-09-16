@@ -2,7 +2,7 @@
 // the running command has written, and the notification the CLI appends when it ends.
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath, proofCwd } from './transcript-files'
+import { fixturePath, proofCwd } from './mock-transcript-files'
 
 // The receipts in `shellRunning` name an absolute output file, the way the CLI's own do. The
 // fixture's path is rewritten into this run's own root, so two runs never share one file.
