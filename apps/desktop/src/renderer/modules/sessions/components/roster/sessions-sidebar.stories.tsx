@@ -167,9 +167,7 @@ export const NoProjectSelected: Story = {
     await expect(canvas.queryByText('Select a Project first')).toBeNull()
     await userEvent.click(newSessionButton)
     await waitFor(async () => {
-      await expect(
-        within(document.body).getByText('Select a Project first'),
-      ).toBeVisible()
+      await expect(within(document.body).getByText('Select a Project first')).toBeVisible()
     })
     await expect(
       within(document.body).getByText('Choose a Project, or add one, to start a Session.'),
