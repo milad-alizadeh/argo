@@ -18,6 +18,19 @@ export const Working: Story = {
   },
 }
 
+// A live tail tool group says "Working" in its own shimmer, so the marker goes quiet. It keeps the
+// height it had, so the Feed below it does not move (#2241).
+export const Quiet: Story = {
+  args: { silent: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('status')).toBeNull()
+    const marker = canvas.getByText('Working').closest('.group\\/marker')
+    await expect(marker).not.toBeVisible()
+    await expect(marker?.getBoundingClientRect().height).toBeGreaterThan(0)
+  },
+}
+
 export const StartingSession: Story = { args: { phase: 'starting' } }
 
 export const ResumingSession: Story = { args: { phase: 'resuming' } }

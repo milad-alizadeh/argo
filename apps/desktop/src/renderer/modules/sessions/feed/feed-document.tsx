@@ -1,15 +1,13 @@
-import { type ReactNode, useRef } from 'react'
+import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
-import { CompactionMarker } from './compaction-marker'
 import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
-import { HandoffCompletedMarker, HandoffMarker } from './handoff-marker'
+import { compactionMarker, feedTail, handoffMarker } from './feed-tail'
 import { useReveals } from './reveal'
 import type { RevealCache } from './streaming-text'
 import { ToolGroupState } from './tool-group-state'
-import { TurnMarker } from './turn-marker'
 import type { TurnMarkerView } from './turn-marker-state'
 import { useSettledFeed } from './use-settled-feed'
 
@@ -39,40 +37,6 @@ type FeedDocumentProps = {
 } & FeedQuestionHandlers
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
-
-function compactionMarker(
-  startedAt: string | null,
-  percentage: number | null,
-  tokens: string | null,
-) {
-  return startedAt === null ? null : (
-    <CompactionMarker percentage={percentage} startedAt={startedAt} tokens={tokens} />
-  )
-}
-
-function handoffMarker(
-  startedAt: string | null,
-  handoffTo: string | null,
-  onOpenSession: (sessionId: string) => void,
-) {
-  if (startedAt !== null) return <HandoffMarker />
-  if (handoffTo !== null)
-    return <HandoffCompletedMarker onOpenSession={onOpenSession} sessionId={handoffTo} />
-  return null
-}
-
-function feedTail(compaction: ReactNode, handoff: ReactNode, turnMarker: TurnMarkerView | null) {
-  if (compaction === null && handoff === null && turnMarker === null) return null
-  return (
-    <>
-      {compaction}
-      {handoff}
-      {turnMarker === null ? null : (
-        <TurnMarker phase={turnMarker.phase} startedAt={turnMarker.startedAt} />
-      )}
-    </>
-  )
-}
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
@@ -124,13 +88,15 @@ export function FeedDocument({
   const tailIsLive =
     lastRow?.shape === 'tool-group' || (lastRow?.shape === 'prose' && lastRow.role === 'assistant')
   const streamingRowId = isRunning && tailIsLive ? lastRow.id : null
-  // A live tail tool group already shimmers its latest call, so Working would say it twice.
-  const tailShimmers = isRunning && lastRow?.shape === 'tool-group'
-  const tail = feedTail(
-    compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens),
-    handoffMarker(handoffStartedAt, handoffTo, onOpenSession),
-    tailShimmers && turnMarker?.phase === 'working' ? null : turnMarker,
-  )
+  // A live tail tool group already shimmers its latest call, so Working would say it twice. The
+  // marker keeps its box while it is quiet, because a running Turn moves between prose and tool
+  // calls and each change of the tail's height moved the whole Feed (#2241).
+  const tail = feedTail({
+    compaction: compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens),
+    handoff: handoffMarker(handoffStartedAt, handoffTo, onOpenSession),
+    turnMarker,
+    markerSilent: isRunning && lastRow?.shape === 'tool-group' && turnMarker?.phase === 'working',
+  })
   const content = feedContent({
     active,
     settled,

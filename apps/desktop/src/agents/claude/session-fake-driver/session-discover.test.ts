@@ -116,6 +116,22 @@ test('changes the Feed revision when a transcript grows', async (context) => {
   assert.notEqual(second.revision, first.revision)
 })
 
+// One reader answers many Roster polls, and it stitches files into Sessions only when a file it
+// read has changed (#2241). What the Roster says must still follow the transcripts.
+test('follows a growing transcript across repeated Roster reads', async (context) => {
+  const root = await fixtureRoot(context, ['externalBasic'])
+  const reader = createClaudeSessionReader({ transcripts: root })
+  const first = await reader.listSessions(listing)
+  const unchanged = await reader.listSessions({ ...listing, requestId: 'list-2' })
+  assert.equal(first.type, 'session.listed')
+  assert.equal(unchanged.type, 'session.listed')
+  assert.deepEqual(unchanged.sessions, first.sessions)
+  await appendFile(path.join(root, 'project-one', 'externalBasic.jsonl'), LATER_TURN)
+  const grown = await reader.listSessions({ ...listing, requestId: 'list-3' })
+  assert.equal(grown.type, 'session.listed')
+  assert.notEqual(grown.sessions[0]?.updatedAt, first.sessions[0]?.updatedAt)
+})
+
 // A retired id follows the chain that took it rather than reading as a Session that ended, and
 // the reply carries both ids so the caller can still prove the answer is its own.
 test('follows a retired id to the Session that took it', async (context) => {
