@@ -15,33 +15,49 @@ import { SessionsSidebarContent } from './sessions-sidebar'
 
 const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
+// A stored id absent from the active Roster is not necessarily gone: the active list never
+// carries an archived Session, so this can still be one, restored by the Archive section
+// asking the reader for it by id (#1593). Navigate under the stored id either way; only a
+// Session the reader answers for nowhere at all fails to resolve, same as any stale id.
+function useRestoreSelectedSession(options: {
+  sessionId: string | undefined
+  roster: ReturnType<typeof useSessions>['roster']
+  rosterError: ReturnType<typeof useSessions>['rosterError']
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const { sessionId, roster, rosterError, navigate } = options
+  useEffect(() => {
+    if (sessionId !== undefined || roster === null || rosterError !== null) return
+    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
+    if (storedId === null) return
+    const restoredId = currentSessionId(roster.sessions, storedId) ?? storedId
+    navigate(`/sessions/${restoredId}`, { replace: true })
+  }, [navigate, roster, rosterError, sessionId])
+}
+
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const lastHarness = useComposerStore(({ harness }) => harness)
   const pending = useSessionCreationStore(({ pending }) => pending)
-  const { roster, rosterError } = useSessions(null, true, cockpit.project?.path ?? null)
+  const { roster, rosterError, hasMoreSessions, fetchMoreSessions } = useSessions(
+    null,
+    true,
+    cockpit.project?.path ?? null,
+  )
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)
   const archiveSelected = useArchiveSelected()
-  useEffect(() => {
-    if (sessionId !== undefined || roster === null || rosterError !== null) return
-    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
-    if (storedId === null) return
-    // A stored id absent from the active Roster is not necessarily gone: the active list never
-    // carries an archived Session, so this can still be one, restored by the Archive section
-    // asking the reader for it by id (#1593). Navigate under the stored id either way; only a
-    // Session the reader answers for nowhere at all fails to resolve, same as any stale id.
-    const restoredId = currentSessionId(roster.sessions, storedId) ?? storedId
-    navigate(`/sessions/${restoredId}`, { replace: true })
-  }, [navigate, roster, rosterError, sessionId])
+  useRestoreSelectedSession({ sessionId, roster, rosterError, navigate })
 
   return (
     <>
       <SessionsSidebarContent
+        hasMoreSessions={hasMoreSessions}
         onArchiveSelected={archiveSelected}
+        onFetchMoreSessions={fetchMoreSessions}
         onLinkTicket={setLinkTarget}
         onNew={() => {
           const target = newSessionTarget(lastHarness, cockpit.project?.path ?? null)

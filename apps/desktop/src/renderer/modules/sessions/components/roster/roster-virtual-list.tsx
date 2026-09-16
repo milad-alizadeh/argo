@@ -27,9 +27,26 @@ function moveFocus(event: KeyboardEvent<HTMLUListElement>) {
 // windowing still kicks in for a roster large enough to exceed it.
 const OVERSCAN = 30
 
+// A sentinel row's appearance among the mounted virtual items is the trigger to fetch its page's
+// continuation; the roster and the Archive each hold their own sentinel and fetch callback.
+function useSentinelFetch(options: {
+  rows: readonly RosterRow[]
+  kind: RosterRow['kind']
+  items: readonly { index: number }[]
+  onFetch: () => void
+}) {
+  const { rows, kind, items, onFetch } = options
+  const sentinelIndex = rows.findIndex((row) => row.kind === kind)
+  useEffect(() => {
+    if (sentinelIndex === -1) return
+    if (items.some((item) => item.index === sentinelIndex)) onFetch()
+  }, [items, onFetch, sentinelIndex])
+}
+
 export function RosterVirtualList({
   label,
   onArchive,
+  onFetchMoreSessions,
   onFetchNextPage,
   onFocus,
   onLinkTicket,
@@ -46,6 +63,7 @@ export function RosterVirtualList({
   tabStop,
 }: RosterRowHandlers & {
   label: string
+  onFetchMoreSessions: () => void
   onFetchNextPage: () => void
   renamedTitles: Record<string, string>
   rows: readonly RosterRow[]
@@ -63,12 +81,8 @@ export function RosterVirtualList({
     overscan: OVERSCAN,
   })
   const items = virtualizer.getVirtualItems()
-  const lastRow = rows.at(-1)
-
-  useEffect(() => {
-    if (lastRow?.kind !== 'archivedSentinel') return
-    if (items.some((item) => item.index === rows.length - 1)) onFetchNextPage()
-  }, [items, lastRow, onFetchNextPage, rows.length])
+  useSentinelFetch({ rows, kind: 'rosterSentinel', items, onFetch: onFetchMoreSessions })
+  useSentinelFetch({ rows, kind: 'archivedSentinel', items, onFetch: onFetchNextPage })
 
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3" ref={scrollRef}>

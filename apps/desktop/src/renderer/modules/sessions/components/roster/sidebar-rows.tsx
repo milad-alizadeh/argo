@@ -5,7 +5,9 @@ import { RosterVirtualList } from './roster-virtual-list'
 import { useArchivedSection } from './use-archived-section'
 
 export function SidebarRows({
+  hasMoreSessions,
   onArchive,
+  onFetchMoreSessions,
   onFocus,
   onRename,
   onOpenTicket,
@@ -16,10 +18,13 @@ export function SidebarRows({
   renamedTitles,
   selectedIds,
   selectedSessionId,
+  showArchive,
   tabStop,
   visible,
 }: {
+  hasMoreSessions: boolean
   onArchive: (sessionId: SessionId) => void
+  onFetchMoreSessions: () => void
   onFocus: (sessionId: SessionId) => void
   onRename: (session: Session) => void
   onOpenTicket: (session: Session) => void
@@ -30,17 +35,25 @@ export function SidebarRows({
   renamedTitles: Record<string, string>
   selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
+  showArchive: boolean
   tabStop: SessionId | null
   visible: SessionsListed['sessions']
 }) {
   const visibleSessionIds = visible.map((session) => session.id)
-  const archived = useArchivedSection(selectedSessionId, visibleSessionIds)
-  const rows = rosterRows({ active: visible, archivedOpen: archived.open, archived })
+  const archived = useArchivedSection(selectedSessionId, visibleSessionIds, showArchive)
+  const rows = rosterRows({
+    active: visible,
+    archivedOpen: archived.open,
+    archived,
+    hasMoreSessions,
+    showArchive,
+  })
 
   return (
     <RosterVirtualList
       label="Sessions"
       onArchive={onArchive}
+      onFetchMoreSessions={onFetchMoreSessions}
       onFetchNextPage={archived.fetchNextPage}
       onFocus={onFocus}
       onLinkTicket={onLinkTicket}

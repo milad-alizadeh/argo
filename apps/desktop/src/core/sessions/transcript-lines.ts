@@ -2,6 +2,8 @@ import { type FileHandle, open } from 'node:fs/promises'
 
 import type { TranscriptRecord } from './transcript'
 
+// How many recent transcript files createTranscriptRecordReader itself scans, for a caller that
+// bounds its own read a different way than the Roster's own paged discovery (#2239) does.
 export const ROSTER_FILE_LIMIT = 200
 
 const CHUNK_BYTES = 1024 * 1024

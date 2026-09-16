@@ -127,6 +127,7 @@ function ReviewSidebar({
         filesFound: SESSION_ROSTER.length,
         filesRead: SESSION_ROSTER.length,
         filesUnreadable: 0,
+        nextCursor: null,
       }}
       rosterError={null}
       selectedSessionId={selectedSessionId}

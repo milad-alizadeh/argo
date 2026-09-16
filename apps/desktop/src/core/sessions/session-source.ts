@@ -26,9 +26,17 @@ export type ArchivedSessionsPage = {
   restored: SessionRosterRow | null
 }
 
+// One adapter's page of the active roster (#2239): `cursor` names the window the caller already
+// holds (or `null` for the bounded first page) and `projectRoot` scopes rows to one Project at
+// the discovery boundary, before the reader ever sees a machine-wide list to filter down.
+export type DiscoverSessionsOptions = {
+  cursor?: string | null
+  projectRoot?: string | null
+}
+
 export type SessionSource = {
   cli: string
-  discoverSessions: () => Promise<TranscriptDiscovery>
+  discoverSessions: (options?: DiscoverSessionsOptions) => Promise<TranscriptDiscovery>
   readSessionFiles: (sessionId: string) => Promise<SessionChain | null>
   // The renderer releases a Feed when its Session stops being selected. The adapter then drops
   // any full transcript records it only retained to incrementally project that selected Feed.

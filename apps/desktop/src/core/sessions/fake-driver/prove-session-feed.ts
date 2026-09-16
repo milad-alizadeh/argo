@@ -3,14 +3,10 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
-import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
-import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { type CaseResults, createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
 import { proveBackgroundShell } from './session-background-shell-case'
-import { proveSessionCreatedByClick } from './session-create-case'
 import { proveDelegationCards } from './session-delegation-card-case'
 import { proveSessionDiagram } from './session-diagram-case'
 import {
@@ -26,6 +22,7 @@ import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
 import { proveSessionQuestion } from './session-question-case'
 import { proveDuplicateSend, proveReplyWait } from './session-reply-delay-case'
+import { proveResumeAndRenameFlow } from './session-resume-rename-flow'
 import { proveContract } from './session-roster-contract-case'
 import {
   provePackagedRosterRestart,
@@ -33,11 +30,13 @@ import {
 } from './session-roster-interaction-cases'
 import { proveStableRosterPolling } from './session-roster-order-case'
 import { rosterOrderMutations } from './session-roster-order-fixture'
+import { proveRosterWindow } from './session-roster-window-case'
+import { writeWindowFillerSessions } from './session-roster-window-fixture'
 import { proveSessionShell } from './session-shell-cases'
 import { completeWatch, writeWatchOutput } from './session-shell-fixture'
 import { proveSubagentFeed } from './session-subagent-feed-case'
 import { proveToolCalls } from './session-tool-calls-case'
-import { proveComposerMemory, proveTurnSetup } from './session-turn-setup-cases'
+import { proveTurnSetup } from './session-turn-setup-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const results: CaseResults = { cases: [], timings: {} }
@@ -110,30 +109,17 @@ try {
   // below starts a Session, which needs one.
   await selectProofProject(fixture.userData, fixture.project)
   page = await restart()
-  await ran(['session-composer-memory'], () =>
-    proveComposerMemory(page, fixture.claudeTranscripts, fixture.project),
-  )
-  // Before the resume cases, for the reason session-create-case.ts records.
-  await ran(['session-created-by-click'], () =>
-    proveSessionCreatedByClick(page, fixture.claudeTranscripts),
-  )
-  await ran(['session-claude-resume'], async () => {
-    page = await provePackagedResume(page, {
-      project: fixture.project,
-      restart,
-      transcripts: fixture.claudeTranscripts,
-    })
-  })
-  await ran(['session-codex-resume'], async () => {
-    page = await provePackagedCodexResume(page, { restart })
-  })
-  await ran(['session-claude-rename'], () =>
-    proveClaudeRename(page, { project: fixture.project, transcripts: fixture.claudeTranscripts }),
-  )
+  page = await proveResumeAndRenameFlow({ page, ran, fixture, restart })
   // Each case below starts its own Session with its own prompt, so the fixture root carries over.
   page = await restart({ replyDelayMs: 2_000 })
   await ran(['session-reply-wait'], () => proveReplyWait(page, fixture.claudeTranscripts))
   await ran(['session-duplicate-send'], () => proveDuplicateSend(page, fixture.claudeTranscripts))
+  // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's own
+  // exact Roster counts or ordering has to account for them.
+  await ran(['session-roster-window'], async () => {
+    await writeWindowFillerSessions(fixture.claudeTranscripts, fixture.project)
+    await proveRosterWindow(page)
+  })
   await assertShippedFusesIntact()
   const timings = {
     total: Math.round(performance.now() - provingStarted),

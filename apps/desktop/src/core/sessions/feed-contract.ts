@@ -13,6 +13,9 @@ export const sessionListRequestSchema = z.strictObject({
   // Session on the machine. A Session whose cwd does not resolve under this root belongs to a
   // different Project and is left out of the reply (#2204).
   projectRoot: z.string().nullable(),
+  // The window already loaded, echoed back from a prior reply's `nextCursor`, or absent/null for
+  // the bounded first page (#2239). Opaque: a caller only ever echoes what a reply gave it.
+  cursor: z.string().nullable().optional(),
 })
 export type SessionListRequest = z.infer<typeof sessionListRequestSchema>
 export const sessionFeedRequestSchema = z.strictObject({
@@ -50,6 +53,9 @@ export const sessionsListedSchema = z.strictObject({
   filesFound: z.number(),
   filesRead: z.number(),
   filesUnreadable: z.number(),
+  // Opaque; echo it back as the next request's `cursor` to read a larger window. `null` means
+  // every adapter has already read every file it found (#2239).
+  nextCursor: z.string().nullable(),
 })
 export type SessionsListed = z.infer<typeof sessionsListedSchema>
 

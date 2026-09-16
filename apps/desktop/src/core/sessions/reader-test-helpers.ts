@@ -14,9 +14,21 @@ export async function tempRoot(context: { after: (cleanup: () => Promise<void>) 
   return root
 }
 
-type TranscriptLine = { root: string; sessionId: string; text: string; updatedAt: string }
+type TranscriptLine = {
+  root: string
+  sessionId: string
+  text: string
+  updatedAt: string
+  cwd?: string
+}
 
-export async function writeClaudeTranscript({ root, sessionId, text, updatedAt }: TranscriptLine) {
+export async function writeClaudeTranscript({
+  root,
+  sessionId,
+  text,
+  updatedAt,
+  cwd,
+}: TranscriptLine) {
   const project = path.join(root, 'project-one')
   await mkdir(project, { recursive: true })
   await writeFile(
@@ -25,6 +37,7 @@ export async function writeClaudeTranscript({ root, sessionId, text, updatedAt }
       type: 'assistant',
       uuid: `${sessionId}-a`,
       timestamp: updatedAt,
+      cwd,
       message: { role: 'assistant', stop_reason: 'end_turn', content: [{ type: 'text', text }] },
     })}\n`,
   )
@@ -102,8 +115,17 @@ export async function appendGarbledCodexLine({
   await appendFile(path.join(codexDay(root), `${sessionId}.jsonl`), '{"type": garbled\n')
 }
 
-export function listing(requestId = 'list-1') {
-  return { version: 1, type: 'session.list', requestId, projectRoot: null } as const
+export function listing(
+  requestId = 'list-1',
+  options?: { cursor?: string | null; projectRoot?: string | null },
+) {
+  return {
+    version: 1,
+    type: 'session.list',
+    requestId,
+    projectRoot: options?.projectRoot ?? null,
+    cursor: options?.cursor,
+  } as const
 }
 
 export function feedRequest(
@@ -121,8 +143,12 @@ export function feedRequest(
   } as const
 }
 
-export async function listed(reader: ReturnType<typeof createSessionReader>, requestId?: string) {
-  const reply = sessionListReplySchema.parse(await reader.listSessions(listing(requestId)))
+export async function listed(
+  reader: ReturnType<typeof createSessionReader>,
+  requestId?: string,
+  options?: { cursor?: string | null; projectRoot?: string | null },
+) {
+  const reply = sessionListReplySchema.parse(await reader.listSessions(listing(requestId, options)))
   assert.equal(reply.type, 'session.listed')
   return reply.type === 'session.listed' ? reply : null
 }

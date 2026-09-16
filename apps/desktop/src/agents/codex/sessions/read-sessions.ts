@@ -3,6 +3,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { projectFeed } from '@/core/sessions/feed'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
+import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
 import { createSessionReader, type FeedOverlay, type SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
@@ -73,10 +74,20 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   const openTurns = createOpenTurnReader(root)
   return {
     cli: 'codex',
-    discoverSessions: async () => {
-      const [discovered, open] = await Promise.all([discoverSessions(root), openTurns(Date.now())])
+    discoverSessions: async (discoverOptions) => {
+      const [discovered, open] = await Promise.all([
+        discoverSessions(root, discoverOptions),
+        openTurns(Date.now()),
+      ])
       const roster = mergeManagedRoster(discovered, options?.roster?.() ?? [])
-      return { ...roster, rows: joinOpenTurns(roster.rows, open) }
+      const rows = joinOpenTurns(roster.rows, open)
+      // Project scope applies here, at this adapter's own discovery boundary (#2239), rather than
+      // after the shared reader has already merged every adapter's machine-wide list.
+      const projectRoots = await projectRootsOf(discoverOptions?.projectRoot)
+      return {
+        ...roster,
+        rows: rows.filter((row) => belongsToProject(row.cwd, projectRoots)),
+      }
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
