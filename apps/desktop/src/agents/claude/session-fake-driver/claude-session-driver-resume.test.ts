@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
+import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
 import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
 
 const turn = (prompt: string) => ({ prompt, setup: OPENING })

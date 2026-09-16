@@ -26,7 +26,8 @@ function readLedger(file: string): Ledger {
   const read = readDocumentSync(file)
   if (!read.ok) return {}
   const parsed = ledgerSchema.safeParse(read.document)
-  return parsed.success ? parsed.data : {}
+  if (!parsed.success) return {}
+  return parsed.data
 }
 
 export function createOwnershipLedger(options: {

@@ -4,9 +4,9 @@
 import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import type { OwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import type { OwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 
 const fixturePath = import.meta.url.endsWith('.mjs')
   ? './fake-codex-app-server.mjs'
