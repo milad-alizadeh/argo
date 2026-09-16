@@ -12,6 +12,9 @@ type DevelopmentIdentityBarProps = {
 export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentityBarProps) {
   const { t } = useTranslation('sessions')
   if (identity === null) return null
+  const separator = identity.id.lastIndexOf('-')
+  const instanceName = separator > 0 ? identity.id.slice(0, separator) : identity.id
+  const instanceHash = separator > 0 ? identity.id.slice(separator) : ''
 
   return (
     <aside
@@ -28,12 +31,9 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
       <span className="rounded-sm bg-background px-1.5 py-0.5 font-mono font-semibold text-foreground">
         {identity.label}
       </span>
-      {/* The instance names the store this app reads, so an empty dialog reads as another app's
-          store rather than as lost data (#2304). Two worktrees on one branch share a label. It
-          truncates like the worktree beside it: a real id runs to ~40 characters, and at the
-          minimum window width a fixed one would eat the path that says which tree this is. */}
-      <span className="min-w-0 truncate font-mono text-background/80" title={identity.id}>
-        {identity.id}
+      <span className="flex min-w-0 font-mono text-background/80" title={identity.id}>
+        <span className="min-w-0 truncate">{instanceName}</span>
+        <span className="shrink-0">{instanceHash}</span>
       </span>
       {ticket === null ? null : (
         <span className="min-w-0 truncate" title={`${ticket.key} · ${ticket.title}`}>

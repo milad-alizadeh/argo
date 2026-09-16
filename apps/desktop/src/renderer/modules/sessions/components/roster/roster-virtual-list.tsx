@@ -15,10 +15,10 @@ import { SessionRosterItem } from './session-roster-item'
 import { RosterLoadingMoreRow } from './sessions-sidebar-chrome'
 import { useSentinelFetch } from './use-roster-sentinel-fetch'
 
-// Memoized, because the sidebar re-renders twice a second while nothing happens: the open Session's
-// permission read polls every 500ms (SESSION_REFRESH_MS, #2299) and re-renders an ancestor the roster
-// shares with it. Without this every mounted row re-rendered on each of those ticks: 185291 renders
-// in a 13-second idle recording, when the Feed still polled at the same rate.
+// Memoized, because a read of the open Session re-renders an ancestor the roster shares with it, and
+// without this every mounted row re-rendered with it: 185291 renders in a 13-second idle recording,
+// when those reads still polled at 500ms. Nothing re-reads on a timer now (#2299, #2303), so the
+// reads are a CLI's writes, but a Session being driven writes several times a second.
 const RosterRowView = memo(function RosterRowView({
   onFocus,
   onSelect,

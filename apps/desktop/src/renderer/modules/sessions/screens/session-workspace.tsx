@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import { BasicFeed } from '../feed/basic-feed'
 import { FeedJumpToLatest } from '../feed/feed-jump-to-latest'
-import type { TurnMarkerView } from '../feed/turn-marker-state'
+import type { FeedLiveFacts } from '../feed/feed-live-facts'
 import type { useSessions } from '../hooks/use-sessions'
-import type { SessionEvidence, SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
@@ -14,17 +14,9 @@ export type SessionWorkspaceProps = {
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
   onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
-  compactionStartedAt?: string | null
-  compactionPercentage?: number | null
-  compactionTokens?: string | null
-  handoffStartedAt?: string | null
-  handoffTo?: string | null
+  liveFacts: FeedLiveFacts
   stallTimeoutMs?: number
   onOpenSession: (sessionId: string) => void
-  isRunning: boolean
-  posture?: 'managed' | 'external' | null
-  optimisticRow?: SessionFeedRow | null
-  turnMarker?: TurnMarkerView | null
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -80,17 +72,9 @@ export function SessionWorkspace({
   feed,
   feedError,
   onRetryFeed,
-  compactionStartedAt = null,
-  compactionPercentage = null,
-  compactionTokens = null,
-  handoffStartedAt = null,
-  handoffTo = null,
+  liveFacts,
   stallTimeoutMs,
   onOpenSession,
-  isRunning,
-  posture = null,
-  optimisticRow = null,
-  turnMarker = null,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -120,25 +104,17 @@ export function SessionWorkspace({
         <BasicFeed
           activeEvidenceId={activeEvidenceId}
           answeringQuestionId={answeringQuestionId}
-          compactionPercentage={compactionPercentage}
-          compactionStartedAt={compactionStartedAt}
-          compactionTokens={compactionTokens}
           failure={feedError}
           feed={feed}
-          handoffStartedAt={handoffStartedAt}
-          handoffTo={handoffTo}
-          isRunning={isRunning}
           onAnswerQuestion={onAnswerQuestion}
           onOpenEvidence={onOpenEvidence}
           onOpenSession={onOpenSession}
           onJumpToLatestChange={updateJumpToLatest}
           onRetryFeed={onRetryFeed}
-          optimisticRow={optimisticRow}
-          posture={posture}
           questionFailure={questionFailure}
           selectedSessionId={selectedSessionId}
           stallTimeoutMs={stallTimeoutMs}
-          turnMarker={turnMarker}
+          liveFacts={liveFacts}
         />
       </section>
       <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />

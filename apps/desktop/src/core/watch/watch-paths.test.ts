@@ -20,7 +20,7 @@ function quiet() {
 async function armedWatch(name: string) {
   const root = await mkdtemp(path.join(tmpdir(), `argo-watch-${name}-`))
   let reported = 0
-  const watched = watchTrees([root], () => {
+  const watched = watchTrees([root])(() => {
     reported += 1
   })
   let counted = 0
@@ -29,7 +29,7 @@ async function armedWatch(name: string) {
     await quiet()
   }
   if (reported === 0) {
-    watched.close()
+    watched()
     await rm(root, { force: true, recursive: true })
     throw new Error('the watch never reported a write under its own root')
   }
@@ -37,9 +37,9 @@ async function armedWatch(name: string) {
   return {
     root,
     changes: () => reported - counted,
-    close: watched.close,
+    close: watched,
     discard: async () => {
-      watched.close()
+      watched()
       await rm(root, { force: true, recursive: true })
     },
   }
@@ -84,7 +84,7 @@ describe('watching a tree', () => {
   test('watches the trees that exist when one of them does not', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-watch-present-'))
     let changes = 0
-    const watched = watchTrees([path.join(root, 'absent'), root], () => {
+    const watched = watchTrees([path.join(root, 'absent'), root])(() => {
       changes += 1
     })
     try {
@@ -94,7 +94,7 @@ describe('watching a tree', () => {
       }
       expect(changes).toBeGreaterThan(0)
     } finally {
-      watched.close()
+      watched()
       await rm(root, { force: true, recursive: true })
     }
   })

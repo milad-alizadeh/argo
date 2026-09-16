@@ -2,7 +2,7 @@
 // Claude compaction hook. Separate from `bridges.ts` so the composition root stays one `attach*`
 // call per domain (ADR-0021).
 import path from 'node:path'
-import type { BrowserWindow } from 'electron'
+import { type BrowserWindow, powerMonitor } from 'electron'
 import { installCompactionHook } from './agents/claude/compaction/compaction-hook'
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
@@ -28,7 +28,9 @@ import {
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
-import { registerWatching, watchedTrees } from './core/watch/bridge'
+import { registerWatching } from './core/watch/bridge'
+import { watchTrees } from './core/watch/watch-paths'
+import { watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
 
 export function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
   const claude = createSystemClaudeSessionDriver({
@@ -110,9 +112,20 @@ export function attachSessions(
   })
   // A Session written by a CLI outside Argo reaches the roster because the trees the CLIs write to
   // are watched, not because the roster re-reads them on a timer. A Permission is the same idea off
-  // disk: the gate that holds the CLI's hook open is what tells the screen (#2299).
+  // disk: the gate that holds the CLI's hook open is what tells the screen (#2299). The archive
+  // store stands beside the transcripts: the roster and the Archived list are both read out of it.
+  // Focus and resume stand beside the trees because FSEvents can lose events with no error and no
+  // closed handle (#2303).
   registerWatching(window, {
-    permissions: claude.onPermissionsChanged,
-    sessions: watchedTrees([claudeTranscriptsRoot(home), codexTranscriptsRoot(home)]),
+    permissions: [claude.onPermissionsChanged],
+    sessions: [
+      watchTrees([
+        claudeTranscriptsRoot(home),
+        codexTranscriptsRoot(home),
+        claudeArchiveRoot(home),
+      ]),
+      watchWindowFocus(window),
+      watchSystemResume(powerMonitor),
+    ],
   })
 }

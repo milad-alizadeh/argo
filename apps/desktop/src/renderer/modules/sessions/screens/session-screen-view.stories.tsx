@@ -9,6 +9,7 @@ import { Roster, type RosterActions } from '../components/roster/roster'
 import { SessionWorkButtons } from '../components/work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../components/work/session-work-inspector-header'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
+import { INACTIVE_FEED_LIVE_FACTS } from '../feed/feed-live-facts'
 import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
 import type { Session, SessionFeed, SessionsListed } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -70,6 +71,14 @@ const SESSION_ROSTER = [
     spentTokens: 2_900,
   }),
 ] satisfies Session[]
+
+function liveFactsFor(session: Pick<Session, 'posture' | 'status'>) {
+  return {
+    ...INACTIVE_FEED_LIVE_FACTS,
+    isRunning: session.status === 'running',
+    posture: session.posture,
+  }
+}
 
 const SESSION_HISTORY_LABEL = 'Session history'
 const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
@@ -248,7 +257,7 @@ function ReviewScreen({
         inspectorBar={<ReviewInspectorBar delegation={delegation} shell={shell} />}
         defaultInspectorCollapsed
         inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
-        isRunning={session.status === 'running'}
+        liveFacts={liveFactsFor(session)}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}
         onAnswerQuestion={() => {}}
@@ -288,7 +297,7 @@ function NewSessionScreen() {
         feed={null}
         feedError={null}
         inspector={null}
-        isRunning={false}
+        liveFacts={INACTIVE_FEED_LIVE_FACTS}
         onAnswerQuestion={() => {}}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}
