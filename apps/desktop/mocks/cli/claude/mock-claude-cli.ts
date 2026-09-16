@@ -21,7 +21,7 @@ export async function writeMockClaude(root: string, transcripts: string) {
 }
 
 export const mockClaudeCli: MockCli = {
-  write: (root, transcripts) => writeMockClaude(root, transcripts),
+  write: writeMockClaude,
   folder: mockClaudeFolder,
   replyMark: (prompt) => `Mock Claude read: ${prompt}`,
 }

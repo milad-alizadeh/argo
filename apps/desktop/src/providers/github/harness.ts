@@ -15,12 +15,12 @@ export async function github(context: TestContext): Promise<[MockGitHub, GitHubE
   return [mock, endpoints]
 }
 
-type RepositorySetup = Omit<Parameters<MockGitHub['addRepository']>[0], 'fullName' | 'visibleTo'>
+type RepositorySetup = Omit<Parameters<MockGitHub['addRepository']>[0], 'visibleTo'>
 
 export async function githubWithRepository(context: TestContext, repository: RepositorySetup) {
   const [mock, endpoints] = await github(context)
   mock.signIn(OCTOCAT)
-  mock.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], ...repository })
+  mock.addRepository({ visibleTo: [OCTOCAT.id], ...repository })
   return { mock, endpoints, token: await signIn(endpoints) }
 }
 

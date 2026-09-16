@@ -126,6 +126,7 @@ test('open Tickets carry their body, hierarchy and dependencies, and a pull requ
 
 test('a repository that serves no dependency facts reads as unknown, not unblocked', async (context) => {
   const { endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
     issues: [{ number: 1, title: 'Alone' }],
     servesDependencies: false,
   })
