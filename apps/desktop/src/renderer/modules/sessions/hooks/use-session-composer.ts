@@ -7,12 +7,13 @@ import type { Cockpit } from '../../projects/hooks/use-projects'
 import type { SessionComposerProps } from '../components/composer/session-composer'
 import type { TurnMarkerView } from '../feed/turn-marker-state'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { useComposerStore } from '../state/use-composer-store'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionFeedRow } from '../types'
 import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composer-identity'
+import { composerSend } from './composer-send'
 import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
-import { useComposerSend } from './use-composer-send'
 import type { Failure } from './use-session-composer-actions'
 import { useSessionMutations } from './use-session-mutations'
 import type { useSessions } from './use-sessions'
@@ -62,25 +63,25 @@ function useComposerFacts(
   })
   const marker = useTurnMarker()
   const selectedRow = findSessionRow(roster, sessionId)
-  return { identity, sessionId, control, watchTurn, marker, selectedRow }
+  return {
+    identity,
+    sessionId,
+    control,
+    watchTurn,
+    marker,
+    selectedRow,
+    isCompacting: (selectedRow?.compactionStartedAt ?? null) !== null,
+  }
 }
 
-export function useSessionComposer({
-  cli,
-  cockpit,
-  focusOnMount,
-  navigate,
-  roster,
-  selectedSessionId,
-}: SessionComposerOptions): ComposerResult {
+export function useSessionComposer(options: SessionComposerOptions): ComposerResult {
+  const { cli, cockpit, focusOnMount, navigate, roster, selectedSessionId } = options
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
-  const { send, start } = mutations
-  const { identity, sessionId, control, watchTurn, marker, selectedRow } = useComposerFacts(
-    { cli, cockpit, roster, selectedSessionId },
-    setFailure,
-  )
+  const setDraft = useComposerStore((state) => state.setDraft)
+  const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
+    useComposerFacts({ cli, cockpit, roster, selectedSessionId }, setFailure)
   const { isHandingOff, onCompact, onHandoff, onInterrupt, markerView, optimisticRow } =
     useComposerActions({
       cli,
@@ -93,18 +94,18 @@ export function useSessionComposer({
       setFailure,
       queryClient,
     })
-  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
-  const onSend = useComposerSend({
+  const onSend = composerSend({
     cli,
     cockpit,
+    identity,
+    marker,
     navigate,
     queryClient,
     roster,
-    identity,
-    marker,
-    send,
+    send: mutations.send,
+    setDraft,
     setFailure,
-    start,
+    start: mutations.start,
     watchTurn,
   })
   return {
@@ -113,40 +114,17 @@ export function useSessionComposer({
     retry: () => setFailure(null),
     markerView,
     optimisticRow,
-    props: composerProps({
-      roster,
-      sessionId,
+    props: {
       focusOnMount,
       isCompacting,
       isHandingOff,
+      isRunning: managedSessionIsRunning(roster, sessionId),
       onCompact,
       onHandoff,
       onInterrupt,
       onSend,
-      identity,
-      control,
-    }),
-  }
-}
-
-function composerProps(input: {
-  roster: SessionComposerOptions['roster']
-  sessionId: string | null
-  focusOnMount: boolean
-  isCompacting: boolean
-  isHandingOff: boolean
-  onCompact: (() => Promise<boolean>) | undefined
-  onHandoff: (() => Promise<boolean>) | undefined
-  onInterrupt: () => Promise<boolean>
-  onSend: SessionComposerProps['onSend']
-  identity: ReturnType<typeof composerIdentityOf>
-  control: SessionComposerProps['setup']
-}): Omit<SessionComposerProps, 'plan' | 'harness'> {
-  const { roster, sessionId, identity, control, ...rest } = input
-  return {
-    ...rest,
-    isRunning: managedSessionIsRunning(roster, sessionId),
-    sessionId: composerIdentityKey(identity),
-    setup: control,
+      sessionId: composerIdentityKey(identity),
+      setup: control,
+    },
   }
 }

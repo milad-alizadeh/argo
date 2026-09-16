@@ -42,7 +42,7 @@ async function sendFromComposer(page, text) {
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(text)
-  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Send message' }).click()
   return composer
 }
 
@@ -63,7 +63,10 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await history.getByText('Fake Claude read: Open the resume proof.').waitFor()
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
-  await history.getByText('Fake Claude read: Carry on after the restart.').waitFor()
+  await history
+    .getByText('Fake Claude read: Carry on after the restart.')
+    .waitFor()
+    .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
   await history.getByText('Conversation compacted').waitFor()
@@ -84,7 +87,9 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await externalHistory
     .getByText('Fake Claude read: Take this one over.')
     .waitFor()
-    .catch((error) => reportStalledResume(relaunched, transcripts, error))
+    .catch((error) =>
+      reportStalledResume({ error, page: relaunched, sessionId: 'externalBasic', transcripts }),
+    )
   return relaunched
 }
 
@@ -92,18 +97,18 @@ export async function provePackagedResume(page, { project, restart, transcripts 
 // rather than throwing here, so the plain timeout above names nothing useful. An empty alert list
 // still leaves open whether the Turn was ever delivered, whether the resumed process ever wrote
 // back, or whether the Roster read the write it made, so this reports all three.
-async function reportStalledResume(page, transcripts, error) {
+async function reportStalledResume({ error, page, sessionId, transcripts }) {
   const alerted = await page.locator('[role="alert"]').allTextContents()
   const feedRows = await page
-    .locator('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
+    .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
     .allTextContents()
-  const [row] = await rosterRow(page, 'externalBasic')
+  const [row] = await rosterRow(page, sessionId)
   const written = await readFile(
-    path.join(transcripts, 'fake-claude', 'externalBasic.jsonl'),
+    path.join(transcripts, 'fake-claude', `${sessionId}.jsonl`),
     'utf8',
   ).catch((readError) => `<unreadable: ${readError.message}>`)
   throw new Error(
-    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nfake-claude/externalBasic.jsonl: ${written}`,
+    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nfake-claude/${sessionId}.jsonl: ${written}`,
   )
 }
 

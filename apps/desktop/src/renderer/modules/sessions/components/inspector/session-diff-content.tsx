@@ -81,7 +81,7 @@ export function DiffContent({
     <CodeBlock
       code={source}
       language={language}
-      className="flex min-h-0 flex-1 flex-col rounded-none border-0 type-code-content [&_pre]:min-h-0 [&_pre]:flex-1"
+      className="flex min-h-0 flex-1 flex-col rounded-none border-0 type-code-content [&_pre]:min-h-0 [&_pre]:flex-1 [&_pre]:p-0"
       line={(index) => {
         const line = lines[index] ?? { kind: 'title', oldLine: null, newLine: null }
         return diffLineDecoration(line)

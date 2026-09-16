@@ -180,6 +180,11 @@ One rule outlives the tooling: **an e2e run holds the real keyboard and mouse fo
 length, so say so and wait before starting one.** The desktop render commands do not: every key
 and click they send goes into the renderer over the debugging protocol.
 
+**Test the running desktop app through its worktree's debugging port.** From that worktree run
+`bun run dev`, read its `debugPort` with `bun run desktop:status`, then run
+`npx -y agent-browser@0.37.1 connect <debugPort>`. This attaches to that exact Electron window;
+never select a generic Electron process or invent a separate CDP client.
+
 **Profile** a desktop screen's jank, dropped frames, re-renders or white flashes with
 agent-browser, and read `docs/agents/profiling.md` first.
 

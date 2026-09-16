@@ -1,8 +1,11 @@
 import { z } from 'zod'
-import { create, type StoreApi } from 'zustand'
+import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-
+import { sessionAttachmentInputSchema } from '@/core/sessions/attachments-contract'
+import type { TurnMarkerEntry } from '../feed/turn-marker-state'
 import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
+import type { TurnSetup } from '../turn-setup/turn-setup'
+import { composerActions } from './composer-store-actions'
 import { type ComposerTicketContext, ticketContextSchema } from './composer-ticket-context'
 
 export type { ComposerTicketContext } from './composer-ticket-context'
@@ -16,19 +19,38 @@ export type ComposerAttachment = {
   status: 'idle' | 'error'
 }
 
+export type PendingTurn = {
+  id: string
+  text: string
+  setup?: TurnSetup
+  attachments: import('@/core/sessions/attachments-contract').SessionAttachmentInput[]
+}
+
 const attachmentSchema = z.object({
   id: z.string(),
   path: z.string(),
   status: z.enum(['idle', 'error']),
 })
 
+const pendingTurnSchema = z
+  .strictObject({
+    id: z.string().uuid(),
+    text: z.string(),
+    setup: z.strictObject({ model: z.string(), effort: z.string(), mode: z.string() }).optional(),
+    attachments: z.array(sessionAttachmentInputSchema).default([]),
+  })
+  .refine(({ text, attachments }) => text.trim().length > 0 || attachments.length > 0)
+
 // What a composer keeps across leaving the page and relaunching: each composer's unsent draft and
 // attachments, and the harness the last new Session was set to, app-wide.
-type ComposerState = {
+export type ComposerState = {
   harness: SessionCli
   drafts: Record<string, string>
   attachments: Record<string, ComposerAttachment[]>
   tickets: Record<string, ComposerTicketContext[]>
+  pendingTurns: Record<string, PendingTurn[]>
+  markers: Record<string, TurnMarkerEntry>
+  setup: Record<string, TurnSetup>
   chooseHarness: (harness: SessionCli) => void
   setDraft: (composerKey: string, text: string) => void
   addAttachments: (composerKey: string, paths: string[]) => void
@@ -37,6 +59,13 @@ type ComposerState = {
   removeAttachments: (composerKey: string, ids: string[]) => void
   addTicket: (composerKey: string, ticket: Omit<ComposerTicketContext, 'id'>) => void
   removeTicket: (composerKey: string, id: string) => void
+  chooseSetup: (composerKey: string, setup: TurnSetup) => void
+  addPendingTurn: (composerKey: string, turn: PendingTurn) => void
+  removePendingTurn: (composerKey: string, id: string) => void
+  reorderPendingTurn: (composerKey: string, sourceId: string, targetId: string) => void
+  beginMarker: (composerKey: string, marker: TurnMarkerEntry) => void
+  clearMarker: (composerKey: string) => void
+  rekey: (from: string, to: string) => void
 }
 
 const storedSchema = z
@@ -44,22 +73,10 @@ const storedSchema = z
     harness: z.enum(SESSION_CLIS),
     drafts: z.record(z.string(), z.string()),
     attachments: z.record(z.string(), z.array(attachmentSchema)),
+    pendingTurns: z.record(z.string(), z.array(pendingTurnSchema)),
     tickets: z.record(z.string(), z.array(ticketContextSchema)),
   })
   .partial()
-
-function updateAttachments(
-  attachments: Record<string, ComposerAttachment[]>,
-  composerKey: string,
-  update: (current: ComposerAttachment[]) => ComposerAttachment[],
-): Record<string, ComposerAttachment[]> {
-  const updated = update(attachments[composerKey] ?? [])
-  if (updated.length === 0) {
-    const { [composerKey]: _replaced, ...others } = attachments
-    return others
-  }
-  return { ...attachments, [composerKey]: updated }
-}
 
 // A test runs this module with no `localStorage`, and the default storage says so on every write.
 // The drafts are the window's to keep, so a run without one keeps them for its own length.
@@ -72,49 +89,6 @@ const composerStorage: Storage = globalThis.localStorage ?? {
   setItem: () => {},
 }
 
-type ComposerSet = StoreApi<ComposerState>['setState']
-
-function attachmentActions(set: ComposerSet) {
-  return {
-    addAttachments: (composerKey: string, paths: string[]) =>
-      set(({ attachments }) => ({
-        attachments: updateAttachments(attachments, composerKey, (current) => {
-          const known = new Set(current.map((attachment) => attachment.path))
-          const reattached = new Set(paths.filter((path) => known.has(path)))
-          const added = paths
-            .filter((path) => !known.has(path))
-            .map((path) => ({ id: crypto.randomUUID(), path, status: 'idle' as const }))
-          const retried = current.map((attachment) =>
-            reattached.has(attachment.path)
-              ? { ...attachment, status: 'idle' as const }
-              : attachment,
-          )
-          return [...retried, ...added]
-        }),
-      })),
-    removeAttachment: (composerKey: string, id: string) =>
-      set(({ attachments }) => ({
-        attachments: updateAttachments(attachments, composerKey, (current) =>
-          current.filter((attachment) => attachment.id !== id),
-        ),
-      })),
-    markAttachmentsError: (composerKey: string, ids: string[]) =>
-      set(({ attachments }) => ({
-        attachments: updateAttachments(attachments, composerKey, (current) =>
-          current.map((attachment) =>
-            ids.includes(attachment.id) ? { ...attachment, status: 'error' } : attachment,
-          ),
-        ),
-      })),
-    removeAttachments: (composerKey: string, ids: string[]) =>
-      set(({ attachments }) => ({
-        attachments: updateAttachments(attachments, composerKey, (current) =>
-          current.filter((attachment) => !ids.includes(attachment.id)),
-        ),
-      })),
-  }
-}
-
 export const useComposerStore = create<ComposerState>()(
   persist(
     (set) => ({
@@ -122,42 +96,19 @@ export const useComposerStore = create<ComposerState>()(
       drafts: {},
       attachments: {},
       tickets: {},
-      chooseHarness: (harness) => set({ harness }),
-      setDraft: (composerKey, text) =>
-        set(({ drafts }) => {
-          const { [composerKey]: _replaced, ...others } = drafts
-          return { drafts: text === '' ? others : { ...others, [composerKey]: text } }
-        }),
-      ...attachmentActions(set),
-      addTicket: (composerKey, ticket) =>
-        set(({ tickets }) => {
-          const current = tickets[composerKey] ?? []
-          if (
-            current.some(({ provider, key }) => provider === ticket.provider && key === ticket.key)
-          )
-            return { tickets }
-          return {
-            tickets: {
-              ...tickets,
-              [composerKey]: [...current, { ...ticket, id: crypto.randomUUID() }],
-            },
-          }
-        }),
-      removeTicket: (composerKey, id) =>
-        set(({ tickets }) => {
-          const remaining = (tickets[composerKey] ?? []).filter((ticket) => ticket.id !== id)
-          if (remaining.length > 0) return { tickets: { ...tickets, [composerKey]: remaining } }
-          const { [composerKey]: _removed, ...others } = tickets
-          return { tickets: others }
-        }),
+      pendingTurns: {},
+      markers: {},
+      setup: {},
+      ...composerActions(set),
     }),
     {
       name: 'argo.composer',
       storage: createJSONStorage(() => composerStorage),
-      partialize: ({ harness, drafts, attachments, tickets }) => ({
+      partialize: ({ harness, drafts, attachments, pendingTurns, tickets }) => ({
         harness,
         drafts,
         attachments,
+        pendingTurns,
         tickets,
       }),
       merge: (stored, current) => ({ ...current, ...storedSchema.safeParse(stored).data }),

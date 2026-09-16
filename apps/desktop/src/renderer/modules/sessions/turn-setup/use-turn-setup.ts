@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { TurnSetupControlProps } from '../components/composer/run-setup-menu'
 import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
+import { useComposerStore } from '../state/use-composer-store'
 import {
   refusalOf,
   resolvedTurnSetup,
@@ -52,27 +53,31 @@ export function useTurnSetup({
   rows: SessionRosterRow[]
   onRefusal: (refusal: { sessionId: string; message: string }) => void
 }) {
-  const [chosen, setChosen] = useState(() => new Map<string, TurnSetup>())
   const [remembered, setRemembered] = useState(restoredRemembered)
   const [expectations, setExpectations] = useState(() => new Map<string, Expectation>())
+  const chosen = useComposerStore(({ setup }) => setup)
+  const chooseSetup = useComposerStore(({ chooseSetup }) => chooseSetup)
 
   useEffect(() => persistRemembered(remembered), [remembered])
 
   const choose = useCallback(
     (key: string, setup: TurnSetup) => {
-      setChosen((current) => new Map(current).set(key, setup))
+      chooseSetup(key, setup)
       setRemembered((current) => ({
         ...current,
         [cli]: { model: setup.model, effort: setup.effort },
       }))
     },
-    [cli],
+    [chooseSetup, cli],
   )
 
-  const watchTurn = useCallback((sessionId: string, requested: TurnSetup, since: string | null) => {
-    setChosen((current) => new Map(current).set(sessionId, requested))
-    setExpectations((current) => new Map(current).set(sessionId, { requested, since }))
-  }, [])
+  const watchTurn = useCallback(
+    (sessionId: string, requested: TurnSetup, since: string | null) => {
+      chooseSetup(sessionId, requested)
+      setExpectations((current) => new Map(current).set(sessionId, { requested, since }))
+    },
+    [chooseSetup],
+  )
 
   useEffect(() => {
     if (choices === null) return
@@ -93,7 +98,7 @@ export function useTurnSetup({
 
   const control = useComposerControl({
     choices,
-    chosen,
+    chosen: new Map(Object.entries(chosen)),
     identity,
     rows,
     remembered,
