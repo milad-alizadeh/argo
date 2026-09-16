@@ -7,6 +7,7 @@ import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { keptDocument } from './kept-document'
 import { Standing } from './standing'
 import { useKeptDocuments } from './use-kept-documents'
+import { awaitingAssistantReply } from './use-settled-feed'
 
 import './feed.css'
 
@@ -41,15 +42,12 @@ export function BasicFeed({
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const [retryToken, setRetryToken] = useState(0)
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
-  const onlyPromptRows =
-    current !== null &&
-    current.rows.length > 0 &&
-    current.rows.every((row) => row.shape === 'prose' && row.role === 'user')
   const awaitingFeed =
     failure === null &&
     selectedSessionId !== null &&
     !optimisticSession &&
-    (current === null || (liveFacts?.isRunning === true && onlyPromptRows))
+    (current === null ||
+      (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
