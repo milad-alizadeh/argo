@@ -1,17 +1,15 @@
-import { expect, test } from '@playwright/test'
+import { expect } from '@playwright/test'
 
-import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
 import { defineSessionJourneyCases } from './cases/journeys.case'
 import { selectProofProject } from './fixtures/feed.fixture'
 import { createSessionByClick } from './gestures'
 import {
   createPageBox,
   describeSessionProof,
+  test,
   type PageBox,
   type SessionProofRun,
 } from './session-proof-run'
-
-const backend = createMockSessionCliBackend()
 
 async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
   return page.evaluate(async (id) => {
@@ -29,7 +27,7 @@ function defineAdversarialLaunch(run: SessionProofRun, box: PageBox, seed: strin
   })
 }
 
-describeSessionProof('session-adversarial', backend, (run) => {
+describeSessionProof('session-adversarial', (run) => {
   const box = createPageBox(run.hold)
 
   defineAdversarialLaunch(run, box, 'seed-42')
@@ -53,7 +51,7 @@ describeSessionProof('session-adversarial', backend, (run) => {
   })
 })
 
-describeSessionProof('session-adversarial-stall', backend, (run) => {
+describeSessionProof('session-adversarial-stall', (run) => {
   const box = createPageBox(run.hold)
 
   defineAdversarialLaunch(run, box, 'seed-17')
@@ -64,7 +62,7 @@ describeSessionProof('session-adversarial-stall', backend, (run) => {
   })
 })
 
-describeSessionProof('session-adversarial-permission', backend, (run) => {
+describeSessionProof('session-adversarial-permission', (run) => {
   const box = createPageBox(run.hold)
 
   defineAdversarialLaunch(run, box, 'seed-0')
@@ -88,8 +86,8 @@ describeSessionProof('session-adversarial-permission', backend, (run) => {
   })
 })
 
-describeSessionProof('session-adversarial-journeys', backend, (run) => {
+describeSessionProof('session-adversarial-journeys', (run) => {
   const box = createPageBox(run.hold)
   defineAdversarialLaunch(run, box, 'alpha')
-  defineSessionJourneyCases({ backend, box, fixture: () => run.fixture, restart: run.restart })
+  defineSessionJourneyCases(run, box)
 })
