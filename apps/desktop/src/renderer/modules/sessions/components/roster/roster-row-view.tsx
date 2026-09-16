@@ -36,7 +36,9 @@ export function RosterRowView({
       />
     )
   }
-  if (row.kind === 'archivedSentinel') return <div aria-hidden="true" />
+  if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
+    return <div aria-hidden="true" />
+  }
   if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
 
   const session = row.session

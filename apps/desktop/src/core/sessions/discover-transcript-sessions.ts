@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { type SessionChain, stitchChains } from './chains'
+import { createFullRecordTracker } from './full-record-tracker'
 import type { SessionRosterRow } from './models'
 import { currentSessionId } from './models'
 import { projectRosterRow } from './roster'
@@ -10,15 +11,25 @@ import {
   type TranscriptRecord,
   transcriptFileFrom,
 } from './transcript'
-import { createTranscriptRecordReader, ROSTER_FILE_LIMIT } from './transcript-lines'
+import { createTranscriptRecordReader } from './transcript-lines'
 
 export type TranscriptPath = { path: string; name: string }
+
+// How many transcript files one Roster pass reads, most recently written first, on a cold cursor.
+// A later request grows the window by the same step rather than reading the rest of the tree.
+// Measured on a real tree of 1,055 files holding 3.3 GB: streaming 50 of them costs about 0.4 s,
+// 200 about 1.6 s. The count is stated on the reply rather than hidden, so a Roster that did not
+// reach every file says so instead of reading as the whole machine.
+export const ROSTER_PAGE_SIZE = 50
 
 export type TranscriptDiscovery = {
   rows: SessionRosterRow[]
   filesFound: number
   filesRead: number
   filesUnreadable: number
+  // A larger window would find more Sessions, encoded as how many files the next pass should
+  // read; null once every file `transcriptPaths` found is already inside the window (#2239).
+  nextCursor: string | null
 }
 
 type Candidate = TranscriptPath & { writtenAt: number }
@@ -32,6 +43,14 @@ type TranscriptDiscoverySource = {
 
 function holdsMessage(file: TranscriptFile): boolean {
   return file.records.some((record) => record.kind === 'message')
+}
+
+// A cursor names how many of the most-recently-written files the pass should read, encoded as a
+// string so the reader treats it as opaque. `null` is the cold-cache first page.
+function windowSizeFor(cursor: string | null | undefined): number {
+  if (cursor === null || cursor === undefined) return ROSTER_PAGE_SIZE
+  const parsed = Number.parseInt(cursor, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : ROSTER_PAGE_SIZE
 }
 
 type ReadFile = (file: TranscriptPath) => Promise<TranscriptFile | null>
@@ -54,7 +73,7 @@ function createFileReader(source: TranscriptDiscoverySource): ReadFile {
 function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile: ReadFile) {
   const summaries = new Map<string, { writtenAt: number; file: TranscriptFile }>()
 
-  return async function summarise(root: string) {
+  return async function summarise(root: string, windowSize: number) {
     const found = await source.transcriptPaths(root)
     const candidates: Candidate[] = await Promise.all(
       found.map(async (file) => ({
@@ -63,7 +82,7 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
       })),
     )
     candidates.sort((left, right) => right.writtenAt - left.writtenAt)
-    const recent = candidates.slice(0, ROSTER_FILE_LIMIT)
+    const recent = candidates.slice(0, windowSize)
     const files: TranscriptFile[] = []
     let unreadable = 0
     for (const candidate of recent) {
@@ -86,21 +105,14 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
   }
 }
 
+function chainFor(files: TranscriptFile[], sessionId: string): SessionChain | undefined {
+  const chains = stitchChains(files)
+  const currentId = currentSessionId(chains, sessionId)
+  return chains.find((candidate) => candidate.id === currentId)
+}
+
 export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
-  const fullRecords = createTranscriptRecordReader(source.parse)
-  const discardedFullPaths = new Set<string>()
-  const fullPaths = new Map<string, string[]>()
-  const readFullFile: ReadFile = async (file) => {
-    try {
-      const records = await fullRecords.readRecords(file.path)
-      return transcriptFileFrom(file.path, {
-        fileName: file.name,
-        records: source.normalizeRecords?.(records) ?? records,
-      })
-    } catch {
-      return null
-    }
-  }
+  const tracker = createFullRecordTracker(source.parse, source.normalizeRecords)
   const metadataSource: TranscriptDiscoverySource = {
     ...source,
     parse: (line) => {
@@ -110,41 +122,44 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   }
   const summarise = createTranscriptSummariser(metadataSource, createFileReader(metadataSource))
 
-  async function discoverSessions(root: string): Promise<TranscriptDiscovery> {
-    const { found, files, unreadable } = await summarise(root)
+  function rowsFrom(files: TranscriptFile[]): SessionRosterRow[] {
     const rows = stitchChains(files.filter(holdsMessage)).map((chain) =>
       projectRosterRow(chain, source.cli),
     )
     rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
-    return { rows, filesFound: found.length, filesRead: files.length, filesUnreadable: unreadable }
+    return rows
   }
 
-  async function readSessionFiles(root: string, sessionId: string): Promise<SessionChain | null> {
-    const { files } = await summarise(root)
-    const chains = stitchChains(files)
-    const currentId = currentSessionId(chains, sessionId)
-    const chain = chains.find((candidate) => candidate.id === currentId)
-    if (chain === undefined) return null
-    const paths = chain.files.map((file) => file.path)
-    for (const path of paths) discardedFullPaths.delete(path)
-    for (const file of chain.files) fullPaths.set(file.sessionId, paths)
-    fullPaths.set(chain.id, paths)
-    const read = await Promise.all(
-      chain.files.map((file) => readFullFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
-    )
-    if (paths.some((path) => discardedFullPaths.has(path))) fullRecords.clear(paths)
-    return { ...chain, files: read.filter((file): file is TranscriptFile => file !== null) }
-  }
-
-  function clearFullRecords(sessionId: string) {
-    const paths = fullPaths.get(sessionId)
-    if (paths === undefined) return
-    for (const path of paths) discardedFullPaths.add(path)
-    fullRecords.clear(paths)
-    for (const [id, remembered] of fullPaths) {
-      if (remembered === paths) fullPaths.delete(id)
+  async function discoverSessions(
+    root: string,
+    options?: { cursor?: string | null },
+  ): Promise<TranscriptDiscovery> {
+    const windowSize = windowSizeFor(options?.cursor)
+    const { found, files, unreadable } = await summarise(root, windowSize)
+    const nextCursor = found.length > windowSize ? String(windowSize + ROSTER_PAGE_SIZE) : null
+    return {
+      rows: rowsFrom(files),
+      filesFound: found.length,
+      filesRead: files.length,
+      filesUnreadable: unreadable,
+      nextCursor,
     }
   }
 
-  return { clearFullRecords, discoverSessions, readSessionFiles }
+  // A Session already known by id is found however far back it sits: the window grows by the same
+  // step discovery pages by until the id resolves or every file has been read (#2239). Opening a
+  // Session this way is a bounded, on-demand read of exactly as much history as that Session needed,
+  // never the unconditional whole-tree read the Roster's own passes must not make.
+  async function readSessionFiles(root: string, sessionId: string): Promise<SessionChain | null> {
+    let windowSize = ROSTER_PAGE_SIZE
+    for (;;) {
+      const { found, files } = await summarise(root, windowSize)
+      const chain = chainFor(files, sessionId)
+      if (chain !== undefined) return { ...chain, files: await tracker.readChainFiles(chain) }
+      if (found.length <= windowSize) return null
+      windowSize += ROSTER_PAGE_SIZE
+    }
+  }
+
+  return { clearFullRecords: tracker.clearFullRecords, discoverSessions, readSessionFiles }
 }

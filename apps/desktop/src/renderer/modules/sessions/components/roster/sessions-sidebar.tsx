@@ -47,6 +47,8 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
 }
 
 export type SessionsSidebarContentProps = {
+  hasMoreSessions?: boolean
+  onFetchMoreSessions?: () => void
   onNew?: () => void
   roster: SessionsListed | null
   rosterError: SessionError | null
@@ -60,6 +62,8 @@ export type SessionsSidebarContentProps = {
 }
 
 export function SessionsSidebarContent({
+  hasMoreSessions = false,
+  onFetchMoreSessions = () => {},
   roster,
   rosterError,
   selectedSessionId,
@@ -99,11 +103,13 @@ export function SessionsSidebarContent({
       {roster === null && rosterError === null ? <RosterLoading /> : null}
       {roster !== null && sessions.length === 0 ? <NoSessionsFound /> : null}
       <SidebarRows
+        hasMoreSessions={hasMoreSessions}
         onArchive={(sessionId) => {
           const bulk = selection.selectedIds.has(sessionId)
           onArchiveSelected(bulk ? [...selection.selectedIds] : [sessionId])
           if (bulk) selection.clear()
         }}
+        onFetchMoreSessions={onFetchMoreSessions}
         onFocus={setFocusedSessionId}
         onRename={setRenameTarget}
         onOpenTicket={onOpenTicket}
@@ -117,6 +123,7 @@ export function SessionsSidebarContent({
         renamedTitles={renamedTitles}
         selectedIds={selection.selectedIds}
         selectedSessionId={selectedSessionId}
+        showArchive={roster !== null}
         tabStop={tabStop}
         visible={visible}
       />

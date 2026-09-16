@@ -1,4 +1,3 @@
-import { realpath } from 'node:fs/promises'
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
@@ -20,31 +19,23 @@ import { delegationUsageReply, type OwnerFor, shellOutputReply } from './read-ba
 import { workspaceFileReply } from './read-file-request'
 import { readFailure, versionFailure } from './read-request'
 import { createFeedReader } from './read-session-feed'
+import { decodeRosterCursor } from './roster-cursor'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 import { archiveSetReply } from './write-archive'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
-// A Project's root as registered and as the CLI records it: a CLI's cwd has symlinks resolved
-// (macOS `/var` is `/private/var`). `null` means no Project is open, so nothing is filtered out.
-async function projectRootsOf(projectRoot: string | null): Promise<string[] | null> {
-  if (projectRoot === null) return null
-  const resolved = await realpath(projectRoot).catch(() => projectRoot)
-  return resolved === projectRoot ? [projectRoot] : [projectRoot, resolved]
-}
-
-// A Session belongs to a Project when its cwd is the Project's root or a path under it (a
-// worktree, a monorepo subfolder).
-function belongsToProject(cwd: string | null, roots: string[] | null): boolean {
-  if (roots === null) return true
-  if (cwd === null) return false
-  return roots.some((root) => cwd === root || cwd.startsWith(`${root}/`))
-}
-
-async function discoverFromSource(source: SessionSource, requestId: string): Promise<Discovered> {
+// Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
+// where that adapter's rows are built — never here, after every adapter has already read a
+// machine-wide window only to have most of it discarded.
+async function discoverFromSource(
+  source: SessionSource,
+  requestId: string,
+  options: { cursor: string | null; projectRoot: string | null },
+): Promise<Discovered> {
   try {
-    const discovery = await source.discoverSessions()
+    const discovery = await source.discoverSessions(options)
     const isLockedElsewhere = source.isLockedElsewhere
     if (isLockedElsewhere === undefined) return discovery
     return {
@@ -127,18 +118,26 @@ export function createSessionReader(
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       const parsed = sessionListRequestSchema.safeParse(value)
       if (!parsed.success) return sessionError('invalid-request', null)
+      const cursors = decodeRosterCursor(parsed.data.cursor)
       const discovered = await Promise.all(
-        sources.map((source) => discoverFromSource(source, parsed.data.requestId)),
+        sources.map((source) =>
+          discoverFromSource(source, parsed.data.requestId, {
+            cursor: cursors[source.cli] ?? null,
+            projectRoot: parsed.data.projectRoot,
+          }),
+        ),
       )
-      const reply = combineDiscoveries(discovered, parsed.data.requestId)
+      const reply = combineDiscoveries(
+        discovered,
+        sources.map((source) => source.cli),
+        parsed.data.requestId,
+      )
       if (reply.type !== 'session.listed') return reply
       ownership.rememberDiscoveries(reply.sessions)
-      const roots = await projectRootsOf(parsed.data.projectRoot)
-      const scoped = reply.sessions.filter((session) => belongsToProject(session.cwd, roots))
       // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
       // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
       const sessions = await Promise.all(
-        scoped.map(async (session) => ({
+        reply.sessions.map(async (session) => ({
           ...session,
           ticket: await ticketLinks.linkFor(session.id),
         })),
