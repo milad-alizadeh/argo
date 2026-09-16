@@ -83,6 +83,23 @@
       "env": ["CI", "ARGO_SESSION_SHOTS"],
       "outputs": []
     },
+    "test:e2e:adversarial": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "e2e/**",
+        "mocks/**",
+        "src/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "scripts/acceptance-protocol.mjs",
+        "scripts/fuse-profile.mjs",
+        "playwright.config.ts",
+        "tsconfig*.json",
+        "package.json"
+      ],
+      "env": ["CI", "ARGO_SESSION_SHOTS"],
+      "outputs": []
+    },
     "build:storybook": {
       "inputs": ["$TURBO_DEFAULT$", "!*.md"],
       "outputs": ["storybook-static/**"]

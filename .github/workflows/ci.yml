@@ -375,8 +375,7 @@ jobs:
 
       - name: Test adversarial Session flows in a packaged copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:e2e:adversarial
+        run: bun run turbo run test:e2e:adversarial --filter=@argo/desktop
 
       # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`
       # keeps both only on failure, so a red run here is the one place they exist to read.

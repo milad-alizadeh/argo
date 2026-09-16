@@ -10,6 +10,7 @@ const PACKAGED_PROOFS = [
   'test:packaged-manifest',
   'test:packaged-pty',
   'test:e2e',
+  'test:e2e:adversarial',
 ]
 
 // `turbo.json` carries no comments, because this file parses it with `JSON.parse` and turbo's own
@@ -146,6 +147,7 @@ describe('what the packaged tasks hash', () => {
     ['test:packaged-pty', 'scripts/prove-packaged-pty.mjs'],
     ['test:e2e', 'e2e/sessions/journeys.e2e.ts'],
     ['test:e2e', 'mocks/cli/claude/mock-claude.ts'],
+    ['test:e2e:adversarial', 'e2e/sessions/adversarial.e2e.ts'],
   ])(
     'reruns %s after the packaged app or %s changes',
     (proof, file) => {
