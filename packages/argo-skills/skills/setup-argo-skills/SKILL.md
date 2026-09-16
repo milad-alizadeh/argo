@@ -184,7 +184,8 @@ frontmatter as one of its five costs, and Phase 2 dispatches it last for exactly
 ## Phase 2: the infra wizard
 
 Detect first (language, UI, monorepo, hooks and CI, linter) so every question ships a
-recommendation, then ask one grouped multi-select question with the recommendation marked:
+recommendation. Include the Codex todo-list choice only when Codex is installed. Then ask one
+grouped multi-select question with the recommendation marked:
 
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
