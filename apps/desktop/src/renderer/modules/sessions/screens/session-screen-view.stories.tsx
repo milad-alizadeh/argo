@@ -5,12 +5,12 @@ import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/mod
 import { CockpitShell } from '../../cockpit/components/cockpit-shell'
 import { SessionComposer } from '../components/composer/session-composer'
 import { SessionInspector } from '../components/inspector/session-inspector'
-import { SessionsSidebarContent } from '../components/roster/sessions-sidebar'
+import { Roster, type RosterActions } from '../components/roster/roster'
 import { SessionWorkButtons } from '../components/work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../components/work/session-work-inspector-header'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { sessionDelegation, sessionRosterRow, sessionShellCommand } from '../session-fixtures'
-import type { Session, SessionFeed } from '../types'
+import type { Session, SessionFeed, SessionsListed } from '../types'
 import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
 
@@ -109,6 +109,39 @@ function feedFor(sessionId: string) {
   } satisfies SessionFeed
 }
 
+// The Roster reads its own Session list now (#2284), so a screen review stubs the read rather than
+// handing it a fixed roster prop.
+function withListedSessions(sessions: Session[]) {
+  const before = window.argo
+  window.argo = {
+    ...before,
+    listSessions: async () =>
+      ({
+        version: 1,
+        type: 'session.listed',
+        requestId: 'screen-review-sessions',
+        sessions,
+        filesFound: sessions.length,
+        filesRead: sessions.length,
+        filesUnreadable: 0,
+        nextCursor: null,
+      }) satisfies SessionsListed,
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
+const NOOP_ROSTER_ACTIONS: RosterActions = {
+  onArchiveSelected: () => {},
+  onLinkTicket: () => {},
+  onNew: () => {},
+  onOpenTicket: () => {},
+  onRename: async (_session, name) => name,
+  onSelect: () => {},
+  onUnlinkTicket: () => {},
+}
+
 function ReviewSidebar({
   onSelect,
   selectedSessionId,
@@ -116,17 +149,11 @@ function ReviewSidebar({
   onSelect: (sessionId: string) => void
   selectedSessionId: string
 }) {
+  withListedSessions(SESSION_ROSTER)
   return (
-    <SessionsSidebarContent
-      onSelect={onSelect}
-      roster={{
-        sessions: SESSION_ROSTER,
-        filesFound: SESSION_ROSTER.length,
-        filesRead: SESSION_ROSTER.length,
-        filesUnreadable: 0,
-        nextCursor: null,
-      }}
-      rosterError={null}
+    <Roster
+      actions={{ ...NOOP_ROSTER_ACTIONS, onSelect }}
+      projectRoot={null}
       selectedSessionId={selectedSessionId}
     />
   )
@@ -235,20 +262,17 @@ function ReviewScreen({
 
 function NewSessionScreen() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  withListedSessions([])
   return (
     <CockpitShell
       sidebar={
-        <SessionsSidebarContent
-          onNew={() => setSelectedSessionId('optimistic:new-session')}
-          onSelect={setSelectedSessionId}
-          roster={{
-            sessions: [],
-            filesFound: 0,
-            filesRead: 0,
-            filesUnreadable: 0,
-            nextCursor: null,
+        <Roster
+          actions={{
+            ...NOOP_ROSTER_ACTIONS,
+            onNew: () => setSelectedSessionId('optimistic:new-session'),
+            onSelect: setSelectedSessionId,
           }}
-          rosterError={null}
+          projectRoot={null}
           selectedSessionId={selectedSessionId}
         />
       }

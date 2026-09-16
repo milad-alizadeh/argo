@@ -1,99 +1,75 @@
-import { useRef, useState } from 'react'
-import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
-import { RenameDialog } from './rename-dialog'
-import { RosterOutcome } from './roster-outcome'
-import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
-import { SidebarRows } from './sidebar-rows'
-import { useSidebarRoster } from './use-sidebar-roster'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { currentSessionId } from '@/core/sessions/models'
+import { useProjects } from '../../../projects/hooks/use-projects'
+import { useSelectedProject } from '../../../projects/hooks/use-selected-project'
+import { useArchiveSelected } from '../../hooks/use-session-archive-mutation'
+import { useSessionTicketLink } from '../../hooks/use-session-ticket-link'
+import type { Session } from '../../types'
+import { Roster, type RosterActions } from './roster'
+import { useOrderedSessions } from './roster-order'
+import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
+import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
-export type SessionsSidebarContentProps = {
-  hasMoreSessions?: boolean
-  isFetchingMoreSessions?: boolean
-  onFetchMoreSessions?: () => void
-  onNew?: () => void
-  roster: SessionRoster | null
-  rosterError: SessionError | null
-  selectedSessionId: SessionId | null
-  onSelect: (sessionId: SessionId) => void
-  onRename?: (session: SessionsListed['sessions'][number], name: string) => Promise<string>
-  onOpenTicket?: (session: SessionsListed['sessions'][number]) => void
-  onLinkTicket?: (session: SessionsListed['sessions'][number]) => void
-  onUnlinkTicket?: (session: SessionsListed['sessions'][number]) => void
-  onArchiveSelected?: (sessionIds: SessionId[]) => void
+// A stored id absent from the active Roster is not necessarily gone: the active list never
+// carries an archived Session, so this can still be one, restored by the Archive section
+// asking the reader for it by id (#1593). Navigate under the stored id either way; only a
+// Session the reader answers for nowhere at all fails to resolve, same as any stale id.
+function useRestoreSelectedSession(options: {
+  sessionId: string | undefined
+  roster: ReturnType<typeof useOrderedSessions>['roster']
+  rosterError: ReturnType<typeof useOrderedSessions>['rosterError']
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const { sessionId, roster, rosterError, navigate } = options
+  useEffect(() => {
+    if (sessionId !== undefined || roster === null || rosterError !== null) return
+    const storedId = window.localStorage.getItem(SELECTED_SESSION_KEY)
+    if (storedId === null) return
+    const restoredId = currentSessionId(roster.sessions, storedId) ?? storedId
+    navigate(`/sessions/${restoredId}`, { replace: true })
+  }, [navigate, roster, rosterError, sessionId])
 }
 
-export function SessionsSidebarContent({
-  hasMoreSessions = false,
-  isFetchingMoreSessions = false,
-  onFetchMoreSessions = () => {},
-  roster,
-  rosterError,
-  selectedSessionId,
-  onSelect,
-  onNew = () => {},
-  onRename = async (_session, name) => name,
-  onOpenTicket = () => {},
-  onLinkTicket = () => {},
-  onUnlinkTicket = () => {},
-  onArchiveSelected = () => {},
-}: SessionsSidebarContentProps) {
-  const sidebar = useRef<HTMLElement>(null)
-  const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
-  const sessions = useSidebarRoster({
-    onArchiveSelected,
-    onSelect,
-    roster,
-    rosterError,
-    selectedSessionId,
-    sidebar,
+export function SessionsSidebar() {
+  const { sessionId } = useParams()
+  const navigate = useNavigate()
+  const [cockpit] = useProjects()
+  const projectRoot = cockpit.project?.path ?? null
+  // Read once here for the restore-on-mount effect below, which needs the raw roster to tell a
+  // stored id apart from an archived one; Roster's own read of the same query shares this cache.
+  const { roster, rosterError } = useOrderedSessions(projectRoot)
+  const project = useSelectedProject()
+  const ticketLink = useSessionTicketLink()
+  const [linkTarget, setLinkTarget] = useState<Session | null>(null)
+  const archiveSelected = useArchiveSelected()
+  const sidebarActions = useSidebarActions({
+    disconnectTicket: ticketLink.disconnect,
+    projectPath: projectRoot,
   })
-  const { focus, selection } = sessions
+  useRestoreSelectedSession({ sessionId, roster, rosterError, navigate })
+
+  const actions: RosterActions = {
+    onArchiveSelected: archiveSelected,
+    onLinkTicket: setLinkTarget,
+    onNew: sidebarActions.openNew,
+    onOpenTicket: sidebarActions.openTicket,
+    onRename: sidebarActions.rename,
+    onSelect: sidebarActions.select,
+    onUnlinkTicket: sidebarActions.unlinkTicket,
+  }
 
   return (
-    <aside
-      aria-label="Sessions sidebar"
-      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
-      data-state={sessions.state}
-      ref={sidebar}
-    >
-      <SessionsSidebarHeader
-        onNew={onNew}
-        onSearch={sessions.setSearch}
-        onStatusChange={sessions.setStatus}
-        search={sessions.search}
-        status={sessions.status}
+    <>
+      <Roster actions={actions} projectRoot={projectRoot} selectedSessionId={sessionId ?? null} />
+      <SessionTicketLinkDialog
+        onConnect={ticketLink.connect}
+        onOpenChange={(open) => {
+          if (!open) setLinkTarget(null)
+        }}
+        projectId={project?.id ?? null}
+        session={linkTarget}
       />
-      <RosterOutcome
-        count={sessions.sessionCount}
-        roster={roster}
-        rosterError={rosterError}
-        status={sessions.status}
-      />
-      <SidebarRows
-        hasMoreSessions={hasMoreSessions}
-        isFetchingMoreSessions={isFetchingMoreSessions}
-        onArchive={sessions.archive}
-        onFetchMoreSessions={onFetchMoreSessions}
-        onFocus={focus.setFocusedSessionId}
-        onLinkTicket={onLinkTicket}
-        onOpenTicket={onOpenTicket}
-        onRename={setRenameTarget}
-        onSelect={sessions.select}
-        onToggleSelect={selection.toggle}
-        onUnlinkTicket={onUnlinkTicket}
-        roster={sessions}
-        selectedSessionId={selectedSessionId}
-        showArchive={roster !== null}
-      />
-      <RenameDialog
-        onRename={async (session, name) =>
-          sessions.rename(session.id, await onRename(session, name))
-        }
-        session={renameTarget}
-        setSession={setRenameTarget}
-      />
-    </aside>
+    </>
   )
 }
-
-export { SessionsSidebar } from './sessions-sidebar-container'
