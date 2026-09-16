@@ -207,8 +207,9 @@ When Codex is installed, the Phase 2 choice asks whether to enable its native to
 that the list adds a small token overhead and only improves progress visibility. It does not
 change the work that Codex does. Recommend enabling it when the user wants visible task progress.
 
-If the user selected the choice, add this to `~/.codex/config.toml`, preserving unrelated
-configuration:
+If the user selected the choice, update `~/.codex/config.toml`, preserving unrelated
+configuration. Set `enabled = true` in the existing `[tools.update_plan]` table. Append the table
+only when it is absent.
 
 ```toml
 [tools.update_plan]
