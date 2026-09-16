@@ -17,6 +17,7 @@ import {
 import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveSessionJourneys } from './session-journey-cases'
 import { proveLiveFeed } from './session-live-feed-cases'
+import { proveNoProjectWindow } from './session-no-project-case'
 import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
 import { proveSessionQuestion } from './session-question-case'
@@ -36,8 +37,7 @@ import { proveToolCalls } from './session-tool-calls-case'
 import { proveTurnSetup } from './session-turn-setup-cases'
 
 // The cases that read a seeded transcript a real CLI never writes, so they run on the fake
-// backend alone. Every one of them reads a `/Users/x` fixture a selected Project scopes out
-// (#2204), so they all run before the journeys select one.
+// backend alone.
 async function proveFeedCases({ fixture, ran, root }: PackagedSessionRun, page: Page) {
   await ran(['session-roster-contract'], () => proveContract(page))
   await ran(['session-shell'], () => proveSessionShell(page))
@@ -102,11 +102,12 @@ await runPackagedSessionProof({
     const { fixture, hold, isPackaged, launch, ran, restart } = run
     let page = hold(await launch())
     assert.equal(await isPackaged(), true)
-    const formatted = await proveFeedCases(run, page)
-    page = await proveRosterCases(run, page)
-    // Every journey below starts a Session, which needs a selected Project (#2204).
+    await ran(['session-no-project-window'], () => proveNoProjectWindow(page))
+    // Every case below reads the Roster, which only a selected Project shows (#2307).
     await selectProofProject(fixture.userData, fixture.project)
     page = hold(await restart())
+    const formatted = await proveFeedCases(run, page)
+    page = await proveRosterCases(run, page)
     page = hold(await proveSessionJourneys({ page, ran, backend, fixture, restart }))
     // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's
     // own exact Roster counts or ordering has to account for them.

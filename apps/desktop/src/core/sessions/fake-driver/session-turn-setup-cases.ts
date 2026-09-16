@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { fixturePath, replaceInFile } from './session-fixture-files'
 import {
   chooseHarness,
   openNewSessionByClick,
@@ -58,10 +57,8 @@ export async function proveTurnSetup(page) {
   await waitForSetup(page, 'Claude Code·Haiku 4.5·Extra high', 'Auto')
 }
 
-// A draft and the harness a new Session was set to outlive a reload of the window. It runs with a
-// Project selected, which scopes the Roster (#2204), so `setupAnswered` moves into it first.
-export async function proveComposerMemory(page, transcripts, project) {
-  await replaceInFile(fixturePath(transcripts, 'setupAnswered'), '/Users/x/proj', project)
+// A draft and the harness a new Session was set to outlive a reload of the window.
+export async function proveComposerMemory(page) {
   await openSessionByClick(page, 'setupAnswered')
   await page.locator(MESSAGE).click()
   await page.keyboard.type('Half a thought.')

@@ -26,9 +26,7 @@ export type SessionJourneyRequest = {
 async function proveResumeAndRename(request: SessionJourneyRequest) {
   let { page } = request
   const { backend, fixture, ran, restart } = request
-  await ran(['session-composer-memory'], () =>
-    proveComposerMemory(page, fixture.claudeTranscripts, fixture.project),
-  )
+  await ran(['session-composer-memory'], () => proveComposerMemory(page))
   // Before the resume cases, for the reason session-create-case.ts records.
   await ran(['session-created-by-click'], () =>
     proveSessionCreatedByClick(page, backend, fixture.claudeTranscripts),
