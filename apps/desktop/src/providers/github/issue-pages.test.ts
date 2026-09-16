@@ -28,6 +28,7 @@ test('a backlog reads one page at a time and names the next until it ends', asyn
 
 test('a search is answered by GitHub, counted, and kept to open issues of this repository', async (context) => {
   const { mock, endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
     issues: [
       { number: 1, title: 'Parent' },
       { number: 2, title: 'Open child' },

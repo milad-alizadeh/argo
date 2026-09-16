@@ -6,10 +6,14 @@ import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '../../src/core/sessions/proof-protocol'
+import type {
+  SessionCliBackend,
+  SessionCliRun,
+  SessionFixture,
+} from '../../e2e/sessions/session-cli-backend'
 import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
 import { mockCodexCli } from '../cli/codex/mock-codex-cli'
 import { createMockSessionCliBackend } from './mock-session-cli-backend'
-import type { SessionCliBackend, SessionCliRun, SessionFixture } from './session-cli-backend'
 
 type Started = {
   root: string
