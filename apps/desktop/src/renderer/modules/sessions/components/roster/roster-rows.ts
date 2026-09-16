@@ -1,10 +1,6 @@
 import type { SessionContractError } from '../../session-contract-error'
 import type { SelectionModifier } from '../../state/roster-selection'
-import {
-  type RosterStatus,
-  showsActive,
-  showsArchived,
-} from '../../state/use-roster-filter-store'
+import { type RosterStatus, showsActive, showsArchived } from '../../state/use-roster-filter-store'
 import type { Session, SessionId } from '../../types'
 
 // The row handlers RosterVirtualList threads down to RosterRowView unchanged (#2194 follow-up):
