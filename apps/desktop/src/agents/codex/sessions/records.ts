@@ -106,6 +106,18 @@ function isSubagentThread(meta: Record<string, unknown>): boolean {
   return meta.thread_source === 'subagent' || (isRecord(meta.source) && 'subagent' in meta.source)
 }
 
+function subagentDetails(meta: Record<string, unknown>) {
+  const source = isRecord(meta.source) ? meta.source : null
+  const subagent = source !== null && isRecord(source.subagent) ? source.subagent : null
+  const spawn = subagent !== null && isRecord(subagent.thread_spawn) ? subagent.thread_spawn : null
+  if (spawn === null) return {}
+  return {
+    parentSessionId: typeof spawn.parent_thread_id === 'string' ? spawn.parent_thread_id : null,
+    agentPath: typeof spawn.agent_path === 'string' ? spawn.agent_path : null,
+    agentNickname: typeof spawn.agent_nickname === 'string' ? spawn.agent_nickname : null,
+  }
+}
+
 export function parseCodexTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let record: unknown
@@ -131,6 +143,7 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
       kind: 'trace',
       uuid: payload.id,
       subagent: isSubagentThread(payload),
+      ...subagentDetails(payload),
       cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
     }
   }

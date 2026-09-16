@@ -16,7 +16,7 @@ export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task'
 
 // The tools that spawn a Subagent (CONTEXT.md L3 · Subagent). The CLI renamed `Task` to `Agent`,
 // and a transcript written before the rename still names the old one.
-const DELEGATING_TOOLS = ['Task', 'Agent']
+const DELEGATING_TOOLS = ['Task', 'Agent', 'spawn_agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
 // come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
@@ -65,7 +65,9 @@ export function readDelegations(
     .filter((call) => DELEGATING_TOOLS.includes(call.name))
     .map((call) => ({
       id: call.id,
-      label: text(call.input.description),
+      // Codex's collaboration tool calls it `task_name`; Claude's Task and Agent tools use a
+      // reader-facing description. Both name the same Subagent.
+      label: text(call.input.task_name) ?? text(call.input.description),
       landed: receipted.has(call.id) ? ended.has(call.id) : answered.has(call.id),
       startedAt: times.started.get(call.id) ?? null,
       endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,

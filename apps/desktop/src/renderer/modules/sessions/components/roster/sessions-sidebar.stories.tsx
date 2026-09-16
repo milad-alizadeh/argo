@@ -163,6 +163,8 @@ export const Discovered: Story = {
     await userEvent.click(row)
     await expect(args.onSelect).toHaveBeenCalledWith('prose')
     await expect(row).toHaveAttribute('aria-current', 'page')
+    await expect(row).toHaveFocus()
+    expect(getComputedStyle(row).outlineColor).toBe('rgba(0, 0, 0, 0)')
     const newSessionIcon = canvas.getByRole('button', { name: 'New Session' }).querySelector('svg')
     if (newSessionIcon === null) throw new Error('The New Session icon is absent.')
     expect(newSessionIcon.getBoundingClientRect().right).toBeCloseTo(
@@ -172,6 +174,7 @@ export const Discovered: Story = {
     await userEvent.keyboard('{ArrowDown}')
     const second = canvas.getByRole('button', { name: /A second Session/ })
     await expect(second).toHaveFocus()
+    expect(second.matches(':focus-visible')).toBe(true)
     await userEvent.keyboard('{Enter}')
     await expect(second).toHaveAttribute('aria-current', 'page')
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(

@@ -3,6 +3,7 @@ import { Bot, ChevronRight, SquareTerminal } from 'lucide-react'
 import { type ReactNode, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  readableDelegationName,
   type SessionWork,
   spentTokens,
   WORK_STATE_MARKS,
@@ -138,7 +139,7 @@ function DelegationCard({
             className={`min-w-0 truncate type-body ${running ? 'feed-work-shimmer' : 'text-foreground'}`}
           >
             <span className="sr-only">{headline}: </span>
-            {title ?? label}
+            {actor === 'agent' && title !== null ? readableDelegationName(title) : (title ?? label)}
           </span>
           <WorkFacts state={state} status={status} target={target} />
           {target === null || links === null ? null : (

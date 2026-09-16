@@ -26,6 +26,10 @@ export function delegationState(delegation: SessionDelegation): WorkState {
   return delegation.landed ? 'done' : 'running'
 }
 
+export function readableDelegationName(name: string): string {
+  return name.replace(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase())
+}
+
 function elapsed(startedAt: string | null, endedAt: string | null, now: number): number | null {
   if (startedAt === null) return null
   const from = Date.parse(startedAt)

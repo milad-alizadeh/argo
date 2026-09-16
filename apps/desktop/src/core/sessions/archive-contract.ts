@@ -35,9 +35,9 @@ export const sessionArchiveListReplySchema = z.union([
 export type SessionArchiveListReply = z.infer<typeof sessionArchiveListReplySchema>
 
 // Setting the archive flag for one or more Sessions at once (#2194): `archived: true` archives
-// the named Sessions, `false` restores them. `sessionIds` names the reader's own stable ids, and
-// a Session that flag has no store row for at all comes back in `failed` rather than throwing,
-// so one Session without a writable row never sinks the rest of a bulk action.
+// the named Sessions, `false` restores them. `sessionIds` names the reader's own stable ids. The
+// flag is Argo's own (#2315), so a Session it has never discovered archives under the id the
+// caller named, and `failed` reports a storage failure alone.
 export const sessionArchiveSetRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.archive.set'),

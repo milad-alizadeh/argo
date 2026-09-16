@@ -2,7 +2,6 @@ import { type ElectronApplication, _electron as electron, type Page } from 'play
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../src/core/projects/proof-protocol'
 import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
@@ -34,7 +33,6 @@ function transcriptEnv(transcripts: SessionCliRun['transcripts']): Record<string
   return {
     [SESSION_CLAUDE_TRANSCRIPTS_ENV]: transcripts.claude,
     [SESSION_CODEX_TRANSCRIPTS_ENV]: transcripts.codex,
-    [SESSION_CLAUDE_ARCHIVE_ENV]: transcripts.archive,
   }
 }
 
