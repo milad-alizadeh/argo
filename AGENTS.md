@@ -34,6 +34,9 @@ Everything here is a fact about this repository. Process belongs to the skill th
   and bodies, comments, close messages, PR titles and bodies, user questions, and grilling rounds.
   Also load it for agent-facing Markdown that people will read. Ordinary implementation work and
   progress commentary do not trigger it. Apply it while you draft, not as cleanup.
+- Task tracking applies to work with at least three steps, multiple changed files, or an approved
+  plan. Before the first edit, read `packages/argo-skills/skills/setup-argo-skills/templates/task-tracking.md`
+  and start its live tracker.
 
 ## Desktop Session adapters
 
