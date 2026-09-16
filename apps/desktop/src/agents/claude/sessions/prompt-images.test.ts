@@ -79,7 +79,7 @@ test('draws pasted images before attached files', () => {
     id: 'prompt-1:1',
     role: 'user',
     text: 'fix',
-    images: [`data:image/png;base64,${PIXEL}`, 'file:///Users/x/b.png'],
+    images: [`data:image/png;base64,${PIXEL}`, 'argo-attachment://local/Users/x/b.png'],
   })
 })
 

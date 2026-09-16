@@ -11,7 +11,10 @@ test('draws attached image files from the @path mentions Argo appends', () => {
       id: 'prompt-1:0',
       role: 'user',
       text: 'Review this.',
-      images: ['file:///Users/x/shot%231.png', 'file:///Users/x/b.JPG'],
+      images: [
+        'argo-attachment://local/Users/x/shot%231.png',
+        'argo-attachment://local/Users/x/b.JPG',
+      ],
       files: ['/Users/x/notes.md'],
     },
   ])
@@ -38,7 +41,13 @@ for (const text of ['Compare @/Users/x/a.png with the design', 'Look at @/Users/
   test(`draws an image the person mentioned but keeps their words: ${text}`, () => {
     const rows = promptRows(text)
     assert.deepEqual(rows, [
-      { shape: 'prose', id: 'prompt-1:0', role: 'user', text, images: ['file:///Users/x/a.png'] },
+      {
+        shape: 'prose',
+        id: 'prompt-1:0',
+        role: 'user',
+        text,
+        images: ['argo-attachment://local/Users/x/a.png'],
+      },
     ])
   })
 }
@@ -51,7 +60,7 @@ test('draws an attached file whose path has a space, from its quoted mention', (
       id: 'prompt-1:0',
       role: 'user',
       text: 'Look.',
-      images: ['file:///Users/x/Screenshot%20at%2006.44.png'],
+      images: ['argo-attachment://local/Users/x/Screenshot%20at%2006.44.png'],
       files: ['/Users/x/notes.md'],
     },
   ])
@@ -59,7 +68,9 @@ test('draws an attached file whose path has a space, from its quoted mention', (
 
 test('draws an image mentioned before a full stop, as Claude Code attaches it', () => {
   const rows = promptRows('Compare @/Users/x/a.png.')
-  assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, ['file:///Users/x/a.png'])
+  assert.deepEqual(rows[0]?.shape === 'prose' ? rows[0].images : null, [
+    'argo-attachment://local/Users/x/a.png',
+  ])
 })
 
 test('reads back every attachment the composer appends, as its bubble draws it', () => {
@@ -75,7 +86,10 @@ test('reads back every attachment the composer appends, as its bubble draws it',
       id: 'prompt-1:0',
       role: 'user',
       text: 'Look.',
-      images: ['file:///Users/x/Screenshot%20at%2006.44.png', 'file:///Users/x/b.png'],
+      images: [
+        'argo-attachment://local/Users/x/Screenshot%20at%2006.44.png',
+        'argo-attachment://local/Users/x/b.png',
+      ],
       files: ['/Users/x/notes.md'],
     },
   ])
