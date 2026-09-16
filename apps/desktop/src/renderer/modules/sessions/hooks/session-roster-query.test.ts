@@ -55,7 +55,7 @@ async function pollTwice(secondTitle: string) {
 
 describe('sessionRosterQuery', () => {
   test('does not poll while an optimistic Session is selected', () => {
-    const options = sessionRosterQuery('optimistic:new-session', true, null)
+    const options = sessionRosterQuery('optimistic:new-session', true, { projectRoot: null })
 
     expect(options.refetchInterval).toBe(false)
   })
