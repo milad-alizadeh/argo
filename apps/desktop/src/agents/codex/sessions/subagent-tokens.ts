@@ -2,17 +2,21 @@ import { readFile } from 'node:fs/promises'
 import { isRecord } from '@/boundary'
 import { transcriptPaths } from './discover'
 
-function tokenCount(line: string): number | null {
+type DelegationFacts = { tokens: number | null; model: string | null }
+
+function delegationFacts(line: string): Partial<DelegationFacts> {
   let parsed: unknown
   try {
     parsed = JSON.parse(line)
   } catch {
-    return null
+    return {}
   }
-  if (!isRecord(parsed) || parsed.type !== 'token_usage_record' || !isRecord(parsed.payload))
-    return null
+  if (!isRecord(parsed) || !isRecord(parsed.payload)) return {}
+  if (parsed.type === 'turn_context' && typeof parsed.payload.model === 'string')
+    return { model: parsed.payload.model }
+  if (parsed.type !== 'token_usage_record') return {}
   const usage = parsed.payload.thread_token_usage
-  if (!isRecord(usage)) return null
+  if (!isRecord(usage)) return {}
   const input = usage.input_tokens
   const cached = usage.cached_input_tokens
   const output = usage.output_tokens
@@ -24,24 +28,26 @@ function tokenCount(line: string): number | null {
     !Number.isFinite(cached) ||
     !Number.isFinite(output)
   )
-    return null
-  return Math.max(0, input - cached) + output
+    return {}
+  return { tokens: Math.max(0, input - cached) + output }
 }
 
-async function tokenCountFromFile(filePath: string): Promise<number | null> {
+async function delegationFactsFromFile(filePath: string): Promise<DelegationFacts> {
   const text = await readFile(filePath, 'utf8').catch(() => null)
-  if (text === null) return null
-  const reported = text.split('\n').flatMap((line) => {
-    const count = tokenCount(line)
-    return count === null ? [] : [count]
-  })
-  return reported.at(-1) ?? null
+  if (text === null) return { tokens: null, model: null }
+  const facts: DelegationFacts = { tokens: null, model: null }
+  for (const line of text.split('\n')) {
+    const reported = delegationFacts(line)
+    if (reported.tokens !== undefined) facts.tokens = reported.tokens
+    if (reported.model !== undefined) facts.model = reported.model
+  }
+  return facts
 }
 
 export async function readDelegationTokens(
   root: string,
   delegationIds: readonly string[],
-): Promise<{ id: string; tokens: number | null }[]> {
+): Promise<{ id: string; tokens: number | null; model: string | null }[]> {
   const paths = await transcriptPaths(root)
   const pathsById = new Map(
     paths.map(({ name, path }) => [name.replace(/\.jsonl$/, ''), path] as const),
@@ -49,7 +55,9 @@ export async function readDelegationTokens(
   return Promise.all(
     delegationIds.map(async (id) => ({
       id,
-      tokens: await (pathsById.has(id) ? tokenCountFromFile(pathsById.get(id) ?? '') : null),
+      ...(pathsById.has(id)
+        ? await delegationFactsFromFile(pathsById.get(id) ?? '')
+        : { tokens: null, model: null }),
     })),
   )
 }

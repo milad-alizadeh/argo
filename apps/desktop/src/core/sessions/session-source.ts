@@ -48,8 +48,10 @@ export type SessionSource = {
   // One Subagent's own transcript, read as a chain so the Feed projects it the same way it
   // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
   readDelegationFiles?: (sessionId: string, delegationId: string) => Promise<SessionChain | null>
-  // What each of this Session's Subagents spent, keyed by the call that spawned it.
-  readDelegationUsage?: (sessionId: string) => Promise<{ id: string; tokens: number | null }[]>
+  // What each of this Session's Subagents used, keyed by the call that spawned it.
+  readDelegationUsage?: (
+    sessionId: string,
+  ) => Promise<{ id: string; tokens: number | null; model: string | null }[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
   // Joined over any lock discovery already read off the CLI's own live record; absent where the
   // CLI keeps no ownership ledger.

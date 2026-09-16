@@ -6,7 +6,12 @@ import type { SessionDelegation, SessionShellCommand, ShellState } from '@/core/
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
 export type SessionWork =
-  | { kind: 'delegation'; delegation: SessionDelegation; tokens: number | null }
+  | {
+      kind: 'delegation'
+      delegation: SessionDelegation
+      tokens: number | null
+      model: string | null
+    }
   | { kind: 'shell'; command: SessionShellCommand }
 
 // A Subagent settles as `done`; a shell command keeps the CLI's own word for how it ended.

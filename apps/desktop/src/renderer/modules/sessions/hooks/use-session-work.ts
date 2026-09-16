@@ -14,9 +14,11 @@ import { sessionFeedQuery } from './session-feed-query'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
+export type DelegationUsage = { tokens: number | null; model: string | null }
+
 export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
   const queryKey = sessionDelegationUsageQueryKey(sessionId ?? '')
-  const usage = useQuery<Record<string, number | null>>({
+  const usage = useQuery<Record<string, DelegationUsage>>({
     queryKey,
     enabled: sessionId !== null,
     gcTime: 0,
@@ -26,7 +28,7 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
       if (sessionId === null) return {}
       const reply = await window.argo.readDelegationUsage({ sessionId })
       if (reply.type !== 'session.delegation.usage.read') return {}
-      return Object.fromEntries(reply.usage.map(({ id, tokens }) => [id, tokens]))
+      return Object.fromEntries(reply.usage.map(({ id, tokens, model }) => [id, { tokens, model }]))
     },
   })
   // A Subagent's transcript is what carries its token count, and it sits under the same watched

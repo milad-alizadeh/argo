@@ -73,12 +73,14 @@ function WorkFacts({
   const work = target?.kind === 'shell' ? target.command : (target?.delegation ?? null)
   const elapsed = work === null ? null : workDuration(work.startedAt, work.endedAt, now)
   const tokens = spentTokens(target?.kind === 'delegation' ? target.tokens : null, t)
+  const model = target?.kind === 'delegation' ? target.model : null
   const word = settledWord(state, status, t)
   return (
     <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">
       {word === null ? null : (
         <span className={state === null ? undefined : STATE_INK[state]}>{word}</span>
       )}
+      {model === null ? null : <span>{model}</span>}
       {tokens === null ? null : <span>{tokens}</span>}
       {elapsed === null ? null : <span>{elapsed}</span>}
     </span>

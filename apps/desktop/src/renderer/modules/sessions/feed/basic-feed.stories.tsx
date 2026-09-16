@@ -390,7 +390,7 @@ function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
     find: ({ callId, name }) => {
       if (callId === BUILD_COMMAND.id) return { kind: 'shell', command: BUILD_COMMAND }
       if (name !== REVIEW_AGENT.label) return null
-      return { kind: 'delegation', delegation: REVIEW_AGENT, tokens: 4200 }
+      return { kind: 'delegation', delegation: REVIEW_AGENT, tokens: 4200, model: 'gpt-5.6-terra' }
     },
     open: (target) =>
       setOpened(target.kind === 'shell' ? target.command.command : target.delegation.label),
@@ -414,6 +414,7 @@ export const DelegationCards: Story = {
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
     await expect(agent).toHaveTextContent('Keyboard access verified')
     await expect(agent).toHaveTextContent('4.2k tokens')
+    await expect(agent).toHaveTextContent('gpt-5.6-terra')
     await expect(agent).toHaveTextContent('1m 12s')
     await userEvent.click(within(agent).getByRole('button'))
     await expect(

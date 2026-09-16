@@ -44,10 +44,15 @@ export const sessionDelegationUsageReadSchema = z.strictObject({
   type: z.literal('session.delegation.usage.read'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
-  // One entry per Subagent whose transcript was read, keyed by the call that spawned it. Tokens
-  // are null where the transcript exists and reports no usage; a Subagent with no readable
-  // transcript has no entry at all.
-  usage: z.array(z.strictObject({ id: identifierSchema, tokens: z.number().nullable() })),
+  // One entry per Subagent whose transcript was read, keyed by the call that spawned it. Each
+  // fact is null where that transcript does not report it; no entry means no readable transcript.
+  usage: z.array(
+    z.strictObject({
+      id: identifierSchema,
+      tokens: z.number().nullable(),
+      model: z.string().nullable(),
+    }),
+  ),
 })
 export type SessionDelegationUsageRead = z.infer<typeof sessionDelegationUsageReadSchema>
 

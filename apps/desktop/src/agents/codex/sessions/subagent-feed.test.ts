@@ -99,12 +99,20 @@ async function writeBackgroundAgent(root: string, sessionId: string, delegationI
   )
   await writeFile(
     path.join(day, `rollout-2026-09-16T21-23-34-${delegationId}.jsonl`),
-    `${JSON.stringify({
-      type: 'token_usage_record',
-      payload: {
-        thread_token_usage: { input_tokens: 2000, cached_input_tokens: 500, output_tokens: 700 },
+    [
+      {
+        type: 'turn_context',
+        payload: { model: 'gpt-5.6-terra' },
       },
-    })}\n`,
+      {
+        type: 'token_usage_record',
+        payload: {
+          thread_token_usage: { input_tokens: 2000, cached_input_tokens: 500, output_tokens: 700 },
+        },
+      },
+    ]
+      .map((record) => JSON.stringify(record))
+      .join('\n'),
   )
 }
 
@@ -123,7 +131,7 @@ test('reads a Codex background agent duration and token usage', async (context) 
     sessionId,
   })
   assert.deepEqual(usage.type === 'session.delegation.usage.read' ? usage.usage : null, [
-    { id: delegationId, tokens: 2200 },
+    { id: delegationId, tokens: 2200, model: 'gpt-5.6-terra' },
   ])
 
   const chain = await codexSessionSource(root).readSessionFiles(sessionId)

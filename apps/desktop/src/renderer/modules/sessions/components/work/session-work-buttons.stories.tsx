@@ -59,7 +59,10 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
     <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border/60 px-3">
       <SessionWorkButtons
         delegations={DELEGATIONS}
-        delegationTokens={{ 'call-review': 18_400, 'call-sweep': 2700 }}
+        delegationUsage={{
+          'call-review': { tokens: 18_400, model: 'claude-opus-5' },
+          'call-sweep': { tokens: 2700, model: 'gpt-5.6-terra' },
+        }}
         now={NOW}
         onSelectDelegation={(id) => {
           setDelegationId(id)
@@ -107,14 +110,14 @@ export const RunningAndFinishedGroups: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     const running = await screen.findByRole('group', { name: 'Running' })
     const finished = screen.getByRole('group', { name: 'Finished' })
-    // Duration and spend are the two facts a Subagent row adds (#1582).
+    // Model, duration and spend are the facts a Subagent row adds (#1582).
     await expect(
       within(running).getByRole('menuitem', { name: /Interface review/ }),
-    ).toHaveTextContent('Running · 5m 0s · 18k tokens')
+    ).toHaveTextContent('Running · 5m 0s · claude-opus-5 · 18k tokens')
     expectDotAlignedWithTitle(within(running).getByRole('menuitem', { name: /Interface review/ }))
     await expect(
       within(finished).getByRole('menuitem', { name: /Find every caller/ }),
-    ).toHaveTextContent('Done · 1m 12s · 2.7k tokens')
+    ).toHaveTextContent('Done · 1m 12s · gpt-5.6-terra · 2.7k tokens')
   },
 }
 

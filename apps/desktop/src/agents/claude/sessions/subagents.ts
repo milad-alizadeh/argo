@@ -75,7 +75,7 @@ export async function readDelegationChain(
 // work consumed, cache reads excluded. A Subagent whose transcript reports no usage reads null.
 export async function readDelegationTokens(
   chain: SessionChain | null,
-): Promise<{ id: string; tokens: number | null }[]> {
+): Promise<{ id: string; tokens: number | null; model: string | null }[]> {
   if (chain === null) return []
   const paths = [...(await subagentPaths(chain))]
   return Promise.all(
@@ -84,12 +84,18 @@ export async function readDelegationTokens(
       const reported = (file?.records ?? []).flatMap((record) =>
         record.kind === 'message' && record.usage !== null ? [record.usage] : [],
       )
+      const models = (file?.records ?? []).flatMap((record) =>
+        record.kind === 'message' && record.role === 'assistant' && record.model !== null
+          ? [record.model]
+          : [],
+      )
       return {
         id,
         tokens:
           reported.length === 0
             ? null
             : reported.reduce((sum, usage) => sum + usage.inputTokens + usage.outputTokens, 0),
+        model: models.at(-1) ?? null,
       }
     }),
   )

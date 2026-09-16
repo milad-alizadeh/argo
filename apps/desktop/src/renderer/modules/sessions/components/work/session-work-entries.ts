@@ -5,6 +5,8 @@ import type { TFunction } from 'i18next'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { delegationState, spentTokens, WORK_STATE_MARKS, workDuration } from './session-work'
 
+type DelegationUsage = { tokens: number | null; model: string | null }
+
 export type WorkEntry = {
   id: string
   title: string
@@ -22,7 +24,7 @@ function joined(facts: readonly (string | null)[]): string {
 
 export function delegationEntries(
   delegations: readonly SessionDelegation[],
-  { now, tokens }: { now: number; tokens: Readonly<Record<string, number | null>> },
+  { now, usage }: { now: number; usage: Readonly<Record<string, DelegationUsage>> },
   t: TFunction<'sessions'>,
 ): WorkEntry[] {
   return delegations.map((delegation) => {
@@ -36,7 +38,8 @@ export function delegationEntries(
       state: t(`workState.${state}`),
       facts: joined([
         workDuration(delegation.startedAt, delegation.endedAt, now),
-        spentTokens(tokens[delegation.id] ?? null, t),
+        usage[delegation.id]?.model ?? null,
+        spentTokens(usage[delegation.id]?.tokens ?? null, t),
       ]),
     }
   })

@@ -66,7 +66,12 @@ function InspectorStory({
       <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
         <SessionWorkInspectorHeader
           now={args.now}
-          work={{ kind: 'delegation', delegation: args.delegation, tokens: tokens ?? null }}
+          work={{
+            kind: 'delegation',
+            delegation: args.delegation,
+            tokens: tokens ?? null,
+            model: null,
+          }}
         />
       </header>
       <SessionDelegationInspector {...args} />
