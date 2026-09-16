@@ -37,6 +37,7 @@ type ComposerFormProps = {
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   contextTokens: number | null | undefined
+  contextWindowTokens: number | null | undefined
   isCompacting: boolean
   onAttach: () => void
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
@@ -72,6 +73,7 @@ export function ComposerForm({
   editorRef,
   focusOnMount,
   contextTokens,
+  contextWindowTokens,
   isCompacting,
   onAttach,
   onAddTicket,
@@ -118,6 +120,7 @@ export function ComposerForm({
         attachments={attachments}
         contextPickerOpen={contextPickerOpen}
         contextTokens={contextTokens}
+        contextWindowTokens={contextWindowTokens}
         disabled={disabled}
         draft={draft}
         editorRef={editorRef}
