@@ -1,12 +1,10 @@
 import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
-import type { SessionPlan, SessionTicket } from '@/core/sessions/models'
-import type { DevelopmentIdentity } from '@/development/instance'
+import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../../state/use-composer-store'
 import { ComposerCard } from './composer-card'
-import { DevelopmentIdentityBar } from './development-identity-bar'
 import type { TurnSetupControlProps } from './run-setup-menu'
 import { AttachmentTray } from './tray/attachment-tray'
 import { PendingTurns } from './tray/pending-turns'
@@ -31,7 +29,6 @@ type ComposerFormProps = {
   attachments: ComposerAttachment[]
   tickets: ComposerTicketContext[]
   contextPickerOpen: boolean
-  developmentIdentity: DevelopmentIdentity | null
   disabled?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
@@ -60,14 +57,12 @@ type ComposerFormProps = {
   sessionId: string
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
-  ticket: SessionTicket | null
 }
 
 export function ComposerForm({
   attachments,
   tickets,
   contextPickerOpen,
-  developmentIdentity,
   disabled = false,
   draft,
   editorRef,
@@ -96,12 +91,11 @@ export function ComposerForm({
   sessionId,
   harness,
   setup,
-  ticket,
 }: ComposerFormProps) {
   const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
   return (
     <form
-      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) ${developmentIdentity === null ? 'pb-(--spacing-session-composer-bottom)' : 'pb-(--spacing-development-identity-bottom)'}`}
+      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
@@ -145,7 +139,6 @@ export function ComposerForm({
         tickets={tickets}
         onContextPickerOpenChange={onContextPickerOpenChange}
       />
-      <DevelopmentIdentityBar identity={developmentIdentity} ticket={ticket} />
     </form>
   )
 }

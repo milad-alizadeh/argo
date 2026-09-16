@@ -17,6 +17,7 @@ type CockpitShellProps = {
   rail?: ReactNode
   sidebar: ReactNode
   header?: ReactNode
+  footer?: ReactNode
   children: ReactNode
 }
 
@@ -104,6 +105,7 @@ export function CockpitShell({
   rail,
   sidebar,
   header = <ProjectSwitcher />,
+  footer,
   children,
 }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
@@ -139,44 +141,47 @@ export function CockpitShell({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 overflow-hidden bg-background">
-      <CockpitRail rail={rail} />
-      <ResizablePanelGroup
-        orientation="horizontal"
-        className="relative min-w-0 flex-1"
-        onLayoutChanged={synchronizeSidebarCollapsed}
-      >
-        {isSidebarCollapsed ? (
-          <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
-        ) : null}
-        <ResizablePanel
-          id="cockpit-sidebar"
-          collapsible
-          collapsedSize={0}
-          defaultSize={sidebarDefaultWidth}
-          minSize={sidebarMinimumWidth}
-          maxSize={sidebarMaximumWidth}
-          panelRef={sidebarPanelRef}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="relative flex min-h-0 flex-1">
+        <CockpitRail rail={rail} />
+        <ResizablePanelGroup
+          orientation="horizontal"
+          className="relative min-w-0 flex-1"
+          onLayoutChanged={synchronizeSidebarCollapsed}
         >
-          <CockpitSidebar
-            header={header}
-            isCollapsed={isSidebarCollapsed}
-            onToggle={toggleSidebar}
-            sidebar={sidebar}
-            toggleRef={sidebarToggleRef}
-          />
-        </ResizablePanel>
-        <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-        <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-          <div
-            data-component="CockpitContent"
-            data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-            className="relative h-full min-w-0 overflow-hidden bg-background"
+          {isSidebarCollapsed ? (
+            <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
+          ) : null}
+          <ResizablePanel
+            id="cockpit-sidebar"
+            collapsible
+            collapsedSize={0}
+            defaultSize={sidebarDefaultWidth}
+            minSize={sidebarMinimumWidth}
+            maxSize={sidebarMaximumWidth}
+            panelRef={sidebarPanelRef}
           >
-            {children}
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+            <CockpitSidebar
+              header={header}
+              isCollapsed={isSidebarCollapsed}
+              onToggle={toggleSidebar}
+              sidebar={sidebar}
+              toggleRef={sidebarToggleRef}
+            />
+          </ResizablePanel>
+          <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
+          <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
+            <div
+              data-component="CockpitContent"
+              data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+              className="relative h-full min-w-0 overflow-hidden bg-background"
+            >
+              {children}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+      {footer ? <div className="shrink-0">{footer}</div> : null}
     </div>
   )
 }

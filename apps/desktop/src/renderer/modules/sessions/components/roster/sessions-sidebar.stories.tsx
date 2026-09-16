@@ -56,6 +56,19 @@ function RoutedRoster(args: SessionsSidebarContentProps) {
   )
 }
 
+// A roster poll rebuilds its array on every tick regardless of whether anything changed
+// (`keepRosterOrder` in `session-roster-query.ts`), so a rename must survive a same-content
+// rebuild rather than only the exact array a rename dialog closed against (#2290).
+function RenameSurvivesPollRoster(args: SessionsSidebarContentProps) {
+  const [roster, setRoster] = useState(listed)
+  useEffect(() => {
+    const repoll = () => setRoster({ ...listed, sessions: [...listed.sessions] })
+    window.addEventListener('story:repoll', repoll)
+    return () => window.removeEventListener('story:repoll', repoll)
+  }, [])
+  return <SessionsSidebarContent {...args} roster={roster} />
+}
+
 function FocusRecoveryRoster(args: SessionsSidebarContentProps) {
   const [roster, setRoster] = useState(listed)
   useEffect(() => {
@@ -312,6 +325,29 @@ export const SkillMentionTitle: Story = {
     await expect(row.querySelector('svg')).not.toBeNull()
     await expect(row).toHaveTextContent('https://github.com/milad-alizadeh/argo/issues/1944')
     await expect(row.querySelector('a')).toBeNull()
+  },
+}
+
+export const RenameSurvivesRosterPoll: Story = {
+  render: (args) => <RenameSurvivesPollRoster {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const row = canvas.getByRole('button', { name: /Read the Session transcript/ })
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
+    await userEvent.click(rename)
+    const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
+    const input = within(dialog).getByRole('textbox', { name: 'Name' })
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Keep the rename after a poll\n')
+    await userEvent.keyboard('{Enter}')
+    await expect(
+      canvas.getByRole('button', { name: /Keep the rename after a poll/ }),
+    ).toBeInTheDocument()
+    window.dispatchEvent(new Event('story:repoll'))
+    await expect(
+      canvas.getByRole('button', { name: /Keep the rename after a poll/ }),
+    ).toBeInTheDocument()
   },
 }
 

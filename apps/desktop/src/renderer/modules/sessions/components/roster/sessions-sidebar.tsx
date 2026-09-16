@@ -13,10 +13,17 @@ import { useRosterSelection } from './use-roster-selection'
 const NO_SESSIONS: SessionsListed['sessions'] = []
 const NO_TITLES: Record<string, string> = {}
 
-// The titles a rename shows, and the Sessions they were recorded against.
-type RenamedTitles = {
-  sessions: SessionsListed['sessions']
-  titles: Record<string, string>
+// A renamed title is shown locally, keyed by session id, until a roster read carries the same
+// title back through the transcript. Keying on the roster array's identity instead let a poll
+// that changed nothing else revert the row, because `keepRosterOrder` builds a new array on every
+// poll whether or not any Session actually changed (#2290).
+function pendingRenames(renamed: Record<string, string>, sessions: SessionsListed['sessions']) {
+  const pending: Record<string, string> = {}
+  for (const [sessionId, title] of Object.entries(renamed)) {
+    const landed = sessions.find((session) => session.id === sessionId)
+    if (landed === undefined || landed.title?.text !== title) pending[sessionId] = title
+  }
+  return pending
 }
 
 function filteredSessions(sessions: SessionsListed['sessions'], search: string) {
@@ -86,12 +93,10 @@ export function SessionsSidebarContent({
 }: SessionsSidebarContentProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
-  const [renamed, setRenamed] = useState<RenamedTitles | null>(null)
+  const [renamed, setRenamed] = useState<Record<string, string>>(NO_TITLES)
   const [search, setSearch] = useState('')
   const sessions = roster?.sessions ?? NO_SESSIONS
-  // A renamed title is shown locally until a roster read carries the new one. A read that finds
-  // nothing new hands back the same Sessions, so the override stands until something changes.
-  const renamedTitles = renamed?.sessions === sessions ? renamed.titles : NO_TITLES
+  const renamedTitles = useMemo(() => pendingRenames(renamed, sessions), [renamed, sessions])
   const visible = filteredSessions(sessions, search)
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
@@ -137,7 +142,7 @@ export function SessionsSidebarContent({
       <RenameDialog
         onRename={async (session, name) => {
           const accepted = await onRename(session, name)
-          setRenamed({ sessions, titles: { ...renamedTitles, [session.id]: accepted } })
+          setRenamed((current) => ({ ...current, [session.id]: accepted }))
         }}
         session={renameTarget}
         setSession={setRenameTarget}

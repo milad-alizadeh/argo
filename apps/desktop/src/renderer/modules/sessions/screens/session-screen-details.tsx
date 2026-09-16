@@ -2,7 +2,6 @@ import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import type { DevelopmentIdentity } from '@/development/instance'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { COMPOSER_COLUMN } from '../components/composer/composer-form'
@@ -21,7 +20,6 @@ type SessionScreenDetailsProps = {
     ReturnType<typeof import('../hooks/use-session-composer').useSessionComposer>,
     'failure' | 'props' | 'retry'
   >
-  developmentIdentity: DevelopmentIdentity | null
   permission: ReturnType<typeof import('../hooks/use-session-permission').useSessionPermission>
   questionPending: boolean
   session: SessionRosterRow | null
@@ -30,7 +28,6 @@ type SessionScreenDetailsProps = {
 
 export function SessionComposerArea({
   composer,
-  developmentIdentity,
   permission,
   questionPending,
   session,
@@ -50,7 +47,6 @@ export function SessionComposerArea({
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}
-        developmentIdentity={developmentIdentity}
         harness={harness}
         permissionPrompt={
           <PermissionPrompt
@@ -60,7 +56,6 @@ export function SessionComposerArea({
           />
         }
         plan={session?.plan ?? null}
-        ticket={session?.ticket ?? null}
       />
     </>
   )

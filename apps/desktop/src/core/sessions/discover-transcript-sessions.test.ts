@@ -1,77 +1,9 @@
-// The shared discovery engine (#2239), proven against a minimal fake CLI rather than either real
-// adapter: the bound window, its cursor, and chain resolution belong to this module regardless of
-// which CLI's files it is reading.
+// The shared discovery engine's bounded window and cursor (#2239), proven against a minimal fake
+// CLI rather than either real adapter.
 import assert from 'node:assert/strict'
-import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { test } from 'node:test'
-import { createTranscriptDiscoverer, ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
-import type { TranscriptRecord } from './transcript'
-
-// A fake CLI's transcript: one line, one message, so a fixture tree of many Sessions is cheap to
-// build. `writtenAt` sets the file's mtime directly, the field the engine's window sorts on, so a
-// test can name recency without racing the filesystem clock across many fast writes.
-async function writeFakeTranscript(root: string, sessionId: string, writtenAt: string) {
-  const file = path.join(root, `${sessionId}.jsonl`)
-  await writeFile(file, `${JSON.stringify({ uuid: sessionId, timestamp: writtenAt })}\n`)
-  const at = new Date(writtenAt)
-  await utimes(file, at, at)
-}
-
-function parseFakeLine(line: string): TranscriptRecord | null {
-  if (line.trim() === '') return null
-  const { uuid, timestamp } = JSON.parse(line) as { uuid: string; timestamp: string }
-  return {
-    kind: 'message',
-    uuid,
-    parentUuid: null,
-    originSessionId: null,
-    role: 'assistant',
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp,
-    entry: 'interactive',
-    stopReason: 'end_turn',
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: [{ shape: 'prose', text: 'Hi.' }],
-    toolCalls: [],
-    answeredCalls: [],
-    usage: null,
-  }
-}
-
-function fakeDiscoverer() {
-  return createTranscriptDiscoverer({
-    cli: 'fake',
-    parse: parseFakeLine,
-    transcriptPaths: async (root) => {
-      const names = await readdir(root).catch(() => [])
-      return names
-        .filter((name) => name.endsWith('.jsonl'))
-        .map((name) => ({ path: path.join(root, name), name }))
-    },
-  })
-}
-
-async function fakeRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-discover-'))
-  context.after(() => rm(root, { recursive: true, force: true }))
-  return root
-}
-
-// Sessions named so the Nth-newest one is `s<N>`, most recent first, spaced a minute apart so
-// their mtimes never tie.
-async function writeManySessions(root: string, count: number) {
-  const base = Date.parse('2026-09-13T12:00:00.000Z')
-  for (let index = 0; index < count; index += 1) {
-    const writtenAt = new Date(base - index * 60_000).toISOString()
-    await writeFakeTranscript(root, `s${index}`, writtenAt)
-  }
-}
+import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
+import { fakeDiscoverer, fakeRoot, writeManySessions } from './discover-transcript-sessions.fake'
 
 test('reads only the bounded window on a cold cursor, even when more files exist', async (context) => {
   const root = await fakeRoot(context)
