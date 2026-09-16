@@ -34,8 +34,10 @@ export function useSessionPermission(sessionId: string | null) {
     },
   })
   // The main process is where a Permission appears and where a decision clears it, so it says when
-  // to read again. Nothing polls: this read used to run twice a second whether or not one was
-  // waiting, and every answer re-rendered an ancestor the sidebar shares with this screen (#2299).
+  // to read again (#2299). The topic carries no Session id: a window shows one Session, so another
+  // Session's Permission costs this screen one read. Unlike the transcript reads, no fallback poll
+  // stands behind it, because the push comes from the process holding the Permission, not from a
+  // file watch the OS can drop.
   useWatchedQueries('permissions', [queryKey])
   const permissionDecision = usePermissionDecision()
   const decide = async (decision: PermissionAnswer) => {
