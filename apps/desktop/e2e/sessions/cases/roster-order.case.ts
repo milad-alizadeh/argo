@@ -70,12 +70,14 @@ async function proveUpdatedRowsStayPut(page, mutations) {
   return before
 }
 
-async function proveArchiveOrderAndFocus(page, mutations, withParent) {
+async function proveArchiveOrderAndFocus(page, withParent) {
   await chooseRosterStatus(page, 'All')
   await page.locator(archivedRow('plannedWork')).waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()
-  await mutations.archive('askPending', true)
+  await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['askPending'], archived: true }),
+  )
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
   await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
@@ -98,7 +100,9 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   // The reader is showing All, so the archived row stayed in the list and kept its place in the
   // roster's remembered order (`keepRosterOrder` in session-roster-query.ts). Restoring it therefore
   // returns it to that place rather than to the head, where a newly discovered Session lands.
-  await mutations.archive('askPending', false)
+  await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['askPending'], archived: false }),
+  )
   await waitForActiveSessions(page, withParent)
   assert.deepEqual(await readRosterIds(page), withParent)
 }
@@ -132,5 +136,5 @@ export async function proveStableRosterPolling(page, mutations) {
     ),
     true,
   )
-  await proveArchiveOrderAndFocus(page, mutations, withParent)
+  await proveArchiveOrderAndFocus(page, withParent)
 }

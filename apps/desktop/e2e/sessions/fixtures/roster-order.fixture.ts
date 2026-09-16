@@ -1,9 +1,5 @@
 import { appendFile, rm, writeFile } from 'node:fs/promises'
 import { fixturePath, proofCwd } from '../../../mocks/sessions/mock-transcript-files'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '../../../src/core/storage/session-archive'
 
 function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
   return `${JSON.stringify({
@@ -69,12 +65,6 @@ async function addRecentSession(transcripts) {
   )
 }
 
-// The running app reads Argo's own archive document on every Roster poll, so a mutation here is
-// what a second Argo window archiving the Session would leave behind (#2315).
-async function setArchived(userData, sessionId, archived) {
-  await createSessionArchiveStore(sessionArchivePath(userData)).setArchived([sessionId], archived)
-}
-
 async function updateProseRoster(transcripts) {
   const title = JSON.stringify({ type: 'custom-title', customTitle: 'Prose renamed in place' })
   const answer = JSON.stringify({
@@ -100,7 +90,7 @@ async function updateProseRoster(transcripts) {
   await appendFile(fixturePath(transcripts, 'prose'), `${title}\n${answer}\n`)
 }
 
-export function rosterOrderMutations({ userData, transcripts }) {
+export function rosterOrderMutations({ transcripts }) {
   return {
     update: () => updateProseRoster(transcripts),
     addReplacementChild: () => addReplacementChild(transcripts),
@@ -111,6 +101,5 @@ export function rosterOrderMutations({ userData, transcripts }) {
         rm(fixturePath(transcripts, 'newSession')),
         rm(fixturePath(transcripts, 'newSessionTwo')),
       ]),
-    archive: (sessionId, archived) => setArchived(userData, sessionId, archived),
   }
 }

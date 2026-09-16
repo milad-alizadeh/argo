@@ -133,7 +133,6 @@ function registerFeedAndPlanCases(run: SessionProofRun, box: PageBox) {
       box.get(),
       rosterOrderMutations({
         transcripts: run.fixture.claudeTranscripts,
-        userData: run.fixture.userData,
       }),
     )
   })
