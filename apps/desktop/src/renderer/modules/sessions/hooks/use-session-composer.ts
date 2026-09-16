@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
@@ -94,23 +94,20 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       setFailure,
       queryClient,
     })
-  const onSend: Send = useCallback(
-    (prompt, setup, attachments) => {
-      const turn = { prompt, setup, attachments }
-      return identity.kind === 'session'
-        ? sendToSessionIdentity(
-            { queryClient, roster, marker, send, setFailure, watchTurn },
-            identity.sessionId,
-            turn,
-          )
-        : sendToDraftIdentity(
-            { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn },
-            identity,
-            turn,
-          )
-    },
-    [cli, cockpit, identity, marker, navigate, queryClient, roster, send, start, watchTurn],
-  )
+  const onSend: Send = async (prompt, setup, attachments) => {
+    const turn = { prompt, setup, attachments }
+    return identity.kind === 'session'
+      ? sendToSessionIdentity(
+          { queryClient, roster, marker, send, setFailure, watchTurn },
+          identity.sessionId,
+          turn,
+        )
+      : sendToDraftIdentity(
+          { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn },
+          identity,
+          turn,
+        )
+  }
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
