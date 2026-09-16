@@ -17,6 +17,11 @@ import {
   STATUS_LABELS,
   STATUS_MARKS,
 } from './session-roster-status'
+import {
+  UnreadMarkerPrototypeLeading,
+  UnreadMarkerPrototypeTrailing,
+  useUnreadMarkerPrototypeVariant,
+} from './unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -75,6 +80,7 @@ export function SessionRosterItem({
   tabIndex: number
 }) {
   const { t } = useTranslation('sessions')
+  const unreadPrototype = useUnreadMarkerPrototypeVariant()
   const [pointerFocused, setPointerFocused] = useState(false)
   const rowHighlight = rowHighlightOf(checked, selected, archived)
   const focusHighlight = pointerFocused
@@ -106,6 +112,7 @@ export function SessionRosterItem({
         type="button"
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
+          <UnreadMarkerPrototypeLeading variant={unreadPrototype} />
           <span className="roster-harness-mark">
             {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
           </span>
@@ -137,6 +144,10 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
+            <UnreadMarkerPrototypeTrailing variant={unreadPrototype} />
+            {unreadPrototype === null || unreadPrototype === 'C' ? null : (
+              <span className="sr-only">Unread</span>
+            )}
           </span>
           <ActivityLine session={session} />
           {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
