@@ -4,6 +4,7 @@ import { currentUserBlocks } from './current-user-blocks'
 import { delegatedRequest } from './harness-envelopes'
 import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
+import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
@@ -76,7 +77,7 @@ function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message') return null
+  if (payload.type !== 'message') return readPlanCall(payload)
   if (typeof payload.id !== 'string') return null
   if (payload.role === 'assistant') {
     const blocks = messageBlocks(payload.content, ['output_text'])
