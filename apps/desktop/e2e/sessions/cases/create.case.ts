@@ -7,7 +7,7 @@ import type { SessionCliBackend } from '../session-cli-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// This runs before the resume cases, so its folder remains empty and the Roster row must precede a CLI transcript.
+// The mock folder starts empty, so the Roster row must precede a CLI transcript.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionCliBackend,

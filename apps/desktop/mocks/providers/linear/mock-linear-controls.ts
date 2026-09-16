@@ -14,7 +14,8 @@ export function linearControls(
       state.signIn = answer
     },
     addTeam: (team) => {
-      state.teams.set(team.id, team)
+      // A copy, so a status one mock changes never reaches the cast another mock starts from.
+      state.teams.set(team.id, structuredClone(team))
     },
     tokenLifetime: (seconds) => {
       state.lifetime = seconds

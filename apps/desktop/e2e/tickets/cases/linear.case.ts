@@ -2,9 +2,7 @@
 // Linear, beside a GitHub Account that no Linear failure may touch.
 import assert from 'node:assert/strict'
 import { test } from '@playwright/test'
-import type { Locator } from 'playwright-core'
 import { ADA } from '../../../mocks/providers/linear/mock-linear-cast'
-import { openedURLs } from '../fixtures/tickets.fixture'
 import {
   accountRow,
   accountsDialog,
@@ -17,6 +15,7 @@ import {
   press,
   type Run,
   room,
+  signInToLinear,
   storeText,
 } from '../screen'
 
@@ -26,22 +25,6 @@ const foot = (run: Run, state: string) =>
   run.page.getByRole('button', { name: `Linear · ${ADA.name} ${state}` })
 const renewals = (run: Run) =>
   run.fixture.linear.requests.filter((request) => request === 'POST /oauth/token').length
-
-// One consent through the dialog. The browser stub loads Linear's page, which answers for Ada and
-// redirects to the cockpit's loopback, so no code is shown and none is typed.
-async function signIn(run: Run, start: { scope: Locator; name: string }) {
-  run.fixture.linear.signIn(ADA)
-  const before = (await openedURLs(run.application)).length
-  await press(start.scope, start.name)
-  const status = accountsDialog(run.page)
-    .getByRole('status')
-    .filter({ hasText: `${ADA.name}.` })
-  await status.waitFor()
-  const opened = (await openedURLs(run.application)).slice(before)
-  assert.equal(opened.length, 1)
-  assert.ok(opened[0]?.startsWith(`${run.fixture.linear.origin}/oauth/authorize?`))
-  return status.textContent()
-}
 
 async function assertSealed(run: Run) {
   const listing = await run.page.evaluate(() =>
@@ -57,7 +40,7 @@ export async function proveLinearConnect(run: Run) {
   await run.page.getByRole('button', { name: 'Accounts', exact: true }).click()
   const start = { scope: accountsDialog(run.page), name: 'Connect a Linear Account' }
   await test.step('linear-connect', async () => {
-    assert.equal(await signIn(run, start), `Connected ${ADA.name}.`)
+    assert.equal(await signInToLinear(run, start), `Connected ${ADA.name}.`)
     await ada(run).getByText(ADA.workspace).waitFor()
   })
   await test.step('linear-sealed-grant', () => assertSealed(run))
@@ -147,7 +130,7 @@ export async function proveLinearExpired(run: Run) {
   })
   await test.step('linear-reconnect', async () => {
     const start = { scope: ada(run), name: 'Reconnect' }
-    assert.equal(await signIn(run, start), `Signed in again as ${ADA.name}.`)
+    assert.equal(await signInToLinear(run, start), `Signed in again as ${ADA.name}.`)
     await press(accountsDialog(run.page), 'Close')
     assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
   })
