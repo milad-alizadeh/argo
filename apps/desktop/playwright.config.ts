@@ -23,7 +23,13 @@ export default defineConfig<object, SessionBackendOptions>({
     { name: 'sessions', testDir: 'e2e/sessions' },
     { name: 'tickets', testDir: 'e2e/tickets' },
     ...(process.env.ARGO_E2E_ADVERSARIAL === '1'
-      ? [{ name: 'sessions-adversarial', testDir: 'e2e/sessions', testMatch: '**/adversarial.e2e.ts' }]
+      ? [
+          {
+            name: 'sessions-adversarial',
+            testDir: 'e2e/sessions',
+            testMatch: '**/adversarial.e2e.ts',
+          },
+        ]
       : []),
     // The signed-in local CLIs, never CI. A real reply can take the backend's whole 180s budget.
     ...(process.env.ARGO_E2E_REAL === '1'
