@@ -1,15 +1,23 @@
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionRosterRow, SessionTitle } from './models'
+import { TITLE_SOURCES } from './models'
 import { rollupSessionStatus } from './session-status-rollup'
 
-type ReconciliationSource = 'held' | 'observed'
+// `stronger-title` reads both rows and returns a title, so only `title` may carry it.
+type ReconciliationSource<Field extends keyof SessionRosterRow> = Field extends 'title'
+  ? 'held' | 'observed' | 'stronger-title'
+  : 'held' | 'observed'
+
+type SessionRosterReconciliation = {
+  [Field in keyof SessionRosterRow]: ReconciliationSource<Field>
+}
 
 export const sessionRosterReconciliation = {
   id: 'observed',
   retiredIds: 'observed',
   cli: 'observed',
   posture: 'held',
-  title: 'held',
+  title: 'stronger-title',
   status: 'observed',
   entry: 'observed',
   cwd: 'observed',
@@ -36,16 +44,29 @@ export const sessionRosterReconciliation = {
   handoffTo: 'observed',
   handoffFrom: 'observed',
   setup: 'observed',
-} as const satisfies Record<keyof SessionRosterRow, ReconciliationSource>
+} as const satisfies SessionRosterReconciliation
+
+function titleRank(title: SessionTitle | null): number {
+  return title === null ? TITLE_SOURCES.length : TITLE_SOURCES.indexOf(title.source)
+}
+
+// A managed row's title starts at the opening prompt, and discovery can find a stronger one: the
+// name the CLI gave the thread, or a rename it has persisted. The held title wins a tie, so a
+// rename Argo has applied outlives a sweep that has not caught up with it (#2256).
+function strongerTitle(observed: SessionRosterRow, held: SessionRosterRow): SessionTitle | null {
+  return titleRank(observed.title) < titleRank(held.title) ? observed.title : held.title
+}
 
 function reconcileManagedRow(observed: SessionRosterRow, held: SessionRosterRow): SessionRosterRow {
+  const pick = {
+    held: (field: keyof SessionRosterRow) => held[field],
+    observed: (field: keyof SessionRosterRow) => observed[field],
+    'stronger-title': () => strongerTitle(observed, held),
+  } as const
   return Object.fromEntries(
     (
-      Object.entries(sessionRosterReconciliation) as [
-        keyof SessionRosterRow,
-        ReconciliationSource,
-      ][]
-    ).map(([field, source]) => [field, source === 'held' ? held[field] : observed[field]]),
+      Object.entries(sessionRosterReconciliation) as [keyof SessionRosterRow, keyof typeof pick][]
+    ).map(([field, source]) => [field, pick[source](field)]),
   ) as SessionRosterRow
 }
 

@@ -35,6 +35,8 @@
     "src/core/commands/**/*.test.ts",
     "src/core/contract/every-domain-refuses-untrusted-frames.test.ts",
     "src/agents/codex/sessions/thread-titles.test.ts",
-    "src/agents/codex/sessions/thread-names.test.ts"
+    "src/agents/codex/sessions/thread-names.test.ts",
+    "src/agents/codex/sessions/managed-thread-titles.test.ts",
+    "src/agents/codex/sessions/thread-title-fixtures.ts"
   ]
 }
