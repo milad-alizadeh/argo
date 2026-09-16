@@ -1,10 +1,30 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
+import type { TranscriptRecord } from '../transcript'
 
 type TranscriptMatch = { size: number }
 type TranscriptMatcher = {
   isAssistant: (line: string) => boolean
   isPrompt: (line: string, prompt: string) => boolean
+}
+
+export function createTranscriptMatcher(
+  parse: (line: string) => TranscriptRecord | null,
+): TranscriptMatcher {
+  return {
+    isAssistant: (line) => {
+      const record = parse(line)
+      return record?.kind === 'message' && record.role === 'assistant'
+    },
+    isPrompt: (line, prompt) => {
+      const record = parse(line)
+      return (
+        record?.kind === 'message' &&
+        record.role === 'user' &&
+        record.blocks.some((block) => block.shape === 'prose' && block.text === prompt)
+      )
+    },
+  }
 }
 
 async function transcriptFiles(folder: string): Promise<string[]> {

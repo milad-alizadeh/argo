@@ -1,6 +1,5 @@
-// The real packaged app must show its wait state and reject repeated Sends while the CLI is
-// deliberately silent (#2119). What a reply looks like is the backend's answer, never a string
-// held here (#2308).
+// The packaged app shows its wait state and rejects repeated Sends while the CLI is silent (#2119).
+// The backend decides what a reply looks like; this proof holds no reply string (#2308).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
 import type { SessionCliBackend } from './session-cli-backend'
