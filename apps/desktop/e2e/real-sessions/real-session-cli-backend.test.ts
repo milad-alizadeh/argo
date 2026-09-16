@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { SessionFixture } from '../../mocks/sessions/session-cli-backend'
@@ -68,6 +68,17 @@ test('reaches the Claude login in the real Keychain from the isolated HOME', asy
     expect(await realpath(path.join(home, 'Library', 'Keychains'))).toBe(
       await realpath(path.join(sourceHome, 'Library', 'Keychains')),
     )
+  }))
+
+// Argo reads an absent transcript folder as unreachable, and the CLIs create theirs only on first write (#2356).
+test('gives the isolated HOME the transcript folders Argo reads', async () =>
+  inTemporaryRoot(async (root) => {
+    const sourceHome = await writeSubscriptionCredentials(root)
+
+    const home = await prepareRealSessionHome(path.join(root, 'run'), sourceHome)
+
+    expect(await readdir(path.join(home, '.claude', 'projects'))).toEqual([])
+    expect(await readdir(path.join(home, '.codex', 'sessions'))).toEqual([])
   }))
 
 test('names authentication when a subscription credential is absent', async () =>

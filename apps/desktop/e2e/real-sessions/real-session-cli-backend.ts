@@ -57,6 +57,8 @@ export async function prepareRealSessionHome(root: string, sourceHome: string) {
       await mkdir(path.dirname(linked), { recursive: true })
       await symlink(credentialPath(sourceHome, parts), linked)
     }
+    // A machine the CLI has run on holds this folder, and Argo reads its absence as unreachable (#2356).
+    await mkdir(REAL_CLIS[cli].transcripts(home), { recursive: true })
   }
   return home
 }

@@ -91,6 +91,17 @@ test('reports a Session no window can find as absent rather than growing forever
   assert.equal(await readSessionFiles(root, 'never-written'), null)
 })
 
+// A Session Argo just started has no transcript yet, and every Feed poll asks for it (#2356).
+test('answers a Session no transcript is named for without reading the tree', async (context) => {
+  const root = await mockRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
+  const read: string[] = []
+  const { readSessionFiles } = mockDiscoverer((line) => read.push(line))
+
+  assert.equal(await readSessionFiles(root, 'not-written-yet'), null)
+  assert.equal(read.length, 0)
+})
+
 // A CLI can append a Turn inside one mtime tick, and on a coarse-timestamp filesystem the file
 // then reads as untouched. The Roster must still follow it (#2241).
 test('follows a transcript appended to without its mtime moving', async (context) => {
