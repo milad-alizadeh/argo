@@ -48,7 +48,8 @@ export const LinkedTicket: Story = {
     await expect(canvas.getByText('Isolate desktop development launches')).toBeVisible()
     await expect(canvas.getByText(identity.worktree)).toBeVisible()
     // Two development apps are told apart by the instance, not by the branch they share.
-    await expect(canvas.getByText(identity.id)).toBeVisible()
+    await expect(canvas.getByText('-a1b2c3d4')).toBeVisible()
+    await expect(canvas.getByTitle(identity.id)).toBeVisible()
     await expect(bar).toHaveAttribute('data-development-instance', identity.id)
     await expect(bar).toHaveAttribute('data-ticket-key', '#2173')
   },
