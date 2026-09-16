@@ -141,9 +141,10 @@ export function CockpitShell({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 overflow-hidden bg-background">
-      <CockpitRail rail={rail} />
-      <ResizablePanelGroup
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="relative flex min-h-0 flex-1">
+        <CockpitRail rail={rail} />
+        <ResizablePanelGroup
         orientation="horizontal"
         className="relative min-w-0 flex-1"
         onLayoutChanged={synchronizeSidebarCollapsed}
@@ -178,8 +179,9 @@ export function CockpitShell({
             {children}
           </div>
         </ResizablePanel>
-      </ResizablePanelGroup>
-      {footer ? <div className="absolute right-0 bottom-0 left-0 z-20 bg-background">{footer}</div> : null}
+        </ResizablePanelGroup>
+      </div>
+      {footer ? <div className="shrink-0">{footer}</div> : null}
     </div>
   )
 }
