@@ -118,6 +118,32 @@ function feedFor(sessionId: string) {
   } satisfies SessionFeed
 }
 
+function delegationFeedFor(delegation: SessionDelegation) {
+  const sessionId = `composer-review#${delegation.id}`
+  return {
+    version: 1,
+    type: 'session.feed.read',
+    requestId: 'screen-review-delegation-feed',
+    sessionId,
+    chainId: sessionId,
+    revision: `screen-review-${delegation.id}`,
+    rows: [
+      {
+        shape: 'prose',
+        id: 'delegation-brief',
+        role: 'user',
+        text: 'Use the approved prototype to review the Session composer in context.',
+      },
+      ...Array.from({ length: 18 }, (_unused, index) => ({
+        shape: 'prose' as const,
+        id: `delegation-review-${index}`,
+        role: 'assistant' as const,
+        text: `Review finding ${index + 1}: The inspector keeps a complete implementation report readable after it closes and reopens, including long evidence, acceptance criteria, and release notes.`,
+      })),
+    ],
+  } satisfies SessionFeed
+}
+
 // The Roster reads its own Session list now (#2284), so a screen review stubs the read rather than
 // handing it a fixed roster prop.
 function withListedSessions(sessions: Session[]) {
@@ -179,7 +205,7 @@ function ReviewInspector({
     <SessionInspector
       activeEvidenceId={null}
       delegation={delegation}
-      delegationFeed={delegation === null ? null : feedFor(delegation.id)}
+      delegationFeed={delegation === null ? null : delegationFeedFor(delegation)}
       evidence={null}
       sessionId={null}
       handoff={null}
@@ -319,6 +345,19 @@ function expectTranscriptRowsDoNotOverlap(canvasElement: HTMLElement) {
   expect(responseRow.getBoundingClientRect().top).toBeGreaterThanOrEqual(
     promptRow.getBoundingClientRect().bottom,
   )
+}
+
+function expectVisibleFeedRowsDoNotOverlap(history: HTMLElement) {
+  const rows = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')].filter(
+    (row) => row.getBoundingClientRect().height > 0,
+  )
+  for (const [index, row] of rows.entries()) {
+    const previous = rows[index - 1]
+    if (previous === undefined) continue
+    expect(row.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      previous.getBoundingClientRect().bottom,
+    )
+  }
 }
 
 function expectSessionsSidebarIsOpen(canvasElement: HTMLElement) {
@@ -480,6 +519,26 @@ async function pickSubagent(canvas: ReturnType<typeof within>) {
   )
 }
 
+async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof within>) {
+  const inspector = canvas.getByRole('region', { name: 'Subagent' })
+  await expect(inspector).toBeVisible()
+  expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
+  const subagentMessage = within(inspector)
+    .getAllByText('Use the approved prototype to review the Session composer in context.')
+    .find((message) => message.getBoundingClientRect().height > 0)
+  if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
+  await expect(subagentMessage).toBeVisible()
+  expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText(SESSION_HISTORY_LABEL))
+
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+  await waitFor(() =>
+    expect(inspector.querySelector('.feed__document')).toHaveAttribute('data-active', 'false'),
+  )
+  await pickSubagent(canvas)
+  const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
+  expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText(SESSION_HISTORY_LABEL))
+}
+
 export const Open: Story = {
   render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
@@ -517,24 +576,9 @@ export const Open: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
-    const inspector = canvas.getByRole('region', { name: 'Subagent' })
-    await expect(inspector).toBeVisible()
-    expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
     await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
-    )
-    await pickSubagent(canvas)
-    const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
-    await expect(reopenedInspector).toBeVisible()
-    expect(reopenedInspector.getBoundingClientRect().width).toBeGreaterThan(0)
-    const subagentMessage = within(reopenedInspector)
-      .getAllByText('Use the approved prototype to review the Session composer in context.')
-      .find((message) => message.getBoundingClientRect().height > 0)
-    if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
-    await expect(subagentMessage).toBeVisible()
+    await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
   },

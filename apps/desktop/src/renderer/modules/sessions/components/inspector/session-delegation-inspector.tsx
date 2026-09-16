@@ -2,6 +2,7 @@
 // in place of it (#1582). The document is the Feed's, so a Subagent reads exactly the way the
 // Session it belongs to reads.
 
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionDelegation } from '@/core/sessions/models'
 import { FeedDocument } from '../../feed/feed-document'
@@ -9,6 +10,21 @@ import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionEvidence, SessionFeed } from '../../types'
 
 import '../../feed/feed.css'
+
+function useVisibleInspector() {
+  const inspector = useRef<HTMLElement>(null)
+  const [active, setActive] = useState(false)
+  useLayoutEffect(() => {
+    const element = inspector.current
+    if (element === null) return
+    const synchronizeActive = () => setActive(element.getBoundingClientRect().width > 0)
+    const observer = new ResizeObserver(synchronizeActive)
+    observer.observe(element)
+    synchronizeActive()
+    return () => observer.disconnect()
+  }, [])
+  return { active, inspector }
+}
 
 export function SessionDelegationInspector({
   activeEvidenceId,
@@ -26,16 +42,18 @@ export function SessionDelegationInspector({
   onOpenSession: (sessionId: string) => void
 }) {
   const { t } = useTranslation('sessions')
+  const { active, inspector } = useVisibleInspector()
   return (
     <section
       aria-label={t('subagent')}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+      ref={inspector}
     >
       <div className="feed min-h-0 flex-1">
         {feed === null ? null : (
           <FeedDocument
             actions={{
-              active: true,
+              active,
               activeEvidenceId,
               answeringQuestionId: null,
               onAnswerQuestion: () => {},
