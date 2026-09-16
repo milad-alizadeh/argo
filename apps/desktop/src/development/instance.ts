@@ -51,7 +51,7 @@ function required(environment: Environment, name: string): string {
   return value
 }
 
-function absolute(value: string, name: string): string {
+export function absolute(value: string, name: string): string {
   if (!path.isAbsolute(value)) throw new Error(`${name} must be an absolute path.`)
   return value
 }

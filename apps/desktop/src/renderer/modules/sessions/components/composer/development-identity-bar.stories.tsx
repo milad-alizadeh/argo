@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 
+import { WINDOW_MINIMUM_WIDTH } from '@/core/window/minimum-width'
+
 import { DevelopmentIdentityBar } from './development-identity-bar'
 
 const identity = {
@@ -20,8 +22,14 @@ const meta = {
   },
   component: DevelopmentIdentityBar,
   decorators: [
-    (Story) => (
-      <div className="mx-auto max-w-(--size-session-column)">
+    // The bar sits in the Session column when a Ticket is linked, and spans the shell footer when
+    // none is. `fullWidth` picks which of the two a story renders in.
+    (Story, context) => (
+      <div
+        className={
+          context.parameters.fullWidth ? 'w-full' : 'mx-auto max-w-(--size-session-column)'
+        }
+      >
         <Story />
       </div>
     ),
@@ -39,7 +47,40 @@ export const LinkedTicket: Story = {
 
     await expect(canvas.getByText('Isolate desktop development launches')).toBeVisible()
     await expect(canvas.getByText(identity.worktree)).toBeVisible()
+    // Two development apps are told apart by the instance, not by the branch they share.
+    await expect(canvas.getByText(identity.id)).toBeVisible()
     await expect(bar).toHaveAttribute('data-development-instance', identity.id)
     await expect(bar).toHaveAttribute('data-ticket-key', '#2173')
+  },
+}
+
+// The shipped shell footer: no Ticket, the whole window wide, and an instance of the length the
+// launcher really produces (worktree folder plus eight hash characters).
+const LONG_INSTANCE = {
+  id: 'ticket-2304-shared-account-store-3a340324',
+  label: '#2304',
+  title: 'Argo dev · #2304 · :45304',
+  worktree: '/Users/developer/argo/.claude/worktrees/ticket-2304-shared-account-store',
+}
+
+export const UnlinkedAtWindowMinimum: Story = {
+  args: { identity: LONG_INSTANCE, ticket: null },
+  decorators: [
+    (Story) => (
+      <div style={{ width: WINDOW_MINIMUM_WIDTH }}>
+        <Story />
+      </div>
+    ),
+  ],
+  parameters: { fullWidth: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(LONG_INSTANCE.id)).toBeVisible()
+    // A real instance runs past 250px in this font. It shares the squeeze with the worktree path
+    // instead of taking its width outright, so the path still shows more than its first folder.
+    const worktree = canvas.getByText(LONG_INSTANCE.worktree)
+    await expect(worktree.clientWidth).toBeGreaterThan(150)
+    // Truncated either way, so the whole id stays readable on hover.
+    await expect(canvas.getByTitle(LONG_INSTANCE.id)).toBeInTheDocument()
   },
 }
