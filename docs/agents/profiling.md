@@ -74,6 +74,25 @@ no CPU samples. Delete the file when you are done.
 If `profiler stop` prints `No tracing in progress` while the app still runs, start the recording
 again.
 
+## A packaged journey
+
+Run the portable Session journeys with a CPU profile and per-case wall times:
+
+```sh
+bun run --cwd apps/desktop test:journey-profile
+```
+
+The run prints a temporary `journey-cpu-trace.json` and `journey-timings.json`. Read the CPU trace
+with the same function report as the dev instance:
+
+```sh
+jq -r -f scripts/profiling/hot-functions.jq <journey-cpu-trace.json>
+```
+
+The trace contains renderer work, including React rendering, and the timings file lists the wall
+time for every journey case. It makes no performance assertion: compare runs on the same machine.
+Delete the temporary directory when you are done.
+
 ## Dev-only noise
 
 The dev build pays for React's development mode. Discount these entries before you name a
