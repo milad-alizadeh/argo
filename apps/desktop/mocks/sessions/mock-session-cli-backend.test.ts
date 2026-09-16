@@ -7,7 +7,10 @@ import type {
   SessionCliRun,
   SessionFixture,
 } from '../../e2e/sessions/session-cli-backend'
-import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../src/core/sessions/proof-protocol'
+import {
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../src/core/sessions/proof-protocol'
 import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
 import { mockCodexCli } from '../cli/codex/mock-codex-cli'
 import { createMockSessionCliBackend } from './mock-session-cli-backend'
@@ -62,6 +65,14 @@ test('holds the reply back only when a case asks for a slow CLI', () =>
     expect(run.launchEnv({ slowReply: false })).toEqual({ [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0' })
     const slow = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_DELAY_MS_ENV]
     expect(Number(slow)).toBeGreaterThan(0)
+  }))
+
+test('passes an adversarial seed to both mock CLIs', () =>
+  started(async ({ run }) => {
+    expect(run.launchEnv({ slowReply: false, adversarialSeed: 'replay-this' })).toMatchObject({
+      [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: 'replay-this',
+      [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
+    })
   }))
 
 test('reads a recorded Claude reply out of the transcript the mock wrote', () =>

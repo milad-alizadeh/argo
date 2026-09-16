@@ -54,7 +54,6 @@ function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
 export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps) {
   const onJumpToLatestChange = actions.onJumpToLatestChange ?? ignoreJumpToLatestChange
   const onOpenSession = actions.onOpenSession
-  const stallTimeoutMs = actions.stallTimeoutMs
   const live = liveReading(reading, liveFacts)
   const feed = live.reading
   const toolGroups = useRef(new ToolGroupState()).current
@@ -77,7 +76,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     revision: feed.revision,
     rows: feed.rows,
     isRunning: live.isRunning,
-    stallTimeoutMs,
+    stallTimeoutMs: actions.stallTimeoutMs,
   })
   const lastRow = feed.rows[feed.rows.length - 1]
   // A running assistant reply or tool group is the Feed's live tail.

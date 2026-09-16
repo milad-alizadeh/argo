@@ -116,7 +116,7 @@ export function SessionScreenView() {
           compactionTokens: session?.compactionTokens ?? null,
           handoffStartedAt: session?.handoffStartedAt ?? null,
           handoffTo: session?.handoffTo ?? null,
-          isRunning: session?.status === 'running',
+          isRunning: session?.status === 'running' || session?.status === 'permission',
           optimisticRow: composer.optimisticRow,
           posture: session?.posture ?? null,
           turnMarker: composer.markerView,

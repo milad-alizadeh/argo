@@ -8,7 +8,10 @@ import type {
   SessionFixture,
   SessionReply,
 } from '../../e2e/sessions/session-cli-backend'
-import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../src/core/sessions/proof-protocol'
+import {
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../src/core/sessions/proof-protocol'
 import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
 import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
 import { mockCodexCli } from '../cli/codex/mock-codex-cli'
@@ -54,9 +57,15 @@ export function createMockSessionCliBackend(): SessionCliBackend {
       return {
         executables,
         transcripts: { ...roots, archive: fixture.archive },
-        launchEnv: ({ slowReply }) => ({
-          [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
-        }),
+        launchEnv: ({ slowReply, adversarialSeed }) => {
+          if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
+          return {
+            [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
+            ...(adversarialSeed === undefined
+              ? {}
+              : { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
+          }
+        },
       }
     },
     waitForReply: (page, reply) => feedMark(page, reply).waitFor({ timeout: BUDGET_MS }),
