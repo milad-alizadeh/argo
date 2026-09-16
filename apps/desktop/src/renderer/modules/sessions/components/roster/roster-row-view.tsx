@@ -1,17 +1,15 @@
 import type { SessionId } from '../../types'
-import { ArchivedSectionRow, ArchivedToggleRow } from './archived-status-row'
+import { ArchivedSectionRow } from './archived-status-row'
 import type { RosterRow, RosterRowHandlers } from './roster-rows'
 import { SessionRosterItem } from './session-roster-item'
 
 export function RosterRowView({
-  archivedLabel,
   onArchive,
   onFocus,
   onLinkTicket,
   onOpenTicket,
   onRename,
   onSelect,
-  onToggleArchived,
   onToggleSelect,
   onUnlinkTicket,
   renamedTitles,
@@ -20,22 +18,12 @@ export function RosterRowView({
   selectedSessionId,
   tabStop,
 }: RosterRowHandlers & {
-  archivedLabel: string
   renamedTitles: Record<string, string>
   row: RosterRow
   selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
 }) {
-  if (row.kind === 'archivedToggle') {
-    return (
-      <ArchivedToggleRow
-        archivedLabel={archivedLabel}
-        onToggle={onToggleArchived}
-        open={row.open}
-      />
-    )
-  }
   if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
     return <div aria-hidden="true" />
   }

@@ -10,6 +10,7 @@ import { useSessions } from '../../hooks/use-sessions'
 import { useComposerStore } from '../../state/use-composer-store'
 import { newSessionTarget, useSessionCreationStore } from '../../state/use-session-creation-store'
 import type { Session, SessionId } from '../../types'
+import { useRosterOrder } from './roster-order'
 import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
 import { SessionsSidebarContent } from './sessions-sidebar'
 
@@ -35,17 +36,21 @@ function useRestoreSelectedSession(options: {
   }, [navigate, roster, rosterError, sessionId])
 }
 
+// The sidebar is the only reader that shows the roster as a list, so the order it holds rows in is
+// its own concern rather than the read's.
+function useSidebarRoster(projectRoot: string | null) {
+  const read = useSessions(null, true, projectRoot)
+  return { ...read, roster: useRosterOrder(read.roster, projectRoot) }
+}
+
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
   const lastHarness = useComposerStore(({ harness }) => harness)
   const pending = useSessionCreationStore(({ pending }) => pending)
-  const { roster, rosterError, hasMoreSessions, fetchMoreSessions } = useSessions(
-    null,
-    true,
-    cockpit.project?.path ?? null,
-  )
+  const { roster, rosterError, hasMoreSessions, isFetchingMoreSessions, fetchMoreSessions } =
+    useSidebarRoster(cockpit.project?.path ?? null)
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)
@@ -56,6 +61,7 @@ export function SessionsSidebar() {
     <>
       <SessionsSidebarContent
         hasMoreSessions={hasMoreSessions}
+        isFetchingMoreSessions={isFetchingMoreSessions}
         onArchiveSelected={archiveSelected}
         onFetchMoreSessions={fetchMoreSessions}
         onLinkTicket={setLinkTarget}

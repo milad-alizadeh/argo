@@ -1,5 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useArchivedSessions } from '../../hooks/use-archived-sessions'
+import {
+  showsArchived,
+  useRosterFilterStore,
+  useRosterStatus,
+} from '../../state/use-roster-filter-store'
 import type { SessionId } from '../../types'
 
 // Ids the archive query has already surfaced, so a click on a row already on screen never counts
@@ -10,7 +15,8 @@ export function useArchivedSection(
   visibleSessionIds: readonly SessionId[],
   rosterResolved: boolean,
 ) {
-  const [open, setOpen] = useState(false)
+  const status = useRosterStatus()
+  const setStatus = useRosterFilterStore((state) => state.setStatus)
   const loadedIds = useRef<Set<SessionId>>(new Set())
   // A selection that is not among the active rows AND not already loaded here can only be an
   // archived Session restored from a route or a persisted choice: ask the reader for it by id
@@ -24,7 +30,7 @@ export function useArchivedSection(
     !loadedIds.current.has(selectedSessionId)
       ? selectedSessionId
       : null
-  const enabled = open || restoreId !== null
+  const enabled = showsArchived(status) || restoreId !== null
   const { error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, restored, sessions } =
     useArchivedSessions(enabled, restoreId)
 
@@ -33,9 +39,11 @@ export function useArchivedSection(
     if (restored !== null) loadedIds.current.add(restored.id)
   })
 
+  // A selected Session that turns out to be archived widens the filter rather than appearing under a
+  // filter that excludes it, so what the reader sees and what the header says stay the same claim.
   useEffect(() => {
-    if (restored !== null) setOpen(true)
-  }, [restored])
+    if (restored !== null) setStatus('all')
+  }, [restored, setStatus])
 
   // `restored` can fall outside every page already loaded, so it is shown by adding it to the
   // list rather than assuming a later page will bring it into view.
@@ -51,7 +59,5 @@ export function useArchivedSection(
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    open,
-    setOpen,
   }
 }

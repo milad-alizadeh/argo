@@ -10,6 +10,7 @@
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",
+  "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
     "roster": "Argo could not read the Sessions again.",
@@ -138,6 +139,11 @@
     "complete": "Assistant response complete."
   },
   "archived": "Archived",
+  "filterSessions": "Filter Sessions",
+  "rosterStatusLabel": "Status",
+  "rosterStatusActive": "Active",
+  "rosterStatusArchived": "Archived",
+  "rosterStatusAll": "All",
   "archivedEmpty": "No archived Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",

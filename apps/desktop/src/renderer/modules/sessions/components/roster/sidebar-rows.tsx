@@ -1,4 +1,5 @@
 import type { SelectionModifier } from '../../state/roster-selection'
+import { useRosterStatus } from '../../state/use-roster-filter-store'
 import type { Session, SessionId, SessionsListed } from '../../types'
 import { rosterRows } from './roster-rows'
 import { RosterVirtualList } from './roster-virtual-list'
@@ -40,13 +41,14 @@ export function SidebarRows({
   visible: SessionsListed['sessions']
 }) {
   const visibleSessionIds = visible.map((session) => session.id)
+  const status = useRosterStatus()
   const archived = useArchivedSection(selectedSessionId, visibleSessionIds, showArchive)
   const rows = rosterRows({
     active: visible,
-    archivedOpen: archived.open,
     archived,
     hasMoreSessions,
     showArchive,
+    status,
   })
 
   return (
@@ -60,7 +62,6 @@ export function SidebarRows({
       onOpenTicket={onOpenTicket}
       onRename={onRename}
       onSelect={onSelect}
-      onToggleArchived={() => archived.setOpen((open) => !open)}
       onToggleSelect={onToggleSelect}
       onUnlinkTicket={onUnlinkTicket}
       renamedTitles={renamedTitles}

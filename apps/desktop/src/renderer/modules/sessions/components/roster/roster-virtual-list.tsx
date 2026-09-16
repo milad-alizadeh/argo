@@ -29,6 +29,11 @@ const OVERSCAN = 30
 
 // A sentinel row's appearance among the mounted virtual items is the trigger to fetch its page's
 // continuation; the roster and the Archive each hold their own sentinel and fetch callback.
+//
+// The effect depends on whether the sentinel is mounted, never on the array of mounted items:
+// `getVirtualItems` returns a fresh array on every render, so depending on it re-ran the effect on
+// every render and asked for the next page again each time, for as long as the sentinel stayed on
+// screen (#2277).
 function useSentinelFetch(options: {
   rows: readonly RosterRow[]
   kind: RosterRow['kind']
@@ -37,10 +42,10 @@ function useSentinelFetch(options: {
 }) {
   const { rows, kind, items, onFetch } = options
   const sentinelIndex = rows.findIndex((row) => row.kind === kind)
+  const mounted = sentinelIndex !== -1 && items.some((item) => item.index === sentinelIndex)
   useEffect(() => {
-    if (sentinelIndex === -1) return
-    if (items.some((item) => item.index === sentinelIndex)) onFetch()
-  }, [items, onFetch, sentinelIndex])
+    if (mounted) onFetch()
+  }, [mounted, onFetch])
 }
 
 export function RosterVirtualList({
@@ -53,7 +58,6 @@ export function RosterVirtualList({
   onOpenTicket,
   onRename,
   onSelect,
-  onToggleArchived,
   onToggleSelect,
   onUnlinkTicket,
   renamedTitles,
@@ -71,8 +75,6 @@ export function RosterVirtualList({
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
 }) {
-  const { t } = useTranslation('sessions')
-  const archivedLabel = t('archived')
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -104,14 +106,12 @@ export function RosterVirtualList({
               >
                 {row === undefined ? null : (
                   <RosterRowView
-                    archivedLabel={archivedLabel}
                     onArchive={onArchive}
                     onFocus={onFocus}
                     onLinkTicket={onLinkTicket}
                     onOpenTicket={onOpenTicket}
                     onRename={onRename}
                     onSelect={onSelect}
-                    onToggleArchived={onToggleArchived}
                     onToggleSelect={onToggleSelect}
                     onUnlinkTicket={onUnlinkTicket}
                     renamedTitles={renamedTitles}

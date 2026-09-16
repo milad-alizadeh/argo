@@ -1,10 +1,12 @@
-import { Plus, Search } from 'lucide-react'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../../../../components/ui/input-group'
 import { Skeleton } from '../../../../components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
+import type { RosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'
+import { RosterFilterMenu } from './roster-filter-menu'
 
 export function rosterState(
   roster: SessionRoster | null,
@@ -14,6 +16,16 @@ export function rosterState(
   if (rosterError !== null) return sessionFailureState(rosterError.code)
   if (roster === null) return 'loading'
   return count === 0 ? 'empty' : 'ready'
+}
+
+// The one spinner every roster load-more state draws, so the active roster and the Archive read the
+// same at the point where the list is still growing.
+export function RosterStatusRow({ label }: { label: string }) {
+  return (
+    <div aria-label={label} className="flex items-center justify-center py-2" role="status">
+      <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+    </div>
+  )
 }
 
 export function RosterLoading() {
@@ -32,11 +44,15 @@ export function RosterLoading() {
 export function SessionsSidebarHeader({
   onNew,
   onSearch,
+  onStatusChange,
   search,
+  status,
 }: {
   onNew: () => void
   onSearch: (search: string) => void
+  onStatusChange: (status: RosterStatus) => void
   search: string
+  status: RosterStatus
 }) {
   const { t } = useTranslation('sessions')
   return (
@@ -57,6 +73,7 @@ export function SessionsSidebarHeader({
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
           <Plus />
         </Button>
+        <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
       </div>
     </header>
   )

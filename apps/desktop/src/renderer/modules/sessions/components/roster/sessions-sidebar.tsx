@@ -3,9 +3,19 @@ import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../../components/ui/empty'
+import {
+  showsActive,
+  useRosterFilterStore,
+  useRosterStatus,
+} from '../../state/use-roster-filter-store'
 import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import { RenameDialog } from './rename-dialog'
-import { RosterLoading, rosterState, SessionsSidebarHeader } from './sessions-sidebar-chrome'
+import {
+  RosterLoading,
+  RosterStatusRow,
+  rosterState,
+  SessionsSidebarHeader,
+} from './sessions-sidebar-chrome'
 import { SidebarRows } from './sidebar-rows'
 import { useRosterFocus } from './use-roster-focus'
 import { useRosterSelection } from './use-roster-selection'
@@ -48,6 +58,18 @@ function NoSessionsFound() {
   )
 }
 
+// The wider window is read outside the scrolled list rather than as its last row: a row appended
+// below the sentinel lands under the fold at the exact moment the reader reaches the bottom and
+// asks for it, so the spinner was drawn and never seen.
+function LoadingMoreFooter() {
+  const { t } = useTranslation('sessions')
+  return (
+    <div className="shrink-0 border-t border-border/60">
+      <RosterStatusRow label={t('loadingMoreSessions')} />
+    </div>
+  )
+}
+
 function RosterErrorAlert({ error }: { error: SessionError }) {
   const { t } = useTranslation('sessions')
   return (
@@ -64,6 +86,7 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
 
 export type SessionsSidebarContentProps = {
   hasMoreSessions?: boolean
+  isFetchingMoreSessions?: boolean
   onFetchMoreSessions?: () => void
   onNew?: () => void
   roster: SessionRoster | null
@@ -79,6 +102,7 @@ export type SessionsSidebarContentProps = {
 
 export function SessionsSidebarContent({
   hasMoreSessions = false,
+  isFetchingMoreSessions = false,
   onFetchMoreSessions = () => {},
   roster,
   rosterError,
@@ -95,6 +119,8 @@ export function SessionsSidebarContent({
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
   const [renamed, setRenamed] = useState<Record<string, string>>(NO_TITLES)
   const [search, setSearch] = useState('')
+  const status = useRosterStatus()
+  const setStatus = useRosterFilterStore((state) => state.setStatus)
   const sessions = roster?.sessions ?? NO_SESSIONS
   const renamedTitles = useMemo(() => pendingRenames(renamed, sessions), [renamed, sessions])
   const visible = filteredSessions(sessions, search)
@@ -110,10 +136,18 @@ export function SessionsSidebarContent({
       data-state={state}
       ref={sidebar}
     >
-      <SessionsSidebarHeader onNew={onNew} onSearch={setSearch} search={search} />
+      <SessionsSidebarHeader
+        onNew={onNew}
+        onSearch={setSearch}
+        onStatusChange={setStatus}
+        search={search}
+        status={status}
+      />
       {rosterError ? <RosterErrorAlert error={rosterError} /> : null}
       {roster === null && rosterError === null ? <RosterLoading /> : null}
-      {roster !== null && sessions.length === 0 ? <NoSessionsFound /> : null}
+      {/* Under a filter that excludes the active roster its emptiness says nothing, so the Archive's
+          own empty row speaks instead. */}
+      {roster !== null && showsActive(status) && sessions.length === 0 ? <NoSessionsFound /> : null}
       <SidebarRows
         hasMoreSessions={hasMoreSessions}
         onArchive={(sessionId) => {
@@ -139,6 +173,7 @@ export function SessionsSidebarContent({
         tabStop={tabStop}
         visible={visible}
       />
+      {isFetchingMoreSessions ? <LoadingMoreFooter /> : null}
       <RenameDialog
         onRename={async (session, name) => {
           const accepted = await onRename(session, name)

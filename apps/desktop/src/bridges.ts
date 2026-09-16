@@ -35,6 +35,7 @@ import {
 import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
+import { registerWatching } from './core/watch/bridge'
 import { providerEndpoints } from './providers/endpoints'
 
 function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
@@ -131,6 +132,11 @@ export function attachBridges(
   attachProjectBridge(window, { userData, rendererURL })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
+  // A Session written by a CLI outside Argo reaches the roster because the trees the CLIs write to
+  // are watched, not because the roster re-reads them on a timer.
+  registerWatching(window, {
+    sessions: [claudeTranscriptsRoot(home), codexTranscriptsRoot(home)],
+  })
   attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({
     userData,
