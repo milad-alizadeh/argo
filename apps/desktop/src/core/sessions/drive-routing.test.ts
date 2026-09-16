@@ -15,7 +15,7 @@ import type { SessionDriveAdapters } from './session-drive-adapter'
 
 const setup = { model: null, effort: null, mode: null } as const
 
-function fakeClaudeDriver() {
+function mockClaudeDriver() {
   const sent: Array<{ sessionId: string; prompt: string }> = []
   return {
     sent,
@@ -43,7 +43,7 @@ function fakeClaudeDriver() {
   }
 }
 
-function fakeCodexDriver() {
+function mockCodexDriver() {
   const sent: Array<{ sessionId: string; prompt: string }> = []
   return {
     sent,
@@ -95,8 +95,8 @@ async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot
 }
 
 test('routes a send to only the adapter that owns the Session, with a Claude and a Codex Session open at once', async (context) => {
-  const claude = fakeClaudeDriver()
-  const codex = fakeCodexDriver()
+  const claude = mockClaudeDriver()
+  const codex = mockCodexDriver()
   const reader = await readerWithBothManagedSessions(context)
   const adapters: SessionDriveAdapters = {
     claude: createClaudeDriveAdapter(claude.driver),
@@ -133,9 +133,9 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
 
 test('routes compaction to its Claude Session owner', async (context) => {
   const compacted: string[] = []
-  const claude = fakeClaudeDriver()
+  const claude = mockClaudeDriver()
   claude.driver.compact = async (sessionId: string) => void compacted.push(sessionId)
-  const codex = fakeCodexDriver()
+  const codex = mockCodexDriver()
   const reader = await readerWithBothManagedSessions(context)
   const adapters: SessionDriveAdapters = {
     claude: createClaudeDriveAdapter(claude.driver),

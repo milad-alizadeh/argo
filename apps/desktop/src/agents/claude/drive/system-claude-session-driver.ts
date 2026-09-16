@@ -26,7 +26,7 @@ export function createSystemClaudeSessionDriver(paths: {
   // Where a handing-off Session's brief lands, and the durable edge a completed handoff records.
   handoffBriefs: string
   handoffLedger: string
-  // A proof names its fake `claude` here; a person's launch finds the real one on the login PATH.
+  // A proof names its mock `claude` here; a person's launch finds the real one on the login PATH.
   executable?: string
 }) {
   const display = createMessageDisplay()

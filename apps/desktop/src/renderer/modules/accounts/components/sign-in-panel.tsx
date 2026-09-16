@@ -20,7 +20,7 @@ function ConnectedLine({ login, outcome }: SignedIn) {
   return (
     <p className="type-body" role="status">
       <Trans
-        components={{ name: <span className="font-medium" /> }}
+        components={{ name: <span className="type-heading" /> }}
         i18nKey={`signIn.${outcome}`}
         ns="accounts"
         values={{ login }}

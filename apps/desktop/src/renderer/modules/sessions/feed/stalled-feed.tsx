@@ -21,7 +21,7 @@ export function StalledFeed({
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <Empty className="h-full border-0" data-state="stalled">
+    <Empty className="h-full" data-state="stalled">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <RotateCw aria-hidden="true" />

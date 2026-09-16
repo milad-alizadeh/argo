@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { sessionFeedReplySchema } from './feed-contract'
 import { type SessionFeedRow, sessionFeedRowSchema } from './feed-rows'
 import { toolRows } from './tool-feed'
-import { groupToolRuns, TOOL_CONTENT_ROUTE } from './tool-groups'
+import { groupToolRuns, TOOL_KIND_PRESENTATION } from './tool-groups'
 import type { ToolCall } from './transcript'
 
 function bash(id: string, command: string): ToolCall {
@@ -93,11 +93,11 @@ test('a run broken by an intervening row never merges', () => {
 })
 
 test('a command or an unclassified tool call routes inline, and a file edit routes to the evidence panel', () => {
-  assert.equal(TOOL_CONTENT_ROUTE.command, 'inline')
-  assert.equal(TOOL_CONTENT_ROUTE.edited, 'evidence')
-  assert.equal(TOOL_CONTENT_ROUTE.created, 'evidence')
-  assert.equal(TOOL_CONTENT_ROUTE.read, 'evidence')
-  assert.equal(TOOL_CONTENT_ROUTE.tool, 'inline')
+  assert.equal(TOOL_KIND_PRESENTATION.command.route, 'inline')
+  assert.equal(TOOL_KIND_PRESENTATION.edited.route, 'evidence')
+  assert.equal(TOOL_KIND_PRESENTATION.created.route, 'evidence')
+  assert.equal(TOOL_KIND_PRESENTATION.read.route, 'evidence')
+  assert.equal(TOOL_KIND_PRESENTATION.tool.route, 'inline')
 })
 
 test('a long tool run keeps its group id inside the Session feed contract', () => {

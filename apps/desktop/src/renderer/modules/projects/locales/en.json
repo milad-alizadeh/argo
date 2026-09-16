@@ -1,5 +1,11 @@
 {
   "settings": {
     "title": "Project settings"
+  },
+  "empty": {
+    "label": "No Project",
+    "title": "Add a Project to start",
+    "description": "Argo shows the Sessions, Tickets and Atlas of one Project. Choose its folder to begin.",
+    "add": "Add Project…"
   }
 }

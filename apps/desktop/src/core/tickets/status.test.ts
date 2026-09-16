@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import type { FakeIssue } from '../../providers/github/fake-driver/fake-github'
+import type { MockIssue } from '../../../mocks/providers/github/mock-github'
 import { ADA, HIDDEN, TEAM } from '../../providers/linear/harness'
 import { connect, harness, LIST, OCTOCAT } from '../accounts/harness'
 
@@ -9,7 +9,7 @@ const HUBOT = { id: 2, login: 'hubot' }
 // octo/hello, whose issues Octocat can change and Hubot can only read.
 async function github(context: TestContext, user = OCTOCAT) {
   const cockpit = await harness(context)
-  const issues: FakeIssue[] = [
+  const issues: MockIssue[] = [
     { number: 1, title: 'Keep' },
     { number: 2, title: 'Drop' },
   ]

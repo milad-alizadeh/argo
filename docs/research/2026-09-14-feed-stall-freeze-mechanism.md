@@ -49,15 +49,15 @@ The transcript reading is shared code rather than an adapter's, so the fix sits 
 
 ## Evidence
 
-`apps/desktop/src/core/sessions/fake-driver/stalled-feed-repro.ts` runs the shipped reader against a
+`apps/desktop/tools/sessions/stalled-feed-repro.ts` runs the shipped reader against a
 fixture transcript, with a second process appending to it, and drives it the way the renderer does:
 a Feed read and a Roster poll every 500 ms, one in flight at a time, plus a ping that stands in for
 the cheapest thing a click can ask the main process for. Each run is a cold start, with empty caches
 — the state the app is in at launch.
 
 ```
-bun src/core/sessions/fake-driver/stalled-feed-repro.ts            # still being written
-APPEND=0 bun src/core/sessions/fake-driver/stalled-feed-repro.ts   # the same file, unchanging
+bun tools/sessions/stalled-feed-repro.ts            # still being written
+APPEND=0 bun tools/sessions/stalled-feed-repro.ts   # the same file, unchanging
 ```
 
 Watched for 20 s each, on an M-series Mac:
@@ -104,7 +104,7 @@ It clears itself when the writing stops. With the writer killed 6 s into a run, 
 342 ms later:
 
 ```
-APPEND_STOP_MS=6000 bun src/core/sessions/fake-driver/stalled-feed-repro.ts
+APPEND_STOP_MS=6000 bun tools/sessions/stalled-feed-repro.ts
 {"ok":true,"feedSettled":true,"feedSettledMs":6342,...}
 ```
 

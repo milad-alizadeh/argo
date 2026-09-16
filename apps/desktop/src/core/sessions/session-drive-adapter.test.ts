@@ -8,7 +8,7 @@ import { createCodexDriveAdapter } from '../../agents/codex/drive/session-drive-
 import { PERMISSION_DECISIONS, PERMISSION_DECISIONS_BY_CLI, permissionSchema } from './permission'
 import type { SessionDriveAdapter } from './session-drive-adapter'
 
-function fakeClaudeAdapter(): SessionDriveAdapter {
+function mockClaudeAdapter(): SessionDriveAdapter {
   return createClaudeDriveAdapter({
     start: () => 'session-1',
     compact: async () => {},
@@ -35,7 +35,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
   })
 }
 
-function fakeCodexAdapter(): SessionDriveAdapter {
+function mockCodexAdapter(): SessionDriveAdapter {
   return createCodexDriveAdapter({
     start: async () => 'session-1',
     send: async () => {},
@@ -51,12 +51,12 @@ function fakeCodexAdapter(): SessionDriveAdapter {
 }
 
 test('the Claude adapter reads its pending Permission in the shared, CLI-neutral shape', async () => {
-  const { permission } = await fakeClaudeAdapter().readPermission({ sessionId: 'session-1' })
+  const { permission } = await mockClaudeAdapter().readPermission({ sessionId: 'session-1' })
   assert.equal(permissionSchema.safeParse(permission).success, true)
 })
 
 test('the Codex adapter reads no pending Permission, in the same shared shape', async () => {
-  const result = await fakeCodexAdapter().readPermission({ sessionId: 'session-1' })
+  const result = await mockCodexAdapter().readPermission({ sessionId: 'session-1' })
   assert.deepEqual(result, { permission: null })
 })
 
@@ -71,12 +71,12 @@ test('names which decision words each CLI actually answers with', () => {
 })
 
 for (const adapterName of ['claude', 'codex'] as const) {
-  // Claude's fake driver always grants; Codex's stub always refuses (#1841) — every shared word
+  // Claude's mock driver always grants; Codex's stub always refuses (#1841) — every shared word
   // still type-checks through decidePermission, whichever outcome the CLI answers with.
   const expected = adapterName === 'claude' ? { ok: true } : { error: 'stale-permission' }
   for (const decision of PERMISSION_DECISIONS) {
     test(`the ${adapterName} adapter's decidePermission accepts the shared word "${decision}"`, async () => {
-      const adapter = adapterName === 'claude' ? fakeClaudeAdapter() : fakeCodexAdapter()
+      const adapter = adapterName === 'claude' ? mockClaudeAdapter() : mockCodexAdapter()
       const result = await adapter.decidePermission({
         sessionId: 'session-1',
         permissionId: 'permission-1',

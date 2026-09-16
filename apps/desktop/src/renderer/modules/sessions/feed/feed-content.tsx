@@ -55,7 +55,7 @@ export function feedContent({
   if (settled === null) return tail
   if (settled.rows.length === 0)
     return (
-      <Empty className="h-full border-0">
+      <Empty className="h-full">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Inbox aria-hidden="true" />

@@ -5,6 +5,7 @@ import { sessionPostureLocksAnswer } from '../types'
 import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
 import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
+import { isFeedRowStreaming } from './feed-row-renderers'
 import { liveFeedTail } from './feed-tail'
 import { useReveals } from './reveal'
 import type { RevealCache } from './streaming-text'
@@ -79,8 +80,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   })
   const lastRow = feed.rows[feed.rows.length - 1]
   // A running assistant reply or tool group is the Feed's live tail.
-  const tailIsLive =
-    lastRow?.shape === 'tool-group' || (lastRow?.shape === 'prose' && lastRow.role === 'assistant')
+  const tailIsLive = lastRow !== undefined && isFeedRowStreaming(lastRow)
   const streamingRowId = live.isRunning && tailIsLive ? lastRow.id : null
   // A quiet marker keeps its box through prose/tool changes, so the Feed height stays stable (#2241).
   const tail = liveFeedTail(live, lastRow, onOpenSession)
