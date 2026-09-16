@@ -1,5 +1,4 @@
 // Where each provider is reached. A provider left null offers no sign-in (ADR-0018).
-
 import { GITHUB_ENDPOINTS, type GitHubEndpoints, proofEndpoints } from './github/endpoints'
 import { LINEAR_ENDPOINTS, type LinearEndpoints, linearProofEndpoints } from './linear/endpoints'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from './proof-protocol'

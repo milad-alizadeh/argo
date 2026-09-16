@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, screen, userEvent, within } from 'storybook/test'
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 
 import { sessionDelegation, sessionShellCommand } from '../../session-fixtures'
 import { SessionWorkButtons } from './session-work-buttons'
@@ -41,6 +41,16 @@ const SHELL = [
   }),
 ]
 
+function expectDotAlignedWithTitle(item: HTMLElement) {
+  const dot = item.querySelector<HTMLElement>('[aria-hidden="true"]')
+  const title = within(item).getByText('Interface review')
+  if (dot === null) throw new Error('Expected a state dot.')
+  const dotCenter = dot.getBoundingClientRect().top + dot.getBoundingClientRect().height / 2
+  const titleBounds = title.getBoundingClientRect()
+  const titleCenter = titleBounds.top + titleBounds.height / 2
+  expect(Math.abs(dotCenter - titleCenter)).toBeLessThanOrEqual(1)
+}
+
 // The header's own selection, so a play function can operate the story the way a reader does.
 function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>) {
   const [delegationId, setDelegationId] = useState<string | null>(null)
@@ -49,7 +59,10 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
     <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border/60 px-3">
       <SessionWorkButtons
         delegations={DELEGATIONS}
-        delegationTokens={{ 'call-review': 18_400, 'call-sweep': 2700 }}
+        delegationUsage={{
+          'call-review': { tokens: 18_400, model: 'claude-opus-5' },
+          'call-sweep': { tokens: 2700, model: 'gpt-5.6-terra' },
+        }}
         now={NOW}
         onSelectDelegation={(id) => {
           setDelegationId(id)
@@ -89,6 +102,26 @@ export const SubagentsAndShell: Story = {
   },
 }
 
+export const ReadableAgentName: Story = {
+  render: () => (
+    <Header
+      delegations={[sessionDelegation({ id: 'call-standards', label: 'standards_review' })]}
+      shell={[]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 1' }))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('menuitem', { name: /Standards review/ })
+          .some((item) => item.checkVisibility()),
+      ).toBe(true),
+    )
+  },
+}
+
 // Each button opens its own list, split into what is still going and what has come back.
 export const RunningAndFinishedGroups: Story = {
   render: () => <Header />,
@@ -97,13 +130,14 @@ export const RunningAndFinishedGroups: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     const running = await screen.findByRole('group', { name: 'Running' })
     const finished = screen.getByRole('group', { name: 'Finished' })
-    // Duration and spend are the two facts a Subagent row adds (#1582).
-    await expect(
-      within(running).getByRole('menuitem', { name: /Interface review/ }),
-    ).toHaveTextContent('Running · 5m 0s · 18k tokens')
-    await expect(
-      within(finished).getByRole('menuitem', { name: /Find every caller/ }),
-    ).toHaveTextContent('Done · 1m 12s · 2.7k tokens')
+    // Model, duration and spend remain visible in the same order; the colored mark carries state.
+    const runningItem = within(running).getByRole('menuitem', { name: /Interface review/ })
+    await expect(runningItem).toHaveTextContent('claude-opus-5 · 5m 0s · 18k tokens')
+    await expect(within(runningItem).getByText('Running')).toHaveClass('sr-only')
+    expectDotAlignedWithTitle(runningItem)
+    const finishedItem = within(finished).getByRole('menuitem', { name: /Find every caller/ })
+    await expect(finishedItem).toHaveTextContent('gpt-5.6-terra · 1m 12s · 2.7k tokens')
+    await expect(within(finishedItem).getByText('Done')).toHaveClass('sr-only')
   },
 }
 
@@ -114,7 +148,7 @@ export const ShellList: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Shell · 2' }))
     await expect(await screen.findByRole('menuitem', { name: /npm run watch/ })).toHaveTextContent(
-      'Running · 4m 30s',
+      '4m 30s',
     )
     await expect(screen.getByRole('menuitem', { name: /bun run build/ })).toHaveTextContent(
       'Completed',

@@ -123,3 +123,26 @@ test('reads a backgrounded Subagent as still running until its completion notifi
   const notified = readDelegations(messages, [backgroundNotification('call-agent', 'completed')])
   assert.equal(notified[0]?.landed, true)
 })
+
+test('uses Codex agent task names as delegation labels', () => {
+  const delegations = readDelegations(
+    [
+      promptMessage(),
+      callMessage({
+        id: 'call-agent',
+        name: 'spawn_agent',
+        input: { task_name: 'standards_review' },
+      }),
+    ],
+    [],
+  )
+  assert.deepEqual(delegations, [
+    {
+      id: 'call-agent',
+      label: 'standards_review',
+      landed: false,
+      startedAt: '2026-09-15T00:00:00.000Z',
+      endedAt: null,
+    },
+  ])
+})

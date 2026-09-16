@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { writeFixtureTree } from './session-fixture-files'
+import { writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 import {
   fixtureRoot,
   LATER_TURN,

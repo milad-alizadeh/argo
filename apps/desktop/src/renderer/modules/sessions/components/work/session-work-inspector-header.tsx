@@ -1,20 +1,26 @@
 import { useTranslation } from 'react-i18next'
-import { delegationState, type SessionWork, spentTokens, workDuration } from './session-work'
+import {
+  delegationState,
+  readableDelegationName,
+  type SessionWork,
+  spentTokens,
+  workDuration,
+} from './session-work'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
 export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {
   const { t } = useTranslation('sessions')
   const currentTime = now ?? Date.now()
   if (work.kind === 'delegation') {
-    const { delegation, tokens } = work
+    const { delegation, usage } = work
     return (
       <InspectorHeader
         facts={[
           t(`workState.${delegationState(delegation)}`),
           workDuration(delegation.startedAt, delegation.endedAt, currentTime),
-          spentTokens(tokens, t),
+          spentTokens(usage.tokens, t),
         ]}
-        title={delegation.label ?? delegation.id}
+        title={delegation.label === null ? delegation.id : readableDelegationName(delegation.label)}
       />
     )
   }

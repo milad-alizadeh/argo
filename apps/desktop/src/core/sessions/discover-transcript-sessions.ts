@@ -12,6 +12,7 @@ import {
   type TranscriptRecord,
   transcriptFileFrom,
 } from './transcript'
+import { sessionIdOfFile } from './transcript-file'
 import { createTranscriptRecordReader } from './transcript-lines'
 
 export type TranscriptPath = { path: string; name: string }
@@ -162,6 +163,10 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   // Session this way is a bounded, on-demand read of exactly as much history as that Session needed,
   // never the unconditional whole-tree read the Roster's own passes must not make.
   async function readSessionFiles(root: string, sessionId: string): Promise<SessionChain | null> {
+    // Every chain id and retired id is some file's own id, so an id no file is named for resolves
+    // nowhere. A Session its CLI has not written yet is answered from the listing alone (#2356).
+    const named = await source.transcriptPaths(root)
+    if (!named.some((file) => sessionIdOfFile(file.name) === sessionId)) return null
     let windowSize = ROSTER_PAGE_SIZE
     for (;;) {
       const { found, files } = await summarise(root, windowSize)

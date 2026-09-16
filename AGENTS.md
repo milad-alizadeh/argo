@@ -34,6 +34,9 @@ Everything here is a fact about this repository. Process belongs to the skill th
   and bodies, comments, close messages, PR titles and bodies, user questions, and grilling rounds.
   Also load it for agent-facing Markdown that people will read. Ordinary implementation work and
   progress commentary do not trigger it. Apply it while you draft, not as cleanup.
+- Task tracking applies to work with at least three steps, multiple changed files, or an approved
+  plan. Before the first edit, read `packages/argo-skills/skills/setup-argo-skills/templates/task-tracking.md`
+  and start its live tracker.
 
 ## Desktop Session adapters
 
@@ -47,7 +50,9 @@ of CLI and filename branches.
 Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
 the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per
 flow in `playwright.config.ts`, run by `bun run test:e2e`; add a flow as a project, never a script.
-`mocks/` holds mock CLIs, mock providers and their transcripts; `tools/` holds capture, measure
+Each flow wraps its cases in `describePackagedProof` (`e2e/packaged-proof.ts`), and a variant of a
+flow, such as the real-CLI Session backend, is a project `use` option on the same file, never a copy.
+`mocks/` holds `mock-*` CLIs, providers and their transcripts; `tools/` holds capture, measure
 and repro scripts. `apps/desktop/scripts/` holds runtime wrappers only.
 
 ## Gates

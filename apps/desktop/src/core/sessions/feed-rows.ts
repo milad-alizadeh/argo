@@ -51,8 +51,7 @@ const delegationRowSchema = z.strictObject({
   callId: identifierSchema.nullable(),
 })
 
-const shellDelegationEntrySchema = delegationRowSchema.extend({
-  actor: z.literal('shell'),
+const delegationGroupEntrySchema = delegationRowSchema.extend({
   groupId: identifierSchema,
 })
 
@@ -60,16 +59,16 @@ const delegationGroupSchema = z
   .strictObject({
     shape: z.literal('delegation-group'),
     id: identifierSchema,
-    actor: z.literal('shell'),
+    actor: z.enum(['agent', 'shell']),
     groupId: identifierSchema,
-    entries: z.array(shellDelegationEntrySchema).min(1),
+    entries: z.array(delegationGroupEntrySchema).min(1),
   })
   .superRefine((group, context) => {
     group.entries.forEach((entry, index) => {
-      if (entry.groupId !== group.groupId)
+      if (entry.groupId !== group.groupId || entry.actor !== group.actor)
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A Shell activity entry must use its enclosing group id.',
+          message: 'A delegation activity entry must match its enclosing group.',
           path: ['entries', index, 'groupId'],
         })
     })

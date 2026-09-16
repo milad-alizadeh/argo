@@ -99,38 +99,4 @@ export const DECLARATIONS: Declaration[] = [
       },
     },
   },
-  {
-    operation: 'archiveList',
-    fields: { cursor: null, restoreId: null },
-    withoutSource: (reply) => {
-      assert.equal(reply.type, 'session.archive.listed')
-      assert.deepEqual(reply.sessions, [])
-    },
-    withoutCapability: (reply) => {
-      assert.equal(reply.type, 'session.archive.listed')
-      assert.deepEqual(
-        { sessions: reply.sessions, next: reply.nextCursor },
-        { sessions: [], next: null },
-      )
-    },
-    throwing: {
-      discoverArchivedSessions: async () => {
-        throw denied()
-      },
-    },
-  },
-  {
-    operation: 'archiveSet',
-    fields: { sessionIds: [SESSION_ID], archived: true },
-    withoutSource: (reply) => {
-      assert.equal(reply.type, 'session.archive.applied')
-      assert.deepEqual(reply.failed, [SESSION_ID])
-    },
-    withoutCapability: (reply) => assert.deepEqual(reply.failed, [SESSION_ID]),
-    throwing: {
-      setArchived: async () => {
-        throw denied()
-      },
-    },
-  },
 ]

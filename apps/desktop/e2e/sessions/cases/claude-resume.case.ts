@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/transcript-files'
+import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/mock-transcript-files'
 import { rosterRow, waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
 

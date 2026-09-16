@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { createSessionReader } from '@/core/sessions/reader'
-import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/transcript-files'
+import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 import { stitchChains } from '../../../core/sessions/chains.ts'
 import { projectRosterRow } from '../../../core/sessions/roster.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
@@ -17,10 +17,8 @@ export const unscopedListing = {
   projectRoot: null,
 }
 
-export function listSessions(value: unknown, root: string, archive?: string) {
-  return createSessionReader([claudeSessionSource({ transcripts: root, archive })]).listSessions(
-    value,
-  )
+export function listSessions(value: unknown, root: string) {
+  return createSessionReader([claudeSessionSource({ transcripts: root })]).listSessions(value)
 }
 
 export const LATER_TURN = `${JSON.stringify({

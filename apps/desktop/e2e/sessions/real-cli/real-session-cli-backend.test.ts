@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionFixture } from '../../mocks/sessions/session-cli-backend'
+import type { SessionFixture } from '../session-cli-backend'
 import {
   createRealSessionCliBackend,
   prepareRealSessionHome,
@@ -23,6 +23,7 @@ async function writeSubscriptionCredentials(root: string) {
   await mkdir(path.join(sourceHome, '.codex'), { recursive: true })
   await writeFile(path.join(sourceHome, '.claude.json'), 'claude-token')
   await writeFile(path.join(sourceHome, '.codex', 'auth.json'), 'codex-token')
+  await mkdir(path.join(sourceHome, 'Library', 'Keychains'), { recursive: true })
   return sourceHome
 }
 
@@ -56,6 +57,28 @@ test('copies both subscription credentials into an isolated HOME', async () =>
     expect(home).toBe(path.join(root, 'run', 'home'))
     expect(await readFile(path.join(home, '.claude.json'), 'utf8')).toBe('claude-token')
     expect(await readFile(path.join(home, '.codex', 'auth.json'), 'utf8')).toBe('codex-token')
+  }))
+
+test('reaches the Claude login in the real Keychain from the isolated HOME', async () =>
+  inTemporaryRoot(async (root) => {
+    const sourceHome = await writeSubscriptionCredentials(root)
+
+    const home = await prepareRealSessionHome(path.join(root, 'run'), sourceHome)
+
+    expect(await realpath(path.join(home, 'Library', 'Keychains'))).toBe(
+      await realpath(path.join(sourceHome, 'Library', 'Keychains')),
+    )
+  }))
+
+// Argo reads an absent transcript folder as unreachable, and the CLIs create theirs only on first write (#2356).
+test('gives the isolated HOME the transcript folders Argo reads', async () =>
+  inTemporaryRoot(async (root) => {
+    const sourceHome = await writeSubscriptionCredentials(root)
+
+    const home = await prepareRealSessionHome(path.join(root, 'run'), sourceHome)
+
+    expect(await readdir(path.join(home, '.claude', 'projects'))).toEqual([])
+    expect(await readdir(path.join(home, '.codex', 'sessions'))).toEqual([])
   }))
 
 test('names authentication when a subscription credential is absent', async () =>

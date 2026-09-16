@@ -1,9 +1,10 @@
 import { QueryClient } from '@tanstack/react-query'
-import type { ProjectSummary } from '@/core/projects/messages'
-import type { sendToNewSession } from './send-turn'
+import type { ProjectSummary } from '../../src/core/projects/messages'
+import type { sendToNewSession } from '../../src/renderer/modules/sessions/hooks/send-turn'
+import type { TurnSetup } from '../../src/renderer/modules/sessions/turn-setup/turn-setup'
 
 export const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
-export const SETUP = { model: 'sonnet', effort: 'high', mode: 'default' }
+export const SETUP: TurnSetup = { model: 'sonnet', effort: 'high', mode: 'default' }
 export const COCKPIT = {
   status: 'selected' as const,
   project: PROJECT,
@@ -25,19 +26,18 @@ export function mockMutation<Args, Reply>(reply: (args: Args) => Promise<Reply>)
   }
 }
 
-export function mockStart(reply: () => Promise<{ sessionId: string }>) {
-  return mockMutation<
-    { cli: string; cwd: string; prompt: string; setup: unknown },
-    { sessionId: string }
-  >(reply)
-}
-
 type NewSessionDeps = Parameters<typeof sendToNewSession>[0]
+
+export function mockStart(reply: () => Promise<{ sessionId: string }>) {
+  return mockMutation<Parameters<NewSessionDeps['start']['mutateAsync']>[0], { sessionId: string }>(
+    reply,
+  )
+}
 
 export function newSessionDeps(
   start: ReturnType<typeof mockStart>,
   identity: NewSessionDeps['identity'],
-  navigate: NewSessionDeps['navigate'] = () => undefined as never,
+  navigate: NewSessionDeps['navigate'] = () => {},
 ): NewSessionDeps {
   return {
     cli: 'claude',
@@ -45,10 +45,9 @@ export function newSessionDeps(
     identity,
     navigate,
     queryClient: new QueryClient(),
-    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
-    start: start as never,
-    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
+    start,
+    turn: { prompt: 'hello', setup: SETUP, attachments: [] },
     watchTurn: () => {},
   }
 }

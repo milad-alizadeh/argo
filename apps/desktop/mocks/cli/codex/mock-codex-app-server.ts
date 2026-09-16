@@ -1,15 +1,17 @@
-// A minimal stand-in for `codex app-server --listen stdio://`, run as a real child process so the
-// vertical-slice test in codex-vertical-slice.test.ts exercises the real pipes and NDJSON framing
-// this adapter depends on, not just an in-memory mock of `CodexChannel`. It answers exactly the
-// verbs `codex-session-driver.ts` sends, grounded in codex-cli 0.147.0's schema
-// (docs/research/2026-09-09-codex-transport.md).
+// A real-child-process mock for `codex app-server --listen stdio://`, grounded in codex-cli 0.147.0's schema.
 
-import { appendFileSync, mkdirSync } from 'node:fs'
-import path from 'node:path'
+import { appendFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
-import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '../../../src/core/sessions/proof-protocol.ts'
+import {
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../../src/core/sessions/proof-protocol.ts'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
+import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
+import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
 import { askQuestion, handleAskReply } from './mock-ask-question.ts'
+import { readMockCodexRequest } from './mock-codex-request.ts'
 
 process.title = MOCK_CODEX_PROCESS_TITLE
 
@@ -18,78 +20,25 @@ const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 const COMPLETION_DELAY_MS = 10
 const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
+const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
+let turnIndex = 0
 
 function threadIdFor(counter: number) {
   return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
 }
-
-function recordTurn(threadId: string, text: string) {
-  const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
-  if (transcripts === undefined) return
-  const day = path.join(transcripts, '2026', '09', '14')
-  mkdirSync(day, { recursive: true })
-  const transcript = path.join(day, `rollout-2026-09-14T15-17-11-${threadId}.jsonl`)
-  appendFileSync(
-    transcript,
-    `${[
-      {
-        timestamp: new Date().toISOString(),
-        type: 'session_meta',
-        payload: { id: threadId, cwd: process.cwd() },
-      },
-      {
-        timestamp: new Date().toISOString(),
-        type: 'event_msg',
-        payload: { type: 'user_message', message: text },
-      },
-    ]
-      .map((record) => JSON.stringify(record))
-      .join('\n')}\n`,
-  )
-}
-
 function send(message: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify(message)}\n`)
 }
-
-function request(line: string) {
-  return JSON.parse(line) as {
-    id?: unknown
-    method?: string
-    params?: Record<string, unknown>
-    result?: unknown
-  }
-}
-
-function completeTurn(threadId: unknown, turnId: string, text: string) {
-  const status = text.includes('FAIL') ? 'failed' : 'completed'
-  send({
-    method: 'turn/completed',
-    params: { threadId, turn: { id: turnId, status, error: null } },
-  })
-  send({
-    method: 'thread/status/changed',
-    params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
-  })
-}
-
-function compactionItem(threadId: unknown, method: 'item/started' | 'item/completed') {
-  send({
-    method,
-    params: {
-      threadId,
-      turnId: `mock-compact-turn-${threadCounter}`,
-      item: { id: `mock-compaction-${threadCounter}`, type: 'contextCompaction' },
-    },
-  })
-}
-
 function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
   const params = message.params ?? {}
   const threadId = params.threadId
   const input = Array.isArray(params.input) ? params.input : []
   const text = typeof input[0]?.text === 'string' ? input[0].text : ''
-  if (typeof threadId === 'string') recordTurn(threadId, text)
+  const plan = nextAdversarialTurn(adversarialSeed, turnIndex++)
+  if (typeof threadId === 'string') {
+    if (plan?.outcome === 'stall') recordStalledTurn(threadId)
+    else recordTurn(threadId, text)
+  }
   if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
   const turnId = `mock-turn-${threadCounter}-${Date.now()}`
   send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
@@ -101,12 +50,46 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     askQuestion(send, { threadId, turnId, text })
     return
   }
+  if (plan?.permissionBeforeReply) {
+    askQuestion(send, { threadId, turnId, text })
+    return
+  }
+  if (plan !== null) {
+    setTimeout(() => {
+      if (plan.outcome === 'stall') return
+      writeSplitReply(
+        {
+          method: 'item/agentMessage/delta',
+          params: {
+            threadId,
+            turnId,
+            itemId: `mock-message-${turnId}`,
+            delta: `Mock Codex read: ${text} 🦜`,
+          },
+        },
+        plan.replySplitByte,
+        (chunk) => process.stdout.write(chunk),
+      )
+      completeTurn({
+        outcome: plan.outcome === 'failure' ? 'failure' : 'reply',
+        send,
+        threadId,
+        turnId,
+      })
+    }, plan.firstReplyDelayMs)
+    return
+  }
   setTimeout(
-    () => completeTurn(threadId, turnId, text),
+    () =>
+      completeTurn({
+        threadId,
+        turnId,
+        outcome: text.includes('FAIL') ? 'failure' : 'reply',
+        send,
+      }),
     REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
   )
 }
-
 function handleRequest(message: {
   id?: unknown
   method?: string
@@ -134,8 +117,11 @@ function handleRequest(message: {
     case 'thread/compact/start': {
       const threadId = message.params?.threadId
       send({ id: message.id, result: {} })
-      compactionItem(threadId, 'item/started')
-      setTimeout(() => compactionItem(threadId, 'item/completed'), 10)
+      compactionItem({ method: 'item/started', send, threadCounter, threadId })
+      setTimeout(
+        () => compactionItem({ method: 'item/completed', send, threadCounter, threadId }),
+        10,
+      )
       return
     }
     case 'thread/name/set': {
@@ -154,12 +140,13 @@ function handleRequest(message: {
       })
   }
 }
-
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
-  const message = request(line)
+  const message = readMockCodexRequest(line)
   if (message.method === undefined) {
-    handleAskReply(message, echoFile, completeTurn)
+    handleAskReply(message, echoFile, (threadId, turnId) =>
+      completeTurn({ outcome: 'reply', send, threadId, turnId }),
+    )
     return
   }
   handleRequest(message)
