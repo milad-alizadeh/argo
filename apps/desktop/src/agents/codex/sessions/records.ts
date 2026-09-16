@@ -29,6 +29,14 @@ function delegatedPrompt(
 
 const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
 
+function agentLabel(agentPath: string): string | null {
+  const name = agentPath.split('/').findLast(Boolean)
+  const [first, ...rest] = name?.split(/[_-]+/).filter(Boolean) ?? []
+  return first === undefined
+    ? null
+    : `${first[0]?.toUpperCase()}${first.slice(1)}${rest.length === 0 ? '' : ` ${rest.join(' ')}`}`
+}
+
 function subagentActivity(item: Record<string, unknown>): TranscriptRecord | null {
   if (item.type !== 'SubAgentActivity' || typeof item.id !== 'string' || !isIdentifier(item.id))
     return null
@@ -36,7 +44,7 @@ function subagentActivity(item: Record<string, unknown>): TranscriptRecord | nul
   if (typeof item.agent_path !== 'string') return null
   const status = SUBAGENT_ACTIVITY_STATUS[item.kind as keyof typeof SUBAGENT_ACTIVITY_STATUS]
   if (status === undefined) return null
-  const action = item.agent_path.split('/').findLast((segment) => segment.length > 0) ?? null
+  const action = agentLabel(item.agent_path)
   return {
     kind: 'delegation',
     uuid: item.id,

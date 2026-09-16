@@ -7,6 +7,7 @@ import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, nameThreads, readSessionFiles } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
+import { readDelegationChain } from './subagents'
 import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
@@ -91,7 +92,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
-    readDelegationFiles: (_sessionId, delegationId) => readSessionFiles(root, delegationId),
+    readDelegationFiles: (_sessionId, delegationId) => readDelegationChain(root, delegationId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
