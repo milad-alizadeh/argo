@@ -113,11 +113,11 @@ export const RunningAndFinishedGroups: Story = {
     // Model, duration and spend are the facts a Subagent row adds (#1582).
     await expect(
       within(running).getByRole('menuitem', { name: /Interface review/ }),
-    ).toHaveTextContent('Running · 5m 0s · claude-opus-5 · 18k tokens')
+    ).toHaveTextContent('Running · 5m 0s · Claude Opus 5 · 18k tokens')
     expectDotAlignedWithTitle(within(running).getByRole('menuitem', { name: /Interface review/ }))
     await expect(
       within(finished).getByRole('menuitem', { name: /Find every caller/ }),
-    ).toHaveTextContent('Done · 1m 12s · gpt-5.6-terra · 2.7k tokens')
+    ).toHaveTextContent('Done · 1m 12s · GPT 5.6 Terra · 2.7k tokens')
   },
 }
 

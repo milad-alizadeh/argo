@@ -68,6 +68,17 @@ export function compactTokens(tokens: number | null): string | null {
   return scaled(tokens, 1_000_000, 'M')
 }
 
+const MODEL_BRANDS: Record<string, string> = { claude: 'Claude', gpt: 'GPT' }
+
+// Transcript model ids are stable transport values. The reader sees the model's product name.
+export function displayModel(model: string | null): string | null {
+  if (model === null) return null
+  return model
+    .split('-')
+    .map((word) => MODEL_BRANDS[word] ?? `${word[0]?.toUpperCase() ?? ''}${word.slice(1)}`)
+    .join(' ')
+}
+
 export function spentTokens(tokens: number | null, t: TFunction<'sessions'>): string | null {
   const amount = compactTokens(tokens)
   return amount === null ? null : t('delegation.tokens', { amount })
