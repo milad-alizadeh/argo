@@ -79,7 +79,7 @@ export async function startFakeLinear(): Promise<FakeLinear> {
     'POST /oauth/token': (request, response) => token(state, request, response),
     'POST /graphql': (request, response) => answerGraphQL(state, request, response),
   }
-  mountFakeProvider(FAKE_LINEAR_ORIGIN, () => !closed, requests, routes)
+  mountFakeProvider({ origin: FAKE_LINEAR_ORIGIN, active: () => !closed, requests, routes })
   const forUser = (userId: string, map: Map<string, { user: FakeLinearUser }>) => {
     for (const [key, grant] of map) if (grant.user.id === userId) map.delete(key)
   }

@@ -6,7 +6,7 @@
 // both alive together.
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { Readable } from 'node:stream'
-import { http, type HttpHandler } from 'msw'
+import { type HttpHandler, http } from 'msw'
 import { setupServer } from 'msw/node'
 
 export type NodeRoute = (
@@ -63,15 +63,19 @@ function theServer() {
 
 const METHODS = { get: http.get, post: http.post, patch: http.patch } as const
 
-// Layers one fake provider's routes onto the shared server. `active` flips to `false` on the
-// fake's own `close()`, so a later request to a closed fake falls through as unhandled rather than
-// answer state a fresh fake, started under the same fixed origin, replaced.
-export function mountFakeProvider(
-  origin: string,
-  active: () => boolean,
-  requests: string[],
-  routes: Record<string, NodeRoute>,
-): void {
+export type FakeMount = {
+  origin: string
+  // Flips to `false` on the fake's own `close()`, so a later request to a closed fake falls
+  // through as unhandled rather than answer state a fresh fake, started under the same fixed
+  // origin, replaced.
+  active: () => boolean
+  requests: string[]
+  routes: Record<string, NodeRoute>
+}
+
+// Layers one fake provider's routes onto the shared server.
+export function mountFakeProvider(mount: FakeMount): void {
+  const { origin, active, requests, routes } = mount
   trackedOrigins.add(origin)
   const handlers: HttpHandler[] = Object.entries(routes).map(([key, run]) => {
     const space = key.indexOf(' ')

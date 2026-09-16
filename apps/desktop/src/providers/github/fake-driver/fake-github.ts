@@ -87,7 +87,7 @@ export async function startFakeGitHub(): Promise<FakeGitHub> {
   let closed = false
   const route: NodeRoute = (request, response) => answer(state, request, response)
   const routes = Object.fromEntries(ROUTES.map((key) => [key, route]))
-  mountFakeProvider(FAKE_GITHUB_ORIGIN, () => !closed, requests, routes)
+  mountFakeProvider({ origin: FAKE_GITHUB_ORIGIN, active: () => !closed, requests, routes })
   return {
     origin: state.origin,
     requests,
