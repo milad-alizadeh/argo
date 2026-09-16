@@ -164,7 +164,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   // never the unconditional whole-tree read the Roster's own passes must not make.
   async function readSessionFiles(root: string, sessionId: string): Promise<SessionChain | null> {
     // Every chain id and retired id is some file's own id, so an id no file is named for resolves
-    // nowhere. A Session its CLI has not written yet is answered without reading the tree (#2356).
+    // nowhere. A Session its CLI has not written yet is answered from the listing alone (#2356).
     const named = await source.transcriptPaths(root)
     if (!named.some((file) => sessionIdOfFile(file.name) === sessionId)) return null
     let windowSize = ROSTER_PAGE_SIZE

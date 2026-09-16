@@ -92,7 +92,7 @@ test('reports a Session no window can find as absent rather than growing forever
 })
 
 // A Session Argo just started has no transcript yet, and every Feed poll asks for it (#2356).
-test('answers a Session no transcript is named for without reading the tree', async (context) => {
+test('answers a Session no transcript is named for without reading a transcript', async (context) => {
   const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
   const read: string[] = []

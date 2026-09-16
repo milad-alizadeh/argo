@@ -75,7 +75,7 @@ function verifyRealSessionAuthentication(executables: Record<SessionCli, string>
         stdio: 'pipe',
       })
     } catch (error) {
-      const output = String((error as { stderr?: Buffer }).stderr ?? '').trim()
+      const output = error instanceof Error && 'stderr' in error ? String(error.stderr).trim() : ''
       throw new Error(
         `${REAL_CLIS[cli].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
       )
