@@ -1,6 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react'
 import type { SessionPlan, SessionTicket } from '@/core/sessions/models'
-import type { DevelopmentIdentity } from '@/development/instance'
 import type { HarnessControl } from '../../harness/harnesses'
 import { ComposerForm } from './composer-form'
 import { activeReference } from './references/composer-reference-menu'
@@ -12,7 +11,6 @@ import { useSessionComposerState } from './use-session-composer-state'
 export type SessionComposerProps = {
   contextTokens?: number | null
   contextWindowTokens?: number | null
-  developmentIdentity?: DevelopmentIdentity | null
   disabled?: boolean
   focusOnMount?: boolean
   isCompacting?: boolean
@@ -33,7 +31,6 @@ export type SessionComposerProps = {
 export function SessionComposer({
   contextTokens,
   contextWindowTokens,
-  developmentIdentity = null,
   disabled = false,
   focusOnMount = false,
   isCompacting = false,
@@ -62,7 +59,6 @@ export function SessionComposer({
       contextTokens={contextTokens}
       contextWindowTokens={contextWindowTokens}
       disabled={disabled}
-      developmentIdentity={developmentIdentity}
       draft={state.draft}
       editorRef={state.editorRef}
       focusOnMount={focusOnMount}

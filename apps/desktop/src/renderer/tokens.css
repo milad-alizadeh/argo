@@ -72,7 +72,7 @@
   --spacing-session-gutter: var(--spacing-shell-gutter);
   --size-queue-row: 44px;
   --size-composer-field: 56px;
-  --size-development-identity-bar: 24px;
+  --size-development-identity-bar: 32px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
   --spacing-session-composer-bottom: calc(
     var(--spacing-shell-region) *
