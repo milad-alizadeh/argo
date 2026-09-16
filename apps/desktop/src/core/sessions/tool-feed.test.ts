@@ -74,6 +74,26 @@ test('a Bash call with no description falls back to the command, first line only
   assert.equal(row.label, 'Ran bun test')
 })
 
+test('a Codex exec_command call reads as a command, the same as Bash', () => {
+  const row = onlyToolRow(
+    [call({ id: 'call-1', name: 'exec_command', input: { cmd: 'bun test\nextra line' } })],
+    new Map(),
+  )
+  assert.equal(row.kind, 'command')
+  assert.equal(row.label, 'Ran bun test')
+  assert.equal(row.text, 'bun test\nextra line')
+})
+
+test('a Codex custom exec call reads as a command, the same as Bash', () => {
+  const row = onlyToolRow(
+    [call({ id: 'call-1', name: 'exec', input: { input: 'echo hi' } })],
+    new Map(),
+  )
+  assert.equal(row.kind, 'command')
+  assert.equal(row.label, 'Ran echo hi')
+  assert.equal(row.text, 'echo hi')
+})
+
 test('an Edit call carries its diff evidence before the result lands', () => {
   const row = onlyToolRow(
     [
