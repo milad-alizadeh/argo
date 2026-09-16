@@ -81,7 +81,7 @@ export function ComposerCard({
   return (
     <div className="relative">
       {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
-          radius instead of boxing the bare text area (#2262). */}
+          radius instead of boxing the bare text area (#2273). */}
       <fieldset
         aria-label="Message composer"
         data-component="ComposerCard"

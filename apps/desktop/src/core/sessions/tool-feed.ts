@@ -49,7 +49,7 @@ function skillTitle(slug: string): string {
 }
 
 // A row names the file, never the path that reached it: every surface drawing this label is narrow
-// and the absolute path is both too long to read and the same prefix on every line (#2262).
+// and the absolute path is both too long to read and the same prefix on every line (#2273).
 function filePath(call: ToolCall) {
   const path = call.input.file_path
   if (typeof path !== 'string') return 'file'

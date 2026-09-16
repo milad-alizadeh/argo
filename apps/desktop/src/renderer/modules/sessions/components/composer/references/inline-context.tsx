@@ -6,7 +6,7 @@ type InlineContextProps = {
 }
 
 // A reference is a mark, not a link, so it takes no underline; `align-middle` sits the whole chip
-// on the line's centre rather than hanging its icon above the words beside it (#2262). Dragged
+// on the line's centre rather than hanging its icon above the words beside it (#2273). Dragged
 // files use attachment cards instead.
 export function InlineContext({ icon, text }: InlineContextProps) {
   return (

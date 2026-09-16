@@ -87,7 +87,7 @@
   --size-session-context-bar: 54px;
   /* The context bar hangs out of the composer form, overlapping the card by one item, so the
      composer's lowest ink clears the window by less than the form's own padding. A card that
-     replaces the whole composer matches that ink rather than the padding (#2262). */
+     replaces the whole composer matches that ink rather than the padding (#2273). */
   --spacing-session-composer-ink-bottom: calc(
     var(--spacing-session-composer-bottom) -
     var(--size-session-context-bar) +
