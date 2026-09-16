@@ -22,6 +22,8 @@
     "test:darwin-manifest": "electron-forge package --platform darwin --arch arm64 && node scripts/desktop-manifest.mjs out/Argo-darwin-arm64/Argo.app",
     "test:packaged-pty": "node scripts/prove-packaged-pty.mjs",
     "test:e2e": "playwright test",
+    "test:journey-profile": "ARGO_JOURNEY_PROFILE=1 playwright test --project=sessions e2e/sessions/journeys.e2e.ts",
+    "e2e:real": "ARGO_E2E_REAL=1 playwright test --project=real-sessions",
     "test:live-claude-display": "node tools/run-tool.mjs tools/claude/message-display.ts",
     "capture:cockpit": "node tools/run-tool.mjs tools/cockpit/capture.ts",
     "measure:cockpit": "node tools/run-tool.mjs tools/cockpit/measure.ts",
