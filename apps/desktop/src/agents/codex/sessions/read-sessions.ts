@@ -9,6 +9,7 @@ import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
+import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {
@@ -19,6 +20,8 @@ type ReaderOptions = {
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
+  // Codex Desktop's own thread names, read from its app state (ADR-0042).
+  threadNames?: ThreadNames
 }
 
 // A streamed message takes the row id the rollout's own message will get (`feed.ts`), so the
@@ -74,7 +77,10 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   return {
     cli: 'codex',
     discoverSessions: async () => {
-      const [discovered, open] = await Promise.all([discoverSessions(root), openTurns(Date.now())])
+      const [discovered, open] = await Promise.all([
+        discoverSessions(root, options?.threadNames),
+        openTurns(Date.now()),
+      ])
       const roster = mergeManagedRoster(discovered, options?.roster?.() ?? [])
       return { ...roster, rows: joinOpenTurns(roster.rows, open) }
     },
