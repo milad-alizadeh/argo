@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { readSkillFile } from './read-skill-file'
+import { skillFileContent } from './read-skill-file'
 
 async function tempDirectory(context: { after: (cleanup: () => unknown) => void }) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-skill-'))
@@ -12,13 +12,7 @@ async function tempDirectory(context: { after: (cleanup: () => unknown) => void 
 }
 
 async function contentAt(requested: string) {
-  const reply = await readSkillFile({
-    version: 1,
-    type: 'session.skill.read',
-    requestId: 'r1',
-    path: requested,
-  })
-  return reply.content
+  return skillFileContent(requested)
 }
 
 test('reads a mentioned skill, through a linked skill folder too', async (context) => {

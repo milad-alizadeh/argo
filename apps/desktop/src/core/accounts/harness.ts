@@ -40,12 +40,13 @@ const unreachable = (provider: string): never => {
 // A restart is a fresh main process over the same `userData`: nothing survives but the files.
 function bootMain(options: {
   userData: string
+  accountData: string
   endpoints: ReturnType<typeof accessEndpoints>
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
 }) {
-  const { userData, endpoints, cipher, openExternal } = options
-  const access = createAccountAccess({ userData, endpoints, cipher, openExternal })
+  const { userData, accountData, endpoints, cipher, openExternal } = options
+  const access = createAccountAccess({ userData, accountData, endpoints, cipher, openExternal })
   const ticketWindow = createFakeIpcWindow()
   attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
   const tickets: TicketClient = createTicketClient((channel, ticketRequest) =>
@@ -66,19 +67,25 @@ function accessEndpoints(github: FakeGitHub, linear: FakeLinear) {
   }
 }
 
+// One cockpit's own application data, holding the one Project its Tickets are read for.
+async function makeUserData(context: TestContext, projectId: string): Promise<string> {
+  const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-accounts-'))
+  context.after(() => rm(userData, { recursive: true, force: true }))
+  await mkdir(path.join(userData, 'portable-v1'))
+  const projects = [{ id: projectId, path: '/tmp/argo-demo' }]
+  const document = { version: 1, projects, selectedId: projectId }
+  await writeFile(path.join(userData, 'portable-v1', 'projects.json'), JSON.stringify(document))
+  return userData
+}
+
 export async function harness(context: TestContext) {
   const github: FakeGitHub = await startFakeGitHub()
   const linear: FakeLinear = await startFakeLinear()
-  const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-accounts-'))
+  const userData = await makeUserData(context, PROJECT_ID)
   context.after(async () => {
     await github.close()
     await linear.close()
-    await rm(userData, { recursive: true, force: true })
   })
-  await mkdir(path.join(userData, 'portable-v1'))
-  const projects = [{ id: PROJECT_ID, path: '/tmp/argo-demo' }]
-  const document = { version: 1, projects, selectedId: PROJECT_ID }
-  await writeFile(path.join(userData, 'portable-v1', 'projects.json'), JSON.stringify(document))
   const endpoints = accessEndpoints(github, linear)
   const cipher = testCipher()
   const opened: string[] = []
@@ -87,7 +94,9 @@ export async function harness(context: TestContext) {
     opened.push(url)
     if (new URL(url).origin === linear.origin) void fetch(url).catch(() => undefined)
   }
-  let main = bootMain({ userData, endpoints, cipher, openExternal })
+  // The Account store is this cockpit's own until a test points a second cockpit at it.
+  const accountData = userData
+  let main = bootMain({ userData, accountData, endpoints, cipher, openExternal })
   // Every reply that crossed to the renderer, in order.
   const replies: unknown[] = []
   const record = (reply: unknown) => {
@@ -111,7 +120,26 @@ export async function harness(context: TestContext) {
       record(await dispatchTicket(main.tickets, type, fields)),
     restart: () => {
       main.accounts.signIn.dispose()
-      main = bootMain({ userData, endpoints, cipher, openExternal })
+      main = bootMain({ userData, accountData, endpoints, cipher, openExternal })
+    },
+    // A second cockpit over the same Account store, with its own application data: two development
+    // apps, each keeping its own Projects and Connections (#2304).
+    otherCockpit: async (projectId: string) => {
+      const otherUserData = await makeUserData(context, projectId)
+      const other = bootMain({
+        userData: otherUserData,
+        accountData,
+        endpoints,
+        cipher,
+        openExternal,
+      })
+      context.after(() => other.accounts.signIn.dispose())
+      return {
+        account: (type: string, fields: Record<string, string> = {}) =>
+          dispatchAccount(other.accountClient, type, fields) as Promise<Record<string, unknown>>,
+        ticket: (type: string, fields: Record<string, unknown> = {}) =>
+          dispatchTicket(other.tickets, type, fields) as Promise<Record<string, unknown>>,
+      }
     },
   }
 }

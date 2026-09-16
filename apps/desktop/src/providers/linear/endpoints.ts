@@ -14,14 +14,18 @@ export const LINEAR_REDIRECT_PORT = 51734
 // host. A `redirectPort` of 0 takes whichever port is free, which only a proof's fake accepts.
 export type LinearEndpoints = { web: string; api: string; clientId: string; redirectPort: number }
 
-export const LINEAR_ENDPOINTS: LinearEndpoints | null = LINEAR_CLIENT_ID
-  ? {
-      web: 'https://linear.app',
-      api: 'https://api.linear.app',
-      clientId: LINEAR_CLIENT_ID,
-      redirectPort: LINEAR_REDIRECT_PORT,
-    }
-  : null
+// Registering the OAuth App is the only step left: a client id here is what offers the sign-in.
+export function linearEndpoints(clientId: string): LinearEndpoints | null {
+  if (!clientId) return null
+  return {
+    web: 'https://linear.app',
+    api: 'https://api.linear.app',
+    clientId,
+    redirectPort: LINEAR_REDIRECT_PORT,
+  }
+}
+
+export const LINEAR_ENDPOINTS: LinearEndpoints | null = linearEndpoints(LINEAR_CLIENT_ID)
 
 // A packaged proof points both hosts at a fake on this machine.
 export function linearProofEndpoints(origin: string | undefined): LinearEndpoints | null {

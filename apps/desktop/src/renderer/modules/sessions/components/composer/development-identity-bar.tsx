@@ -28,6 +28,13 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
       <span className="rounded-sm bg-background px-1.5 py-0.5 font-mono font-semibold text-foreground">
         {identity.label}
       </span>
+      {/* The instance names the store this app reads, so an empty dialog reads as another app's
+          store rather than as lost data (#2304). Two worktrees on one branch share a label. It
+          truncates like the worktree beside it: a real id runs to ~40 characters, and at the
+          minimum window width a fixed one would eat the path that says which tree this is. */}
+      <span className="min-w-0 truncate font-mono text-background/80" title={identity.id}>
+        {identity.id}
+      </span>
       {ticket === null ? null : (
         <span className="min-w-0 truncate" title={`${ticket.key} · ${ticket.title}`}>
           <span className="font-mono text-background/70">{ticket.key}</span>
