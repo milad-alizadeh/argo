@@ -12,10 +12,26 @@ export type SessionChain = {
   files: TranscriptFile[]
   // The origin file names a predecessor that is not in the set read. A Roster pass reads the most
   // recent files only, so a long-running chain can arrive without its own beginning: this chain is
-  // then a resumed half standing under a retired id, with a partial history and its own first
-  // prompt as a title. Stated rather than smoothed over, because the alternative is drawing a
-  // Session as an origin it is not.
+  // then a resumed half standing under a retired id, with a partial history. Its title still comes
+  // from the ledger's strongest remembered record for that id (#2290), not from this half alone.
+  // Stated rather than smoothed over, because the alternative is drawing a Session as an origin it
+  // is not.
   originUnread: boolean
+}
+
+// What a caller has learned across earlier `stitchChains` calls: which session ids exist, and
+// which immediate parent each one resumes. A resume link, once read off a file, never changes
+// (files are immutable), so this is safe to grow forever and reuse. Passing it back in keeps a
+// chain's `id` stable when a later, narrower page of files no longer includes the origin that
+// established it (#2290): without it, `parentOf` would call the origin unknown and promote the
+// resumed file to root, which is the roster-reorder and lost-title fault.
+export type ChainHistory = {
+  knownIds: Set<string>
+  parents: Map<string, string>
+}
+
+export function createChainHistory(): ChainHistory {
+  return { knownIds: new Set(), parents: new Map() }
 }
 
 // Every uuid a file names, whatever the record carrying it. A resume can be opened on a record
@@ -72,14 +88,37 @@ function orderedByTime(files: TranscriptFile[]): TranscriptFile[] {
   return [...files].sort((left, right) => left.openedAt.localeCompare(right.openedAt))
 }
 
-export function stitchChains(files: TranscriptFile[]): SessionChain[] {
+// The caller hands back the same TranscriptFile objects while a file's mtime is unchanged, so
+// identity alone says whether anything worth re-stitching happened. A Roster poll runs twice a
+// second and stitching walks every record of every file it was given (#2241).
+//
+// `history` is shared with every other cache a discoverer runs, so a Session opened on demand and
+// one seen by the Roster's own poll agree on the same id (#2290).
+export function createChainCache(history: ChainHistory = createChainHistory()) {
+  let read: TranscriptFile[] = []
+  let chains: SessionChain[] = []
+  return function stitched(files: TranscriptFile[]): SessionChain[] {
+    if (files.length === read.length && files.every((file, index) => file === read[index])) {
+      return chains
+    }
+    read = files
+    chains = stitchChains(files, history)
+    return chains
+  }
+}
+
+export function stitchChains(
+  files: TranscriptFile[],
+  history: ChainHistory = createChainHistory(),
+): SessionChain[] {
   const owners = ownerOfEachUuid(files)
-  const known = new Set(files.map((file) => file.sessionId))
-  const parents = new Map<string, string>()
+  for (const file of files) history.knownIds.add(file.sessionId)
+  const known = history.knownIds
   for (const file of files) {
     const parent = parentOf(file, owners, known)
-    if (parent !== null) parents.set(file.sessionId, parent)
+    if (parent !== null) history.parents.set(file.sessionId, parent)
   }
+  const parents = history.parents
   const grouped = new Map<string, TranscriptFile[]>()
   for (const file of files) {
     const root = rootOf(file.sessionId, parents)
@@ -91,7 +130,7 @@ export function stitchChains(files: TranscriptFile[]): SessionChain[] {
       id,
       retiredIds: members.map((file) => file.sessionId).filter((sessionId) => sessionId !== id),
       files: orderedByTime(members),
-      originUnread: origin !== undefined && resumedFromUnread(origin, owners, known),
+      originUnread: origin === undefined || resumedFromUnread(origin, owners, known),
     }
   })
 }
