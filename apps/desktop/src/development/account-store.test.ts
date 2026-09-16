@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { createGrantStore } from '../core/accounts/grants'
 import { readAccounts, writeAccounts } from '../core/accounts/registry'
 import { readRegistry, writeRegistry } from '../core/projects/registry'
-import { developmentStoreDirectories } from './account-store'
+import { DEVELOPMENT_APPLICATION_NAME, developmentStoreDirectories } from './account-store'
 import { type DevelopmentInstance, developmentInstance } from './instance'
 
 const APP_DATA = '/Users/developer/Library/Application Support'
@@ -61,12 +61,13 @@ function testCipher() {
   }
 }
 
+function grantsFor(store: ReturnType<typeof developmentStoreDirectories>) {
+  return createGrantStore(path.join(store.accountData, 'portable-v1', 'grants.json'), testCipher())
+}
+
 async function persistFirstLaunch(first: ReturnType<typeof developmentStoreDirectories>) {
   const accountsPath = path.join(first.accountData, 'portable-v1', 'accounts.json')
-  const grants = createGrantStore(
-    path.join(first.accountData, 'portable-v1', 'grants.json'),
-    testCipher(),
-  )
+  const grants = grantsFor(first)
   assert.equal(
     await writeAccounts(accountsPath, {
       accounts: [
@@ -104,10 +105,7 @@ async function persistFirstLaunch(first: ReturnType<typeof developmentStoreDirec
   return grants
 }
 
-async function assertSecondLaunch(
-  second: ReturnType<typeof developmentStoreDirectories>,
-  grants: ReturnType<typeof createGrantStore>,
-) {
+async function assertSecondLaunch(second: ReturnType<typeof developmentStoreDirectories>) {
   assert.deepEqual(
     await readAccounts(path.join(second.accountData, 'portable-v1', 'accounts.json')),
     {
@@ -129,7 +127,7 @@ async function assertSecondLaunch(
       },
     },
   )
-  assert.deepEqual(await grants.read('github:583231'), {
+  assert.deepEqual(await grantsFor(second).read('github:583231'), {
     ok: true,
     grant: { accessToken: 'development-token', scopes: ['repo'], renewal: null },
   })
@@ -152,6 +150,7 @@ test('a second worktree reads the Account grant and selected Project from the fi
   const stores = worktreeStores(path.join(root, 'Application Support'))
   assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
   assert.deepEqual(stores.first, stores.second)
-  const grants = await persistFirstLaunch(stores.first)
-  await assertSecondLaunch(stores.second, grants)
+  assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
+  await persistFirstLaunch(stores.first)
+  await assertSecondLaunch(stores.second)
 })

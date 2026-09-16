@@ -12,7 +12,10 @@ import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
-import { developmentStoreDirectories } from './development/account-store'
+import {
+  DEVELOPMENT_APPLICATION_NAME,
+  developmentStoreDirectories,
+} from './development/account-store'
 import {
   developmentIdentityArgument,
   developmentInstance,
@@ -58,7 +61,7 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   : null
 if (DEVELOPMENT_INSTANCE) {
   // safeStorage keys belong to an app, so every development worktree must keep one app identity.
-  app.setName('Argo Development')
+  app.setName(DEVELOPMENT_APPLICATION_NAME)
   const ticket = DEVELOPMENT_INSTANCE.label.match(/^#(\d+)$/)?.[1]
   app.dock?.setBadge(ticket ?? '')
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)

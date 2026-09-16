@@ -2,7 +2,8 @@
 import path from 'node:path'
 import { absolute, type DevelopmentInstance } from './instance'
 
-export const DEVELOPMENT_SHARED_STORE = 'Argo Development'
+export const DEVELOPMENT_APPLICATION_NAME = 'Argo Development'
+export const DEVELOPMENT_SHARED_STORE = DEVELOPMENT_APPLICATION_NAME
 
 export type DevelopmentStorePlacement = {
   userData: string
