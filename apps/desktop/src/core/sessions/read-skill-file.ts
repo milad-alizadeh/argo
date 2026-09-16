@@ -1,6 +1,5 @@
 import { readFile, realpath } from 'node:fs/promises'
 import path from 'node:path'
-import type { SessionSkillRead, SessionSkillRequest } from './skill-contract'
 
 const SKILL_FILE = 'SKILL.md'
 
@@ -12,8 +11,7 @@ async function skillFile(requested: string) {
   return resolved !== null && path.basename(resolved) === SKILL_FILE ? resolved : null
 }
 
-export async function readSkillFile(request: SessionSkillRequest): Promise<SessionSkillRead> {
-  const file = await skillFile(request.path)
-  const content = file === null ? null : await readFile(file, 'utf8').catch(() => null)
-  return { version: 1, type: 'session.skill.read', requestId: request.requestId, content }
+export async function skillFileContent(requested: string): Promise<string | null> {
+  const file = await skillFile(requested)
+  return file === null ? null : await readFile(file, 'utf8').catch(() => null)
 }
