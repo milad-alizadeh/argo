@@ -9,7 +9,7 @@ import { COMPOSER_COLUMN } from '../components/composer/composer-form'
 import { SessionComposer } from '../components/composer/session-composer'
 import { PermissionPrompt } from '../components/composer/tray/permission-prompt'
 import type { HarnessControl } from '../harness/harnesses'
-import type { SessionRoster } from '../hooks/use-sessions'
+import type { SessionRoster } from '../types'
 
 // Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
 // way to the lock card instead of sitting under it (#2053, #2092). Every other failure code keeps
@@ -65,7 +65,7 @@ export function SessionComposerArea({
   )
 }
 
-function handoffTitle(roster: SessionRoster, sessionId: string) {
+function handoffTitle(roster: SessionRoster | null, sessionId: string) {
   const row = roster?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
 }
@@ -78,7 +78,7 @@ function HandoffLink({
 }: {
   label: string
   sessionId: string
-  roster: SessionRoster
+  roster: SessionRoster | null
   onNavigate: (path: string) => void
 }) {
   return (
@@ -100,7 +100,7 @@ export function SessionHandoffFacts({
   roster = null,
   onNavigate,
 }: Pick<SessionScreenDetailsProps, 'session'> & {
-  roster?: SessionRoster
+  roster?: SessionRoster | null
   onNavigate?: (path: string) => void
 }) {
   if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null

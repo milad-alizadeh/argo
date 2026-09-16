@@ -105,8 +105,23 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
   }
 }
 
-function chainFor(files: TranscriptFile[], sessionId: string): SessionChain | undefined {
-  const chains = stitchChains(files)
+// The summariser hands back the same TranscriptFile objects while a file's mtime is unchanged, so
+// identity alone says whether anything worth re-stitching happened. A Roster poll runs twice a
+// second and stitching walks every record of every file it was given (#2241).
+function createChainCache() {
+  let read: TranscriptFile[] = []
+  let chains: SessionChain[] = []
+  return function stitched(files: TranscriptFile[]): SessionChain[] {
+    if (files.length === read.length && files.every((file, index) => file === read[index])) {
+      return chains
+    }
+    read = files
+    chains = stitchChains(files)
+    return chains
+  }
+}
+
+function chainFor(chains: SessionChain[], sessionId: string): SessionChain | undefined {
   const currentId = currentSessionId(chains, sessionId)
   return chains.find((candidate) => candidate.id === currentId)
 }
@@ -121,9 +136,11 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     },
   }
   const summarise = createTranscriptSummariser(metadataSource, createFileReader(metadataSource))
+  const rosterChains = createChainCache()
+  const sessionChains = createChainCache()
 
   function rowsFrom(files: TranscriptFile[]): SessionRosterRow[] {
-    const rows = stitchChains(files.filter(holdsMessage)).map((chain) =>
+    const rows = rosterChains(files.filter(holdsMessage)).map((chain) =>
       projectRosterRow(chain, source.cli),
     )
     rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
@@ -154,7 +171,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     let windowSize = ROSTER_PAGE_SIZE
     for (;;) {
       const { found, files } = await summarise(root, windowSize)
-      const chain = chainFor(files, sessionId)
+      const chain = chainFor(sessionChains(files), sessionId)
       if (chain !== undefined) return { ...chain, files: await tracker.readChainFiles(chain) }
       if (found.length <= windowSize) return null
       windowSize += ROSTER_PAGE_SIZE

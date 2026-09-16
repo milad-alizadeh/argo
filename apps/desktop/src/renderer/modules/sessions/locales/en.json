@@ -88,6 +88,8 @@
     "interrupt": "Interrupt",
     "usage": "Usage",
     "compact": "Compact the conversation",
+    "compactAction": "Compact context",
+    "compactShort": "Compact",
     "handoff": "Hand off to a new Session",
     "removeQueued": "Remove queued message",
     "pendingTurns": "Pending Turns",
