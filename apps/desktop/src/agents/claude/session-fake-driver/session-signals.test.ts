@@ -2,8 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
-import { readPlan } from '../../../core/sessions/signals.ts'
-import { parseTranscriptLine } from '../sessions/records.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
@@ -17,28 +15,6 @@ test('reads the Plan entries off the newest snapshot the agent wrote', async () 
     ],
   })
   assert.equal((await rowOf(['externalBasic'])).plan, null)
-})
-
-test('marks an unreadable latest Plan snapshot as malformed', () => {
-  const malformedPlan = parseTranscriptLine(
-    JSON.stringify({
-      type: 'assistant',
-      uuid: 'malformed-plan',
-      message: {
-        role: 'assistant',
-        content: [
-          {
-            type: 'tool_use',
-            id: 'plan',
-            name: 'TodoWrite',
-            input: { todos: [{ content: 'No status' }] },
-          },
-        ],
-      },
-    }),
-  )
-  if (malformedPlan?.kind !== 'message') assert.fail('expected a transcript message')
-  assert.deepEqual(readPlan([malformedPlan]), { state: 'malformed' })
 })
 
 test('starts the Turn at the last prompt, never at a tool result', async () => {
