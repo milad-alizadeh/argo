@@ -28,7 +28,7 @@ async function openPackageReadEvidence(page) {
   await packageRead.click()
   assert.equal(await packageRead.getAttribute('aria-current'), 'location')
   await page.locator('section[aria-label="Command and file inspector"]').waitFor()
-  await page.getByText('apps/desktop/package.json').last().waitFor()
+  await page.getByText('Read package.json').last().waitFor()
   await page.getByText(/"name": "desktop"/).waitFor()
   return packageRead
 }
