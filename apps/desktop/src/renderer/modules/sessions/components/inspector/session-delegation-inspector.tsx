@@ -50,7 +50,11 @@ export function SessionDelegationInspector({
       ref={inspector}
     >
       <div className="feed min-h-0 flex-1">
-        {feed === null ? null : (
+        {feed === null ? (
+          <p className="px-(--spacing-shell-item) py-(--spacing-shell-item) type-meta text-muted-foreground">
+            {t('subagentLoading')}
+          </p>
+        ) : (
           <FeedDocument
             actions={{
               active,

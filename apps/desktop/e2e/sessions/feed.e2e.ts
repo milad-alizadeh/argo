@@ -132,7 +132,6 @@ function registerFeedAndPlanCases(run: SessionProofRun, box: PageBox) {
     await proveStableRosterPolling(
       box.get(),
       rosterOrderMutations({
-        archive: run.fixture.archive,
         transcripts: run.fixture.claudeTranscripts,
       }),
     )

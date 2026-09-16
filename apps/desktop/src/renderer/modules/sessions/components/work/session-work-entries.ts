@@ -6,6 +6,7 @@ import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/mod
 import {
   delegationState,
   displayModel,
+  readableDelegationName,
   spentTokens,
   WORK_STATE_MARKS,
   workDuration,
@@ -37,7 +38,7 @@ export function delegationEntries(
     const state = delegationState(delegation)
     return {
       id: delegation.id,
-      title: delegation.label ?? delegation.id,
+      title: delegation.label === null ? delegation.id : readableDelegationName(delegation.label),
       monospace: false,
       running: state === 'running',
       mark: WORK_STATE_MARKS[state],

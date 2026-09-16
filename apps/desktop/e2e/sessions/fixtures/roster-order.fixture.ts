@@ -1,5 +1,4 @@
 import { appendFile, rm, writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import { fixturePath, proofCwd } from '../../../mocks/sessions/mock-transcript-files'
 
 function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
@@ -66,17 +65,6 @@ async function addRecentSession(transcripts) {
   )
 }
 
-async function setArchived(archive, sessionId, archived) {
-  await writeFile(
-    path.join(archive, 'workspace-one', 'project-one', `local_${sessionId}.json`),
-    `${JSON.stringify({
-      sessionId: `desktop-${sessionId}`,
-      cliSessionId: sessionId,
-      isArchived: archived,
-    })}\n`,
-  )
-}
-
 async function updateProseRoster(transcripts) {
   const title = JSON.stringify({ type: 'custom-title', customTitle: 'Prose renamed in place' })
   const answer = JSON.stringify({
@@ -102,7 +90,7 @@ async function updateProseRoster(transcripts) {
   await appendFile(fixturePath(transcripts, 'prose'), `${title}\n${answer}\n`)
 }
 
-export function rosterOrderMutations({ archive, transcripts }) {
+export function rosterOrderMutations({ transcripts }) {
   return {
     update: () => updateProseRoster(transcripts),
     addReplacementChild: () => addReplacementChild(transcripts),
@@ -113,6 +101,5 @@ export function rosterOrderMutations({ archive, transcripts }) {
         rm(fixturePath(transcripts, 'newSession')),
         rm(fixturePath(transcripts, 'newSessionTwo')),
       ]),
-    archive: (sessionId, archived) => setArchived(archive, sessionId, archived),
   }
 }

@@ -9,7 +9,6 @@ import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-ad
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
-  claudeArchiveRoot,
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
@@ -27,6 +26,7 @@ import {
   SESSION_CODEX_EXECUTABLE_ENV,
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
+import { createSessionArchiveStore, sessionArchivePath } from './core/storage/session-archive'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
 import { watchTrees } from './core/watch/watch-paths'
@@ -76,12 +76,13 @@ export function attachSessions(
   const ticketLinks = createSessionTicketLinkStore(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
   )
+  // Argo's own archive flag, for every harness at once (#2315).
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   attachSessionBridge(window, {
     reader: createSessionReader(
       [
         claudeSessionSource({
           transcripts: claudeTranscriptsRoot(home),
-          archive: claudeArchiveRoot(home),
           processes: claudeProcessesRoot(home),
           managedSessions: claude.roster,
           compactionStarts,
@@ -103,6 +104,7 @@ export function attachSessions(
         }),
       ],
       ticketLinks,
+      archive,
     ),
     adapters: {
       claude: createClaudeDriveAdapter(claude),
@@ -122,7 +124,7 @@ export function attachSessions(
       watchTrees([
         claudeTranscriptsRoot(home),
         codexTranscriptsRoot(home),
-        claudeArchiveRoot(home),
+        sessionArchivePath(userData),
       ]),
       watchWindowFocus(window),
       watchSystemResume(powerMonitor),

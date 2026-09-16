@@ -2,13 +2,17 @@
 // adapter's own but a small map of them (#2239): each adapter pages its own window independently,
 // and the wire cursor is the opaque encoding of all of them together. A caller never reads inside
 // it — it only ever echoes a cursor a reply already gave it back on the next request.
-export type RosterCursorMap = Record<string, string | null>
+import { z } from 'zod'
+
+export const rosterCursorMapSchema = z.record(z.string(), z.string().nullable())
+
+export type RosterCursorMap = z.infer<typeof rosterCursorMapSchema>
 
 export function decodeRosterCursor(cursor: string | null | undefined): RosterCursorMap {
   if (cursor === null || cursor === undefined) return {}
   try {
-    const decoded = JSON.parse(cursor)
-    return typeof decoded === 'object' && decoded !== null ? (decoded as RosterCursorMap) : {}
+    const parsed = rosterCursorMapSchema.safeParse(JSON.parse(cursor))
+    return parsed.success ? parsed.data : {}
   } catch {
     return {}
   }

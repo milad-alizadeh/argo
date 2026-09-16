@@ -4,7 +4,13 @@ import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
-import { clearFullRecords, discoverSessions, nameThreads, readSessionFiles } from './discover'
+import {
+  clearFullRecords,
+  discoverSessions,
+  nameThreads,
+  readDelegationFiles as readDelegationFilesForParent,
+  readSessionFiles,
+} from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
 import { readDelegationTokens } from './subagent-tokens'
@@ -93,7 +99,9 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
-    readDelegationFiles: (_sessionId, delegationId) => readDelegationChain(root, delegationId),
+    readDelegationFiles: async (sessionId, delegationId) =>
+      (await readDelegationFilesForParent(root, sessionId, delegationId)) ??
+      readDelegationChain(root, delegationId),
     readDelegationUsage: async (sessionId) => {
       const chain = await readSessionFiles(root, sessionId)
       const delegationIds = [

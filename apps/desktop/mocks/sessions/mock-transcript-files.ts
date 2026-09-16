@@ -10,6 +10,7 @@
 import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { sessionArchivePath } from '../../src/core/storage/session-archive'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const FIXTURES = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'fixtures', 'sessions')
@@ -84,19 +85,13 @@ export async function writeFixtureTree(root, names, options = {}) {
   return root
 }
 
-// The Claude desktop app's own Session store, shaped the way that app writes one: a JSON file per
-// Session two directories down, naming the CLI Session in `cliSessionId` and carrying its own
-// `isArchived`. `archived` defaults to true so a fixture store is all the read-side proof needs;
-// the write-side proof (#2194) passes `archived: false` to give a bulk-archive call an existing,
-// unarchived row to flip.
-export async function writeArchiveStore(root, names, { archived = true } = {}) {
-  const inside = path.join(root, 'workspace-one', PROJECT)
-  await mkdir(inside, { recursive: true })
-  for (const name of names) {
-    await writeFile(
-      path.join(inside, `local_${name}.json`),
-      `${JSON.stringify({ sessionId: `desktop-${name}`, cliSessionId: name, isArchived: archived })}\n`,
-    )
-  }
-  return root
+// Argo's own archive document (#2315): one portable file under the fixture's `userData`, keyed
+// by the CLI Session id, the same shape `core/storage/session-archive.ts` reads and writes.
+export async function writeArchiveStore(userData, names) {
+  const file = sessionArchivePath(userData)
+  await mkdir(path.dirname(file), { recursive: true })
+  const archivedAt = '2026-09-01T00:00:00.000Z'
+  const document = Object.fromEntries(names.map((name) => [name, { archivedAt }]))
+  await writeFile(file, `${JSON.stringify(document, null, 2)}\n`)
+  return file
 }

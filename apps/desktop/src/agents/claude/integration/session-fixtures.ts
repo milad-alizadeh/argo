@@ -17,10 +17,8 @@ export const unscopedListing = {
   projectRoot: null,
 }
 
-export function listSessions(value: unknown, root: string, archive?: string) {
-  return createSessionReader([claudeSessionSource({ transcripts: root, archive })]).listSessions(
-    value,
-  )
+export function listSessions(value: unknown, root: string) {
+  return createSessionReader([claudeSessionSource({ transcripts: root })]).listSessions(value)
 }
 
 export const LATER_TURN = `${JSON.stringify({
