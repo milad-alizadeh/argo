@@ -83,7 +83,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
       title: 'Prose renamed in place',
       status: 'idle',
       updatedAt: '2098-01-01T00:00:00.000Z',
-      activity: { label: 'Read order.ts', tool: 'Read', target: 'order.ts' },
+      activity: { label: 'Read /Users/x/order.ts', tool: 'Read', target: 'order.ts' },
     },
   )
   assert.equal(
