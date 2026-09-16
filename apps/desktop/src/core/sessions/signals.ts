@@ -23,8 +23,6 @@ const SHELL_TOOL = 'Bash'
 
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
-// An agent-supplied description reads before the raw command it describes (a Bash call is the
-// one shape carrying both), so it wins whenever both fields are present.
 const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
 const TEXT_FIELDS = ['pattern', 'description', 'command', 'url', 'query']
 
@@ -55,6 +53,12 @@ export function readDelegations(
   notifications: BackgroundTask[],
 ): SessionDelegation[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
+  // A backgrounded call's receipt answers it at once; only its notification lands it (#2247).
+  const receipted = new Set(
+    messages
+      .flatMap((message) => message.toolResults ?? [])
+      .flatMap((result) => (result.background === undefined ? [] : [result.callId])),
+  )
   const times = callTimes(messages)
   const ended = endings(notifications)
   return calls(messages)
@@ -62,10 +66,8 @@ export function readDelegations(
     .map((call) => ({
       id: call.id,
       label: text(call.input.description),
-      landed: answered.has(call.id),
+      landed: receipted.has(call.id) ? ended.has(call.id) : answered.has(call.id),
       startedAt: times.started.get(call.id) ?? null,
-      // A Subagent sent to the background answers its call at once with a receipt, so the
-      // notification is what says when it actually stopped.
       endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
     }))
 }

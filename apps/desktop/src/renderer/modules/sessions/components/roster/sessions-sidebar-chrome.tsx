@@ -4,10 +4,10 @@ import { Button } from '../../../../components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../../../../components/ui/input-group'
 import { Skeleton } from '../../../../components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
-import type { SessionError, SessionsListed } from '../../types'
+import type { SessionError, SessionRoster } from '../../types'
 
 export function rosterState(
-  roster: SessionsListed | null,
+  roster: SessionRoster | null,
   rosterError: SessionError | null,
   count: number,
 ) {
