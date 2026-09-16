@@ -6,6 +6,7 @@ import path from 'node:path'
 import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
+import { proveCodexThreadName } from '../../../agents/codex/session-fake-driver/codex-thread-name-case'
 import { assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { type CaseResults, createCaseRunner } from './packaged-case-runner'
 import { createPackagedSessionHarness } from './packaged-session-harness'
@@ -134,6 +135,10 @@ try {
   page = await restart({ replyDelayMs: 2_000 })
   await ran(['session-reply-wait'], () => proveReplyWait(page, fixture.claudeTranscripts))
   await ran(['session-duplicate-send'], () => proveDuplicateSend(page, fixture.claudeTranscripts))
+  // Last, because naming the Codex row changes the title the cases above open it by.
+  await ran(['session-codex-thread-name'], () =>
+    proveCodexThreadName(page, fixture.codexTranscripts),
+  )
   await assertShippedFusesIntact()
   const timings = {
     total: Math.round(performance.now() - provingStarted),

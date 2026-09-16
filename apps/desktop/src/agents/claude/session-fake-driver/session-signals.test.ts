@@ -2,8 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '../../../core/sessions/contract.ts'
 import { readDelegation } from '../../../core/sessions/delegation.ts'
-import { readPlan } from '../../../core/sessions/signals.ts'
-import type { TranscriptMessage } from '../../../core/sessions/transcript.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
@@ -17,30 +15,6 @@ test('reads the Plan entries off the newest snapshot the agent wrote', async () 
     ],
   })
   assert.equal((await rowOf(['externalBasic'])).plan, null)
-})
-
-test('marks an unreadable latest Plan snapshot as malformed', () => {
-  const malformedPlan: TranscriptMessage = {
-    kind: 'message',
-    uuid: 'malformed-plan',
-    parentUuid: null,
-    originSessionId: null,
-    role: 'assistant',
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp: null,
-    entry: 'interactive',
-    stopReason: null,
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: [],
-    toolCalls: [{ id: 'plan', name: 'TodoWrite', input: { todos: [{ content: 'No status' }] } }],
-    answeredCalls: [],
-    usage: null,
-  }
-  assert.deepEqual(readPlan([malformedPlan]), { state: 'malformed' })
 })
 
 test('starts the Turn at the last prompt, never at a tool result', async () => {

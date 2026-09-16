@@ -78,3 +78,38 @@ test('streams a notifying reply without its heartbeat block, and a quiet one not
   ])
   assert.ok(!rows.some((row) => row.id === 'msg_live_quiet:0'))
 })
+
+test('opens a thread the voice session created with its request, never the injected instructions', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-created-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const day = path.join(root, '2026', '09', '15')
+  await mkdir(day, { recursive: true })
+  const session = 'codexCreatedThread'
+  await copyFile(
+    fileURLToPath(
+      new URL(`../session-fake-driver/fixtures/sessions/rollout-${session}.jsonl`, import.meta.url),
+    ),
+    path.join(day, `${session}.jsonl`),
+  )
+  const reply = await createCodexSessionReader(root).readSessionFeed({
+    version: 1,
+    type: 'session.feed',
+    requestId: 'feed-1',
+    sessionId: session,
+    delegationId: null,
+    revision: null,
+  })
+  assert.ok(typeof reply === 'object' && reply !== null && 'rows' in reply)
+  assert.deepEqual(visible((reply as { rows: Record<string, unknown>[] }).rows), [
+    {
+      id: 'fco_delegation:0',
+      shape: 'prose',
+      text: 'Implement the approved Geist desktop typography contract for Argo issue #2235.\n\nWork in a dedicated worktree and do not open a pull request.',
+    },
+    {
+      id: 'msg_start:0',
+      shape: 'prose',
+      text: "I am starting with the repository's own instructions.",
+    },
+  ])
+})
