@@ -1,18 +1,20 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/use-projects'
 import type { SessionComposerProps } from '../components/composer/session-composer'
+import type { Send } from '../components/composer/use-send'
 import type { TurnMarkerView } from '../feed/turn-marker-state'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionFeedRow } from '../types'
-import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composer-identity'
-import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
-import { useComposerSend } from './use-composer-send'
+import { composerIdentityOf, findSessionRow } from './composer-identity'
+import { composerProps } from './composer-props'
+import { sendToDraftIdentity, sendToSessionIdentity } from './send-turn'
+import { useComposerActions } from './use-composer-actions'
 import type { Failure } from './use-session-composer-actions'
 import { useSessionMutations } from './use-session-mutations'
 import type { useSessions } from './use-sessions'
@@ -65,14 +67,8 @@ function useComposerFacts(
   return { identity, sessionId, control, watchTurn, marker, selectedRow }
 }
 
-export function useSessionComposer({
-  cli,
-  cockpit,
-  focusOnMount,
-  navigate,
-  roster,
-  selectedSessionId,
-}: SessionComposerOptions): ComposerResult {
+export function useSessionComposer(options: SessionComposerOptions): ComposerResult {
+  const { cli, cockpit, focusOnMount, navigate, roster, selectedSessionId } = options
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
@@ -94,19 +90,23 @@ export function useSessionComposer({
       queryClient,
     })
   const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
-  const onSend = useComposerSend({
-    cli,
-    cockpit,
-    navigate,
-    queryClient,
-    roster,
-    identity,
-    marker,
-    send,
-    setFailure,
-    start,
-    watchTurn,
-  })
+  const onSend: Send = useCallback(
+    (prompt, setup, attachments) => {
+      const turn = { prompt, setup, attachments }
+      return identity.kind === 'session'
+        ? sendToSessionIdentity(
+            { queryClient, roster, marker, send, setFailure, watchTurn },
+            identity.sessionId,
+            turn,
+          )
+        : sendToDraftIdentity(
+            { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn },
+            identity,
+            turn,
+          )
+    },
+    [cli, cockpit, identity, marker, navigate, queryClient, roster, send, start, watchTurn],
+  )
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
@@ -126,27 +126,5 @@ export function useSessionComposer({
       identity,
       control,
     }),
-  }
-}
-
-function composerProps(input: {
-  roster: SessionComposerOptions['roster']
-  sessionId: string | null
-  focusOnMount: boolean
-  isCompacting: boolean
-  isHandingOff: boolean
-  onCompact: (() => Promise<boolean>) | undefined
-  onHandoff: (() => Promise<boolean>) | undefined
-  onInterrupt: () => Promise<boolean>
-  onSend: SessionComposerProps['onSend']
-  identity: ReturnType<typeof composerIdentityOf>
-  control: SessionComposerProps['setup']
-}): Omit<SessionComposerProps, 'plan' | 'harness'> {
-  const { roster, sessionId, identity, control, ...rest } = input
-  return {
-    ...rest,
-    isRunning: managedSessionIsRunning(roster, sessionId),
-    sessionId: composerIdentityKey(identity),
-    setup: control,
   }
 }

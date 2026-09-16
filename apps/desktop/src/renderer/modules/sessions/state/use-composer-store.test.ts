@@ -76,3 +76,40 @@ test('a draft survives before a Session exists, keyed by its own identity', () =
   expect(useComposerStore.getState().drafts['session-1']).toBeUndefined()
   useComposerStore.getState().setDraft('new:project-1', '')
 })
+
+test('a draft becoming a Session moves every unsent-Turn fact together', () => {
+  const composer = useComposerStore.getState()
+  composer.setDraft('new:project-1', 'still writing this')
+  composer.addAttachments('new:project-1', ['/repo/notes.md'])
+  composer.addTicket('new:project-1', { provider: 'github', key: '2283', title: 'Composer' })
+  composer.addPendingTurn('new:project-1', {
+    id: crypto.randomUUID(),
+    text: 'then send this',
+    attachments: [],
+  })
+  composer.chooseSetup('new:project-1', { model: 'opus', effort: 'high', mode: 'default' })
+  composer.beginMarker('new:project-1', {
+    stage: 'starting',
+    since: null,
+    prompt: 'still writing this',
+    images: [],
+    files: [],
+    startedAt: 0,
+  })
+
+  composer.rekey('new:project-1', 'session-1')
+
+  const state = useComposerStore.getState()
+  expect(state.drafts['new:project-1']).toBeUndefined()
+  expect(state.attachments['new:project-1']).toBeUndefined()
+  expect(state.tickets['new:project-1']).toBeUndefined()
+  expect(state.pendingTurns['new:project-1']).toBeUndefined()
+  expect(state.markers['new:project-1']).toBeUndefined()
+  expect(state.setup['new:project-1']).toBeUndefined()
+  expect(state.drafts['session-1']).toBe('still writing this')
+  expect(state.attachments['session-1']).toHaveLength(1)
+  expect(state.tickets['session-1']).toHaveLength(1)
+  expect(state.pendingTurns['session-1']).toHaveLength(1)
+  expect(state.markers['session-1']?.stage).toBe('starting')
+  expect(state.setup['session-1']).toEqual({ model: 'opus', effort: 'high', mode: 'default' })
+})

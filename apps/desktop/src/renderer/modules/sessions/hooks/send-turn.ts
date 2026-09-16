@@ -10,8 +10,8 @@ import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionRoster } from '../types'
 import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composer-identity'
+import { sendToSelected } from './send-selected-turn'
 import type { Failure } from './use-session-composer-actions'
-import { sendMessage } from './use-session-composer-actions'
 import type { useSessionMutations } from './use-session-mutations'
 import { startNewSession } from './use-start-new-session'
 import type { TurnMarkerApi } from './use-turn-marker'
@@ -23,26 +23,7 @@ export type TurnInput = {
 }
 
 // Exported for direct testing: the send-routing decision itself needs no React to prove.
-export function sendToSelected(request: {
-  queryClient: ReturnType<typeof useQueryClient>
-  since: string | null
-  selectedSessionId: string
-  send: ReturnType<typeof useSessionMutations>['send']
-  setFailure: (failure: Failure | null) => void
-  turn: TurnInput
-  watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
-}) {
-  const { queryClient, since, selectedSessionId, send, setFailure, turn, watchTurn } = request
-  const { prompt, setup, attachments } = turn
-  return sendMessage(
-    { send, prompt, setup, attachments, sessionId: selectedSessionId, setFailure },
-    () => {
-      if (setup !== null) watchTurn(selectedSessionId, setup, since)
-      // A Send can resume the Session (ADR-0026), so its posture may have changed.
-      return invalidateSessionRoster(queryClient)
-    },
-  )
-}
+export { sendToSelected } from './send-selected-turn'
 
 export function sendToNewSession(request: {
   cli: SessionCli
@@ -104,7 +85,11 @@ export type SendDeps = {
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }
 
-export async function sendToSessionIdentity(deps: SendDeps, sessionId: string, turn: TurnInput) {
+export async function sendToSessionIdentity(
+  deps: Pick<SendDeps, 'marker' | 'queryClient' | 'roster' | 'send' | 'setFailure' | 'watchTurn'>,
+  sessionId: string,
+  turn: TurnInput,
+) {
   const { queryClient, roster, marker, send, setFailure, watchTurn } = deps
   const row = findSessionRow(roster, sessionId)
   const since = row?.turnStartedAt ?? null
@@ -127,7 +112,18 @@ export async function sendToSessionIdentity(deps: SendDeps, sessionId: string, t
 }
 
 export async function sendToDraftIdentity(
-  deps: SendDeps,
+  deps: Pick<
+    SendDeps,
+    | 'cli'
+    | 'cockpit'
+    | 'marker'
+    | 'navigate'
+    | 'queryClient'
+    | 'send'
+    | 'setFailure'
+    | 'start'
+    | 'watchTurn'
+  >,
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
   turn: TurnInput,
 ) {

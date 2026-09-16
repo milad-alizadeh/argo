@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
 import type { TurnMarkerEntry } from '../feed/turn-marker-state'
+import { useComposerStore } from '../state/use-composer-store'
 
 export type TurnMarkerEntries = Map<string, TurnMarkerEntry>
 
@@ -38,19 +38,17 @@ export function clearEntry(entries: TurnMarkerEntries, key: string): TurnMarkerE
 // flight: local, client-owned state (#2099), so the optimistic prompt row and the Marker itself
 // never have to guess whether the CLI has "really" received a Turn before showing it.
 export function useTurnMarker() {
-  const [entries, setEntries] = useState<TurnMarkerEntries>(() => new Map())
-
-  const begin = useCallback((key: string, entry: Omit<TurnMarkerEntry, 'startedAt'>) => {
-    setEntries((current) => beginEntry(current, key, { ...entry, startedAt: Date.now() }))
-  }, [])
-  const rekey = useCallback((from: string, to: string) => {
-    setEntries((current) => rekeyEntry(current, from, to))
-  }, [])
-  const clear = useCallback((key: string) => {
-    setEntries((current) => clearEntry(current, key))
-  }, [])
-
-  return { begin, clear, entries, rekey }
+  const markers = useComposerStore(({ markers }) => markers)
+  const beginMarker = useComposerStore(({ beginMarker }) => beginMarker)
+  const clearMarker = useComposerStore(({ clearMarker }) => clearMarker)
+  const rekey = useComposerStore(({ rekey }) => rekey)
+  return {
+    begin: (key: string, entry: Omit<TurnMarkerEntry, 'startedAt'>) =>
+      beginMarker(key, { ...entry, startedAt: Date.now() }),
+    clear: clearMarker,
+    entries: new Map(Object.entries(markers)),
+    rekey,
+  }
 }
 
 export type TurnMarkerApi = ReturnType<typeof useTurnMarker>
