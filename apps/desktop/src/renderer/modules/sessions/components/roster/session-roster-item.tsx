@@ -40,8 +40,7 @@ function activitySummary(session: Session): string | null {
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is
 // reachable", and a selected row has nothing left to say (#2273).
 function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean): string {
-  if (checked) return 'bg-accent text-accent-foreground'
-  if (selected) return 'bg-selected text-foreground'
+  if (checked || selected) return 'bg-selected text-foreground'
   if (archived) return 'border border-border/70 bg-muted/50 text-muted-foreground hover:bg-muted'
   return 'hover:bg-muted'
 }
