@@ -74,6 +74,7 @@ async function domains(userData: string) {
 
   const access = createAccountAccess({
     userData,
+    accountData: userData,
     endpoints: { github: GITHUB_ENDPOINTS, linear: null },
     cipher: { available: () => false, encrypt: () => Buffer.alloc(0), decrypt: () => '' },
     openExternal: async () => undefined,
