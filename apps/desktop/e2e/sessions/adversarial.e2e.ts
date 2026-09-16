@@ -65,7 +65,7 @@ describeSessionProof('session-adversarial-stall', (run) => {
 describeSessionProof('session-adversarial-permission', (run) => {
   const box = createPageBox(run.hold)
 
-  defineAdversarialLaunch(run, box, 'seed-0')
+  defineAdversarialLaunch(run, box, 'seed-15')
 
   test('sends the queued Turn after a seeded Claude Permission is allowed', async () => {
     const sessionId = await createSessionByClick(box.get(), {
