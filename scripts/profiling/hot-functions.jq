@@ -1,9 +1,11 @@
 # Self time per JavaScript function from the CPU samples of an `agent-browser profiler stop` file (#2228).
 def frame: "\(.functionName | if . == "" then "(anonymous)" else . end) \((.url // "") | split("/") | last):\(.lineNumber)";
 [.traceEvents[] | select(.name == "ProfileChunk")] as $chunks
-| ([$chunks[] | .id as $profile | .args.data.cpuProfile.nodes // [] | .[]
+# The main process and the renderer both number their profile 0x1, so a key without the pid lets
+# one process's node labels overwrite the other's (#2241).
+| ([$chunks[] | "\(.pid):\(.id)" as $profile | .args.data.cpuProfile.nodes // [] | .[]
     | {key: "\($profile):\(.id)", value: (.callFrame | frame)}] | from_entries) as $labels
-| [$chunks[] | .id as $profile | .args.data as $data
+| [$chunks[] | "\(.pid):\(.id)" as $profile | .args.data as $data
     | ($data.cpuProfile.samples // []) as $samples | ($data.timeDeltas // []) as $deltas
     | range(0; $samples | length) | {function: $labels["\($profile):\($samples[.])"], micros: $deltas[.]}]
 | map(select(.function | test("^\\((idle|program|garbage collector)\\)") | not))

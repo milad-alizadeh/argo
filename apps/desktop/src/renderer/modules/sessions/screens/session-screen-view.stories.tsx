@@ -120,9 +120,6 @@ function ReviewSidebar({
     <SessionsSidebarContent
       onSelect={onSelect}
       roster={{
-        version: 1,
-        type: 'session.listed',
-        requestId: 'screen-review-roster',
         sessions: SESSION_ROSTER,
         filesFound: SESSION_ROSTER.length,
         filesRead: SESSION_ROSTER.length,

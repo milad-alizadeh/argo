@@ -1,66 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import {
-  invalidateSessionRoster,
-  SESSION_REFRESH_MS,
-  sessionRosterQueryKey,
-} from '../session-queries'
+import type { SessionContractError } from '../session-contract-error'
+import { invalidateSessionRoster } from '../session-queries'
 import {
   mergeOptimisticRow,
   readableSessionId,
   useSessionCreationStore,
 } from '../state/use-session-creation-store'
-import type { SessionFeed, SessionId, SessionsListed } from '../types'
+import type { SessionFeed, SessionId, SessionRoster } from '../types'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
-
-let rosterOrder: SessionId[] = []
-
-function keepRosterOrder(sessions: SessionsListed['sessions']) {
-  const unmatched = [...sessions]
-  const ordered = rosterOrder.flatMap((rememberedId) => {
-    const index = unmatched.findIndex(
-      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
-    )
-    if (index === -1) return []
-    const session = unmatched.splice(index, 1)[0]
-    return session === undefined ? [] : [session]
-  })
-  ordered.push(...unmatched)
-  rosterOrder = ordered.map((session) => session.id)
-  return ordered
-}
-
-export type SessionRoster = SessionsListed | null
-
-function useRosterQuery(
-  selectedSessionId: SessionId | null,
-  enabled: boolean,
-  projectRoot: string | null,
-) {
-  return useQuery<SessionsListed, SessionContractError>({
-    queryKey: [...sessionRosterQueryKey, projectRoot],
-    staleTime: Infinity,
-    enabled,
-    refetchInterval: selectedSessionId === null ? false : SESSION_REFRESH_MS,
-    retry: false,
-    queryFn: async () => {
-      const reply = await window.argo.listSessions({ projectRoot })
-      switch (reply.type) {
-        case 'session.listed':
-          return { ...reply, sessions: keepRosterOrder(reply.sessions) }
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
-  })
-}
+import { sessionRosterQuery } from './session-roster-query'
 
 // The main column always reads the Session's own Feed. A Subagent's Feed is a separate document
 // read beside it, drawn in the inspector, so opening one never takes the Session's away (#1582).
@@ -76,7 +25,9 @@ export function useSessions(
 ) {
   const queryClient = useQueryClient()
   const selectedFeedId = readableSessionId(selectedSessionId)
-  const roster = useRosterQuery(selectedSessionId, rosterEnabled, projectRoot)
+  const roster = useQuery<SessionRoster, SessionContractError>(
+    sessionRosterQuery(selectedSessionId, rosterEnabled, projectRoot),
+  )
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
 
