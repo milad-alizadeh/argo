@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
   AUTO_COMPACT_LIMIT_MAX,
@@ -12,6 +13,7 @@ import { contextZone } from './context-zone'
 // `~/.codex/config.toml`, custom per machine and never committed (#1904). Claude Code offers no
 // equivalent knob to write, so the control only appears for Codex.
 function CodexAutoCompact({ capacityTokens }: { capacityTokens: number | null }) {
+  const { t } = useTranslation('sessions')
   const [threshold, setThreshold] = useCodexAutoCompactThreshold()
   const [thresholdInput, setThresholdInput] = useState(String(threshold))
 
@@ -22,7 +24,7 @@ function CodexAutoCompact({ capacityTokens }: { capacityTokens: number | null })
   return (
     <div className="grid gap-2.5 border-t pt-3">
       <div className="flex items-center justify-between gap-3 type-body">
-        <span className="font-semibold">Auto-compact</span>
+        <span className="font-semibold">{t('composer.contextWindow.autoCompact')}</span>
         <span className="text-muted-foreground">
           {capacityTokens === null
             ? `${Math.round(threshold / 1000)}k tokens`
@@ -81,6 +83,7 @@ export function ContextDetails({
   percentage: number | null
   usedTokens: number
 }) {
+  const { t } = useTranslation('sessions')
   const zone = contextZone(percentage ?? 0)
   const capacityReported = capacityTokens !== null && percentage !== null
   return (
@@ -95,7 +98,7 @@ export function ContextDetails({
           </div>
           {capacityReported ? (
             <span className={`type-heading ${zone.text}`}>
-              {percentage}% used · {zone.label}
+              {t('composer.contextWindow.used', { percentage, zone: zone.label })}
             </span>
           ) : null}
         </div>
@@ -109,13 +112,19 @@ export function ContextDetails({
               <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
             </div>
             <div className="flex justify-between type-body text-muted-foreground">
-              <span>Working target · {Math.round(capacityTokens / 5_000) * 1000} tokens</span>
-              <span>Current · {Math.round(usedTokens / 1000)}k tokens</span>
+              <span>
+                {t('composer.contextWindow.workingTarget', {
+                  count: Math.round(capacityTokens / 5_000) * 1000,
+                })}
+              </span>
+              <span>
+                {t('composer.contextWindow.current', { count: Math.round(usedTokens / 1000) })}
+              </span>
             </div>
           </>
         ) : (
           <p className="type-prose text-muted-foreground">
-            This session did not report its context window.
+            {t('composer.contextWindow.unreported')}
           </p>
         )}
         <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3 type-prose">
@@ -134,8 +143,7 @@ export function ContextDetails({
         </div>
         {capacityReported ? (
           <p className="type-prose text-muted-foreground">
-            At this level, older context can compete with the current task. Compact before starting
-            another substantial phase.
+            {t('composer.contextWindow.description')}
           </p>
         ) : null}
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   Tooltip,
   TooltipContent,
@@ -59,14 +60,22 @@ function ContextSummary({
   percentage: number | null
   usedTokens: number
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
-      <span className="font-medium text-foreground">{Math.round(usedTokens / 1000)}k</span>
+      <span className="font-medium text-foreground">
+        {t('composer.contextWindow.tokenCount', { count: Math.round(usedTokens / 1000) })}
+      </span>
       {capacityTokens === null ? (
-        <span className="text-muted-foreground"> tokens</span>
+        <span className="text-muted-foreground"> {t('composer.contextWindow.tokens')}</span>
       ) : (
         <>
-          <span className="text-muted-foreground"> / {Math.round(capacityTokens / 1000)}k</span>
+          <span className="text-muted-foreground">
+            {' / '}
+            {t('composer.contextWindow.tokenCount', {
+              count: Math.round(capacityTokens / 1000),
+            })}
+          </span>
           <span className="font-medium">· {percentage}%</span>
         </>
       )}

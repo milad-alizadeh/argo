@@ -1,4 +1,5 @@
 import { Info, Layers3 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../components/ui/button'
 import {
   Popover,
@@ -18,6 +19,7 @@ type ContextTriggerProps = {
 }
 
 function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: ContextTriggerProps) {
+  const { t } = useTranslation('sessions')
   const value =
     capacityTokens === null || percentage === null
       ? `${Math.round(usedTokens / 1000)}k tokens`
@@ -61,7 +63,7 @@ function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: Conte
         />
       </svg>
       <span>
-        Context{' '}
+        {t('composer.context')}{' '}
         <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">{value}</span>
         <span className="tabular-nums text-muted-foreground @[23rem]:hidden">
           {percentage === null ? '–' : `${percentage}%`}
@@ -72,6 +74,7 @@ function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: Conte
 }
 
 function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
+  const { t } = useTranslation('sessions')
   const accessibleName =
     percentage === null ? 'Context total not reported' : `Context ${percentage}%`
   return (
@@ -86,7 +89,7 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
       }
     >
       <Layers3 />
-      <span>Context</span>
+      <span>{t('composer.context')}</span>
     </PopoverTrigger>
   )
 }
@@ -96,10 +99,15 @@ function ContextPopoverTrigger({
   labelled,
   ...props
 }: ContextTriggerProps & { compact: boolean; labelled: boolean }) {
+  const { t } = useTranslation('sessions')
   if (compact) return <CompactContextTrigger {...props} />
   if (labelled) return <LabelledContextTrigger {...props} />
   return (
-    <PopoverTrigger render={<Button aria-label="Context details" size="icon-sm" variant="ghost" />}>
+    <PopoverTrigger
+      render={
+        <Button aria-label={t('composer.contextWindow.details')} size="icon-sm" variant="ghost" />
+      }
+    >
       <Info />
     </PopoverTrigger>
   )
