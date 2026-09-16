@@ -18,6 +18,10 @@ function unclassified(id: string): ToolCall {
   return { id, name: 'SomeMcpTool', input: {} }
 }
 
+function execCommand(id: string, cmd: string): ToolCall {
+  return { id, name: 'exec_command', input: { cmd } }
+}
+
 function rowsFor(calls: ToolCall[]): SessionFeedRow[] {
   return toolRows(calls, { results: new Map(), skillBodies: new Map() })
 }
@@ -54,6 +58,11 @@ test('a single unclassified tool call groups alone and reads "Called a tool"', (
 
 test('several consecutive commands state the count', () => {
   const found = group(rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build')]))
+  assert.equal(found.label, 'Ran 2 commands')
+})
+
+test('several consecutive Codex exec calls read as commands, the same as Bash', () => {
+  const found = group(rowsFor([execCommand('c1', 'bun test'), execCommand('c2', 'bun run build')]))
   assert.equal(found.label, 'Ran 2 commands')
 })
 
