@@ -70,10 +70,7 @@ function chainOf(id: string, records: TranscriptRecord[]): SessionChain {
 
 test('a Tool Call with no result yet stays open, and freezes once resolved and no longer trailing', () => {
   const first = chainOf('s', [prose('a', 'First.'), toolCall('b', 'call-1', 'Bash')])
-  const { state: afterCall, previouslyFrozenCount: initial } = projectFeed(
-    first,
-    undefined,
-  )
+  const { state: afterCall, previouslyFrozenCount: initial } = projectFeed(first, undefined)
   assert.equal(initial, 0)
   // The prose row is safe; the Tool Call is not, since nothing has resolved it yet.
   assert.equal(afterCall.frozenRows.length, 1)
@@ -88,18 +85,20 @@ test('a Tool Call with no result yet stays open, and freezes once resolved and n
     previouslyFrozenCount: afterResultFrozen,
   } = projectFeed(second, afterCall)
   assert.equal(afterResultFrozen, 1)
-  assert.deepEqual(rowsAfterResult.map((row) => row.shape), ['prose', 'tool-group'])
+  assert.deepEqual(
+    rowsAfterResult.map((row) => row.shape),
+    ['prose', 'tool-group'],
+  )
   // Resolved, but still the trailing row: a later poll's new Tool Call could still join its group.
   assert.equal(afterResult.frozenRows.length, 1)
 
   const third = chainOf('s', [...(second.files[0]?.records ?? []), prose('d', 'Third.')])
-  const {
-    rows,
-    state: afterProse,
-    previouslyFrozenCount,
-  } = projectFeed(third, afterResult)
+  const { rows, state: afterProse, previouslyFrozenCount } = projectFeed(third, afterResult)
   assert.equal(previouslyFrozenCount, 1)
-  assert.deepEqual(rows.map((row) => row.shape), ['prose', 'tool-group', 'prose'])
+  assert.deepEqual(
+    rows.map((row) => row.shape),
+    ['prose', 'tool-group', 'prose'],
+  )
   // A later, non-Tool row proves the group is closed, so it freezes now.
   assert.equal(afterProse.frozenRows.length, 3)
 })
@@ -122,7 +121,10 @@ test('a file rewritten in place resets rather than misreading the old cursor as 
   const rewritten = chainOf('s', [prose('a2', 'Rewritten.')])
   const { rows } = projectFeed(rewritten, state)
 
-  assert.deepEqual(rows.map((row) => row.shape), ['prose'])
+  assert.deepEqual(
+    rows.map((row) => row.shape),
+    ['prose'],
+  )
   assert.equal(rows[0]?.shape === 'prose' ? rows[0].text : null, 'Rewritten.')
 })
 

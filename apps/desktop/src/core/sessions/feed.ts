@@ -1,8 +1,6 @@
-import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
 import { withPromptAttachments } from './prompt-attachments'
 import { type ToolEvidence, toolRows } from './tool-feed'
-import { groupToolRuns } from './tool-groups'
 import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
