@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
+import { SELECTED_SESSION_KEY } from '../../sessions/components/roster/use-sidebar-actions'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function CockpitRouteLayoutStory() {
@@ -15,7 +16,15 @@ function CockpitRouteLayoutStory() {
         {
           element: <CockpitRouteLayout />,
           children: [
-            { path: '/sessions', handle: { sidebar: <SessionsSidebar /> }, element: null },
+            {
+              path: '/sessions',
+              handle: { sidebar: <SessionsSidebar /> },
+              // The sidebar reopens the last selected Session, so that path must resolve.
+              children: [
+                { index: true, element: null },
+                { path: ':sessionId', element: null },
+              ],
+            },
           ],
         },
       ],
@@ -57,6 +66,8 @@ function listed(projects: (typeof PROJECT)[], selectedId: string | null) {
 export const NoProject: Story = {
   beforeEach: () => {
     const before = window.argo
+    const storedSession = window.localStorage.getItem(SELECTED_SESSION_KEY)
+    window.localStorage.setItem(SELECTED_SESSION_KEY, 'restored-session')
     window.argo = {
       ...before,
       listProjects: () => Promise.resolve(listed([], null)),
@@ -64,6 +75,8 @@ export const NoProject: Story = {
     }
     return () => {
       window.argo = before
+      if (storedSession === null) window.localStorage.removeItem(SELECTED_SESSION_KEY)
+      else window.localStorage.setItem(SELECTED_SESSION_KEY, storedSession)
     }
   },
   play: async ({ canvasElement }) => {
