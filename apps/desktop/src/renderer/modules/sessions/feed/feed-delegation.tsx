@@ -21,15 +21,6 @@ type Actor = DelegationRow['actor']
 // The Session header's own two icons (SessionWorkButtons), so a block and its header button match.
 const ACTOR_ICON = { agent: Bot, shell: SquareTerminal } satisfies Record<Actor, typeof Bot>
 
-const STATE_INK: Record<WorkState, string> = {
-  running: 'text-(--feed-work-ink-active)',
-  done: 'text-muted-foreground',
-  completed: 'text-muted-foreground',
-  failed: 'text-(--feed-work-ink-danger)',
-  killed: 'text-(--feed-work-ink-warn)',
-  stopped: 'text-(--feed-work-ink-warn)',
-}
-
 function useNow(ticking: boolean) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -53,13 +44,12 @@ function WorkMark({ actor, state }: { actor: Actor; state: WorkState | null }) {
   )
 }
 
-// A running block says so in its shimmering headline, so only a settled state is worded.
-function settledWord(state: WorkState | null, status: string | null, t: TFunction<'sessions'>) {
+function workStateText(state: WorkState | null, status: string | null, t: TFunction<'sessions'>) {
   if (state === null) return status
-  return state === 'running' ? null : t(`workState.${state}`)
+  return t(`workState.${state}`)
 }
 
-// The settled state word, then the tokens a Subagent spent, then how long the work ran.
+// The colored state mark is visual; its fact remains available to screen readers before the metrics.
 function WorkFacts({
   state,
   status,
@@ -73,15 +63,15 @@ function WorkFacts({
   const now = useNow(state === 'running')
   const work = target?.kind === 'shell' ? target.command : (target?.delegation ?? null)
   const elapsed = work === null ? null : workDuration(work.startedAt, work.endedAt, now)
-  const tokens = spentTokens(target?.kind === 'delegation' ? target.tokens : null, t)
-  const word = settledWord(state, status, t)
+  const tokens = spentTokens(target?.kind === 'delegation' ? target.usage.tokens : null, t)
+  const model = target?.kind === 'delegation' ? (target.usage.model ?? null) : null
+  const stateText = workStateText(state, status, t)
   return (
     <span className="flex flex-1 shrink-0 items-center justify-end gap-3 whitespace-nowrap tabular-nums">
-      {word === null ? null : (
-        <span className={state === null ? undefined : STATE_INK[state]}>{word}</span>
-      )}
-      {tokens === null ? null : <span>{tokens}</span>}
+      {stateText === null ? null : <span className="sr-only">{stateText}</span>}
+      {model === null ? null : <span>{model}</span>}
       {elapsed === null ? null : <span>{elapsed}</span>}
+      {tokens === null ? null : <span>{tokens}</span>}
     </span>
   )
 }

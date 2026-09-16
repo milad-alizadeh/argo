@@ -12,13 +12,13 @@ export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; n
   const { t } = useTranslation('sessions')
   const currentTime = now ?? Date.now()
   if (work.kind === 'delegation') {
-    const { delegation, tokens } = work
+    const { delegation, usage } = work
     return (
       <InspectorHeader
         facts={[
           t(`workState.${delegationState(delegation)}`),
           workDuration(delegation.startedAt, delegation.endedAt, currentTime),
-          spentTokens(tokens, t),
+          spentTokens(usage.tokens, t),
         ]}
         title={delegation.label === null ? delegation.id : readableDelegationName(delegation.label)}
       />

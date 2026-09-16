@@ -11,6 +11,7 @@ import { listed } from '@/core/sessions/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
 
 const THREAD = '01a0b000-0000-7000-8000-000000000001'
+const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
 const FIXTURE = fileURLToPath(
   new URL(
     '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexOpenTurn.jsonl',
@@ -36,6 +37,33 @@ const TURN_ENDS = {
     completed_at: 1789509322,
     duration_ms: 2154,
   },
+}
+
+function delegationActivity(kind: 'started' | 'completed') {
+  return {
+    type: 'event_msg',
+    payload: {
+      type: 'item_completed',
+      item: {
+        type: 'SubAgentActivity',
+        id: `delegation-${kind}`,
+        kind,
+        agent_thread_id: DELEGATION,
+        agent_path: '/root/inspect_session',
+      },
+    },
+  }
+}
+
+async function completeTurnWithActiveDelegation(rollout: string) {
+  await appendFile(
+    rollout,
+    `${JSON.stringify({ timestamp: '2026-09-15T21:56:20.000Z', ...delegationActivity('started') })}\n`,
+  )
+  await appendFile(
+    rollout,
+    `${JSON.stringify({ timestamp: '2026-09-15T21:56:21.000Z', type: 'event_msg', payload: TURN_ENDS.task_complete })}\n`,
+  )
 }
 
 async function rolloutRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
@@ -84,6 +112,26 @@ test('keeps a thread resumable when its open Turn has not been written to for 31
   const { root, rollout } = await rolloutRoot(context)
   const silentSince = new Date(Date.now() - 31 * 60 * 1000)
   await utimes(rollout, silentSince, silentSince)
+  assert.deepEqual(await rows(readerFor(root)), [
+    { id: THREAD, posture: 'external', status: 'unknown', locked: false },
+  ])
+})
+
+test('locks a completed root Turn while its Codex delegation is active', async (context) => {
+  const { root, rollout } = await rolloutRoot(context)
+  await completeTurnWithActiveDelegation(rollout)
+  assert.deepEqual(await rows(readerFor(root)), [
+    { id: THREAD, posture: 'external', status: 'running', locked: true },
+  ])
+})
+
+test('unlocks a completed root Turn after its Codex delegation completes', async (context) => {
+  const { root, rollout } = await rolloutRoot(context)
+  await completeTurnWithActiveDelegation(rollout)
+  await appendFile(
+    rollout,
+    `${JSON.stringify({ timestamp: '2026-09-15T21:56:22.000Z', ...delegationActivity('completed') })}\n`,
+  )
   assert.deepEqual(await rows(readerFor(root)), [
     { id: THREAD, posture: 'external', status: 'unknown', locked: false },
   ])

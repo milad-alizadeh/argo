@@ -2,6 +2,7 @@
 // between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
+import type { DelegationUsageFacts } from '@/core/sessions/background-work-contract'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import {
   delegationState,
@@ -28,7 +29,7 @@ function joined(facts: readonly (string | null)[]): string {
 
 export function delegationEntries(
   delegations: readonly SessionDelegation[],
-  { now, tokens }: { now: number; tokens: Readonly<Record<string, number | null>> },
+  { now, usage }: { now: number; usage: Readonly<Record<string, DelegationUsageFacts>> },
   t: TFunction<'sessions'>,
 ): WorkEntry[] {
   return delegations.map((delegation) => {
@@ -41,8 +42,9 @@ export function delegationEntries(
       mark: WORK_STATE_MARKS[state],
       state: t(`workState.${state}`),
       facts: joined([
+        usage[delegation.id]?.model ?? null,
         workDuration(delegation.startedAt, delegation.endedAt, now),
-        spentTokens(tokens[delegation.id] ?? null, t),
+        spentTokens(usage[delegation.id]?.tokens ?? null, t),
       ]),
     }
   })

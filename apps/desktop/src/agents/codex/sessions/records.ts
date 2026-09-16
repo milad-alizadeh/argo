@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { subagentActivity } from './subagent-activity'
 import { readToolRecord } from './tool-calls'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
@@ -32,6 +33,7 @@ function itemMessage(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   const item = isRecord(payload.item) ? payload.item : null
+  if (item?.type === 'SubAgentActivity') return subagentActivity(record, item)
   if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'

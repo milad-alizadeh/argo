@@ -2,6 +2,7 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { DelegationUsageFacts } from '@/core/sessions/background-work-contract'
 import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
 import type { SessionContractError } from '../session-contract-error'
 import {
@@ -16,7 +17,7 @@ import { sessionFeedQuery } from './session-feed-query'
 // all come back is read once rather than on every pass.
 export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
   const queryKey = sessionDelegationUsageQueryKey(sessionId ?? '')
-  const usage = useQuery<Record<string, number | null>>({
+  const usage = useQuery<Record<string, DelegationUsageFacts>>({
     queryKey,
     enabled: sessionId !== null,
     gcTime: 0,
@@ -26,7 +27,7 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
       if (sessionId === null) return {}
       const reply = await window.argo.readDelegationUsage({ sessionId })
       if (reply.type !== 'session.delegation.usage.read') return {}
-      return Object.fromEntries(reply.usage.map(({ id, tokens }) => [id, tokens]))
+      return Object.fromEntries(reply.usage.map(({ id, tokens, model }) => [id, { tokens, model }]))
     },
   })
   // A Subagent's transcript is what carries its token count, and it sits under the same watched

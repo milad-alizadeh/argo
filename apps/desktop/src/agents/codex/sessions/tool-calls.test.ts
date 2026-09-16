@@ -41,14 +41,14 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
       {
         status: 'succeeded',
         label: 'Ran bun test session-store.test.ts',
-        text: 'const result = await tools.exec_command({"cmd":"bun test session-store.test.ts"});\ntext(result.output);',
+        text: 'bun test session-store.test.ts',
       },
       { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
       { status: 'running', label: 'Ran bun run build', text: 'bun run build' },
       {
         status: 'succeeded',
         label: 'Ran bun run quality',
-        text: 'const result = await tools.exec_command({"cmd":"bun run quality"});\ntext(result.output);',
+        text: 'bun run quality',
       },
     ],
   )

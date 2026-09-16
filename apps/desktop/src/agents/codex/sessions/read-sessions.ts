@@ -8,11 +8,13 @@ import {
   clearFullRecords,
   discoverSessions,
   nameThreads,
-  readDelegationFiles,
+  readDelegationFiles as readDelegationFilesForParent,
   readSessionFiles,
 } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
+import { readDelegationTokens } from './subagent-tokens'
+import { readDelegationChain } from './subagents'
 import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
@@ -97,8 +99,24 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
-    readDelegationFiles: (sessionId, delegationId) =>
-      readDelegationFiles(root, sessionId, delegationId),
+    readDelegationFiles: async (sessionId, delegationId) =>
+      (await readDelegationFilesForParent(root, sessionId, delegationId)) ??
+      readDelegationChain(root, delegationId),
+    readDelegationUsage: async (sessionId) => {
+      const chain = await readSessionFiles(root, sessionId)
+      const delegationIds = [
+        ...new Set(
+          chain?.files
+            .flatMap((file) => file.records)
+            .flatMap((record) =>
+              record.kind === 'delegation' && record.actor === 'agent' && record.groupId !== null
+                ? [record.groupId]
+                : [],
+            ) ?? [],
+        ),
+      ]
+      return readDelegationTokens(root, delegationIds)
+    },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,

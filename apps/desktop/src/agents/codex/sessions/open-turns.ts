@@ -3,6 +3,7 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
+import { hasOpenDelegation } from '@/core/sessions/delegation'
 import { isLiveElsewhere } from '@/core/sessions/live-elsewhere'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { sessionIdOfFile } from '@/core/sessions/transcript-file'
@@ -67,6 +68,8 @@ export function joinOpenTurns(
   open: ReadonlySet<string>,
 ): SessionRosterRow[] {
   return rows.map((row) =>
-    isLiveElsewhere(row, open) ? { ...row, status: 'running', locked: true } : row,
+    isLiveElsewhere(row, open) || (row.posture === 'external' && hasOpenDelegation(row.delegations))
+      ? { ...row, status: 'running', locked: true }
+      : row,
   )
 }
