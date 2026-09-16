@@ -1,4 +1,5 @@
 import { GitFork, Minimize2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../../../components/ui/button'
 import {
@@ -46,6 +47,47 @@ function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; per
   )
 }
 
+function CompactButtons({
+  canCompact,
+  isCompacting,
+  onCompact,
+}: {
+  canCompact: boolean
+  isCompacting: boolean
+  onCompact?: () => Promise<boolean>
+}) {
+  const { t } = useTranslation('sessions')
+  return (
+    <>
+      <div className="flex shrink-0 items-center gap-1 @[23rem]:hidden">
+        <Button
+          aria-label={t('composer.compact')}
+          disabled={!canCompact || isCompacting}
+          onClick={() => void onCompact?.()}
+          size="icon-sm"
+          type="button"
+          variant="secondary"
+        >
+          <Minimize2 />
+        </Button>
+      </div>
+      <div className="hidden shrink-0 items-center gap-1 @[23rem]:flex">
+        <Button
+          aria-label={t('composer.compact')}
+          disabled={!canCompact || isCompacting}
+          onClick={() => void onCompact?.()}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          <Minimize2 />
+          {t('composer.compactShort')}
+        </Button>
+      </div>
+    </>
+  )
+}
+
 export function SessionContextBar({
   contextTokens,
   harness,
@@ -73,7 +115,10 @@ export function SessionContextBar({
       className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
-      <div className="shrink-0 border-r border-border/60 pr-2 @[56rem]:pr-4">
+      {/* Compact leads the bar so its left edge sits at the bar's own left inset, the same
+          column the Feed's own text starts from, instead of trailing behind Handoff (#2251). */}
+      <CompactButtons canCompact={canCompact} isCompacting={isCompacting} onCompact={onCompact} />
+      <div className="shrink-0 border-l border-border/60 pl-2 @[56rem]:pl-4">
         <UsagePopover harness={harness ?? 'codex'} />
       </div>
       <div className="shrink-0 @[56rem]:hidden">
@@ -100,16 +145,6 @@ export function SessionContextBar({
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[23rem]:hidden">
         <Button
-          aria-label="Compact context"
-          disabled={!canCompact || isCompacting}
-          onClick={() => void onCompact?.()}
-          size="icon-sm"
-          type="button"
-          variant="secondary"
-        >
-          <Minimize2 />
-        </Button>
-        <Button
           aria-label="Handoff Session"
           disabled={!canHandoff || isHandingOff}
           onClick={() => void onHandoff?.()}
@@ -121,17 +156,6 @@ export function SessionContextBar({
         </Button>
       </div>
       <div className="ml-auto hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
-        <Button
-          aria-label="Compact context"
-          disabled={!canCompact || isCompacting}
-          onClick={() => void onCompact?.()}
-          size="sm"
-          type="button"
-          variant="secondary"
-        >
-          <Minimize2 />
-          Compact
-        </Button>
         <Button
           aria-label="Handoff Session"
           disabled={!canHandoff || isHandingOff}
