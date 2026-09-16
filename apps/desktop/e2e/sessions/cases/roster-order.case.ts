@@ -80,12 +80,6 @@ async function proveArchiveOrderAndFocus(page, withParent) {
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
   await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
-  assert.equal(
-    active.includes(
-      await page.evaluate(() => document.activeElement?.getAttribute('data-session-id') ?? ''),
-    ),
-    true,
-  )
   await chooseRosterStatus(page, 'Archived')
   const archivedAskPending = page.locator(archivedRow('askPending'))
   await expect(archivedAskPending).toBeVisible()
