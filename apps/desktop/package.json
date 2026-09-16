@@ -23,7 +23,7 @@
     "test:darwin-manifest": "electron-forge package --platform darwin --arch arm64 && node scripts/desktop-manifest.mjs out/Argo-darwin-arm64/Argo.app",
     "test:packaged-pty": "node scripts/prove-packaged-pty.mjs",
     "test:packaged-project": "bun run build:fake-drivers && node scripts/project-fake-driver/prove-project-contract.mjs",
-    "test:packaged-session": "playwright test session-feed.spec.ts",
+    "test:packaged-session": "playwright test session-feed.spec.ts session-adversarial.spec.ts",
     "test:packaged-journeys": "playwright test session-journeys.spec.ts",
     "test:packaged-tickets": "bun run build:fake-drivers && node scripts/ticket-fake-driver/prove-tickets.mjs",
     "test:live-claude-display": "bun build src/agents/claude/session-fake-driver/prove-message-display.ts --target=node --format=esm --packages=external --outfile=scripts/claude-session-fake-driver/prove-message-display.mjs && node scripts/claude-session-fake-driver/prove-message-display.mjs",

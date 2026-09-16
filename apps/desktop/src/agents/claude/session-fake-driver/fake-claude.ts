@@ -8,13 +8,10 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import {
-  type AdversarialTurn,
-  adversarialTurn,
-} from '../../../core/sessions/fake-driver/adversarial-turns.ts'
-import {
   SESSION_FAKE_ADVERSARIAL_SEED_ENV,
   SESSION_FAKE_REPLY_DELAY_MS_ENV,
 } from '../../../core/sessions/proof-protocol.ts'
+import { type AdversarialTurn, adversarialTurn } from './adversarial-turns.ts'
 
 const ESCAPE = String.fromCharCode(27)
 // Long enough for the proof to read the running compaction before the boundary ends it; that read

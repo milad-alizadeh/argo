@@ -1,4 +1,3 @@
-// The packaged Session fakes share this plan, so a printed seed replays their timing and failures.
 export const ADVERSARIAL_TURN_COUNT = 5
 
 export type AdversarialTurn = {

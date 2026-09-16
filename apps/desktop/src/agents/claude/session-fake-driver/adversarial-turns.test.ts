@@ -9,10 +9,7 @@ test('the same seed plans the same adversarial turns', () => {
 })
 
 test('different seeds select different adversarial behavior', () => {
-  const first = adversarialTurnsForSeed('first-seed')
-  const second = adversarialTurnsForSeed('second-seed')
-
-  expect(first).not.toEqual(second)
+  expect(adversarialTurnsForSeed('first-seed')).not.toEqual(adversarialTurnsForSeed('second-seed'))
 })
 
 test('each planned reply waits inside the jitter range and splits a multi-byte reply', () => {
@@ -25,7 +22,6 @@ test('each planned reply waits inside the jitter range and splits a multi-byte r
 
 test('a seed plans each terminal behavior and the queued Permission', () => {
   const turns = adversarialTurnsForSeed('all-behaviors')
-
   expect(turns.map((turn) => turn.outcome)).toEqual(
     expect.arrayContaining(['reply', 'failure', 'stall']),
   )

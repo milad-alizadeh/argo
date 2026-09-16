@@ -59,33 +59,39 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     return
   }
   if (plan !== null) {
-    writeSplitReply(
-      {
-        method: 'item/agentMessage/delta',
-        params: {
-          threadId,
-          turnId,
-          itemId: `fake-message-${turnId}`,
-          delta: `Fake Codex read: ${text} 🦜`,
+    setTimeout(() => {
+      writeSplitReply(
+        {
+          method: 'item/agentMessage/delta',
+          params: {
+            threadId,
+            turnId,
+            itemId: `fake-message-${turnId}`,
+            delta: `Fake Codex read: ${text} 🦜`,
+          },
         },
-      },
-      plan.replySplitByte,
-      (chunk) => process.stdout.write(chunk),
-    )
-    if (plan.outcome === 'stall') return
+        plan.replySplitByte,
+        (chunk) => process.stdout.write(chunk),
+      )
+      if (plan.outcome === 'stall') return
+      completeTurn({
+        outcome: plan.outcome === 'failure' ? 'failure' : 'reply',
+        send,
+        threadId,
+        turnId,
+      })
+    }, plan.firstReplyDelayMs)
+    return
   }
   setTimeout(
     () =>
       completeTurn({
         threadId,
         turnId,
-        outcome:
-          plan?.outcome === 'failure' || (plan === null && text.includes('FAIL'))
-            ? 'failure'
-            : 'reply',
+        outcome: text.includes('FAIL') ? 'failure' : 'reply',
         send,
       }),
-    plan?.firstReplyDelayMs ?? (REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS),
+    REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
   )
 }
 
