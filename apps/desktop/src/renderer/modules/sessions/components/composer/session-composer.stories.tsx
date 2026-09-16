@@ -164,9 +164,6 @@ function CompactingComposerStory() {
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
-          compactionPercentage={compacting ? 22 : null}
-          compactionStartedAt={compacting ? '2026-09-13T22:01:00.000Z' : null}
-          compactionTokens={compacting ? '10.1k tokens' : null}
           failure={null}
           feed={COMPACTION_FEED}
           onOpenEvidence={() => {}}
@@ -175,7 +172,17 @@ function CompactingComposerStory() {
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
-          isRunning={compacting}
+          liveFacts={{
+            compactionPercentage: compacting ? 22 : null,
+            compactionStartedAt: compacting ? '2026-09-13T22:01:00.000Z' : null,
+            compactionTokens: compacting ? '10.1k tokens' : null,
+            handoffStartedAt: null,
+            handoffTo: null,
+            isRunning: compacting,
+            optimisticRow: null,
+            posture: null,
+            turnMarker: null,
+          }}
           selectedSessionId="compacting-session"
         />
       </div>

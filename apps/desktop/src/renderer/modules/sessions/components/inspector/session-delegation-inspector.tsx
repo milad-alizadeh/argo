@@ -33,22 +33,27 @@ export function SessionDelegationInspector({
       <div className="feed min-h-0 flex-1">
         {feed === null ? null : (
           <FeedDocument
-            active={true}
-            activeEvidenceId={activeEvidenceId}
-            answeringQuestionId={null}
-            compactionStartedAt={null}
-            compactionPercentage={null}
-            compactionTokens={null}
-            feed={feed}
-            handoffStartedAt={null}
-            handoffTo={null}
-            isRunning={!delegation.landed}
-            onAnswerQuestion={() => {}}
-            onOpenEvidence={onOpenEvidence}
-            onOpenSession={onOpenSession}
-            posture={null}
-            questionFailure={() => null}
-            turnMarker={null}
+            actions={{
+              active: true,
+              activeEvidenceId,
+              answeringQuestionId: null,
+              onAnswerQuestion: () => {},
+              onOpenEvidence,
+              onOpenSession,
+              questionFailure: () => null,
+            }}
+            liveFacts={{
+              compactionStartedAt: null,
+              compactionPercentage: null,
+              compactionTokens: null,
+              handoffStartedAt: null,
+              handoffTo: null,
+              isRunning: !delegation.landed,
+              optimisticRow: null,
+              posture: null,
+              turnMarker: null,
+            }}
+            reading={feed}
           />
         )}
       </div>
