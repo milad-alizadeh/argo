@@ -124,3 +124,15 @@ test('an access token past its lifetime is refused as unauthorized', async (cont
   fake.expire(ADA.id)
   assert.deepEqual(await listTeams(endpoints, accessToken), { ok: false, failure: 'unauthorized' })
 })
+
+test('a call to a route this fake never stubbed fails loudly, naming the request', async (context) => {
+  const [fake] = await linear(context)
+  const printed: string[] = []
+  const originalError = console.error
+  console.error = (...args: unknown[]) => printed.push(args.join(' '))
+  context.after(() => {
+    console.error = originalError
+  })
+  await assert.rejects(fetch(`${fake.origin}/oauth/revoke`))
+  assert.ok(printed.some((line) => line.includes(`GET ${fake.origin}/oauth/revoke`)))
+})

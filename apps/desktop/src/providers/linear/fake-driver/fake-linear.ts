@@ -1,11 +1,12 @@
-// Linear, as far as the cockpit calls it, on a loopback port: the consent page, the token endpoint
-// and the GraphQL reads. The provider is the one thing a test here does not control and cannot
-// afford live, so it is the one thing faked; the unit tests and the packaged proof both drive it.
-import { createServer } from 'node:http'
-import type { AddressInfo } from 'node:net'
+// Linear, as far as the cockpit calls it, on a fixed loopback origin: the consent page, the token
+// endpoint and the GraphQL reads, answered by Mock Service Worker instead of a real socket. The
+// provider is the one thing a test here does not control and cannot afford live, so it is the one
+// thing faked; only this in-process suite drives it — the packaged proof keeps its own real
+// loopback server, since Mock Service Worker cannot reach a process it was never loaded into.
+import { mountFakeProvider, type NodeRoute } from '../../msw-node-bridge'
 import { answerGraphQL } from './fake-linear-graphql'
 import { authorize, token } from './fake-linear-oauth'
-import { type FakeLinearState, type Route, reply } from './fake-linear-state'
+import type { FakeLinearState } from './fake-linear-state'
 
 export type FakeLinearUser = { id: string; name: string; email: string; workspace: string }
 
@@ -55,16 +56,14 @@ export type FakeLinear = {
   close(): Promise<void>
 }
 
-const ROUTES: Record<string, Route> = {
-  'GET /oauth/authorize': authorize,
-  'POST /oauth/token': token,
-  'POST /graphql': answerGraphQL,
-}
+// A fixed loopback-shaped origin, never actually dialed: Mock Service Worker intercepts a request
+// to it before any socket opens, so nothing needs to bind a free port.
+const FAKE_LINEAR_ORIGIN = 'http://127.0.0.1:41100'
 
 export async function startFakeLinear(): Promise<FakeLinear> {
   const requests: string[] = []
   const state: FakeLinearState = {
-    origin: '',
+    origin: FAKE_LINEAR_ORIGIN,
     signIn: 'declined',
     codes: new Map(),
     access: new Map(),
@@ -74,16 +73,13 @@ export async function startFakeLinear(): Promise<FakeLinear> {
     lifetime: 86_399,
     serial: 0,
   }
-  const server = createServer((request, response) => {
-    const route = `${request.method} ${new URL(request.url ?? '/', 'http://x').pathname}`
-    requests.push(route)
-    const answer = ROUTES[route] ?? (() => reply(response, 404, { error: 'not_found' }))
-    Promise.resolve(answer(state, request, response)).catch(() =>
-      reply(response, 500, { error: 'fake_failed' }),
-    )
-  })
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  state.origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+  let closed = false
+  const routes: Record<string, NodeRoute> = {
+    'GET /oauth/authorize': (request, response) => authorize(state, request, response),
+    'POST /oauth/token': (request, response) => token(state, request, response),
+    'POST /graphql': (request, response) => answerGraphQL(state, request, response),
+  }
+  mountFakeProvider(FAKE_LINEAR_ORIGIN, () => !closed, requests, routes)
   const forUser = (userId: string, map: Map<string, { user: FakeLinearUser }>) => {
     for (const [key, grant] of map) if (grant.user.id === userId) map.delete(key)
   }
@@ -110,10 +106,8 @@ export async function startFakeLinear(): Promise<FakeLinear> {
     outage: (kind) => {
       state.outage = kind
     },
-    close: () =>
-      new Promise((resolve) => {
-        server.closeAllConnections()
-        server.close(() => resolve())
-      }),
+    close: async () => {
+      closed = true
+    },
   }
 }
