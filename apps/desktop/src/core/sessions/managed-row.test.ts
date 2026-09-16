@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { managedRow, mergeManagedRoster } from './managed-row'
 import type { SessionRosterRow, SessionStatus, SessionTitle } from './models'
+import { reconcileRosterRow, rosterRowFields } from './roster-row-definition'
 
 const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'
@@ -46,7 +46,7 @@ function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus
   return merged.rows[0]?.status
 }
 
-test('keeps the current held fields when reconciling a managed row', () => {
+test('reconciles every Roster field by its declared rule', () => {
   const held = managedRow('session-1', {
     cli: 'claude',
     compactionPercentage: 40,
@@ -72,25 +72,16 @@ test('keeps the current held fields when reconciling a managed row', () => {
     compactionTokens: null,
     setup: { model: 'observed-model', effort: 'observed-effort', mode: 'observed-mode' },
   } as const
-  const discovered: TranscriptDiscovery = {
-    rows: [observed],
-    filesFound: 1,
-    filesRead: 1,
-    filesUnreadable: 0,
-    nextCursor: null,
+  const reconciled = reconcileRosterRow(observed, held, () => held.title)
+  const rows = {
+    held,
+    observed,
+    'stronger-title': { ...observed, title: held.title },
   }
 
-  const [merged] = mergeManagedRoster(discovered, [held]).rows
-
-  assert.deepEqual(merged, {
-    ...observed,
-    posture: held.posture,
-    title: held.title,
-    locked: undefined,
-    compactionStartedAt: held.compactionStartedAt,
-    compactionPercentage: held.compactionPercentage,
-    compactionTokens: held.compactionTokens,
-  })
+  for (const field of rosterRowFields) {
+    assert.deepEqual(reconciled[field.name], rows[field.reconciliation][field.name], field.name)
+  }
 })
 
 test('a managed Session shows the strongest title known for it, keeping its own on a tie', () => {

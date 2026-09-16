@@ -12,6 +12,7 @@ import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
+import { accountStoreDirectory } from './development/account-store'
 import {
   developmentIdentityArgument,
   developmentInstance,
@@ -90,6 +91,11 @@ async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
 
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
+  const accountData = accountStoreDirectory({
+    userData,
+    appData: app.getPath('appData'),
+    instance: DEVELOPMENT_INSTANCE,
+  })
   const window = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -132,6 +138,7 @@ function createWindow(): BrowserWindow {
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachBridges(window, {
     userData,
+    accountData,
     rendererURL,
     proofEnabled: PROOF_ENABLED,
     acceptance: ACCEPTANCE_ENABLED,

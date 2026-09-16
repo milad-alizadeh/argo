@@ -34,6 +34,17 @@ The default port is stable for the worktree. Vite refuses a busy port. If anothe
 the port, stop that process or start this run with `ARGO_DESKTOP_DEV_PORT=<free-port> bun run dev`.
 The state directory is under the system temporary directory and is unique to the worktree.
 
+Accounts are the one exception. Every development app reads and writes one Account store in
+`Argo Development`, beside the packaged app's own folder in your application data directory
+(`~/Library/Application Support` on macOS). You sign in to GitHub or Linear once, and every
+worktree lists that Account. The store is outside the temporary directory, so a reboot does not
+remove it. A packaged app reads its own Accounts and never these. Projects, Connections and
+Sessions stay in the worktree's own state directory.
+
+The development bar at the foot of the window names the instance, for example
+`ticket-2304-shared-account-store-3f2a1b9c`: the worktree folder, then a short hash of its path.
+Two development apps on one branch are still told apart.
+
 `bun run desktop:stop` reads only this worktree's ready record. It stops the recorded app and
 launcher processes. It does not target another worktree's app.
 
@@ -46,6 +57,21 @@ bun run dev:prove-isolation -- /absolute/path/to/another/argo/worktree
 The proof launches two Electron windows, verifies their title, port, profile and ready records
 are distinct, then stops one. It passes only when that worktree's actual Electron process and
 ready record disappear while the other window remains live and responsive.
+
+## Offer a Linear sign-in
+
+The app offers a "Connect a Linear Account" button only when it has an OAuth client id. The code
+for the sign-in, the token renewal and the proofs is all written. A person does the rest, once:
+
+1. Register an OAuth App for the desktop at Linear.
+2. Set its redirect URI to `http://127.0.0.1:51734/linear/callback`, the address the app listens
+   on. `LINEAR_REDIRECT_PORT` fixes the port and `CALLBACK_PATH` fixes the path.
+3. Ask for the `read` and `write` scopes, which `LINEAR_SCOPES` names.
+4. Write the client id into `LINEAR_CLIENT_ID` in `src/providers/linear/endpoints.ts`.
+
+The client id is public, on the same terms as the GitHub one
+([ADR-0018](../../docs/adr/0018-provider-access-oauth-api.md)). Nothing else changes: the
+button appears beside the GitHub one on the next launch.
 
 ## Visual design infra
 

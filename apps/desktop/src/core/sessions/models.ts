@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { ticketKey } from '../tickets/ticket'
+import { createSessionRosterRowSchema } from './roster-row-definition'
 
 export {
   FEED_EVENT_KINDS,
@@ -138,55 +139,7 @@ export const sessionSetupSchema = z.strictObject({
 })
 export type SessionSetup = z.infer<typeof sessionSetupSchema>
 
-export const sessionRosterRowSchema = z.strictObject({
-  id: identifierSchema,
-  retiredIds: z.array(identifierSchema),
-  cli: identifierSchema,
-  posture: sessionPostureSchema,
-  title: sessionTitleSchema.nullable(),
-  status: sessionStatusSchema,
-  entry: sessionEntrySchema,
-  cwd: z.string().nullable(),
-  branch: z.string().nullable(),
-  // Another process runs this Session live now (another Argo window, or the CLI in a terminal or
-  // another app), so the Roster marks it read-only and hides its composer (ADR-0040, CONTEXT.md
-  // L2 · Session). Absent where no source reports liveness, which reads the same as `false`.
-  locked: z.boolean().optional(),
-  updatedAt: z.string().nullable(),
-  unreadableLines: z.number(),
-  originUnread: z.boolean(),
-  // When the prompt that opened the newest Turn was written (CONTEXT.md L3 · Turn).
-  turnStartedAt: z.string().nullable(),
-  activity: sessionActivitySchema.nullable(),
-  plan: sessionPlanSchema.nullable(),
-  delegations: z.array(sessionDelegationSchema),
-  // The shell commands running now, read off `Bash` calls with no result (`sessions/signals.ts`).
-  shell: z.array(sessionShellCommandSchema),
-  pullRequest: sessionPullRequestSchema.nullable(),
-  ticket: sessionTicketSchema.nullable(),
-  // Whether the reader has archived this Session. Argo's own flag, joined on the CLI Session id
-  // and on every id the Session has retired (`sessions/archive-store.ts`).
-  archived: z.boolean(),
-  contextTokens: countSchema.nullable().optional(),
-  contextWindowTokens: countSchema.nullable().optional(),
-  spentTokens: countSchema.nullable().optional(),
-  // A managed Claude Session is compacting only after Argo typed its `/compact` command. The
-  // transcript's compact boundary clears this DIRECT start rather than a timeout guessing at it.
-  compactionStartedAt: z.string().datetime().nullable().optional(),
-  compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
-  compactionTokens: z.string().nullable().optional(),
-  // A managed Claude Session is handing off only after Argo typed its `/handoff` command. Cleared
-  // by `completeHandoffs` once the brief arrives (success) or the patience runs out (failure).
-  handoffStartedAt: z.string().datetime().nullable().optional(),
-  // Why the last handoff attempt did not land; cleared by the next attempt or a fresh read.
-  handoffFailure: z.string().nullable().optional(),
-  // The durable handoff ledger's edge for this Session, in either direction — read at every
-  // discovery pass so the relationship survives a restart (ADR-0026: New Session, handoff and
-  // resume are one path with three seeds).
-  handoffTo: identifierSchema.nullable().optional(),
-  handoffFrom: identifierSchema.nullable().optional(),
-  setup: sessionSetupSchema,
-})
+export const sessionRosterRowSchema = createSessionRosterRowSchema()
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
 
 export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | 'retiredIds'>>(

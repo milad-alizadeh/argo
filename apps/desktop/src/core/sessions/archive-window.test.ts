@@ -11,10 +11,10 @@ import {
 } from '@/agents/claude/session-fake-driver/session-window-fixture'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
+import { ARCHIVE_PAGE_LIMIT } from './archive-reads'
 import { createSessionArchiveStore } from './archive-store'
 import { sessionArchiveListReplySchema } from './contract'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
-import { ARCHIVE_PAGE_LIMIT } from './read-archive-list'
 import { createSessionReader } from './reader'
 
 const ROOT_ID = 'archivedRoot'

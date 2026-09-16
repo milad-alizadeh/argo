@@ -14,6 +14,7 @@ import { channelActions, type DriverOptions, type ManagedSession } from './drive
 import { ClaudeSessionDriverError } from './driver-error'
 import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
 import type { LiveMessage } from './live-messages'
+import { claudeManagedStatus } from './managed-status'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -112,10 +113,11 @@ function roster(options: DriverOptions, sessions: Sessions) {
       cli: 'claude',
       // No transcript floor participates in a live managed reading, so `unknown` — the honest
       // "nothing observed" floor — leaves the gate's own signal standing unopposed.
-      status: rollupSessionStatus('unknown', 'managed', {
-        kind: 'claude',
-        pendingPermission: options.gate.pending(id) !== null,
-      }),
+      status: rollupSessionStatus(
+        'unknown',
+        'managed',
+        claudeManagedStatus(options.gate.pending(id) !== null),
+      ),
       setup: session.applied,
       title: session.title,
     }),
