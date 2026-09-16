@@ -1,7 +1,12 @@
 // Registration and relocation. Both open a folder chooser, both prove the choice is a git root,
 // and neither ever creates a second identity for a repository that already has one.
 import { type ProjectError, type ProjectErrorCode, projectError } from './contract'
-import type { ProjectListReply, ProjectRegisterRequest, ProjectRelocateRequest } from './messages'
+import type {
+  ProjectListed,
+  ProjectListReply,
+  ProjectRegisterRequest,
+  ProjectRelocateRequest,
+} from './messages'
 import {
   EMPTY_REGISTRY,
   listed,
@@ -40,7 +45,7 @@ export function openRegistry(read: RegistryRead): Registry | ProjectErrorCode {
 // The chooser is modal and the registry is a file another window of this app can write while it is
 // open, so the snapshot the pre-checks read is stale by the time a choice comes back. Every commit
 // is built on a re-read rather than on that snapshot.
-async function currentRegistry(
+export async function currentRegistry(
   store: ProjectStore,
   requestId: string,
 ): Promise<Registry | ProjectError> {
@@ -68,11 +73,11 @@ async function chooseAndReread(
   return { root: chosen.root, registry }
 }
 
-async function commit(
+export async function commit(
   store: ProjectStore,
   requestId: string,
   registry: Registry,
-): Promise<ProjectListReply> {
+): Promise<ProjectListed | ProjectError> {
   if (!(await writeRegistry(store.registryPath, registry))) {
     return projectError('storage-not-written', requestId)
   }
