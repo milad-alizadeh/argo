@@ -1,7 +1,16 @@
 import { Loader2, Plus, Search } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../../../../components/ui/input-group'
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from '../../../../components/ui/popover'
 import { Skeleton } from '../../../../components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
@@ -54,13 +63,46 @@ export function RosterLoading() {
   )
 }
 
+// With no Project selected, the control has nothing to create a Session on: clicking it names the
+// next step instead of opening a composer aimed at nothing (#2307).
+function NewSessionControl({ hasProject, onNew }: { hasProject: boolean; onNew: () => void }) {
+  const { t } = useTranslation('sessions')
+  const [hintOpen, setHintOpen] = useState(false)
+  return (
+    <Popover open={hintOpen} onOpenChange={(open) => setHintOpen(open && !hasProject)}>
+      <PopoverTrigger
+        render={
+          <Button
+            aria-label={t('newSession')}
+            onClick={() => {
+              if (hasProject) onNew()
+            }}
+            size="icon-sm"
+            variant="ghost"
+          />
+        }
+      >
+        <Plus />
+      </PopoverTrigger>
+      <PopoverContent align="end">
+        <PopoverHeader>
+          <PopoverTitle>{t('noProjectHint.title')}</PopoverTitle>
+          <PopoverDescription>{t('noProjectHint.description')}</PopoverDescription>
+        </PopoverHeader>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export function SessionsSidebarHeader({
+  hasProject,
   onNew,
   onSearch,
   onStatusChange,
   search,
   status,
 }: {
+  hasProject: boolean
   onNew: () => void
   onSearch: (search: string) => void
   onStatusChange: (status: RosterStatus) => void
@@ -85,9 +127,7 @@ export function SessionsSidebarHeader({
       {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
         <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
-        <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
-          <Plus />
-        </Button>
+        <NewSessionControl hasProject={hasProject} onNew={onNew} />
       </div>
     </header>
   )

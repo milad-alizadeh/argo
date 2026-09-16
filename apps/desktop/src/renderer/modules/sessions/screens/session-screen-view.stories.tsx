@@ -239,6 +239,7 @@ function NewSessionScreen() {
     <CockpitShell
       sidebar={
         <SessionsSidebarContent
+          hasProject={true}
           onNew={() => setSelectedSessionId('optimistic:new-session')}
           onSelect={setSelectedSessionId}
           roster={{

@@ -59,6 +59,7 @@ export function SessionsSidebar() {
     <>
       <SessionsSidebarContent
         hasMoreSessions={hasMoreSessions}
+        hasProject={cockpit.project !== null}
         isFetchingMoreSessions={isFetchingMoreSessions}
         onArchiveSelected={archiveSelected}
         onFetchMoreSessions={fetchMoreSessions}

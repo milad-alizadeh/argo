@@ -20,12 +20,11 @@ export function useSidebarActions(options: {
   const pending = useSessionCreationStore(({ pending }) => pending)
 
   return {
+    // The sidebar's "+" control never reaches here with no Project selected: it shows the reader
+    // where to go instead (#2307). This guard stays as the seam's own defense, not a live path.
     openNew: useCallback(() => {
       const target = newSessionTarget(lastHarness, projectPath)
-      if (target === null) {
-        navigate('/sessions/new')
-        return
-      }
+      if (target === null) return
       navigate(`/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
     }, [lastHarness, navigate, projectPath]),
 

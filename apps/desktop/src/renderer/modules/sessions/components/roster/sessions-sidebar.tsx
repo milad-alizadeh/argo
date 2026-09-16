@@ -8,6 +8,7 @@ import { useSidebarRoster } from './use-sidebar-roster'
 
 export type SessionsSidebarContentProps = {
   hasMoreSessions?: boolean
+  hasProject?: boolean
   isFetchingMoreSessions?: boolean
   onFetchMoreSessions?: () => void
   onNew?: () => void
@@ -24,6 +25,7 @@ export type SessionsSidebarContentProps = {
 
 export function SessionsSidebarContent({
   hasMoreSessions = false,
+  hasProject = false,
   isFetchingMoreSessions = false,
   onFetchMoreSessions = () => {},
   roster,
@@ -57,6 +59,7 @@ export function SessionsSidebarContent({
       ref={sidebar}
     >
       <SessionsSidebarHeader
+        hasProject={hasProject}
         onNew={onNew}
         onSearch={sessions.setSearch}
         onStatusChange={sessions.setStatus}

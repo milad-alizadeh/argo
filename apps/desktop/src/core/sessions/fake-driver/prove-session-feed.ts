@@ -17,6 +17,7 @@ import {
 import { proveFormattedFeed } from './session-formatted-feed-case'
 import { proveSessionJourneys } from './session-journey-cases'
 import { proveLiveFeed } from './session-live-feed-cases'
+import { proveNewSessionWithNoProject } from './session-new-with-no-project-case'
 import { proveSessionPlan } from './session-plan-cases'
 import { updatePlan } from './session-plan-fixture'
 import { proveSessionQuestion } from './session-question-case'
@@ -102,6 +103,9 @@ await runPackagedSessionProof({
     const { fixture, hold, isPackaged, launch, ran, restart } = run
     let page = hold(await launch())
     assert.equal(await isPackaged(), true)
+    // Before any Project is selected, so this cannot pass by accident on a Project the fixture
+    // already carries (#2307).
+    await ran(['session-new-with-no-project'], () => proveNewSessionWithNoProject(page))
     const formatted = await proveFeedCases(run, page)
     page = await proveRosterCases(run, page)
     // Every journey below starts a Session, which needs a selected Project (#2204).

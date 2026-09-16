@@ -94,6 +94,7 @@ const meta: Meta<typeof SessionsSidebarContent> = {
     ),
   ],
   args: {
+    hasProject: true,
     onRename: fn(async (_session, name) => name),
     onSelect: fn(),
     roster: listed,
@@ -153,6 +154,27 @@ export const Discovered: Story = {
     await userEvent.keyboard('second')
     await expect(canvas.queryByRole('button', { name: /Keep the roster stable/ })).toBeNull()
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeInTheDocument()
+  },
+}
+
+// With no Project selected, the "+" control has nothing to create a Session on: clicking it names
+// the next step instead of opening the composer #2109 already covers (#2307).
+export const NoProjectSelected: Story = {
+  args: { hasProject: false, onNew: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const newSessionButton = canvas.getByRole('button', { name: 'New Session' })
+    await expect(canvas.queryByText('Select a Project first')).toBeNull()
+    await userEvent.click(newSessionButton)
+    await waitFor(async () => {
+      await expect(
+        within(document.body).getByText('Select a Project first'),
+      ).toBeVisible()
+    })
+    await expect(
+      within(document.body).getByText('Choose a Project, or add one, to start a Session.'),
+    ).toBeVisible()
+    await expect(args.onNew).not.toHaveBeenCalled()
   },
 }
 
