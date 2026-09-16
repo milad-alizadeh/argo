@@ -19,6 +19,10 @@ export type DelegationReading =
       unresolved: number
     }
 
+export function hasOpenDelegation(delegations: readonly SessionDelegation[]): boolean {
+  return delegations.some((delegation) => !delegation.landed)
+}
+
 export function readDelegation(
   status: SessionStatus,
   delegations: readonly SessionDelegation[],

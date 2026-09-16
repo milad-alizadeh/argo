@@ -3,13 +3,14 @@
 // header control at all.
 import { Bot, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { DelegationUsageFacts } from '@/core/sessions/background-work-contract'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
 import { delegationEntries, shellEntries } from './session-work-entries'
 import { SessionWorkMenu } from './session-work-menu'
 
 export function SessionWorkButtons({
   delegations,
-  delegationTokens,
+  delegationUsage,
   now,
   onSelectDelegation,
   onSelectShell,
@@ -18,9 +19,8 @@ export function SessionWorkButtons({
   shell,
 }: {
   delegations: readonly SessionDelegation[]
-  // What each Subagent spent, keyed by the call that spawned it. A Subagent whose transcript has
-  // not been read yet is simply absent, and its row then shows no token figure at all.
-  delegationTokens?: Readonly<Record<string, number | null>>
+  // The recorded facts for each Subagent, keyed by the call that spawned it.
+  delegationUsage?: Readonly<Record<string, DelegationUsageFacts>>
   // The clock a running entry is measured against. Passed in so a story draws a fixed duration.
   now?: number
   onSelectDelegation: (delegationId: string) => void
@@ -34,7 +34,7 @@ export function SessionWorkButtons({
   return (
     <>
       <SessionWorkMenu
-        entries={delegationEntries(delegations, { now: clock, tokens: delegationTokens ?? {} }, t)}
+        entries={delegationEntries(delegations, { now: clock, usage: delegationUsage ?? {} }, t)}
         icon={Bot}
         label="Subagents"
         onSelect={onSelectDelegation}

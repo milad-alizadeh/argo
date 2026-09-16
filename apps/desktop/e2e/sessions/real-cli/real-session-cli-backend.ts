@@ -1,14 +1,10 @@
 import { execFileSync } from 'node:child_process'
-import { copyFile, mkdir } from 'node:fs/promises'
+import { copyFile, mkdir, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type {
-  SessionCliBackend,
-  SessionFixture,
-  SessionReply,
-} from '../../mocks/sessions/session-cli-backend'
-import { findExecutableOnLoginShellPath } from '../../src/agents/executable-path'
-import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
+import { findExecutableOnLoginShellPath } from '../../../src/agents/executable-path'
+import type { SessionCli } from '../../../src/renderer/modules/sessions/harness/harnesses'
+import type { SessionCliBackend, SessionFixture, SessionReply } from '../session-cli-backend'
 import { realClaudeCli } from './real-claude-cli'
 import { realCodexCli } from './real-codex-cli'
 
@@ -52,6 +48,13 @@ export async function prepareRealSessionHome(root: string, sourceHome: string) {
         `${REAL_CLIS[cli].label} authentication is unavailable: ${source} is missing.`,
       )
     }
+    for (const parts of REAL_CLIS[cli].linked) {
+      const linked = credentialPath(home, parts)
+      await mkdir(path.dirname(linked), { recursive: true })
+      await symlink(credentialPath(sourceHome, parts), linked)
+    }
+    // A machine the CLI has run on holds this folder, and Argo reads its absence as unreachable (#2356).
+    await mkdir(REAL_CLIS[cli].transcripts(home), { recursive: true })
   }
   return home
 }
@@ -65,11 +68,12 @@ function verifyRealSessionAuthentication(executables: Record<SessionCli, string>
             ([name]) => !REAL_CLI_UNSET_ENV.includes(name),
           ),
         ),
-        stdio: 'ignore',
+        stdio: 'pipe',
       })
-    } catch {
+    } catch (error) {
+      const output = error instanceof Error && 'stderr' in error ? String(error.stderr).trim() : ''
       throw new Error(
-        `${REAL_CLIS[cli].label} authentication is unavailable. Sign in and run e2e:real again.`,
+        `${REAL_CLIS[cli].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
       )
     }
   }

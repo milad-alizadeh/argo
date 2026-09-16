@@ -38,6 +38,43 @@ test('groups adjacent Shell updates for one background task', () => {
   ])
 })
 
+test('groups adjacent Agent updates for one subagent', () => {
+  const agentStarted = { ...started, actor: 'agent' as const, groupId: 'agent-1' }
+  const agentCompleted = { ...completed, actor: 'agent' as const, groupId: 'agent-1' }
+  const rows = groupDelegations([agentStarted, agentCompleted])
+  assert.deepEqual(rows, [
+    {
+      shape: 'delegation-group',
+      id: 'shell-start',
+      actor: 'agent',
+      groupId: 'agent-1',
+      entries: [agentStarted, agentCompleted],
+    },
+  ])
+})
+
+test('groups one Agent lifecycle across visible parent rows', () => {
+  const agentStarted = { ...started, actor: 'agent' as const, groupId: 'agent-1' }
+  const agentCompleted = { ...completed, actor: 'agent' as const, groupId: 'agent-1' }
+  const parentReply = {
+    shape: 'prose' as const,
+    id: 'parent-reply',
+    role: 'assistant' as const,
+    text: 'The delegated review is still running.',
+  }
+  const rows = groupDelegations([agentStarted, parentReply, agentCompleted])
+  assert.deepEqual(rows, [
+    {
+      shape: 'delegation-group',
+      id: 'shell-start',
+      actor: 'agent',
+      groupId: 'agent-1',
+      entries: [agentStarted, agentCompleted],
+    },
+    parentReply,
+  ])
+})
+
 test('keeps a maximum-length Shell group valid at the Feed boundary', () => {
   const groupId = 'g'.repeat(256)
   const [row] = groupDelegations([{ ...started, groupId }])

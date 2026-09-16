@@ -4,12 +4,18 @@
 // not here at all — the IPC operation table does both before a body runs (ADR-0039) — so a body
 // takes its parsed request type and `reads.ts` declares nothing but resolution and body.
 import { isRecord } from '../../boundary'
+import type { SessionArchiveStore } from '../storage/session-archive'
 import { sessionError } from './contract'
 import type { SessionSource } from './session-source'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
 
-export type ReadContext = { sources: SessionSource[]; ownerFor: OwnerFor }
+export type ReadContext = {
+  sources: SessionSource[]
+  ownerFor: OwnerFor
+  // Argo's own Session state, shared by every adapter rather than resolved from one (#2315).
+  archive: SessionArchiveStore
+}
 
 // A filesystem failure, said in the contract's own words.
 export function readFailure(error: unknown) {
@@ -93,6 +99,17 @@ export function fromCapability<
         ? declaration.absent(request)
         : await body(source as WithCapability<Capability>, request)
     })
+}
+
+// The reader's own shared state, no adapter behind it. A read whose answer is Argo's rather than
+// any one CLI's resolves no target and takes the whole context (#2315).
+export function fromContext<
+  Name extends string,
+  Request extends { requestId: string },
+  Result extends object,
+>(name: Name, body: (context: ReadContext, request: Request) => Promise<Result>) {
+  return (context: ReadContext, request: Request) =>
+    envelope(name, request.requestId, () => body(context, request))
 }
 
 // No source at all: the request names everything the body needs.

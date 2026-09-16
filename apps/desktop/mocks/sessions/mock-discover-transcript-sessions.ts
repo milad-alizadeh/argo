@@ -75,10 +75,14 @@ function parseMockLine(line: string): TranscriptRecord | null {
   }
 }
 
-export function mockDiscoverer() {
+// `onLine` sees every transcript line the engine reads, so a test can state how much it read.
+export function mockDiscoverer(onLine: (line: string) => void = () => {}) {
   return createTranscriptDiscoverer({
     cli: 'mock',
-    parse: parseMockLine,
+    parse: (line) => {
+      onLine(line)
+      return parseMockLine(line)
+    },
     transcriptPaths: async (root) => {
       const names = await readdir(root).catch(() => [])
       return names

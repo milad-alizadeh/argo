@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
-import type { SessionCliBackend } from '../../../mocks/sessions/session-cli-backend'
 import { createSessionByClick, openSessionByClick } from '../gestures'
+import type { SessionCliBackend } from '../session-cli-backend'
 
 type Restart = () => Promise<Page>
 

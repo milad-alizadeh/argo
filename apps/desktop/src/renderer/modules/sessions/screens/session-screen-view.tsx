@@ -19,7 +19,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   return (
     <SessionWorkButtons
       delegations={session?.delegations ?? []}
-      delegationTokens={model.delegationTokens}
+      delegationUsage={model.delegationUsage}
       onSelectDelegation={(delegationId) =>
         pick({ sessionId: selectedSessionId, delegationId, shellId: null })
       }
@@ -45,8 +45,8 @@ function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {
         session?.delegations.find((entry) => entry.id === callId) ??
         session?.delegations.findLast((entry) => name !== null && entry.label === name)
       if (delegation === undefined) return null
-      const tokens = model.delegationTokens[delegation.id] ?? null
-      return { kind: 'delegation', delegation, tokens }
+      const usage = model.delegationUsage[delegation.id] ?? { tokens: null, model: null }
+      return { kind: 'delegation', delegation, usage }
     },
     open: (target) =>
       pick(
@@ -86,7 +86,7 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
         work={{
           kind: 'delegation',
           delegation: model.delegation,
-          tokens: model.delegationTokens[model.delegation.id] ?? null,
+          usage: model.delegationUsage[model.delegation.id] ?? { tokens: null, model: null },
         }}
       />
     )
@@ -116,7 +116,7 @@ export function SessionScreenView() {
           compactionTokens: session?.compactionTokens ?? null,
           handoffStartedAt: session?.handoffStartedAt ?? null,
           handoffTo: session?.handoffTo ?? null,
-          isRunning: session?.status === 'running',
+          isRunning: session?.status === 'running' || session?.status === 'permission',
           optimisticRow: composer.optimisticRow,
           posture: session?.posture ?? null,
           turnMarker: composer.markerView,

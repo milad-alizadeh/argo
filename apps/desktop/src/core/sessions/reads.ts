@@ -1,19 +1,17 @@
 // Every Session read, one declaration each: the reply it answers with, how its target source is
 // resolved, and its body. The failure modes, the absent-capability degrade and the reply envelope
-// all sit behind the declaration, in `read-declaration.ts`. The archive write is declared here
-// too, because setting the flag resolves its target and degrades exactly as reading it does.
+// all sit behind the declaration, in `read-declaration.ts`. The two archive
+// operations are declared in `archive-reads.ts`, because the flag they read is Argo's own.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { SessionChain } from './chains'
 import type {
-  SessionArchiveListRequest,
-  SessionArchiveSetRequest,
   SessionDelegationUsageRequest,
   SessionFileRequest,
   SessionShellOutputRequest,
   SessionSkillRequest,
 } from './contract'
-import { fromCapability, fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
+import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
 import { skillFileContent } from './read-skill-file'
 import type { SessionSource } from './session-source'
 
@@ -70,40 +68,4 @@ export const delegationUsageRead = fromOwner(
     sessionId: request.sessionId,
     usage: (await owner.readDelegationUsage?.(request.sessionId)) ?? [],
   }),
-)
-
-export const archiveListRead = fromCapability(
-  {
-    name: 'session.archive.listed',
-    capability: 'discoverArchivedSessions',
-    absent: () => ({ sessions: [], nextCursor: null, restored: null }),
-  },
-  async (source, request: SessionArchiveListRequest) => {
-    const page = await source.discoverArchivedSessions({
-      cursor: request.cursor,
-      restoreId: request.restoreId,
-    })
-    return { sessions: page.rows, nextCursor: page.nextCursor, restored: page.restored }
-  },
-)
-
-// Setting the archived flag for one or more Sessions at once (#2194), against the same store the
-// list above reads. Where no source keeps one, every requested id comes back failed.
-export const archiveSetWrite = fromCapability(
-  {
-    name: 'session.archive.applied',
-    capability: 'setArchived',
-    absent: (request: SessionArchiveSetRequest) => ({
-      archived: request.archived,
-      applied: [] as string[],
-      failed: [...request.sessionIds],
-    }),
-  },
-  async (source, request: SessionArchiveSetRequest) => {
-    const applied = await source.setArchived({
-      ids: request.sessionIds,
-      archived: request.archived,
-    })
-    return { archived: request.archived, applied: applied.applied, failed: applied.failed }
-  },
 )

@@ -3,7 +3,7 @@
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { pointShellOutputAtRoot } from '../../../mocks/sessions/shell.fixture'
+import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
   CODEX_FIXTURES,
   fixturePath,
@@ -11,7 +11,7 @@ import {
   proofProject,
   writeArchiveStore,
   writeFixtureTree,
-} from '../../../mocks/sessions/transcript-files'
+} from '../../../mocks/sessions/mock-transcript-files'
 import { packagedTestCopy } from '../../packaged-app'
 
 export const FIXTURES = [
@@ -40,13 +40,8 @@ export const FIXTURES = [
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
-// The Sessions the fixture store says the reader archived.
+// The Sessions Argo's own archive document says the reader archived.
 const ARCHIVED = ['plannedWork']
-
-// A Session the desktop app already tracks but has not archived (#2194): its store row exists so
-// a bulk-archive round trip has a real file to flip, the way the write only ever mutates a row the
-// app already wrote rather than inventing one.
-const TRACKED_UNARCHIVED = ['harnessNoise']
 
 // A directory for a person's own screenshots. The Playwright test runner owns `process.argv`, so
 // this reads an environment variable rather than a flag: `ARGO_SESSION_SHOTS=<dir> bunx playwright test`.
@@ -117,17 +112,15 @@ export async function prepare(root) {
     fixtures: CODEX_FIXTURES,
     inProofProject: true,
   })
-  const archive = path.join(root, 'archive')
-  await writeArchiveStore(archive, ARCHIVED)
-  await writeArchiveStore(archive, TRACKED_UNARCHIVED, { archived: false })
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
+  await writeArchiveStore(userData, ARCHIVED)
   const project = proofProject(claudeTranscripts)
   await mkdir(project)
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
   // No Project is selected yet, so the first case sees the cockpit with none (#2307).
   await writeProjectStore(userData, project, null)
-  return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
+  return { application, claudeTranscripts, codexTranscripts, userData, project }
 }
 
 const PROOF_PROJECT_ID = 'session-proof-project'

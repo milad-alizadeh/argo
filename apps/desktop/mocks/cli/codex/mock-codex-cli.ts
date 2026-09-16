@@ -5,7 +5,7 @@ import type { MockCli } from '../mock-cli'
 import { writeMockCodex } from './mock-codex-driver'
 
 export const mockCodexCli: MockCli = {
-  write: (root) => writeMockCodex(root),
+  write: writeMockCodex,
   folder: (transcripts) => transcripts,
   replyMark: (prompt) => prompt,
 }

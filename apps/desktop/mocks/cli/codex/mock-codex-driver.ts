@@ -5,11 +5,11 @@ import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import type { OwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { openCodexChannel } from '../../../src/agents/codex/drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../../../src/agents/codex/drive/codex-session-driver.ts'
-import type { OwnershipLedger } from '../../../src/core/sessions/ownership-ledger.ts'
 
-// The proof always starts in `apps/desktop`, as `mock-claude-cli.ts`'s MOCK_CLAUDE notes:
+// The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
 const fixture = path.join(process.cwd(), 'mocks', 'cli', 'codex', 'mock-codex-app-server.ts')
 

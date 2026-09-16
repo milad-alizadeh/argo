@@ -7,18 +7,14 @@ import {
   CodeBlockTitle,
 } from '@/components/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
+import { displayedToolLabel } from '@/core/sessions/tool-feed'
 import { CollapsibleText } from '@/renderer/components/collapsible-text'
 import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import {
-  RunningText,
-  StatusIcon,
-  type ToolCall,
-  type ToolRow,
-  toolPresentation,
-} from './feed-tools'
+import { RunningText, StatusIcon } from './feed-tool-status'
+import { type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
 import { withoutRepeatedTitle } from './skill-title'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
@@ -80,6 +76,7 @@ export function FeedInlineToolCallItem({
   call: ToolCall | ToolRow
   toolGroups: ToolGroupState
 }) {
+  const { t } = useTranslation('sessions')
   const Icon = toolPresentation(call.kind).icon
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, call.id)
   return (
@@ -89,7 +86,11 @@ export function FeedInlineToolCallItem({
       icon={Icon}
       onOpenChange={onOpenChange}
       open={open}
-      title={<RunningText running={call.status === 'running'}>{call.label}</RunningText>}
+      title={
+        <RunningText running={call.status === 'running'}>
+          {displayedToolLabel(call, call.status === 'running', t('workState.running'))}
+        </RunningText>
+      }
     />
   )
 }
