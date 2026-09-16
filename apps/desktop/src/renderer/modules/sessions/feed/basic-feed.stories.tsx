@@ -64,6 +64,133 @@ export const Loaded: Story = {
     )
   },
 }
+
+const rowShapeFeed = {
+  ...feed,
+  sessionId: 'row-shapes',
+  chainId: 'row-shapes',
+  revision: 'row-shapes-one',
+  rows: [
+    {
+      shape: 'tool',
+      id: 'tool-row',
+      kind: 'command',
+      label: 'Ran a command',
+      lineCounts: null,
+      status: 'succeeded',
+      evidence: null,
+      text: 'bun test',
+    },
+    {
+      shape: 'tool-group',
+      id: 'tool-group-row',
+      label: 'Ran a command',
+      calls: [
+        {
+          shape: 'tool',
+          id: 'grouped-tool-row',
+          kind: 'command',
+          label: 'Ran a grouped command',
+          lineCounts: null,
+          status: 'succeeded',
+          evidence: null,
+          text: 'bun run test',
+        },
+      ],
+    },
+    { shape: 'prose', id: 'prompt-row', role: 'user', text: 'Please inspect every row shape.' },
+    {
+      shape: 'prose',
+      id: 'assistant-prose-row',
+      role: 'assistant',
+      text: 'Every row shape has a renderer.',
+    },
+    { shape: 'thought', id: 'thought-row', text: 'A private thought.' },
+    { shape: 'command-output', id: 'command-output-row', text: 'Command completed.' },
+    { shape: 'event', id: 'event-row', event: 'status', text: 'Session is running.' },
+    {
+      shape: 'delegation',
+      id: 'delegation-row',
+      actor: 'agent',
+      action: 'Review the Feed.',
+      status: 'running',
+      progress: 'Checking rows',
+      groupId: null,
+      callId: null,
+    },
+    {
+      shape: 'delegation-group',
+      id: 'delegation-group-row',
+      actor: 'shell',
+      groupId: 'delegation-group',
+      entries: [
+        {
+          shape: 'delegation',
+          id: 'delegation-group-entry',
+          actor: 'shell',
+          action: 'Run tests.',
+          status: 'completed',
+          progress: null,
+          groupId: 'delegation-group',
+          callId: 'call-tests',
+        },
+      ],
+    },
+    { shape: 'marker', id: 'marker-row', marker: 'interrupted', summary: null },
+    {
+      shape: 'source',
+      id: 'source-row',
+      role: 'assistant',
+      label: 'A source row.',
+      source: 'source-row',
+    },
+    { shape: 'unreadable', id: 'unreadable-row' },
+    {
+      shape: 'ask',
+      id: 'ask-row',
+      answer: null,
+      unsupported: null,
+      questions: [
+        {
+          question: 'Should the Feed render every row shape?',
+          header: null,
+          multiSelect: false,
+          options: [{ label: 'Yes', description: null }],
+        },
+      ],
+    },
+  ],
+} satisfies SessionFeed
+
+const ROW_SHAPE_ASSERTIONS = [
+  ['tool-row', 'Ran a command'],
+  ['tool-group-row', 'Ran a grouped command'],
+  ['prompt-row', 'Please inspect every row shape.'],
+  ['assistant-prose-row', 'Every row shape has a renderer.'],
+  ['thought-row', 'A private thought.'],
+  ['command-output-row', 'Command completed.'],
+  ['event-row', 'Status updated'],
+  ['delegation-row', 'Review the Feed.'],
+  ['delegation-group-row', 'Run tests.'],
+  ['marker-row', 'Interrupted'],
+  ['source-row', 'A source row.'],
+  ['unreadable-row', 'Part of this transcript is damaged'],
+  ['ask-row', 'Should the Feed render every row shape?'],
+] as const
+
+// This story renders every row shape through the public Feed surface rather than a renderer directly.
+export const EveryRowShape: Story = {
+  args: { feed: rowShapeFeed, selectedSessionId: 'row-shapes' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(drawnRows(canvasElement)).toHaveLength(rowShapeFeed.rows.length)
+      for (const [id, text] of ROW_SHAPE_ASSERTIONS) {
+        expect(canvasElement.querySelector(`[data-feed-row="${id}"]`)).toHaveTextContent(text)
+      }
+    })
+  },
+}
+
 export const Loading: Story = {
   args: { feed: null, failure: null, selectedSessionId: 'prose' },
   play: async ({ canvasElement }) => {

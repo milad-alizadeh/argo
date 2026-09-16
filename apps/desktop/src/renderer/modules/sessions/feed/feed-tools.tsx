@@ -9,7 +9,7 @@ import {
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TaskItem } from '@/components/ai-elements/task'
-import { TOOL_CONTENT_ROUTE } from '@/core/sessions/tool-groups'
+import { TOOL_KIND_PRESENTATION } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/collapsible-text'
 import type { SessionFeedRow } from '../types'
 import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
@@ -18,13 +18,20 @@ import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
 
-export const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: string }>> = {
-  command: SquareTerminal,
-  read: Search,
-  edited: FilePenLine,
-  created: FilePenLine,
-  tool: Wrench,
-  skill: WandSparkles,
+const TOOL_ICONS = {
+  terminal: SquareTerminal,
+  search: Search,
+  file: FilePenLine,
+  wrench: Wrench,
+  wand: WandSparkles,
+} satisfies Record<
+  (typeof TOOL_KIND_PRESENTATION)[ToolRow['kind']]['icon'],
+  ComponentType<{ className?: string }>
+>
+
+export function toolPresentation(kind: ToolRow['kind']) {
+  const presentation = TOOL_KIND_PRESENTATION[kind]
+  return { ...presentation, icon: TOOL_ICONS[presentation.icon] }
 }
 
 export function StatusIcon({ status }: { status: ToolRow['status'] }) {
@@ -86,7 +93,7 @@ export function FeedToolLine({
   onOpen: (row: ToolRow) => void
 }) {
   const { t } = useTranslation('sessions')
-  const Icon = TOOL_ICONS[call.kind]
+  const Icon = toolPresentation(call.kind).icon
   const active = activeEvidenceId === call.id
   const failed = call.status === 'failed'
   return (
@@ -124,7 +131,7 @@ function GroupedCall({
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
 }) {
-  if (TOOL_CONTENT_ROUTE[call.kind] !== 'inline')
+  if (toolPresentation(call.kind).route !== 'inline')
     return <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
   if (isSole) return <FeedInlineToolCall call={call} />
   return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
@@ -168,7 +175,7 @@ export function FeedToolGroup({
         </TaskItem>
       ))}
       contentVariant="flush"
-      icon={titleCall === undefined ? SquareTerminal : TOOL_ICONS[titleCall.kind]}
+      icon={titleCall === undefined ? SquareTerminal : toolPresentation(titleCall.kind).icon}
       onOpenChange={onOpenChange}
       open={open}
       title={

@@ -2,10 +2,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
-import { FeedMarkdown } from './content/feed-markdown'
-import { FeedQuestion } from './feed-question'
-import { FeedPrompt, FeedRowFallback } from './feed-row-fallback'
-import { FeedToolGroup, FeedToolLine } from './feed-tools'
+import { isFeedRowStreaming, renderFeedRow } from './feed-row-renderers'
 import { type Reveal, useRevealAnimation } from './reveal'
 import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
@@ -43,7 +40,7 @@ export function FeedRow({
   const rowReveal = streaming ? undefined : reveal
   const resume: RevealResume = { rowId: row.id, cache: revealCache }
   const text = useStreamingText(
-    row.shape === 'prose' && row.role === 'assistant' ? row.text : '',
+    isFeedRowStreaming(row) && row.shape === 'prose' ? row.text : '',
     streaming,
     resume,
   )
@@ -59,18 +56,18 @@ export function FeedRow({
       {row.shape === 'prose' ? (
         <StreamingStatus hasStreamed={hasStreamed.current} streaming={streaming} />
       ) : null}
-      <FeedRowContent
-        onOpenEvidence={onOpenEvidence}
-        activeEvidenceId={activeEvidenceId}
-        toolGroups={toolGroups}
-        onAnswerQuestion={onAnswerQuestion}
-        answering={answering}
-        questionFailure={questionFailure}
-        questionLocked={questionLocked}
-        row={row}
-        streaming={streaming}
-        streamingText={text}
-      />
+      {renderFeedRow({
+        activeEvidenceId,
+        answering,
+        onAnswerQuestion,
+        onOpenEvidence,
+        questionFailure,
+        questionLocked,
+        row,
+        streaming,
+        streamingText: text,
+        toolGroups,
+      })}
     </article>
   )
 }
@@ -83,68 +80,4 @@ function StreamingStatus({ hasStreamed, streaming }: { hasStreamed: boolean; str
       {streaming ? t('streaming.responding') : t('streaming.complete')}
     </span>
   )
-}
-
-function FeedRowContent({
-  row,
-  onOpenEvidence,
-  activeEvidenceId,
-  toolGroups,
-  onAnswerQuestion,
-  answering,
-  questionFailure,
-  questionLocked,
-  streaming,
-  streamingText,
-}: Omit<FeedRowProps, 'reveal' | 'streaming' | 'revealCache'> & {
-  streaming: boolean
-  streamingText: string
-}) {
-  switch (row.shape) {
-    // `groupToolRuns` wraps every tool call, lone ones included, so `projectFeed` and
-    // `feed-incremental` never emit a bare 'tool' row; kept for exhaustiveness against the
-    // shared `ToolRow` type, which `tool-group.calls` still uses.
-    case 'tool':
-      return <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
-    case 'tool-group':
-      return (
-        <FeedToolGroup
-          group={row}
-          live={streaming}
-          activeEvidenceId={activeEvidenceId}
-          onOpen={onOpenEvidence}
-          toolGroups={toolGroups}
-        />
-      )
-    case 'prose':
-      if (row.role === 'assistant')
-        return (
-          <FeedMarkdown
-            activeEvidenceId={activeEvidenceId}
-            onOpenEvidence={onOpenEvidence}
-            rowId={row.id}
-            text={streamingText}
-          />
-        )
-      return (
-        <FeedPrompt
-          files={row.files}
-          images={row.images}
-          onOpenEvidence={onOpenEvidence}
-          text={row.text}
-        />
-      )
-    case 'ask':
-      return (
-        <FeedQuestion
-          row={row}
-          answering={answering}
-          failure={questionFailure}
-          locked={questionLocked}
-          onAnswer={onAnswerQuestion}
-        />
-      )
-    default:
-      return <FeedRowFallback row={row} />
-  }
 }
