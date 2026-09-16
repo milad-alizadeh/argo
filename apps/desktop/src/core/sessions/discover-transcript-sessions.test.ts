@@ -1,9 +1,18 @@
 // The shared discovery engine's bounded window and cursor (#2239), proven against a minimal fake
 // CLI rather than either real adapter.
 import assert from 'node:assert/strict'
+import { appendFile, utimes } from 'node:fs/promises'
+import path from 'node:path'
 import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
-import { fakeDiscoverer, fakeRoot, writeManySessions } from './discover-transcript-sessions.fake'
+import {
+  fakeDiscoverer,
+  fakeRoot,
+  writeFakeTranscript,
+  writeManySessions,
+} from './discover-transcript-sessions.fake'
+
+const LATER = '2026-09-13T12:05:00.000Z'
 
 test('reads only the bounded window on a cold cursor, even when more files exist', async (context) => {
   const root = await fakeRoot(context)
@@ -80,4 +89,23 @@ test('reports a Session no window can find as absent rather than growing forever
   const { readSessionFiles } = fakeDiscoverer()
 
   assert.equal(await readSessionFiles(root, 'never-written'), null)
+})
+
+// A CLI can append a Turn inside one mtime tick, and on a coarse-timestamp filesystem the file
+// then reads as untouched. The Roster must still follow it (#2241).
+test('follows a transcript appended to without its mtime moving', async (context) => {
+  const root = await fakeRoot(context)
+  const writtenAt = '2026-09-13T12:00:00.000Z'
+  await writeFakeTranscript({ root, sessionId: 'grows', writtenAt })
+  const { discoverSessions } = fakeDiscoverer()
+
+  const first = await discoverSessions(root)
+  const file = path.join(root, 'grows.jsonl')
+  await appendFile(file, `${JSON.stringify({ uuid: 'later', timestamp: LATER })}\n`)
+  const at = new Date(writtenAt)
+  await utimes(file, at, at)
+
+  const grown = await discoverSessions(root)
+  assert.notEqual(grown.rows[0]?.updatedAt, first.rows[0]?.updatedAt)
+  assert.equal(grown.rows[0]?.updatedAt, LATER)
 })
