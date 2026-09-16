@@ -5,6 +5,7 @@
 // process it was never loaded into.
 import { mountFakeProvider, type NodeRoute } from '../../msw-node-bridge'
 import type { FakeState } from './fake-exchange'
+import { githubControls } from './fake-github-controls'
 import { answer } from './fake-routes'
 
 export type FakeUser = { id: number; login: string }
@@ -90,21 +91,7 @@ export async function startFakeGitHub(): Promise<FakeGitHub> {
   return {
     origin: state.origin,
     requests,
-    signIn(answer, pendingPolls = 1) {
-      state.signIn = { answer, pending: pendingPolls, held: false }
-    },
-    holdSignIn(answer) {
-      state.signIn = { answer, pending: 0, held: true }
-    },
-    addRepository(repository) {
-      state.repositories.set(repository.fullName.toLowerCase(), repository)
-    },
-    revoke(login) {
-      for (const [token, user] of state.tokens) if (user.login === login) state.tokens.delete(token)
-    },
-    outage(kind) {
-      state.outage = kind
-    },
+    ...githubControls(state),
     close: async () => {
       retire()
     },

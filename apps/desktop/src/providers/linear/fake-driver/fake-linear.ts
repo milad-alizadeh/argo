@@ -4,6 +4,7 @@
 // thing faked; only this in-process suite drives it — the packaged proof keeps its own real
 // loopback server, since Mock Service Worker cannot reach a process it was never loaded into.
 import { mountFakeProvider, type NodeRoute } from '../../msw-node-bridge'
+import { linearControls } from './fake-linear-controls'
 import { answerGraphQL } from './fake-linear-graphql'
 import { authorize, token } from './fake-linear-oauth'
 import type { FakeLinearState } from './fake-linear-state'
@@ -79,32 +80,10 @@ export async function startFakeLinear(): Promise<FakeLinear> {
     'POST /graphql': (request, response) => answerGraphQL(state, request, response),
   }
   const retire = mountFakeProvider({ origin: FAKE_LINEAR_ORIGIN, requests, routes })
-  const forUser = (userId: string, map: Map<string, { user: FakeLinearUser }>) => {
-    for (const [key, grant] of map) if (grant.user.id === userId) map.delete(key)
-  }
   return {
     origin: state.origin,
     requests,
-    signIn: (answer) => {
-      state.signIn = answer
-    },
-    addTeam: (team) => {
-      state.teams.set(team.id, team)
-    },
-    tokenLifetime: (seconds) => {
-      state.lifetime = seconds
-    },
-    expire: (userId) => {
-      for (const grant of state.access.values()) if (grant.user.id === userId) grant.expiresAt = 0
-    },
-    revoke: (userId) => {
-      forUser(userId, state.access)
-      forUser(userId, state.refresh)
-    },
-    refuseRefresh: (userId) => forUser(userId, state.refresh),
-    outage: (kind) => {
-      state.outage = kind
-    },
+    ...linearControls(state),
     close: async () => {
       retire()
     },
