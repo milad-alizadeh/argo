@@ -7,12 +7,14 @@ import { installCompactionHook } from './agents/claude/compaction/compaction-hoo
 import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
+import { legacyArchivedSessionIds } from './agents/claude/sessions/legacy-archive'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
+  legacyClaudeArchiveRoot,
 } from './agents/claude/sessions/roots'
 import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
@@ -20,13 +22,13 @@ import { createSystemCodexSessionDriver } from './agents/codex/drive/system-code
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
 import { codexStatePath, codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { codexThreadNames } from './agents/codex/sessions/state-store'
-import { createSessionArchiveStore, sessionArchivePath } from './core/sessions/archive-store'
 import { attachSessionBridge } from './core/sessions/bridge'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
+import { createSessionArchiveStore, sessionArchivePath } from './core/storage/session-archive'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
 import { watchTrees } from './core/watch/watch-paths'
@@ -77,7 +79,9 @@ export function attachSessions(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
   )
   // Argo's own archive flag, for every harness at once (#2315).
-  const archive = createSessionArchiveStore(sessionArchivePath(userData))
+  const archive = createSessionArchiveStore(sessionArchivePath(userData), () =>
+    legacyArchivedSessionIds(legacyClaudeArchiveRoot(home)),
+  )
   attachSessionBridge(window, {
     reader: createSessionReader(
       [

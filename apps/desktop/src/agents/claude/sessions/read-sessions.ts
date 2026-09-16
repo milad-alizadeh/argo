@@ -1,5 +1,5 @@
 // The Claude source the shared Session reader drives (#2025). Transcripts are read-only, with no
-// exception: archiving is Argo's own store, shared by every adapter (`core/sessions/archive-store.ts`).
+// exception: archiving is Argo's own store, shared by every adapter (`core/storage/session-archive.ts`).
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { discoverRoster } from '@/core/sessions/discover-roster'
 import type { SessionRosterRow } from '@/core/sessions/models'

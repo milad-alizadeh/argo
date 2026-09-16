@@ -3,7 +3,7 @@
 // face the same problem, that the row they want can sit outside the window the Roster loads, so
 // both grow that window (`archive-window.ts`) until the reading has what it needs.
 import { z } from 'zod'
-import { isArchivedSession } from './archive-store'
+import { isArchivedSession } from '../storage/session-archive'
 import { growWindow } from './archive-window'
 import type { SessionArchiveListRequest, SessionArchiveSetRequest } from './contract'
 import type { SessionRosterRow } from './models'

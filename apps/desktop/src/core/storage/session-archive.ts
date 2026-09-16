@@ -1,16 +1,10 @@
 // Which Sessions the reader has archived (#2315). Argo owns this flag: one document under
 // `<userData>/portable-v1`, keyed by the CLI Session id, so archiving works for every harness,
 // on a machine with no other agent app installed, and for a Session Argo has never discovered.
-// A flag the Claude desktop app already holds is not imported: this store starts empty, so a
-// Session archived there before #2315 comes back in the active Roster until the reader archives
-// it here.
+// The first archive read imports existing Claude desktop flags and records completion beside this
+// document (#2351). Later reads never touch Claude's store, which Argo never writes.
 import { z } from 'zod'
-import {
-  createWriteQueue,
-  portablePath,
-  readDocument,
-  writeDocument,
-} from '../storage/portable-file'
+import { createWriteQueue, portablePath, readDocument, writeDocument } from './portable-file'
 
 // The one place the document is named, so the app, the fixtures and the tests all read the file
 // the app writes.
@@ -18,11 +12,16 @@ export function sessionArchivePath(userData: string): string {
   return portablePath(userData, 'session-archive.json')
 }
 
+function sessionArchiveImportPath(archivePath: string): string {
+  return `${archivePath}.legacy-import.json`
+}
+
 // The entry's presence is the flag, and restoring removes it rather than writing a false one.
 // `archivedAt` is the document's one fact about an entry: when the reader archived it.
 const archivedSessionSchema = z.strictObject({ archivedAt: z.iso.datetime() })
 
 const archiveDocumentSchema = z.record(z.string(), archivedSessionSchema)
+const archiveImportSchema = z.strictObject({ completed: z.literal(true) })
 
 export type SessionArchiveStore = {
   archivedIds: () => Promise<ReadonlySet<string>>
@@ -62,19 +61,42 @@ export function createInMemorySessionArchiveStore(): SessionArchiveStore {
   }
 }
 
-export function createSessionArchiveStore(path: string): SessionArchiveStore {
+export function createSessionArchiveStore(
+  path: string,
+  legacyArchivedIds: (() => Promise<ReadonlySet<string>>) | undefined = undefined,
+): SessionArchiveStore {
   const enqueue = createWriteQueue()
+  let importPromise: Promise<void> | undefined
+  const importLegacyArchive = () => {
+    if (importPromise !== undefined) return importPromise
+    importPromise = enqueue(async () => {
+      const imported = await readDocument(sessionArchiveImportPath(path))
+      if (imported.ok && archiveImportSchema.safeParse(imported.document).success) return
+      const legacy = legacyArchivedIds === undefined ? new Set<string>() : await legacyArchivedIds()
+      const held = await readArchive(path)
+      const archivedAt = new Date().toISOString()
+      const additions = Object.fromEntries([...legacy].map((id) => [id, { archivedAt }]))
+      const wroteArchive = await writeDocument(path, { ...additions, ...held })
+      if (wroteArchive) await writeDocument(sessionArchiveImportPath(path), { completed: true })
+    })
+    return importPromise
+  }
   return {
     // Unqueued, unlike the write below: a rename is atomic, so the worst a read racing a write
     // sees is the document as it was one write ago.
-    archivedIds: async () => new Set(Object.keys(await readArchive(path))),
+    archivedIds: async () => {
+      await importLegacyArchive()
+      return new Set(Object.keys(await readArchive(path)))
+    },
     setArchived: (ids, archive) =>
-      enqueue(async () => {
-        const held = await readArchive(path)
-        const archivedAt = new Date().toISOString()
-        const added = Object.fromEntries(ids.map((id) => [id, { archivedAt }]))
-        const kept = Object.fromEntries(Object.entries(held).filter(([id]) => !ids.includes(id)))
-        return await writeDocument(path, archive ? { ...held, ...added } : kept)
-      }),
+      importLegacyArchive().then(() =>
+        enqueue(async () => {
+          const held = await readArchive(path)
+          const archivedAt = new Date().toISOString()
+          const added = Object.fromEntries(ids.map((id) => [id, { archivedAt }]))
+          const kept = Object.fromEntries(Object.entries(held).filter(([id]) => !ids.includes(id)))
+          return await writeDocument(path, archive ? { ...held, ...added } : kept)
+        }),
+      ),
   }
 }

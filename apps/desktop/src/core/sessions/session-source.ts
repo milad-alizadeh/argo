@@ -2,7 +2,7 @@
 // transcript chain, projecting a chain into Feed rows, and the optional capabilities only
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
-// Argo owns that flag for every CLI at once (`archive-store.ts`, #2315).
+// Argo owns that flag for every CLI at once (`storage/session-archive.ts`, #2315).
 import type { SessionChain } from './chains'
 import type { SessionRenameReply, SessionRenameRequest } from './contract'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'

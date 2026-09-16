@@ -1,7 +1,7 @@
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fixturePath, proofCwd } from '../../../mocks/sessions/transcript-files'
-import { sessionArchivePath } from '../../../src/core/sessions/archive-store'
+import { sessionArchivePath } from '../../../src/core/storage/session-archive'
 
 function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
   return `${JSON.stringify({

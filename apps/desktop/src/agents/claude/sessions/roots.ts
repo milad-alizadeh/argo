@@ -20,3 +20,8 @@ export function claudeCompactionStartsRoot(home: string): string {
 export function claudeProcessesRoot(home: string): string {
   return path.join(home, '.claude', 'sessions')
 }
+
+// The retired Claude desktop archive is read only once during #2351's migration.
+export function legacyClaudeArchiveRoot(home: string): string {
+  return path.join(home, 'Library', 'Application Support', 'Claude', 'claude-code-sessions')
+}
