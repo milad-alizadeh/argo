@@ -41,6 +41,16 @@ const SHELL = [
   }),
 ]
 
+function expectDotAlignedWithTitle(item: HTMLElement) {
+  const dot = item.querySelector<HTMLElement>('[aria-hidden="true"]')
+  const title = within(item).getByText('Interface review')
+  if (dot === null) throw new Error('Expected a state dot.')
+  const dotCenter = dot.getBoundingClientRect().top + dot.getBoundingClientRect().height / 2
+  const titleBounds = title.getBoundingClientRect()
+  const titleCenter = titleBounds.top + titleBounds.height / 2
+  expect(Math.abs(dotCenter - titleCenter)).toBeLessThanOrEqual(1)
+}
+
 // The header's own selection, so a play function can operate the story the way a reader does.
 function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>) {
   const [delegationId, setDelegationId] = useState<string | null>(null)
@@ -101,6 +111,7 @@ export const RunningAndFinishedGroups: Story = {
     await expect(
       within(running).getByRole('menuitem', { name: /Interface review/ }),
     ).toHaveTextContent('Running · 5m 0s · 18k tokens')
+    expectDotAlignedWithTitle(within(running).getByRole('menuitem', { name: /Interface review/ }))
     await expect(
       within(finished).getByRole('menuitem', { name: /Find every caller/ }),
     ).toHaveTextContent('Done · 1m 12s · 2.7k tokens')

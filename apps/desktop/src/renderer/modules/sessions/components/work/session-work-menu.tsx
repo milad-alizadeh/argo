@@ -26,10 +26,16 @@ function Row({
   return (
     <DropdownMenuItem
       aria-current={selected}
-      className={cn('gap-2 py-1.5', selected ? 'bg-accent' : null)}
+      className={cn('items-start gap-2 py-1.5', selected ? 'bg-accent' : null)}
       onClick={onSelect}
     >
-      <span aria-hidden="true" className={cn('size-(--size-state-dot) rounded-full', entry.mark)} />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full',
+          entry.mark,
+        )}
+      />
       <span className="min-w-0 flex-1">
         <span
           className={cn('block truncate text-foreground', entry.monospace ? 'font-mono' : null)}
