@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
 import { isOptimisticSessionId } from '../state/use-session-creation-store'
-import type { SessionError, SessionFeed, SessionFeedRow, SessionId } from '../types'
+import type { SessionError, SessionFeed, SessionId } from '../types'
 import type { FeedQuestionHandlers } from './feed-document'
+import type { FeedLiveFacts } from './feed-live-facts'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { keptDocument } from './kept-document'
 import { Standing } from './standing'
-import type { TurnMarkerView } from './turn-marker-state'
 import { useKeptDocuments } from './use-kept-documents'
 
 import './feed.css'
@@ -15,20 +15,12 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 export function BasicFeed({
   feed,
   activeEvidenceId,
-  compactionStartedAt = null,
-  compactionPercentage = null,
-  compactionTokens = null,
-  handoffStartedAt = null,
-  handoffTo = null,
+  liveFacts,
   onOpenSession,
   failure,
   onRetryFeed,
   onJumpToLatestChange = ignoreJumpToLatestChange,
-  isRunning,
-  optimisticRow = null,
-  posture = null,
   selectedSessionId,
-  turnMarker = null,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -37,20 +29,12 @@ export function BasicFeed({
 }: {
   feed: SessionFeed | null
   activeEvidenceId: string | null
-  compactionStartedAt?: string | null
-  compactionPercentage?: number | null
-  compactionTokens?: string | null
-  handoffStartedAt?: string | null
-  handoffTo?: string | null
+  liveFacts: FeedLiveFacts
   onOpenSession: (sessionId: string) => void
   failure: SessionError | null
   onRetryFeed: () => void
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
-  isRunning: boolean
-  optimisticRow?: SessionFeedRow | null
-  posture?: 'managed' | 'external' | null
   selectedSessionId: SessionId | null
-  turnMarker?: TurnMarkerView | null
 } & FeedQuestionHandlers) {
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
@@ -70,17 +54,7 @@ export function BasicFeed({
 
   const shared = {
     selectedSessionId,
-    facts: {
-      compactionStartedAt,
-      compactionPercentage,
-      compactionTokens,
-      handoffStartedAt,
-      handoffTo,
-      isRunning,
-      optimisticRow,
-      turnMarker,
-      posture,
-    },
+    liveFacts,
     activeEvidenceId,
     failure,
     onOpenSession,
@@ -100,7 +74,7 @@ export function BasicFeed({
           failure={failure}
           selected={selectedSessionId !== null}
           stalled={stalled}
-          posture={posture}
+          posture={liveFacts?.posture ?? null}
           onRetry={retry}
         />
       ) : null}
