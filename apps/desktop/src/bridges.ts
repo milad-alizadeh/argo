@@ -17,19 +17,20 @@ export function attachBridges(
   request: {
     userData: string
     accountData: string
+    projectData: string
     rendererURL: string
     proofEnabled: boolean
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, rendererURL, proofEnabled } = request
+  const { userData, accountData, projectData, rendererURL, proofEnabled } = request
   const home = app.getPath('home')
   const drivers = createSessionDrivers(userData, home, proofEnabled)
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
-  attachProjectBridge(window, { userData, rendererURL })
+  attachProjectBridge(window, { projectData, rendererURL })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
-import { accountStoreDirectory } from './account-store'
+import {
+  accountStoreDirectory,
+  developmentStoreDirectories,
+  projectStoreDirectory,
+} from './account-store'
 import { type DevelopmentInstance, developmentInstance } from './instance'
 
 const APP_DATA = '/Users/developer/Library/Application Support'
@@ -36,6 +40,26 @@ test('two development worktrees read one Account store', () => {
   assert.equal(
     accountStoreDirectory({ userData: first.userData, appData: APP_DATA, instance: first }),
     accountStoreDirectory({ userData: second.userData, appData: APP_DATA, instance: second }),
+  )
+})
+
+test('two development worktrees read one Project store', () => {
+  const first = launched('/Users/developer/argo')
+  const second = launched('/Users/developer/argo/.claude/worktrees/ticket-2367')
+  assert.equal(
+    projectStoreDirectory({ userData: first.userData, appData: APP_DATA, instance: first }),
+    projectStoreDirectory({ userData: second.userData, appData: APP_DATA, instance: second }),
+  )
+})
+
+test('a development launch selects both shared stores together', () => {
+  const instance = launched('/Users/developer/argo/.claude/worktrees/ticket-2367')
+  assert.deepEqual(
+    developmentStoreDirectories({ userData: instance.userData, appData: APP_DATA, instance }),
+    {
+      accountData: path.join(APP_DATA, 'Argo Development'),
+      projectData: path.join(APP_DATA, 'Argo Development'),
+    },
   )
 })
 
