@@ -91,6 +91,7 @@ jq -r -f scripts/profiling/hot-functions.jq <journey-cpu-trace.json>
 
 The trace contains renderer work, including React rendering, and the timings file lists the wall
 time for every journey case. It makes no performance assertion: compare runs on the same machine.
+Delete the temporary directory when you are done.
 
 ## Dev-only noise
 

@@ -98,7 +98,9 @@ export function describeSessionProof(
 
       test.beforeAll(async () => {
         root = await mkdtemp(path.join(os.tmpdir(), `argo-${name}-`))
-        harness = await createPackagedSessionHarness(root, backend, profile === undefined)
+        harness = await createPackagedSessionHarness(root, backend, {
+          recordFailureTrace: profile === undefined,
+        })
       })
 
       test.afterAll(async () => {

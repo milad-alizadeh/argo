@@ -69,7 +69,7 @@ async function timed<T>(launches: number[], start: () => Promise<T>) {
 export async function createPackagedSessionHarness(
   root: string,
   backend: SessionCliBackend,
-  recordFailureTrace = true,
+  options: { recordFailureTrace: boolean } = { recordFailureTrace: true },
 ) {
   const fixture = await prepare(root)
   const run = await backend.start({ root, fixture })
@@ -95,7 +95,7 @@ export async function createPackagedSessionHarness(
     // One trace recording per Electron process, segmented per Playwright test in
     // `session-proof-run.ts`: it stops and restarts the recording at each test boundary so a
     // failure writes only its own trace, and a restart mid-case simply starts recording again.
-    if (recordFailureTrace) {
+    if (options.recordFailureTrace) {
       await application.context().tracing.start({ screenshots: true, snapshots: true })
     }
     await application.evaluate(({ BrowserWindow }, viewport) => {
