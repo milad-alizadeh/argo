@@ -528,7 +528,7 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
   await expect(inspector).toBeVisible()
   expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
   const subagentMessage = within(inspector)
-    .getAllByText('Use the approved prototype to review the Session composer in context.')
+    .getAllByText(/Review finding \d+: The inspector keeps a complete implementation report/)
     .find((message) => message.getBoundingClientRect().height > 0)
   if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
   await expect(subagentMessage).toBeVisible()
