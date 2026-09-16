@@ -12,7 +12,13 @@ import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import { RunningText, StatusIcon, TOOL_ICONS, type ToolCall, type ToolRow } from './feed-tools'
+import {
+  RunningText,
+  StatusIcon,
+  TOOL_PRESENTATION,
+  type ToolCall,
+  type ToolRow,
+} from './feed-tools'
 import { withoutRepeatedTitle } from './skill-title'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
@@ -74,7 +80,7 @@ export function FeedInlineToolCallItem({
   call: ToolCall | ToolRow
   toolGroups: ToolGroupState
 }) {
-  const Icon = TOOL_ICONS[call.kind]
+  const Icon = TOOL_PRESENTATION[call.kind].icon
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, call.id)
   return (
     <CollapsibleText

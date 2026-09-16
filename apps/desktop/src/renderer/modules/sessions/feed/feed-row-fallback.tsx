@@ -1,11 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip } from '../components/attachment-chip'
 import { PromptText } from '../prompt/prompt-text'
-import type { SessionEvidence, SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 import { FeedImage } from './content/feed-images'
-import { FeedDelegation } from './feed-delegation'
-import { FeedEvent } from './feed-event'
-import { FeedMarker } from './feed-marker'
 
 export function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
@@ -72,29 +69,4 @@ export function FeedPrompt({
       )}
     </div>
   )
-}
-
-export function FeedRowFallback({
-  row,
-}: {
-  row: Exclude<SessionFeedRow, { shape: 'tool' | 'tool-group' | 'prose' | 'ask' }>
-}) {
-  const { t } = useTranslation('sessions')
-  switch (row.shape) {
-    case 'thought':
-      return <PlainText text={row.text} />
-    case 'command-output':
-      return <PlainText text={row.text} />
-    case 'event':
-      return <FeedEvent row={row} />
-    case 'delegation':
-    case 'delegation-group':
-      return <FeedDelegation row={row} />
-    case 'source':
-      return <p>{row.label}</p>
-    case 'marker':
-      return <FeedMarker row={row} />
-    case 'unreadable':
-      return <p>{t('rowUnreadable')}</p>
-  }
 }

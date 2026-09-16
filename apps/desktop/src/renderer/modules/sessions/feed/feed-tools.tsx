@@ -18,13 +18,16 @@ import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
 
-export const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: string }>> = {
-  command: SquareTerminal,
-  read: Search,
-  edited: FilePenLine,
-  created: FilePenLine,
-  tool: Wrench,
-  skill: WandSparkles,
+export const TOOL_PRESENTATION: Record<
+  ToolRow['kind'],
+  { icon: ComponentType<{ className?: string }>; route: 'inline' | 'evidence' }
+> = {
+  command: { icon: SquareTerminal, route: TOOL_CONTENT_ROUTE.command },
+  read: { icon: Search, route: TOOL_CONTENT_ROUTE.read },
+  edited: { icon: FilePenLine, route: TOOL_CONTENT_ROUTE.edited },
+  created: { icon: FilePenLine, route: TOOL_CONTENT_ROUTE.created },
+  tool: { icon: Wrench, route: TOOL_CONTENT_ROUTE.tool },
+  skill: { icon: WandSparkles, route: TOOL_CONTENT_ROUTE.skill },
 }
 
 export function StatusIcon({ status }: { status: ToolRow['status'] }) {
@@ -86,7 +89,7 @@ export function FeedToolLine({
   onOpen: (row: ToolRow) => void
 }) {
   const { t } = useTranslation('sessions')
-  const Icon = TOOL_ICONS[call.kind]
+  const Icon = TOOL_PRESENTATION[call.kind].icon
   const active = activeEvidenceId === call.id
   const failed = call.status === 'failed'
   return (
@@ -124,7 +127,7 @@ function GroupedCall({
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
 }) {
-  if (TOOL_CONTENT_ROUTE[call.kind] !== 'inline')
+  if (TOOL_PRESENTATION[call.kind].route !== 'inline')
     return <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
   if (isSole) return <FeedInlineToolCall call={call} />
   return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
@@ -168,7 +171,7 @@ export function FeedToolGroup({
         </TaskItem>
       ))}
       contentVariant="flush"
-      icon={titleCall === undefined ? SquareTerminal : TOOL_ICONS[titleCall.kind]}
+      icon={titleCall === undefined ? SquareTerminal : TOOL_PRESENTATION[titleCall.kind].icon}
       onOpenChange={onOpenChange}
       open={open}
       title={
