@@ -7,6 +7,7 @@
 import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { electronStandIn } from '../contract/electron-stand-in'
 import { createFakeIpcWindow, RENDERER_URL } from '../contract/test-support'
 import { SESSION_OPERATIONS } from './operations'
 import { createSessionReader } from './reader'
@@ -16,7 +17,7 @@ import type { SessionSource } from './session-source'
 // The Session bridge opens the attachment chooser over Electron's `dialog`, which no read
 // reaches. The stand-in goes in before the bridge is imported, as a static import would resolve
 // the real `electron` package first.
-mock.module('electron', () => ({ dialog: {} }))
+mock.module('electron', () => electronStandIn)
 const { attachSessionBridge } = await import('./bridge')
 
 function invoking(sources: SessionSource[]) {
