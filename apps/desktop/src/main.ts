@@ -57,7 +57,7 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   : null
 if (DEVELOPMENT_INSTANCE) {
   app.setName(DEVELOPMENT_INSTANCE.label)
-  const ticket = path.basename(DEVELOPMENT_INSTANCE.worktree).match(/^ticket-(\d+)(?:-|$)/)?.[1]
+  const ticket = DEVELOPMENT_INSTANCE.label.match(/^#(\d+)$/)?.[1]
   app.dock?.setBadge(ticket ?? '')
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
