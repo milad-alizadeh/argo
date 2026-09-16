@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
+import { assertUnstubbedRequestFails } from '../msw-node-bridge'
 import type { FakeLinearTeam } from './fake-driver/fake-linear'
 import { ADA, HIDDEN, linear, signIn, TEAM } from './harness'
 import { readTicketPage } from './issues'
@@ -123,4 +124,9 @@ test('an access token past its lifetime is refused as unauthorized', async (cont
   const { accessToken } = await signIn(endpoints)
   fake.expire(ADA.id)
   assert.deepEqual(await listTeams(endpoints, accessToken), { ok: false, failure: 'unauthorized' })
+})
+
+test('a call to a route this fake never stubbed fails loudly, naming the request', async (context) => {
+  const [fake] = await linear(context)
+  await assertUnstubbedRequestFails(`${fake.origin}/oauth/revoke`)
 })
