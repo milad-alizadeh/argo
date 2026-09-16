@@ -18,7 +18,7 @@ export const THREADS_SCHEMA = 'CREATE TABLE threads (id TEXT PRIMARY KEY, title 
 
 const FIXTURE = fileURLToPath(
   new URL(
-    `../session-fake-driver/fixtures/sessions/rollout-${CREATED_THREAD}.jsonl`,
+    `../../../../mocks/cli/codex/fixtures/sessions/rollout-${CREATED_THREAD}.jsonl`,
     import.meta.url,
   ),
 )

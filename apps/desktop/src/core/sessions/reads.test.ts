@@ -7,8 +7,8 @@
 import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { createMockIpcWindow, RENDERER_URL } from '../../../mocks/contract/mock-ipc-window'
 import { electronStandIn } from '../contract/electron-stand-in'
-import { createFakeIpcWindow, RENDERER_URL } from '../contract/test-support'
 import { SESSION_OPERATIONS } from './operations'
 import { createSessionReader } from './reader'
 import { DECLARATIONS, type Declaration, owningSource, type Reply } from './reads-failure-cases'
@@ -21,8 +21,8 @@ mock.module('electron', () => electronStandIn)
 const { attachSessionBridge } = await import('./bridge')
 
 function invoking(sources: SessionSource[]) {
-  const fake = createFakeIpcWindow()
-  attachSessionBridge(fake.window, {
+  const ipc = createMockIpcWindow()
+  attachSessionBridge(ipc.window, {
     adapters: {},
     reader: createSessionReader(sources),
     rendererURL: RENDERER_URL,
@@ -36,7 +36,7 @@ function invoking(sources: SessionSource[]) {
       ...declaration.fields,
       ...overrides,
     }
-    return (await fake.trustedInvoke(operation.channel, request)) as Reply
+    return (await ipc.trustedInvoke(operation.channel, request)) as Reply
   }
 }
 

@@ -4,7 +4,14 @@ import { QueryClient } from '@tanstack/react-query'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { sendToDraftIdentity } from './send-draft-turn'
 import { type SendDeps, sendToNewSession, sendToSelected } from './send-turn'
-import { COCKPIT, fakeMutation, PROJECT, SETUP } from './send-turn-fixtures'
+import {
+  COCKPIT,
+  mockMutation,
+  mockStart,
+  newSessionDeps,
+  PROJECT,
+  SETUP,
+} from './send-turn-fixtures'
 import { beginEntry, clearEntry, rekeyEntry, type TurnMarkerEntries } from './use-turn-marker'
 
 beforeEach(() => {
@@ -13,7 +20,7 @@ beforeEach(() => {
 
 // The identity's session variant routes a Send to that Session, never a new one.
 test('a Send with a selected Session sends to it', async () => {
-  const send = fakeMutation<{ prompt: string; sessionId: string; setup: unknown }, void>(
+  const send = mockMutation<{ prompt: string; sessionId: string; setup: unknown }, void>(
     async () => undefined,
   )
   const watched: unknown[] = []
@@ -35,26 +42,14 @@ test('a Send with a selected Session sends to it', async () => {
 
 // The identity's draft variant routes a Send to starting a fresh Session, and moves there.
 test('a Send with no prior Session starts one and navigates to it', async () => {
-  const start = fakeMutation<
-    { cli: string; cwd: string; prompt: string; setup: unknown },
-    { sessionId: string }
-  >(async () => ({ sessionId: 'session-new' }))
+  const start = mockStart(async () => ({ sessionId: 'session-new' }))
   const navigated: unknown[] = []
-  const sent = await sendToNewSession({
-    cli: 'claude',
-    cockpit: COCKPIT,
-    identity: { kind: 'draft', projectId: PROJECT.id },
-    navigate: (...args) => {
+  const sent = await sendToNewSession(
+    newSessionDeps(start, { kind: 'draft', projectId: PROJECT.id }, (...args) => {
       navigated.push(args)
       return undefined as never
-    },
-    queryClient: new QueryClient(),
-    send: fakeMutation(async () => undefined) as never,
-    setFailure: () => {},
-    start: start as never,
-    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
-    watchTurn: () => {},
-  })
+    }),
+  )
   expect(sent).toBe(true)
   expect(start.calls).toEqual([
     { cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
@@ -84,7 +79,7 @@ function turnMarker() {
 test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
   let answer: (reply: { sessionId: string }) => void = () => {}
-  const start = fakeMutation(
+  const start = mockMutation(
     () =>
       new Promise<{ sessionId: string }>((resolve) => {
         answer = resolve
@@ -98,7 +93,7 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
     queryClient: new QueryClient(),
     roster: null,
     marker,
-    send: fakeMutation(async () => undefined) as never,
+    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
     watchTurn: () => {},
@@ -126,9 +121,9 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
     navigate: () => undefined as never,
     queryClient: new QueryClient(),
     marker,
-    send: fakeMutation(async () => undefined) as never,
+    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
-    start: fakeMutation(async () => ({ sessionId: 'session-new' })) as never,
+    start: mockMutation(async () => ({ sessionId: 'session-new' })) as never,
     watchTurn: () => {},
   } as unknown as SendDeps
   const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const

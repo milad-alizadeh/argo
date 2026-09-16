@@ -1,19 +1,19 @@
-// A fake Linear per test, a browser that follows its consent page, and a signed-in grant on it.
+// A mock Linear per test, a browser that follows its consent page, and a signed-in grant on it.
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
+import { type MockLinear, startMockLinear } from '../../../mocks/providers/linear/mock-linear'
 import type { Grant } from '../grant'
 import { beginAuthorization } from './authorization'
 import { type LinearEndpoints, linearProofEndpoints } from './endpoints'
-import { type FakeLinear, startFakeLinear } from './fake-driver/fake-linear'
 
-export { ADA, HIDDEN, TEAM } from './fake-driver/fake-linear-cast'
+export { ADA, HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 
-export async function linear(context: TestContext): Promise<[FakeLinear, LinearEndpoints]> {
-  const fake = await startFakeLinear()
-  context.after(() => fake.close())
-  const endpoints = linearProofEndpoints(fake.origin)
+export async function linear(context: TestContext): Promise<[MockLinear, LinearEndpoints]> {
+  const mock = await startMockLinear()
+  context.after(() => mock.close())
+  const endpoints = linearProofEndpoints(mock.origin)
   assert.ok(endpoints)
-  return [fake, endpoints]
+  return [mock, endpoints]
 }
 
 // The person's browser: opens the page and follows Linear's redirect back to the loopback.

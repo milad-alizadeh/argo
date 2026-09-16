@@ -10,7 +10,10 @@ import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(
-  new URL('../session-fake-driver/fixtures/sessions/rollout-codexToolCalls.jsonl', import.meta.url),
+  new URL(
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexToolCalls.jsonl',
+    import.meta.url,
+  ),
 )
 
 async function reader(context: { after: (cleanup: () => Promise<void>) => void }) {

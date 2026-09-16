@@ -15,7 +15,7 @@ const [
   path,
   { test },
   assert,
-  { createFakeIpcWindow, RENDERER_URL },
+  { createMockIpcWindow, RENDERER_URL },
   { GITHUB_ENDPOINTS },
   { createAccountAccess },
   { attachAccountBridge },
@@ -34,7 +34,7 @@ const [
   import('node:path').then((module) => module.default),
   import('node:test'),
   import('node:assert/strict').then((module) => module.default),
-  import('./test-support'),
+  import('../../../mocks/contract/mock-ipc-window'),
   import('../../providers/github/endpoints'),
   import('../accounts/access'),
   import('../accounts/bridge'),
@@ -66,11 +66,11 @@ function neverCalled<T>(): T {
 
 async function domains(userData: string) {
   const rendererURL = RENDERER_URL
-  const projectFake = createFakeIpcWindow()
-  attachProjectBridge(projectFake.window, { userData, rendererURL })
+  const projectMock = createMockIpcWindow()
+  attachProjectBridge(projectMock.window, { userData, rendererURL })
 
-  const sessionFake = createFakeIpcWindow()
-  attachSessionBridge(sessionFake.window, { ...neverCalled<SessionContext>(), rendererURL })
+  const sessionMock = createMockIpcWindow()
+  attachSessionBridge(sessionMock.window, { ...neverCalled<SessionContext>(), rendererURL })
 
   const access = createAccountAccess({
     userData,
@@ -80,38 +80,38 @@ async function domains(userData: string) {
     openExternal: async () => undefined,
   })
 
-  const accountFake = createFakeIpcWindow()
-  attachAccountBridge(accountFake.window, { access, rendererURL })
+  const accountMock = createMockIpcWindow()
+  attachAccountBridge(accountMock.window, { access, rendererURL })
 
-  const ticketFake = createFakeIpcWindow()
-  attachTicketBridge(ticketFake.window, { access, rendererURL })
+  const ticketMock = createMockIpcWindow()
+  attachTicketBridge(ticketMock.window, { access, rendererURL })
 
-  const appearanceFake = createFakeIpcWindow()
-  attachAppearanceBridge(appearanceFake.window, { userData, rendererURL })
+  const appearanceMock = createMockIpcWindow()
+  attachAppearanceBridge(appearanceMock.window, { userData, rendererURL })
 
   return [
     {
       name: 'project',
-      fake: projectFake,
+      mock: projectMock,
       operations: PROJECT_OPERATIONS,
       errorType: 'project.error',
     },
     {
       name: 'session',
-      fake: sessionFake,
+      mock: sessionMock,
       operations: SESSION_OPERATIONS,
       errorType: 'session.error',
     },
     {
       name: 'account',
-      fake: accountFake,
+      mock: accountMock,
       operations: ACCOUNT_OPERATIONS,
       errorType: 'account.error',
     },
-    { name: 'ticket', fake: ticketFake, operations: TICKET_OPERATIONS, errorType: 'ticket.error' },
+    { name: 'ticket', mock: ticketMock, operations: TICKET_OPERATIONS, errorType: 'ticket.error' },
     {
       name: 'appearance',
-      fake: appearanceFake,
+      mock: appearanceMock,
       operations: APPEARANCE_OPERATIONS,
       errorType: 'appearance.error',
     },
@@ -126,7 +126,7 @@ test('every operation of every domain refuses an untrusted frame', async (contex
     for (const [key, operation] of Object.entries<{ channel: string; name: string }>(
       domain.operations,
     )) {
-      const reply = (await domain.fake.untrustedInvoke(operation.channel, {
+      const reply = (await domain.mock.untrustedInvoke(operation.channel, {
         version: 1,
         type: operation.name,
         requestId: `${domain.name}-${key}`,

@@ -18,7 +18,7 @@ function quiet() {
 
 // A stand-in for the one thing here that cannot run for real: an Electron window. The watch itself,
 // the settling and the files are all real.
-function fakeWindow() {
+function mockWindow() {
   const sent: { channel: string; topic: unknown }[] = []
   let destroyed = false
   const closers: (() => void)[] = []
@@ -43,7 +43,7 @@ function fakeWindow() {
 
 // A recursive watch arms asynchronously, so a write that lands before it is armed is never reported.
 // Each case writes until the first message arrives and measures from there (watch-paths.test.ts).
-async function armed(host: ReturnType<typeof fakeWindow>, file: string) {
+async function armed(host: ReturnType<typeof mockWindow>, file: string) {
   for (let attempt = 0; attempt < ARMING_ATTEMPTS && host.sent.length === 0; attempt += 1) {
     await writeFile(file, `{"attempt":${attempt}}\n`)
     await quiet()
@@ -54,7 +54,7 @@ async function armed(host: ReturnType<typeof fakeWindow>, file: string) {
 describe('telling a window its data changed', () => {
   test('names the topic whose tree a CLI wrote under', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-wrote-'))
-    const host = fakeWindow()
+    const host = mockWindow()
     try {
       registerWatching(host.window, { sessions: [watchTrees([root])] })
       await armed(host, path.join(root, 'session.jsonl'))
@@ -66,7 +66,7 @@ describe('telling a window its data changed', () => {
   })
 
   test('names a topic whose source is not a tree', () => {
-    const host = fakeWindow()
+    const host = mockWindow()
     let changed = () => {}
     let disposed = false
     registerWatching(host.window, {
@@ -87,7 +87,7 @@ describe('telling a window its data changed', () => {
 
   test('says nothing more once the window has closed', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-closed-'))
-    const host = fakeWindow()
+    const host = mockWindow()
     try {
       registerWatching(host.window, { sessions: [watchTrees([root])] })
       await armed(host, path.join(root, 'session.jsonl'))
@@ -104,7 +104,7 @@ describe('telling a window its data changed', () => {
 
 describe('telling a window about a watch that had to be opened again', () => {
   test('carries a change announced after a dead watch reopened', async () => {
-    const host = fakeWindow()
+    const host = mockWindow()
     const opener = failableOpener()
     try {
       registerWatching(host.window, { sessions: [watchTrees(['/transcripts'], opener.open)] })
@@ -123,7 +123,7 @@ describe('telling a window about a watch that had to be opened again', () => {
   test('carries a change under a root that only appeared after it was registered', async () => {
     const parent = await mkdtemp(path.join(tmpdir(), 'argo-bridge-late-'))
     const root = path.join(parent, 'transcripts')
-    const host = fakeWindow()
+    const host = mockWindow()
     try {
       registerWatching(host.window, { sessions: [watchTrees([root])] })
       await mkdir(root)

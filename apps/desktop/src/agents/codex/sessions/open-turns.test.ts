@@ -12,7 +12,10 @@ import { codexSessionSource } from './read-sessions'
 
 const THREAD = '01a0b000-0000-7000-8000-000000000001'
 const FIXTURE = fileURLToPath(
-  new URL('../session-fake-driver/fixtures/sessions/rollout-codexOpenTurn.jsonl', import.meta.url),
+  new URL(
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexOpenTurn.jsonl',
+    import.meta.url,
+  ),
 )
 
 // The two ways codex-cli 0.147.0 closes a Turn, in the shape its rollouts write them.

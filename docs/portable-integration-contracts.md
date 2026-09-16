@@ -197,8 +197,8 @@ It reads back the original package's production fuses after the run.
 `bun run measure:cockpit` records startup and idle evidence for #1863 from five launches of it.
 Only a run on the 120 Hz reference display is judged. Every other run reports `unjudged` and exits zero.
 
-`bun run test:packaged-tickets` drives the same packaged copy with GitHub replaced by a fake on a loopback port.
-The fake is used only when the proof store is set, and only at a `127.0.0.1` origin.
+`bun run test:e2e -- --project=tickets` drives the same packaged copy with GitHub replaced by a mock on a loopback port.
+The mock is used only when the proof store is set, and only at a `127.0.0.1` origin.
 The proof connects an Account, signs in again as the same identity, and connects a second identity.
 It makes sure that no token reaches the renderer or an unsealed file.
 It connects a repository after one refusal, reads the backlog and one Ticket, and restarts while GitHub is down.

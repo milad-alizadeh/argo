@@ -14,7 +14,7 @@ async function directory(context: TestContext) {
   return folder
 }
 
-// A fake login shell: it ignores the `-ilc` flags a real one is called with and just states the
+// A mock login shell: it ignores the `-ilc` flags a real one is called with and just states the
 // PATH the test wants read back, the way a person's `.zshrc` would after a version manager runs.
 async function loginShellNaming(context: TestContext, directoryToNamed: string) {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-login-shell-'))
