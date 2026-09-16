@@ -89,7 +89,7 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
   const { t } = useTranslation('tickets')
   const { name, scope } = providerPresentation(provider)
   return (
-    <Empty className="flex-none border-0">
+    <Empty className="flex-none">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           {query === '' ? <TicketMark aria-hidden="true" /> : <SearchX aria-hidden="true" />}

@@ -9,7 +9,7 @@ import { RosterLoading } from './sessions-sidebar-chrome'
 function NoSessionsFound() {
   const { t } = useTranslation('sessions')
   return (
-    <Empty className="flex-none border-0 px-4 py-8">
+    <Empty className="flex-none px-4 py-8">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Inbox aria-hidden="true" />
