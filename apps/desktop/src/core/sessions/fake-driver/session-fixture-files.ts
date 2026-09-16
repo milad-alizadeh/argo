@@ -60,14 +60,30 @@ export async function replaceInFile(file, search, replacement) {
   await utimes(file, future, future)
 }
 
+// The packaged proof's own Project folder, beside its transcripts. The cockpit shows no Roster
+// without a selected Project (#2307), so a proof selects this one and places every cwd under it.
+export function proofProject(transcripts) {
+  return path.join(path.dirname(transcripts), 'project')
+}
+
+export function proofCwd(transcripts, place) {
+  return path.join(proofProject(transcripts), place)
+}
+
+// The fixtures record their cwd under the fake home `/Users/x`, which a selected Project scopes out.
+function placeInProofProject(text, transcripts) {
+  return text.replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
+}
+
 export async function writeFixtureTree(root, names, options = {}) {
-  const { directory = PROJECT, fixtures = FIXTURES } = options
+  const { directory = PROJECT, fixtures = FIXTURES, inProofProject = false } = options
   const inside = path.join(root, directory)
   await mkdir(inside, { recursive: true })
   for (const name of names) {
+    const text = `${(await fixtureLines(name, fixtures)).join('\n')}\n`
     await writeFile(
       path.join(inside, `${name}.jsonl`),
-      `${(await fixtureLines(name, fixtures)).join('\n')}\n`,
+      inProofProject ? placeInProofProject(text, root) : text,
     )
     // The Subagent transcripts the CLI keeps in a folder beside the Session's own file, for the
     // fixtures that have them. Copied as-is, so the tree matches the layout the reader walks.

@@ -6,10 +6,6 @@
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "newSession": "New Session",
-  "noProjectHint": {
-    "title": "Select a Project first",
-    "description": "Choose a Project, or add one, to start a Session."
-  },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
   "findSession": "Find a Session",

@@ -7,6 +7,8 @@ import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import {
   CODEX_FIXTURES,
   fixturePath,
+  proofCwd,
+  proofProject,
   writeArchiveStore,
   writeFixtureTree,
 } from './session-fixture-files'
@@ -51,22 +53,23 @@ export const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ??
 
 // One more turn on a Session already measured, written the way the CLI writes one: appended to
 // the file it belongs to.
-const GROWN_TURN = `${JSON.stringify({
-  type: 'assistant',
-  cwd: '/Users/x/stranded',
-  gitBranch: 'main',
-  timestamp: '2026-08-20T09:30:00.000Z',
-  uuid: 'sr-asst-2',
-  parentUuid: 'sr-asst-1',
-  message: {
-    role: 'assistant',
-    stop_reason: 'end_turn',
-    content: [{ type: 'text', text: 'And one more turn, written while Argo was looking.' }],
-  },
-})}\n`
+const grownTurn = (transcripts) =>
+  `${JSON.stringify({
+    type: 'assistant',
+    cwd: proofCwd(transcripts, 'stranded'),
+    gitBranch: 'main',
+    timestamp: '2026-08-20T09:30:00.000Z',
+    uuid: 'sr-asst-2',
+    parentUuid: 'sr-asst-1',
+    message: {
+      role: 'assistant',
+      stop_reason: 'end_turn',
+      content: [{ type: 'text', text: 'And one more turn, written while Argo was looking.' }],
+    },
+  })}\n`
 
 export async function growStranded(transcripts) {
-  await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
+  await appendFile(fixturePath(transcripts, 'strandedResume'), grownTurn(transcripts))
 }
 
 export async function removeProse(transcripts) {
@@ -78,7 +81,7 @@ export async function appendProse(transcripts, uuid, text) {
     fixturePath(transcripts, 'prose'),
     `${JSON.stringify({
       type: 'assistant',
-      cwd: '/Users/x/prose',
+      cwd: proofCwd(transcripts, 'prose'),
       timestamp: '2026-07-21T09:31:00.000Z',
       uuid,
       parentUuid: 'p-turn-3',
@@ -106,22 +109,22 @@ export async function prepare(root) {
   const application = await packagedTestCopy(root)
   const claudeTranscripts = path.join(root, 'claude-transcripts')
   const codexTranscripts = path.join(root, 'codex-transcripts')
-  await writeFixtureTree(claudeTranscripts, FIXTURES)
+  await writeFixtureTree(claudeTranscripts, FIXTURES, { inProofProject: true })
   await pointShellOutputAtRoot(claudeTranscripts, root)
   await writeFixtureTree(codexTranscripts, CODEX_FIXTURE_NAMES, {
     directory: '2026/09/10',
     fixtures: CODEX_FIXTURES,
+    inProofProject: true,
   })
   const archive = path.join(root, 'archive')
   await writeArchiveStore(archive, ARCHIVED)
   await writeArchiveStore(archive, TRACKED_UNARCHIVED, { archived: false })
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
-  const project = path.join(root, 'project')
+  const project = proofProject(claudeTranscripts)
   await mkdir(project)
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
-  // No Project is selected yet: the fixtures span unrelated fake cwds (/Users/x/tree, ...), and a
-  // selected Project scopes every one of them out of the Roster (#2204).
+  // No Project is selected yet, so the first case sees the cockpit with none (#2307).
   await writeProjectStore(userData, project, null)
   return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
 }

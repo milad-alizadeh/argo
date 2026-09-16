@@ -61,12 +61,7 @@ export function SessionsSidebar() {
 
   return (
     <>
-      <Roster
-        actions={actions}
-        hasProject={projectRoot !== null}
-        projectRoot={projectRoot}
-        selectedSessionId={sessionId ?? null}
-      />
+      <Roster actions={actions} projectRoot={projectRoot} selectedSessionId={sessionId ?? null} />
       <SessionTicketLinkDialog
         onConnect={ticketLink.connect}
         onOpenChange={(open) => {

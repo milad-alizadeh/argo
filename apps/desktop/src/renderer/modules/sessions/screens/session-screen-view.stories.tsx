@@ -162,7 +162,6 @@ function ReviewSidebar({
   return (
     <Roster
       actions={{ ...NOOP_ROSTER_ACTIONS, onSelect }}
-      hasProject={true}
       projectRoot={null}
       selectedSessionId={selectedSessionId}
     />
@@ -282,7 +281,6 @@ function NewSessionScreen() {
             onNew: () => setSelectedSessionId('optimistic:new-session'),
             onSelect: setSelectedSessionId,
           }}
-          hasProject={true}
           projectRoot={null}
           selectedSessionId={selectedSessionId}
         />

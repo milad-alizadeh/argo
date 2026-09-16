@@ -76,12 +76,10 @@ function useRosterSessions(options: {
 // this and a rendered row all fold into it (#2284).
 export function Roster({
   actions,
-  hasProject,
   projectRoot,
   selectedSessionId,
 }: {
   actions: RosterActions
-  hasProject: boolean
   projectRoot: string | null
   selectedSessionId: SessionId | null
 }) {
@@ -103,7 +101,6 @@ export function Roster({
       ref={sidebar}
     >
       <SessionsSidebarHeader
-        hasProject={hasProject}
         onNew={actions.onNew}
         onSearch={sessions.setSearch}
         onStatusChange={sessions.setStatus}

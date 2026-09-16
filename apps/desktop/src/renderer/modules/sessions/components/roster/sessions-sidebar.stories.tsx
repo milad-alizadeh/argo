@@ -86,23 +86,13 @@ function withSessionsHost(initialSessions: SessionsListed['sessions']) {
   }
 }
 
-type RosterHarnessArgs = RosterActions & {
-  hasProject: boolean
-  selectedSessionId: SessionId | null
-}
+type RosterHarnessArgs = RosterActions & { selectedSessionId: SessionId | null }
 
 // The presentational seam Storybook drives: Roster's own props, plus the routing a real caller
 // gives it. Project scoping plays no part in what a story renders, so every story reads the same
 // null root and tells the roster apart by what window.argo.listSessions answers instead.
-function RosterHarness({ hasProject, selectedSessionId, ...actions }: RosterHarnessArgs) {
-  return (
-    <Roster
-      actions={actions}
-      hasProject={hasProject}
-      projectRoot={null}
-      selectedSessionId={selectedSessionId}
-    />
-  )
+function RosterHarness({ selectedSessionId, ...actions }: RosterHarnessArgs) {
+  return <Roster actions={actions} projectRoot={null} selectedSessionId={selectedSessionId} />
 }
 
 function RoutedRoster(args: RosterHarnessArgs) {
@@ -145,7 +135,6 @@ const meta: Meta<typeof RosterHarness> = {
     return withRosterHost(async () => listedReply(listed))
   },
   args: {
-    hasProject: true,
     onArchiveSelected: fn(),
     onLinkTicket: fn(),
     onNew: fn(),
@@ -208,25 +197,6 @@ export const Discovered: Story = {
     await userEvent.keyboard('second')
     await expect(canvas.queryByRole('button', { name: /Keep the roster stable/ })).toBeNull()
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeInTheDocument()
-  },
-}
-
-// With no Project selected, the "+" control has nothing to create a Session on: clicking it names
-// the next step instead of opening the composer #2109 already covers (#2307).
-export const NoProjectSelected: Story = {
-  args: { hasProject: false, onNew: fn() },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement)
-    const newSessionButton = canvas.getByRole('button', { name: 'New Session' })
-    await expect(canvas.queryByText('Select a Project first')).toBeNull()
-    await userEvent.click(newSessionButton)
-    await waitFor(async () => {
-      await expect(within(document.body).getByText('Select a Project first')).toBeVisible()
-    })
-    await expect(
-      within(document.body).getByText('Choose a Project, or add one, to start a Session.'),
-    ).toBeVisible()
-    await expect(args.onNew).not.toHaveBeenCalled()
   },
 }
 
