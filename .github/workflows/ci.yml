@@ -356,36 +356,39 @@ jobs:
         working-directory: apps/desktop
         run: bun run test:packaged-pty --arch arm64 --skip-package
 
-      - name: Test the Project workflow in a packaged copy
+      # Every flow under `apps/desktop/e2e/`, one Playwright project each, against a packaged copy:
+      # the Project contract, the Session Feed and journeys (#1831), and the Tickets workflow with
+      # GitHub and Linear mocked on loopback ports (#1848). Nothing takes a screenshot (#1910): the
+      # assertions read the DOM, and reviewers inspect pixels in Storybook.
+      - name: Test the e2e flows in a packaged copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: bun run test:packaged-project
-
-      # Discovery with no Project registered, the Feed contract, the ADR-0033 measure pass and the
-      # renderer authority the Session bridge asserts for itself (#1831).
-      - name: Test the Session Feed in a packaged copy
-        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        # No `--shots`. The driver can still write PNG files for a person reading them on their own
-        # machine, but nothing in CI takes a screenshot any more (#1910): the assertions above read
-        # the DOM, and reviewers inspect pixels in Storybook outside this workflow.
-        run: bun run test:packaged-session
+        run: bun run test:e2e
 
       # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`
       # keeps both only on failure, so a red run here is the one place they exist to read.
-      - name: Upload Session proof failure artifacts
+      - name: Upload e2e failure artifacts
+        id: e2e-artifacts
         if: ${{ failure() && steps.touched.outputs.desktop == 'true' }}
         uses: actions/upload-artifact@v5
         with:
-          name: session-proof-failure
+          name: e2e-failure
           path: |
             apps/desktop/playwright-report
             apps/desktop/test-results
           retention-days: 7
 
-      # Connect an Account, connect a repository, list, detail, restart, revoked access, disconnect
-      # and a visible failure, through the shipped cockpit with GitHub faked on a loopback port (#1848).
-      - name: Test the Tickets workflow in a packaged copy
-        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:packaged-tickets
+      # The annotation shows on the PR's Checks tab and the summary on the run page, so the zip is one
+      # click from the red check instead of buried at the foot of the run.
+      - name: Link the e2e failure artifacts
+        if: ${{ failure() && steps.e2e-artifacts.outputs.artifact-url != '' }}
+        env:
+          ARTIFACT_URL: ${{ steps.e2e-artifacts.outputs.artifact-url }}
+        run: |
+          echo "::error title=e2e failed::Report and traces: $ARTIFACT_URL"
+          {
+            echo "### e2e failure artifacts"
+            echo ""
+            echo "[Download the Playwright report and traces]($ARTIFACT_URL)."
+            echo "Unzip it, then run \`npx playwright show-report playwright-report\` or \`npx playwright show-trace test-results/<case>/trace.zip\`."
+          } >> "$GITHUB_STEP_SUMMARY"

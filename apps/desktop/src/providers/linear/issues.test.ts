@@ -1,23 +1,23 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import type { FakeLinearTeam } from './fake-driver/fake-linear'
+import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
 import { ADA, HIDDEN, linear, signIn, TEAM } from './harness'
 import { readTicketPage } from './issues'
 import { checkTeam, listTeams } from './teams'
 
 const BACKLOG = { scope: TEAM.id, query: '', cursor: null }
 
-// Ada signed in to a fake Linear serving these teams.
-async function signedIn(context: TestContext, teams: FakeLinearTeam[]) {
-  const [fake, endpoints] = await linear(context)
-  for (const team of teams) fake.addTeam(team)
-  fake.signIn(ADA)
+// Ada signed in to a mock Linear serving these teams.
+async function signedIn(context: TestContext, teams: MockLinearTeam[]) {
+  const [mock, endpoints] = await linear(context)
+  for (const team of teams) mock.addTeam(team)
+  mock.signIn(ADA)
   const { accessToken } = await signIn(endpoints)
-  return { fake, endpoints, accessToken }
+  return { mock, endpoints, accessToken }
 }
 
 test('a Ticket carries Linear’s own fields, children and blockers', async (context) => {
-  const { fake, endpoints, accessToken } = await signedIn(context, [TEAM])
+  const { mock, endpoints, accessToken } = await signedIn(context, [TEAM])
   const page = await readTicketPage(endpoints, accessToken, BACKLOG)
   assert.ok(page.ok)
   assert.deepEqual(
@@ -26,7 +26,7 @@ test('a Ticket carries Linear’s own fields, children and blockers', async (con
   )
   assert.deepEqual(page.value.tickets[0], {
     key: 'ENG-1',
-    url: `${fake.origin}/Analytical/issue/ENG-1`,
+    url: `${mock.origin}/Analytical/issue/ENG-1`,
     title: 'Bind the mill',
     body: 'The mill turns the cards.',
     state: 'open',
@@ -106,21 +106,21 @@ test('a team is checked against the teams the Account can see', async (context) 
 })
 
 test('Linear’s refusals and outages become the failure the cockpit names', async (context) => {
-  const { fake, endpoints, accessToken } = await signedIn(context, [TEAM])
+  const { mock, endpoints, accessToken } = await signedIn(context, [TEAM])
   const read = () => readTicketPage(endpoints, accessToken, BACKLOG)
-  fake.outage('rate-limited')
+  mock.outage('rate-limited')
   assert.deepEqual(await read(), { ok: false, failure: 'rate-limited' })
-  fake.outage('down')
+  mock.outage('down')
   assert.deepEqual(await read(), { ok: false, failure: 'unreachable' })
-  fake.outage('none')
-  fake.revoke(ADA.id)
+  mock.outage('none')
+  mock.revoke(ADA.id)
   assert.deepEqual(await read(), { ok: false, failure: 'unauthorized' })
 })
 
 test('an access token past its lifetime is refused as unauthorized', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn(ADA)
+  const [mock, endpoints] = await linear(context)
+  mock.signIn(ADA)
   const { accessToken } = await signIn(endpoints)
-  fake.expire(ADA.id)
+  mock.expire(ADA.id)
   assert.deepEqual(await listTeams(endpoints, accessToken), { ok: false, failure: 'unauthorized' })
 })

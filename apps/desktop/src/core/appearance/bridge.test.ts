@@ -3,26 +3,21 @@
 // it is registered before the dynamic imports below, since a static import of `./bridge` would
 // resolve the real `electron` package first.
 import { mock } from 'bun:test'
+import assert from 'node:assert/strict'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { test } from 'node:test'
 import { electronStandIn } from '../contract/electron-stand-in'
 
 mock.module('electron', () => electronStandIn)
 
 const [
-  { mkdir, mkdtemp, readFile, rm, writeFile },
-  os,
-  path,
-  { test },
-  assert,
-  { createFakeIpcWindow, RENDERER_URL },
+  { createMockIpcWindow, RENDERER_URL },
   { APPEARANCE_OPERATIONS },
   { attachAppearanceBridge },
 ] = await Promise.all([
-  import('node:fs/promises'),
-  import('node:os').then((module) => module.default),
-  import('node:path').then((module) => module.default),
-  import('node:test'),
-  import('node:assert/strict').then((module) => module.default),
-  import('../contract/test-support'),
+  import('../../../mocks/contract/mock-ipc-window'),
   import('./appearance'),
   import('./bridge'),
 ])
@@ -30,10 +25,10 @@ const [
 test('an untrusted set is refused, and a later trusted get shows the appearance from before', async (context) => {
   const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-appearance-'))
   context.after(() => rm(userData, { recursive: true, force: true }))
-  const fake = createFakeIpcWindow()
-  attachAppearanceBridge(fake.window, { userData, rendererURL: RENDERER_URL })
+  const ipc = createMockIpcWindow()
+  attachAppearanceBridge(ipc.window, { userData, rendererURL: RENDERER_URL })
 
-  const denied = (await fake.untrustedInvoke(APPEARANCE_OPERATIONS.set.channel, {
+  const denied = (await ipc.untrustedInvoke(APPEARANCE_OPERATIONS.set.channel, {
     version: 1,
     type: 'appearance.set',
     requestId: 'r1',
@@ -42,7 +37,7 @@ test('an untrusted set is refused, and a later trusted get shows the appearance 
   assert.equal(denied.type, 'appearance.error')
   assert.equal(denied.code, 'access-denied')
 
-  const after = (await fake.trustedInvoke(APPEARANCE_OPERATIONS.get.channel, {
+  const after = (await ipc.trustedInvoke(APPEARANCE_OPERATIONS.get.channel, {
     version: 1,
     type: 'appearance.get',
     requestId: 'r2',
@@ -60,9 +55,9 @@ test('a field this build does not own survives a change of appearance', async (c
     JSON.stringify({ version: 1, appearance: 'light', importedFrom: 'swift' }),
   )
 
-  const fake = createFakeIpcWindow()
-  attachAppearanceBridge(fake.window, { userData, rendererURL: RENDERER_URL })
-  await fake.trustedInvoke(APPEARANCE_OPERATIONS.set.channel, {
+  const ipc = createMockIpcWindow()
+  attachAppearanceBridge(ipc.window, { userData, rendererURL: RENDERER_URL })
+  await ipc.trustedInvoke(APPEARANCE_OPERATIONS.set.channel, {
     version: 1,
     type: 'appearance.set',
     requestId: 'r1',

@@ -8,12 +8,12 @@ import { readViewer } from './identity'
 import { refreshGrant } from './tokens'
 
 test('a consented sign-in yields a renewable grant for the Linear user it belongs to', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn(ADA)
+  const [mock, endpoints] = await linear(context)
+  mock.signIn(ADA)
   const start = await beginAuthorization(endpoints, new AbortController().signal)
   assert.ok(start.ok)
   const url = new URL(start.authorization.url)
-  assert.equal(url.origin, fake.origin)
+  assert.equal(url.origin, mock.origin)
   assert.equal(url.searchParams.get('code_challenge_method'), 'S256')
   assert.equal(url.searchParams.get('scope'), 'read,write')
   assert.match(await browse(start.authorization.url), /Linear is connected to Argo/)
@@ -29,8 +29,8 @@ test('a consented sign-in yields a renewable grant for the Linear user it belong
 })
 
 test('a declined consent ends as declined', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn('declined')
+  const [mock, endpoints] = await linear(context)
+  mock.signIn('declined')
   const start = await beginAuthorization(endpoints, new AbortController().signal)
   assert.ok(start.ok)
   await browse(start.authorization.url)
@@ -38,20 +38,20 @@ test('a declined consent ends as declined', async (context) => {
 })
 
 test('a callback carrying another request’s state is refused without spending the code', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn(ADA)
+  const [mock, endpoints] = await linear(context)
+  mock.signIn(ADA)
   const start = await beginAuthorization(endpoints, new AbortController().signal)
   assert.ok(start.ok)
   const forged = new URL(start.authorization.url)
   forged.searchParams.set('state', 'somebody-else')
   await browse(forged.href)
   assert.deepEqual(await start.authorization.outcome, { kind: 'refused' })
-  assert.equal(fake.requests.filter((line) => line === 'POST /oauth/token').length, 0)
+  assert.equal(mock.requests.filter((line) => line === 'POST /oauth/token').length, 0)
 })
 
 test('a sign-in nobody answers ends as expired, and a cancelled one as cancelled', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn('held')
+  const [mock, endpoints] = await linear(context)
+  mock.signIn('held')
   const waited = await beginAuthorization(endpoints, new AbortController().signal, 20)
   assert.ok(waited.ok)
   assert.deepEqual(await waited.authorization.outcome, { kind: 'expired' })
@@ -76,8 +76,8 @@ test('a redirect port another process holds refuses before the browser opens', a
 })
 
 test('a refresh rotates the refresh token, and the spent one is refused', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.signIn(ADA)
+  const [mock, endpoints] = await linear(context)
+  mock.signIn(ADA)
   const start = await beginAuthorization(endpoints, new AbortController().signal)
   assert.ok(start.ok)
   await browse(start.authorization.url)
@@ -92,13 +92,13 @@ test('a refresh rotates the refresh token, and the spent one is refused', async 
 })
 
 test('a Linear that cannot be reached leaves a refresh unreachable, not refused', async (context) => {
-  const [fake, endpoints] = await linear(context)
-  fake.outage('down')
+  const [mock, endpoints] = await linear(context)
+  mock.outage('down')
   assert.deepEqual(await refreshGrant(endpoints, 'linear-refresh-1'), {
     ok: false,
     failure: 'unreachable',
   })
-  await fake.close()
+  await mock.close()
   assert.deepEqual(await refreshGrant(endpoints, 'linear-refresh-1'), {
     ok: false,
     failure: 'unreachable',

@@ -1,23 +1,23 @@
-// The shared discovery engine's bounded window and cursor (#2239), proven against a minimal fake
+// The shared discovery engine's bounded window and cursor (#2239), proven against a minimal mock
 // CLI rather than either real adapter.
 import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 import {
-  fakeDiscoverer,
-  fakeRoot,
-  writeFakeTranscript,
+  mockDiscoverer,
+  mockRoot,
   writeManySessions,
-} from './discover-transcript-sessions.fake'
+  writeMockTranscript,
+} from '../../../mocks/sessions/mock-discover-transcript-sessions'
+import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 
 const LATER = '2026-09-13T12:05:00.000Z'
 
 test('reads only the bounded window on a cold cursor, even when more files exist', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
-  const { discoverSessions } = fakeDiscoverer()
+  const { discoverSessions } = mockDiscoverer()
 
   const reply = await discoverSessions(root)
   assert.equal(reply.filesFound, ROSTER_PAGE_SIZE + 20)
@@ -27,9 +27,9 @@ test('reads only the bounded window on a cold cursor, even when more files exist
 })
 
 test('states no continuation once every file is inside the window', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE - 5)
-  const { discoverSessions } = fakeDiscoverer()
+  const { discoverSessions } = mockDiscoverer()
 
   const reply = await discoverSessions(root)
   assert.equal(reply.filesRead, ROSTER_PAGE_SIZE - 5)
@@ -37,9 +37,9 @@ test('states no continuation once every file is inside the window', async (conte
 })
 
 test('a later request echoing nextCursor reads the Sessions the first page missed', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
-  const { discoverSessions } = fakeDiscoverer()
+  const { discoverSessions } = mockDiscoverer()
 
   const first = await discoverSessions(root)
   const ids = first.rows.map((row) => row.id)
@@ -52,9 +52,9 @@ test('a later request echoing nextCursor reads the Sessions the first page misse
 })
 
 test('a grown window still carries every row the smaller one already returned, newest first', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
-  const { discoverSessions } = fakeDiscoverer()
+  const { discoverSessions } = mockDiscoverer()
 
   const first = await discoverSessions(root)
   const second = await discoverSessions(root, { cursor: first.nextCursor })
@@ -73,9 +73,9 @@ test('a grown window still carries every row the smaller one already returned, n
 })
 
 test('finds a Session outside the initial window by growing until it resolves', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
-  const { readSessionFiles } = fakeDiscoverer()
+  const { readSessionFiles } = mockDiscoverer()
 
   const targetId = `s${ROSTER_PAGE_SIZE + 10}`
   const chain = await readSessionFiles(root, targetId)
@@ -84,9 +84,9 @@ test('finds a Session outside the initial window by growing until it resolves', 
 })
 
 test('reports a Session no window can find as absent rather than growing forever', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   await writeManySessions(root, ROSTER_PAGE_SIZE - 5)
-  const { readSessionFiles } = fakeDiscoverer()
+  const { readSessionFiles } = mockDiscoverer()
 
   assert.equal(await readSessionFiles(root, 'never-written'), null)
 })
@@ -94,10 +94,10 @@ test('reports a Session no window can find as absent rather than growing forever
 // A CLI can append a Turn inside one mtime tick, and on a coarse-timestamp filesystem the file
 // then reads as untouched. The Roster must still follow it (#2241).
 test('follows a transcript appended to without its mtime moving', async (context) => {
-  const root = await fakeRoot(context)
+  const root = await mockRoot(context)
   const writtenAt = '2026-09-13T12:00:00.000Z'
-  await writeFakeTranscript({ root, sessionId: 'grows', writtenAt })
-  const { discoverSessions } = fakeDiscoverer()
+  await writeMockTranscript({ root, sessionId: 'grows', writtenAt })
+  const { discoverSessions } = mockDiscoverer()
 
   const first = await discoverSessions(root)
   const file = path.join(root, 'grows.jsonl')

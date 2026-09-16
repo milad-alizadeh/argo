@@ -224,7 +224,7 @@
     // that needs none of them as `async ({}, testInfo) => {`, and a named parameter in its place
     // breaks that reading rather than just going unused.
     {
-      "includes": ["apps/desktop/src/core/sessions/fake-driver/session-proof-run.ts"],
+      "includes": ["apps/desktop/e2e/sessions/session-proof-run.ts"],
       "linter": {
         "rules": {
           "correctness": {

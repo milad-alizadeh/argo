@@ -1,0 +1,105 @@
+import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
+import { deselectSession, openArchivedSessionByClick, openSessionByClick } from '../gestures'
+import { readRosterIds } from '../roster-facts'
+
+async function proveRetiredSelection(page, restart) {
+  // No affordance writes the remembered selection directly, and this case needs it pointing at a
+  // Session the next launch retires.
+  await page.evaluate(() => window.localStorage.setItem('argo.selected-session-id', 'resumeChild'))
+  const retired = await restart()
+  await retired.waitForFunction(() => window.location.hash === '#/sessions/resumeParent')
+  await retired.waitForSelector('.feed__viewport[data-session="resumeParent"] [data-feed-row]')
+}
+
+async function proveFreshOrder(page, previousOrder) {
+  const refreshedOrder = await readRosterIds(page)
+  assert.deepEqual(refreshedOrder.slice(0, 2), ['replacementParent', 'prose'])
+  // askPending's tail position going into the restart was itself a client-only artifact of the
+  // earlier archive/restore round trip (#1593): a restart drops that memory and the Session
+  // resorts to its real, untouched updatedAt position, ahead of harnessNoise here.
+  const excludingBumped = (sessionId) =>
+    sessionId !== 'replacementParent' && sessionId !== 'prose' && sessionId !== 'askPending'
+  assert.deepEqual(
+    refreshedOrder.slice(2).filter(excludingBumped),
+    previousOrder.filter(excludingBumped),
+  )
+  assert.equal(refreshedOrder.indexOf('askPending') < refreshedOrder.indexOf('harnessNoise'), true)
+}
+
+export async function provePackagedRosterSelection(page) {
+  await deselectSession(page)
+  const first = page.locator('nav[aria-label="Sessions"] button').first()
+  await first.waitFor()
+  const sessionId = await first.getAttribute('data-session-id')
+  assert.notEqual(sessionId, null)
+  await first.focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction((id) => window.location.hash === `#/sessions/${id}`, sessionId)
+  await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
+  const selected = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
+  await expect(selected).toHaveAttribute('aria-current', 'page')
+  await page.keyboard.press('ArrowDown')
+  const focusedSessionId = await page.evaluate(
+    () => document.activeElement?.getAttribute('data-session-id') ?? null,
+  )
+  assert.notEqual(focusedSessionId, sessionId)
+  await expect(selected).toHaveAttribute('aria-current', 'page')
+}
+
+async function proveArchivedRestart(page, restart) {
+  await openArchivedSessionByClick(page, 'plannedWork')
+  const archived = await restart()
+  await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
+  // Restoring the selected archived Session widens the filter to All on its own, but only once the
+  // reader's request for that row resolves, so this waits rather than reading the status once.
+  await archived.locator('button[aria-label="Filter Sessions"]').click()
+  await archived.getByRole('menuitemradio', { name: 'All', checked: true }).waitFor()
+  await archived.keyboard.press('Escape')
+  await archived
+    .locator(
+      'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
+    )
+    .waitFor()
+  await expect(
+    archived.locator(
+      'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
+    ),
+  ).toHaveAttribute('aria-current', 'page')
+  return archived
+}
+
+export async function provePackagedRosterRestart(page, { remove, restart, updateRoster }) {
+  await deselectSession(page)
+  await openSessionByClick(page, 'prose')
+  await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
+  const rosterFacts = await readRosterIds(page)
+
+  const relaunched = await restart()
+  await relaunched.waitForFunction(() => window.location.hash === '#/sessions/prose')
+  await relaunched.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
+  await proveFreshOrder(relaunched, rosterFacts)
+  await expect(
+    relaunched.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]'),
+  ).toHaveAttribute('aria-current', 'page')
+
+  await updateRoster()
+  const updated = await restart()
+  await updated.waitForFunction(() => window.location.hash === '#/sessions/prose')
+  await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
+  assert.equal((await readRosterIds(updated))[0], 'rollout-codexParent')
+
+  const archived = await proveArchivedRestart(updated, restart)
+
+  await openSessionByClick(archived, 'prose')
+  await remove()
+  const missing = await restart()
+  await missing.waitForFunction(() => window.location.hash === '#/sessions')
+  await missing.locator('nav[aria-label="Sessions"] button').first().waitFor()
+  await expect(
+    missing.locator('nav[aria-label="Sessions"] button[aria-current="page"]'),
+  ).toHaveCount(0)
+  await expect(missing.locator('.feed__viewport')).toHaveCount(0)
+
+  await proveRetiredSelection(missing, restart)
+}

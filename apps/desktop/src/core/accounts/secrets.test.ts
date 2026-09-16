@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import { isAccountChallengeReply, isAccountConnectReply, isAccountListReply } from './contract'
 import { connect, harness, LIST, OCTOCAT } from './harness'
 
-// Every token the fake GitHub hands out starts with this.
+// Every token the mock GitHub hands out starts with this.
 const TOKEN = 'token-octocat-'
 
 test('no reply on the Account or Ticket channel carries a token, and each one parses', async (context) => {

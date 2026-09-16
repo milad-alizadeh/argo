@@ -1,14 +1,14 @@
 // The Account and Ticket channels exactly as the renderer reaches them, over real files and the
-// fake providers, for tests. Only the providers and Electron's `safeStorage` are stood in for.
+// mock providers, for tests. Only the providers and Electron's `safeStorage` are stood in for.
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
+import { createMockIpcWindow, RENDERER_URL } from '../../../mocks/contract/mock-ipc-window'
+import { type MockGitHub, startMockGitHub } from '../../../mocks/providers/github/mock-github'
+import { type MockLinear, startMockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { proofEndpoints } from '../../providers/github/endpoints'
-import { type FakeGitHub, startFakeGitHub } from '../../providers/github/fake-driver/fake-github'
 import { linearProofEndpoints } from '../../providers/linear/endpoints'
-import { type FakeLinear, startFakeLinear } from '../../providers/linear/fake-driver/fake-linear'
-import { createFakeIpcWindow, RENDERER_URL } from '../contract/test-support'
 import { attachTicketBridge } from '../tickets/bridge'
 import { createTicketClient, type TicketClient } from '../tickets/client'
 import { createAccountAccess } from './access'
@@ -34,7 +34,7 @@ export function testCipher(): Cipher & { enabled: boolean } {
 export type Harness = Awaited<ReturnType<typeof harness>>
 
 const unreachable = (provider: string): never => {
-  throw new Error(`The fake ${provider} is not on a loopback origin`)
+  throw new Error(`The mock ${provider} is not on a loopback origin`)
 }
 
 // A restart is a fresh main process over the same `userData`: nothing survives but the files.
@@ -47,12 +47,12 @@ function bootMain(options: {
 }) {
   const { userData, accountData, endpoints, cipher, openExternal } = options
   const access = createAccountAccess({ userData, accountData, endpoints, cipher, openExternal })
-  const ticketWindow = createFakeIpcWindow()
+  const ticketWindow = createMockIpcWindow()
   attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
   const tickets: TicketClient = createTicketClient((channel, ticketRequest) =>
     ticketWindow.trustedInvoke(channel, ticketRequest),
   )
-  const accountWindow = createFakeIpcWindow()
+  const accountWindow = createMockIpcWindow()
   const accounts = attachAccountBridge(accountWindow.window, { access, rendererURL: RENDERER_URL })
   const accountClient: AccountClient = createAccountClient((channel, accountRequest) =>
     accountWindow.trustedInvoke(channel, accountRequest),
@@ -60,7 +60,7 @@ function bootMain(options: {
   return { access, accounts, accountClient, accountInvoke: accountWindow.trustedInvoke, tickets }
 }
 
-function accessEndpoints(github: FakeGitHub, linear: FakeLinear) {
+function accessEndpoints(github: MockGitHub, linear: MockLinear) {
   return {
     github: proofEndpoints(github.origin) ?? unreachable('GitHub'),
     linear: linearProofEndpoints(linear.origin),
@@ -79,8 +79,8 @@ async function makeUserData(context: TestContext, projectId: string): Promise<st
 }
 
 export async function harness(context: TestContext) {
-  const github: FakeGitHub = await startFakeGitHub()
-  const linear: FakeLinear = await startFakeLinear()
+  const github: MockGitHub = await startMockGitHub()
+  const linear: MockLinear = await startMockLinear()
   const userData = await makeUserData(context, PROJECT_ID)
   context.after(async () => {
     await github.close()
@@ -144,7 +144,7 @@ export async function harness(context: TestContext) {
   }
 }
 
-// Connect whoever the provider's fake signs in next, through the steps the renderer takes.
+// Connect whoever the provider's mock signs in next, through the steps the renderer takes.
 export async function connect(cockpit: Harness, provider: 'github' | 'linear' = 'github') {
   const challenge = await cockpit.account('account.connect', { provider })
   if (challenge.type !== 'account.challenge') return challenge

@@ -1,34 +1,22 @@
 import { beforeEach, expect, test } from 'bun:test'
-import { QueryClient } from '@tanstack/react-query'
 
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { sendToNewSession } from './send-turn'
-import { COCKPIT, fakeMutation, PROJECT, SETUP } from './send-turn-fixtures'
+import { mockStart, newSessionDeps, PROJECT } from './send-turn-fixtures'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
 })
 
+const pendingIdentity = (sessionId: string) =>
+  ({ kind: 'pending', sessionId, projectId: PROJECT.id }) as const
+
 // A "+" already opened the optimistic row (#2109): sending reuses it rather than starting a
 // second draft, and the Roster's optimistic id resolves to the real one in place.
 test('a Send against an already-pending row reuses it instead of beginning a second one', async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
-  const start = fakeMutation<
-    { cli: string; cwd: string; prompt: string; setup: unknown },
-    { sessionId: string }
-  >(async () => ({ sessionId: 'session-new' }))
-  const sent = await sendToNewSession({
-    cli: 'claude',
-    cockpit: COCKPIT,
-    identity: { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id },
-    navigate: () => undefined as never,
-    queryClient: new QueryClient(),
-    send: fakeMutation(async () => undefined) as never,
-    setFailure: () => {},
-    start: start as never,
-    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
-    watchTurn: () => {},
-  })
+  const start = mockStart(async () => ({ sessionId: 'session-new' }))
+  const sent = await sendToNewSession(newSessionDeps(start, pendingIdentity(opened.id)))
   expect(sent).toBe(true)
   expect(start.calls.length).toBe(1)
   expect(useSessionCreationStore.getState().pending).toEqual({
@@ -43,22 +31,8 @@ test('a Send against an already-pending row reuses it instead of beginning a sec
 test('a second rapid Send while the first is still starting is dropped', async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
   useSessionCreationStore.getState().startSubmission(opened.id)
-  const start = fakeMutation<
-    { cli: string; cwd: string; prompt: string; setup: unknown },
-    { sessionId: string }
-  >(async () => ({ sessionId: 'session-new' }))
-  const sent = await sendToNewSession({
-    cli: 'claude',
-    cockpit: COCKPIT,
-    identity: { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id },
-    navigate: () => undefined as never,
-    queryClient: new QueryClient(),
-    send: fakeMutation(async () => undefined) as never,
-    setFailure: () => {},
-    start: start as never,
-    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
-    watchTurn: () => {},
-  })
+  const start = mockStart(async () => ({ sessionId: 'session-new' }))
+  const sent = await sendToNewSession(newSessionDeps(start, pendingIdentity(opened.id)))
   expect(sent).toBe(false)
   expect(start.calls).toEqual([])
 })
@@ -67,28 +41,16 @@ test('a second rapid Send while the first is still starting is dropped', async (
 // composer rather than leaving them stuck on an id nothing will ever resolve (#2109).
 test('a failed start clears the pending row and leaves the composer navigable again', async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
-  const start = fakeMutation<
-    { cli: string; cwd: string; prompt: string; setup: unknown },
-    { sessionId: string }
-  >(async () => {
+  const start = mockStart(async () => {
     throw new Error('boom')
   })
   const navigated: unknown[] = []
-  const sent = await sendToNewSession({
-    cli: 'claude',
-    cockpit: COCKPIT,
-    identity: { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id },
-    navigate: (...args) => {
+  const sent = await sendToNewSession(
+    newSessionDeps(start, pendingIdentity(opened.id), (...args) => {
       navigated.push(args)
       return undefined as never
-    },
-    queryClient: new QueryClient(),
-    send: fakeMutation(async () => undefined) as never,
-    setFailure: () => {},
-    start: start as never,
-    turn: { prompt: 'hello', setup: SETUP, attachments: [] } as never,
-    watchTurn: () => {},
-  })
+    }),
+  )
   expect(sent).toBe(false)
   expect(useSessionCreationStore.getState().pending).toBeNull()
   expect(navigated).toEqual([['/sessions/new', { replace: true }]])

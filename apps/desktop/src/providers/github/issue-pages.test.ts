@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
-import { github, OCTOCAT, signIn } from './harness'
+import { github, githubWithRepository, OCTOCAT, signIn } from './harness'
 import { readTicketPage, searchQuery } from './issues'
 
 test('a backlog reads one page at a time and names the next until it ends', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
+  const [mock, endpoints] = await github(context)
+  mock.signIn(OCTOCAT)
   const issues = Array.from({ length: TICKET_PAGE_SIZE + 5 }, (_, index) => ({
     number: index + 1,
     title: `T${index}`,
   }))
-  fake.addRepository({ fullName: 'octo/big', visibleTo: [OCTOCAT.id], issues })
+  mock.addRepository({ fullName: 'octo/big', visibleTo: [OCTOCAT.id], issues })
   const token = await signIn(endpoints)
   const first = await readTicketPage(endpoints, token, { scope: 'octo/big', query: '', page: 1 })
   assert.ok(first.ok)
@@ -27,18 +27,13 @@ test('a backlog reads one page at a time and names the next until it ends', asyn
 })
 
 test('a search is answered by GitHub, counted, and kept to open issues of this repository', async (context) => {
-  const [fake, endpoints] = await github(context)
-  fake.signIn(OCTOCAT)
-  fake.addRepository({
-    fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+  const { mock, endpoints, token } = await githubWithRepository(context, {
     issues: [
       { number: 1, title: 'Parent' },
       { number: 2, title: 'Open child' },
       { number: 3, title: 'Closed child', state: 'closed' },
     ],
   })
-  const token = await signIn(endpoints)
   const read = await readTicketPage(endpoints, token, {
     scope: 'octo/hello',
     query: 'child',
@@ -50,7 +45,7 @@ test('a search is answered by GitHub, counted, and kept to open issues of this r
     ['#2'],
   )
   assert.equal(read.value.total, 1)
-  assert.ok(fake.requests.includes('GET /search/issues'))
+  assert.ok(mock.requests.includes('GET /search/issues'))
 })
 
 test('a typed qualifier cannot widen a search past the open issues of the repository', () => {

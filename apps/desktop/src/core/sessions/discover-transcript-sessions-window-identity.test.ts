@@ -5,21 +5,25 @@ import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
+import {
+  mockDiscoverer,
+  mockRoot,
+  writeMockTranscript,
+} from '../../../mocks/sessions/mock-discover-transcript-sessions'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
-import { fakeDiscoverer, fakeRoot, writeFakeTranscript } from './discover-transcript-sessions.fake'
 
 test('a resumed Session keeps its id and title as its origin file moves out of the window and back', async (context) => {
-  const root = await fakeRoot(context)
-  const { discoverSessions } = fakeDiscoverer()
+  const root = await mockRoot(context)
+  const { discoverSessions } = mockDiscoverer()
   const base = Date.parse('2026-09-13T12:00:00.000Z')
 
-  await writeFakeTranscript({
+  await writeMockTranscript({
     root,
     sessionId: 'origin',
     writtenAt: new Date(base - 3_600_000).toISOString(),
     title: { text: 'Renamed by hand', source: 'custom' },
   })
-  await writeFakeTranscript({
+  await writeMockTranscript({
     root,
     sessionId: 'resumed',
     writtenAt: new Date(base).toISOString(),
@@ -27,7 +31,7 @@ test('a resumed Session keeps its id and title as its origin file moves out of t
   })
   for (let index = 0; index < ROSTER_PAGE_SIZE - 2; index += 1) {
     const writtenAt = new Date(base - 1_800_000 - index * 1_000).toISOString()
-    await writeFakeTranscript({ root, sessionId: `filler${index}`, writtenAt })
+    await writeMockTranscript({ root, sessionId: `filler${index}`, writtenAt })
   }
 
   function chainRow(rows: Awaited<ReturnType<typeof discoverSessions>>['rows']) {
@@ -41,7 +45,7 @@ test('a resumed Session keeps its id and title as its origin file moves out of t
 
   // One more, newer filler pushes `origin`, the oldest file in the chain, past the window
   // boundary. Nothing about the resumed Session itself changed.
-  await writeFakeTranscript({
+  await writeMockTranscript({
     root,
     sessionId: 'pushesOriginOut',
     writtenAt: new Date(base - 1_700_000).toISOString(),
