@@ -46,8 +46,7 @@ export function BasicFeed({
     failure === null &&
     selectedSessionId !== null &&
     !optimisticSession &&
-    (current === null ||
-      (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
+    (current === null || (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,

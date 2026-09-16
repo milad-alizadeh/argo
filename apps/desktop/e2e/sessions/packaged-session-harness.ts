@@ -72,6 +72,7 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
   let application: Awaited<ReturnType<typeof electron.launch>> | undefined
   let recentConsole: string[] = []
   const launches: number[] = []
+  let lastLaunch: SessionCliLaunch = { slowReply: false }
 
   // The CLIs read their launch environment when the app spawns them, so it is fixed per launch.
   const open = async (launch: SessionCliLaunch) => {
@@ -103,19 +104,21 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
     return page
   }
 
-  const launch = (options: Partial<SessionCliLaunch> = {}) =>
-    timed(launches, () =>
-      open({ slowReply: options.slowReply ?? false, adversarialSeed: options.adversarialSeed }),
-    )
+  const launch = (options: Partial<SessionCliLaunch> = {}) => {
+    lastLaunch = { slowReply: options.slowReply ?? false, adversarialSeed: options.adversarialSeed }
+    return timed(launches, () => open(lastLaunch))
+  }
 
-  const restart = (options: Partial<SessionCliLaunch> = {}) =>
-    timed(launches, async () => {
+  const restart = (options: Partial<SessionCliLaunch> = {}) => {
+    lastLaunch = {
+      slowReply: options.slowReply ?? lastLaunch.slowReply,
+      adversarialSeed: options.adversarialSeed ?? lastLaunch.adversarialSeed,
+    }
+    return timed(launches, async () => {
       await application?.close()
-      return open({
-        slowReply: options.slowReply ?? false,
-        adversarialSeed: options.adversarialSeed,
-      })
+      return open(lastLaunch)
     })
+  }
 
   return {
     fixture,

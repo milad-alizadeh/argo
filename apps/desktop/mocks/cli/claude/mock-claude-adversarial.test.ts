@@ -6,8 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { SESSION_FAKE_ADVERSARIAL_SEED_ENV } from '../../../core/sessions/proof-protocol.ts'
-import { writeFakeClaude } from './session-resume-case.ts'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/core/sessions/proof-protocol.ts'
+import { writeMockClaude } from './mock-claude-cli.ts'
 
 const ESCAPE = String.fromCharCode(27)
 
@@ -16,7 +16,7 @@ type Prepared = { environment?: NodeJS.ProcessEnv; pluginRoot?: string }
 async function started(seed: string, prepare?: (root: string) => Promise<Prepared>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-adversarial-claude-'))
   const transcripts = path.join(root, 'transcripts')
-  const executable = await writeFakeClaude(root, transcripts)
+  const executable = await writeMockClaude(root, transcripts)
   const prepared = await prepare?.(root)
   const child = spawn(
     executable,
@@ -26,7 +26,7 @@ async function started(seed: string, prepare?: (root: string) => Promise<Prepare
       ...(prepared?.pluginRoot === undefined ? [] : ['--plugin-dir', prepared.pluginRoot]),
     ],
     {
-      env: { ...process.env, [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: seed, ...prepared?.environment },
+      env: { ...process.env, [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: seed, ...prepared?.environment },
     },
   )
   child.stdin.setDefaultEncoding('utf8')
@@ -34,7 +34,7 @@ async function started(seed: string, prepare?: (root: string) => Promise<Prepare
   return {
     child,
     root,
-    transcript: path.join(transcripts, 'fake-claude', 'adversarial-session.jsonl'),
+    transcript: path.join(transcripts, 'mock-claude', 'adversarial-session.jsonl'),
   }
 }
 
@@ -56,7 +56,7 @@ test('a seeded Claude reply survives a split through a multi-byte character', as
     send(run.child, 'Keep this complete.')
     await new Promise((resolve) => setTimeout(resolve, 150))
     const transcript = await readFile(run.transcript, 'utf8')
-    assert.match(transcript, /Fake Claude read: Keep this complete\. 🦜/)
+    assert.match(transcript, /Mock Claude read: Keep this complete\. 🦜/)
   } finally {
     run.child.kill()
     await once(run.child, 'exit')
@@ -83,7 +83,7 @@ test('a seeded Claude stall leaves the Turn open', async () => {
     await new Promise((resolve) => setTimeout(resolve, 150))
     assert.equal(run.child.exitCode, null)
     const transcript = await readFile(run.transcript, 'utf8')
-    assert.doesNotMatch(transcript, /Fake Claude read:/)
+    assert.doesNotMatch(transcript, /Mock Claude read:/)
   } finally {
     run.child.kill()
     await once(run.child, 'exit')
@@ -91,7 +91,7 @@ test('a seeded Claude stall leaves the Turn open', async () => {
   }
 })
 
-test('a seeded Permission holds while the fake accepts a second queued Turn', async () => {
+test('a seeded Permission holds while the mock accepts a second queued Turn', async () => {
   let capture = ''
   const run = await started('seed-0', async (root) => {
     const pluginRoot = path.join(root, 'plugin')

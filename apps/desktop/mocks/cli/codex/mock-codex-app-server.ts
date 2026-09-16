@@ -1,45 +1,31 @@
-// A minimal stand-in for `codex app-server --listen stdio://`, run as a real child process so the
-// vertical-slice test in codex-vertical-slice.test.ts exercises the real pipes and NDJSON framing
-// this adapter depends on, not just an in-memory fake of `CodexChannel`. It answers exactly the
-// verbs `codex-session-driver.ts` sends, grounded in codex-cli 0.147.0's schema
-// (docs/research/2026-09-09-codex-transport.md).
+// A real-child-process mock for `codex app-server --listen stdio://`, grounded in codex-cli 0.147.0's schema.
 
 import { appendFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import {
-  SESSION_FAKE_ADVERSARIAL_SEED_ENV,
-  SESSION_FAKE_REPLY_DELAY_MS_ENV,
-} from '../../../../core/sessions/proof-protocol.ts'
-import { askQuestion, handleAskReply } from './fake-ask-question.ts'
-import { nextAdversarialTurn, writeSplitReply } from './fake-codex-adversarial.ts'
-import { compactionItem, completeTurn } from './fake-codex-responses.ts'
-import { recordStalledTurn, recordTurn } from './fake-codex-transcript.ts'
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../../src/core/sessions/proof-protocol.ts'
+import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
+import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
+import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
+import { askQuestion, handleAskReply } from './mock-ask-question.ts'
+import { readMockCodexRequest } from './mock-codex-request.ts'
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 const COMPLETION_DELAY_MS = 10
-const replyDelay = Number(process.env[SESSION_FAKE_REPLY_DELAY_MS_ENV] ?? '0')
+const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
-const adversarialSeed = process.env[SESSION_FAKE_ADVERSARIAL_SEED_ENV]
+const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
 function threadIdFor(counter: number) {
   return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
 }
-
 function send(message: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify(message)}\n`)
 }
-
-function request(line: string) {
-  return JSON.parse(line) as {
-    id?: unknown
-    method?: string
-    params?: Record<string, unknown>
-    result?: unknown
-  }
-}
-
 function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
   const params = message.params ?? {}
   const threadId = params.threadId
@@ -51,13 +37,17 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     else recordTurn(threadId, text)
   }
   if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
-  const turnId = `fake-turn-${threadCounter}-${Date.now()}`
+  const turnId = `mock-turn-${threadCounter}-${Date.now()}`
   send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
   send({
     method: 'thread/status/changed',
     params: { threadId, status: { type: 'active', activeFlags: [] } },
   })
   if (text.includes('ASK')) {
+    askQuestion(send, { threadId, turnId, text })
+    return
+  }
+  if (plan?.permissionBeforeReply) {
     askQuestion(send, { threadId, turnId, text })
     return
   }
@@ -70,8 +60,8 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
           params: {
             threadId,
             turnId,
-            itemId: `fake-message-${turnId}`,
-            delta: `Fake Codex read: ${text} 🦜`,
+            itemId: `mock-message-${turnId}`,
+            delta: `Mock Codex read: ${text} 🦜`,
           },
         },
         plan.replySplitByte,
@@ -97,7 +87,6 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
   )
 }
-
 function handleRequest(message: {
   id?: unknown
   method?: string
@@ -148,10 +137,9 @@ function handleRequest(message: {
       })
   }
 }
-
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
-  const message = request(line)
+  const message = readMockCodexRequest(line)
   if (message.method === undefined) {
     handleAskReply(message, echoFile, (threadId, turnId) =>
       completeTurn({ outcome: 'reply', send, threadId, turnId }),

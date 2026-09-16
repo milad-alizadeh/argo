@@ -11,9 +11,7 @@ export type Settled = {
 }
 
 export function awaitingAssistantReply(rows: readonly SessionFeedRow[]) {
-  return (
-    rows.length > 0 && rows.every((row) => row.shape === 'prose' && row.role === 'user')
-  )
+  return rows.length > 0 && rows.every((row) => row.shape === 'prose' && row.role === 'user')
 }
 
 type SettledFeedOptions = {

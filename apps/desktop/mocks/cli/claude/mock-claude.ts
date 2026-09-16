@@ -8,10 +8,10 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import {
-  SESSION_FAKE_ADVERSARIAL_SEED_ENV,
-  SESSION_FAKE_REPLY_DELAY_MS_ENV,
-} from '../../../core/sessions/proof-protocol.ts'
-import { type AdversarialTurn, adversarialTurn } from './adversarial-turns.ts'
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../../src/core/sessions/proof-protocol.ts'
+import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 
 const ESCAPE = String.fromCharCode(27)
 // Long enough for the proof to read the running compaction before the boundary ends it; that read
@@ -24,9 +24,9 @@ const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 // The real CLI's own slash command: it writes a `custom-title` record rather than answering as a
 // Turn, and Argo's `driver.rename` reads that record back with source `custom` (issue #2134).
 const RENAME = /^\/rename (.+)$/
-const replyDelay = Number(process.env[SESSION_FAKE_REPLY_DELAY_MS_ENV] ?? '0')
+const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
-const adversarialSeed = process.env[SESSION_FAKE_ADVERSARIAL_SEED_ENV]
+const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
 const [transcripts, ...flags] = process.argv.slice(2)
@@ -41,7 +41,7 @@ const sessionId = flagValue('--session-id') ?? flagValue('--resume')
 const pluginRoot = flagValue('--plugin-dir')
 if (transcripts === undefined || sessionId === null) process.exit(2)
 
-const folder = path.join(transcripts, 'fake-claude')
+const folder = path.join(transcripts, 'mock-claude')
 mkdirSync(folder, { recursive: true })
 const transcript = path.join(folder, `${sessionId}.jsonl`)
 let parentUuid: string | null = null
@@ -77,7 +77,7 @@ function writeReply(text: string, plan: AdversarialTurn | null) {
   const reply = record('assistant', {
     role: 'assistant',
     stop_reason: 'end_turn',
-    content: [{ type: 'text', text: `Fake Claude read: ${text}${plan ? ' 🦜' : ''}` }],
+    content: [{ type: 'text', text: `Mock Claude read: ${text}${plan ? ' 🦜' : ''}` }],
   })
   if (plan === null) {
     appendFileSync(transcript, reply)
@@ -105,7 +105,7 @@ async function settleTurn(text: string, plan: AdversarialTurn | null) {
   const delay = plan?.firstReplyDelayMs ?? REPLY_DELAY_MS
   if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
   if (plan?.outcome === 'failure') {
-    process.stdout.write('Fake Claude failed a Turn.\r\n')
+    process.stdout.write('Mock Claude failed a Turn.\r\n')
     process.exit(1)
   }
   writeReply(text, plan)

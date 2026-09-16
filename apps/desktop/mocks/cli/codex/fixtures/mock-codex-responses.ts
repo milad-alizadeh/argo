@@ -37,8 +37,8 @@ export function compactionItem({
     method,
     params: {
       threadId,
-      turnId: `fake-compact-turn-${threadCounter}`,
-      item: { id: `fake-compaction-${threadCounter}`, type: 'contextCompaction' },
+      turnId: `mock-compact-turn-${threadCounter}`,
+      item: { id: `mock-compaction-${threadCounter}`, type: 'contextCompaction' },
     },
   })
 }

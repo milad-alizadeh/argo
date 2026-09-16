@@ -2,13 +2,13 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { startSession } from '@/core/sessions/drive.ts'
-import { SESSION_FAKE_ADVERSARIAL_SEED_ENV } from '../../../core/sessions/proof-protocol.ts'
-import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { driverBackedByFixture } from './fixture-driver.ts'
+import { createCodexDriveAdapter } from '../../../src/agents/codex/drive/session-drive-adapter.ts'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/core/sessions/proof-protocol.ts'
+import { driverBackedByFixture } from './mock-codex-driver.ts'
 
 test('a seeded Codex reply survives a split through a multi-byte character', async () => {
   const driver = driverBackedByFixture({
-    env: { [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: 'alpha' },
+    env: { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: 'alpha' },
   })
   const adapters = { codex: createCodexDriveAdapter(driver) }
   try {
@@ -28,7 +28,7 @@ test('a seeded Codex reply survives a split through a multi-byte character', asy
     await new Promise((resolve) => setTimeout(resolve, 150))
     const messages = driver.liveMessages(sessionId)
     assert.equal(messages.length, 1)
-    assert.equal(messages[0]?.text, 'Fake Codex read: Keep this complete. 🦜')
+    assert.equal(messages[0]?.text, 'Mock Codex read: Keep this complete. 🦜')
     assert.equal(driver.roster().find((session) => session.id === sessionId)?.status, 'idle')
   } finally {
     driver.close()
@@ -37,10 +37,10 @@ test('a seeded Codex reply survives a split through a multi-byte character', asy
 
 test('a seeded Codex failure and stall stay visible as distinct adverse states', async () => {
   const failing = driverBackedByFixture({
-    env: { [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: 'seed-0' },
+    env: { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: 'seed-3' },
   })
   const stalled = driverBackedByFixture({
-    env: { [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: 'seed-6' },
+    env: { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: 'seed-17' },
   })
   try {
     const failed = await failing.start({

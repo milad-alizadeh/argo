@@ -23,8 +23,17 @@ export default defineConfig({
   outputDir: 'test-results',
   projects: [
     { name: 'projects', testDir: 'e2e/projects' },
-    { name: 'sessions', testDir: 'e2e/sessions' },
+    { name: 'sessions', testDir: 'e2e/sessions', testIgnore: '**/adversarial.e2e.ts' },
     { name: 'tickets', testDir: 'e2e/tickets' },
+    ...(process.env.ARGO_E2E_ADVERSARIAL === '1'
+      ? [
+          {
+            name: 'sessions-adversarial',
+            testDir: 'e2e/sessions',
+            testMatch: '**/adversarial.e2e.ts',
+          },
+        ]
+      : []),
     // Signed-in local CLIs only, never CI: `bun run e2e:real` sets the variable. A reply can take
     // the real backend's whole 180s budget, so a case gets more than that.
     ...(process.env.ARGO_E2E_REAL === '1'

@@ -12,7 +12,7 @@ import type { DrawnRowProps } from './drawn-row'
 import { FeedLoading } from './feed-loading'
 import type { Reveal } from './reveal'
 import { StalledFeed } from './stalled-feed'
-import { awaitingAssistantReply, type Settled, useSettledFeed } from './use-settled-feed'
+import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use-settled-feed'
 
 export function feedContent({
   active,

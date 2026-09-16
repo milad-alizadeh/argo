@@ -1,25 +1,25 @@
-// The backend every packaged Session proof runs against today: each adapter's fake CLI written
+// The backend every packaged Session proof runs against today: each adapter's mock CLI written
 // beside the fixture tree, and both transcript roots pointed at that tree (#2308).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
-import { fakeClaudeCli } from '../../../agents/claude/session-fake-driver/fake-claude-cli'
-import { fakeCodexCli } from '../../../agents/codex/session-fake-driver/fake-codex-cli'
-import type { SessionCli } from '../../../renderer/modules/sessions/harness/harnesses'
 import {
-  SESSION_FAKE_ADVERSARIAL_SEED_ENV,
-  SESSION_FAKE_REPLY_DELAY_MS_ENV,
-} from '../proof-protocol'
-import type { FakeCli } from './fake-cli'
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '../../src/core/sessions/proof-protocol'
+import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
+import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
+import { mockCodexCli } from '../cli/codex/mock-codex-cli'
+import type { MockCli } from '../cli/mock-cli'
 import type { SessionCliBackend, SessionFixture, SessionReply } from './session-cli-backend'
 
-// Long enough for a case to read the app's wait state before the fake answers (#2119).
+// Long enough for a case to read the app's wait state before the mock answers (#2119).
 const SLOW_REPLY_MS = 2_000
 const BUDGET_MS = 30_000
 const HISTORY = { name: 'Session history' }
 
-// Every fake this backend runs, registered once. Adding a CLI is one entry here plus its adapter.
-const FAKES: Record<SessionCli, FakeCli> = { claude: fakeClaudeCli, codex: fakeCodexCli }
+// Every mock this backend runs, registered once. Adding a CLI is one entry here plus its adapter.
+const MOCKS: Record<SessionCli, MockCli> = { claude: mockClaudeCli, codex: mockCodexCli }
 
 function transcriptRoots(fixture: SessionFixture): Record<SessionCli, string> {
   return { claude: fixture.claudeTranscripts, codex: fixture.codexTranscripts }
@@ -33,33 +33,33 @@ async function transcriptHolds(folder: string, mark: string) {
   return records.some((record) => record.includes(mark))
 }
 
-export function createFakeSessionCliBackend(): SessionCliBackend {
-  // Where each fake writes its transcripts, filled in by `start` before any case runs.
+export function createMockSessionCliBackend(): SessionCliBackend {
+  // Where each mock writes its transcripts, filled in by `start` before any case runs.
   const folders: Record<SessionCli, string> = { claude: '', codex: '' }
-  const mark = ({ cli, prompt }: SessionReply) => FAKES[cli].replyMark(prompt)
+  const mark = ({ cli, prompt }: SessionReply) => MOCKS[cli].replyMark(prompt)
   const feedMark = (page: Page, reply: SessionReply) =>
     page.getByRole('region', HISTORY).getByText(mark(reply))
 
   return {
-    name: 'fake',
+    name: 'mock',
     budgetMs: BUDGET_MS,
     start: async ({ root, fixture }) => {
       const roots = transcriptRoots(fixture)
       const executables = { claude: '', codex: '' }
-      for (const cli of Object.keys(FAKES) as SessionCli[]) {
-        folders[cli] = FAKES[cli].folder(roots[cli])
-        executables[cli] = await FAKES[cli].write(root, roots[cli])
+      for (const cli of Object.keys(MOCKS) as SessionCli[]) {
+        folders[cli] = MOCKS[cli].folder(roots[cli])
+        executables[cli] = await MOCKS[cli].write(root, roots[cli])
       }
       return {
         executables,
         transcripts: { ...roots, archive: fixture.archive },
         launchEnv: ({ slowReply, adversarialSeed }) => {
-          if (adversarialSeed !== undefined) console.info(`Session fake seed: ${adversarialSeed}`)
+          if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
           return {
-            [SESSION_FAKE_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
+            [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
             ...(adversarialSeed === undefined
               ? {}
-              : { [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
+              : { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
           }
         },
       }
