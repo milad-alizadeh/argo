@@ -12,6 +12,12 @@ import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-
 const SKILL_BADGE_CLASS =
   'items-baseline text-[length:inherit] leading-none [&>svg]:size-(--size-icon-text)! [&>svg]:self-center'
 
+// Same icon-and-baseline rule as the badge, without the chip's own border, background and
+// padding: the Roster title has no click target for a skill mention, so it draws the name as
+// part of the title's own text — same font, same weight, same line as the words beside it
+// (#2251).
+const SKILL_LABEL_CLASS = `inline-flex gap-1 font-medium ${SKILL_BADGE_CLASS}`
+
 export type PromptSkill = { name: string; path: string }
 
 export function SkillBadge({ name }: { name: string }) {
@@ -20,6 +26,15 @@ export function SkillBadge({ name }: { name: string }) {
       <Sparkles data-icon="inline-start" />
       {formatSkillLabel(name)}
     </Badge>
+  )
+}
+
+function SkillLabel({ name }: { name: string }) {
+  return (
+    <span className={SKILL_LABEL_CLASS}>
+      <Sparkles aria-hidden="true" data-icon="inline-start" />
+      {formatSkillLabel(name)}
+    </span>
   )
 }
 
@@ -84,7 +99,7 @@ function renderSegment(segment: PromptSegment, key: string, options: RenderOptio
   switch (segment.kind) {
     case 'skill':
       return options.onOpenSkill === null ? (
-        <SkillBadge key={key} name={segment.name} />
+        <SkillLabel key={key} name={segment.name} />
       ) : (
         <SkillButton key={key} onOpen={options.onOpenSkill} skill={segment} />
       )
