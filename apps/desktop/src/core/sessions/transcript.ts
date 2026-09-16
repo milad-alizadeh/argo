@@ -96,6 +96,11 @@ export type TranscriptRecord =
       uuid: string
       boundary?: boolean
       subagent?: boolean
+      // Codex records a spawned thread's parent and path in its session metadata. The adapter
+      // uses them to open that thread from the parent Session's delegation card.
+      parentSessionId?: string | null
+      agentPath?: string | null
+      agentNickname?: string | null
       cwd?: string | null
       // Codex records this on `task_started`; it is the model's actual context window, rather
       // than a capacity the cockpit can safely assume.

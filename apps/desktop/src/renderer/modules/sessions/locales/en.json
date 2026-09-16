@@ -8,6 +8,7 @@
   "newSession": "New Session",
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
+  "subagentLoading": "Loading agent transcript…",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",

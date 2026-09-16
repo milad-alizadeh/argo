@@ -3,7 +3,13 @@
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
 import type { SessionDelegation, SessionShellCommand } from '@/core/sessions/models'
-import { delegationState, spentTokens, WORK_STATE_MARKS, workDuration } from './session-work'
+import {
+  delegationState,
+  readableDelegationName,
+  spentTokens,
+  WORK_STATE_MARKS,
+  workDuration,
+} from './session-work'
 
 export type WorkEntry = {
   id: string
@@ -29,7 +35,7 @@ export function delegationEntries(
     const state = delegationState(delegation)
     return {
       id: delegation.id,
-      title: delegation.label ?? delegation.id,
+      title: delegation.label === null ? delegation.id : readableDelegationName(delegation.label),
       monospace: false,
       running: state === 'running',
       mark: WORK_STATE_MARKS[state],

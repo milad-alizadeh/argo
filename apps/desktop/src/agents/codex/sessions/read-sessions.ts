@@ -4,7 +4,13 @@ import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
-import { clearFullRecords, discoverSessions, nameThreads, readSessionFiles } from './discover'
+import {
+  clearFullRecords,
+  discoverSessions,
+  nameThreads,
+  readDelegationFiles,
+  readSessionFiles,
+} from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
 import type { ThreadNames } from './thread-names'
@@ -91,6 +97,8 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
+    readDelegationFiles: (sessionId, delegationId) =>
+      readDelegationFiles(root, sessionId, delegationId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,

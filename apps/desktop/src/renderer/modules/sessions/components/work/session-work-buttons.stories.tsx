@@ -89,6 +89,20 @@ export const SubagentsAndShell: Story = {
   },
 }
 
+export const ReadableAgentName: Story = {
+  render: () => (
+    <Header
+      delegations={[sessionDelegation({ id: 'call-standards', label: 'standards_review' })]}
+      shell={[]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 1' }))
+    await expect(await screen.findByRole('menuitem', { name: /Standards review/ })).toBeVisible()
+  },
+}
+
 // Each button opens its own list, split into what is still going and what has come back.
 export const RunningAndFinishedGroups: Story = {
   render: () => <Header />,
