@@ -1,5 +1,10 @@
 import { isRecord } from '@/boundary'
-import type { ContentBlock, TranscriptRecord } from '@/core/sessions/transcript'
+import type {
+  ContentBlock,
+  ToolCall,
+  ToolResult,
+  TranscriptRecord,
+} from '@/core/sessions/transcript'
 import { readHarnessEnvelopes } from './harness-envelopes'
 import { readImage } from './prompt-images'
 
@@ -31,8 +36,11 @@ export function messageRecord(
     role: 'user' | 'assistant'
     originSessionId: string | null
     blocks: ContentBlock[]
+    toolCalls?: ToolCall[]
+    toolResults?: ToolResult[]
   },
 ): TranscriptRecord {
+  const toolResults = message.toolResults ?? []
   return readHarnessEnvelopes({
     kind: 'message',
     uuid: message.uuid,
@@ -49,9 +57,9 @@ export function messageRecord(
     effort: null,
     mode: null,
     blocks: message.blocks,
-    toolCalls: [],
-    toolResults: [],
-    answeredCalls: [],
+    toolCalls: message.toolCalls ?? [],
+    toolResults,
+    answeredCalls: toolResults.map((result) => result.callId),
     usage: null,
   })
 }
