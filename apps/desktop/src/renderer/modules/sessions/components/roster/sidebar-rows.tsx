@@ -43,7 +43,7 @@ export function SidebarRows({
   const status = useRosterStatus()
   const archived = useArchivedSection(selectedSessionId, visibleSessionIds, showArchive)
   // Each row object is what the memoized RosterRowView compares against, so rebuilding the array on
-  // every render would defeat the memo and re-render every mounted row on each 500ms poll tick.
+  // every render would defeat the memo and re-render every mounted row on each read of the roster.
   const rows = useMemo(
     () =>
       rosterRows({

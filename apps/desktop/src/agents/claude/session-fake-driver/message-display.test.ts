@@ -7,6 +7,7 @@ import path from 'node:path'
 
 import type { CompanionPart } from '../drive/companion-plugin'
 import { createMessageDisplay } from '../drive/message-display'
+import { hookSocketPath } from './hook-socket'
 
 const BATCH = {
   session_id: 'claude-session',
@@ -62,7 +63,7 @@ test('returns at once, leaving the terminal text alone, when Argo is not listeni
 test('keeps the display socket path inside the macOS limit', () => {
   const display = createMessageDisplay()
   const opened = display.open(randomUUID(), () => {})
-  const socket = opened.hook.script.match(/nc -U -w 1 "([^"]+)"/)?.[1] ?? ''
+  const socket = hookSocketPath(opened)
 
   expect(socket).not.toBe('')
   expect(Buffer.byteLength(socket)).toBeLessThan(104)
