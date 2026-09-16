@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
+import type { SessionCliBackend } from '../../../core/sessions/fake-driver/session-cli-backend'
 import {
   createSessionByClick,
   openSessionByClick,
 } from '../../../core/sessions/fake-driver/session-gestures'
 
 type Restart = () => Promise<Page>
+
+const OPENING_PROMPT = 'Open the Codex resume proof.'
+const RESUMING_PROMPT = 'Carry on after the restart.'
 
 async function rosterRow(page: Page, sessionId: string) {
   const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
@@ -21,8 +25,8 @@ async function sendFromComposer(page: Page, text: string) {
   await page.keyboard.press('Enter')
 }
 
-async function managedRosterRow(page: Page, sessionId: string) {
-  const deadline = Date.now() + 30_000
+async function managedRosterRow(page: Page, sessionId: string, budgetMs: number) {
+  const deadline = Date.now() + budgetMs
   while (Date.now() < deadline) {
     const rows = await rosterRow(page, sessionId)
     if (rows.some((row: { posture: string }) => row.posture === 'managed')) return rows
@@ -31,23 +35,22 @@ async function managedRosterRow(page: Page, sessionId: string) {
   throw new Error(`Session ${sessionId} did not become managed after resuming.`)
 }
 
-export async function provePackagedCodexResume(page: Page, { restart }: { restart: Restart }) {
-  const sessionId = await createSessionByClick(page, {
-    cli: 'codex',
-    prompt: 'Open the Codex resume proof.',
-  })
+export async function provePackagedCodexResume(
+  page: Page,
+  { backend, restart }: { backend: SessionCliBackend; restart: Restart },
+) {
+  const sessionId = await createSessionByClick(page, { cli: 'codex', prompt: OPENING_PROMPT })
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
-  await history.getByText('Open the Codex resume proof.').waitFor()
+  await backend.waitForReply(relaunched, { cli: 'codex', prompt: OPENING_PROMPT })
 
-  await sendFromComposer(relaunched, 'Carry on after the restart.')
-  await history
-    .getByText('Carry on after the restart.')
-    .waitFor()
+  await sendFromComposer(relaunched, RESUMING_PROMPT)
+  await backend
+    .waitForReply(relaunched, { cli: 'codex', prompt: RESUMING_PROMPT })
     .catch(async (error) => {
       const rows = await history.locator('[data-feed-row]').allTextContents()
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()
@@ -59,7 +62,7 @@ export async function provePackagedCodexResume(page: Page, { restart }: { restar
   // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the roster
   // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
   // rather than by the time the message is visible.
-  const resumed = await managedRosterRow(relaunched, sessionId)
+  const resumed = await managedRosterRow(relaunched, sessionId, backend.budgetMs)
   assert.deepEqual(
     resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),
     [{ id: sessionId, posture: 'managed' }],

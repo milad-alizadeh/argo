@@ -7,27 +7,25 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { rosterRow, waitFor } from './session-proof-helpers'
 
-export async function proveClaudeRename(page, { project, transcripts }) {
+export async function proveClaudeRename(page, { backend, project, transcripts }) {
+  const prompt = 'Open the rename proof.'
   const started = await page.evaluate(
-    (cwd) =>
+    ({ cwd, prompt }) =>
       window.argo.startSession({
         cli: 'claude',
         cwd,
-        prompt: 'Open the rename proof.',
+        prompt,
         setup: { model: 'opus', effort: 'medium', mode: 'manual' },
       }),
-    project,
+    { cwd: project, prompt },
   )
   assert.equal(started.type, 'session.started')
   const sessionId = started.sessionId
   const transcript = path.join(transcripts, 'fake-claude', `${sessionId}.jsonl`)
-  await waitFor(async () => (await readFile(transcript, 'utf8').catch(() => '')).includes('Fake'))
+  await waitFor(() => backend.recorded({ cli: 'claude', prompt }))
 
   const [beforeRename] = await rosterRow(page, sessionId)
-  assert.deepEqual(beforeRename?.title, {
-    text: 'Open the rename proof.',
-    source: 'first-prompt',
-  })
+  assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
 
   const renamed = await page.evaluate(
     (id) => window.argo.renameSession({ sessionId: id, name: 'Ticket: fix the roster badge' }),

@@ -14,7 +14,6 @@ import {
   createSessionByClick,
   openSessionByClick,
 } from '../../../core/sessions/fake-driver/session-gestures'
-import { fakeClaudeFolder } from './fake-claude-transcripts'
 import { rosterRow, waitFor } from './session-proof-helpers'
 
 // The proof always starts in `apps/desktop`, as the fixture files note.
@@ -46,13 +45,10 @@ async function sendFromComposer(page, text) {
   return composer
 }
 
-export async function provePackagedResume(page, { project, restart, transcripts }) {
-  const sessionId = await createSessionByClick(page, {
-    cli: 'claude',
-    prompt: 'Open the resume proof.',
-  })
-  const transcript = path.join(fakeClaudeFolder(transcripts), `${sessionId}.jsonl`)
-  await waitFor(async () => (await readFile(transcript, 'utf8').catch(() => '')).includes('Fake'))
+export async function provePackagedResume(page, { backend, project, restart, transcripts }) {
+  const opened = { cli: 'claude', prompt: 'Open the resume proof.' }
+  const sessionId = await createSessionByClick(page, { cli: 'claude', prompt: opened.prompt })
+  await waitFor(() => backend.recorded(opened))
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
@@ -60,12 +56,11 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await openSessionByClick(relaunched, sessionId)
   await relaunched.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   const history = relaunched.getByRole('region', { name: 'Session history' })
-  await history.getByText('Fake Claude read: Open the resume proof.').waitFor()
+  await backend.waitForReply(relaunched, opened)
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
-  await history
-    .getByText('Fake Claude read: Carry on after the restart.')
-    .waitFor()
+  await backend
+    .waitForReply(relaunched, { cli: 'claude', prompt: 'Carry on after the restart.' })
     .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
@@ -83,10 +78,8 @@ export async function provePackagedResume(page, { project, restart, transcripts 
   await openSessionByClick(relaunched, 'externalBasic')
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
   await sendFromComposer(relaunched, 'Take this one over.')
-  const externalHistory = relaunched.getByRole('region', { name: 'Session history' })
-  await externalHistory
-    .getByText('Fake Claude read: Take this one over.')
-    .waitFor()
+  await backend
+    .waitForReply(relaunched, { cli: 'claude', prompt: 'Take this one over.' })
     .catch((error) =>
       reportStalledResume({ error, page: relaunched, sessionId: 'externalBasic', transcripts }),
     )

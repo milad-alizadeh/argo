@@ -1,4 +1,4 @@
-// Split from session-discover.test.ts to stay under the file-length gate: the reader's mtime-keyed
+// Split from session-discover.test.ts to stay under the file-length gate: the reader's
 // per-transcript cache, proven directly through the reader's own listSessions interface.
 import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
@@ -29,10 +29,10 @@ test('re-reads a transcript that was written since the last pass', async (contex
   assert.equal(second.sessions[0].updatedAt, '2026-09-01T08:00:00.000Z')
 })
 
-// The other half of the same fact, and the cost of it stated out loud: a file rewritten without
-// its mtime moving is answered from the summary already held. This is what makes the second pass
-// cheap, and it is the one thing that would go stale if the CLI ever wrote a transcript that way.
-test('answers from the summary it holds while a file has not moved', async (context) => {
+// The other half of the same fact: a CLI can append a Turn inside one mtime tick, and on a
+// filesystem whose timestamps are coarser than the write the file reads as untouched. What the
+// summary is keyed on carries the file's size too, so the Roster follows the transcript anyway.
+test('re-reads a transcript that grew without its mtime moving', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
   const file = path.join(root, 'project-one', 'externalBasic.jsonl')
   // Pinned to a whole second, so restoring it below restores it exactly: a filesystem stamp
@@ -45,7 +45,7 @@ test('answers from the summary it holds while a file has not moved', async (cont
   await utimes(file, stamp, stamp)
 
   const again = await listSessions(listing, root)
-  assert.equal(again.sessions[0].updatedAt, '2026-07-20T10:00:05.000Z')
+  assert.equal(again.sessions[0].updatedAt, '2026-09-01T08:00:00.000Z')
 })
 
 // The tree is listed every pass, so a Session written since the last one is found. Only the
