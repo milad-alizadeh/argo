@@ -20,7 +20,7 @@ export type FeedQuestionHandlers = {
   stallTimeoutMs?: number
 }
 
-export type FeedDocumentActions = {
+export type FeedDocumentContext = {
   active: boolean
   activeEvidenceId: string | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
@@ -30,7 +30,7 @@ export type FeedDocumentActions = {
 export type FeedDocumentProps = {
   reading: SessionFeed
   liveFacts: FeedLiveFacts
-  actions: FeedDocumentActions
+  actions: FeedDocumentContext
 }
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}

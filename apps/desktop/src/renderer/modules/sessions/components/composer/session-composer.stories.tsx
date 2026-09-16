@@ -5,6 +5,7 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../../components/ui/button'
 import { BasicFeed } from '../../feed/basic-feed'
+import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionCli } from '../../harness/harnesses'
 import { useComposerStore } from '../../state/use-composer-store'
 import { CLAUDE_TURN_SETUP } from '../../turn-setup/claude-turn-setup'
@@ -173,15 +174,11 @@ function CompactingComposerStory() {
           answeringQuestionId={null}
           questionFailure={() => null}
           liveFacts={{
+            ...INACTIVE_FEED_LIVE_FACTS,
             compactionPercentage: compacting ? 22 : null,
             compactionStartedAt: compacting ? '2026-09-13T22:01:00.000Z' : null,
             compactionTokens: compacting ? '10.1k tokens' : null,
-            handoffStartedAt: null,
-            handoffTo: null,
             isRunning: compacting,
-            optimisticRow: null,
-            posture: null,
-            turnMarker: null,
           }}
           selectedSessionId="compacting-session"
         />

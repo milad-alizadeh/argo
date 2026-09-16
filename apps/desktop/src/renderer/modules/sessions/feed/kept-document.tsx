@@ -1,12 +1,12 @@
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
-import type { FeedDocumentActions } from './feed-document'
+import type { FeedDocumentContext } from './feed-document'
 import { FeedDocument } from './feed-document'
 import type { FeedLiveFacts } from './feed-live-facts'
 
 // Only the selected document shows live facts (compaction, handoff, the optimistic row, the
 // Turn Marker, posture); a kept-but-inactive document renders its own settled transcript alone.
-function selectedDocumentProps(
+function selectedLiveFacts(
   id: SessionId,
   selectedSessionId: SessionId | null,
   liveFacts: FeedLiveFacts,
@@ -29,8 +29,8 @@ export type KeptDocumentShared = {
 }
 
 export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptDocumentShared) {
-  const liveFacts = selectedDocumentProps(id, shared.selectedSessionId, shared.liveFacts)
-  const actions: FeedDocumentActions = {
+  const liveFacts = selectedLiveFacts(id, shared.selectedSessionId, shared.liveFacts)
+  const actions: FeedDocumentContext = {
     active: shared.failure === null && id === shared.selectedSessionId,
     activeEvidenceId: shared.activeEvidenceId,
     onJumpToLatestChange: shared.onJumpToLatestChange,

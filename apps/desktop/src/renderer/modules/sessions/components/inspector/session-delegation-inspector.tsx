@@ -5,6 +5,7 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionDelegation } from '@/core/sessions/models'
 import { FeedDocument } from '../../feed/feed-document'
+import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionEvidence, SessionFeed } from '../../types'
 
 import '../../feed/feed.css'
@@ -43,15 +44,8 @@ export function SessionDelegationInspector({
               questionFailure: () => null,
             }}
             liveFacts={{
-              compactionStartedAt: null,
-              compactionPercentage: null,
-              compactionTokens: null,
-              handoffStartedAt: null,
-              handoffTo: null,
+              ...INACTIVE_FEED_LIVE_FACTS,
               isRunning: !delegation.landed,
-              optimisticRow: null,
-              posture: null,
-              turnMarker: null,
             }}
             reading={feed}
           />

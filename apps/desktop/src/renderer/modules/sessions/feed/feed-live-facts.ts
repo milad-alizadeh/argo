@@ -1,4 +1,4 @@
-import type { SessionFeedRow } from '../types'
+import type { Session, SessionFeedRow, SessionId } from '../types'
 import type { TurnMarkerView } from './turn-marker-state'
 
 export type FeedLiveFacts = {
@@ -6,10 +6,10 @@ export type FeedLiveFacts = {
   compactionPercentage: number | null
   compactionTokens: string | null
   handoffStartedAt: string | null
-  handoffTo: string | null
+  handoffTo: SessionId | null
   isRunning: boolean
   optimisticRow: SessionFeedRow | null
-  posture: 'managed' | 'external' | null
+  posture: Session['posture'] | null
   turnMarker: TurnMarkerView | null
 } | null
 
