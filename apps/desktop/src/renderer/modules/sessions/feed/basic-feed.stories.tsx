@@ -7,6 +7,7 @@ import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
 import { BasicFeed } from './basic-feed'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from './content/feed-samples'
 import { FeedJumpToLatest } from './feed-jump-to-latest'
+import { INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
 
 const feed = {
   version: 1,
@@ -26,6 +27,8 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
+const LIVE_FACTS = INACTIVE_FEED_LIVE_FACTS
+
 const meta: Meta<typeof BasicFeed> = {
   title: 'Sessions/Feed',
   component: BasicFeed,
@@ -41,7 +44,7 @@ const meta: Meta<typeof BasicFeed> = {
     activeEvidenceId: null,
     feed,
     failure: null,
-    isRunning: false,
+    liveFacts: LIVE_FACTS,
     onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
@@ -81,7 +84,7 @@ export const Empty: Story = {
   },
 }
 export const Unselected: Story = {
-  args: { feed: null, failure: null, selectedSessionId: null },
+  args: { feed: null, failure: null, liveFacts: null, selectedSessionId: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
@@ -853,7 +856,7 @@ function StreamingFeed() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          isRunning={false}
+          liveFacts={LIVE_FACTS}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -992,7 +995,7 @@ function HistoryScrollHarness() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          isRunning={false}
+          liveFacts={LIVE_FACTS}
           onJumpToLatestChange={(_sessionId, action) => setJumpToLatest(() => action)}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
@@ -1023,7 +1026,7 @@ function HistoryPrependHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          isRunning={false}
+          liveFacts={LIVE_FACTS}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -1045,7 +1048,7 @@ function DisclosureHistoryHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={disclosureHistoryFeed}
-          isRunning={false}
+          liveFacts={LIVE_FACTS}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -1147,12 +1150,11 @@ function SendPromptHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          isRunning={false}
+          liveFacts={{ ...LIVE_FACTS, optimisticRow: sent }}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
           onRetryFeed={() => {}}
-          optimisticRow={sent}
           questionFailure={() => null}
           selectedSessionId="history"
         />
@@ -1273,8 +1275,7 @@ function StalledFeedHarness() {
           activeEvidenceId={null}
           feed={stalledFeed}
           failure={null}
-          isRunning
-          posture="external"
+          liveFacts={{ ...LIVE_FACTS, isRunning: true, posture: 'external' }}
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -1327,8 +1328,7 @@ function NeverArrivesHarness() {
           activeEvidenceId={null}
           feed={null}
           failure={null}
-          isRunning={false}
-          posture="external"
+          liveFacts={{ ...LIVE_FACTS, posture: 'external' }}
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -1431,7 +1431,7 @@ function StreamingTextFeed() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          isRunning={running}
+          liveFacts={{ ...LIVE_FACTS, isRunning: running }}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
@@ -1483,7 +1483,7 @@ export const SmoothedStreamingTextReducedMotion: Story = {
 }
 
 export const SmoothedStreamingTextSettled: Story = {
-  args: { feed: streamedTextFeed, isRunning: false, selectedSessionId: 'streaming' },
+  args: { feed: streamedTextFeed, liveFacts: LIVE_FACTS, selectedSessionId: 'streaming' },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
@@ -1516,7 +1516,11 @@ const scrollAwayFeed = {
 // streaming row is last (`FeedDocument`'s `streamingRowId` only marks the last row streaming), so
 // it starts in view and scrolling to the top is what pushes it out of the overscan window.
 export const StreamingRevealSurvivesScrollAway: Story = {
-  args: { feed: scrollAwayFeed, isRunning: true, selectedSessionId: 'streaming' },
+  args: {
+    feed: scrollAwayFeed,
+    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    selectedSessionId: 'streaming',
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const history = await canvas.findByLabelText('Session history')
@@ -1554,7 +1558,11 @@ const runningToolFeed = {
 } satisfies SessionFeed
 
 export const RunningToolAfterAssistantReply: Story = {
-  args: { feed: runningToolFeed, isRunning: true, selectedSessionId: 'streaming' },
+  args: {
+    feed: runningToolFeed,
+    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    selectedSessionId: 'streaming',
+  },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
 
+import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
-import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
 
 const turn = (prompt: string) => ({ prompt, setup: OPENING })
@@ -107,7 +107,7 @@ const refusals: Array<{
     arrange: (file: string) =>
       createOwnershipLedger({
         path: file,
-        owner: { pid: process.pid, registry: 'window-other' },
+        window: { pid: process.pid, registry: 'window-other' },
         isAlive: () => true,
       }).bind('chain-root'),
     options: {},

@@ -1,3 +1,4 @@
+import type { OwnershipStanding } from '@/core/sessions/ownership-ledger'
 import { CodexSessionDriverError } from './codex-session-error'
 import {
   type ManagedSession,
@@ -5,10 +6,9 @@ import {
   openManagedChannel,
   rememberManagedSession,
 } from './managed-session'
-import type { CodexOwnershipStanding } from './ownership-ledger'
 import { readThreadId } from './protocol'
 
-function refuseUnlessResumable(standing: CodexOwnershipStanding) {
+function refuseUnlessResumable(standing: OwnershipStanding) {
   switch (standing) {
     case 'held-elsewhere':
       throw new CodexSessionDriverError('held-elsewhere')
