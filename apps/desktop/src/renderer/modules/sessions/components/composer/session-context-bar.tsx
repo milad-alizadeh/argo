@@ -61,7 +61,7 @@ function CompactButtons({
     <>
       <div className="flex shrink-0 items-center gap-1 @[23rem]:hidden">
         <Button
-          aria-label={t('composer.compact')}
+          aria-label={t('composer.compactAction')}
           disabled={!canCompact || isCompacting}
           onClick={() => void onCompact?.()}
           size="icon-sm"
@@ -73,7 +73,7 @@ function CompactButtons({
       </div>
       <div className="hidden shrink-0 items-center gap-1 @[23rem]:flex">
         <Button
-          aria-label={t('composer.compact')}
+          aria-label={t('composer.compactAction')}
           disabled={!canCompact || isCompacting}
           onClick={() => void onCompact?.()}
           size="sm"
