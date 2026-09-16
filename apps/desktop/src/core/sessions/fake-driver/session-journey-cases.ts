@@ -28,9 +28,7 @@ async function proveResumeAndRename(request: SessionJourneyRequest) {
   const { backend, fixture, ran, restart } = request
   await ran(['session-composer-memory'], () => proveComposerMemory(page))
   // Before the resume cases, for the reason session-create-case.ts records.
-  await ran(['session-created-by-click'], () =>
-    proveSessionCreatedByClick(page, backend, fixture.claudeTranscripts),
-  )
+  await ran(['session-created-by-click'], () => proveSessionCreatedByClick(page, backend))
   await ran(['session-claude-resume'], async () => {
     page = await provePackagedResume(page, {
       backend,
@@ -58,9 +56,7 @@ export async function proveSessionJourneys(request: SessionJourneyRequest): Prom
   // A slow CLI, so the two wait cases can read the app holding a Turn open.
   const page = await restart({ slowReply: true })
   await ran(['session-reply-wait'], () => proveReplyWait(page, backend))
-  await ran(['session-duplicate-send'], () =>
-    proveDuplicateSend(page, backend, fixture.claudeTranscripts),
-  )
+  await ran(['session-duplicate-send'], () => proveDuplicateSend(page, backend))
   // Last, because naming the Codex row changes the title the cases above open it by.
   await ran(['session-codex-thread-name'], () =>
     proveCodexThreadName(page, fixture.codexTranscripts),

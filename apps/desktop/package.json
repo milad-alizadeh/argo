@@ -25,6 +25,7 @@
     "test:packaged-project": "bun run build:fake-drivers && node scripts/project-fake-driver/prove-project-contract.mjs",
     "test:packaged-session": "bun run build:fake-drivers && node scripts/session-fake-driver/prove-session-feed.mjs",
     "test:packaged-journeys": "bun run build:fake-drivers && node scripts/session-fake-driver/prove-session-journeys.mjs",
+    "e2e:real": "bun run build:fake-drivers && bun build src/core/sessions/fake-driver/prove-real-session-journeys.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/session-fake-driver/prove-real-session-journeys.mjs && node scripts/session-fake-driver/prove-real-session-journeys.mjs",
     "test:packaged-tickets": "bun run build:fake-drivers && node scripts/ticket-fake-driver/prove-tickets.mjs",
     "test:live-claude-display": "bun build src/agents/claude/session-fake-driver/prove-message-display.ts --target=node --format=esm --packages=external --outfile=scripts/claude-session-fake-driver/prove-message-display.mjs && node scripts/claude-session-fake-driver/prove-message-display.mjs",
     "capture:cockpit": "bun run build:fake-drivers && node scripts/project-fake-driver/capture-cockpit.mjs",
