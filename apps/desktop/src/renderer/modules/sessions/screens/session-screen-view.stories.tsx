@@ -271,6 +271,7 @@ function NewSessionScreen() {
         onRetryFeed={() => {}}
         questionFailure={() => null}
         selectedSessionId={selectedSessionId}
+        stallTimeoutMs={50}
       />
     </CockpitShell>
   )

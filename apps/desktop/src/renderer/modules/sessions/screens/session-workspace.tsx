@@ -19,6 +19,7 @@ export type SessionWorkspaceProps = {
   compactionTokens?: string | null
   handoffStartedAt?: string | null
   handoffTo?: string | null
+  stallTimeoutMs?: number
   onOpenSession: (sessionId: string) => void
   isRunning: boolean
   posture?: 'managed' | 'external' | null
@@ -84,6 +85,7 @@ export function SessionWorkspace({
   compactionTokens = null,
   handoffStartedAt = null,
   handoffTo = null,
+  stallTimeoutMs,
   onOpenSession,
   isRunning,
   posture = null,
@@ -135,6 +137,7 @@ export function SessionWorkspace({
           posture={posture}
           questionFailure={questionFailure}
           selectedSessionId={selectedSessionId}
+          stallTimeoutMs={stallTimeoutMs}
           turnMarker={turnMarker}
         />
       </section>
