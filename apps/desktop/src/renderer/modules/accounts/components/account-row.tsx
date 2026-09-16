@@ -95,13 +95,15 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
       className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
     >
       <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
-        <span className="type-body min-w-0 truncate font-medium">{account.login}</span>
+        <span className="type-heading min-w-0 truncate">{account.login}</span>
         {account.workspace ? (
           <span className="type-meta min-w-0 truncate text-muted-foreground">
             {account.workspace}
           </span>
         ) : null}
-        <Badge variant={variant}>{t(`state.${account.state}`)}</Badge>
+        <Badge size="compact" variant={variant}>
+          {t(`state.${account.state}`)}
+        </Badge>
         <span className="flex-1" />
         {confirming ? null : (
           <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
