@@ -5,9 +5,9 @@ import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/core/command
 
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
+import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
 import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
 import { SessionsPage } from '../../sessions/pages/sessions-page'
-import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
 import { SessionScreenView } from '../../sessions/screens/session-screen-view'
 import { TicketsSidebar } from '../../tickets/components/tickets-sidebar'
 import { TicketsPage } from '../../tickets/pages/tickets-page'

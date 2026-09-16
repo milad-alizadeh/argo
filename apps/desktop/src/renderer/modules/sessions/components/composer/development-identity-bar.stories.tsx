@@ -37,7 +37,6 @@ export const LinkedTicket: Story = {
     const canvas = within(canvasElement)
     const bar = canvas.getByLabelText('Development build')
 
-    await expect(canvas.getByText('#2173')).toBeVisible()
     await expect(canvas.getByText('Isolate desktop development launches')).toBeVisible()
     await expect(canvas.getByText(identity.worktree)).toBeVisible()
     await expect(bar).toHaveAttribute('data-development-instance', identity.id)

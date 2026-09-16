@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
-import type { SessionPlan, SessionTicket } from '@/core/sessions/models'
+import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../../state/use-composer-store'
 import { ComposerCard } from './composer-card'
@@ -57,7 +57,6 @@ type ComposerFormProps = {
   sessionId: string
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
-  ticket: SessionTicket | null
 }
 
 export function ComposerForm({
@@ -92,7 +91,6 @@ export function ComposerForm({
   sessionId,
   harness,
   setup,
-  ticket,
 }: ComposerFormProps) {
   const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
   return (

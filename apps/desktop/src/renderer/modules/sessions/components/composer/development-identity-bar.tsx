@@ -29,16 +29,16 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
         {identity.label}
       </span>
       {ticket === null ? null : (
-        <span
-          className="min-w-0 truncate"
-          title={`${ticket.key} · ${ticket.title}`}
-        >
+        <span className="min-w-0 truncate" title={`${ticket.key} · ${ticket.title}`}>
           <span className="font-mono text-background/70">{ticket.key}</span>
           <span aria-hidden="true"> · </span>
           {ticket.title}
         </span>
       )}
-      <span className="ml-auto flex min-w-0 items-center gap-1 font-mono text-background/80" title={identity.worktree}>
+      <span
+        className="ml-auto flex min-w-0 items-center gap-1 font-mono text-background/80"
+        title={identity.worktree}
+      >
         <GitBranch aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />
         <span className="truncate">{identity.worktree}</span>
       </span>

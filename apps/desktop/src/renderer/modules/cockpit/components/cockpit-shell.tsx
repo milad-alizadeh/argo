@@ -145,40 +145,40 @@ export function CockpitShell({
       <div className="relative flex min-h-0 flex-1">
         <CockpitRail rail={rail} />
         <ResizablePanelGroup
-        orientation="horizontal"
-        className="relative min-w-0 flex-1"
-        onLayoutChanged={synchronizeSidebarCollapsed}
-      >
-        {isSidebarCollapsed ? (
-          <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
-        ) : null}
-        <ResizablePanel
-          id="cockpit-sidebar"
-          collapsible
-          collapsedSize={0}
-          defaultSize={sidebarDefaultWidth}
-          minSize={sidebarMinimumWidth}
-          maxSize={sidebarMaximumWidth}
-          panelRef={sidebarPanelRef}
+          orientation="horizontal"
+          className="relative min-w-0 flex-1"
+          onLayoutChanged={synchronizeSidebarCollapsed}
         >
-          <CockpitSidebar
-            header={header}
-            isCollapsed={isSidebarCollapsed}
-            onToggle={toggleSidebar}
-            sidebar={sidebar}
-            toggleRef={sidebarToggleRef}
-          />
-        </ResizablePanel>
-        <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-        <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-          <div
-            data-component="CockpitContent"
-            data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-            className="relative h-full min-w-0 overflow-hidden bg-background"
+          {isSidebarCollapsed ? (
+            <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
+          ) : null}
+          <ResizablePanel
+            id="cockpit-sidebar"
+            collapsible
+            collapsedSize={0}
+            defaultSize={sidebarDefaultWidth}
+            minSize={sidebarMinimumWidth}
+            maxSize={sidebarMaximumWidth}
+            panelRef={sidebarPanelRef}
           >
-            {children}
-          </div>
-        </ResizablePanel>
+            <CockpitSidebar
+              header={header}
+              isCollapsed={isSidebarCollapsed}
+              onToggle={toggleSidebar}
+              sidebar={sidebar}
+              toggleRef={sidebarToggleRef}
+            />
+          </ResizablePanel>
+          <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
+          <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
+            <div
+              data-component="CockpitContent"
+              data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+              className="relative h-full min-w-0 overflow-hidden bg-background"
+            >
+              {children}
+            </div>
+          </ResizablePanel>
         </ResizablePanelGroup>
       </div>
       {footer ? <div className="shrink-0">{footer}</div> : null}

@@ -56,7 +56,6 @@ export function SessionComposerArea({
           />
         }
         plan={session?.plan ?? null}
-        ticket={session?.ticket ?? null}
       />
     </>
   )

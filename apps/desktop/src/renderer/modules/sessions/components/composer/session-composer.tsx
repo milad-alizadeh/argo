@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan, SessionTicket } from '@/core/sessions/models'
+import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { ComposerForm } from './composer-form'
 import { activeReference } from './references/composer-reference-menu'
@@ -25,7 +25,6 @@ export type SessionComposerProps = {
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
-  ticket?: SessionTicket | null
 }
 
 export function SessionComposer({
@@ -45,7 +44,6 @@ export function SessionComposer({
   plan = null,
   harness = null,
   setup = null,
-  ticket = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
@@ -86,7 +84,6 @@ export function SessionComposer({
       sessionId={sessionId}
       setup={setup}
       tickets={state.tickets}
-      ticket={ticket}
       onContextPickerOpenChange={setContextPickerOpen}
     />
   )
