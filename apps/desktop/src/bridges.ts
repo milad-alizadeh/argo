@@ -19,7 +19,8 @@ import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
-import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
+import { codexStatePath, codexTranscriptsRoot } from './agents/codex/sessions/roots'
+import { codexThreadNames } from './agents/codex/sessions/state-store'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
 import { safeStorageCipher } from './core/accounts/safe-storage'
@@ -103,6 +104,7 @@ function attachSessions(
           pendingQuestion: codex.pendingQuestion,
           rename: (request) => renameCodexSession(request, codex),
           isLockedElsewhere: codex.isLockedElsewhere,
+          threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
         }),
       ],
       ticketLinks,
