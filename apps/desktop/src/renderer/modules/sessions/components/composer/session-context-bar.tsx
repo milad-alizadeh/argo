@@ -110,7 +110,7 @@ export function SessionContextBar({
 
   return (
     <div
-      className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
+      className="@container relative z-0 flex min-h-(--size-session-context-bar) min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
       <div className="shrink-0 border-l border-border/60 pl-2 @[56rem]:pl-4">

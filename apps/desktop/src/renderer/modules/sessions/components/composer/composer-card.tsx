@@ -80,10 +80,12 @@ export function ComposerCard({
 }: ComposerCardProps) {
   return (
     <div className="relative">
+      {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
+          radius instead of boxing the bare text area (#2262). */}
       <fieldset
         aria-label="Message composer"
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface)${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
           event.preventDefault()
