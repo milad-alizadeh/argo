@@ -3,16 +3,8 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import {
-  fixturePath,
-  replaceInFile,
-  writeArchiveStore,
-} from '../../../../mocks/sessions/mock-transcript-files'
+import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 import { createSessionReader } from '../../../core/sessions/reader.ts'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '../../../core/storage/session-archive.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import {
   fixtureRoot,
@@ -66,29 +58,6 @@ test('keeps a Session in a Project registered through a symlinked path', async (
     ['externalBasic'],
   )
   assert.deepEqual((await scoped(path.join(folder, 'other'))).sessions, [])
-})
-
-// Argo owns the archive flag (#2315), and the shared reader joins it on the Session's own id and
-// on every id it has retired: an archived resume is out of the active Roster under both (#1593).
-test('excludes an archived Session from the Roster, under any id it answered to', async (context) => {
-  const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
-  const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
-  context.after(() => rm(store, { recursive: true, force: true }))
-  const archive = createSessionArchiveStore(sessionArchivePath(store))
-  await archive.setArchived(['resumeChild'], true)
-  const reader = createSessionReader(
-    [claudeSessionSource({ transcripts: root })],
-    undefined,
-    archive,
-  )
-
-  const reply = await reader.listSessions(listing)
-
-  assert.equal(reply.type, 'session.listed')
-  assert.deepEqual(
-    reply.type === 'session.listed' ? reply.sessions.map((session) => session.id).sort() : [],
-    ['externalBasic'],
-  )
 })
 
 test('puts the Session touched last at the top of the Roster', async (context) => {

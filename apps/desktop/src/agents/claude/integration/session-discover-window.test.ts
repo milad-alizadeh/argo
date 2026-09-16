@@ -4,7 +4,6 @@ import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from '@/core/sessions/discover-transcript-sessions'
 import { createSessionReader } from '@/core/sessions/reader'
 import { assertWindowGrowsToFarSession } from '@/core/sessions/window-proof-helpers'
-import { writeArchiveStore } from '../../../../mocks/sessions/mock-transcript-files'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { claudeRoot, writeManySessions } from './session-window-fixture'
 
