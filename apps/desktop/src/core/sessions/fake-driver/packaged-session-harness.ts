@@ -5,7 +5,6 @@ import { writeFakeCodex } from '../../../agents/codex/session-fake-driver/fixtur
 import { appExecutable } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
@@ -59,7 +58,6 @@ export async function createPackagedSessionHarness(root: string) {
         ...process.env,
         [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
         [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
-        [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
         [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
         [SESSION_CODEX_EXECUTABLE_ENV]: fakeCodex,
         [SESSION_FAKE_REPLY_DELAY_MS_ENV]: String(options.replyDelayMs ?? 0),

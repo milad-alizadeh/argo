@@ -91,7 +91,7 @@ try {
     proveStableRosterPolling(
       page,
       rosterOrderMutations({
-        archive: fixture.archive,
+        userData: fixture.userData,
         transcripts: fixture.claudeTranscripts,
       }),
     ),

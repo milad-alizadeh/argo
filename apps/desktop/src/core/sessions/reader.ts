@@ -2,20 +2,19 @@ import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '../tickets/session-links'
-import type { SessionReader } from './bridge'
 import {
-  driveSessionError,
-  isDriveCli,
-  sessionError,
-  sessionListRequestSchema,
-  sessionRenameRequestSchema,
-} from './contract'
+  createInMemorySessionArchiveStore,
+  type SessionArchiveStore,
+  withoutArchived,
+} from './archive-store'
+import type { SessionReader } from './bridge'
+import { sessionError, sessionListRequestSchema } from './contract'
 import type { HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
 import { archiveListReply } from './read-archive-list'
-import { delegationUsageReply, type OwnerFor, shellOutputReply } from './read-background-work'
+import { delegationUsageReply, shellOutputReply } from './read-background-work'
 import { workspaceFileReply } from './read-file-request'
 import { readFailure, versionFailure } from './read-request'
 import { createFeedReader } from './read-session-feed'
@@ -23,6 +22,7 @@ import { decodeRosterCursor } from './roster-cursor'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 import { archiveSetReply } from './write-archive'
+import { renameReply } from './write-rename'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
@@ -84,25 +84,13 @@ function createOwnerResolver(sources: SessionSource[]) {
   }
 }
 
-async function renameReply(ownerFor: OwnerFor, value: unknown) {
-  if (versionFailure(value)) return sessionError('unsupported-version', null)
-  const parsed = sessionRenameRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', null)
-  const owner = await ownerFor(parsed.data.sessionId)
-  if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
-  if (owner.rename === undefined) {
-    const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
-    return driveSessionError('not-drivable', cli, parsed.data.requestId)
-  }
-  return owner.rename(parsed.data)
-}
-
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
 // driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
 export function createSessionReader(
   sources: SessionSource[],
   ticketLinks: SessionTicketLinkStore = createInMemorySessionTicketLinkStore(),
+  archive: SessionArchiveStore = createInMemorySessionArchiveStore(),
 ): SessionReader {
   const feeds = new Map<string, HeldFeed>()
   const projections = new Map<string, FeedProjectionState>()
@@ -136,8 +124,9 @@ export function createSessionReader(
       ownership.rememberDiscoveries(reply.sessions)
       // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
       // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
+      const active = await withoutArchived(reply.sessions, archive)
       const sessions = await Promise.all(
-        reply.sessions.map(async (session) => ({
+        active.map(async (session) => ({
           ...session,
           ticket: await ticketLinks.linkFor(session.id),
         })),
@@ -146,8 +135,8 @@ export function createSessionReader(
     },
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
-    archiveList: (value) => archiveListReply(sources, value),
-    archiveSet: (value) => archiveSetReply(sources, value),
+    archiveList: (value) => archiveListReply(sources, value, archive),
+    archiveSet: (value) => archiveSetReply(sources, value, archive),
     readWorkspaceFile: (value) => workspaceFileReply(ownership.ownerFor, value),
     readSessionFeed: feedReader.readSessionFeed,
     cancelSessionFeed: feedReader.cancelSessionFeed,

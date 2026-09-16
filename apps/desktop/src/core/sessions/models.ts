@@ -164,8 +164,8 @@ export const sessionRosterRowSchema = z.strictObject({
   shell: z.array(sessionShellCommandSchema),
   pullRequest: sessionPullRequestSchema.nullable(),
   ticket: sessionTicketSchema.nullable(),
-  // Whether the reader has archived this Session. Argo keeps no flag of its own: this is the
-  // Claude desktop app's own `isArchived`, joined on the CLI Session id (`sessions/archive.ts`).
+  // Whether the reader has archived this Session. Argo's own flag, joined on the CLI Session id
+  // and on every id the Session has retired (`sessions/archive-store.ts`).
   archived: z.boolean(),
   contextTokens: countSchema.nullable().optional(),
   contextWindowTokens: countSchema.nullable().optional(),

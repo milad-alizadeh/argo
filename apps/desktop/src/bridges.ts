@@ -8,7 +8,6 @@ import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-ad
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
-  claudeArchiveRoot,
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
@@ -27,12 +26,14 @@ import { safeStorageCipher } from './core/accounts/safe-storage'
 import { attachAppearanceBridge } from './core/appearance/bridge'
 import { attachProjectBridge } from './core/projects/bridge'
 import { attachWindowNavigation } from './core/security/window-navigation'
+import { createSessionArchiveStore } from './core/sessions/archive-store'
 import { attachSessionBridge } from './core/sessions/bridge'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
+import { portablePath } from './core/storage/portable-file'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching, watchedTrees } from './core/watch/bridge'
@@ -79,15 +80,14 @@ function attachSessions(
 ) {
   const { rendererURL, home, userData, drivers, compactionStarts } = request
   const { claude, codex } = drivers
-  const ticketLinks = createSessionTicketLinkStore(
-    path.join(userData, 'portable-v1', 'session-tickets.json'),
-  )
+  const ticketLinks = createSessionTicketLinkStore(portablePath(userData, 'session-tickets.json'))
+  // Argo's own archive flag, for every harness at once (#2315).
+  const archive = createSessionArchiveStore(portablePath(userData, 'session-archive.json'))
   attachSessionBridge(window, {
     reader: createSessionReader(
       [
         claudeSessionSource({
           transcripts: claudeTranscriptsRoot(home),
-          archive: claudeArchiveRoot(home),
           processes: claudeProcessesRoot(home),
           managedSessions: claude.roster,
           compactionStarts,
@@ -109,6 +109,7 @@ function attachSessions(
         }),
       ],
       ticketLinks,
+      archive,
     ),
     adapters: {
       claude: createClaudeDriveAdapter(claude),

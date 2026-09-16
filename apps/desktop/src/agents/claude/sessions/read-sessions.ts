@@ -1,6 +1,5 @@
-// The Claude source the shared Session reader drives (#2025). Transcripts are read-only. The one
-// exception is the archive flag (#2194): `setArchivedSessions` writes it back into the Claude
-// desktop app's own store, the same file `discoverArchivedSessions` reads (`sessions/archive.ts`).
+// The Claude source the shared Session reader drives (#2025). Transcripts are read-only, with no
+// exception: archiving is Argo's own store, shared by every adapter (`core/sessions/archive-store.ts`).
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { discoverRoster } from '@/core/sessions/discover-roster'
 import { projectFeed } from '@/core/sessions/feed'
@@ -8,13 +7,7 @@ import type { SessionRosterRow } from '@/core/sessions/models'
 import type { SessionSource } from '@/core/sessions/reader'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
-import {
-  clearFullRecords,
-  discoverArchivedSessions,
-  discoverSessions,
-  readSessionFiles,
-  setArchivedSessions,
-} from './discover'
+import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
 import { draftOverlay } from './live-feed'
 import {
   joinLiveProcesses,
@@ -57,12 +50,8 @@ async function readLiveState(processes: string | undefined) {
   return processes === undefined ? NO_PROCESSES : await readLiveProcesses(processes)
 }
 
-// Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
-// Claude desktop app's own store, which is where the archive flag already lives. `archive` is
-// optional: a machine without that app installed reads no archived Sessions rather than failing.
 export type ClaudeSessionRoots = {
   transcripts: string
-  archive?: string
   // Where each running `claude` names its Session; absent, no external Session reads `running` or locked.
   processes?: string
   managedSessions?: () => SessionRosterRow[]
@@ -85,7 +74,7 @@ async function discoverClaudeSessions(
 ) {
   roots.completeHandoffs?.()
   const live = await readLiveState(roots.processes)
-  const discovery = await discoverSessions(roots.transcripts, roots.archive, options)
+  const discovery = await discoverSessions(roots.transcripts, options)
   const managed = roots.managedSessions?.() ?? []
   await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
   return discoverRoster({
@@ -111,7 +100,6 @@ async function discoverClaudeSessions(
 export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
-  const archiveRoot = roots.archive
   return {
     cli: 'claude',
     discoverSessions: (options) => discoverClaudeSessions(roots, options),
@@ -127,15 +115,6 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,
-    discoverArchivedSessions:
-      archiveRoot === undefined
-        ? undefined
-        : (options) => discoverArchivedSessions(roots.transcripts, archiveRoot, options),
-    setArchived:
-      archiveRoot === undefined
-        ? undefined
-        : ({ ids, archived }) =>
-            setArchivedSessions(roots.transcripts, archiveRoot, { ids, archived }),
     overlayFor:
       liveMessages === undefined
         ? undefined

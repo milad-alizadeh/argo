@@ -11,7 +11,6 @@ import { appExecutable, packagedTestCopy } from '../../desktop-proof/packaged-te
 import { repository } from '../../projects/fake-driver/project-proof-fixture'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../sessions/proof-protocol'
@@ -94,7 +93,6 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
       [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
-      [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.noSessions,
       [ACCEPTANCE_ENV]: '0',
     },
     timeout: 30_000,

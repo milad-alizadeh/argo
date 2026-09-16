@@ -38,13 +38,8 @@ export const FIXTURES = [
 ]
 export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
-// The Sessions the fixture store says the reader archived.
+// The Sessions Argo's own archive document says the reader archived.
 const ARCHIVED = ['plannedWork']
-
-// A Session the desktop app already tracks but has not archived (#2194): its store row exists so
-// a bulk-archive round trip has a real file to flip, the way the write only ever mutates a row the
-// app already wrote rather than inventing one.
-const TRACKED_UNARCHIVED = ['harnessNoise']
 
 const shotsIndex = process.argv.indexOf('--shots')
 export const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
@@ -112,18 +107,16 @@ export async function prepare(root) {
     directory: '2026/09/10',
     fixtures: CODEX_FIXTURES,
   })
-  const archive = path.join(root, 'archive')
-  await writeArchiveStore(archive, ARCHIVED)
-  await writeArchiveStore(archive, TRACKED_UNARCHIVED, { archived: false })
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
+  await writeArchiveStore(userData, ARCHIVED)
   const project = path.join(root, 'project')
   await mkdir(project)
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
   // No Project is selected yet: the fixtures span unrelated fake cwds (/Users/x/tree, ...), and a
   // selected Project scopes every one of them out of the Roster (#2204).
   await writeProjectStore(userData, project, null)
-  return { application, claudeTranscripts, codexTranscripts, archive, userData, project }
+  return { application, claudeTranscripts, codexTranscripts, userData, project }
 }
 
 const PROOF_PROJECT_ID = 'session-proof-project'

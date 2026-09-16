@@ -1,4 +1,4 @@
-import { appendFile, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fixturePath } from './session-fixture-files'
 
@@ -66,15 +66,15 @@ async function addRecentSession(transcripts) {
   )
 }
 
-async function setArchived(archive, sessionId, archived) {
-  await writeFile(
-    path.join(archive, 'workspace-one', 'project-one', `local_${sessionId}.json`),
-    `${JSON.stringify({
-      sessionId: `desktop-${sessionId}`,
-      cliSessionId: sessionId,
-      isArchived: archived,
-    })}\n`,
-  )
+// The running app reads Argo's own archive document on every Roster poll, so a mutation here is
+// what a second Argo window archiving the Session would leave behind (#2315).
+async function setArchived(userData, sessionId, archived) {
+  const file = path.join(userData, 'portable-v1', 'session-archive.json')
+  await mkdir(path.dirname(file), { recursive: true })
+  const held = JSON.parse(await readFile(file, 'utf8').catch(() => '{}'))
+  if (archived) held[sessionId] = { archivedAt: '2026-09-02T00:00:00.000Z' }
+  else delete held[sessionId]
+  await writeFile(file, `${JSON.stringify(held, null, 2)}\n`)
 }
 
 async function updateProseRoster(transcripts) {
@@ -102,7 +102,7 @@ async function updateProseRoster(transcripts) {
   await appendFile(fixturePath(transcripts, 'prose'), `${title}\n${answer}\n`)
 }
 
-export function rosterOrderMutations({ archive, transcripts }) {
+export function rosterOrderMutations({ userData, transcripts }) {
   return {
     update: () => updateProseRoster(transcripts),
     addReplacementChild: () => addReplacementChild(transcripts),
@@ -113,6 +113,6 @@ export function rosterOrderMutations({ archive, transcripts }) {
         rm(fixturePath(transcripts, 'newSession')),
         rm(fixturePath(transcripts, 'newSessionTwo')),
       ]),
-    archive: (sessionId, archived) => setArchived(archive, sessionId, archived),
+    archive: (sessionId, archived) => setArchived(userData, sessionId, archived),
   }
 }

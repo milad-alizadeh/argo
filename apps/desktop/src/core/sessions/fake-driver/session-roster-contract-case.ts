@@ -16,46 +16,56 @@ async function proveArchivedPage(page) {
   assert.equal(archived.restored, null)
 }
 
-// A real archive round trip (#2194): archiving moves `harnessNoise` out of the active list and
+// A real archive round trip (#2194, #2315): archiving moves the Session out of the active list and
 // into the Archived page, and restoring it (the shape a short-lived Undo calls) brings it back.
-// Both calls flip the same fixture row `session-feed-fixture.ts` wrote for it, so this leaves the
-// fixture exactly as every other case in this file finds it.
-async function proveBulkArchive(page) {
-  const archived = await page.evaluate(() =>
-    window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: true }),
+// Both calls write Argo's own archive document, and the restore leaves the fixture exactly as
+// every other case in this file finds it. The Claude Session and the Codex one take this one path.
+async function proveArchiveRoundTrip(page, sessionId) {
+  const archived = await page.evaluate(
+    (id) => window.argo.setSessionsArchived({ sessionIds: [id], archived: true }),
+    sessionId,
   )
-  assert.equal(archived.type, 'session.archive.applied')
   assert.deepEqual(archived, {
     version: 1,
     type: 'session.archive.applied',
     requestId: archived.requestId,
     archived: true,
-    applied: ['harnessNoise'],
+    applied: [sessionId],
     failed: [],
   })
   const afterArchive = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.ok(!afterArchive.sessions.some((session) => session.id === 'harnessNoise'))
+  assert.ok(!afterArchive.sessions.some((session) => session.id === sessionId))
   const archivedPage = await page.evaluate(() =>
     window.argo.listArchivedSessions({ cursor: null, restoreId: null }),
   )
-  assert.ok(archivedPage.sessions.some((session) => session.id === 'harnessNoise'))
-  const restored = await page.evaluate(() =>
-    window.argo.setSessionsArchived({ sessionIds: ['harnessNoise'], archived: false }),
+  assert.ok(archivedPage.sessions.some((session) => session.id === sessionId))
+  const restored = await page.evaluate(
+    (id) => window.argo.setSessionsArchived({ sessionIds: [id], archived: false }),
+    sessionId,
   )
-  assert.deepEqual(restored.applied, ['harnessNoise'])
+  assert.deepEqual(restored.applied, [sessionId])
   const afterRestore = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.ok(afterRestore.sessions.some((session) => session.id === 'harnessNoise'))
+  assert.ok(afterRestore.sessions.some((session) => session.id === sessionId))
+}
+
+async function proveBulkArchive(page) {
+  await proveArchiveRoundTrip(page, 'harnessNoise')
+  await proveArchiveRoundTrip(page, 'rollout-codexParent')
   // A roster fetch that lands while the Session is archived drops it from the renderer's kept
   // order, and it returns last; a reload reads the order afresh, as `session-roster-restart` expects.
   await page.reload()
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]').waitFor()
 
-  // A Session the store has no row for at all fails rather than the write inventing one.
+  // Argo owns the flag, so a Session it has never discovered archives too: it writes its own row
+  // rather than looking for one in another app's store (#2315).
   const unknown = await page.evaluate(() =>
     window.argo.setSessionsArchived({ sessionIds: ['not-a-session'], archived: true }),
   )
-  assert.deepEqual(unknown.applied, [])
-  assert.deepEqual(unknown.failed, ['not-a-session'])
+  assert.deepEqual(unknown.applied, ['not-a-session'])
+  assert.deepEqual(unknown.failed, [])
+  await page.evaluate(() =>
+    window.argo.setSessionsArchived({ sessionIds: ['not-a-session'], archived: false }),
+  )
 }
 
 export async function proveContract(page) {
