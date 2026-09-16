@@ -17,7 +17,7 @@ back to the caller. It never ends in silence either.
   (`gh pr list --head "$(git rev-parse --abbrev-ref HEAD)"`). Run everything below anyway — the
   push is what puts the new commits on it — then report its URL and open no second one.
 - **A conflict you cannot resolve from the diff** (below). An ordinary conflict is not one of
-  these: you resolve that one yourself and carry on to the PR.
+  these: you resolve that one and carry on to the PR.
 
 ## Ship onto the current base
 
@@ -36,8 +36,9 @@ ready. Nobody wants an out-of-date PR.
    unless you stacked this branch on another ticket branch, which is then the base.
 3. `git fetch origin` — the whole remote, so the merge and the push read a current ref.
 4. **`git merge origin/<base>`.** Already up to date is the common answer and costs nothing.
-   When it conflicts, resolve with `resolving-merge-conflicts` — it is the method, and `ship` does
-   not carry a second one — then `git merge --continue` to the end. Name every
+   When it conflicts, **load `/resolving-merge-conflicts` and follow it**: it is the method, and
+   `ship` carries no second one. Invoke it rather than resolving by hand, even for a conflict that
+   looks obvious from the diff. Then `git merge --continue` to the end. Name every
    path that conflicted in the PR body, so a reviewer can find each resolution without reading the
    reflog.
 5. **Re-run the gates after a merge that created a commit**, before the push. The merged tree is
