@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createCodexOwnershipLedger } from '../drive/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { driverBackedByFixture } from './fixture-driver.ts'
 
 test('resumes a Codex Session Argo held before restart in its recorded workspace before accepting its next Turn', async (context) => {
@@ -12,9 +12,9 @@ test('resumes a Codex Session Argo held before restart in its recorded workspace
   context.after(() => rm(root, { recursive: true, force: true }))
   const ledger = path.join(root, 'codex-session-ownership.json')
   const first = driverBackedByFixture({
-    ownership: createCodexOwnershipLedger({
+    ownership: createOwnershipLedger({
       path: ledger,
-      owner: { pid: 1, registry: 'first-window' },
+      window: { pid: 1, registry: 'first-window' },
       isAlive: () => true,
     }),
   })
@@ -26,9 +26,9 @@ test('resumes a Codex Session Argo held before restart in its recorded workspace
   first.close()
 
   const resumed = driverBackedByFixture({
-    ownership: createCodexOwnershipLedger({
+    ownership: createOwnershipLedger({
       path: ledger,
-      owner: { pid: 2, registry: 'second-window' },
+      window: { pid: 2, registry: 'second-window' },
       isAlive: () => false,
     }),
     resumeTarget: async () => ({ cwd: process.cwd() }),

@@ -110,16 +110,18 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
-        compactionStartedAt={session?.compactionStartedAt ?? null}
-        compactionPercentage={session?.compactionPercentage ?? null}
-        compactionTokens={session?.compactionTokens ?? null}
-        handoffStartedAt={session?.handoffStartedAt ?? null}
-        handoffTo={session?.handoffTo ?? null}
+        liveFacts={{
+          compactionStartedAt: session?.compactionStartedAt ?? null,
+          compactionPercentage: session?.compactionPercentage ?? null,
+          compactionTokens: session?.compactionTokens ?? null,
+          handoffStartedAt: session?.handoffStartedAt ?? null,
+          handoffTo: session?.handoffTo ?? null,
+          isRunning: session?.status === 'running',
+          optimisticRow: composer.optimisticRow,
+          posture: session?.posture ?? null,
+          turnMarker: composer.markerView,
+        }}
         onOpenSession={openSession}
-        isRunning={session?.status === 'running'}
-        posture={session?.posture ?? null}
-        optimisticRow={composer.optimisticRow}
-        turnMarker={composer.markerView}
         selectedSessionId={selectedSessionId}
         activeEvidenceId={evidence?.id ?? null}
         onOpenEvidence={setEvidence}

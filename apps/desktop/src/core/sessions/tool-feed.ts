@@ -20,6 +20,10 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
+function commandLabel(call: ToolCall) {
+  return `Ran ${String(call.input.cmd ?? 'command').split('\n')[0]}`
+}
+
 const TOOL_DETAILS = {
   // The agent's own description is already a whole label; the raw command, first line, is the fallback.
   Bash: (call: ToolCall) => ({
@@ -35,16 +39,14 @@ const TOOL_DETAILS = {
     kind: 'skill' as const,
     label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
   }),
-  // Codex's own two shell tools: `exec_command`'s structured call carries its command on `cmd`,
-  // and a `custom_tool_call` named `exec` carries the model's bare script on `input` (see
-  // `readToolCall` in the Codex adapter). Both read as a command, the same as Claude's `Bash`.
+  // Codex's `exec` record carries wrapper source; its adapter extracts `cmd` when the wrapper has one.
   exec_command: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: `Ran ${String(call.input.cmd ?? 'command').split('\n')[0]}`,
+    label: commandLabel(call),
   }),
   exec: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: `Ran ${String(call.input.input ?? 'command').split('\n')[0]}`,
+    label: commandLabel(call),
   }),
 } as const
 
