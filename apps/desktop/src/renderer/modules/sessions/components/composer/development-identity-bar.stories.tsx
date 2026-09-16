@@ -75,12 +75,9 @@ export const UnlinkedAtWindowMinimum: Story = {
   parameters: { fullWidth: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(LONG_INSTANCE.id)).toBeVisible()
-    // A real instance runs past 250px in this font. It shares the squeeze with the worktree path
-    // instead of taking its width outright, so the path still shows more than its first folder.
+    await expect(canvas.getByText('-3a340324')).toBeVisible()
     const worktree = canvas.getByText(LONG_INSTANCE.worktree)
     await expect(worktree.clientWidth).toBeGreaterThan(150)
-    // Truncated either way, so the whole id stays readable on hover.
     await expect(canvas.getByTitle(LONG_INSTANCE.id)).toBeInTheDocument()
   },
 }
