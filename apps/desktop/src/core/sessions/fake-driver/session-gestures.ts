@@ -13,7 +13,7 @@ import type { SessionCli } from '../../../renderer/modules/sessions/harness/harn
 const HARNESS_TABS: Record<SessionCli, string> = { claude: 'Claude Code', codex: 'Codex' }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
-const ARCHIVED_TOGGLE = '[data-slot="archived-toggle"]'
+const FILTER = 'button[aria-label="Filter Sessions"]'
 export const RUN_SETUP = '[aria-label^="Choose run setup"]'
 const ROW_TIMEOUT = 30_000
 const POLL_MS = 25
@@ -44,16 +44,22 @@ export async function openSessionByClick(page: Page, sessionId: string) {
   await waitForRoute(page, sessionId)
 }
 
-// An archived Session is behind the Archived disclosure, which a person opens before clicking its
-// row. The disclosure can already be open, so this reads it rather than toggling it blind.
-export async function openArchivedSection(page: Page) {
-  const disclosure = page.locator(ARCHIVED_TOGGLE)
-  await disclosure.waitFor()
-  if ((await disclosure.getAttribute('aria-expanded')) !== 'true') await disclosure.click()
+// Which Sessions the list holds is a status the reader picks in the header's filter (#2239). "All"
+// is the reading that keeps the active rows beside the archived ones, which is what the disclosure
+// the filter replaced did.
+export async function chooseRosterStatus(page: Page, status: 'Active' | 'Archived' | 'All') {
+  await page.locator(FILTER).click()
+  const choice = page.getByRole('menuitemradio', { name: status })
+  await choice.click()
+  // A Base UI radio item takes `closeOnClick = false` (MenuRadioItem.mjs), so the picked status is
+  // read off the item and the menu is dismissed by hand rather than waited out.
+  await page.getByRole('menuitemradio', { checked: true, name: status }).waitFor()
+  await page.keyboard.press('Escape')
+  await choice.waitFor({ state: 'detached' })
 }
 
 export async function openArchivedSessionByClick(page: Page, sessionId: string) {
-  await openArchivedSection(page)
+  await chooseRosterStatus(page, 'All')
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
 }

@@ -3,17 +3,14 @@ import { useNavigate, useParams } from 'react-router'
 import { currentSessionId } from '@/core/sessions/models'
 import { useProjects } from '../../../projects/hooks/use-projects'
 import { useSelectedProject } from '../../../projects/hooks/use-selected-project'
-import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { useArchiveSelected } from '../../hooks/use-session-archive-mutation'
 import { useSessionTicketLink } from '../../hooks/use-session-ticket-link'
 import { useSessions } from '../../hooks/use-sessions'
-import { useComposerStore } from '../../state/use-composer-store'
-import { newSessionTarget, useSessionCreationStore } from '../../state/use-session-creation-store'
-import type { Session, SessionId } from '../../types'
+import type { Session } from '../../types'
+import { useRosterOrder } from './roster-order'
 import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
 import { SessionsSidebarContent } from './sessions-sidebar'
-
-const SELECTED_SESSION_KEY = 'argo.selected-session-id'
+import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
 // A stored id absent from the active Roster is not necessarily gone: the active list never
 // carries an archived Session, so this can still be one, restored by the Archive section
@@ -35,56 +32,42 @@ function useRestoreSelectedSession(options: {
   }, [navigate, roster, rosterError, sessionId])
 }
 
+// The sidebar is the only reader that shows the roster as a list, so the order it holds rows in is
+// its own concern rather than the read's.
+function useOrderedRoster(projectRoot: string | null) {
+  const read = useSessions(null, true, projectRoot)
+  return { ...read, roster: useRosterOrder(read.roster, projectRoot) }
+}
+
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [cockpit] = useProjects()
-  const lastHarness = useComposerStore(({ harness }) => harness)
-  const pending = useSessionCreationStore(({ pending }) => pending)
-  const { roster, rosterError, hasMoreSessions, fetchMoreSessions } = useSessions(
-    null,
-    true,
-    cockpit.project?.path ?? null,
-  )
+  const { roster, rosterError, hasMoreSessions, isFetchingMoreSessions, fetchMoreSessions } =
+    useOrderedRoster(cockpit.project?.path ?? null)
   const project = useSelectedProject()
   const ticketLink = useSessionTicketLink()
   const [linkTarget, setLinkTarget] = useState<Session | null>(null)
   const archiveSelected = useArchiveSelected()
+  const actions = useSidebarActions({
+    disconnectTicket: ticketLink.disconnect,
+    projectPath: cockpit.project?.path ?? null,
+  })
   useRestoreSelectedSession({ sessionId, roster, rosterError, navigate })
 
   return (
     <>
       <SessionsSidebarContent
         hasMoreSessions={hasMoreSessions}
+        isFetchingMoreSessions={isFetchingMoreSessions}
         onArchiveSelected={archiveSelected}
         onFetchMoreSessions={fetchMoreSessions}
         onLinkTicket={setLinkTarget}
-        onNew={() => {
-          const target = newSessionTarget(lastHarness, cockpit.project?.path ?? null)
-          if (target === null) {
-            navigate('/sessions/new')
-            return
-          }
-          navigate(`/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
-        }}
-        onOpenTicket={(session) => {
-          if (session.ticket !== null) navigate(`/tickets/${session.ticket.key}`)
-        }}
-        onRename={async (session, name) => {
-          const reply = await window.argo.renameSession({ sessionId: session.id, name })
-          if (reply.type === 'session.renamed') return reply.title
-          throw new Error(reply.message)
-        }}
-        onSelect={(selectedSessionId: SessionId) => {
-          // Picking a different row abandons an un-sent draft rather than leaving it a ghost row
-          // nobody will ever send (#2109).
-          if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
-            useSessionCreationStore.getState().abandon(pending.id)
-          }
-          window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
-          navigate(`/sessions/${selectedSessionId}`)
-        }}
-        onUnlinkTicket={(session) => void ticketLink.disconnect(session.id)}
+        onNew={actions.openNew}
+        onOpenTicket={actions.openTicket}
+        onRename={actions.rename}
+        onSelect={actions.select}
+        onUnlinkTicket={actions.unlinkTicket}
         roster={roster}
         rosterError={rosterError}
         selectedSessionId={sessionId ?? null}

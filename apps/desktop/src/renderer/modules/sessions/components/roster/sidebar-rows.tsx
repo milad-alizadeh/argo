@@ -1,11 +1,15 @@
+import { useMemo } from 'react'
 import type { SelectionModifier } from '../../state/roster-selection'
-import type { Session, SessionId, SessionsListed } from '../../types'
+import { useRosterStatus } from '../../state/use-roster-filter-store'
+import type { Session, SessionId } from '../../types'
 import { rosterRows } from './roster-rows'
 import { RosterVirtualList } from './roster-virtual-list'
 import { useArchivedSection } from './use-archived-section'
+import type { useSidebarRoster } from './use-sidebar-roster'
 
 export function SidebarRows({
   hasMoreSessions,
+  isFetchingMoreSessions,
   onArchive,
   onFetchMoreSessions,
   onFocus,
@@ -15,14 +19,12 @@ export function SidebarRows({
   onUnlinkTicket,
   onSelect,
   onToggleSelect,
-  renamedTitles,
-  selectedIds,
+  roster,
   selectedSessionId,
   showArchive,
-  tabStop,
-  visible,
 }: {
   hasMoreSessions: boolean
+  isFetchingMoreSessions: boolean
   onArchive: (sessionId: SessionId) => void
   onFetchMoreSessions: () => void
   onFocus: (sessionId: SessionId) => void
@@ -32,22 +34,28 @@ export function SidebarRows({
   onUnlinkTicket: (session: Session) => void
   onSelect: (sessionId: SessionId) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
-  renamedTitles: Record<string, string>
-  selectedIds: ReadonlySet<SessionId>
+  roster: ReturnType<typeof useSidebarRoster>
   selectedSessionId: SessionId | null
   showArchive: boolean
-  tabStop: SessionId | null
-  visible: SessionsListed['sessions']
 }) {
+  const { renamedTitles, selection, visible } = roster
   const visibleSessionIds = visible.map((session) => session.id)
+  const status = useRosterStatus()
   const archived = useArchivedSection(selectedSessionId, visibleSessionIds, showArchive)
-  const rows = rosterRows({
-    active: visible,
-    archivedOpen: archived.open,
-    archived,
-    hasMoreSessions,
-    showArchive,
-  })
+  // Each row object is what the memoized RosterRowView compares against, so rebuilding the array on
+  // every render would defeat the memo and re-render every mounted row on each 500ms poll tick.
+  const rows = useMemo(
+    () =>
+      rosterRows({
+        active: visible,
+        archived,
+        hasMoreSessions,
+        isFetchingMoreSessions,
+        showArchive,
+        status,
+      }),
+    [archived, hasMoreSessions, isFetchingMoreSessions, showArchive, status, visible],
+  )
 
   return (
     <RosterVirtualList
@@ -60,14 +68,13 @@ export function SidebarRows({
       onOpenTicket={onOpenTicket}
       onRename={onRename}
       onSelect={onSelect}
-      onToggleArchived={() => archived.setOpen((open) => !open)}
       onToggleSelect={onToggleSelect}
       onUnlinkTicket={onUnlinkTicket}
       renamedTitles={renamedTitles}
       rows={rows}
-      selectedIds={selectedIds}
+      selectedIds={selection.selectedIds}
       selectedSessionId={selectedSessionId}
-      tabStop={tabStop}
+      tabStop={roster.focus.tabStop}
     />
   )
 }

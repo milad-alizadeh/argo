@@ -50,9 +50,11 @@ async function proveArchivedRestart(page, restart) {
   await openArchivedSessionByClick(page, 'plannedWork')
   const archived = await restart()
   await archived.waitForFunction(() => window.location.hash === '#/sessions/plannedWork')
-  // Restoring the selected archived Session opens the section on its own, but only once the
-  // reader's request for that row resolves, so this waits rather than reading the count once.
-  await archived.locator('[data-slot="archived-toggle"][aria-expanded="true"]').waitFor()
+  // Restoring the selected archived Session widens the filter to All on its own, but only once the
+  // reader's request for that row resolves, so this waits rather than reading the status once.
+  await archived.locator('button[aria-label="Filter Sessions"]').click()
+  await archived.getByRole('menuitemradio', { name: 'All', checked: true }).waitFor()
+  await archived.keyboard.press('Escape')
   await archived
     .locator(
       'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',

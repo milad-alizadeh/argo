@@ -58,6 +58,7 @@ const SURFACE = [
   'listTickets',
   'onAppearanceChanged',
   'onCommand',
+  'onWatchedChanged',
   'openProject',
   'pathForFile',
   'readConnection',

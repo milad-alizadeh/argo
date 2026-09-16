@@ -1,21 +1,9 @@
 import assert from 'node:assert/strict'
-import { openArchivedSection, openSessionByClick } from './session-gestures'
-import { readRosterIds } from './session-roster-facts'
-
-const ACTIVE_ROW = 'nav[aria-label="Sessions"] button[data-archived="false"]'
+import { chooseRosterStatus, openSessionByClick } from './session-gestures'
+import { readRosterIds, waitForActiveSessions } from './session-roster-facts'
 
 function archivedRow(sessionId: string) {
   return `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"][data-archived="true"]`
-}
-
-async function waitForActiveSessions(page, expected) {
-  await page.waitForFunction(
-    ({ selector, ids }) => {
-      const rows = [...document.querySelectorAll(selector)]
-      return rows.map((row) => row.getAttribute('data-session-id')).join('|') === ids.join('|')
-    },
-    { selector: ACTIVE_ROW, ids: expected },
-  )
 }
 
 async function proveVisibleNames(page) {
@@ -94,7 +82,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 }
 
 async function proveArchiveOrderAndFocus(page, mutations, withParent) {
-  await openArchivedSection(page)
+  await chooseRosterStatus(page, 'All')
   await page.locator(archivedRow('plannedWork')).waitFor()
   const archivedBefore = await readRosterIds(page, 'Archived')
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]').focus()
@@ -108,23 +96,22 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
     ),
     true,
   )
-  // The active list polls; the archived list is read on demand (#1593), so a live mutation only
-  // reaches it once the reader asks again — closing and reopening the section is that ask.
-  await page.locator('[data-slot="archived-toggle"]').click()
-  await page.locator('[data-slot="archived-toggle"]').click()
+  // The active list refreshes itself; the archived list is read on demand (#1593), so a live
+  // mutation only reaches it once the reader asks again, and picking the status again is that ask.
+  await chooseRosterStatus(page, 'Active')
+  await chooseRosterStatus(page, 'All')
   await page.locator(archivedRow('askPending')).waitFor()
   const archivedAfter = await readRosterIds(page, 'Archived')
   assert.deepEqual(
     archivedAfter.filter((sessionId) => sessionId !== 'askPending'),
     archivedBefore,
   )
-  // Archiving dropped askPending from the roster's remembered order (see `keepRosterOrder` in
-  // session-roster-query.ts), so restoring it reintroduces it as an unrecognised row: it leads
-  // the roster, the same place a newly discovered Session lands above.
+  // The reader is showing All, so the archived row stayed in the list and kept its place in the
+  // roster's remembered order (`keepRosterOrder` in session-roster-query.ts). Restoring it therefore
+  // returns it to that place rather than to the head, where a newly discovered Session lands.
   await mutations.archive('askPending', false)
-  const restored = ['askPending', ...active]
-  await waitForActiveSessions(page, restored)
-  assert.deepEqual(await readRosterIds(page), restored)
+  await waitForActiveSessions(page, withParent)
+  assert.deepEqual(await readRosterIds(page), withParent)
 }
 
 export async function proveStableRosterPolling(page, mutations) {

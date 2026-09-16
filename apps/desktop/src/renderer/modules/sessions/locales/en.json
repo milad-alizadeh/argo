@@ -10,6 +10,7 @@
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",
+  "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
     "roster": "Argo could not read the Sessions again.",
@@ -137,7 +138,10 @@
     "responding": "Assistant is responding.",
     "complete": "Assistant response complete."
   },
-  "archived": "Archived",
+  "filterSessions": "Filter Sessions",
+  "rosterStatusActive": "Active",
+  "rosterStatusArchived": "Archived",
+  "rosterStatusAll": "All",
   "archivedEmpty": "No archived Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
@@ -154,6 +158,7 @@
     "failure": "Argo could not archive the selected Sessions."
   },
   "contextMenu": {
+    "actions": "{{title}} actions",
     "rename": "Rename",
     "openTicket": "Open Ticket",
     "unlinkTicket": "Unlink Ticket",

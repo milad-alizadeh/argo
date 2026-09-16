@@ -1,61 +1,52 @@
 // One read of the Session roster. The reply's transport envelope is dropped here, so that a poll
 // that finds nothing new republishes the roster it already holds (#2241).
-import type { UseQueryOptions } from '@tanstack/react-query'
+import { keepPreviousData, type UseQueryOptions } from '@tanstack/react-query'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
-import { SESSION_REFRESH_MS, sessionRosterQueryKey } from '../session-queries'
+import { sessionRosterQueryKey, WATCHED_FALLBACK_REFRESH_MS } from '../session-queries'
 import { isOptimisticSessionId } from '../state/use-session-creation-store'
-import type { SessionId, SessionRoster, SessionsListed } from '../types'
-
-let rosterOrder: SessionId[] = []
+import type { SessionId, SessionRoster } from '../types'
 
 type RosterQuerySource = {
-  cursor?: string | null
+  cursor: string | null
   projectRoot: string | null
-}
-
-function keepRosterOrder(sessions: SessionsListed['sessions']) {
-  const unmatched = [...sessions]
-  const ordered = rosterOrder.flatMap((rememberedId) => {
-    const index = unmatched.findIndex(
-      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
-    )
-    if (index === -1) return []
-    const session = unmatched.splice(index, 1)[0]
-    return session === undefined ? [] : [session]
-  })
-  // A Session neither id nor retired-id matches is one the remembered order has never placed:
-  // freshly discovered, or a restored archive row starting over. It leads the roster rather than
-  // trailing it, so a newly observed Session reads at the top and the rest keep their fixed order.
-  ordered.unshift(...unmatched)
-  rosterOrder = ordered.map((session) => session.id)
-  return ordered
 }
 
 export function sessionRosterQuery(
   selectedSessionId: SessionId | null,
   enabled: boolean,
-  { projectRoot, cursor = null }: RosterQuerySource,
+  { projectRoot, cursor }: RosterQuerySource,
 ): UseQueryOptions<SessionRoster, SessionContractError> {
   return {
-    queryKey: [...sessionRosterQueryKey, projectRoot],
+    // The cursor is part of the identity of what was read, not a parameter smuggled past it. A key
+    // that omitted it made every window the same cache entry, so a reader growing the window and a
+    // poll refreshing it fought over one slot, and `refetch` re-ran whichever queryFn closure the
+    // last render had built rather than the cursor just chosen.
+    queryKey: [...sessionRosterQueryKey, projectRoot, cursor],
     staleTime: Infinity,
     enabled,
-    // A draft Session has no backend record, so it cannot reconcile from a Roster poll.
+    // Growing the window is a new key, so without this the roster would blank to its skeleton and
+    // the reader would lose their scroll position every time they reached the end. The previous
+    // window stays on screen until the larger one lands, and `isPlaceholderData` is what tells the
+    // list a larger window is still in flight.
+    placeholderData: keepPreviousData,
+    // A watch on the transcript trees is what brings a new Session in, so this only catches what no
+    // watch reports. A draft Session has no backend record, so it cannot reconcile from a poll at
+    // all, and re-reading every file for it is wasted work.
     refetchInterval:
-      selectedSessionId === null || isOptimisticSessionId(selectedSessionId)
+      selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
         ? false
-        : SESSION_REFRESH_MS,
+        : WATCHED_FALLBACK_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       const reply = await window.argo.listSessions({ projectRoot, cursor })
       switch (reply.type) {
         case 'session.listed':
           return {
-            sessions: keepRosterOrder(reply.sessions),
+            sessions: reply.sessions,
             filesFound: reply.filesFound,
             filesRead: reply.filesRead,
             filesUnreadable: reply.filesUnreadable,

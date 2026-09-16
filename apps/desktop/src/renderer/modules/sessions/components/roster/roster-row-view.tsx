@@ -1,69 +1,53 @@
+import { memo } from 'react'
+import type { SelectionModifier } from '../../state/roster-selection'
 import type { SessionId } from '../../types'
-import { ArchivedSectionRow, ArchivedToggleRow } from './archived-status-row'
-import type { RosterRow, RosterRowHandlers } from './roster-rows'
+import { ArchivedSectionRow } from './archived-status-row'
+import { type RosterRow, renamedSession } from './roster-rows'
 import { SessionRosterItem } from './session-roster-item'
+import { RosterLoadingMoreRow } from './sessions-sidebar-chrome'
 
-export function RosterRowView({
-  archivedLabel,
-  onArchive,
+// Memoized, because the sidebar re-renders twice a second while nothing happens: the open Session's
+// permission read polls every 500ms (SESSION_REFRESH_MS, #2299) and re-renders an ancestor the roster
+// shares with it. Without this every mounted row re-rendered on each of those ticks: 185291 renders
+// in a 13-second idle recording, when the Feed still polled at the same rate.
+export const RosterRowView = memo(function RosterRowView({
   onFocus,
-  onLinkTicket,
-  onOpenTicket,
-  onRename,
   onSelect,
-  onToggleArchived,
   onToggleSelect,
-  onUnlinkTicket,
   renamedTitles,
   row,
   selectedIds,
   selectedSessionId,
   tabStop,
-}: RosterRowHandlers & {
-  archivedLabel: string
+}: {
+  onFocus: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId) => void
+  onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
   renamedTitles: Record<string, string>
   row: RosterRow
   selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
 }) {
-  if (row.kind === 'archivedToggle') {
-    return (
-      <ArchivedToggleRow
-        archivedLabel={archivedLabel}
-        onToggle={onToggleArchived}
-        open={row.open}
-      />
-    )
-  }
   if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
     return <div aria-hidden="true" />
   }
+  if (row.kind === 'rosterLoadingMore') return <RosterLoadingMoreRow />
   if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
 
   const session = row.session
-  const title = renamedTitles[session.id]
-  const renamed =
-    title === undefined
-      ? session
-      : { ...session, title: { text: title, source: 'custom' as const } }
   const selectable = !row.archived
   return (
     <SessionRosterItem
       archived={row.archived}
       checked={selectable && selectedIds.has(session.id)}
-      onArchive={selectable ? () => onArchive(session.id) : undefined}
       onFocus={() => onFocus(session.id)}
-      onLinkTicket={() => onLinkTicket(renamed)}
-      onOpenTicket={() => onOpenTicket(renamed)}
-      onRename={() => onRename(renamed)}
       onSelect={() => onSelect(session.id)}
       onToggleSelect={(modifier) => onToggleSelect(session.id, modifier)}
-      onUnlinkTicket={() => onUnlinkTicket(renamed)}
       selectable={selectable}
       selected={session.id === selectedSessionId}
-      session={renamed}
+      session={renamedSession(session, renamedTitles)}
       tabIndex={session.id === tabStop ? 0 : -1}
     />
   )
-}
+})

@@ -8,7 +8,11 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
-import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
+import {
+  SESSION_REFRESH_MS,
+  sessionFeedQueryKey,
+  WATCHED_FALLBACK_REFRESH_MS,
+} from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
 
 export async function retrySessionFeed(
@@ -35,7 +39,15 @@ export function sessionFeedQuery(
     // React Query immediately drops the transcript and aborts its in-flight reader work. This
     // avoids an async manual cleanup that could race a rapid A -> B -> A switch.
     gcTime: 0,
-    refetchInterval: SESSION_REFRESH_MS,
+    // A CLI writing this Session's transcript is what adds a row, and the watch on the transcript
+    // trees reports that write, so the reader of this Feed subscribes to the topic rather than
+    // re-reading the document twice a second. That poll cost the roster too: it re-rendered the whole
+    // sidebar on every tick, 185291 renders in a 13-second idle recording.
+    // A read that failed is the one case where waiting out the fallback is felt: the reader is looking
+    // at an error, and `retry: false` means nothing else will ask again. A failed read therefore keeps
+    // the old rate until one succeeds.
+    refetchInterval: (query) =>
+      query.state.error === null ? WATCHED_FALLBACK_REFRESH_MS : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async ({ signal }) => {
       if (sessionId === null) return null

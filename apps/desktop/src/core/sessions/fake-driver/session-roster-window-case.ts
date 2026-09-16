@@ -9,12 +9,15 @@ const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const SCROLL_ATTEMPTS = 40
 const SCROLL_TIMEOUT_MS = 20_000
 
+// The scrolled container is named rather than walked up to: the list's context menu wraps the nav
+// inside it, so the nav's parent is that wrapper and setting its scrollTop scrolls nothing.
+const SCROLLER = '[data-slot="roster-scroll"]'
+
 function scrollRosterToEnd(page: Page) {
-  return page.evaluate(() => {
-    const nav = document.querySelector('nav[aria-label="Sessions"]')
-    const scroller = nav?.parentElement
-    if (scroller !== null && scroller !== undefined) scroller.scrollTop = scroller.scrollHeight
-  })
+  return page.evaluate((selector) => {
+    const scroller = document.querySelector(selector)
+    if (scroller !== null) scroller.scrollTop = scroller.scrollHeight
+  }, SCROLLER)
 }
 
 async function scrollUntilVisible(page: Page, selector: string) {
@@ -26,7 +29,9 @@ async function scrollUntilVisible(page: Page, selector: string) {
     await page.waitForTimeout(50)
     if (Date.now() > deadline) break
   }
-  await target.waitFor({ timeout: 1_000 })
+  // The window stopped growing before it reached the row, so the count it stopped at is the fact.
+  const rows = await page.locator(ROW).count()
+  throw new Error(`The window stopped growing at ${rows} rows, without ${selector}.`)
 }
 
 export async function proveRosterWindow(page: Page) {

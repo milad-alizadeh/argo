@@ -1,10 +1,13 @@
-import { Plus, Search } from 'lucide-react'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../../../../components/ui/input-group'
 import { Skeleton } from '../../../../components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
+import type { RosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'
+import { RosterFilterMenu } from './roster-filter-menu'
+import { ROSTER_ROW_HEIGHT } from './roster-rows'
 
 export function rosterState(
   roster: SessionRoster | null,
@@ -14,6 +17,28 @@ export function rosterState(
   if (rosterError !== null) return sessionFailureState(rosterError.code)
   if (roster === null) return 'loading'
   return count === 0 ? 'empty' : 'ready'
+}
+
+// The one spinner every roster load-more state draws, so the active roster and the Archive read the
+// same at the point where the list is still growing. It takes one row's height, the height of the
+// Session row it stands in for, and centers the spinner in it.
+export function RosterStatusRow({ label }: { label: string }) {
+  return (
+    <div
+      aria-label={label}
+      className="flex items-center justify-center"
+      role="status"
+      style={{ height: ROSTER_ROW_HEIGHT }}
+    >
+      <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
+
+// The bottom of the active roster while the next window arrives.
+export function RosterLoadingMoreRow() {
+  const { t } = useTranslation('sessions')
+  return <RosterStatusRow label={t('loadingMoreSessions')} />
 }
 
 export function RosterLoading() {
@@ -32,11 +57,15 @@ export function RosterLoading() {
 export function SessionsSidebarHeader({
   onNew,
   onSearch,
+  onStatusChange,
   search,
+  status,
 }: {
   onNew: () => void
   onSearch: (search: string) => void
+  onStatusChange: (status: RosterStatus) => void
   search: string
+  status: RosterStatus
 }) {
   const { t } = useTranslation('sessions')
   return (
@@ -53,7 +82,9 @@ export function SessionsSidebarHeader({
           value={search}
         />
       </InputGroup>
+      {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
+        <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
           <Plus />
         </Button>
