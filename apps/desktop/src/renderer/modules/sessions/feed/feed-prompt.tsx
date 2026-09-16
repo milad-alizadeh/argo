@@ -4,10 +4,6 @@ import { PromptText } from '../prompt/prompt-text'
 import type { SessionEvidence } from '../types'
 import { FeedImage } from './content/feed-images'
 
-export function PlainText({ text }: { text: string }) {
-  return <p className="whitespace-pre-wrap break-words">{text}</p>
-}
-
 // Biome refuses a position key, and the same file can be attached twice: count earlier copies.
 function keyedAttachments(sources: readonly string[]) {
   const seen = new Map<string, number>()

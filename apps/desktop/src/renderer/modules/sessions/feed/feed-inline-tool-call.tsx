@@ -15,9 +15,9 @@ import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
 import {
   RunningText,
   StatusIcon,
-  TOOL_PRESENTATION,
   type ToolCall,
   type ToolRow,
+  toolPresentation,
 } from './feed-tools'
 import { withoutRepeatedTitle } from './skill-title'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
@@ -80,7 +80,7 @@ export function FeedInlineToolCallItem({
   call: ToolCall | ToolRow
   toolGroups: ToolGroupState
 }) {
-  const Icon = TOOL_PRESENTATION[call.kind].icon
+  const Icon = toolPresentation(call.kind).icon
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, call.id)
   return (
     <CollapsibleText

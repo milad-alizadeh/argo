@@ -99,6 +99,12 @@ const rowShapeFeed = {
       ],
     },
     { shape: 'prose', id: 'prompt-row', role: 'user', text: 'Please inspect every row shape.' },
+    {
+      shape: 'prose',
+      id: 'assistant-prose-row',
+      role: 'assistant',
+      text: 'Every row shape has a renderer.',
+    },
     { shape: 'thought', id: 'thought-row', text: 'A private thought.' },
     { shape: 'command-output', id: 'command-output-row', text: 'Command completed.' },
     { shape: 'event', id: 'event-row', event: 'status', text: 'Session is running.' },
@@ -156,11 +162,32 @@ const rowShapeFeed = {
   ],
 } satisfies SessionFeed
 
+const ROW_SHAPE_ASSERTIONS = [
+  ['tool-row', 'Ran a command'],
+  ['tool-group-row', 'Ran a grouped command'],
+  ['prompt-row', 'Please inspect every row shape.'],
+  ['assistant-prose-row', 'Every row shape has a renderer.'],
+  ['thought-row', 'A private thought.'],
+  ['command-output-row', 'Command completed.'],
+  ['event-row', 'Status updated'],
+  ['delegation-row', 'Review the Feed.'],
+  ['delegation-group-row', 'Run tests.'],
+  ['marker-row', 'Interrupted'],
+  ['source-row', 'A source row.'],
+  ['unreadable-row', 'Part of this transcript is damaged'],
+  ['ask-row', 'Should the Feed render every row shape?'],
+] as const
+
 // This story renders every row shape through the public Feed surface rather than a renderer directly.
 export const EveryRowShape: Story = {
   args: { feed: rowShapeFeed, selectedSessionId: 'row-shapes' },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(rowShapeFeed.rows.length))
+    await waitFor(() => {
+      expect(drawnRows(canvasElement)).toHaveLength(rowShapeFeed.rows.length)
+      for (const [id, text] of ROW_SHAPE_ASSERTIONS) {
+        expect(canvasElement.querySelector(`[data-feed-row="${id}"]`)).toHaveTextContent(text)
+      }
+    })
   },
 }
 

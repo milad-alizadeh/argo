@@ -20,34 +20,27 @@ function toolGroupId(calls: ToolRow[]) {
   return `tool-group:${groupFingerprint(callIds, 0x811c9dc5)}${groupFingerprint(callIds, 0x9e3779b9)}`
 }
 
-// Everything a tool kind needs for grouping: where its content routes once opened, the words its
-// count reads with, and where it falls in a mixed summary (a command count leads, since it is
-// the kind a group exists to read inline; the rest follow in the order below). One table, so
-// adding a kind is one new entry rather than four tables kept in lockstep.
-const KIND_PRESENTATION: Record<
+// One tool-kind record owns its icon, route, group wording, and group order.
+export const TOOL_KIND_PRESENTATION: Record<
   ToolRow['kind'],
-  { route: 'inline' | 'evidence'; verb: string; noun: string }
+  {
+    icon: 'terminal' | 'search' | 'file' | 'wrench' | 'wand'
+    route: 'inline' | 'evidence'
+    verb: string
+    noun: string
+  }
 > = {
-  command: { route: 'inline', verb: 'ran', noun: 'command' },
-  edited: { route: 'evidence', verb: 'edited', noun: 'file' },
-  created: { route: 'evidence', verb: 'created', noun: 'file' },
-  read: { route: 'evidence', verb: 'read', noun: 'file' },
-  tool: { route: 'inline', verb: 'called', noun: 'tool' },
-  skill: { route: 'inline', verb: 'invoked', noun: 'skill' },
+  command: { icon: 'terminal', route: 'inline', verb: 'ran', noun: 'command' },
+  edited: { icon: 'file', route: 'evidence', verb: 'edited', noun: 'file' },
+  created: { icon: 'file', route: 'evidence', verb: 'created', noun: 'file' },
+  read: { icon: 'search', route: 'evidence', verb: 'read', noun: 'file' },
+  tool: { icon: 'wrench', route: 'inline', verb: 'called', noun: 'tool' },
+  skill: { icon: 'wand', route: 'inline', verb: 'invoked', noun: 'skill' },
 }
-const KIND_ORDER = Object.keys(KIND_PRESENTATION) as ToolRow['kind'][]
-
-// Where a group routes each call's content once opened: inline, as a labelled code block (a
-// command's own text), or to the evidence panel, unchanged from today. The one place a future
-// tool kind's routing is decided, so adding a kind never touches the grouping logic below.
-export const TOOL_CONTENT_ROUTE: Record<ToolRow['kind'], 'inline' | 'evidence'> =
-  Object.fromEntries(KIND_ORDER.map((kind) => [kind, KIND_PRESENTATION[kind].route])) as Record<
-    ToolRow['kind'],
-    'inline' | 'evidence'
-  >
+const KIND_ORDER = Object.keys(TOOL_KIND_PRESENTATION) as ToolRow['kind'][]
 
 function countPhrase(kind: ToolRow['kind'], count: number, leading: boolean) {
-  const { verb, noun } = KIND_PRESENTATION[kind]
+  const { verb, noun } = TOOL_KIND_PRESENTATION[kind]
   const capitalized = leading ? `${verb[0]?.toUpperCase()}${verb.slice(1)}` : verb
   return count === 1 ? `${capitalized} a ${noun}` : `${capitalized} ${count} ${noun}s`
 }

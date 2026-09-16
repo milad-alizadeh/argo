@@ -6,8 +6,8 @@ import { FeedMarkdown } from './content/feed-markdown'
 import { FeedDelegation } from './feed-delegation'
 import { FeedEvent } from './feed-event'
 import { FeedMarker } from './feed-marker'
+import { FeedPrompt } from './feed-prompt'
 import { FeedQuestion } from './feed-question'
-import { FeedPrompt, PlainText } from './feed-row-fallback'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 import type { ToolGroupState } from './tool-group-state'
 
@@ -46,6 +46,10 @@ type FeedRowRenderers = {
       row: Extract<SessionFeedRow, { shape: Shape }>
     },
   ) => ReactNode
+}
+
+function PlainText({ text }: { text: string }) {
+  return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
 export const FEED_ROW_RENDERERS = {
