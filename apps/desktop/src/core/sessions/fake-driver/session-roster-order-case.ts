@@ -119,10 +119,10 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
     archivedBefore,
   )
   // Archiving dropped askPending from the roster's remembered order (see `keepRosterOrder` in
-  // use-sessions.ts), so restoring it reintroduces it as an unrecognised row: it lands at the end,
-  // the same place a newly discovered Session lands above.
+  // session-roster-query.ts), so restoring it reintroduces it as an unrecognised row: it leads
+  // the roster, the same place a newly discovered Session lands above.
   await mutations.archive('askPending', false)
-  const restored = [...active, 'askPending']
+  const restored = ['askPending', ...active]
   await waitForActiveSessions(page, restored)
   assert.deepEqual(await readRosterIds(page), restored)
 }
@@ -131,12 +131,12 @@ export async function proveStableRosterPolling(page, mutations) {
   await proveVisibleNames(page)
   const before = await proveUpdatedRowsStayPut(page, mutations)
   await mutations.addReplacementChild()
-  await waitForActiveSessions(page, [...before, 'replacementChild'])
+  await waitForActiveSessions(page, ['replacementChild', ...before])
   await page
     .locator('nav[aria-label="Sessions"] button[data-session-id="replacementChild"]')
     .focus()
   await mutations.addReplacementParent()
-  const withParent = [...before, 'replacementParent']
+  const withParent = ['replacementParent', ...before]
   await waitForActiveSessions(page, withParent)
   assert.equal(
     await page.evaluate(() => document.activeElement?.getAttribute('data-session-id')),
@@ -144,7 +144,7 @@ export async function proveStableRosterPolling(page, mutations) {
   )
   await mutations.addRecent()
   const newlyDiscovered = ['newSessionTwo', 'newSession']
-  const withRecent = [...withParent, ...newlyDiscovered]
+  const withRecent = [...newlyDiscovered, ...withParent]
   await waitForActiveSessions(page, withRecent)
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="newSessionTwo"]').focus()
   await mutations.removeRecent()

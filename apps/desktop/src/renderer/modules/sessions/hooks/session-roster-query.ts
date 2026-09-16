@@ -21,7 +21,10 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
     const session = unmatched.splice(index, 1)[0]
     return session === undefined ? [] : [session]
   })
-  ordered.push(...unmatched)
+  // A Session neither id nor retired-id matches is one the remembered order has never placed:
+  // freshly discovered, or a restored archive row starting over. It leads the roster rather than
+  // trailing it, so a newly observed Session reads at the top and the rest keep their fixed order.
+  ordered.unshift(...unmatched)
   rosterOrder = ordered.map((session) => session.id)
   return ordered
 }
