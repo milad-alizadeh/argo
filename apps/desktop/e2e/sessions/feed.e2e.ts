@@ -1,17 +1,11 @@
-// The #1831 slice proves Session contracts over the real preload, not a dev server (#1910).
-//
-// Every case below shares one packaged launch and one fixture root (`session-proof-run.ts`), so
-// this file is one ordered proof rather than independent tests: a case reads state an earlier one
-// left behind, and a failure stops the ones after it (`test.describe.serial`).
-import { expect, test } from '@playwright/test'
-import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
-import { completeWatch, writeWatchOutput } from '../../mocks/sessions/shell.fixture'
+// The Session cases that read seeded transcripts, in order on one packaged launch (#1831, #1910).
+import { expect } from '@playwright/test'
+import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBackgroundShell } from './cases/background-shell.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
-import { defineSessionJourneyCases } from './cases/journeys.case'
 import { proveLiveFeed } from './cases/live-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { proveSessionPlan } from './cases/plan.case'
@@ -38,15 +32,10 @@ import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import type { PageBox, SessionProofRun } from './session-proof-run'
-import { createPageBox, describeSessionProof } from './session-proof-run'
+import { createPageBox, describeSessionProof, test } from './session-proof-run'
 
-const backend = createMockSessionCliBackend()
-
-describeSessionProof('packaged-session', backend, (run) => {
-  // `fixture` stays on `run` rather than destructured here: this callback runs once, at
-  // describe-registration time, before `beforeAll` assigns the harness the getter reads
-  // (`session-proof-run.ts`). Every `run.fixture` access below happens inside a test body instead,
-  // once the harness is real.
+describeSessionProof('packaged-session', (run) => {
+  // `run.fixture` stays a getter: the harness exists only once a case runs.
   const { hold, isPackaged, launch, restart } = run
   const box = createPageBox(hold)
 
@@ -67,8 +56,6 @@ describeSessionProof('packaged-session', backend, (run) => {
 
   registerRosterAndShellCases(run, box)
   registerFeedAndPlanCases(run, box)
-
-  defineSessionJourneyCases({ backend, fixture: () => run.fixture, restart, box })
 
   // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's own
   // exact Roster counts or ordering has to account for them.

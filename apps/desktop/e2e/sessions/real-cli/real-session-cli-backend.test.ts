@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionFixture } from '../../mocks/sessions/session-cli-backend'
+import type { SessionFixture } from '../session-cli-backend'
 import {
   createRealSessionCliBackend,
   prepareRealSessionHome,

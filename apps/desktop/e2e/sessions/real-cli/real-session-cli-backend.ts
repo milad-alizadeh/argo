@@ -2,13 +2,9 @@ import { execFileSync } from 'node:child_process'
 import { copyFile, mkdir, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type {
-  SessionCliBackend,
-  SessionFixture,
-  SessionReply,
-} from '../../mocks/sessions/session-cli-backend'
-import { findExecutableOnLoginShellPath } from '../../src/agents/executable-path'
-import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
+import { findExecutableOnLoginShellPath } from '../../../src/agents/executable-path'
+import type { SessionCli } from '../../../src/renderer/modules/sessions/harness/harnesses'
+import type { SessionCliBackend, SessionFixture, SessionReply } from '../session-cli-backend'
 import { realClaudeCli } from './real-claude-cli'
 import { realCodexCli } from './real-codex-cli'
 

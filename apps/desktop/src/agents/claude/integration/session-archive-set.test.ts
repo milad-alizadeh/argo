@@ -3,9 +3,9 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { writeArchiveStore } from '../../../../mocks/sessions/mock-transcript-files'
 import { createSessionReader } from '../../../core/sessions/reader.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
-import { writeArchiveStore } from './session-fixture-files'
 import { fixtureRoot, unscopedListing as listing, listSessions } from './session-fixtures'
 
 // Bulk archive (#2194) writes into the same store the read joins on, changing only `isArchived`

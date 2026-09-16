@@ -1,36 +1,46 @@
-// The scaffolding every packaged Session spec file shares (#2308, #2325): a fixture root that is
-// removed however the run ends, a harness on one CLI backend, and a trace recording segmented at
-// every test boundary. A spec file is then its case list and nothing else.
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
-import { expect, test } from '@playwright/test'
+// The Session flow's describe: one harness on the backend the project chose, shared by every case in a file.
+import { test as base, expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionCliBackend, SessionFixture } from '../../mocks/sessions/session-cli-backend'
+import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
+import { describePackagedProof } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { selectProofProject } from './fixtures/feed.fixture'
+import { JourneyPerformanceProfile, journeyProfileEnabled } from './journey-performance-profile'
 import { createPackagedSessionHarness } from './packaged-session-harness'
+import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
+import type { SessionBackendOptions } from './session-backend-option'
+import type { SessionCliBackend, SessionFixture } from './session-cli-backend'
+
+const BACKENDS = {
+  mock: createMockSessionCliBackend,
+  real: createRealSessionCliBackend,
+} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionCliBackend>
+
+// `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
+export const test = base.extend<object, SessionBackendOptions & { backend: SessionCliBackend }>({
+  sessionBackend: ['mock', { option: true, scope: 'worker' }],
+  backend: [
+    async ({ sessionBackend }, use) => use(BACKENDS[sessionBackend]()),
+    { scope: 'worker' },
+  ],
+})
 
 type Harness = Awaited<ReturnType<typeof createPackagedSessionHarness>>
 
 export type SessionProofRun = {
   readonly root: string
   readonly fixture: SessionFixture
+  readonly backend: SessionCliBackend
   launch: Harness['launch']
   restart: Harness['restart']
   isPackaged: Harness['isPackaged']
-  // Records the page the current case is driving, so a failure's trace and console dump report
-  // that window rather than the one the run opened with.
+  // Names the page a failure's feed-state snapshot reads.
   hold: (page: Page) => Page
 }
 
-// The page the journeys are currently driving, read and written by name so a case that restarts
-// the app (`session-claude-resume`, `session-codex-resume`, the slow-reply restart below) hands
-// the next case the window it actually has to keep.
+// The page the cases drive, replaced whenever a case restarts the app.
 export type PageBox = { get: () => Page; set: (page: Page) => Page }
 
-// Both spec files build one of these right after `describeSessionProof` hands them a run, so the
-// box itself stays out of each file's own duplicated setup (#2325).
 export function createPageBox(hold: SessionProofRun['hold']): PageBox {
   let page: Page
   return {
@@ -51,76 +61,74 @@ export function defineLaunchWithProject(run: SessionProofRun, box: PageBox) {
   })
 }
 
-// Wraps a packaged Session spec file in one serial describe block: one fixture root and one
-// harness, on one CLI backend, shared across every case the way a packaged launch's cost demands
-// (`packaged-session-harness.ts:34-42`). Playwright still gives each case its own test: a failure
-// reports one name, and every later test in the file is skipped rather than run against state a
-// prior failure left inconsistent.
-export function describeSessionProof(
-  name: string,
-  backend: SessionCliBackend,
-  body: (run: SessionProofRun) => void,
-) {
-  test.describe
-    .serial(name, () => {
-      let root: string
-      let harness: Harness
-      let page: Page | undefined
+// Members read `harness` when a case runs, because `body` registers cases before `setup` assigns it.
+export function describeSessionProof(name: string, body: (run: SessionProofRun) => void) {
+  describePackagedProof(test, name, (proof) => {
+    let harness: Harness
+    let backend: SessionCliBackend
+    let page: Page | undefined
+    const profile = journeyProfileEnabled() ? new JourneyPerformanceProfile() : undefined
 
-      test.beforeAll(async () => {
-        root = await mkdtemp(path.join(os.tmpdir(), `argo-${name}-`))
-        harness = await createPackagedSessionHarness(root, backend)
-      })
-
-      test.afterAll(async () => {
+    test.beforeAll(async ({ backend: chosen }) => {
+      backend = chosen
+      // Playwright's own screenshot trace and the CDP CPU trace both attach to the page, so a
+      // profiled run skips the former and keeps only the timings and samples it asked for.
+      harness = await createPackagedSessionHarness(
+        proof.root,
+        backend,
+        profile ? async () => {} : proof.trace,
+      )
+    })
+    proof.teardown(async () => {
+      try {
+        await profile?.write()
+      } finally {
         await harness?.close()
-        await rm(root, { recursive: true, force: true })
+      }
+    })
+    test.afterEach(async ({}, testInfo) => {
+      profile?.recordCase(testInfo)
+    })
+    proof.onFailure(async (testInfo) => {
+      const snapshot = await feedStateSnapshot(page).catch((error: unknown) => ({
+        snapshotFailed: String(error),
+      }))
+      await testInfo.attach('feed-state', {
+        body: JSON.stringify(snapshot),
+        contentType: 'application/json',
       })
-
-      test.afterEach(async ({}, testInfo) => {
-        const context = harness.context()
-        if (!context) return
-        const failed = testInfo.status !== testInfo.expectedStatus
-        if (!failed) {
-          await context.tracing.stop()
-        } else {
-          const tracePath = testInfo.outputPath('trace.zip')
-          await context.tracing.stop({ path: tracePath })
-          await testInfo.attach('trace', { path: tracePath, contentType: 'application/zip' })
-          await testInfo.attach('feed-state', {
-            body: JSON.stringify(
-              await feedStateSnapshot(page).catch((error: unknown) => ({
-                snapshotFailed: String(error),
-              })),
-            ),
-            contentType: 'application/json',
-          })
-          await testInfo.attach('renderer-console', {
-            body: harness.recentConsole().join('\n'),
-            contentType: 'text/plain',
-          })
-        }
-        // A restart already opened a fresh recording (`packaged-session-harness.ts`); a context
-        // that ran unrestarted needs one for the next test.
-        await harness.context()?.tracing.start({ screenshots: true, snapshots: true })
-      })
-
-      // `harness` is only assigned once `beforeAll` runs; every member below reads it lazily, at
-      // case-execution time, rather than capturing it at this describe-registration time.
-      body({
-        get root() {
-          return root
-        },
-        get fixture() {
-          return harness.fixture
-        },
-        launch: (...arguments_) => harness.launch(...arguments_),
-        restart: (...arguments_) => harness.restart(...arguments_),
-        isPackaged: () => harness.isPackaged(),
-        hold: (next) => {
-          page = next
-          return next
-        },
+      await testInfo.attach('renderer-console', {
+        body: harness.recentConsole().join('\n'),
+        contentType: 'text/plain',
       })
     })
+
+    body({
+      get root() {
+        return proof.root
+      },
+      get fixture() {
+        return harness.fixture
+      },
+      get backend() {
+        return backend
+      },
+      launch: async (...arguments_) => {
+        const next = await harness.launch(...arguments_)
+        await profile?.start(next)
+        return next
+      },
+      restart: async (...arguments_) => {
+        await profile?.stop()
+        const next = await harness.restart(...arguments_)
+        await profile?.start(next)
+        return next
+      },
+      isPackaged: () => harness.isPackaged(),
+      hold: (next) => {
+        page = next
+        return next
+      },
+    })
+  })
 }

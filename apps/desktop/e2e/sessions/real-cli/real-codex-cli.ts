@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { parseCodexTranscriptLine } from '../../src/agents/codex/sessions/records'
+import { parseCodexTranscriptLine } from '../../../src/agents/codex/sessions/records'
 import { assistantAfterPrompt, createTranscriptMatcher } from './real-session-transcript'
 
 export const realCodexCli = {
