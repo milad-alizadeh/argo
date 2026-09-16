@@ -51,7 +51,14 @@ export async function proveConnect(run: Run, ran: Ran) {
     }
     assert.equal((await storeText(run.fixture, 'accounts.json')).includes('token-'), false)
   })
-  await press(accountsDialog(run.page), 'Close')
+  await ran(['open-repository-form'], async () => {
+    await press(accountRow(run.page, 'octocat'), 'Connect a repository')
+    await accountsDialog(run.page).waitFor({ state: 'detached' })
+    await connectForm(run.page)
+      .getByRole('combobox', { name: 'Account' })
+      .getByText('GitHub · octocat')
+      .waitFor()
+  })
 }
 
 export async function proveConnectRepository(run: Run, ran: Ran) {
