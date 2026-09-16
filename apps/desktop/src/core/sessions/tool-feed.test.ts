@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionFeedRow } from './feed-rows'
-import { type ToolResult, toolRows } from './tool-feed'
+import { displayedToolLabel, type ToolResult, toolRows } from './tool-feed'
 import type { ToolCall } from './transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -80,8 +80,23 @@ test('a Codex exec_command call reads as a command, the same as Bash', () => {
     new Map(),
   )
   assert.equal(row.kind, 'command')
-  assert.equal(row.label, 'Ran command')
+  assert.equal(row.label, 'Ran bun test')
   assert.equal(row.text, 'bun test\nextra line')
+})
+
+test('a Codex command prefers its supplied label to the raw command', () => {
+  const row = onlyToolRow(
+    [
+      call({
+        id: 'call-1',
+        name: 'exec_command',
+        input: { cmd: 'bun run typecheck', label: 'Checking types' },
+      }),
+    ],
+    new Map(),
+  )
+  assert.equal(row.label, 'Checking types')
+  assert.equal(displayedToolLabel(row, true, 'Running'), 'Running Checking types')
 })
 
 test('a Codex custom exec call keeps its literal command in its details', () => {
@@ -90,7 +105,7 @@ test('a Codex custom exec call keeps its literal command in its details', () => 
     new Map(),
   )
   assert.equal(row.kind, 'command')
-  assert.equal(row.label, 'Ran command')
+  assert.equal(row.label, 'Ran echo hi')
   assert.equal(row.text, 'echo hi')
 })
 

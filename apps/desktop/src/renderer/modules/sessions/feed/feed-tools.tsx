@@ -1,18 +1,13 @@
-import {
-  FilePenLine,
-  LoaderCircle,
-  Search,
-  SquareTerminal,
-  WandSparkles,
-  Wrench,
-} from 'lucide-react'
+import { FilePenLine, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TaskItem } from '@/components/ai-elements/task'
+import { displayedToolLabel } from '@/core/sessions/tool-feed'
 import { TOOL_KIND_PRESENTATION } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/collapsible-text'
 import type { SessionFeedRow } from '../types'
 import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
+import { RunningText, StatusIcon } from './feed-tool-status'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -32,38 +27,6 @@ const TOOL_ICONS = {
 export function toolPresentation(kind: ToolRow['kind']) {
   const presentation = TOOL_KIND_PRESENTATION[kind]
   return { ...presentation, icon: TOOL_ICONS[presentation.icon] }
-}
-
-export function StatusIcon({ status }: { status: ToolRow['status'] }) {
-  switch (status) {
-    case 'failed':
-    case 'succeeded':
-      return null
-    case 'running':
-      return <StatusMark icon={LoaderCircle} label="In progress" className="animate-spin" />
-  }
-}
-
-function StatusMark({
-  icon: Icon,
-  label,
-  className,
-}: {
-  icon: ComponentType<{ className?: string }>
-  label: string
-  className: string
-}) {
-  return (
-    <>
-      <Icon aria-hidden="true" className={`size-4 shrink-0 ${className}`} />
-      <span className="sr-only">{label}</span>
-    </>
-  )
-}
-
-// Text for work still running carries the Feed's work shimmer.
-export function RunningText({ running, children }: { running: boolean; children: string }) {
-  return running ? <span className="feed-work-shimmer">{children}</span> : children
 }
 
 // A failed call reads red; otherwise the row is muted until hovered or open in the inspector.
@@ -106,7 +69,9 @@ export function FeedToolLine({
     >
       <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
       <span className="min-w-0 truncate text-left [direction:rtl]">
-        <RunningText running={call.status === 'running'}>{call.label}</RunningText>
+        <RunningText running={call.status === 'running'}>
+          {displayedToolLabel(call, call.status === 'running', t('workState.running'))}
+        </RunningText>
       </span>
       {call.lineCounts === null ? null : <LineCounts {...call.lineCounts} />}
       {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
@@ -150,6 +115,7 @@ export function FeedToolGroup({
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
 }) {
+  const { t } = useTranslation('sessions')
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its
@@ -161,6 +127,10 @@ export function FeedToolGroup({
     ? group.calls.at(-1)
     : group.calls.findLast((call) => call.status === 'running')
   const titleCall = latestCall ?? (namesItsOwnGroup ? soleCall : undefined)
+  const title =
+    titleCall === undefined
+      ? group.label
+      : displayedToolLabel(titleCall, latestCall !== undefined, t('workState.running'))
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -178,11 +148,7 @@ export function FeedToolGroup({
       icon={titleCall === undefined ? SquareTerminal : toolPresentation(titleCall.kind).icon}
       onOpenChange={onOpenChange}
       open={open}
-      title={
-        <RunningText running={latestCall !== undefined}>
-          {titleCall?.label ?? group.label}
-        </RunningText>
-      }
+      title={<RunningText running={latestCall !== undefined}>{title}</RunningText>}
     />
   )
 }
