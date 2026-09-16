@@ -10,6 +10,7 @@
 import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { sessionArchivePath } from '../archive-store'
 
 // Bun folds this module into a generated driver. The package script always starts in
 // `apps/desktop`, which remains stable after that relocation.
@@ -81,7 +82,7 @@ export async function writeFixtureTree(root, names, options = {}) {
 // Argo's own archive document (#2315): one portable file under the fixture's `userData`, keyed
 // by the CLI Session id, the same shape `core/sessions/archive-store.ts` reads and writes.
 export async function writeArchiveStore(userData, names) {
-  const file = path.join(userData, 'portable-v1', 'session-archive.json')
+  const file = sessionArchivePath(userData)
   await mkdir(path.dirname(file), { recursive: true })
   const archivedAt = '2026-09-01T00:00:00.000Z'
   const document = Object.fromEntries(names.map((name) => [name, { archivedAt }]))

@@ -3,7 +3,10 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionArchiveStore } from '../../../core/sessions/archive-store.ts'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '../../../core/sessions/archive-store.ts'
 import { createSessionReader } from '../../../core/sessions/reader.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixturePath, replaceInFile } from './session-fixture-files'
@@ -67,7 +70,7 @@ test('excludes an archived Session from the Roster, under any id it answered to'
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
   context.after(() => rm(store, { recursive: true, force: true }))
-  const archive = createSessionArchiveStore(path.join(store, 'session-archive.json'))
+  const archive = createSessionArchiveStore(sessionArchivePath(store))
   await archive.setArchived(['resumeChild'], true)
   const reader = createSessionReader(
     [claudeSessionSource({ transcripts: root })],

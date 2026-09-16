@@ -68,17 +68,21 @@ export const archiveListRead = fromContext(
   },
 )
 
-// Every id each named Session has answered to. A Session outside the loaded window resolves to
-// itself alone, which is still the right key to remove: it is the one the caller archived under.
+// Every id each named Session has answered to, found under any of them: a caller holding an id
+// the Session has since retired restores it just as one holding the current id does. A Session
+// outside the loaded window resolves to itself alone, which is still the right key to remove: it
+// is the one the caller archived under.
 async function everyIdAnsweredTo(
   sources: SessionSource[],
   sessionIds: readonly string[],
 ): Promise<string[]> {
-  const found = (rows: { id: string }[]) =>
-    sessionIds.every((id) => rows.some((row) => row.id === id))
+  const answersTo = (row: { id: string; retiredIds: readonly string[] }, id: string) =>
+    row.id === id || row.retiredIds.includes(id)
+  const found = (rows: { id: string; retiredIds: readonly string[] }[]) =>
+    sessionIds.every((id) => rows.some((row) => answersTo(row, id)))
   const { rows } = await growWindow(sources, {}, found)
   return sessionIds.flatMap((id) => {
-    const row = rows.find((candidate) => candidate.id === id)
+    const row = rows.find((candidate) => answersTo(candidate, id))
     return row === undefined ? [id] : [row.id, ...row.retiredIds]
   })
 }

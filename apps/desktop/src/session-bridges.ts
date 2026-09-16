@@ -20,14 +20,13 @@ import { createSystemCodexSessionDriver } from './agents/codex/drive/system-code
 import { codexSessionSource } from './agents/codex/sessions/read-sessions'
 import { codexStatePath, codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { codexThreadNames } from './agents/codex/sessions/state-store'
-import { createSessionArchiveStore } from './core/sessions/archive-store'
+import { createSessionArchiveStore, sessionArchivePath } from './core/sessions/archive-store'
 import { attachSessionBridge } from './core/sessions/bridge'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
-import { portablePath } from './core/storage/portable-file'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching, watchedTrees } from './core/watch/bridge'
 
@@ -76,7 +75,7 @@ export function attachSessions(
     path.join(userData, 'portable-v1', 'session-tickets.json'),
   )
   // Argo's own archive flag, for every harness at once (#2315).
-  const archive = createSessionArchiveStore(portablePath(userData, 'session-archive.json'))
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   attachSessionBridge(window, {
     reader: createSessionReader(
       [

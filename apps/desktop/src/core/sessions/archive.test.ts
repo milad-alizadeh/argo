@@ -1,11 +1,10 @@
 // Archiving through the shared reader (#2315): one Argo-owned flag, the same path for every CLI.
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import { test } from 'node:test'
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
-import { createSessionArchiveStore } from './archive-store'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 import { sessionArchiveListReplySchema, sessionArchiveSetReplySchema } from './contract'
 import { createSessionReader } from './reader'
 import {
@@ -33,9 +32,7 @@ async function twoHarnessReader(context: Context) {
     text: 'From Codex.',
     updatedAt: '2026-09-13T11:00:00.000Z',
   })
-  const archive = createSessionArchiveStore(
-    path.join(userData, 'portable-v1', 'session-archive.json'),
-  )
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   const reader = createSessionReader(
     [claudeSessionSource({ transcripts: claudeRoot }), codexSessionSource(codexRoot)],
     createInMemorySessionTicketLinkStore(),
@@ -139,7 +136,7 @@ test('archives on a machine with no other agent app installed', async (context) 
   const reader = createSessionReader(
     [claudeSessionSource({ transcripts: claudeRoot })],
     createInMemorySessionTicketLinkStore(),
-    createSessionArchiveStore(path.join(userData, 'portable-v1', 'session-archive.json')),
+    createSessionArchiveStore(sessionArchivePath(userData)),
   )
 
   await setArchived(reader, ['claudeOne'], { archived: true })

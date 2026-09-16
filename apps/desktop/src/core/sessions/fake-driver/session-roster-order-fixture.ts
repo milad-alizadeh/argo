@@ -1,5 +1,6 @@
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { sessionArchivePath } from '../archive-store'
 import { fixturePath } from './session-fixture-files'
 
 function transcriptRecord({ id, prompt, timestamp, uuid }) {
@@ -69,7 +70,7 @@ async function addRecentSession(transcripts) {
 // The running app reads Argo's own archive document on every Roster poll, so a mutation here is
 // what a second Argo window archiving the Session would leave behind (#2315).
 async function setArchived(userData, sessionId, archived) {
-  const file = path.join(userData, 'portable-v1', 'session-archive.json')
+  const file = sessionArchivePath(userData)
   await mkdir(path.dirname(file), { recursive: true })
   const held = JSON.parse(await readFile(file, 'utf8').catch(() => '{}'))
   if (archived) held[sessionId] = { archivedAt: '2026-09-02T00:00:00.000Z' }

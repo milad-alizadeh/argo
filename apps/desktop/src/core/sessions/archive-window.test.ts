@@ -12,7 +12,7 @@ import {
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
 import { ARCHIVE_PAGE_LIMIT } from './archive-reads'
-import { createSessionArchiveStore } from './archive-store'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 import { sessionArchiveListReplySchema } from './contract'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 import { createSessionReader } from './reader'
@@ -26,7 +26,7 @@ async function archiveOf(
 ) {
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-window-'))
   context.after(() => rm(store, { recursive: true, force: true }))
-  const archive = createSessionArchiveStore(path.join(store, 'session-archive.json'))
+  const archive = createSessionArchiveStore(sessionArchivePath(store))
   await archive.setArchived(archivedIds, true)
   return archive
 }

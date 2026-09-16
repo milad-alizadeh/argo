@@ -1,12 +1,19 @@
-// Growing every adapter's bounded discovery window until the archive readings have what they
-// need (#2315). Both archive calls face the same problem: the row they want — an archived
-// Session, or the Session a caller named by id — can sit outside the page the Roster loads, and
-// only the chain-stitched parse says which id a row has retired. So each reading grows the same
-// window `discoverSessions` pages by, one step at a time, and stops as soon as it is satisfied
-// rather than reading the whole tree.
+// Growing every adapter's bounded discovery window until an archive reading has what it needs
+// (#2315). The row an archive call wants — an archived Session, or the Session a caller named by
+// id — can sit outside the page the Roster loads, and only the chain-stitched parse says which
+// ids a row has retired. So a reading grows the same window `discoverSessions` pages by, one step
+// at a time, and stops as soon as its own predicate is satisfied. A predicate no row can satisfy
+// grows to the whole tree, which is what restoring an id that is no longer on disk costs.
+import { sessionError } from './contract'
+import { combineDiscoveries, type Discovered } from './merge-discovery'
 import type { SessionRosterRow } from './models'
-import type { RosterCursorMap } from './roster-cursor'
+import { readFailure } from './read-declaration'
+import { decodeRosterCursor, type RosterCursorMap } from './roster-cursor'
 import type { SessionSource } from './session-source'
+
+// The merged reply below needs a request id for its error case, which no caller ever reads: an
+// archive reading answers under its own request id, in its own envelope.
+const WINDOW_READ = 'archive-window'
 
 export type SessionWindow = {
   rows: SessionRosterRow[]
@@ -26,25 +33,27 @@ function grownWindows(windows: RosterCursorMap, next: RosterCursorMap): RosterCu
 }
 
 async function readWindow(sources: readonly SessionSource[], windows: RosterCursorMap) {
-  const discoveries = await Promise.all(
-    sources.map(async (source) => ({
-      cli: source.cli,
-      read: await source
+  const discovered: Discovered[] = await Promise.all(
+    sources.map((source) =>
+      source
         .discoverSessions({ cursor: windows[source.cli] ?? null, projectRoot: null })
-        .catch(() => null),
-    })),
+        .catch((error: unknown) => ({ error: sessionError(readFailure(error), WINDOW_READ) })),
+    ),
   )
-  const next: RosterCursorMap = Object.fromEntries(
-    discoveries.map(({ cli, read }) => [cli, read?.nextCursor ?? null]),
-  )
+  // The Roster's own merge, so the archive page holds the rows in the order the active list
+  // holds them and reads one cursor per adapter the same way (#2025, #2239).
+  const merged = combineDiscoveries(discovered, Object.values(sources).map(cliOf), WINDOW_READ)
+  const listed = merged.type === 'session.listed' ? merged : null
   const window: SessionWindow = {
-    rows: discoveries
-      .flatMap(({ read }) => read?.rows ?? [])
-      .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')),
+    rows: listed?.sessions ?? [],
     windows,
-    exhausted: Object.values(next).every((cursor) => cursor === null),
+    exhausted: listed === null || listed.nextCursor === null,
   }
-  return { window, next: grownWindows(windows, next) }
+  return { window, next: grownWindows(windows, decodeRosterCursor(listed?.nextCursor ?? null)) }
+}
+
+function cliOf(source: SessionSource) {
+  return source.cli
 }
 
 // Reads the window `windows` names, then grows it a page at a time until `satisfied` says the

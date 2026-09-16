@@ -1,12 +1,22 @@
 // Which Sessions the reader has archived (#2315). Argo owns this flag: one document under
 // `<userData>/portable-v1`, keyed by the CLI Session id, so archiving works for every harness,
 // on a machine with no other agent app installed, and for a Session Argo has never discovered.
-// Argo used to read and write the Claude desktop app's own `isArchived` instead, which left
-// Codex Sessions unarchivable and made the flag another app's to change or drop. A flag that app
-// already holds is not imported: this store starts empty, so a Session archived there before
-// #2315 comes back in the active Roster until the reader archives it here.
+// A flag the Claude desktop app already holds is not imported: this store starts empty, so a
+// Session archived there before #2315 comes back in the active Roster until the reader archives
+// it here.
 import { z } from 'zod'
-import { createWriteQueue, readDocument, writeDocument } from '../storage/portable-file'
+import {
+  createWriteQueue,
+  portablePath,
+  readDocument,
+  writeDocument,
+} from '../storage/portable-file'
+
+// The one place the document is named, so the app, the fixtures and the tests all read the file
+// the app writes.
+export function sessionArchivePath(userData: string): string {
+  return portablePath(userData, 'session-archive.json')
+}
 
 // The entry's presence is the flag, and restoring removes it rather than writing a false one.
 // `archivedAt` is the document's one fact about an entry: when the reader archived it.
@@ -28,17 +38,6 @@ export function isArchivedSession(
   archived: ReadonlySet<string>,
 ): boolean {
   return archived.has(row.id) || row.retiredIds.some((id) => archived.has(id))
-}
-
-// The active Roster never carries an archived row (#1593): expanding Archive asks the archive
-// list for one instead, on demand. The join is Argo's own store rather than any one adapter's, so
-// a Session from every harness drops out of the active list the same way.
-export async function withoutArchived<Row extends { id: string; retiredIds: string[] }>(
-  rows: Row[],
-  archive: SessionArchiveStore,
-): Promise<Row[]> {
-  const archivedIds = await archive.archivedIds()
-  return rows.filter((row) => !isArchivedSession(row, archivedIds))
 }
 
 async function readArchive(path: string): Promise<Record<string, { archivedAt: string }>> {
@@ -66,6 +65,8 @@ export function createInMemorySessionArchiveStore(): SessionArchiveStore {
 export function createSessionArchiveStore(path: string): SessionArchiveStore {
   const enqueue = createWriteQueue()
   return {
+    // Unqueued, unlike the write below: a rename is atomic, so the worst a read racing a write
+    // sees is the document as it was one write ago.
     archivedIds: async () => new Set(Object.keys(await readArchive(path))),
     setArchived: (ids, archive) =>
       enqueue(async () => {

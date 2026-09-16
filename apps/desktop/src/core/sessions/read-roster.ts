@@ -2,8 +2,7 @@
 // pieces of Session state that are Argo's own rather than any CLI's — the Ticket link and the
 // archive flag (#2315).
 import type { SessionTicketLinkStore } from '../tickets/session-links'
-import type { SessionArchiveStore } from './archive-store'
-import { withoutArchived } from './archive-store'
+import { isArchivedSession, type SessionArchiveStore } from './archive-store'
 import { type SessionListRequest, sessionError } from './contract'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
@@ -33,6 +32,17 @@ async function discoverFromSource(
   } catch (error) {
     return { error: sessionError(readFailure(error), requestId) }
   }
+}
+
+// The active Roster never carries an archived row (#1593): expanding Archive asks the archive
+// list for one instead, on demand. The join is Argo's own store rather than any one adapter's, so
+// a Session from every harness drops out of the active list the same way.
+async function withoutArchived<Row extends { id: string; retiredIds: string[] }>(
+  rows: Row[],
+  archive: SessionArchiveStore,
+): Promise<Row[]> {
+  const archivedIds = await archive.archivedIds()
+  return rows.filter((row) => !isArchivedSession(row, archivedIds))
 }
 
 export async function listReply(
