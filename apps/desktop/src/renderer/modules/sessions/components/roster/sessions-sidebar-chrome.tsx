@@ -7,6 +7,7 @@ import { sessionFailureState } from '../../session-failure-state'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'
 import { RosterFilterMenu } from './roster-filter-menu'
+import { ROSTER_ROW_HEIGHT } from './roster-rows'
 
 export function rosterState(
   roster: SessionRoster | null,
@@ -19,13 +20,25 @@ export function rosterState(
 }
 
 // The one spinner every roster load-more state draws, so the active roster and the Archive read the
-// same at the point where the list is still growing.
+// same at the point where the list is still growing. It takes one row's height, the height of the
+// Session row it stands in for, and centers the spinner in it.
 export function RosterStatusRow({ label }: { label: string }) {
   return (
-    <div aria-label={label} className="flex items-center justify-center py-2" role="status">
+    <div
+      aria-label={label}
+      className="flex items-center justify-center"
+      role="status"
+      style={{ height: ROSTER_ROW_HEIGHT }}
+    >
       <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
     </div>
   )
+}
+
+// The bottom of the active roster while the next window arrives.
+export function RosterLoadingMoreRow() {
+  const { t } = useTranslation('sessions')
+  return <RosterStatusRow label={t('loadingMoreSessions')} />
 }
 
 export function RosterLoading() {

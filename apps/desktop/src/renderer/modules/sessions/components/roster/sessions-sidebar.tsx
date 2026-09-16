@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import { RenameDialog } from './rename-dialog'
-import { LoadingMoreFooter, RosterOutcome } from './roster-outcome'
+import { RosterOutcome } from './roster-outcome'
 import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
 import { SidebarRows } from './sidebar-rows'
 import { useSidebarRoster } from './use-sidebar-roster'
@@ -39,7 +39,14 @@ export function SessionsSidebarContent({
 }: SessionsSidebarContentProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [renameTarget, setRenameTarget] = useState<SessionsListed['sessions'][number] | null>(null)
-  const sessions = useSidebarRoster({ roster, rosterError, selectedSessionId, sidebar })
+  const sessions = useSidebarRoster({
+    onArchiveSelected,
+    onSelect,
+    roster,
+    rosterError,
+    selectedSessionId,
+    sidebar,
+  })
   const { focus, selection } = sessions
 
   return (
@@ -64,30 +71,20 @@ export function SessionsSidebarContent({
       />
       <SidebarRows
         hasMoreSessions={hasMoreSessions}
-        onArchive={(sessionId) => {
-          const bulk = selection.selectedIds.has(sessionId)
-          onArchiveSelected(bulk ? [...selection.selectedIds] : [sessionId])
-          if (bulk) selection.clear()
-        }}
+        isFetchingMoreSessions={isFetchingMoreSessions}
+        onArchive={sessions.archive}
         onFetchMoreSessions={onFetchMoreSessions}
         onFocus={focus.setFocusedSessionId}
         onLinkTicket={onLinkTicket}
         onOpenTicket={onOpenTicket}
         onRename={setRenameTarget}
-        onSelect={(sessionId) => {
-          selection.clear()
-          onSelect(sessionId)
-        }}
+        onSelect={sessions.select}
         onToggleSelect={selection.toggle}
         onUnlinkTicket={onUnlinkTicket}
-        renamedTitles={sessions.renamedTitles}
-        selectedIds={selection.selectedIds}
+        roster={sessions}
         selectedSessionId={selectedSessionId}
         showArchive={roster !== null}
-        tabStop={focus.tabStop}
-        visible={sessions.visible}
       />
-      {isFetchingMoreSessions ? <LoadingMoreFooter /> : null}
       <RenameDialog
         onRename={async (session, name) =>
           sessions.rename(session.id, await onRename(session, name))

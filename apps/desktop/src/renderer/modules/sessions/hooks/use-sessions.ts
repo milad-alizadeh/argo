@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
-import { useWatchedTopic } from '@/renderer/core/hooks/use-watched-topic'
+import { useWatchedQueries, useWatchedTopic } from '@/renderer/core/hooks/use-watched-topic'
 import type { SessionContractError } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import { useRosterWindowCursor, useRosterWindowStore } from '../state/use-roster-window-store'
@@ -71,6 +71,9 @@ export function useSessions(
   } = useRosterQuery(selectedSessionId, rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
+  // The open Session's transcript lives under the same watched trees as every other, whether a CLI
+  // outside Argo writes it or a Turn Argo drives does.
+  useWatchedQueries('sessions', [feedQuery.queryKey])
 
   // An already-settled read has no in-flight abort to notify the main process. Release it here
   // as well, so a Session switch or close drops its Feed rows and measurement state immediately.

@@ -2,10 +2,11 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
-// The roster is told when the transcript trees change (core/watch), so it does not poll to notice a
-// new Session. This is the fallback for a change no watch reports: a managed Session whose status
-// moves without a transcript write, and a machine where the watch could not be opened at all.
-export const ROSTER_FALLBACK_REFRESH_MS = 5_000
+// What a read that a watch tells about polls at anyway. The roster and the Feed are both read again
+// when the transcript trees change (core/watch), so neither polls to notice a write. This is the
+// fallback for a change no watch reports: a managed Session whose status moves without a transcript
+// write, and a machine where the watch could not be opened at all.
+export const WATCHED_FALLBACK_REFRESH_MS = 5_000
 export const sessionRosterQueryKey = ['sessions', 'roster'] as const
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).

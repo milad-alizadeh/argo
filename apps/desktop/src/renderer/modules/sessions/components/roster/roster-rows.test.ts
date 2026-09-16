@@ -20,6 +20,7 @@ function activeRoster(count: number) {
 function kindsOf(options: {
   archived?: typeof noArchive
   hasMoreSessions?: boolean
+  isFetchingMoreSessions?: boolean
   showArchive?: boolean
   status?: RosterStatus
 }) {
@@ -27,6 +28,7 @@ function kindsOf(options: {
     active: activeRoster(2),
     archived: noArchive,
     hasMoreSessions: false,
+    isFetchingMoreSessions: false,
     showArchive: false,
     status: 'active',
     ...options,
@@ -38,11 +40,17 @@ describe('rosterRows', () => {
     expect(kindsOf({ hasMoreSessions: true })).toEqual(['session', 'session', 'rosterSentinel'])
   })
 
-  // The spinner for a wider window is not among these rows: appended below the sentinel it landed
-  // under the fold at the moment the reader scrolled to the bottom to ask for it, so the sidebar
-  // draws it outside the scrolled list.
   test('carries no paging rows once every Session is inside the window', () => {
     expect(kindsOf({ hasMoreSessions: false })).toEqual(['session', 'session'])
+  })
+
+  test('ends on the spinner row while a wider window is being read', () => {
+    expect(kindsOf({ hasMoreSessions: true, isFetchingMoreSessions: true })).toEqual([
+      'session',
+      'session',
+      'rosterSentinel',
+      'rosterLoadingMore',
+    ])
   })
 
   test('carries only active Sessions under the active filter', () => {

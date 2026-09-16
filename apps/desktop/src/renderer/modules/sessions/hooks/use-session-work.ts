@@ -2,6 +2,7 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
 import type { SessionContractError } from '../session-contract-error'
 import {
   SESSION_REFRESH_MS,
@@ -55,8 +56,13 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, delegationId: string | null) {
   const queryClient = useQueryClient()
-  const feed = useQuery<SessionFeed | null, SessionContractError>(
-    sessionFeedQuery(queryClient, delegationId === null ? null : sessionId, delegationId),
+  const query = sessionFeedQuery(
+    queryClient,
+    delegationId === null ? null : sessionId,
+    delegationId,
   )
+  const feed = useQuery<SessionFeed | null, SessionContractError>(query)
+  // A Subagent's transcript sits under the same watched trees as its Session's own.
+  useWatchedQueries('sessions', [query.queryKey])
   return feed.data ?? null
 }

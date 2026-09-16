@@ -1,0 +1,100 @@
+import { Archive } from 'lucide-react'
+import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/renderer/components/ui/context-menu'
+import type { Session } from '../../types'
+import { type RosterMenuHandlers, type RosterRow, renamedSession } from './roster-rows'
+
+type RosterMenuTarget = { session: Session; archived: boolean }
+
+function targetOf(
+  element: EventTarget | null,
+  rows: readonly RosterRow[],
+  renamedTitles: Record<string, string>,
+): RosterMenuTarget | null {
+  const row = element instanceof Element ? element.closest('[data-session-id]') : null
+  const sessionId = row?.getAttribute('data-session-id') ?? null
+  const found = rows.find((entry) => entry.kind === 'session' && entry.session.id === sessionId)
+  if (found === undefined || found.kind !== 'session') return null
+  return { archived: found.archived, session: renamedSession(found.session, renamedTitles) }
+}
+
+// One menu for the whole list, opened on the row under the pointer, rather than one menu per row. A
+// row used to carry its own: a fling through the roster then mounted 46034 ContextMenuTriggers in
+// 4.25s, 17.1s of render time, for menus nobody opened.
+export function RosterContextMenu({
+  children,
+  onArchive,
+  onLinkTicket,
+  onOpenTicket,
+  onRename,
+  onUnlinkTicket,
+  renamedTitles,
+  rows,
+}: RosterMenuHandlers & {
+  children: ReactNode
+  renamedTitles: Record<string, string>
+  rows: readonly RosterRow[]
+}) {
+  const { t } = useTranslation('sessions')
+  const [target, setTarget] = useState<RosterMenuTarget | null>(null)
+  const [open, setOpen] = useState(false)
+  // A ref beside the state, because the trigger opens the menu in the same event that names the row:
+  // the state has not landed yet when it asks whether to open.
+  const pointed = useRef<RosterMenuTarget | null>(null)
+
+  function readTarget(event: MouseEvent) {
+    const found = targetOf(event.target, rows, renamedTitles)
+    pointed.current = found
+    setTarget(found)
+  }
+
+  return (
+    <ContextMenu onOpenChange={(next) => setOpen(next && pointed.current !== null)} open={open}>
+      <ContextMenuTrigger onContextMenuCapture={readTarget} render={<div />}>
+        {children}
+      </ContextMenuTrigger>
+      {target === null ? null : (
+        <ContextMenuContent
+          aria-label={`${target.session.title?.text ?? target.session.id} actions`}
+        >
+          <ContextMenuGroup>
+            <ContextMenuItem onClick={() => onRename(target.session)}>
+              {t('contextMenu.rename')}
+            </ContextMenuItem>
+            {target.session.ticket !== null ? (
+              <>
+                <ContextMenuItem onClick={() => onOpenTicket(target.session)}>
+                  {t('contextMenu.openTicket')}
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => onUnlinkTicket(target.session)}>
+                  {t('contextMenu.unlinkTicket')}
+                </ContextMenuItem>
+              </>
+            ) : (
+              <ContextMenuItem onClick={() => onLinkTicket(target.session)}>
+                {t('contextMenu.linkTicket')}
+              </ContextMenuItem>
+            )}
+            {target.archived ? null : (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={() => onArchive(target.session.id)}>
+                  <Archive aria-hidden="true" />
+                  {t('bulkSelect.archive')}
+                </ContextMenuItem>
+              </>
+            )}
+          </ContextMenuGroup>
+        </ContextMenuContent>
+      )}
+    </ContextMenu>
+  )
+}

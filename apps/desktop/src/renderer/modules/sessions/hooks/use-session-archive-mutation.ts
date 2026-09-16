@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/renderer/components/ui/toast'
 import { throwSessionContractError, throwUnexpectedSessionReply } from '../session-contract-error'
@@ -41,47 +42,52 @@ export function useSessionArchiveMutation() {
 export function useArchiveSelected() {
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
-  const archiveMutation = useSessionArchiveMutation()
-  return (sessionIds: SessionId[]) => {
-    archiveMutation.mutate(
-      { archived: true, sessionIds },
-      {
-        onSuccess: ({ applied, failed }) => {
-          if (applied.length > 0) {
-            add({
-              title: t('bulkSelect.archived', { count: applied.length }),
-              type: 'success',
-              timeout: UNDO_TOAST_TIMEOUT_MS,
-              actionProps: {
-                children: t('bulkSelect.undo'),
-                onClick: () => {
-                  archiveMutation.mutate(
-                    { archived: false, sessionIds: applied },
-                    {
-                      onSuccess: ({ applied: restored }) => {
-                        if (restored.length > 0) {
-                          add({
-                            title: t('bulkSelect.restored', { count: restored.length }),
-                            type: 'success',
-                            timeout: UNDO_TOAST_TIMEOUT_MS,
-                          })
-                        }
+  const { mutate } = useSessionArchiveMutation()
+  // Stable, because a roster row's menu reaches this through a memoized row.
+  return useCallback(
+    (sessionIds: SessionId[]) => {
+      mutate(
+        { archived: true, sessionIds },
+        {
+          onSuccess: ({ applied, failed }) => {
+            if (applied.length > 0) {
+              add({
+                title: t('bulkSelect.archived', { count: applied.length }),
+                type: 'success',
+                timeout: UNDO_TOAST_TIMEOUT_MS,
+                actionProps: {
+                  children: t('bulkSelect.undo'),
+                  onClick: () => {
+                    mutate(
+                      { archived: false, sessionIds: applied },
+                      {
+                        onSuccess: ({ applied: restored }) => {
+                          if (restored.length > 0) {
+                            add({
+                              title: t('bulkSelect.restored', { count: restored.length }),
+                              type: 'success',
+                              timeout: UNDO_TOAST_TIMEOUT_MS,
+                            })
+                          }
+                        },
                       },
-                    },
-                  )
+                    )
+                  },
                 },
-              },
-            })
-          }
-          if (failed.length > 0) {
-            add({
-              title: applied.length > 0 ? t('bulkSelect.partialFailure') : t('bulkSelect.failure'),
-              type: 'error',
-              timeout: UNDO_TOAST_TIMEOUT_MS,
-            })
-          }
+              })
+            }
+            if (failed.length > 0) {
+              add({
+                title:
+                  applied.length > 0 ? t('bulkSelect.partialFailure') : t('bulkSelect.failure'),
+                type: 'error',
+                timeout: UNDO_TOAST_TIMEOUT_MS,
+              })
+            }
+          },
         },
-      },
-    )
-  }
+      )
+    },
+    [add, mutate, t],
+  )
 }

@@ -6,7 +6,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
-import { ROSTER_FALLBACK_REFRESH_MS, sessionRosterQueryKey } from '../session-queries'
+import { sessionRosterQueryKey, WATCHED_FALLBACK_REFRESH_MS } from '../session-queries'
 import { isOptimisticSessionId } from '../state/use-session-creation-store'
 import type { SessionId, SessionRoster } from '../types'
 
@@ -39,7 +39,7 @@ export function sessionRosterQuery(
     refetchInterval:
       selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
         ? false
-        : ROSTER_FALLBACK_REFRESH_MS,
+        : WATCHED_FALLBACK_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       const reply = await window.argo.listSessions({ projectRoot, cursor })

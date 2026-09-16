@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useArchivedSessions } from '../../hooks/use-archived-sessions'
 import {
   showsArchived,
@@ -47,17 +47,18 @@ export function useArchivedSection(
 
   // `restored` can fall outside every page already loaded, so it is shown by adding it to the
   // list rather than assuming a later page will bring it into view.
-  const displayed =
-    restored === null || sessions.some((session) => session.id === restored.id)
-      ? sessions
-      : [restored, ...sessions]
+  const displayed = useMemo(
+    () =>
+      restored === null || sessions.some((session) => session.id === restored.id)
+        ? sessions
+        : [restored, ...sessions],
+    [restored, sessions],
+  )
 
-  return {
-    displayed,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  }
+  // One stable object, because the caller builds the row list from it: a fresh object here rebuilds
+  // every row on each render and the memoized rows lose their memo.
+  return useMemo(
+    () => ({ displayed, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading }),
+    [displayed, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading],
+  )
 }

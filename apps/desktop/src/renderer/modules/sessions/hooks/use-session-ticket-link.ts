@@ -3,7 +3,7 @@
 // are two calls: a refused or skipped rename never undoes a successful link (issue #2134).
 
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { invalidateSessionRoster } from '../session-queries'
 import type { Session } from '../types'
 
@@ -100,39 +100,50 @@ export function useSessionTicketLink() {
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
 
-  async function connect(
-    session: Session,
-    ticket: ConnectTicketInput,
-    options: { confirmedRename?: boolean } = {},
-  ): Promise<ConnectOutcome> {
-    setPending(true)
-    setFailure(null)
-    try {
-      const result = await connectTicket({
-        argo: window.argo,
-        session,
-        ticket,
-        confirmedRename: options.confirmedRename,
-      })
-      if (result.failure !== null) setFailure(result.failure)
-      if (result.invalidate) await invalidateSessionRoster(client)
-      return result.outcome
-    } finally {
-      setPending(false)
-    }
-  }
+  // Both keep one identity: a roster row's menu reaches them through a memoized row, which a
+  // function rebuilt on every render would re-render on every poll tick.
+  const connect = useCallback(
+    async (
+      session: Session,
+      ticket: ConnectTicketInput,
+      options: { confirmedRename?: boolean } = {},
+    ): Promise<ConnectOutcome> => {
+      setPending(true)
+      setFailure(null)
+      try {
+        const result = await connectTicket({
+          argo: window.argo,
+          session,
+          ticket,
+          confirmedRename: options.confirmedRename,
+        })
+        if (result.failure !== null) setFailure(result.failure)
+        if (result.invalidate) await invalidateSessionRoster(client)
+        return result.outcome
+      } finally {
+        setPending(false)
+      }
+    },
+    [client],
+  )
 
-  async function disconnect(sessionId: string) {
-    setPending(true)
-    setFailure(null)
-    try {
-      const result = await disconnectTicket(window.argo, sessionId)
-      if (result.failure !== null) setFailure(result.failure)
-      if (result.invalidate) await invalidateSessionRoster(client)
-    } finally {
-      setPending(false)
-    }
-  }
+  const disconnect = useCallback(
+    async (sessionId: string) => {
+      setPending(true)
+      setFailure(null)
+      try {
+        const result = await disconnectTicket(window.argo, sessionId)
+        if (result.failure !== null) setFailure(result.failure)
+        if (result.invalidate) await invalidateSessionRoster(client)
+      } finally {
+        setPending(false)
+      }
+    },
+    [client],
+  )
 
-  return { connect, disconnect, pending, failure }
+  return useMemo(
+    () => ({ connect, disconnect, pending, failure }),
+    [connect, disconnect, failure, pending],
+  )
 }

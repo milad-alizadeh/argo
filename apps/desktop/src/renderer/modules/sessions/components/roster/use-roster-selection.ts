@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   clickSelection,
   EMPTY_ROSTER_SELECTION,
@@ -14,10 +14,9 @@ export function useRosterSelection(
   openSessionId: SessionId | null,
 ) {
   const [selection, setSelection] = useState(EMPTY_ROSTER_SELECTION)
-  return {
-    selectedIds: selection.ids,
-    clear: () => setSelection(EMPTY_ROSTER_SELECTION),
-    toggle: (sessionId: SessionId, modifier: SelectionModifier) =>
+  const clear = useCallback(() => setSelection(EMPTY_ROSTER_SELECTION), [])
+  const toggle = useCallback(
+    (sessionId: SessionId, modifier: SelectionModifier) =>
       setSelection((current) => {
         // A Shift-click before any bulk selection exists ranges from the Session already open,
         // not from whichever row happens to be clicked first (#2194 follow-up): the open row is
@@ -29,5 +28,12 @@ export function useRosterSelection(
             : current
         return clickSelection(anchored, visibleIds, { id: sessionId, modifier })
       }),
-  }
+    [openSessionId, visibleIds],
+  )
+  // One stable object: the sidebar reads it into memoized rows, where a fresh object per render
+  // would re-render every row on every poll tick.
+  return useMemo(
+    () => ({ selectedIds: selection.ids, clear, toggle }),
+    [clear, selection.ids, toggle],
+  )
 }

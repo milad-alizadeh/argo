@@ -1,4 +1,4 @@
-import { type RefObject, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useMemo, useState } from 'react'
 import { useRosterFilterStore, useRosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import { rosterState } from './sessions-sidebar-chrome'
@@ -32,11 +32,15 @@ function filteredSessions(sessions: SessionsListed['sessions'], search: string) 
 // Everything the sidebar reads off one roster: what the search and the status filter leave visible,
 // which rows are selected, where the keyboard is, and the titles a rename is still waiting on.
 export function useSidebarRoster({
+  onArchiveSelected,
+  onSelect,
   roster,
   rosterError,
   selectedSessionId,
   sidebar,
 }: {
+  onArchiveSelected: (sessionIds: SessionId[]) => void
+  onSelect: (sessionId: SessionId) => void
   roster: SessionRoster | null
   rosterError: SessionError | null
   selectedSessionId: SessionId | null
@@ -51,12 +55,33 @@ export function useSidebarRoster({
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)
+
+  // Both keep one identity for as long as their inputs do: a row is memoized, so a handler rebuilt
+  // on every render would re-render every row whenever anything else on the screen ticked.
+  const archive = useCallback(
+    (sessionId: SessionId) => {
+      const bulk = selection.selectedIds.has(sessionId)
+      onArchiveSelected(bulk ? [...selection.selectedIds] : [sessionId])
+      if (bulk) selection.clear()
+    },
+    [onArchiveSelected, selection],
+  )
+  const select = useCallback(
+    (sessionId: SessionId) => {
+      selection.clear()
+      onSelect(sessionId)
+    },
+    [onSelect, selection],
+  )
+
   return {
+    archive,
     focus,
     renamedTitles: useMemo(() => pendingRenames(renamed, sessions), [renamed, sessions]),
     rename: (sessionId: SessionId, title: string) =>
       setRenamed((current) => ({ ...current, [sessionId]: title })),
     search,
+    select,
     selection,
     sessionCount: sessions.length,
     setSearch,

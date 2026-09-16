@@ -8,7 +8,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../session-contract-error'
-import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
+import { sessionFeedQueryKey, WATCHED_FALLBACK_REFRESH_MS } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
 
 export async function retrySessionFeed(
@@ -35,7 +35,11 @@ export function sessionFeedQuery(
     // React Query immediately drops the transcript and aborts its in-flight reader work. This
     // avoids an async manual cleanup that could race a rapid A -> B -> A switch.
     gcTime: 0,
-    refetchInterval: SESSION_REFRESH_MS,
+    // A CLI writing this Session's transcript is what adds a row, and the watch on the transcript
+    // trees reports that write, so the reader of this Feed subscribes to the topic rather than
+    // re-reading the document twice a second. That poll cost the roster too: it re-rendered the whole
+    // sidebar on every tick, 185291 renders in a 13-second idle recording.
+    refetchInterval: WATCHED_FALLBACK_REFRESH_MS,
     retry: false,
     queryFn: async ({ signal }) => {
       if (sessionId === null) return null

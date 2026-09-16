@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/a
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../../components/ui/empty'
 import { type RosterStatus, showsActive } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'
-import { RosterLoading, RosterStatusRow } from './sessions-sidebar-chrome'
+import { RosterLoading } from './sessions-sidebar-chrome'
 
 function NoSessionsFound() {
   const { t } = useTranslation('sessions')
@@ -31,18 +31,6 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
       <AlertTitle>{t('unableToLoadSessions')}</AlertTitle>
       <AlertDescription>{error.message}</AlertDescription>
     </Alert>
-  )
-}
-
-// The wider window is read outside the scrolled list rather than as its last row: a row appended
-// below the sentinel lands under the fold at the exact moment the reader reaches the bottom and
-// asks for it, so the spinner was drawn and never seen.
-export function LoadingMoreFooter() {
-  const { t } = useTranslation('sessions')
-  return (
-    <div className="shrink-0 border-t border-border/60">
-      <RosterStatusRow label={t('loadingMoreSessions')} />
-    </div>
   )
 }
 
