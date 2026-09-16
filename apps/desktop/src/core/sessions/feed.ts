@@ -1,19 +1,9 @@
-import type { SessionChain } from './chains'
-import { groupDelegations } from './delegation-groups'
 import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
 import { withPromptAttachments } from './prompt-attachments'
 import { type ToolEvidence, toolRows } from './tool-feed'
-import { groupToolRuns } from './tool-groups'
 import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
-
-// The renderer measures a complete projected document, so the revision includes every visible
-// field rather than only row ids: a streaming writer can extend a row it already opened. This is
-// the exact projection, not a hash: skipped layout can never reuse a collision's geometry.
-export function feedProjection(rows: readonly SessionFeedRow[]): string {
-  return JSON.stringify(rows)
-}
 
 export function rowsOfRecord(
   record: TranscriptRecord,
@@ -135,33 +125,4 @@ export function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] 
   return rows.filter(
     (row, index) => row.shape !== 'unreadable' || rows[index - 1]?.shape !== 'unreadable',
   )
-}
-
-export function projectFeed(chain: SessionChain): SessionFeedRow[] {
-  const results = new Map(
-    chain.files
-      .flatMap((file) =>
-        file.records.flatMap((record) =>
-          record.kind === 'message' ? (record.toolResults ?? []) : [],
-        ),
-      )
-      .map(
-        (result) => [result.callId, { content: result.content, failed: result.failed }] as const,
-      ),
-  )
-  const skillBodies = new Map(
-    chain.files.flatMap((file) =>
-      file.records.flatMap((record) =>
-        record.kind === 'skill-body' ? [[record.callId, record.text] as const] : [],
-      ),
-    ),
-  )
-  const projected = chain.files.flatMap((file, fileIndex) =>
-    file.records.map((record, recordIndex) => ({
-      record,
-      rows: rowsOfRecord(record, `${fileIndex}:${recordIndex}`, { results, skillBodies }),
-    })),
-  )
-  const { rows, breakBeforeIds } = collectFeedRows(projected)
-  return groupDelegations(groupToolRuns(withoutRepeatedBreaks(rows), breakBeforeIds))
 }
