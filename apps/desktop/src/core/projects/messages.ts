@@ -1,6 +1,6 @@
-// The three actions #1828 adds to the version 1 Project contract, beside the `project.open` that
-// #1825 settled. Version 1 gains actions and never changes a message it already defines, so a
-// `project.open` exchange is byte-identical to the one the accepted proof asserts.
+// The actions #1828 and #2269 add to the version 1 Project contract, beside the `project.open`
+// that #1825 settled. Version 1 gains actions and never changes a message it already defines, so
+// a `project.open` exchange is byte-identical to the one the accepted proof asserts.
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import type { ProjectError } from './contract'
@@ -33,6 +33,13 @@ export const projectRelocateRequestSchema = z.strictObject({
   projectId: identifierSchema,
 })
 export type ProjectRelocateRequest = z.infer<typeof projectRelocateRequestSchema>
+export const projectSelectRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.select'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectSelectRequest = z.infer<typeof projectSelectRequestSchema>
 
 // Every action that can change the known set answers with the whole set, so the renderer never
 // assembles its own picture of storage out of a sequence of replies.

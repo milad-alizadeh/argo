@@ -8,6 +8,7 @@ export type ProjectClient = {
   listProjects(): Promise<ProjectListReply>
   registerProject(): Promise<ProjectListReply>
   relocateProject(request: { projectId: string }): Promise<ProjectListReply>
+  selectProject(request: { projectId: string }): Promise<ProjectListReply>
 }
 
 export function createProjectClient(
@@ -26,5 +27,6 @@ export function createProjectClient(
     listProjects: () => client.list(),
     registerProject: () => client.register(),
     relocateProject: (request) => client.relocate(request),
+    selectProject: (request) => client.select(request),
   }
 }

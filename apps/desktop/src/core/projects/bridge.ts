@@ -8,6 +8,7 @@ import { listProjects } from './list-projects'
 import { openProject } from './open-project'
 import { PROJECT_OPERATIONS } from './operations'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
+import { selectProject } from './select-project'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
 // asks for the action by name and receives the resulting registry (docs/portable-integration-contracts.md).
@@ -40,6 +41,7 @@ export function attachProjectBridge(
       list: (request, context) => listProjects(request, context.registryPath),
       register: registerProject,
       relocate: relocateProject,
+      select: selectProject,
     },
     error: projectError,
   })

@@ -70,6 +70,7 @@ const SURFACE = [
   'registerProject',
   'relocateProject',
   'renameSession',
+  'selectProject',
   'sendSession',
   'setAppearance',
   'setCodexAutoCompactLimit',

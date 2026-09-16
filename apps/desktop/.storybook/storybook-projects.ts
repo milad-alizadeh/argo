@@ -26,4 +26,5 @@ export const storybookProjectBridge: ProjectClient = {
     }),
   registerProject: () => Promise.resolve(listed('storybook-worktree')),
   relocateProject: () => Promise.resolve(listed('storybook-worktree')),
+  selectProject: ({ projectId }) => Promise.resolve(listed(projectId)),
 }
