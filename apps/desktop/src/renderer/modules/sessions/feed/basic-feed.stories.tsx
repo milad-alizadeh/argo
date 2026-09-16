@@ -121,13 +121,13 @@ const rowShapeFeed = {
     {
       shape: 'delegation-group',
       id: 'delegation-group-row',
-      actor: 'shell',
+      actor: 'agent',
       groupId: 'delegation-group',
       entries: [
         {
           shape: 'delegation',
           id: 'delegation-group-entry',
-          actor: 'shell',
+          actor: 'agent',
           action: 'Run tests.',
           status: 'completed',
           progress: null,

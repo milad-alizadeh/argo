@@ -1,4 +1,4 @@
-import { isRecord } from '@/boundary'
+import { isIdentifier, isRecord } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { taskStartedContextWindow } from './context-window'
 import { currentUserBlocks } from './current-user-blocks'
@@ -27,11 +27,34 @@ function delegatedPrompt(
   })
 }
 
+const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
+
+function subagentActivity(item: Record<string, unknown>): TranscriptRecord | null {
+  if (item.type !== 'SubAgentActivity' || typeof item.id !== 'string' || !isIdentifier(item.id))
+    return null
+  if (typeof item.agent_thread_id !== 'string' || !isIdentifier(item.agent_thread_id)) return null
+  if (typeof item.agent_path !== 'string') return null
+  const status = SUBAGENT_ACTIVITY_STATUS[item.kind as keyof typeof SUBAGENT_ACTIVITY_STATUS]
+  if (status === undefined) return null
+  const action = item.agent_path.split('/').findLast((segment) => segment.length > 0) ?? null
+  return {
+    kind: 'delegation',
+    uuid: item.id,
+    actor: 'agent',
+    action,
+    status,
+    progress: null,
+    groupId: item.agent_thread_id,
+    callId: null,
+  }
+}
+
 function itemMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   const item = isRecord(payload.item) ? payload.item : null
+  if (item?.type === 'SubAgentActivity') return subagentActivity(item)
   if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'

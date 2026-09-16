@@ -91,6 +91,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       })
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
+    readDelegationFiles: (_sessionId, delegationId) => readSessionFiles(root, delegationId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,

@@ -3,14 +3,14 @@ import type { SessionFeedRow } from './feed-rows'
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 type DelegationGroup = Extract<SessionFeedRow, { shape: 'delegation-group' }>
 
-function shellGroup(row: DelegationRow): DelegationGroup | null {
-  if (row.actor !== 'shell' || row.groupId === null) return null
+function delegationGroup(row: DelegationRow): DelegationGroup | null {
+  if (row.groupId === null) return null
   return {
     shape: 'delegation-group',
     id: row.id,
-    actor: 'shell',
+    actor: row.actor,
     groupId: row.groupId,
-    entries: [{ ...row, actor: 'shell', groupId: row.groupId }],
+    entries: [{ ...row, groupId: row.groupId }],
   }
 }
 
@@ -23,12 +23,13 @@ export function groupDelegations(rows: SessionFeedRow[]): SessionFeedRow[] {
       grouped.push(row)
       continue
     }
-    const nextGroup = shellGroup(row)
+    const nextGroup = delegationGroup(row)
     const previous = grouped.at(-1)
     if (
       nextGroup !== null &&
       previous?.shape === 'delegation-group' &&
-      previous.groupId === nextGroup.groupId
+      previous.groupId === nextGroup.groupId &&
+      previous.actor === nextGroup.actor
     ) {
       const [entry] = nextGroup.entries
       if (entry !== undefined) previous.entries.push(entry)

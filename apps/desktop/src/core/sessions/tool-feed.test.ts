@@ -80,18 +80,18 @@ test('a Codex exec_command call reads as a command, the same as Bash', () => {
     new Map(),
   )
   assert.equal(row.kind, 'command')
-  assert.equal(row.label, 'Ran bun test')
+  assert.equal(row.label, 'Ran command')
   assert.equal(row.text, 'bun test\nextra line')
 })
 
-test('a Codex custom exec call uses its extracted command label', () => {
+test('a Codex custom exec call keeps its literal command in its details', () => {
   const row = onlyToolRow(
     [call({ id: 'call-1', name: 'exec', input: { input: 'wrapper source', cmd: 'echo hi' } })],
     new Map(),
   )
   assert.equal(row.kind, 'command')
-  assert.equal(row.label, 'Ran echo hi')
-  assert.equal(row.text, 'wrapper source')
+  assert.equal(row.label, 'Ran command')
+  assert.equal(row.text, 'echo hi')
 })
 
 test('an Edit call carries its diff evidence before the result lands', () => {

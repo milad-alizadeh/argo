@@ -51,6 +51,7 @@ function callTimes(messages: TranscriptMessage[]): CallTimes {
 export function readDelegations(
   messages: TranscriptMessage[],
   notifications: BackgroundTask[],
+  records: TranscriptRecord[] = [],
 ): SessionDelegation[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
   // A backgrounded call's receipt answers it at once; only its notification lands it (#2247).
@@ -61,7 +62,7 @@ export function readDelegations(
   )
   const times = callTimes(messages)
   const ended = endings(notifications)
-  return calls(messages)
+  const delegations = calls(messages)
     .filter((call) => DELEGATING_TOOLS.includes(call.name))
     .map((call) => ({
       id: call.id,
@@ -70,6 +71,19 @@ export function readDelegations(
       startedAt: times.started.get(call.id) ?? null,
       endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
     }))
+  const activities = new Map<string, SessionDelegation>()
+  for (const record of records) {
+    if (record.kind !== 'delegation' || record.actor !== 'agent' || record.groupId === null)
+      continue
+    activities.set(record.groupId, {
+      id: record.groupId,
+      label: record.action,
+      landed: record.status === 'completed',
+      startedAt: null,
+      endedAt: null,
+    })
+  }
+  return [...delegations, ...activities.values()]
 }
 
 function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {

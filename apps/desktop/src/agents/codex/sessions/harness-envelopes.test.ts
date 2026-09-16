@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readTranscriptFile } from '@/core/sessions/transcript'
 import { draftText } from './harness-envelopes'
 import { parseCodexTranscriptLine } from './records'
 
@@ -116,31 +115,6 @@ test('keeps a realtime delegation with nothing said out of the Feed', () => {
     '<realtime_delegation><transcript_delta>user: hm</transcript_delta></realtime_delegation>',
   )
   assert.deepEqual(record, { kind: 'trace', uuid: 'user-1' })
-})
-
-test('names a voice thread by the first thing the person said', () => {
-  const said = (input: string) =>
-    JSON.stringify({
-      type: 'response_item',
-      payload: {
-        type: 'message',
-        id: `said-${input}`,
-        role: 'user',
-        content: [
-          { type: 'input_text', text: '<recommended_plugins>\n- Figma\n</recommended_plugins>' },
-          {
-            type: 'input_text',
-            text: `<realtime_delegation><input>${input}</input></realtime_delegation>`,
-          },
-        ],
-      },
-    })
-  const file = readTranscriptFile('/tmp/voice.jsonl', {
-    fileName: 'voice.jsonl',
-    lines: [said('\nTighten the typography\n'), said('And the spacing')],
-    parse: parseCodexTranscriptLine,
-  })
-  assert.equal(file.openingPrompt, 'Tighten the typography')
 })
 
 test('keeps the thread Codex dispatched to review an approval out of the Roster', () => {

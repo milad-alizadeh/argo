@@ -20,9 +20,7 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-function commandLabel(call: ToolCall) {
-  return `Ran ${String(call.input.cmd ?? 'command').split('\n')[0]}`
-}
+const CODEX_COMMAND_LABEL = 'Ran command'
 
 const TOOL_DETAILS = {
   // The agent's own description is already a whole label; the raw command, first line, is the fallback.
@@ -40,13 +38,13 @@ const TOOL_DETAILS = {
     label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
   }),
   // Codex's `exec` record carries wrapper source; its adapter extracts `cmd` when the wrapper has one.
-  exec_command: (call: ToolCall) => ({
+  exec_command: (_call: ToolCall) => ({
     kind: 'command' as const,
-    label: commandLabel(call),
+    label: CODEX_COMMAND_LABEL,
   }),
-  exec: (call: ToolCall) => ({
+  exec: (_call: ToolCall) => ({
     kind: 'command' as const,
-    label: commandLabel(call),
+    label: CODEX_COMMAND_LABEL,
   }),
 } as const
 
@@ -127,6 +125,7 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
   if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
+  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
   if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)

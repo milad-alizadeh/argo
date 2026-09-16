@@ -35,20 +35,20 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
     [
       {
         status: 'succeeded',
-        label: 'Ran bun test session-store.test.ts',
+        label: 'Ran command',
         text: 'bun test session-store.test.ts',
       },
       {
         status: 'succeeded',
-        label: 'Ran bun test session-store.test.ts',
-        text: 'const result = await tools.exec_command({"cmd":"bun test session-store.test.ts"});\ntext(result.output);',
+        label: 'Ran command',
+        text: 'bun test session-store.test.ts',
       },
-      { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
-      { status: 'running', label: 'Ran bun run build', text: 'bun run build' },
+      { status: 'failed', label: 'Ran command', text: 'bun run lint' },
+      { status: 'running', label: 'Ran command', text: 'bun run build' },
       {
         status: 'succeeded',
-        label: 'Ran bun run quality',
-        text: 'const result = await tools.exec_command({"cmd":"bun run quality"});\ntext(result.output);',
+        label: 'Ran command',
+        text: 'bun run quality',
       },
     ],
   )
@@ -58,7 +58,7 @@ test('names the roster activity line after the newest tool call, the same way it
   const reply = await listed(await reader(context))
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
-    label: 'Ran bun run quality',
+    label: 'Ran command',
     tool: 'exec',
     target: null,
   })

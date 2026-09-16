@@ -142,7 +142,11 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(chain.files.flatMap((file) => file.records)),
-    delegations: readDelegations(messages, notifications),
+    delegations: readDelegations(
+      messages,
+      notifications,
+      chain.files.flatMap((file) => file.records),
+    ),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
     usage: readUsage(messages),

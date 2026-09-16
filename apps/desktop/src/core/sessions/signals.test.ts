@@ -123,3 +123,33 @@ test('reads a backgrounded Subagent as still running until its completion notifi
   const notified = readDelegations(messages, [backgroundNotification('call-agent', 'completed')])
   assert.equal(notified[0]?.landed, true)
 })
+
+test('reads Codex subagent activity as a delegation that can open its transcript', () => {
+  assert.deepEqual(
+    readDelegations(
+      [],
+      [],
+      [
+        {
+          kind: 'delegation',
+          uuid: 'activity-completed',
+          actor: 'agent',
+          action: 'review_feed',
+          status: 'completed',
+          progress: null,
+          groupId: 'subagent-thread',
+          callId: null,
+        },
+      ],
+    ),
+    [
+      {
+        id: 'subagent-thread',
+        label: 'review_feed',
+        landed: true,
+        startedAt: null,
+        endedAt: null,
+      },
+    ],
+  )
+})
