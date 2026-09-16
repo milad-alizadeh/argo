@@ -328,7 +328,7 @@ const delegationFeed = {
       actor: 'agent' as const,
       action: 'Review the Feed card for keyboard access.',
       status: 'completed',
-      progress: 'Keyboard access verified',
+      progress: null,
       groupId: 'review',
       callId: null,
     },
@@ -412,7 +412,7 @@ export const DelegationCards: Story = {
     const agent = canvas.getByRole('region', { name: 'Background Agent' })
     await expect(agent).toHaveTextContent('Done')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
-    await expect(agent).toHaveTextContent('Keyboard access verified')
+    await expect(agent).not.toHaveClass('border-b')
     await expect(agent).toHaveTextContent('4.2k tokens')
     await expect(agent).toHaveTextContent('gpt-5.6-terra')
     await expect(agent).toHaveTextContent('1m 12s')
