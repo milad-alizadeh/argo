@@ -16,6 +16,26 @@ test('skips Codex events outside the Session evidence contract', () => {
   )
 })
 
+test('reads the model context window declared when a Codex Turn starts', () => {
+  assert.deepEqual(
+    parseCodexTranscriptLine(
+      JSON.stringify({
+        type: 'event_msg',
+        payload: {
+          type: 'task_started',
+          turn_id: '01a0b000-0000-7000-8000-00000000a001',
+          model_context_window: 258_400,
+        },
+      }),
+    ),
+    {
+      kind: 'trace',
+      uuid: 'task-started:01a0b000-0000-7000-8000-00000000a001',
+      contextWindowTokens: 258_400,
+    },
+  )
+})
+
 test('reads the record Codex writes once it has compacted the context', () => {
   assert.deepEqual(
     parseCodexTranscriptLine(

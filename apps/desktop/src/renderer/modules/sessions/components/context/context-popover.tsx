@@ -1,4 +1,5 @@
 import { Info, Layers3 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../../../../components/ui/button'
 import {
   Popover,
@@ -9,106 +10,128 @@ import {
   PopoverTrigger,
 } from '../../../../components/ui/popover'
 import { ContextDetails } from './context-details'
+import { contextZone } from './context-zone'
 
-function contextZone(percentage: number) {
-  if (percentage <= 20) return { label: 'Smart Zone', text: 'text-emerald-600' }
-  if (percentage <= 40) return { label: 'Nearing Dumb Zone', text: 'text-amber-600' }
-  return { label: 'Dumb Zone', text: 'text-red-600' }
+type ContextTriggerProps = {
+  capacityTokens: number | null
+  percentage: number | null
+  usedTokens: number
+}
+
+function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: ContextTriggerProps) {
+  const { t } = useTranslation('sessions')
+  const value =
+    capacityTokens === null || percentage === null
+      ? `${Math.round(usedTokens / 1000)}k tokens`
+      : `${Math.round(usedTokens / 1000)}k / ${Math.round(capacityTokens / 1000)}k · ${percentage}%`
+  const zone = contextZone(percentage ?? 0)
+  const accessibleName =
+    capacityTokens === null || percentage === null
+      ? `Context ${Math.round(usedTokens / 1000)}k tokens, total not reported`
+      : `Context ${Math.round(usedTokens / 1000)}k tokens of ${Math.round(capacityTokens / 1000)}k tokens, ${percentage}%`
+  return (
+    <PopoverTrigger
+      render={
+        <Button
+          aria-label={accessibleName}
+          className="gap-1.5 px-2 type-label font-medium text-foreground"
+          size="sm"
+          variant="ghost"
+        />
+      }
+    >
+      <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
+        <circle
+          cx="10"
+          cy="10"
+          r="7"
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.2"
+          strokeWidth="2.5"
+        />
+        <circle
+          cx="10"
+          cy="10"
+          r="7"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          pathLength="100"
+          strokeDasharray={`${percentage ?? 0} 100`}
+        />
+      </svg>
+      <span>
+        {t('composer.context')}{' '}
+        <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">{value}</span>
+        <span className="tabular-nums text-muted-foreground @[23rem]:hidden">
+          {percentage === null ? '–' : `${percentage}%`}
+        </span>
+      </span>
+    </PopoverTrigger>
+  )
+}
+
+function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
+  const { t } = useTranslation('sessions')
+  const accessibleName =
+    percentage === null ? 'Context total not reported' : `Context ${percentage}%`
+  return (
+    <PopoverTrigger
+      render={
+        <Button
+          aria-label={accessibleName}
+          className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage !== null && percentage >= 40 ? 'text-red-600' : 'text-foreground'}`}
+          size="sm"
+          variant="ghost"
+        />
+      }
+    >
+      <Layers3 />
+      <span>{t('composer.context')}</span>
+    </PopoverTrigger>
+  )
 }
 
 function ContextPopoverTrigger({
   compact,
   labelled,
-  percentage,
-  usedTokens,
-}: {
-  compact: boolean
-  labelled: boolean
-  percentage: number
-  usedTokens: number
-}) {
-  const value = `${Math.round(usedTokens / 1000)}k / 200k · ${percentage}%`
-  const zone = contextZone(percentage)
-  let accessibleName = 'Context details'
-  let button = <Button aria-label={accessibleName} size="icon-sm" variant="ghost" />
-  let content = <Info />
-  if (compact) {
-    accessibleName = `Context ${Math.round(usedTokens / 1000)}k tokens of 200k tokens, ${percentage}%`
-    button = (
-      <Button
-        aria-label={accessibleName}
-        className="gap-1.5 px-2 type-label font-medium text-foreground"
-        size="sm"
-        variant="ghost"
-      />
-    )
-    content = (
-      <>
-        <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
-          <circle
-            cx="10"
-            cy="10"
-            r="7"
-            fill="none"
-            stroke="currentColor"
-            strokeOpacity="0.2"
-            strokeWidth="2.5"
-          />
-          <circle
-            cx="10"
-            cy="10"
-            r="7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            pathLength="100"
-            strokeDasharray={`${percentage} 100`}
-          />
-        </svg>
-        <span>
-          Context{' '}
-          <span className="hidden tabular-nums text-muted-foreground @[23rem]:inline">{value}</span>
-          <span className="tabular-nums text-muted-foreground @[23rem]:hidden">{percentage}%</span>
-        </span>
-      </>
-    )
-  } else if (labelled) {
-    accessibleName = `Context ${percentage}%`
-    button = (
-      <Button
-        aria-label={accessibleName}
-        className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage >= 40 ? 'text-red-600' : 'text-foreground'}`}
-        size="sm"
-        variant="ghost"
-      />
-    )
-    content = (
-      <>
-        <Layers3 />
-        <span>Context</span>
-      </>
-    )
-  }
-  return <PopoverTrigger render={button}>{content}</PopoverTrigger>
+  ...props
+}: ContextTriggerProps & { compact: boolean; labelled: boolean }) {
+  const { t } = useTranslation('sessions')
+  if (compact) return <CompactContextTrigger {...props} />
+  if (labelled) return <LabelledContextTrigger {...props} />
+  return (
+    <PopoverTrigger
+      render={
+        <Button aria-label={t('composer.contextWindow.details')} size="icon-sm" variant="ghost" />
+      }
+    >
+      <Info />
+    </PopoverTrigger>
+  )
 }
 export function ContextPopover({
   compact = false,
+  capacityTokens,
   harness = 'codex',
   labelled = false,
   percentage,
   usedTokens,
 }: {
   compact?: boolean
+  capacityTokens: number | null
   harness?: 'claude' | 'codex'
   labelled?: boolean
-  percentage: number
+  percentage: number | null
   usedTokens: number
 }) {
   return (
     <Popover>
       <ContextPopoverTrigger
         compact={compact}
+        capacityTokens={capacityTokens}
         labelled={labelled}
         percentage={percentage}
         usedTokens={usedTokens}
@@ -121,7 +144,12 @@ export function ContextPopover({
             As it fills, new information competes with older details.
           </PopoverDescription>
         </PopoverHeader>
-        <ContextDetails harness={harness} percentage={percentage} usedTokens={usedTokens} />
+        <ContextDetails
+          capacityTokens={capacityTokens}
+          harness={harness}
+          percentage={percentage}
+          usedTokens={usedTokens}
+        />
       </PopoverContent>
     </Popover>
   )
