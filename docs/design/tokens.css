@@ -37,7 +37,7 @@
   --spacing-session-gutter: var(--spacing-shell-gutter);
   --size-queue-row: 44px;
   --size-composer-field: 56px;
-  --size-development-identity-bar: 24px;
+  --size-development-identity-bar: 32px;
   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
   --spacing-session-composer-bottom: calc(
     var(--spacing-shell-region) *
@@ -342,4 +342,3 @@
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
   --ticket-label-lean: 40%;
 }
-

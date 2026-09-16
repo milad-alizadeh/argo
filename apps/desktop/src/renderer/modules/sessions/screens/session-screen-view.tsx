@@ -130,7 +130,6 @@ export function SessionScreenView() {
           selectedSessionId === null ? null : (
             <SessionComposerArea
               composer={model.composer}
-              developmentIdentity={window.argo?.development ?? null}
               permission={model.permission}
               questionPending={pendingQuestionId(feed) !== null}
               session={session}

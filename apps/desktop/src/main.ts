@@ -12,7 +12,11 @@ import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
-import { developmentInstance, developmentReadyRecord } from './development/instance'
+import {
+  developmentIdentityArgument,
+  developmentInstance,
+  developmentReadyRecord,
+} from './development/instance'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
 // constraint), so this runs at module load, ahead of every other side effect below.
@@ -53,6 +57,8 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   : null
 if (DEVELOPMENT_INSTANCE) {
   app.setName(DEVELOPMENT_INSTANCE.label)
+  const ticket = DEVELOPMENT_INSTANCE.label.match(/^#(\d+)$/)?.[1]
+  app.dock?.setBadge(ticket ?? '')
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
   // Loopback only; agent-browser attaches here to profile, and a packaged app never opens it (#2228).
@@ -98,6 +104,18 @@ function createWindow(): BrowserWindow {
     // of the wrong appearance on every launch into the dark one.
     backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
     webPreferences: {
+      ...(DEVELOPMENT_INSTANCE
+        ? {
+            additionalArguments: [
+              developmentIdentityArgument({
+                id: DEVELOPMENT_INSTANCE.id,
+                label: DEVELOPMENT_INSTANCE.label,
+                title: DEVELOPMENT_INSTANCE.title,
+                worktree: DEVELOPMENT_INSTANCE.worktree,
+              }),
+            ],
+          }
+        : {}),
       // Forge's Vite plugin emits main and preload side by side in .vite/build.
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

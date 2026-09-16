@@ -16,26 +16,29 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
   return (
     <aside
       aria-label={t('development.label')}
-      className="mt-(--spacing-shell-item) flex h-(--size-development-identity-bar) min-w-0 items-center gap-2 border-t border-border/60 px-1 type-meta text-muted-foreground"
+      className="flex h-(--size-development-identity-bar) w-full min-w-0 items-center gap-(--spacing-shell-item) bg-foreground px-(--spacing-shell-gutter) type-meta text-background"
       data-component="DevelopmentIdentityBar"
       data-development-instance={identity.id}
       data-development-worktree={identity.worktree}
       data-ticket-key={ticket?.key}
     >
-      <span className="shrink-0 font-medium uppercase tracking-wide">
+      <span className="shrink-0 font-semibold uppercase tracking-wide">
         {t('development.shortLabel')}
       </span>
+      <span className="rounded-sm bg-background px-1.5 py-0.5 font-mono font-semibold text-foreground">
+        {identity.label}
+      </span>
       {ticket === null ? null : (
-        <span
-          className="min-w-0 truncate text-foreground"
-          title={`${ticket.key} · ${ticket.title}`}
-        >
-          <span className="font-mono text-muted-foreground">{ticket.key}</span>
+        <span className="min-w-0 truncate" title={`${ticket.key} · ${ticket.title}`}>
+          <span className="font-mono text-background/70">{ticket.key}</span>
           <span aria-hidden="true"> · </span>
           {ticket.title}
         </span>
       )}
-      <span className="ml-auto flex min-w-0 items-center gap-1 font-mono" title={identity.worktree}>
+      <span
+        className="ml-auto flex min-w-0 items-center gap-1 font-mono text-background/80"
+        title={identity.worktree}
+      >
         <GitBranch aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />
         <span className="truncate">{identity.worktree}</span>
       </span>
