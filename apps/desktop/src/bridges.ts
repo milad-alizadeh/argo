@@ -35,7 +35,7 @@ import {
 import { createSessionReader } from './core/sessions/reader'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
-import { registerWatching } from './core/watch/bridge'
+import { registerWatching, watchedTrees } from './core/watch/bridge'
 import { providerEndpoints } from './providers/endpoints'
 
 function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
@@ -133,9 +133,11 @@ export function attachBridges(
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   // A Session written by a CLI outside Argo reaches the roster because the trees the CLIs write to
-  // are watched, not because the roster re-reads them on a timer.
+  // are watched, not because the roster re-reads them on a timer. A Permission is the same idea off
+  // disk: the gate that holds the CLI's hook open is what tells the screen (#2299).
   registerWatching(window, {
-    sessions: [claudeTranscriptsRoot(home), codexTranscriptsRoot(home)],
+    permissions: drivers.claude.onPermissionsChanged,
+    sessions: watchedTrees([claudeTranscriptsRoot(home), codexTranscriptsRoot(home)]),
   })
   attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({

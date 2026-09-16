@@ -30,6 +30,7 @@ function fakeClaudeDriver() {
         sent.push({ sessionId, prompt: turn.prompt })
       },
       interrupt: () => {},
+      onPermissionsChanged: () => () => {},
       pendingPermission: () => null,
       decidePermission: () => true,
       isLockedElsewhere: () => false,

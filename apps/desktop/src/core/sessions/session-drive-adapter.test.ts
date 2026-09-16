@@ -21,6 +21,7 @@ function fakeClaudeAdapter(): SessionDriveAdapter {
     completeHandoffs: () => {},
     liveMessages: () => [],
     roster: () => [],
+    onPermissionsChanged: () => () => {},
     pendingPermission: () => ({
       id: 'permission-1',
       sessionId: 'session-1',

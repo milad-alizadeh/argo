@@ -11,12 +11,16 @@ export type ClaudePermissionGate = {
   open: (sessionId: string) => CompanionPart
   pending: (sessionId: string) => ClaudePermission | null
   decide: (sessionId: string, permissionId: string, decision: ClaudePermissionDecision) => boolean
+  // Runs the moment a Permission starts or stops waiting. The gate is where both happen, so nothing
+  // has to ask: a reader is told, and reads `pending` back. Hands back its own disposer.
+  onChanged: (listener: () => void) => () => void
   close: () => void
 }
 
 type GateState = {
   waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>
   standing: Map<string, Set<string>>
+  announce: () => void
 }
 
 const HOOK = `#!/bin/sh
@@ -68,10 +72,23 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
 
 // Each managed Session gets its own Unix socket, so a late answer cannot reach a different turn.
 export function createClaudePermissionGate(): ClaudePermissionGate {
-  const state: GateState = { waiting: new Map(), standing: new Map() }
+  const listeners = new Set<() => void>()
+  const state: GateState = {
+    waiting: new Map(),
+    standing: new Map(),
+    announce: () => {
+      for (const listener of listeners) listener()
+    },
+  }
   const sockets = createSocketFolder('permission')
   return {
     open: (sessionId) => openPermissionGate(sockets.socketPath(sessionId), sessionId, state),
+    onChanged(listener) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
     pending(sessionId) {
       return state.waiting.get(sessionId)?.permission ?? null
     },
@@ -84,6 +101,7 @@ export function createClaudePermissionGate(): ClaudePermissionGate {
         state.standing.set(sessionId, rules.add(similarityKey(held.permission)))
       }
       held.socket.end(decisionLine(decision === 'deny' ? 'deny' : 'allow'))
+      state.announce()
       return true
     },
     close: sockets.close,
@@ -93,7 +111,7 @@ export function createClaudePermissionGate(): ClaudePermissionGate {
 function openPermissionGate(
   socketPath: string,
   sessionId: string,
-  { standing, waiting }: GateState,
+  { announce, standing, waiting }: GateState,
 ): CompanionPart {
   const server = net.createServer((socket) => {
     let received = ''
@@ -119,6 +137,7 @@ function openPermissionGate(
       }
       waiting.set(sessionId, { permission, socket })
       socket.write('__ARGO_GATE_HELD__\n')
+      announce()
     })
   })
   // Without a listener a failed listen is an uncaught main-process exception; the hook then denies.
@@ -138,6 +157,7 @@ function openPermissionGate(
       waiting.delete(sessionId)
       standing.delete(sessionId)
       server.close()
+      if (held) announce()
     },
   }
 }

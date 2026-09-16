@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { BrowserWindow } from 'electron'
-import { registerWatching } from './bridge'
+import { registerWatching, watchedTrees } from './bridge'
 import { WATCHED_CHANGED_CHANNEL } from './watch-contract'
 import { SETTLE_MS } from './watch-paths'
 
@@ -55,7 +55,7 @@ describe('telling a window its data changed', () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-wrote-'))
     const host = fakeWindow()
     try {
-      registerWatching(host.window, { sessions: [root] })
+      registerWatching(host.window, { sessions: watchedTrees([root]) })
       await armed(host, path.join(root, 'session.jsonl'))
       expect(host.sent[0]).toEqual({ channel: WATCHED_CHANGED_CHANNEL, topic: 'sessions' })
     } finally {
@@ -64,11 +64,29 @@ describe('telling a window its data changed', () => {
     }
   })
 
+  test('names a topic whose source is not a tree', () => {
+    const host = fakeWindow()
+    let changed = () => {}
+    let disposed = false
+    registerWatching(host.window, {
+      permissions: (announce) => {
+        changed = announce
+        return () => {
+          disposed = true
+        }
+      },
+    })
+    changed()
+    expect(host.sent).toEqual([{ channel: WATCHED_CHANGED_CHANNEL, topic: 'permissions' }])
+    host.close()
+    expect(disposed).toBe(true)
+  })
+
   test('says nothing more once the window has closed', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-closed-'))
     const host = fakeWindow()
     try {
-      registerWatching(host.window, { sessions: [root] })
+      registerWatching(host.window, { sessions: watchedTrees([root]) })
       await armed(host, path.join(root, 'session.jsonl'))
       const before = host.sent.length
       host.close()

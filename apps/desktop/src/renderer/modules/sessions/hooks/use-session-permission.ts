@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { Permission, SessionPermissionDecisionRequest } from '@/core/sessions/contract'
+import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -13,11 +14,11 @@ export type PermissionAnswer = SessionPermissionDecisionRequest['decision']
 export function useSessionPermission(sessionId: string | null) {
   const [failure, setFailure] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const queryKey =
+    sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId)
   const permission = useQuery<Permission | null, SessionContractError>({
-    queryKey:
-      sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId),
+    queryKey,
     enabled: sessionId !== null,
-    refetchInterval: 500,
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return null
@@ -32,6 +33,12 @@ export function useSessionPermission(sessionId: string | null) {
       }
     },
   })
+  // The main process is where a Permission appears and where a decision clears it, so it says when
+  // to read again (#2299). The topic carries no Session id: a window shows one Session, so another
+  // Session's Permission costs this screen one read. Unlike the transcript reads, no fallback poll
+  // stands behind it, because the push comes from the process holding the Permission, not from a
+  // file watch the OS can drop.
+  useWatchedQueries('permissions', [queryKey])
   const permissionDecision = usePermissionDecision()
   const decide = async (decision: PermissionAnswer) => {
     if (permission.data === null || permission.data === undefined) return false
