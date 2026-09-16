@@ -91,7 +91,16 @@ export type TranscriptRecord =
   | { kind: 'skill-body'; uuid: string; callId: string; text: string }
   // A hidden harness envelope draws no Feed row, but `boundary` preserves that a real transcript
   // delivery happened there so adjacent Tool Calls on either side do not become one group.
-  | { kind: 'trace'; uuid: string; boundary?: boolean; subagent?: boolean; cwd?: string | null }
+  | {
+      kind: 'trace'
+      uuid: string
+      boundary?: boolean
+      subagent?: boolean
+      cwd?: string | null
+      // Codex records this on `task_started`; it is the model's actual context window, rather
+      // than a capacity the cockpit can safely assume.
+      contextWindowTokens?: number
+    }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
   // A CLI that writes its Plan outside any message, as Codex's `update_plan` call does.
   | { kind: 'plan'; changes: PlanChange[] }

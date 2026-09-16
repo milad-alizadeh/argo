@@ -48,6 +48,7 @@ export function SessionComposerArea({
       <SessionComposer
         {...composer.props}
         contextTokens={session?.contextTokens}
+        contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}
         developmentIdentity={developmentIdentity}
         harness={harness}

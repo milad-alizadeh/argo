@@ -233,6 +233,49 @@ function ReviewScreen({
   )
 }
 
+function NewSessionScreen() {
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  return (
+    <CockpitShell
+      sidebar={
+        <SessionsSidebarContent
+          onNew={() => setSelectedSessionId('optimistic:new-session')}
+          onSelect={setSelectedSessionId}
+          roster={{
+            sessions: [],
+            filesFound: 0,
+            filesRead: 0,
+            filesUnreadable: 0,
+          }}
+          rosterError={null}
+          selectedSessionId={selectedSessionId}
+        />
+      }
+    >
+      <SessionShell
+        activeEvidenceId={null}
+        answeringQuestionId={null}
+        composer={
+          selectedSessionId === null ? null : (
+            <SessionComposer onSend={async () => true} sessionId={selectedSessionId} />
+          )
+        }
+        feed={null}
+        feedError={null}
+        inspector={null}
+        isRunning={false}
+        onAnswerQuestion={() => {}}
+        onOpenEvidence={() => {}}
+        onOpenSession={() => {}}
+        onRetryFeed={() => {}}
+        questionFailure={() => null}
+        selectedSessionId={selectedSessionId}
+        stallTimeoutMs={50}
+      />
+    </CockpitShell>
+  )
+}
+
 function expectTranscriptRowsDoNotOverlap(canvasElement: HTMLElement) {
   const sessionHistory = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const promptRow = sessionHistory.querySelector<HTMLElement>('[data-feed-row="review-request"]')
@@ -474,6 +517,17 @@ export const ComposerStaysFixed: Story = {
     )
     await expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement)
     expectContextBarInset(canvasElement)
+  },
+}
+
+export const NewSessionDoesNotStall: Story = {
+  render: () => <NewSessionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'New Session' }))
+    await expect(canvas.getByLabelText('Session composer')).toBeVisible()
+    await new Promise((resolve) => window.setTimeout(resolve, 100))
+    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
   },
 }
 

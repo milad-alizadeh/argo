@@ -1,30 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
-import { managedRow, mergeManagedRoster, sessionRosterReconciliation } from './managed-row'
-import { type SessionRosterRow, type SessionStatus, sessionRosterRowSchema } from './models'
-
-type ReconciliationRule =
-  (typeof sessionRosterReconciliation)[keyof typeof sessionRosterReconciliation]
+import { managedRow, mergeManagedRoster } from './managed-row'
+import type { SessionRosterRow, SessionStatus, SessionTitle } from './models'
 
 const setup = { model: null, effort: null, mode: null } as const
-
-function assertSessionRosterReconciliationIsTotal(
-  schema: { shape: Record<string, unknown> },
-  reconciliation: Partial<Record<string, ReconciliationRule>>,
-): void {
-  for (const field of Object.keys(schema.shape)) {
-    if (reconciliation[field] === undefined) {
-      throw new Error(`SessionRosterRow reconciliation is missing a rule for "${field}".`)
-    }
-  }
-
-  for (const field of Object.keys(reconciliation)) {
-    if (schema.shape[field] === undefined) {
-      throw new Error(`SessionRosterRow reconciliation has no field named "${field}".`)
-    }
-  }
-}
+const HELD_TITLE = 'Held title'
+const OBSERVED_TITLE = 'Observed title'
 
 function row(id: string, status: SessionStatus): SessionRosterRow {
   return managedRow(id, {
@@ -40,6 +22,16 @@ function row(id: string, status: SessionStatus): SessionRosterRow {
   })
 }
 
+function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle | null) {
+  const held = { ...row('s1', 'running'), title: heldTitle }
+  const observed = { ...row('s1', 'running'), title: observedTitle }
+  const merged = mergeManagedRoster(
+    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    [held],
+  )
+  return merged.rows[0]?.title
+}
+
 function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
   const merged = mergeManagedRoster(
     {
@@ -53,34 +45,6 @@ function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus
   )
   return merged.rows[0]?.status
 }
-
-test('states a reconciliation rule for every SessionRosterRow field', () => {
-  assert.doesNotThrow(() =>
-    assertSessionRosterReconciliationIsTotal(sessionRosterRowSchema, sessionRosterReconciliation),
-  )
-})
-
-test('names the SessionRosterRow field whose reconciliation rule is missing', () => {
-  const withoutTitle = Object.fromEntries(
-    Object.entries(sessionRosterReconciliation).filter(([field]) => field !== 'title'),
-  )
-
-  assert.throws(
-    () => assertSessionRosterReconciliationIsTotal(sessionRosterRowSchema, withoutTitle),
-    /SessionRosterRow reconciliation is missing a rule for "title"/,
-  )
-})
-
-test('names a reconciliation rule that no longer matches a SessionRosterRow field', () => {
-  assert.throws(
-    () =>
-      assertSessionRosterReconciliationIsTotal(sessionRosterRowSchema, {
-        ...sessionRosterReconciliation,
-        departedField: 'observed',
-      }),
-    /SessionRosterRow reconciliation has no field named "departedField"/,
-  )
-})
 
 test('keeps the current held fields when reconciling a managed row', () => {
   const held = managedRow('session-1', {
@@ -127,6 +91,33 @@ test('keeps the current held fields when reconciling a managed row', () => {
     compactionPercentage: held.compactionPercentage,
     compactionTokens: held.compactionTokens,
   })
+})
+
+test('a managed Session shows the strongest title known for it, keeping its own on a tie', () => {
+  const cases = [
+    { observed: 'summarised', held: 'first-prompt', wins: OBSERVED_TITLE },
+    { observed: 'custom', held: 'first-prompt', wins: OBSERVED_TITLE },
+    { observed: 'custom', held: 'summarised', wins: OBSERVED_TITLE },
+    { observed: 'summarised', held: 'custom', wins: HELD_TITLE },
+    { observed: 'first-prompt', held: 'custom', wins: HELD_TITLE },
+    { observed: 'summarised', held: 'summarised', wins: HELD_TITLE },
+  ] as const
+
+  for (const { observed, held, wins } of cases) {
+    const merged = mergedTitle(
+      { text: OBSERVED_TITLE, source: observed },
+      { text: HELD_TITLE, source: held },
+    )
+    assert.equal(merged?.text, wins, `observed ${observed} against held ${held}`)
+  }
+})
+
+test('a managed Session shows whichever title exists when the other is missing', () => {
+  const found = { text: OBSERVED_TITLE, source: 'summarised' } as const
+  const held = { text: HELD_TITLE, source: 'first-prompt' } as const
+
+  assert.deepEqual(mergedTitle(null, held), held)
+  assert.deepEqual(mergedTitle(found, null), found)
 })
 
 test('the held permission status always wins over the discovered floor', () => {

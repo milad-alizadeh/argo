@@ -1,5 +1,6 @@
 import { isRecord } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { taskStartedContextWindow } from './context-window'
 import { currentUserBlocks } from './current-user-blocks'
 import { delegatedRequest } from './harness-envelopes'
 import { messageBlocks, messageRecord } from './message-record'
@@ -63,6 +64,8 @@ function promptMessage(
 }
 
 function event(record: Record<string, unknown>, payload: Record<string, unknown>) {
+  const contextWindow = taskStartedContextWindow(payload)
+  if (contextWindow !== null) return contextWindow
   if (payload.type === 'item_completed') return itemMessage(record, payload)
   if (payload.type !== 'user_message' && payload.type !== 'agent_message') return null
   if (isRecord(payload.item)) return itemMessage(record, payload)
