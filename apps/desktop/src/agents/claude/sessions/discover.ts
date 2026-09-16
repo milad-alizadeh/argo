@@ -5,6 +5,7 @@ import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import {
   createTranscriptDiscoverer,
+  ROSTER_PAGE_SIZE,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
 import type { ArchivedSessionsPage } from '@/core/sessions/session-source'
@@ -14,10 +15,6 @@ import { parseTranscriptLine } from './records'
 // A page's worth of Archived Sessions (#1593), read on demand rather than on every poll.
 const ARCHIVE_PAGE_LIMIT = 20
 
-// How many transcript files one Roster pass reads, most recently written first. Measured on a
-// real tree of 1,055 files holding 3.3 GB: streaming 200 of them costs about 1.6 s and 60 about
-// 0.5 s. The count is stated on the reply rather than hidden, so a Roster that did not reach
-// every file says so instead of reading as the whole machine.
 export type Discovery = TranscriptDiscovery
 
 async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
@@ -52,8 +49,12 @@ function isArchived(
 // can move a Session's id forward, and the store still names whichever id was current when the
 // reader archived it. The active Roster never carries an archived row (#1593): expanding Archive
 // asks discoverArchivedSessions below instead, on demand.
-export async function discoverSessions(root: string, archiveRoot?: string): Promise<Discovery> {
-  const discovery = await reader.discoverSessions(root)
+export async function discoverSessions(
+  root: string,
+  archiveRoot?: string,
+  options?: { cursor?: string | null },
+): Promise<Discovery> {
+  const discovery = await reader.discoverSessions(root, options)
   if (archiveRoot === undefined) return discovery
   const archived = await readArchivedSessions(archiveRoot)
   return {
@@ -64,42 +65,76 @@ export async function discoverSessions(root: string, archiveRoot?: string): Prom
   }
 }
 
-// One page of the reader's Archived Sessions, offset-paginated over the same parsed, cached rows
-// discoverSessions above reads: detecting an archived row requires the full chain-stitched parse
-// (a Session can be archived under a retired id), so a page costs the same read as the active
-// list and only withholds its rows from that reply.
+// Archive's cursor names both dimensions it pages over: `read`, how many of the most recent files
+// the underlying pass has read so far, and `offset`, how many archived rows earlier pages already
+// returned. Encoded together so a caller only ever echoes what a reply gave it.
+function decodeArchiveCursor(cursor: string | null): { read: number; offset: number } {
+  const parts = (cursor ?? '').split(':')
+  const read = Number.parseInt(parts[0] ?? '', 10)
+  const offset = Number.parseInt(parts[1] ?? '', 10)
+  return {
+    read: Number.isFinite(read) && read > 0 ? read : ROSTER_PAGE_SIZE,
+    offset: Number.isFinite(offset) && offset > 0 ? offset : 0,
+  }
+}
+
+// One page of the reader's Archived Sessions (#1593, #2239): detecting an archived row requires
+// the full chain-stitched parse (a Session can be archived under a retired id), so this grows the
+// same bounded window discoverSessions pages by, reading only as many more files as it takes to
+// fill this page, rather than the whole tree on every page as before.
 export async function discoverArchivedSessions(
   root: string,
   archiveRoot: string,
   options: { cursor: string | null; restoreId: string | null },
 ): Promise<ArchivedSessionsPage> {
-  const discovery = await reader.discoverSessions(root)
   const archivedIds = await readArchivedSessions(archiveRoot)
-  const archived = discovery.rows
+  const restoreId = options.restoreId
+  let { read, offset } = decodeArchiveCursor(options.cursor)
+  let discovery = await reader.discoverSessions(root, { cursor: String(read) })
+  let archived = discovery.rows
     .filter((row) => isArchived(row, archivedIds))
     .map((row) => ({ ...row, archived: true }))
-  const offset = options.cursor === null ? 0 : Number.parseInt(options.cursor, 10)
-  const page = archived.slice(offset, offset + ARCHIVE_PAGE_LIMIT)
-  const nextCursor =
-    offset + ARCHIVE_PAGE_LIMIT >= archived.length ? null : String(offset + ARCHIVE_PAGE_LIMIT)
-  const restoreId = options.restoreId
-  const restored =
+  const restoredIn = (rows: typeof archived) =>
     restoreId === null
       ? null
-      : (archived.find((row) => row.id === restoreId || row.retiredIds.includes(restoreId)) ?? null)
-  return { rows: page, nextCursor, restored }
+      : (rows.find((row) => row.id === restoreId || row.retiredIds.includes(restoreId)) ?? null)
+  // Keep growing the window until this page is full, or a still-unfound `restoreId` is either
+  // found or provably absent (every file has been read) — the two reasons this pass needs more
+  // than the page it started with.
+  while (
+    discovery.nextCursor !== null &&
+    (archived.length < offset + ARCHIVE_PAGE_LIMIT || restoredIn(archived) === null)
+  ) {
+    read += ROSTER_PAGE_SIZE
+    discovery = await reader.discoverSessions(root, { cursor: String(read) })
+    archived = discovery.rows
+      .filter((row) => isArchived(row, archivedIds))
+      .map((row) => ({ ...row, archived: true }))
+  }
+  const page = archived.slice(offset, offset + ARCHIVE_PAGE_LIMIT)
+  const more = discovery.nextCursor !== null || archived.length > offset + ARCHIVE_PAGE_LIMIT
+  const nextCursor = more ? `${read}:${offset + ARCHIVE_PAGE_LIMIT}` : null
+  return { rows: page, nextCursor, restored: restoredIn(archived) }
 }
 
 // Setting the archive flag for a batch of Sessions (#2194), by canonical id: each id is resolved
-// against the full discovery (active and archived alike) so a Session archived under a retired id
-// is still found under its current one, and the write reaches whichever file the store already
-// keeps for it under any id it has answered to.
+// against a window grown just far enough to find every one of them (active and archived alike,
+// #2239), so a Session archived under a retired id is still found under its current one even when
+// it sits outside the roster's own bounded window, and the write reaches whichever file the store
+// already keeps for it under any id it has answered to.
 export async function setArchivedSessions(
   root: string,
   archiveRoot: string,
   request: { ids: readonly string[]; archived: boolean },
 ): Promise<{ applied: string[]; failed: string[] }> {
-  const discovery = await reader.discoverSessions(root)
+  let read = ROSTER_PAGE_SIZE
+  let discovery = await reader.discoverSessions(root, { cursor: String(read) })
+  const unresolved = () =>
+    request.ids.some((id) => !discovery.rows.some((candidate) => candidate.id === id))
+  while (unresolved() && discovery.nextCursor !== null) {
+    read += ROSTER_PAGE_SIZE
+    discovery = await reader.discoverSessions(root, { cursor: String(read) })
+  }
   const targets = request.ids.map((id) => {
     const row = discovery.rows.find((candidate) => candidate.id === id)
     return { id, candidateIds: row === undefined ? [id] : [row.id, ...row.retiredIds] }

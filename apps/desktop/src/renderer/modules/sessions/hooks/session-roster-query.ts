@@ -12,6 +12,11 @@ import type { SessionId, SessionRoster, SessionsListed } from '../types'
 
 let rosterOrder: SessionId[] = []
 
+type RosterQuerySource = {
+  cursor?: string | null
+  projectRoot: string | null
+}
+
 function keepRosterOrder(sessions: SessionsListed['sessions']) {
   const unmatched = [...sessions]
   const ordered = rosterOrder.flatMap((rememberedId) => {
@@ -22,7 +27,10 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
     const session = unmatched.splice(index, 1)[0]
     return session === undefined ? [] : [session]
   })
-  ordered.push(...unmatched)
+  // A Session neither id nor retired-id matches is one the remembered order has never placed:
+  // freshly discovered, or a restored archive row starting over. It leads the roster rather than
+  // trailing it, so a newly observed Session reads at the top and the rest keep their fixed order.
+  ordered.unshift(...unmatched)
   rosterOrder = ordered.map((session) => session.id)
   return ordered
 }
@@ -30,7 +38,7 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 export function sessionRosterQuery(
   selectedSessionId: SessionId | null,
   enabled: boolean,
-  projectRoot: string | null,
+  { projectRoot, cursor = null }: RosterQuerySource,
 ): UseQueryOptions<SessionRoster, SessionContractError> {
   return {
     queryKey: [...sessionRosterQueryKey, projectRoot],
@@ -43,7 +51,7 @@ export function sessionRosterQuery(
         : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
-      const reply = await window.argo.listSessions({ projectRoot })
+      const reply = await window.argo.listSessions({ projectRoot, cursor })
       switch (reply.type) {
         case 'session.listed':
           return {
@@ -51,6 +59,7 @@ export function sessionRosterQuery(
             filesFound: reply.filesFound,
             filesRead: reply.filesRead,
             filesUnreadable: reply.filesUnreadable,
+            nextCursor: reply.nextCursor,
           }
         case 'session.error':
           return throwSessionContractError(reply)

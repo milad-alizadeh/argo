@@ -26,6 +26,7 @@ const listed = {
   filesFound: 1,
   filesRead: 1,
   filesUnreadable: 0,
+  nextCursor: null,
 } satisfies SessionsListed
 
 const readFailure = {
@@ -336,6 +337,9 @@ export const Loading: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
     await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(6)
+    // The Archive disclosure names a real empty/non-empty outcome, so it stays off the list
+    // until the roster resolves once (#2239): the unresolved skeleton never shows it.
+    await expect(canvas.queryByRole('button', { name: 'Archived' })).not.toBeInTheDocument()
   },
 }
 export const Empty: Story = {

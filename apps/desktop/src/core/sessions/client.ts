@@ -49,7 +49,10 @@ export type SessionClient = {
     questionId: string
     answers: ClaudeQuestionAnswer[]
   }): Promise<SessionAcceptedReply>
-  listSessions(request: { projectRoot: string | null }): Promise<SessionListReply>
+  listSessions(request: {
+    projectRoot: string | null
+    cursor?: string | null
+  }): Promise<SessionListReply>
   listArchivedSessions(request: {
     cursor: string | null
     restoreId: string | null

@@ -40,7 +40,7 @@ afterEach(() => {
 async function pollTwice(secondTitle: string) {
   withListSessions(listedReply('request-1', 'Read the Feed'), listedReply('request-2', secondTitle))
   const client = new QueryClient()
-  const options = sessionRosterQuery('session-a', true, null)
+  const options = sessionRosterQuery('session-a', true, { projectRoot: null })
   const observer = new QueryObserver(client, options)
   const unsubscribe = observer.subscribe(() => {})
 

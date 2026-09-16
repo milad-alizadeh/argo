@@ -18,6 +18,7 @@ export type RosterRowHandlers = {
 
 export type RosterRow =
   | { kind: 'session'; session: Session; archived: boolean }
+  | { kind: 'rosterSentinel' }
   | { kind: 'archivedToggle'; open: boolean }
   | { kind: 'archivedLoading' }
   | { kind: 'archivedError'; error: SessionContractError }
@@ -32,6 +33,8 @@ export function rosterRows({
   active,
   archivedOpen,
   archived,
+  hasMoreSessions,
+  showArchive,
 }: {
   active: readonly Session[]
   archivedOpen: boolean
@@ -42,12 +45,21 @@ export function rosterRows({
     isFetchingNextPage: boolean
     isLoading: boolean
   }
+  hasMoreSessions: boolean
+  showArchive: boolean
 }): RosterRow[] {
   const rows: RosterRow[] = active.map((session) => ({
     kind: 'session',
     session,
     archived: false,
   }))
+  // Scrolling this row into view is the reader action that grows the active roster's own bounded
+  // window (#2239); it carries no loaded rows itself, so it is never mistaken for one.
+  if (hasMoreSessions) rows.push({ kind: 'rosterSentinel' })
+  // The initial roster load draws its own skeleton (sessions-sidebar-chrome.tsx); the Archive
+  // disclosure names a real empty/non-empty outcome, so it stays off the list until the roster
+  // has resolved once (#2239).
+  if (!showArchive) return rows
   rows.push({ kind: 'archivedToggle', open: archivedOpen })
   if (!archivedOpen) return rows
   if (archived.isLoading) {
