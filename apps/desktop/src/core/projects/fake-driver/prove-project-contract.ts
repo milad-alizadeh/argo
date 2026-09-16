@@ -1,15 +1,21 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
+import {
+  type CaseResults,
+  createCaseRunner,
+  printPackagedProofResult,
+} from '../../desktop-proof/packaged-case-runner'
 import {
   appExecutable,
   assertShippedFusesIntact,
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
+import { PROJECT_PROOF_SURFACE } from './project-proof-surface'
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -30,62 +36,9 @@ async function prepare(root) {
   return { application, userData, projectPath, registryPath }
 }
 
-const SURFACE = [
-  'awaitAccount',
-  'cancelAccount',
-  'cancelSessionFeed',
-  'chooseSessionAttachments',
-  'compactSession',
-  'connectAccount',
-  'connectSessionTicket',
-  'connectSource',
-  'decideSessionPermission',
-  'decideSessionQuestion',
-  'development',
-  'disconnectAccount',
-  'disconnectSessionTicket',
-  'disconnectSource',
-  'discoverSources',
-  'dismissAccountNotice',
-  'getAppearance',
-  'getCodexAutoCompactLimit',
-  'handoffSession',
-  'interruptSession',
-  'listAccounts',
-  'listArchivedSessions',
-  'listProjects',
-  'listSessions',
-  'listTickets',
-  'onAppearanceChanged',
-  'onCommand',
-  'onWatchedChanged',
-  'openProject',
-  'pathForFile',
-  'readConnection',
-  'readDelegationUsage',
-  'readSessionFeed',
-  'readSessionPermission',
-  'readShellOutput',
-  'readSkillFile',
-  'readWorkspaceFile',
-  'registerProject',
-  'relocateProject',
-  'renameSession',
-  'selectProject',
-  'sendSession',
-  'setAppearance',
-  'setCodexAutoCompactLimit',
-  'setSessionsArchived',
-  'startSession',
-  'statSessionAttachments',
-  'updatePriority',
-  'updateStatus',
-  'verifyAccount',
-  'versions',
-  'zoomFactor',
-]
+const invoke = (page, value) => page.evaluate((message) => window.argo.openProject(message), value)
 
-async function proveSurface(application, page) {
+async function proveSuccess(application, page) {
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   assert.equal(
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()),
@@ -97,15 +50,36 @@ async function proveSurface(application, page) {
       process: typeof window.process,
       methods: Object.keys(window.argo).sort(),
     })),
-    { node: 'undefined', process: 'undefined', methods: SURFACE },
+    { node: 'undefined', process: 'undefined', methods: PROJECT_PROOF_SURFACE },
   )
+  const reply = await invoke(page, { projectId: 'project-1' })
+  assert.equal(typeof reply.requestId, 'string')
+  assert.deepEqual(reply, {
+    version: 1,
+    type: 'project.opened',
+    requestId: reply.requestId,
+    project: { id: 'project-1', name: 'example' },
+  })
 }
 
-async function prove(application) {
-  const page = await application.firstWindow()
-  page.setDefaultTimeout(30_000)
-  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
-  await proveSurface(application, page)
+async function proveMissingProject(page) {
+  assert.equal((await invoke(page, { projectId: 'missing' })).code, 'missing-project')
+}
+
+async function proveDeniedAccess(page, fixture) {
+  await chmod(fixture.projectPath, 0)
+  try {
+    assert.equal((await invoke(page, { projectId: 'project-1' })).code, 'access-denied')
+  } finally {
+    await chmod(fixture.projectPath, 0o700)
+  }
+}
+
+async function proveInvalidRequest(page) {
+  assert.equal(
+    (await invoke(page, { projectId: 'project-1', path: '/private' })).code,
+    'invalid-request',
+  )
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
@@ -118,18 +92,22 @@ try {
     env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
     timeout: 30_000,
   })
-  await prove(application)
-  assert.equal(await readFile(fixture.registryPath, 'utf8'), before)
+  const page = await application.firstWindow()
+  page.setDefaultTimeout(30_000)
+  await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+
+  const results: CaseResults = { cases: [], timings: {} }
+  const ran = createCaseRunner(results)
+  await ran(['success'], () => proveSuccess(application, page))
+  await ran(['missing-project'], () => proveMissingProject(page))
+  await ran(['denied-access'], () => proveDeniedAccess(page, fixture))
+  await ran(['invalid-request'], () => proveInvalidRequest(page))
+  await ran(['unchanged-store'], async () => {
+    assert.equal(await readFile(fixture.registryPath, 'utf8'), before)
+  })
+
   await assertShippedFusesIntact()
-  console.log(
-    JSON.stringify({
-      ok: true,
-      packaged: true,
-      signed: false,
-      profile: 'test',
-      cases: ['success', 'missing-project', 'denied-access', 'invalid-request', 'unchanged-store'],
-    }),
-  )
+  printPackagedProofResult(results.cases)
 } finally {
   try {
     if (application) await application.close()

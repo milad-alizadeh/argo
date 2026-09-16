@@ -1,5 +1,6 @@
 {
   "navigationLabel": "Sessions",
+  "sidebarLabel": "Sessions sidebar",
   "title": "Sessions",
   "subtitle": "CLI messages",
   "loading": "Argo is reading this machine's Sessions.",
