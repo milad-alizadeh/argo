@@ -6,23 +6,27 @@ import type { SessionReader } from './bridge'
 import {
   driveSessionError,
   isDriveCli,
+  type SessionListRequest,
+  type SessionRenameRequest,
   sessionError,
-  sessionListRequestSchema,
-  sessionRenameRequestSchema,
 } from './contract'
 import type { HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'
-import { archiveListReply } from './read-archive-list'
-import { delegationUsageReply, type OwnerFor, shellOutputReply } from './read-background-work'
-import { workspaceFileReply } from './read-file-request'
-import { readFailure, versionFailure } from './read-request'
+import { type OwnerFor, type ReadContext, readFailure } from './read-declaration'
 import { createFeedReader } from './read-session-feed'
+import {
+  archiveListRead,
+  archiveSetWrite,
+  delegationUsageRead,
+  shellOutputRead,
+  skillFileRead,
+  workspaceFileRead,
+} from './reads'
 import { decodeRosterCursor } from './roster-cursor'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
-import { archiveSetReply } from './write-archive'
 
 export type { FeedOverlay, SessionSource } from './session-source'
 
@@ -84,17 +88,43 @@ function createOwnerResolver(sources: SessionSource[]) {
   }
 }
 
-async function renameReply(ownerFor: OwnerFor, value: unknown) {
-  if (versionFailure(value)) return sessionError('unsupported-version', null)
-  const parsed = sessionRenameRequestSchema.safeParse(value)
-  if (!parsed.success) return sessionError('invalid-request', null)
-  const owner = await ownerFor(parsed.data.sessionId)
-  if (owner === undefined) return sessionError('missing-session', parsed.data.requestId)
+async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
+  const owner = await ownerFor(request.sessionId)
+  if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
     const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
-    return driveSessionError('not-drivable', cli, parsed.data.requestId)
+    return driveSessionError('not-drivable', cli, request.requestId)
   }
-  return owner.rename(parsed.data)
+  return owner.rename(request)
+}
+
+async function listReply(
+  sources: SessionSource[],
+  ownership: ReturnType<typeof createOwnerResolver>,
+  { ticketLinks, request }: { ticketLinks: SessionTicketLinkStore; request: SessionListRequest },
+) {
+  const cursors = decodeRosterCursor(request.cursor)
+  const discovered = await Promise.all(
+    sources.map((source) =>
+      discoverFromSource(source, request.requestId, {
+        cursor: cursors[source.cli] ?? null,
+        projectRoot: request.projectRoot,
+      }),
+    ),
+  )
+  const clis = sources.map((source) => source.cli)
+  const reply = combineDiscoveries(discovered, clis, request.requestId)
+  if (reply.type !== 'session.listed') return reply
+  ownership.rememberDiscoveries(reply.sessions)
+  // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
+  // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
+  const sessions = await Promise.all(
+    reply.sessions.map(async (session) => ({
+      ...session,
+      ticket: await ticketLinks.linkFor(session.id),
+    })),
+  )
+  return { ...reply, sessions }
 }
 
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
@@ -108,51 +138,24 @@ export function createSessionReader(
   const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
   const feedReader = createFeedReader(ownership, feeds, projections)
+  const reads: ReadContext = { sources, ownerFor: ownership.ownerFor }
 
   return {
     async ownerCliFor(sessionId) {
       const owner = await ownership.ownerFor(sessionId)
       return owner?.cli
     },
-    async listSessions(value) {
-      if (versionFailure(value)) return sessionError('unsupported-version', null)
-      const parsed = sessionListRequestSchema.safeParse(value)
-      if (!parsed.success) return sessionError('invalid-request', null)
-      const cursors = decodeRosterCursor(parsed.data.cursor)
-      const discovered = await Promise.all(
-        sources.map((source) =>
-          discoverFromSource(source, parsed.data.requestId, {
-            cursor: cursors[source.cli] ?? null,
-            projectRoot: parsed.data.projectRoot,
-          }),
-        ),
-      )
-      const reply = combineDiscoveries(
-        discovered,
-        sources.map((source) => source.cli),
-        parsed.data.requestId,
-      )
-      if (reply.type !== 'session.listed') return reply
-      ownership.rememberDiscoveries(reply.sessions)
-      // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
-      // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
-      const sessions = await Promise.all(
-        reply.sessions.map(async (session) => ({
-          ...session,
-          ticket: await ticketLinks.linkFor(session.id),
-        })),
-      )
-      return { ...reply, sessions }
-    },
+    listSessions: (request) => listReply(sources, ownership, { ticketLinks, request }),
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
-    archiveList: (value) => archiveListReply(sources, value),
-    archiveSet: (value) => archiveSetReply(sources, value),
-    readWorkspaceFile: (value) => workspaceFileReply(ownership.ownerFor, value),
+    archiveList: (request) => archiveListRead(reads, request),
+    archiveSet: (request) => archiveSetWrite(reads, request),
+    readWorkspaceFile: (request) => workspaceFileRead(reads, request),
+    readSkillFile: (request) => skillFileRead(reads, request),
     readSessionFeed: feedReader.readSessionFeed,
     cancelSessionFeed: feedReader.cancelSessionFeed,
-    readShellOutput: (value) => shellOutputReply(ownership.ownerFor, value),
-    readDelegationUsage: (value) => delegationUsageReply(ownership.ownerFor, value),
-    renameSession: (value) => renameReply(ownership.ownerFor, value),
+    readShellOutput: (request) => shellOutputRead(reads, request),
+    readDelegationUsage: (request) => delegationUsageRead(reads, request),
+    renameSession: (request) => renameReply(ownership.ownerFor, request),
   }
 }

@@ -5,7 +5,7 @@ import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
-import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
+import { sessionListReplySchema } from './contract'
 import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,
@@ -135,28 +135,4 @@ test('says a Session is missing when no CLI can find it', async (context) => {
   const reply = await fed(reader, feedRequest('nowhere'))
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.type === 'session.error' && reply.code, 'missing-session')
-})
-
-test('refuses a request it cannot parse and a version it does not hold', async (context) => {
-  const claudeRoot = await tempRoot(context)
-  const codexRoot = await tempRoot(context)
-  const reader = createSessionReader([
-    claudeSessionSource({ transcripts: claudeRoot }),
-    codexSessionSource(codexRoot),
-  ])
-
-  const badVersion = sessionListReplySchema.parse(
-    await reader.listSessions({ ...listing(), version: 2 } as never),
-  )
-  assert.equal(badVersion.type === 'session.error' && badVersion.code, 'unsupported-version')
-
-  const badShape = sessionListReplySchema.parse(
-    await reader.listSessions({ ...listing(), extra: 1 } as never),
-  )
-  assert.equal(badShape.type === 'session.error' && badShape.code, 'invalid-request')
-
-  const badFeed = sessionFeedReplySchema.parse(
-    await reader.readSessionFeed({ ...feedRequest('growing'), sessionId: '' }),
-  )
-  assert.equal(badFeed.type === 'session.error' && badFeed.code, 'invalid-request')
 })
