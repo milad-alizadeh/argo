@@ -4,6 +4,7 @@
 // interception of `fetch`, so every fake provider layers its routes onto this one instance rather
 // than owning a server of its own; a test that runs two fakes at once (the Account harness) needs
 // both alive together.
+import assert from 'node:assert/strict'
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { Readable } from 'node:stream'
 import { type HttpHandler, http } from 'msw'
@@ -65,24 +66,23 @@ const METHODS = { get: http.get, post: http.post, patch: http.patch } as const
 
 export type FakeMount = {
   origin: string
-  // Flips to `false` on the fake's own `close()`, so a later request to a closed fake falls
-  // through as unhandled rather than answer state a fresh fake, started under the same fixed
-  // origin, replaced.
-  active: () => boolean
   requests: string[]
   routes: Record<string, NodeRoute>
 }
 
-// Layers one fake provider's routes onto the shared server.
-export function mountFakeProvider(mount: FakeMount): void {
-  const { origin, active, requests, routes } = mount
+// Layers one fake provider's routes onto the shared server, and returns the way it retires them:
+// calling it back flips a private flag so a later request to a closed fake falls through as
+// unhandled rather than answer state a fresh fake, started under the same fixed origin, replaced.
+export function mountFakeProvider(mount: FakeMount): () => void {
+  const { origin, requests, routes } = mount
+  let active = true
   trackedOrigins.add(origin)
   const handlers: HttpHandler[] = Object.entries(routes).map(([key, run]) => {
     const space = key.indexOf(' ')
     const method = key.slice(0, space).toLowerCase() as keyof typeof METHODS
     const path = key.slice(space + 1)
     return METHODS[method](`${origin}${path}`, async ({ request }) => {
-      if (!active()) return
+      if (!active) return
       requests.push(`${request.method} ${new URL(request.url).pathname}`)
       try {
         return await bridge(request, run)
@@ -92,4 +92,21 @@ export function mountFakeProvider(mount: FakeMount): void {
     })
   })
   theServer().use(...handlers)
+  return () => {
+    active = false
+  }
+}
+
+// Asserts the AC every fake provider shares: a `GET` this fake never stubbed rejects the caller,
+// and Mock Service Worker's console error for it names the request.
+export async function assertUnstubbedRequestFails(url: string): Promise<void> {
+  const printed: string[] = []
+  const originalError = console.error
+  console.error = (...args: unknown[]) => printed.push(args.join(' '))
+  try {
+    await assert.rejects(fetch(url))
+  } finally {
+    console.error = originalError
+  }
+  assert.ok(printed.some((line) => line.includes(`GET ${url}`)))
 }
