@@ -4,9 +4,11 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
-import { type FakeGitHub, startFakeGitHub } from '../../../providers/github/fake-driver/fake-github'
-import { type FakeLinear, startFakeLinear } from '../../../providers/linear/fake-driver/fake-linear'
+import type { FakeGitHub } from '../../../providers/github/fake-driver/fake-github'
+import { startFakeGitHubLoopback } from '../../../providers/github/fake-driver/fake-github-loopback'
+import type { FakeLinear } from '../../../providers/linear/fake-driver/fake-linear'
 import { HIDDEN, TEAM } from '../../../providers/linear/fake-driver/fake-linear-cast'
+import { startFakeLinearLoopback } from '../../../providers/linear/fake-driver/fake-linear-loopback'
 import { appExecutable, packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import { repository } from '../../projects/fake-driver/project-proof-fixture'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
@@ -75,9 +77,9 @@ export async function prepare(root: string): Promise<TicketFixture> {
       selectedId: 'project-1',
     }),
   )
-  const github = await startFakeGitHub()
+  const github = await startFakeGitHubLoopback()
   serveRepositories(github)
-  const linear = await startFakeLinear()
+  const linear = await startFakeLinearLoopback()
   serveTeams(linear)
   return { application, userData, noSessions, github, linear }
 }
