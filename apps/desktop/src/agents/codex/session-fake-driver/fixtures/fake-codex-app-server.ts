@@ -13,7 +13,7 @@ import {
 import { askQuestion, handleAskReply } from './fake-ask-question.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fake-codex-adversarial.ts'
 import { compactionItem, completeTurn } from './fake-codex-responses.ts'
-import { recordTurn } from './fake-codex-transcript.ts'
+import { recordStalledTurn, recordTurn } from './fake-codex-transcript.ts'
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
@@ -46,7 +46,10 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
   const input = Array.isArray(params.input) ? params.input : []
   const text = typeof input[0]?.text === 'string' ? input[0].text : ''
   const plan = nextAdversarialTurn(adversarialSeed, turnIndex++)
-  if (typeof threadId === 'string') recordTurn(threadId, text)
+  if (typeof threadId === 'string') {
+    if (plan?.outcome === 'stall') recordStalledTurn(threadId)
+    else recordTurn(threadId, text)
+  }
   if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
   const turnId = `fake-turn-${threadCounter}-${Date.now()}`
   send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
@@ -60,6 +63,7 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
   }
   if (plan !== null) {
     setTimeout(() => {
+      if (plan.outcome === 'stall') return
       writeSplitReply(
         {
           method: 'item/agentMessage/delta',
@@ -73,7 +77,6 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
         plan.replySplitByte,
         (chunk) => process.stdout.write(chunk),
       )
-      if (plan.outcome === 'stall') return
       completeTurn({
         outcome: plan.outcome === 'failure' ? 'failure' : 'reply',
         send,

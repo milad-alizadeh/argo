@@ -30,14 +30,17 @@ describeSessionProof('session-adversarial', backend, (run) => {
 
   test('replays jitter, split bytes, and failure through Codex', async () => {
     const firstPrompt = 'Keep the adversarial reply complete.'
-    const failed = await createSessionByClick(box.get(), { cli: 'codex', prompt: firstPrompt })
+    const failedSessionId = await createSessionByClick(box.get(), {
+      cli: 'codex',
+      prompt: firstPrompt,
+    })
     await expect(box.get().getByText(`Fake Codex read: ${firstPrompt} 🦜`)).toBeVisible()
 
     const composer = box.get().getByRole('textbox', { name: 'Message' })
     await composer.click()
     await box.get().keyboard.type('Fail this Turn.')
     await box.get().keyboard.press('Enter')
-    await expect.poll(() => statusFor(box.get(), failed)).toBe('unknown')
+    await expect.poll(() => statusFor(box.get(), failedSessionId)).toBe('unknown')
   })
 })
 
@@ -46,19 +49,12 @@ describeSessionProof('session-adversarial-stall', backend, (run) => {
 
   test('launch', async () => {
     await selectProofProject(run.fixture.userData, run.fixture.project)
-    box.set(await run.launch({ adversarialSeed: 'seed-5' }))
+    box.set(await run.launch({ adversarialSeed: 'seed-6' }))
   })
 
-  test('keeps a stalled Codex Turn visibly working', async () => {
-    const stalledPrompt = 'Start the stalled Session.'
-    const stalled = await createSessionByClick(box.get(), { cli: 'codex', prompt: stalledPrompt })
-    await expect(box.get().getByText(`Fake Codex read: ${stalledPrompt} 🦜`)).toBeVisible()
-    const composer = box.get().getByRole('textbox', { name: 'Message' })
-    await composer.click()
-    await box.get().keyboard.type('Stall this Turn.')
-    await box.get().keyboard.press('Enter')
-    await expect.poll(() => statusFor(box.get(), stalled)).toBe('running')
-    await expect(box.get().getByRole('status', { name: 'Working' })).toBeVisible()
+  test('shows the stalled reading for a Codex Turn with no Feed row', async () => {
+    await createSessionByClick(box.get(), { cli: 'codex', prompt: 'Stall this Turn.' })
+    await expect(box.get().locator('[data-state="stalled"]')).toBeVisible({ timeout: 12_000 })
   })
 })
 
@@ -86,7 +82,10 @@ describeSessionProof('session-adversarial-permission', backend, (run) => {
     )
     await expect
       .poll(async () => (await readFile(transcript, 'utf8')).match(/"type":"user"/g)?.length)
-      .toBe(2)
+      .toBe(1)
+    await expect(box.get().locator('.session-page__queued-message')).toContainText(
+      'Queue this after Permission.',
+    )
   })
 })
 

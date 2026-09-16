@@ -41,8 +41,15 @@ export function BasicFeed({
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const [retryToken, setRetryToken] = useState(0)
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
+  const onlyPromptRows =
+    current !== null &&
+    current.rows.length > 0 &&
+    current.rows.every((row) => row.shape === 'prose' && row.role === 'user')
   const awaitingFeed =
-    failure === null && selectedSessionId !== null && !optimisticSession && current === null
+    failure === null &&
+    selectedSessionId !== null &&
+    !optimisticSession &&
+    (current === null || (liveFacts?.isRunning === true && onlyPromptRows))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
@@ -68,8 +75,8 @@ export function BasicFeed({
 
   return (
     <section aria-label="Session Feed" className="feed">
-      {ordered.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || (current === null && !optimisticSession) ? (
+      {!stalled && ordered.map(([id, document]) => keptDocument(id, document, shared))}
+      {failure !== null || stalled || (current === null && !optimisticSession) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}
