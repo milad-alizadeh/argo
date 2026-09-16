@@ -2,7 +2,9 @@
 // way (#2117). Every packaged case used to inherit its Session from an injected
 // `window.argo.startSession()`, and that one uncrossed boundary is where a cluster of creation
 // bugs reached the user.
+
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionCli } from '../../../renderer/modules/sessions/harness/harnesses'
 
@@ -148,7 +150,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await chooseHarness(page, request.cli)
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
-  assert.equal(await composer.textContent(), '')
+  await expect(composer).toHaveText('')
   await page.keyboard.type(request.prompt)
   await page.keyboard.press('Enter')
 

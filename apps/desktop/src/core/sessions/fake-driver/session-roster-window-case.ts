@@ -1,7 +1,9 @@
 // The Roster's bounded window, proved through the packaged app rather than the reader alone
 // (#2239): scrolling the sentinel row into view grows the loaded window, and keyboard navigation
 // keeps walking cleanly across whatever it just loaded.
+
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import { FARTHEST_WINDOW_FILLER_ID } from './session-roster-window-fixture'
 
@@ -40,8 +42,7 @@ export async function proveRosterWindow(page: Page) {
 
   // The farthest filler Session sits well outside the first bounded window (#2239): it is not in
   // the document at all until scrolling grows the window past it.
-  assert.equal(
-    await page.locator(`${ROW}[data-session-id="${FARTHEST_WINDOW_FILLER_ID}"]`).count(),
+  await expect(page.locator(`${ROW}[data-session-id="${FARTHEST_WINDOW_FILLER_ID}"]`)).toHaveCount(
     0,
   )
 

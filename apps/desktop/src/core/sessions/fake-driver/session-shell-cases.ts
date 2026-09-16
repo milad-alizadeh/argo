@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import { deselectSession } from './session-gestures'
 
@@ -29,15 +30,16 @@ export async function proveSessionShell(page: Page) {
   assert.ok(inspectorWidth > 0, '--size-session-inspector resolves to a width')
 
   const inspector = page.locator('aside[aria-label="Session inspector"]')
-  if (Math.round((await inspector.boundingBox())?.width ?? 0) !== 0) {
+  const roundedWidth = async () => Math.round((await inspector.boundingBox())?.width ?? 0)
+  if ((await roundedWidth()) !== 0) {
     await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
     await waitForInspectorWidth(page, 0)
   }
-  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
+  await expect.poll(roundedWidth).toBe(0)
   await page.getByRole('button', { name: 'Open Session inspector' }).click()
   await waitForInspectorWidth(page, inspectorWidth)
-  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), inspectorWidth)
+  await expect.poll(roundedWidth).toBe(inspectorWidth)
   await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
   await waitForInspectorWidth(page, 0)
-  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
+  await expect.poll(roundedWidth).toBe(0)
 }

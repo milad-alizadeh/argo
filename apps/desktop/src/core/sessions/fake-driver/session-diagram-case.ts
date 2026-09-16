@@ -2,7 +2,9 @@
 // content draws as a diagram, an incomplete fence gets an honest failure state instead of a
 // blank one, and expanding a diagram into the inspector holds the Feed's reading anchor exactly
 // where it was.
+
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { ACTIVE_VIEWPORT } from './feed-selectors'
 
 type DiagramFixture = {
@@ -66,14 +68,12 @@ export async function proveSessionDiagram(page, fixture: DiagramFixture) {
   // The honest state for the fence Mermaid could not draw: its source stays readable and the
   // reader is told plainly, rather than the row going blank.
   const alert = page.locator(`${ACTIVE_VIEWPORT} [role="alert"]`)
-  assert.match(await alert.innerText(), /incomplete/)
-  assert.equal(
-    await page
+  await expect(alert).toHaveText(/incomplete/)
+  await expect(
+    page
       .locator(`${ACTIVE_VIEWPORT} figure:has-text("Could not render")`)
-      .getByRole('button', { name: 'Expand diagram in inspector' })
-      .count(),
-    0,
-  )
+      .getByRole('button', { name: 'Expand diagram in inspector' }),
+  ).toHaveCount(0)
 
   const expand = page.locator(ACTIVE_VIEWPORT).getByRole('button', {
     name: 'Expand diagram in inspector',
@@ -112,5 +112,5 @@ export async function proveSessionDiagram(page, fixture: DiagramFixture) {
   await page.waitForTimeout(REFLOW_SETTLE_MS)
 
   assert.equal(Math.abs((await rowOffset(page, DIAGRAM_ROW)) - before) <= 1, true)
-  assert.notEqual(await inspector.locator('svg').count(), 0)
+  await expect(inspector.locator('svg')).not.toHaveCount(0)
 }

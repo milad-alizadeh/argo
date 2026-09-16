@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { fixturePath, replaceInFile } from './session-fixture-files'
 import {
   chooseHarness,
@@ -39,10 +39,7 @@ export async function proveTurnSetup(page) {
   await page.keyboard.press('ArrowLeft')
   await page.keyboard.press('Escape')
   await models.waitFor({ state: 'detached' })
-  assert.equal(
-    await page.evaluate((selector) => document.activeElement?.matches(selector), RUN_SETUP),
-    true,
-  )
+  await expect(page.locator(RUN_SETUP)).toBeFocused()
 
   await page.locator(MODE).focus()
   await page.keyboard.press('ArrowDown')

@@ -76,6 +76,10 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
     page.setDefaultTimeout(backend.budgetMs)
     recentConsole = []
     keepRecentConsole(page, recentConsole)
+    // One trace recording per Electron process, segmented per Playwright test in
+    // `session-proof-run.ts`: it stops and restarts the recording at each test boundary so a
+    // failure writes only its own trace, and a restart mid-case simply starts recording again.
+    await application.context().tracing.start({ screenshots: true, snapshots: true })
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
@@ -104,5 +108,6 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
     close: () => application?.close(),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
+    context: () => application?.context(),
   }
 }

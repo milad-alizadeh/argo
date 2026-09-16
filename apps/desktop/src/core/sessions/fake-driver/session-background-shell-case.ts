@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { mountFeedRow } from './feed-virtualization'
 
 async function openPackageReadEvidence(page) {
@@ -26,7 +26,7 @@ async function openPackageReadEvidence(page) {
   const packageRead = evidenceGroup.locator('[data-feed-evidence-id="sh-call-package"]')
   await packageRead.waitFor()
   await packageRead.click()
-  assert.equal(await packageRead.getAttribute('aria-current'), 'location')
+  await expect(packageRead).toHaveAttribute('aria-current', 'location')
   await page.locator('section[aria-label="Command and file inspector"]').waitFor()
   await page.getByText('Read package.json').last().waitFor()
   await page.getByText(/"name": "desktop"/).waitFor()
@@ -45,7 +45,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   const shellButton = page.getByRole('button', { name: 'Shell · 3' })
   await shellButton.waitFor()
   // No Subagent here, so the header carries the Shell button alone.
-  assert.equal(await page.getByRole('button', { name: /^Subagents/ }).count(), 0)
+  await expect(page.getByRole('button', { name: /^Subagents/ })).toHaveCount(0)
 
   // A work pick replaces evidence already open in the inspector.
   await openPackageReadEvidence(page)
@@ -68,7 +68,7 @@ export async function proveBackgroundShell(page, { writeOutput, complete }) {
   )
   await page.getByText('rebuilt in 240ms').waitFor()
   await shellButton.click()
-  assert.equal(await running.getAttribute('aria-current'), 'true')
+  await expect(running).toHaveAttribute('aria-current', 'true')
   await page.keyboard.press('Escape')
 
   await writeOutput('watching for changes\nrebuilt in 240ms\nwatcher stopped\n')

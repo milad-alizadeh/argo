@@ -1,4 +1,4 @@
-// The fixture half of the packaged Session proof: the disk state `prove-session-feed.ts` launches
+// The fixture half of the packaged Session proof: the disk state `session-feed.spec.ts` launches
 // the app against, and the two mutations that prove a re-read reaches the file system rather than
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -46,8 +46,9 @@ const ARCHIVED = ['plannedWork']
 // app already wrote rather than inventing one.
 const TRACKED_UNARCHIVED = ['harnessNoise']
 
-const shotsIndex = process.argv.indexOf('--shots')
-export const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
+// A directory for a person's own screenshots. The Playwright test runner owns `process.argv`, so
+// this reads an environment variable rather than a flag: `ARGO_SESSION_SHOTS=<dir> bunx playwright test`.
+export const shots = process.env.ARGO_SESSION_SHOTS ?? null
 
 // One more turn on a Session already measured, written the way the CLI writes one: appended to
 // the file it belongs to.

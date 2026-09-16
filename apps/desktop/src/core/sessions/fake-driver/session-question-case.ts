@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { openSessionByClick } from './session-gestures'
 
 // A pending `AskUserQuestion` draws as a Feed row (#1840), and the composer stays a plain text
@@ -14,12 +14,12 @@ export async function proveSessionQuestion(page) {
   const history = page.getByRole('region', { name: 'Session history' })
   await history.getByText('Which ink?').waitFor()
   await history.getByText('This session is open in another app').waitFor()
-  assert.equal(await history.getByRole('radio').count(), 0)
-  assert.equal(await history.getByRole('button', { name: 'Send answer' }).count(), 0)
+  await expect(history.getByRole('radio')).toHaveCount(0)
+  await expect(history.getByRole('button', { name: 'Send answer' })).toHaveCount(0)
 
   const message = page.locator('[aria-label="Message"]')
   await message.click()
   await page.keyboard.type('Not yet.')
   const send = page.locator('[aria-label="Send message"]')
-  assert.equal(await send.isDisabled(), true)
+  await expect(send).toBeDisabled()
 }

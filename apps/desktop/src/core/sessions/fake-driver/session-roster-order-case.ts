@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { chooseRosterStatus, openSessionByClick } from './session-gestures'
 import { readRosterIds, waitForActiveSessions } from './session-roster-facts'
 
@@ -9,37 +10,25 @@ function archivedRow(sessionId: string) {
 async function proveVisibleNames(page) {
   const claude = page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]')
   await claude.waitFor()
-  assert.equal((await claude.textContent())?.includes('/effort'), true)
+  await expect(claude).toContainText('/effort')
   await claude.click()
   await page.waitForSelector('.feed__viewport[data-session="harnessNoise"] [data-feed-row]')
-  assert.equal(
-    await page
-      .locator('.feed__viewport[data-session="harnessNoise"] [data-feed-row]', {
-        hasText: 'Set effort level to medium',
-      })
-      .count(),
-    1,
+  await expect(
+    page.locator('.feed__viewport[data-session="harnessNoise"] [data-feed-row]', {
+      hasText: 'Set effort level to medium',
+    }),
+  ).toHaveCount(1)
+  const codex = page.locator(
+    'nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]',
   )
-  await page
-    .locator('nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]')
-    .click()
-  assert.equal(
-    (
-      await page
-        .locator('nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]')
-        .textContent()
-    )?.includes('Run Codex check'),
-    true,
-  )
+  await codex.click()
+  await expect(codex).toContainText('Run Codex check')
   await page.waitForSelector('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]')
-  assert.equal(
-    await page
-      .locator('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]', {
-        hasText: 'Checking...',
-      })
-      .count(),
-    1,
-  )
+  await expect(
+    page.locator('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]', {
+      hasText: 'Checking...',
+    }),
+  ).toHaveCount(1)
 }
 
 async function proveUpdatedRowsStayPut(page, mutations) {
@@ -89,7 +78,7 @@ async function proveArchiveOrderAndFocus(page, mutations, withParent) {
   await mutations.archive('askPending', true)
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
-  assert.equal(await page.locator('nav[aria-label="Sessions"] button[tabindex="0"]').count(), 1)
+  await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
   assert.equal(
     active.includes(
       await page.evaluate(() => document.activeElement?.getAttribute('data-session-id') ?? ''),
@@ -136,7 +125,7 @@ export async function proveStableRosterPolling(page, mutations) {
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="newSessionTwo"]').focus()
   await mutations.removeRecent()
   await waitForActiveSessions(page, withParent)
-  assert.equal(await page.locator('nav[aria-label="Sessions"] button[tabindex="0"]').count(), 1)
+  await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
   assert.equal(
     withParent.includes(
       await page.evaluate(() => document.activeElement?.getAttribute('data-session-id') ?? ''),

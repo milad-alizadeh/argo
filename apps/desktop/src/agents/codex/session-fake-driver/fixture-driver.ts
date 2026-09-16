@@ -3,15 +3,23 @@
 // CodexChannel transport rather than an in-memory fake.
 import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import process from 'node:process'
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import type { CodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 
-const fixturePath = import.meta.url.endsWith('.mjs')
-  ? './fake-codex-app-server.mjs'
-  : './fixtures/fake-codex-app-server.ts'
-const fixture = fileURLToPath(new URL(fixturePath, import.meta.url))
+// The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s FAKE_CLAUDE notes:
+// `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
+const fixture = path.join(
+  process.cwd(),
+  'src',
+  'agents',
+  'codex',
+  'session-fake-driver',
+  'fixtures',
+  'fake-codex-app-server.ts',
+)
 
 export function driverBackedByFixture(
   driverOptions: {

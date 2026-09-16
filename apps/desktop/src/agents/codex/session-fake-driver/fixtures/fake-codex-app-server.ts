@@ -7,8 +7,8 @@
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
-import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../../../../core/sessions/proof-protocol'
-import { askQuestion, handleAskReply } from './fake-ask-question'
+import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../../../../core/sessions/proof-protocol.ts'
+import { askQuestion, handleAskReply } from './fake-ask-question.ts'
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE

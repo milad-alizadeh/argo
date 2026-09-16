@@ -371,6 +371,18 @@ jobs:
         # the DOM, and reviewers inspect pixels in Storybook outside this workflow.
         run: bun run test:packaged-session
 
+      # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`
+      # keeps both only on failure, so a red run here is the one place they exist to read.
+      - name: Upload Session proof failure artifacts
+        if: ${{ failure() && steps.touched.outputs.desktop == 'true' }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: session-proof-failure
+          path: |
+            apps/desktop/playwright-report
+            apps/desktop/test-results
+          retention-days: 7
+
       # Connect an Account, connect a repository, list, detail, restart, revoked access, disconnect
       # and a visible failure, through the shipped cockpit with GitHub faked on a loopback port (#1848).
       - name: Test the Tickets workflow in a packaged copy

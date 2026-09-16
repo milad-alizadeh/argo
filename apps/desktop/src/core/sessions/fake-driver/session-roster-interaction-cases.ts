@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import { deselectSession, openArchivedSessionByClick, openSessionByClick } from './session-gestures'
 import { readRosterIds } from './session-roster-facts'
 
@@ -37,13 +38,13 @@ export async function provePackagedRosterSelection(page) {
   await page.waitForFunction((id) => window.location.hash === `#/sessions/${id}`, sessionId)
   await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   const selected = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
-  assert.equal(await selected.getAttribute('aria-current'), 'page')
+  await expect(selected).toHaveAttribute('aria-current', 'page')
   await page.keyboard.press('ArrowDown')
   const focusedSessionId = await page.evaluate(
     () => document.activeElement?.getAttribute('data-session-id') ?? null,
   )
   assert.notEqual(focusedSessionId, sessionId)
-  assert.equal(await selected.getAttribute('aria-current'), 'page')
+  await expect(selected).toHaveAttribute('aria-current', 'page')
 }
 
 async function proveArchivedRestart(page, restart) {
@@ -60,14 +61,11 @@ async function proveArchivedRestart(page, restart) {
       'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
     )
     .waitFor()
-  assert.equal(
-    await archived
-      .locator(
-        'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
-      )
-      .getAttribute('aria-current'),
-    'page',
-  )
+  await expect(
+    archived.locator(
+      'nav[aria-label="Sessions"] button[data-session-id="plannedWork"][data-archived="true"]',
+    ),
+  ).toHaveAttribute('aria-current', 'page')
   return archived
 }
 
@@ -81,12 +79,9 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await relaunched.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await relaunched.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   await proveFreshOrder(relaunched, rosterFacts)
-  assert.equal(
-    await relaunched
-      .locator('nav[aria-label="Sessions"] button[data-session-id="prose"]')
-      .getAttribute('aria-current'),
-    'page',
-  )
+  await expect(
+    relaunched.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]'),
+  ).toHaveAttribute('aria-current', 'page')
 
   await updateRoster()
   const updated = await restart()
@@ -101,11 +96,10 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   const missing = await restart()
   await missing.waitForFunction(() => window.location.hash === '#/sessions')
   await missing.locator('nav[aria-label="Sessions"] button').first().waitFor()
-  assert.equal(
-    await missing.locator('nav[aria-label="Sessions"] button[aria-current="page"]').count(),
-    0,
-  )
-  assert.equal(await missing.locator('.feed__viewport').count(), 0)
+  await expect(
+    missing.locator('nav[aria-label="Sessions"] button[aria-current="page"]'),
+  ).toHaveCount(0)
+  await expect(missing.locator('.feed__viewport')).toHaveCount(0)
 
   await proveRetiredSelection(missing, restart)
 }

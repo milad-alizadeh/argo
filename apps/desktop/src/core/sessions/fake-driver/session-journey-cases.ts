@@ -1,71 +1,78 @@
 // The eight Session journeys: a person starts a Session, sends a Turn, restarts the app, resumes
 // and renames. Every one of them runs after the proof selects a Project, and every one asks the
-// backend what a reply looks like, so more than one entry point can run the set (#2308).
+// backend what a reply looks like, so more than one spec file can register the set (#2308, #2325).
+import { test } from '@playwright/test'
 import { proveClaudeRename } from '../../../agents/claude/session-fake-driver/session-rename-case'
 import { provePackagedResume } from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { provePackagedCodexResume } from '../../../agents/codex/session-fake-driver/codex-resume-case'
 import { proveCodexThreadName } from '../../../agents/codex/session-fake-driver/codex-thread-name-case'
-import type { createCaseRunner } from './packaged-case-runner'
-import type { createPackagedSessionHarness } from './packaged-session-harness'
 import type { SessionCliBackend, SessionFixture } from './session-cli-backend'
 import { proveSessionCreatedByClick } from './session-create-case'
+import type { PageBox, SessionProofRun } from './session-proof-run'
 import { proveDuplicateSend, proveReplyWait } from './session-reply-delay-case'
 import { proveComposerMemory } from './session-turn-setup-cases'
 
-type Harness = Awaited<ReturnType<typeof createPackagedSessionHarness>>
-type Page = Awaited<ReturnType<Harness['launch']>>
-
 export type SessionJourneyRequest = {
-  page: Page
-  ran: ReturnType<typeof createCaseRunner>
   backend: SessionCliBackend
-  fixture: SessionFixture
-  restart: Harness['restart']
+  // A thunk, not the fixture itself: a caller registering these cases at describe-registration
+  // time has no fixture yet (`session-proof-run.ts`), so each case below reads it inside its own
+  // test body instead, once `beforeAll` has run.
+  fixture: () => SessionFixture
+  restart: SessionProofRun['restart']
+  box: PageBox
 }
 
-async function proveResumeAndRename(request: SessionJourneyRequest) {
-  let { page } = request
-  const { backend, fixture, ran, restart } = request
-  await ran(['session-composer-memory'], () =>
-    proveComposerMemory(page, fixture.claudeTranscripts, fixture.project),
-  )
+export function defineSessionJourneyCases(request: SessionJourneyRequest) {
+  const { backend, fixture, restart, box } = request
+
+  test('session-composer-memory', async () => {
+    await proveComposerMemory(box.get(), fixture().claudeTranscripts, fixture().project)
+  })
+
   // Before the resume cases, for the reason session-create-case.ts records.
-  await ran(['session-created-by-click'], () =>
-    proveSessionCreatedByClick(page, backend, fixture.claudeTranscripts),
-  )
-  await ran(['session-claude-resume'], async () => {
-    page = await provePackagedResume(page, {
+  test('session-created-by-click', async () => {
+    await proveSessionCreatedByClick(box.get(), backend, fixture().claudeTranscripts)
+  })
+
+  test('session-claude-resume', async () => {
+    box.set(
+      await provePackagedResume(box.get(), {
+        backend,
+        project: fixture().project,
+        restart,
+        transcripts: fixture().claudeTranscripts,
+      }),
+    )
+  })
+
+  test('session-codex-resume', async () => {
+    box.set(await provePackagedCodexResume(box.get(), { backend, restart }))
+  })
+
+  test('session-claude-rename', async () => {
+    await proveClaudeRename(box.get(), {
       backend,
-      project: fixture.project,
-      restart,
-      transcripts: fixture.claudeTranscripts,
+      project: fixture().project,
+      transcripts: fixture().claudeTranscripts,
     })
   })
-  await ran(['session-codex-resume'], async () => {
-    page = await provePackagedCodexResume(page, { backend, restart })
-  })
-  await ran(['session-claude-rename'], () =>
-    proveClaudeRename(page, {
-      backend,
-      project: fixture.project,
-      transcripts: fixture.claudeTranscripts,
-    }),
-  )
-}
 
-export async function proveSessionJourneys(request: SessionJourneyRequest): Promise<Page> {
-  const { backend, fixture, ran, restart } = request
-  await proveResumeAndRename(request)
   // Each case below starts its own Session with its own prompt, so the fixture root carries over.
   // A slow CLI, so the two wait cases can read the app holding a Turn open.
-  const page = await restart({ slowReply: true })
-  await ran(['session-reply-wait'], () => proveReplyWait(page, backend))
-  await ran(['session-duplicate-send'], () =>
-    proveDuplicateSend(page, backend, fixture.claudeTranscripts),
-  )
+  test('session-restart-slow-reply', async () => {
+    box.set(await restart({ slowReply: true }))
+  })
+
+  test('session-reply-wait', async () => {
+    await proveReplyWait(box.get(), backend)
+  })
+
+  test('session-duplicate-send', async () => {
+    await proveDuplicateSend(box.get(), backend, fixture().claudeTranscripts)
+  })
+
   // Last, because naming the Codex row changes the title the cases above open it by.
-  await ran(['session-codex-thread-name'], () =>
-    proveCodexThreadName(page, fixture.codexTranscripts),
-  )
-  return page
+  test('session-codex-thread-name', async () => {
+    await proveCodexThreadName(box.get(), fixture().codexTranscripts)
+  })
 }
