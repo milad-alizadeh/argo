@@ -165,6 +165,7 @@ export const sessionRosterRowSchema = z.strictObject({
   // Claude desktop app's own `isArchived`, joined on the CLI Session id (`sessions/archive.ts`).
   archived: z.boolean(),
   contextTokens: countSchema.nullable().optional(),
+  contextWindowTokens: countSchema.nullable().optional(),
   spentTokens: countSchema.nullable().optional(),
   // A managed Claude Session is compacting only after Argo typed its `/compact` command. The
   // transcript's compact boundary clears this DIRECT start rather than a timeout guessing at it.

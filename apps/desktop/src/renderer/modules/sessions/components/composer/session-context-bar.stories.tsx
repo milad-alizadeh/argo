@@ -6,6 +6,7 @@ import { SessionContextBar } from './session-context-bar'
 const meta = {
   args: {
     contextTokens: 148_000,
+    contextWindowTokens: 200_000,
     harness: 'claude',
     isCompacting: false,
     onCompact: async () => true,
@@ -22,6 +23,7 @@ function ContextBarFrame({ width }: { width: string }) {
     <div style={{ width }}>
       <SessionContextBar
         contextTokens={148_000}
+        contextWindowTokens={200_000}
         harness="claude"
         isCompacting={false}
         onCompact={async () => true}

@@ -1,6 +1,3 @@
-import { GitFork, Minimize2 } from 'lucide-react'
-
-import { Button } from '../../../../components/ui/button'
 import {
   Tooltip,
   TooltipContent,
@@ -8,12 +5,19 @@ import {
   TooltipTrigger,
 } from '../../../../components/ui/tooltip'
 import { ContextPopover } from '../context/context-popover'
+import { SessionContextActions } from './session-context-actions'
 import { UsagePopover } from './usage-popover'
 
-const CONTEXT_CAPACITY_TOKENS = 200_000
 const WORKING_TARGET_PERCENTAGE = 20
 
-function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; percentage: number }) {
+function ContextMeter({
+  contextAlert,
+  percentage,
+}: {
+  contextAlert: boolean
+  percentage: number | null
+}) {
+  if (percentage === null) return null
   const description = contextAlert
     ? 'Dumb zone. Context is crowded and performance may degrade.'
     : 'Context has capacity. Performance should remain stable.'
@@ -46,8 +50,33 @@ function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; per
   )
 }
 
+function ContextSummary({
+  capacityTokens,
+  percentage,
+  usedTokens,
+}: {
+  capacityTokens: number | null
+  percentage: number | null
+  usedTokens: number
+}) {
+  return (
+    <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
+      <span className="font-medium text-foreground">{Math.round(usedTokens / 1000)}k</span>
+      {capacityTokens === null ? (
+        <span className="text-muted-foreground"> tokens</span>
+      ) : (
+        <>
+          <span className="text-muted-foreground"> / {Math.round(capacityTokens / 1000)}k</span>
+          <span className="font-medium">· {percentage}%</span>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function SessionContextBar({
   contextTokens,
+  contextWindowTokens,
   harness,
   isCompacting,
   isHandingOff,
@@ -55,18 +84,20 @@ export function SessionContextBar({
   onHandoff,
 }: {
   contextTokens: number | null | undefined
+  contextWindowTokens: number | null | undefined
   harness: 'claude' | 'codex' | undefined
   isCompacting: boolean
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
 }) {
-  const usedTokens = contextTokens ?? 148_000
-  const percentage = Math.round((usedTokens / CONTEXT_CAPACITY_TOKENS) * 100)
+  const usedTokens = contextTokens ?? 0
+  const capacityTokens = contextWindowTokens ?? null
+  const percentage =
+    capacityTokens === null ? null : Math.round((usedTokens / capacityTokens) * 100)
   const canCompact = onCompact !== undefined
   const canHandoff = onHandoff !== undefined
-  const contextAlert = percentage >= 40
-  const usedTokenSummary = `${Math.round(usedTokens / 1000)}k`
+  const contextAlert = percentage !== null && percentage >= 40
 
   return (
     <div
@@ -80,6 +111,7 @@ export function SessionContextBar({
         <ContextPopover
           compact
           harness={harness ?? 'codex'}
+          capacityTokens={capacityTokens}
           percentage={percentage}
           usedTokens={usedTokens}
         />
@@ -87,63 +119,21 @@ export function SessionContextBar({
       <div className="hidden shrink-0 @[56rem]:block">
         <ContextPopover
           harness={harness ?? 'codex'}
+          capacityTokens={capacityTokens}
           labelled
           percentage={percentage}
           usedTokens={usedTokens}
         />
       </div>
       <ContextMeter contextAlert={contextAlert} percentage={percentage} />
-      <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
-        <span className="font-medium text-foreground">{usedTokenSummary}</span>
-        <span className="text-muted-foreground"> / 200k</span>
-        <span className="font-medium">· {percentage}%</span>
-      </div>
-      <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[23rem]:hidden">
-        <Button
-          aria-label="Compact context"
-          disabled={!canCompact || isCompacting}
-          onClick={() => void onCompact?.()}
-          size="icon-sm"
-          type="button"
-          variant="secondary"
-        >
-          <Minimize2 />
-        </Button>
-        <Button
-          aria-label="Handoff Session"
-          disabled={!canHandoff || isHandingOff}
-          onClick={() => void onHandoff?.()}
-          size="icon-sm"
-          type="button"
-          variant="outline"
-        >
-          <GitFork />
-        </Button>
-      </div>
-      <div className="ml-auto hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
-        <Button
-          aria-label="Compact context"
-          disabled={!canCompact || isCompacting}
-          onClick={() => void onCompact?.()}
-          size="sm"
-          type="button"
-          variant="secondary"
-        >
-          <Minimize2 />
-          Compact
-        </Button>
-        <Button
-          aria-label="Handoff Session"
-          disabled={!canHandoff || isHandingOff}
-          onClick={() => void onHandoff?.()}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <GitFork />
-          Handoff
-        </Button>
-      </div>
+      <ContextSummary
+        capacityTokens={capacityTokens}
+        percentage={percentage}
+        usedTokens={usedTokens}
+      />
+      <SessionContextActions
+        {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
+      />
     </div>
   )
 }

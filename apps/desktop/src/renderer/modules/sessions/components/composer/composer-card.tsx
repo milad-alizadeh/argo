@@ -15,6 +15,7 @@ type ComposerCardProps = {
   tickets: ComposerTicketContext[]
   contextPickerOpen: boolean
   contextTokens: number | null | undefined
+  contextWindowTokens: number | null | undefined
   disabled?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
@@ -53,6 +54,7 @@ export function ComposerCard({
   tickets,
   contextPickerOpen,
   contextTokens,
+  contextWindowTokens,
   disabled,
   draft,
   editorRef,
@@ -126,6 +128,7 @@ export function ComposerCard({
       <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
         <SessionContextBar
           contextTokens={contextTokens}
+          contextWindowTokens={contextWindowTokens}
           harness={harness?.cli}
           isCompacting={isCompacting}
           isHandingOff={isHandingOff}

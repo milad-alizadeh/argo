@@ -19,7 +19,7 @@ import {
   readTurnStartedAt,
 } from './signals'
 import { readExternalStatus } from './status'
-import type { TranscriptMessage } from './transcript'
+import type { TranscriptMessage, TranscriptRecord } from './transcript'
 
 export type { RosterRow, SessionTitle }
 // The `managed | external` axis (CONTEXT.md L2). This slice discovers Sessions from transcripts
@@ -108,6 +108,17 @@ function readUsage(messages: TranscriptMessage[]) {
   }
 }
 
+function readContextWindowTokens(chain: SessionChain) {
+  return (
+    chain.files
+      .flatMap((file) => file.records)
+      .findLast(
+        (record): record is Extract<TranscriptRecord, { kind: 'trace' }> =>
+          record.kind === 'trace' && record.contextWindowTokens !== undefined,
+      )?.contextWindowTokens ?? null
+  )
+}
+
 export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
   const notifications = chainBackgroundTasks(chain)
@@ -143,6 +154,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     // this projection runs. Every other caller — Codex included — reads false.
     archived: false,
     ...readUsage(messages),
+    contextWindowTokens: readContextWindowTokens(chain),
     setup: readSetup(messages),
   }
 }
