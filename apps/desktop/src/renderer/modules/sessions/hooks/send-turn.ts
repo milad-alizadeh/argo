@@ -9,7 +9,7 @@ import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionRoster } from '../types'
-import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composer-identity'
+import { type ComposerIdentity, findSessionRow } from './composer-identity'
 import { sendToSelected } from './send-selected-turn'
 import type { Failure } from './use-session-composer-actions'
 import type { useSessionMutations } from './use-session-mutations'
@@ -83,6 +83,7 @@ export type SendDeps = {
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
+  onStarted?: (sessionId: string) => void
 }
 
 export async function sendToSessionIdentity(
@@ -108,46 +109,5 @@ export async function sendToSessionIdentity(
     watchTurn,
   })
   if (!sent) marker.clear(sessionId)
-  return sent
-}
-
-export async function sendToDraftIdentity(
-  deps: Pick<
-    SendDeps,
-    | 'cli'
-    | 'cockpit'
-    | 'marker'
-    | 'navigate'
-    | 'queryClient'
-    | 'send'
-    | 'setFailure'
-    | 'start'
-    | 'watchTurn'
-  >,
-  identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
-  turn: TurnInput,
-) {
-  const { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn } = deps
-  const key = composerIdentityKey(identity)
-  // A duplicate Enter that the row drops must leave the first Send's Marker alone (#2229).
-  let began = false
-  const sent = await sendToNewSession({
-    cli,
-    cockpit,
-    identity,
-    navigate,
-    queryClient,
-    send,
-    setFailure,
-    start,
-    turn,
-    watchTurn,
-    onSubmitted: () => {
-      began = true
-      marker.begin(key, { stage: 'starting', since: null, ...promptOf(turn) })
-    },
-    onStarted: (sessionId) => marker.rekey(key, sessionId),
-  })
-  if (!sent && began) marker.clear(key)
   return sent
 }

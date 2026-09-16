@@ -5,14 +5,14 @@ import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/use-projects'
 import type { SessionComposerProps } from '../components/composer/session-composer'
-import type { Send } from '../components/composer/use-send'
 import type { TurnMarkerView } from '../feed/turn-marker-state'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
+import { useComposerStore } from '../state/use-composer-store'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionFeedRow } from '../types'
 import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composer-identity'
-import { sendToDraftIdentity, sendToSessionIdentity } from './send-turn'
+import { composerSend } from './composer-send'
 import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
 import type { Failure } from './use-session-composer-actions'
 import { useSessionMutations } from './use-session-mutations'
@@ -79,7 +79,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
-  const { send, start } = mutations
+  const setDraft = useComposerStore((state) => state.setDraft)
   const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
     useComposerFacts({ cli, cockpit, roster, selectedSessionId }, setFailure)
   const { isHandingOff, onCompact, onHandoff, onInterrupt, markerView, optimisticRow } =
@@ -94,20 +94,20 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       setFailure,
       queryClient,
     })
-  const onSend: Send = async (prompt, setup, attachments) => {
-    const turn = { prompt, setup, attachments }
-    return identity.kind === 'session'
-      ? sendToSessionIdentity(
-          { queryClient, roster, marker, send, setFailure, watchTurn },
-          identity.sessionId,
-          turn,
-        )
-      : sendToDraftIdentity(
-          { cli, cockpit, navigate, queryClient, marker, send, setFailure, start, watchTurn },
-          identity,
-          turn,
-        )
-  }
+  const onSend = composerSend({
+    cli,
+    cockpit,
+    identity,
+    marker,
+    navigate,
+    queryClient,
+    roster,
+    send: mutations.send,
+    setDraft,
+    setFailure,
+    start: mutations.start,
+    watchTurn,
+  })
   return {
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
