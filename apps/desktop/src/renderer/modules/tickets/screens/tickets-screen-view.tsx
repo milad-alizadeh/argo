@@ -73,10 +73,15 @@ function Body({ view }: { view: TicketsView }) {
 }
 
 export function TicketsScreenView() {
+  const screen = useTicketsView()
   return (
     <>
-      <TicketsScreen {...useTicketsView()} />
-      <AccountsDialog />
+      <TicketsScreen {...screen} />
+      <AccountsDialog
+        onConnectSource={
+          screen.view.kind === 'unconnected' ? screen.view.onSelectAccount : undefined
+        }
+      />
     </>
   )
 }

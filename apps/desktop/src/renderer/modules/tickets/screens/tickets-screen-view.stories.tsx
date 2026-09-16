@@ -2,14 +2,16 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-
+import { AccountsPanel } from '../../accounts/components/accounts-dialog'
 import { CockpitShell } from '../../cockpit/components/cockpit-shell'
+import { ConnectSourceForm } from '../components/connect-source-form'
 import { STATUSES } from '../components/status-fixtures'
 import {
   backlog,
   connection,
   engine,
   longBacklog,
+  octocat,
   standalone,
   ticketsView,
 } from '../components/ticket-fixtures'
@@ -33,6 +35,50 @@ function TicketsScreenStory({ view }: TicketsScreenProps) {
           view.onSelect(key)
           setSelectedKey(key)
         },
+      }}
+    />
+  )
+}
+
+// A sign-in leaves the Account dialog over the selected Project's connection form. Choosing the
+// Account's action must close that dialog and carry the Account into the form behind it.
+function AccountToRepositoryForm() {
+  const [accountId, setAccountId] = useState<string | null>(null)
+  if (accountId) {
+    return (
+      <ConnectSourceForm
+        accountId={accountId}
+        accounts={[octocat]}
+        error={null}
+        onConnectAccount={fn()}
+        onConnectSource={fn()}
+        onSelectAccount={setAccountId}
+        pending={false}
+        projectName="argo"
+        sources={{
+          state: 'listed',
+          scopes: [{ scope: 'octocat/hello-world', label: 'octocat/hello-world' }],
+        }}
+      />
+    )
+  }
+  return (
+    <AccountsPanel
+      disconnectError={null}
+      disconnecting={null}
+      listError={null}
+      listing={{ accounts: [octocat], notice: false, providers: ['github'] }}
+      onConnectSource={setAccountId}
+      onDisconnect={fn()}
+      signIn={{
+        cancel: fn(),
+        challenge: null,
+        connected: null,
+        error: null,
+        openProvider: fn(),
+        phase: 'idle',
+        provider: null,
+        start: fn(),
       }}
     />
   )
@@ -106,6 +152,22 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
 export const Backlog: Story = {
   play: async ({ canvasElement }) => {
     await readsTheBacklog(canvasElement)
+  },
+}
+
+export const AccountToRepositoryConnection: StoryObj<typeof AccountToRepositoryForm> = {
+  render: () => <AccountToRepositoryForm />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const account = canvas.getByRole('listitem', { name: 'GitHub Account octocat' })
+    await userEvent.click(within(account).getByRole('button', { name: 'Connect a repository' }))
+    await expect(
+      canvas.getByRole('heading', { name: 'Connect argo to a repository' }),
+    ).toBeVisible()
+    await expect(canvas.getByRole('combobox', { name: 'Account' })).toHaveTextContent(
+      'GitHub · octocat',
+    )
+    await expect(canvas.getByRole('combobox', { name: 'Repository' })).toBeEnabled()
   },
 }
 
