@@ -31,7 +31,7 @@ export function useRosterSelection(
     [openSessionId, visibleIds],
   )
   // One stable object: the sidebar reads it into memoized rows, where a fresh object per render
-  // would re-render every row on every poll tick.
+  // would re-render every row on every roster read.
   return useMemo(
     () => ({ selectedIds: selection.ids, clear, toggle }),
     [clear, selection.ids, toggle],
