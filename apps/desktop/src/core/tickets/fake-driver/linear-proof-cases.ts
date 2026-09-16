@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict'
 import type { Locator } from 'playwright-core'
 import { ADA } from '../../../providers/linear/fake-driver/fake-linear-cast'
+import type { Ran } from '../../desktop-proof/packaged-case-runner'
 import { openedURLs } from './ticket-proof-fixture'
 import {
   accountRow,
@@ -15,10 +16,10 @@ import {
   openRoom,
   press,
   type Run,
+  room,
   storeText,
 } from './ticket-proof-screen'
 
-const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 const ada = (run: Run) => accountRow(run.page, ADA.name, 'Linear')
 const teamKeys = (run: Run) => backlogKeys(run.page, /^ENG-\d+/)
 const foot = (run: Run, state: string) =>
@@ -52,96 +53,116 @@ async function assertSealed(run: Run) {
   }
 }
 
-export async function proveLinearConnect(run: Run) {
+export async function proveLinearConnect(run: Run, ran: Ran) {
   await run.page.getByRole('button', { name: 'Accounts', exact: true }).dispatchEvent('click')
   const start = { scope: accountsDialog(run.page), name: 'Connect a Linear Account' }
-  assert.equal(await signIn(run, start), `Connected ${ADA.name}.`)
-  await ada(run).getByText(ADA.workspace).waitFor()
-  await assertSealed(run)
+  await ran(['linear-connect'], async () => {
+    assert.equal(await signIn(run, start), `Connected ${ADA.name}.`)
+    await ada(run).getByText(ADA.workspace).waitFor()
+  })
+  await ran(['linear-sealed-grant'], () => assertSealed(run))
   await press(accountsDialog(run.page), 'Close')
   const form = connectForm(run.page)
   await chooseAccount(run.page, `Linear · ${ADA.name}`)
   const team = form.getByRole('combobox', { name: 'Team' })
-  // Linear, not the form, decides which teams Ada can read, so a hidden team is never offered.
-  await team.fill('Secret')
-  await run.page.getByText('No team matches.').waitFor()
-  await team.fill('Eng')
-  await run.page.getByRole('option', { name: 'Engine' }).dispatchEvent('click')
-  assert.equal(await team.inputValue(), 'Engine')
-  await press(form, 'Connect team')
-  await backlog(run.page).waitFor()
-  assert.equal((await storeText(run.fixture, 'connections.json')).includes('team-engine'), true)
+  await ran(['linear-hidden-team'], async () => {
+    // Linear, not the form, decides which teams Ada can read, so a hidden team is never offered.
+    await team.fill('Secret')
+    await run.page.getByText('No team matches.').waitFor()
+  })
+  await ran(['linear-bind'], async () => {
+    await team.fill('Eng')
+    await run.page.getByRole('option', { name: 'Engine' }).dispatchEvent('click')
+    assert.equal(await team.inputValue(), 'Engine')
+    await press(form, 'Connect team')
+    await backlog(run.page).waitFor()
+    assert.equal((await storeText(run.fixture, 'connections.json')).includes('team-engine'), true)
+  })
 }
 
 // ENG-2 sits under ENG-1, and the done ENG-3 is only a closed blocker.
-export async function proveLinearBacklog(run: Run) {
-  assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
-  await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
-  await backlog(run.page)
-    .getByRole('button', { name: /^ENG-1/ })
-    .dispatchEvent('click')
-  const detail = run.page.getByRole('article', { name: 'Ticket ENG-1' })
-  await detail.getByRole('heading', { name: 'Bind the mill' }).waitFor()
-  await detail.getByText('The mill turns the cards.').waitFor()
-  await detail.getByText('In Progress').waitFor()
-  await detail.getByText('High').waitFor()
-  await detail.getByRole('region', { name: 'Children · 0 of 1 closed' }).waitFor()
-  await detail.getByRole('region', { name: 'Blocked by · 1' }).waitFor()
-  await foot(run, 'Connected').waitFor()
-  // Linear has no new-issue page Argo links to, so the sidebar offers none.
-  assert.equal(await run.page.getByRole('button', { name: 'New Ticket' }).count(), 0)
+export async function proveLinearBacklog(run: Run, ran: Ran) {
+  await ran(['linear-list'], async () => {
+    assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+    await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
+  })
+  await ran(['linear-detail'], async () => {
+    await backlog(run.page)
+      .getByRole('button', { name: /^ENG-1/ })
+      .dispatchEvent('click')
+    const detail = run.page.getByRole('article', { name: 'Ticket ENG-1' })
+    await detail.getByRole('heading', { name: 'Bind the mill' }).waitFor()
+    await detail.getByText('The mill turns the cards.').waitFor()
+    await detail.getByText('In Progress').waitFor()
+    await detail.getByText('High').waitFor()
+    await detail.getByRole('region', { name: 'Children · 0 of 1 closed' }).waitFor()
+    await detail.getByRole('region', { name: 'Blocked by · 1' }).waitFor()
+    await foot(run, 'Connected').waitFor()
+    // Linear has no new-issue page Argo links to, so the sidebar offers none.
+    assert.equal(await run.page.getByRole('button', { name: 'New Ticket' }).count(), 0)
+  })
 }
 
 // Moving ENG-2 from its row reaches Linear, which the next launch reads back.
-export async function proveLinearStatus(run: Run) {
-  await choose(run.page, backlog(run.page).getByRole('button', { name: 'Status: Todo' }), {
-    role: 'menuitemradio',
-    name: 'In Progress',
+export async function proveLinearStatus(run: Run, ran: Ran) {
+  await ran(['linear-change-status'], async () => {
+    await choose(run.page, backlog(run.page).getByRole('button', { name: 'Status: Todo' }), {
+      role: 'menuitemradio',
+      name: 'In Progress',
+    })
+    await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).nth(1).waitFor()
   })
-  await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).nth(1).waitFor()
 }
 
 // A fresh launch unseals the grant, and the short-lived token is renewed before the first read.
-export async function proveLinearRestart(run: Run) {
-  const before = renewals(run)
-  await openRoom(run.page, 'tickets')
-  assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
-  // ENG-2 kept the status it was moved to before the restart.
-  const moved = backlog(run.page).getByRole('button', { name: 'Status: In Progress' })
-  assert.equal(await moved.count(), 2)
-  assert.ok(renewals(run) > before)
-  await assertSealed(run)
+export async function proveLinearRestart(run: Run, ran: Ran) {
+  await ran(['linear-restart-renewal'], async () => {
+    const before = renewals(run)
+    await openRoom(run.page, 'tickets')
+    assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+    // ENG-2 kept the status it was moved to before the restart.
+    const moved = backlog(run.page).getByRole('button', { name: 'Status: In Progress' })
+    assert.equal(await moved.count(), 2)
+    assert.ok(renewals(run) > before)
+    await assertSealed(run)
+  })
 }
 
 // Linear refuses the renewal: the Linear Account expires and its Connection waits, while the GitHub
 // Account beside it stays connected. Signing in again brings the backlog back.
-export async function proveLinearExpired(run: Run) {
+export async function proveLinearExpired(run: Run, ran: Ran) {
   run.fixture.linear.refuseRefresh(ADA.id)
   await openRoom(run.page, 'atlas')
   await openRoom(run.page, 'tickets')
-  await room(run).getByText(`The sign-in for ${ADA.name} expired`).waitFor()
-  await foot(run, 'Sign-in expired').dispatchEvent('click')
-  await ada(run).getByText('Sign-in expired', { exact: true }).waitFor()
-  await ada(run).getByText('Linear would not renew it', { exact: false }).waitFor()
-  await ada(run)
-    .getByRole('list', { name: `Teams for ${ADA.name}` })
-    .getByText(/Engine/)
-    .waitFor()
-  await accountRow(run.page, 'hubot').getByText('Connected', { exact: true }).waitFor()
-  const start = { scope: ada(run), name: 'Reconnect' }
-  assert.equal(await signIn(run, start), `Signed in again as ${ADA.name}.`)
-  await press(accountsDialog(run.page), 'Close')
-  assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+  await ran(['linear-refresh-failure'], async () => {
+    await room(run).getByText(`The sign-in for ${ADA.name} expired`).waitFor()
+    await foot(run, 'Sign-in expired').dispatchEvent('click')
+    await ada(run).getByText('Sign-in expired', { exact: true }).waitFor()
+    await ada(run).getByText('Linear would not renew it', { exact: false }).waitFor()
+    await ada(run)
+      .getByRole('list', { name: `Teams for ${ADA.name}` })
+      .getByText(/Engine/)
+      .waitFor()
+    await accountRow(run.page, 'hubot').getByText('Connected', { exact: true }).waitFor()
+  })
+  await ran(['linear-reconnect'], async () => {
+    const start = { scope: ada(run), name: 'Reconnect' }
+    assert.equal(await signIn(run, start), `Signed in again as ${ADA.name}.`)
+    await press(accountsDialog(run.page), 'Close')
+    assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+  })
 }
 
-export async function proveLinearDisconnect(run: Run) {
-  await foot(run, 'Connected').dispatchEvent('click')
-  await press(ada(run), 'Disconnect…')
-  await press(ada(run), 'Disconnect')
-  await ada(run).waitFor({ state: 'detached' })
-  assert.equal((await storeText(run.fixture, 'grants.json')).includes('linear:user-ada'), false)
-  await press(accountsDialog(run.page), 'Close')
-  await room(run).getByText('The Linear Account for this team is disconnected').waitFor()
-  await press(room(run), 'Disconnect team')
-  await room(run).getByRole('heading', { name: 'Connect argo to a repository' }).waitFor()
+export async function proveLinearDisconnect(run: Run, ran: Ran) {
+  await ran(['linear-disconnect'], async () => {
+    await foot(run, 'Connected').dispatchEvent('click')
+    await press(ada(run), 'Disconnect…')
+    await press(ada(run), 'Disconnect')
+    await ada(run).waitFor({ state: 'detached' })
+    assert.equal((await storeText(run.fixture, 'grants.json')).includes('linear:user-ada'), false)
+    await press(accountsDialog(run.page), 'Close')
+    await room(run).getByText('The Linear Account for this team is disconnected').waitFor()
+    await press(room(run), 'Disconnect team')
+    await room(run).getByRole('heading', { name: 'Connect argo to a repository' }).waitFor()
+  })
 }

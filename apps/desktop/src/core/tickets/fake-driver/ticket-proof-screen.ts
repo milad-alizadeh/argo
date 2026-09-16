@@ -41,6 +41,8 @@ export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
 
 export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog' })
 
+export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
+
 export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
   await page.evaluate((hash) => {
     window.location.hash = hash
