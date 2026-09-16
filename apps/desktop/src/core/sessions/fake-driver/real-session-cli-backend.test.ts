@@ -89,7 +89,7 @@ test('recognizes an assistant record after the prompt in a real Claude transcrip
     await mkdir(path.dirname(transcript), { recursive: true })
     await writeFile(
       transcript,
-      `${JSON.stringify({ type: 'user', message: { content: 'Reply with ACK.' } })}\n${JSON.stringify({ type: 'assistant', message: { content: 'ACK' } })}\n`,
+      `${JSON.stringify({ type: 'user', uuid: 'user', message: { content: 'Reply with ACK.' } })}\n${JSON.stringify({ type: 'assistant', uuid: 'assistant', message: { content: 'ACK' } })}\n`,
     )
 
     expect(await backend.recorded({ cli: 'claude', prompt: 'Reply with ACK.' })).toBe(true)

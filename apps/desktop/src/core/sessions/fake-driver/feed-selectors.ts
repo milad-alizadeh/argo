@@ -50,12 +50,19 @@ export async function feedStateSnapshot(page) {
         active: feedDocument.getAttribute('data-active'),
         revision: feedDocument.getAttribute('data-revision'),
         rowCount: viewport?.querySelectorAll('[data-feed-row]').length ?? null,
+        rows: [...(viewport?.querySelectorAll('[data-feed-row]') ?? [])].map(
+          (row) => row.textContent,
+        ),
         session: viewport?.getAttribute('data-session') ?? null,
         scrollHeight: viewport?.scrollHeight ?? null,
         clientHeight: viewport?.clientHeight ?? null,
         scrollTop: viewport?.scrollTop ?? null,
       }
     })
-    return { documents, url: window.location.href }
+    return {
+      alerts: [...document.querySelectorAll('[role="alert"]')].map((alert) => alert.textContent),
+      documents,
+      url: window.location.href,
+    }
   })
 }

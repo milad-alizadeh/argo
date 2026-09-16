@@ -1,5 +1,4 @@
-// The portable Session journeys against subscription-authenticated CLIs. Fixture-dependent Feed
-// cases stay on the fake backend; this entry point only proves the paths a real CLI can provide.
+// The portable Session journeys against subscription-authenticated CLIs; fixture cases stay fake-only.
 import assert from 'node:assert/strict'
 import { runPackagedSessionProof } from './packaged-session-run'
 import { createRealSessionCliBackend } from './real-session-cli-backend'

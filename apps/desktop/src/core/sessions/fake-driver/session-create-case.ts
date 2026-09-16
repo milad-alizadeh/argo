@@ -6,10 +6,7 @@ import type { SessionCli } from '../../../renderer/modules/sessions/harness/harn
 import type { SessionCliBackend } from './session-cli-backend'
 import { createSessionByClick, rosterIds } from './session-gestures'
 
-const PROMPTS: Record<SessionCli, string> = {
-  claude: 'Reply with one short acknowledgement.',
-  codex: 'Reply with one short acknowledgement.',
-}
+const PROMPT = 'Reply with one short acknowledgement.'
 
 // Runs before the resume cases, which are the first to run the CLI, so its folder is still empty
 // here and the Roster row is held to appearing ahead of anything the CLI writes.
@@ -18,13 +15,12 @@ export async function proveSessionCreatedByClick(
   backend: SessionCliBackend,
   cli: SessionCli = 'claude',
 ) {
-  const prompt = PROMPTS[cli]
-  const reply = { cli, prompt }
+  const reply = { cli, prompt: PROMPT }
   assert.equal(await backend.recorded(reply), false)
   const known = await rosterIds(page)
   const sessionId = await createSessionByClick(page, {
     cli,
-    prompt,
+    prompt: PROMPT,
     cliWrote: () => backend.recorded(reply),
   })
 

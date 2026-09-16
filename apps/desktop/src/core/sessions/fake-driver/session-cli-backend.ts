@@ -28,6 +28,8 @@ export type SessionCliRun = {
   transcripts: { claude: string; codex: string; archive: string } | null
   // What one launch adds to the app's environment.
   launchEnv: (launch: SessionCliLaunch) => Record<string, string>
+  // Variables inherited from the developer shell that this backend must not pass to the app.
+  unsetEnv?: string[]
 }
 
 export type SessionCliBackend = {

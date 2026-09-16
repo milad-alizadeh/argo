@@ -38,6 +38,18 @@ function transcriptEnv(transcripts: SessionCliRun['transcripts']): Record<string
   }
 }
 
+function launchEnvironment(run: SessionCliRun, launch: SessionCliLaunch) {
+  const environment = {
+    ...process.env,
+    ...transcriptEnv(run.transcripts),
+    [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
+    [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
+    ...run.launchEnv(launch),
+  }
+  for (const name of run.unsetEnv ?? []) delete environment[name]
+  return environment
+}
+
 // Runs a launch or restart, pushing its wall time in milliseconds for the proof's timings line.
 async function timed<T>(launches: number[], start: () => Promise<T>) {
   const started = performance.now()
@@ -62,11 +74,7 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
       env: {
-        ...process.env,
-        ...transcriptEnv(run.transcripts),
-        [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
-        [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
-        ...run.launchEnv(launch),
+        ...launchEnvironment(run, launch),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
