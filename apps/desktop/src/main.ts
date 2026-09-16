@@ -57,7 +57,7 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   : null
 if (DEVELOPMENT_INSTANCE) {
   app.setName(DEVELOPMENT_INSTANCE.label)
-  app.dock?.setBadge(DEVELOPMENT_INSTANCE.label)
+  app.dock?.setBadge(path.basename(DEVELOPMENT_INSTANCE.worktree))
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
   // Loopback only; agent-browser attaches here to profile, and a packaged app never opens it (#2228).
