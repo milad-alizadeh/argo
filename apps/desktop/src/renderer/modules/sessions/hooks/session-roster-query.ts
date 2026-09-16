@@ -11,6 +11,11 @@ import type { SessionId, SessionRoster, SessionsListed } from '../types'
 
 let rosterOrder: SessionId[] = []
 
+type RosterQuerySource = {
+  cursor?: string | null
+  projectRoot: string | null
+}
+
 function keepRosterOrder(sessions: SessionsListed['sessions']) {
   const unmatched = [...sessions]
   const ordered = rosterOrder.flatMap((rememberedId) => {
@@ -29,8 +34,7 @@ function keepRosterOrder(sessions: SessionsListed['sessions']) {
 export function sessionRosterQuery(
   selectedSessionId: SessionId | null,
   enabled: boolean,
-  projectRoot: string | null,
-  cursor: string | null = null,
+  { projectRoot, cursor = null }: RosterQuerySource,
 ): UseQueryOptions<SessionRoster, SessionContractError> {
   return {
     queryKey: [...sessionRosterQueryKey, projectRoot],

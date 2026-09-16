@@ -26,7 +26,7 @@ function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle
   const held = { ...row('s1', 'running'), title: heldTitle }
   const observed = { ...row('s1', 'running'), title: observedTitle }
   const merged = mergeManagedRoster(
-    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0, nextCursor: null },
     [held],
   )
   return merged.rows[0]?.title
