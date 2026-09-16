@@ -69,13 +69,20 @@ export function SessionContextActions({
       variant: 'outline' as const,
     },
   ]
+  const [compactAction, handoffAction] = actions
   return (
     <>
+      <div className="flex shrink-0 items-center gap-1 @[23rem]:hidden">
+        <ContextActionButtons actions={[compactAction]} labelled={false} size="icon-sm" />
+      </div>
+      <div className="hidden shrink-0 items-center gap-1 @[23rem]:flex">
+        <ContextActionButtons actions={[compactAction]} labelled size="sm" />
+      </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[23rem]:hidden">
-        <ContextActionButtons actions={actions} labelled={false} size="icon-sm" />
+        <ContextActionButtons actions={[handoffAction]} labelled={false} size="icon-sm" />
       </div>
       <div className="ml-auto hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[23rem]:flex">
-        <ContextActionButtons actions={actions} labelled size="sm" />
+        <ContextActionButtons actions={[handoffAction]} labelled size="sm" />
       </div>
     </>
   )
