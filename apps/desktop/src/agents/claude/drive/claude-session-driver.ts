@@ -31,6 +31,9 @@ export type ClaudeSessionDriver = {
   roster: () => SessionRosterRow[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingPermission: (sessionId: string) => ClaudePermission | null
+  // #2299: the Session screen is told a Permission started or stopped waiting, rather than asking
+  // twice a second whether one is there.
+  onPermissionsChanged: DriverOptions['gate']['onChanged']
   decidePermission: DriverOptions['gate']['decide']
   decideQuestion: (
     sessionId: string,
@@ -139,6 +142,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     roster: () => roster(options, sessions),
     isLockedElsewhere: (sessionId) => options.ledger.standing(sessionId) === 'held-elsewhere',
     pendingPermission: (sessionId) => options.gate.pending(sessionId),
+    onPermissionsChanged: (listener) => options.gate.onChanged(listener),
     decidePermission: (sessionId, permissionId, decision) =>
       options.gate.decide(sessionId, permissionId, decision),
     decideQuestion: (sessionId, questionId, answers) =>
