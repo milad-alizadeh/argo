@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import { registerProject } from './register-project'
-import { fixture, register, repository } from './registration-fixture'
+import { fixture, register, repository } from '../../../mocks/projects/mock-registration'
 import { selectProject } from './select-project'
 
 const select = (id, projectId) => ({

@@ -11,7 +11,7 @@ import {
   newSessionDeps,
   PROJECT,
   SETUP,
-} from './send-turn-fixtures'
+} from '../../../../../mocks/sessions/mock-send-turn'
 import { beginEntry, clearEntry, rekeyEntry, type TurnMarkerEntries } from './use-turn-marker'
 
 beforeEach(() => {
@@ -93,7 +93,6 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
     queryClient: new QueryClient(),
     roster: null,
     marker,
-    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
     start: start as never,
     watchTurn: () => {},
@@ -121,7 +120,6 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
     navigate: () => undefined as never,
     queryClient: new QueryClient(),
     marker,
-    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
     start: mockMutation(async () => ({ sessionId: 'session-new' })) as never,
     watchTurn: () => {},

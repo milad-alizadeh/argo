@@ -17,7 +17,6 @@ type DraftSendDeps = {
   navigate: NavigateFunction
   onStarted?: (sessionId: string) => void
   queryClient: ReturnType<typeof useQueryClient>
-  send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
@@ -35,7 +34,6 @@ export async function sendToDraftIdentity(
     navigate,
     onStarted,
     queryClient,
-    send,
     setFailure,
     start,
     watchTurn,
@@ -49,7 +47,6 @@ export async function sendToDraftIdentity(
     identity,
     navigate,
     queryClient,
-    send,
     setFailure,
     start,
     turn,

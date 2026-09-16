@@ -9,7 +9,7 @@ import { ROSTER_PAGE_SIZE } from '@/core/sessions/discover-transcript-sessions'
 import { createSessionReader } from '@/core/sessions/reader'
 import { assertWindowGrowsToFarSession } from '@/core/sessions/window-proof-helpers'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
-import { writeArchiveStore } from './session-fixture-files'
+import { writeArchiveStore } from '../../../../mocks/sessions/mock-transcript-files'
 import { claudeRoot, writeManySessions } from './session-window-fixture'
 
 test('a Session outside the initial window is unread on first discovery, but reachable by growing the cursor or asking for it by id', async (context) => {

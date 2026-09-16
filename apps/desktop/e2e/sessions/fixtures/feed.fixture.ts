@@ -11,7 +11,7 @@ import {
   proofProject,
   writeArchiveStore,
   writeFixtureTree,
-} from '../../../mocks/sessions/transcript-files'
+} from '../../../mocks/sessions/mock-transcript-files'
 import { packagedTestCopy } from '../../packaged-app'
 
 export const FIXTURES = [
