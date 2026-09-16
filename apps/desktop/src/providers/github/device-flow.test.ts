@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { assertUnstubbedRequestFails } from '../msw-node-bridge'
 import { awaitGrant, readIdentity, requestChallenge } from './device-flow'
 import { proofEndpoints } from './endpoints'
 import { github, OCTOCAT } from './harness'
@@ -64,4 +65,9 @@ test('a GitHub that cannot be reached is unreachable, not a refusal', async (con
   const [fake, endpoints] = await github(context)
   await fake.close()
   assert.deepEqual(await requestChallenge(endpoints), { ok: false, failure: 'unreachable' })
+})
+
+test('a call to a route this fake never stubbed fails loudly, naming the request', async (context) => {
+  const [fake] = await github(context)
+  await assertUnstubbedRequestFails(`${fake.origin}/user/orgs`)
 })
