@@ -1,0 +1,151 @@
+// The shared discovery engine (#2239), proven against a minimal fake CLI rather than either real
+// adapter: the bound window, its cursor, and chain resolution belong to this module regardless of
+// which CLI's files it is reading.
+import assert from 'node:assert/strict'
+import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { test } from 'node:test'
+import { createTranscriptDiscoverer, ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
+import type { TranscriptRecord } from './transcript'
+
+// A fake CLI's transcript: one line, one message, so a fixture tree of many Sessions is cheap to
+// build. `writtenAt` sets the file's mtime directly, the field the engine's window sorts on, so a
+// test can name recency without racing the filesystem clock across many fast writes.
+async function writeFakeTranscript(root: string, sessionId: string, writtenAt: string) {
+  const file = path.join(root, `${sessionId}.jsonl`)
+  await writeFile(file, `${JSON.stringify({ uuid: sessionId, timestamp: writtenAt })}\n`)
+  const at = new Date(writtenAt)
+  await utimes(file, at, at)
+}
+
+function parseFakeLine(line: string): TranscriptRecord | null {
+  if (line.trim() === '') return null
+  const { uuid, timestamp } = JSON.parse(line) as { uuid: string; timestamp: string }
+  return {
+    kind: 'message',
+    uuid,
+    parentUuid: null,
+    originSessionId: null,
+    role: 'assistant',
+    sidechain: false,
+    cwd: null,
+    branch: null,
+    timestamp,
+    entry: 'interactive',
+    stopReason: 'end_turn',
+    model: null,
+    effort: null,
+    mode: null,
+    blocks: [{ shape: 'prose', text: 'Hi.' }],
+    toolCalls: [],
+    answeredCalls: [],
+    usage: null,
+  }
+}
+
+function fakeDiscoverer() {
+  return createTranscriptDiscoverer({
+    cli: 'fake',
+    parse: parseFakeLine,
+    transcriptPaths: async (root) => {
+      const names = await readdir(root).catch(() => [])
+      return names
+        .filter((name) => name.endsWith('.jsonl'))
+        .map((name) => ({ path: path.join(root, name), name }))
+    },
+  })
+}
+
+async function fakeRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-discover-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  return root
+}
+
+// Sessions named so the Nth-newest one is `s<N>`, most recent first, spaced a minute apart so
+// their mtimes never tie.
+async function writeManySessions(root: string, count: number) {
+  const base = Date.parse('2026-09-13T12:00:00.000Z')
+  for (let index = 0; index < count; index += 1) {
+    const writtenAt = new Date(base - index * 60_000).toISOString()
+    await writeFakeTranscript(root, `s${index}`, writtenAt)
+  }
+}
+
+test('reads only the bounded window on a cold cursor, even when more files exist', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
+  const { discoverSessions } = fakeDiscoverer()
+
+  const reply = await discoverSessions(root)
+  assert.equal(reply.filesFound, ROSTER_PAGE_SIZE + 20)
+  assert.equal(reply.filesRead, ROSTER_PAGE_SIZE)
+  assert.equal(reply.rows.length, ROSTER_PAGE_SIZE)
+  assert.notEqual(reply.nextCursor, null)
+})
+
+test('states no continuation once every file is inside the window', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE - 5)
+  const { discoverSessions } = fakeDiscoverer()
+
+  const reply = await discoverSessions(root)
+  assert.equal(reply.filesRead, ROSTER_PAGE_SIZE - 5)
+  assert.equal(reply.nextCursor, null)
+})
+
+test('a later request echoing nextCursor reads the Sessions the first page missed', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
+  const { discoverSessions } = fakeDiscoverer()
+
+  const first = await discoverSessions(root)
+  const ids = first.rows.map((row) => row.id)
+  assert.ok(!ids.includes(`s${ROSTER_PAGE_SIZE + 10}`))
+
+  const second = await discoverSessions(root, { cursor: first.nextCursor })
+  assert.equal(second.filesRead, ROSTER_PAGE_SIZE + 20)
+  assert.equal(second.nextCursor, null)
+  assert.ok(second.rows.map((row) => row.id).includes(`s${ROSTER_PAGE_SIZE + 10}`))
+})
+
+test('a grown window still carries every row the smaller one already returned, newest first', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
+  const { discoverSessions } = fakeDiscoverer()
+
+  const first = await discoverSessions(root)
+  const second = await discoverSessions(root, { cursor: first.nextCursor })
+  const secondIds = second.rows.map((row) => row.id)
+
+  for (const row of first.rows) assert.ok(secondIds.includes(row.id))
+  assert.deepEqual(
+    secondIds,
+    [...secondIds].sort((a, b) => secondIds.indexOf(a) - secondIds.indexOf(b)),
+  )
+  assert.equal(new Set(secondIds).size, secondIds.length)
+  assert.deepEqual(
+    second.rows.map((row) => row.updatedAt),
+    [...second.rows.map((row) => row.updatedAt)].sort((a, b) => (b ?? '').localeCompare(a ?? '')),
+  )
+})
+
+test('finds a Session outside the initial window by growing until it resolves', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE + 20)
+  const { readSessionFiles } = fakeDiscoverer()
+
+  const targetId = `s${ROSTER_PAGE_SIZE + 10}`
+  const chain = await readSessionFiles(root, targetId)
+  assert.ok(chain !== null)
+  assert.equal(chain?.id, targetId)
+})
+
+test('reports a Session no window can find as absent rather than growing forever', async (context) => {
+  const root = await fakeRoot(context)
+  await writeManySessions(root, ROSTER_PAGE_SIZE - 5)
+  const { readSessionFiles } = fakeDiscoverer()
+
+  assert.equal(await readSessionFiles(root, 'never-written'), null)
+})

@@ -26,7 +26,7 @@ function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle
   const held = { ...row('s1', 'running'), title: heldTitle }
   const observed = { ...row('s1', 'running'), title: observedTitle }
   const merged = mergeManagedRoster(
-    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0, nextCursor: null },
     [held],
   )
   return merged.rows[0]?.title
@@ -34,7 +34,13 @@ function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle
 
 function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
   const merged = mergeManagedRoster(
-    { rows: [row('s1', discoveredStatus)], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    {
+      rows: [row('s1', discoveredStatus)],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+      nextCursor: null,
+    },
     [row('s1', heldStatus)],
   )
   return merged.rows[0]?.status
@@ -71,6 +77,7 @@ test('keeps the current held fields when reconciling a managed row', () => {
     filesFound: 1,
     filesRead: 1,
     filesUnreadable: 0,
+    nextCursor: null,
   }
 
   const [merged] = mergeManagedRoster(discovered, [held]).rows
@@ -130,7 +137,13 @@ test('a definite discovered floor is never overridden by a held `running`', () =
 
 test('a Session with no held counterpart passes through the discovered row untouched', () => {
   const merged = mergeManagedRoster(
-    { rows: [row('only-discovered', 'idle')], filesFound: 1, filesRead: 1, filesUnreadable: 0 },
+    {
+      rows: [row('only-discovered', 'idle')],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+      nextCursor: null,
+    },
     [],
   )
   assert.equal(merged.rows[0]?.status, 'idle')

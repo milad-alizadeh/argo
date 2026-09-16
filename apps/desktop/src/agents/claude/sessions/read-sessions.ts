@@ -5,6 +5,7 @@ import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
 import { mergeManagedRoster } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
+import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
 import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
@@ -54,10 +55,14 @@ function withHandoffEdges(
 
 const NO_PROCESSES: ReadonlyMap<string, ProcessState> = new Map()
 
+async function readLiveState(processes: string | undefined) {
+  return processes === undefined ? NO_PROCESSES : await readLiveProcesses(processes)
+}
+
 // Two roots, because the two readings live in two places: the transcripts the CLI writes, and the
 // Claude desktop app's own store, which is where the archive flag already lives. `archive` is
 // optional: a machine without that app installed reads no archived Sessions rather than failing.
-export function claudeSessionSource(roots: {
+export type ClaudeSessionRoots = {
   transcripts: string
   archive?: string
   // Where each running `claude` names its Session; absent, no external Session reads `running` or locked.
@@ -74,28 +79,41 @@ export function claudeSessionSource(roots: {
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
-}): SessionSource {
+}
+
+async function discoverClaudeSessions(
+  roots: ClaudeSessionRoots,
+  options: Parameters<SessionSource['discoverSessions']>[0],
+) {
+  roots.completeHandoffs?.()
+  const live = await readLiveState(roots.processes)
+  const read = await discoverSessions(roots.transcripts, roots.archive, options)
+  const discovered = { ...read, rows: joinLiveProcesses(read.rows, live) }
+  const managed = roots.managedSessions?.() ?? []
+  await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
+  const roster = mergeManagedRoster(discovered, managed)
+  const rows = await markCompactingRows(lockLiveProcesses(roster.rows, live), {
+    folder: roots.compactionStarts,
+    readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+    begin: roots.beginCompaction,
+  })
+  const withEdges = withHandoffEdges(rows, roots.handoffEdges)
+  // Project scope applies here, at this adapter's own discovery boundary (#2239), rather than
+  // after the shared reader has already merged every adapter's machine-wide list.
+  const projectRoots = await projectRootsOf(options?.projectRoot)
+  return {
+    ...roster,
+    rows: withEdges.filter((row) => belongsToProject(row.cwd, projectRoots)),
+  }
+}
+
+export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
   const archiveRoot = roots.archive
   return {
     cli: 'claude',
-    discoverSessions: async () => {
-      roots.completeHandoffs?.()
-      const live =
-        roots.processes === undefined ? NO_PROCESSES : await readLiveProcesses(roots.processes)
-      const read = await discoverSessions(roots.transcripts, roots.archive)
-      const discovered = { ...read, rows: joinLiveProcesses(read.rows, live) }
-      const managed = roots.managedSessions?.() ?? []
-      await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-      const roster = mergeManagedRoster(discovered, managed)
-      const rows = await markCompactingRows(lockLiveProcesses(roster.rows, live), {
-        folder: roots.compactionStarts,
-        readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
-        begin: roots.beginCompaction,
-      })
-      return { ...roster, rows: withHandoffEdges(rows, roots.handoffEdges) }
-    },
+    discoverSessions: (options) => discoverClaudeSessions(roots, options),
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>

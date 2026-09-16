@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { SessionContractError } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import {
@@ -7,9 +7,45 @@ import {
   readableSessionId,
   useSessionCreationStore,
 } from '../state/use-session-creation-store'
-import type { SessionFeed, SessionId, SessionRoster } from '../types'
+import type { SessionFeed, SessionId } from '../types'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 import { sessionRosterQuery } from './session-roster-query'
+
+// A poll must refresh only the window this reader has already loaded, never regrow it, so the
+// cursor that produced that window is held outside the query cache and resent unchanged on every
+// poll (#2239). `fetchMore` is the only thing that advances it, in response to a reader action
+// (scrolling to the end): it moves the cursor to the reply's own `nextCursor` before refetching, so
+// the window that grows once then stays that size on every later poll.
+function useRosterQuery(
+  selectedSessionId: SessionId | null,
+  enabled: boolean,
+  projectRoot: string | null,
+) {
+  const cursorRef = useRef<string | null>(null)
+  const previousProjectRoot = useRef(projectRoot)
+  if (previousProjectRoot.current !== projectRoot) {
+    previousProjectRoot.current = projectRoot
+    cursorRef.current = null
+  }
+
+  const query = useQuery(
+    sessionRosterQuery(selectedSessionId, enabled, {
+      projectRoot,
+      cursor: cursorRef.current,
+    }),
+  )
+
+  const nextCursor = query.data?.nextCursor ?? null
+  return {
+    query,
+    hasMore: nextCursor !== null,
+    fetchMore: () => {
+      if (nextCursor === null || query.isFetching) return
+      cursorRef.current = nextCursor
+      void query.refetch()
+    },
+  }
+}
 
 // The main column always reads the Session's own Feed. A Subagent's Feed is a separate document
 // read beside it, drawn in the inspector, so opening one never takes the Session's away (#1582).
@@ -25,9 +61,11 @@ export function useSessions(
 ) {
   const queryClient = useQueryClient()
   const selectedFeedId = readableSessionId(selectedSessionId)
-  const roster = useQuery<SessionRoster, SessionContractError>(
-    sessionRosterQuery(selectedSessionId, rosterEnabled, projectRoot),
-  )
+  const {
+    query: roster,
+    hasMore: hasMoreSessions,
+    fetchMore: fetchMoreSessions,
+  } = useRosterQuery(selectedSessionId, rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
 
@@ -61,6 +99,8 @@ export function useSessions(
     // `failureCount` is consecutive failed fetches and resets to 0 on the next success.
     feed: feed.data ?? null,
     feedError: feed.failureCount > 1 ? feed.error : null,
+    hasMoreSessions,
+    fetchMoreSessions,
     reread: () => invalidateSessionRoster(queryClient),
     // Cancel a read that never answers (#2102), because TanStack reuses a pending query without cached data.
     retryFeed: () => void retrySessionFeed(queryClient, feedQuery.queryKey, feed.refetch),
