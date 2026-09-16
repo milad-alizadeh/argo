@@ -1,7 +1,9 @@
-import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import path from 'node:path'
+import { appendFile, rm, writeFile } from 'node:fs/promises'
 import { fixturePath, proofCwd } from '../../../mocks/sessions/mock-transcript-files'
-import { sessionArchivePath } from '../../../src/core/storage/session-archive'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '../../../src/core/storage/session-archive'
 
 function transcriptRecord(transcripts, { id, prompt, timestamp, uuid }) {
   return `${JSON.stringify({
@@ -70,12 +72,7 @@ async function addRecentSession(transcripts) {
 // The running app reads Argo's own archive document on every Roster poll, so a mutation here is
 // what a second Argo window archiving the Session would leave behind (#2315).
 async function setArchived(userData, sessionId, archived) {
-  const file = sessionArchivePath(userData)
-  await mkdir(path.dirname(file), { recursive: true })
-  const held = JSON.parse(await readFile(file, 'utf8').catch(() => '{}'))
-  if (archived) held[sessionId] = { archivedAt: '2026-09-02T00:00:00.000Z' }
-  else delete held[sessionId]
-  await writeFile(file, `${JSON.stringify(held, null, 2)}\n`)
+  await createSessionArchiveStore(sessionArchivePath(userData)).setArchived([sessionId], archived)
 }
 
 async function updateProseRoster(transcripts) {
