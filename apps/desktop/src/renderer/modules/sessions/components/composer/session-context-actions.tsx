@@ -51,7 +51,7 @@ export function SessionContextActions({
   onCompact: (() => Promise<boolean>) | undefined
   onHandoff: (() => Promise<boolean>) | undefined
 }) {
-  const actions = [
+  const actions: [ContextAction, ContextAction] = [
     {
       accessibleName: 'Compact context',
       icon: <Minimize2 />,

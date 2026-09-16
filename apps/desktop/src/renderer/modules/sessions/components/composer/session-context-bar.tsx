@@ -113,9 +113,6 @@ export function SessionContextBar({
       className="@container relative z-0 flex min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
-      {/* Compact leads the bar so its left edge sits at the bar's own left inset, the same
-          column the Feed's own text starts from, instead of trailing behind Handoff (#2251). */}
-      <CompactButtons canCompact={canCompact} isCompacting={isCompacting} onCompact={onCompact} />
       <div className="shrink-0 border-l border-border/60 pl-2 @[56rem]:pl-4">
         <UsagePopover harness={harness ?? 'codex'} />
       </div>
@@ -142,6 +139,9 @@ export function SessionContextBar({
         capacityTokens={capacityTokens}
         percentage={percentage}
         usedTokens={usedTokens}
+      />
+      <SessionContextActions
+        {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
       />
       <SessionContextActions
         {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
