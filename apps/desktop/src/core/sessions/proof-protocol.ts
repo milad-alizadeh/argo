@@ -15,3 +15,6 @@ export const SESSION_CODEX_EXECUTABLE_ENV = 'ARGO_CODEX_EXECUTABLE'
 // The reply gap a packaged proof gives both mock CLIs. Omitted means their current, immediate
 // reply behavior, so the ordinary proof cases retain their existing timing.
 export const SESSION_MOCK_REPLY_DELAY_MS_ENV = 'ARGO_MOCK_REPLY_DELAY_MS'
+
+// Opts a packaged proof into a replayable adverse transport plan; unset keeps ordinary mock behavior.
+export const SESSION_MOCK_ADVERSARIAL_SEED_ENV = 'ARGO_MOCK_ADVERSARIAL_SEED'

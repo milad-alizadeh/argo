@@ -7,6 +7,7 @@ import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { keptDocument } from './kept-document'
 import { Standing } from './standing'
 import { useKeptDocuments } from './use-kept-documents'
+import { awaitingAssistantReply } from './use-settled-feed'
 
 import './feed.css'
 
@@ -42,7 +43,10 @@ export function BasicFeed({
   const [retryToken, setRetryToken] = useState(0)
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
   const awaitingFeed =
-    failure === null && selectedSessionId !== null && !optimisticSession && current === null
+    failure === null &&
+    selectedSessionId !== null &&
+    !optimisticSession &&
+    (current === null || (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
@@ -68,8 +72,8 @@ export function BasicFeed({
 
   return (
     <section aria-label="Session Feed" className="feed">
-      {ordered.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || (current === null && !optimisticSession) ? (
+      {!stalled && ordered.map(([id, document]) => keptDocument(id, document, shared))}
+      {failure !== null || stalled || (current === null && !optimisticSession) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}

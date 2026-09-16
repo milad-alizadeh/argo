@@ -16,7 +16,7 @@ export type SessionFixture = {
 
 // What one launch asks of the CLI. A slow reply is the state the wait cases read (#2119): a CLI
 // that answers instantly never shows the app waiting.
-export type SessionCliLaunch = { slowReply: boolean }
+export type SessionCliLaunch = { slowReply: boolean; adversarialSeed?: string }
 
 // The Turn a case is waiting on, named the way the case sent it.
 export type SessionReply = { cli: SessionCli; prompt: string }

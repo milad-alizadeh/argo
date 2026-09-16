@@ -10,6 +10,10 @@ export type Settled = {
   rows: readonly SessionFeedRow[]
 }
 
+export function awaitingAssistantReply(rows: readonly SessionFeedRow[]) {
+  return rows.length > 0 && rows.every((row) => row.shape === 'prose' && row.role === 'user')
+}
+
 type SettledFeedOptions = {
   active: boolean
   sessionId: string | null
@@ -41,7 +45,9 @@ export function useSettledFeed({
   // A kept document keeps its own hook instance for the Session it belongs to (basic-feed.tsx), so
   // this bound only ever watches a first load: a later revision leaves the previous settled
   // document in place (the rule above) rather than making `awaitingFeed` true again.
-  const awaitingFeed = isRunning && (settled === null || settled.rows.length === 0)
+  const awaitingFeed =
+    isRunning &&
+    (settled === null || settled.rows.length === 0 || awaitingAssistantReply(settled.rows))
   const stalled = useStallTimer(awaitingFeed ? `${sessionId}:${retryToken}` : false, stallTimeoutMs)
 
   const retry = useCallback(() => {
