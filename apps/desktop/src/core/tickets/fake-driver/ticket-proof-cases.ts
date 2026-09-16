@@ -55,7 +55,7 @@ export async function proveConnectRepository(run: Run) {
   await scope.fill('octocat/secret')
   await run.page.getByText('No repository matches.').waitFor()
   await scope.fill('hello')
-  await run.page.getByRole('option', { name: 'octocat/hello-world' }).dispatchEvent('click')
+  await run.page.getByRole('option', { name: 'octocat/hello-world' }).click()
   assert.equal(await scope.inputValue(), 'octocat/hello-world')
   assert.equal(await storeText(run.fixture, 'connections.json'), '')
   await press(form, 'Connect repository')
@@ -70,7 +70,7 @@ export async function proveBacklog(run: Run) {
   // #609 sits under its parent; the closed #388 and the pull request #700 are not Tickets here.
   assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
   await backlog(run.page).getByText('All open · 3 Tickets').waitFor()
-  await backlog(run.page).getByRole('button', { name: /^#607/ }).dispatchEvent('click')
+  await backlog(run.page).getByRole('button', { name: /^#607/ }).click()
   const detail = run.page.getByRole('article', { name: 'Ticket #607' })
   await detail.getByRole('heading', { name: 'Wayfinder: the Tickets room, end to end' }).waitFor()
   await detail.getByText('The backlog in the deck and the Ticket beside it.').waitFor()
@@ -98,7 +98,7 @@ export async function proveRevoked(run: Run) {
   await openRoom(run.page, 'tickets')
   await room(run).getByText('GitHub no longer accepts octocat').waitFor()
   const foot = run.page.getByRole('button', { name: 'GitHub · octocat Access revoked' })
-  await foot.dispatchEvent('click')
+  await foot.click()
   const octocat = accountRow(run.page, 'octocat')
   await octocat.getByText('Access revoked').waitFor()
   await octocat
@@ -115,7 +115,7 @@ export async function proveRevoked(run: Run) {
 
 // Closing #273 as not planned from its Detail reaches GitHub: the next read leaves it out.
 export async function proveChangeState(run: Run) {
-  await backlog(run.page).getByRole('button', { name: /^#273/ }).dispatchEvent('click')
+  await backlog(run.page).getByRole('button', { name: /^#273/ }).click()
   const detail = run.page.getByRole('article', { name: 'Ticket #273' })
   await choose(run.page, detail.getByRole('button', { name: 'State: Open' }), {
     role: 'menuitemradio',
@@ -130,7 +130,7 @@ export async function proveChangeState(run: Run) {
 }
 
 export async function proveDisconnect(run: Run) {
-  await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).dispatchEvent('click')
+  await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).click()
   const octocat = accountRow(run.page, 'octocat')
   await press(octocat, 'Disconnect…')
   await press(octocat, 'Disconnect')
