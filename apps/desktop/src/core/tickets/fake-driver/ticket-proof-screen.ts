@@ -1,6 +1,4 @@
 // Reading and operating the packaged Tickets screen by role and name, as a person would find it.
-// Every press is dispatched into the renderer: the proof window is never shown, so nothing is
-// there to hit-test, and no real keyboard or mouse is taken.
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -11,17 +9,15 @@ import { openedURLs, type TicketFixture } from './ticket-proof-fixture'
 export type Run = { application: ElectronApplication; page: Page; fixture: TicketFixture }
 
 export const press = (scope: Page | Locator, name: string) =>
-  scope.getByRole('button', { name, exact: true }).dispatchEvent('click')
+  scope.getByRole('button', { name, exact: true }).click()
 
-// The packaged proof window is hidden, so normal pointer actions cannot hit-test it. Base UI's
-// trigger still accepts the dispatched click; opening it that way is more reliable than a key
-// press racing the trigger's focus setup. Its option then takes Enter rather than a click.
+// The click opens the trigger; its option then takes Enter rather than a click.
 export async function choose(
   page: Page,
   trigger: Locator,
   choice: { role: 'option' | 'menuitemradio'; name: string },
 ) {
-  await trigger.dispatchEvent('click')
+  await trigger.click()
   await page.getByRole(choice.role, { name: choice.name, exact: true }).press('Enter')
 }
 
@@ -40,6 +36,8 @@ export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
   accountsDialog(page).getByRole('listitem', { name: `${provider} Account ${login}` })
 
 export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog' })
+
+export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
   await page.evaluate((hash) => {

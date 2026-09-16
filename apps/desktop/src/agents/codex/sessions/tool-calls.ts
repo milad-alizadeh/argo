@@ -20,12 +20,24 @@ function readArguments(value: unknown): Record<string, unknown> {
   }
 }
 
+const EXEC_COMMAND = /tools\.exec_command\s*\(\s*\{[\s\S]*?(?:"cmd"|cmd)\s*:\s*"((?:\\.|[^"\\])*)"/
+
+function execInput(input: string): Record<string, unknown> {
+  const match = input.match(EXEC_COMMAND)
+  if (match?.[1] === undefined) return { input }
+  try {
+    return { input, cmd: JSON.parse(`"${match[1]}"`) }
+  } catch {
+    return { input }
+  }
+}
+
 function readToolCall(payload: Record<string, unknown>): ToolCall | null {
   if (typeof payload.call_id !== 'string' || typeof payload.name !== 'string') return null
   if (payload.type === 'function_call')
     return { id: payload.call_id, name: payload.name, input: readArguments(payload.arguments) }
   if (payload.type === 'custom_tool_call' && typeof payload.input === 'string')
-    return { id: payload.call_id, name: payload.name, input: { input: payload.input } }
+    return { id: payload.call_id, name: payload.name, input: execInput(payload.input) }
   return null
 }
 

@@ -184,13 +184,15 @@ frontmatter as one of its five costs, and Phase 2 dispatches it last for exactly
 ## Phase 2: the infra wizard
 
 Detect first (language, UI, monorepo, hooks and CI, linter) so every question ships a
-recommendation, then ask one grouped multi-select question with the recommendation marked:
+recommendation. Include the Codex todo-list choice only when Codex is installed. Then ask one
+grouped multi-select question with the recommendation marked:
 
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Always-on task tracking | this skill, below | always | 2 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 3 |
+| Enable Codex native todo lists | this skill, below | Codex is installed | 2 |
+| Always-on task tracking | this skill, below | always | 3 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -199,6 +201,25 @@ Done when the user has answered the one question.
 
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
+
+### Enable Codex native todo lists
+
+When Codex is installed, the Phase 2 choice asks whether to enable its native todo list. Explain
+that the list adds a small token overhead and only improves progress visibility. It does not
+change the work that Codex does. Recommend enabling it when the user wants visible task progress.
+
+If the user selected the choice, update `~/.codex/config.toml`, preserving unrelated
+configuration. Set `enabled = true` in the existing `[tools.update_plan]` table. Append the table
+only when it is absent.
+
+```toml
+[tools.update_plan]
+enabled = true
+```
+
+Tell the user to restart Codex before they start a new session. If they did not select the choice,
+do not change the Codex configuration. This setting enables `update_plan`; it is separate from
+Plan Mode.
 
 The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing

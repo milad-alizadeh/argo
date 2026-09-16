@@ -97,13 +97,13 @@ function firstUnfrozenRecordIndex(
 
 // The Feed for one chain, reusing as much of the last poll's work as it safely can. Pass the
 // state the previous call returned; pass none for the first poll of a chain.
-export function projectFeedIncrementally(
+export function projectFeed(
   chain: SessionChain,
   state: FeedProjectionState | undefined,
 ): { rows: SessionFeedRow[]; previouslyFrozenCount: number; state: FeedProjectionState } {
   const previouslyFrozenCount = state?.chainId === chain.id ? state.frozenRows.length : 0
   const open = openRecordsSince(chain, state)
-  if (open === null) return projectFeedIncrementally(chain, undefined)
+  if (open === null) return projectFeed(chain, undefined)
   const { records, cursors } = open
   const frozenRows = state?.chainId === chain.id ? state.frozenRows : []
   if (records.length === 0) {

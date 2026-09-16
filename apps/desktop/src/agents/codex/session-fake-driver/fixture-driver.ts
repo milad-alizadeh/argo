@@ -5,9 +5,9 @@ import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import type { OwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { openCodexChannel } from '../drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import type { CodexOwnershipLedger } from '../drive/ownership-ledger.ts'
 
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s FAKE_CLAUDE notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
@@ -23,7 +23,7 @@ const fixture = path.join(
 
 export function driverBackedByFixture(
   driverOptions: {
-    ownership?: CodexOwnershipLedger
+    ownership?: OwnershipLedger
     env?: Record<string, string>
     resumeTarget?: (sessionId: string) => Promise<{ cwd: string } | null>
   } = {},

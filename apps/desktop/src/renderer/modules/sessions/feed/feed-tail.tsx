@@ -1,6 +1,8 @@
 // The markers after the last row: compaction, handoff, and the Turn Marker.
 import type { ReactNode } from 'react'
+import type { SessionFeed } from '../types'
 import { CompactionMarker } from './compaction-marker'
+import type { FeedLiveFacts } from './feed-live-facts'
 import { HandoffCompletedMarker, HandoffMarker } from './handoff-marker'
 import { TurnMarker } from './turn-marker'
 import type { TurnMarkerView } from './turn-marker-state'
@@ -51,4 +53,24 @@ export function feedTail({
       )}
     </>
   )
+}
+
+export function liveFeedTail(
+  liveFacts: NonNullable<FeedLiveFacts>,
+  lastRow: SessionFeed['rows'][number] | undefined,
+  onOpenSession: (sessionId: string) => void,
+) {
+  return feedTail({
+    compaction: compactionMarker(
+      liveFacts.compactionStartedAt,
+      liveFacts.compactionPercentage,
+      liveFacts.compactionTokens,
+    ),
+    handoff: handoffMarker(liveFacts.handoffStartedAt, liveFacts.handoffTo, onOpenSession),
+    turnMarker: liveFacts.turnMarker,
+    markerSilent:
+      liveFacts.isRunning &&
+      lastRow?.shape === 'tool-group' &&
+      liveFacts.turnMarker?.phase === 'working',
+  })
 }

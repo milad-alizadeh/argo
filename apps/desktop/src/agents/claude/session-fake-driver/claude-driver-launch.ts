@@ -5,11 +5,11 @@ import path from 'node:path'
 import type { TestContext } from 'node:test'
 
 import type { ClaudeTurnSetup } from '@/core/sessions/contract.ts'
+import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import type { ResumeTarget } from '../drive/drive-channel.ts'
 import { createHandoffLedger, type HandoffLedger } from '../drive/handoff-ledger.ts'
-import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
 import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
 
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
@@ -81,7 +81,7 @@ export function launch(
   const displays = new Map<string, (batch: unknown) => void>()
   const ledger = createOwnershipLedger({
     path: file,
-    owner: { pid: process.pid, registry: options.registry ?? 'window-a' },
+    window: { pid: process.pid, registry: options.registry ?? 'window-a' },
     isAlive: (pid) => pid === process.pid,
   })
   const handoffLedger =
@@ -127,7 +127,7 @@ export function launch(
 export function ownedBeforeRestart(file: string, sessionId: string) {
   const before = createOwnershipLedger({
     path: file,
-    owner: { pid: 1, registry: 'previous-launch' },
+    window: { pid: 1, registry: 'previous-launch' },
     isAlive: () => false,
   })
   before.bind(sessionId)
