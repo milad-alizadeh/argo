@@ -92,12 +92,17 @@ export async function createPackagedSessionHarness(root: string, backend: Sessio
   }
 
   const launch = (options: Partial<SessionCliLaunch> = {}) =>
-    timed(launches, () => open({ slowReply: options.slowReply ?? false }))
+    timed(launches, () =>
+      open({ slowReply: options.slowReply ?? false, adversarialSeed: options.adversarialSeed }),
+    )
 
   const restart = (options: Partial<SessionCliLaunch> = {}) =>
     timed(launches, async () => {
       await application?.close()
-      return open({ slowReply: options.slowReply ?? false })
+      return open({
+        slowReply: options.slowReply ?? false,
+        adversarialSeed: options.adversarialSeed,
+      })
     })
 
   return {

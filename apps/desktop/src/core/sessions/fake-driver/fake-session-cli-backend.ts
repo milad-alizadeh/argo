@@ -6,7 +6,10 @@ import type { Page } from 'playwright-core'
 import { fakeClaudeCli } from '../../../agents/claude/session-fake-driver/fake-claude-cli'
 import { fakeCodexCli } from '../../../agents/codex/session-fake-driver/fake-codex-cli'
 import type { SessionCli } from '../../../renderer/modules/sessions/harness/harnesses'
-import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../proof-protocol'
+import {
+  SESSION_FAKE_ADVERSARIAL_SEED_ENV,
+  SESSION_FAKE_REPLY_DELAY_MS_ENV,
+} from '../proof-protocol'
 import type { FakeCli } from './fake-cli'
 import type { SessionCliBackend, SessionFixture, SessionReply } from './session-cli-backend'
 
@@ -50,9 +53,15 @@ export function createFakeSessionCliBackend(): SessionCliBackend {
       return {
         executables,
         transcripts: { ...roots, archive: fixture.archive },
-        launchEnv: ({ slowReply }) => ({
-          [SESSION_FAKE_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
-        }),
+        launchEnv: ({ slowReply, adversarialSeed }) => {
+          if (adversarialSeed !== undefined) console.info(`Session fake seed: ${adversarialSeed}`)
+          return {
+            [SESSION_FAKE_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
+            ...(adversarialSeed === undefined
+              ? {}
+              : { [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
+          }
+        },
       }
     },
     waitForReply: (page, reply) => feedMark(page, reply).waitFor({ timeout: BUDGET_MS }),

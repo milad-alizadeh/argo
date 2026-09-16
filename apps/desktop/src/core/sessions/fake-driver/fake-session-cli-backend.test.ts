@@ -4,7 +4,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { fakeClaudeCli } from '../../../agents/claude/session-fake-driver/fake-claude-cli'
 import { fakeCodexCli } from '../../../agents/codex/session-fake-driver/fake-codex-cli'
-import { SESSION_FAKE_REPLY_DELAY_MS_ENV } from '../proof-protocol'
+import {
+  SESSION_FAKE_ADVERSARIAL_SEED_ENV,
+  SESSION_FAKE_REPLY_DELAY_MS_ENV,
+} from '../proof-protocol'
 import { createFakeSessionCliBackend } from './fake-session-cli-backend'
 import type { SessionCliBackend, SessionCliRun, SessionFixture } from './session-cli-backend'
 
@@ -58,6 +61,14 @@ test('holds the reply back only when a case asks for a slow CLI', () =>
     expect(run.launchEnv({ slowReply: false })).toEqual({ [SESSION_FAKE_REPLY_DELAY_MS_ENV]: '0' })
     const slow = run.launchEnv({ slowReply: true })[SESSION_FAKE_REPLY_DELAY_MS_ENV]
     expect(Number(slow)).toBeGreaterThan(0)
+  }))
+
+test('passes an adversarial seed to both fake CLIs', () =>
+  started(async ({ run }) => {
+    expect(run.launchEnv({ slowReply: false, adversarialSeed: 'replay-this' })).toMatchObject({
+      [SESSION_FAKE_ADVERSARIAL_SEED_ENV]: 'replay-this',
+      [SESSION_FAKE_REPLY_DELAY_MS_ENV]: '0',
+    })
   }))
 
 test('reads a recorded Claude reply out of the transcript the fake wrote', () =>
