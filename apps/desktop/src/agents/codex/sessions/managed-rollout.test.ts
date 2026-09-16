@@ -3,9 +3,11 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import type { SessionReader } from '@/core/sessions/bridge'
 import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
 import { managedRow } from '@/core/sessions/managed-row'
-import { createCodexSessionReader } from './read-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
+import { codexSessionSource } from './read-sessions'
 
 const listing = {
   version: 1 as const,
@@ -14,9 +16,7 @@ const listing = {
   projectRoot: null,
 }
 
-function listed(
-  reply: Awaited<ReturnType<ReturnType<typeof createCodexSessionReader>['listSessions']>>,
-) {
+function listed(reply: Awaited<ReturnType<SessionReader['listSessions']>>) {
   const parsed = sessionListReplySchema.parse(reply)
   if (parsed.type !== 'session.listed')
     throw new Error(`Expected sessions, received ${parsed.type}.`)
@@ -61,18 +61,20 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
   context.after(() => rm(root, { recursive: true, force: true }))
   const sessionId = '01a09cee-bb4c-7991-b10d-7c58aff5e0ff'
   await writeManagedRollout(root, sessionId)
-  const reader = createCodexSessionReader(root, {
-    roster: () => [
-      managedRow(sessionId, {
-        cli: 'codex',
-        status: 'running',
-        cwd: '/projects/argo',
-        prompt: 'Inspect the failing test.',
-        startedAt: '2026-09-13T15:17:11.000Z',
-        setup: { model: null, effort: null, mode: null },
-      }),
-    ],
-  })
+  const reader = createSessionReader([
+    codexSessionSource(root, {
+      roster: () => [
+        managedRow(sessionId, {
+          cli: 'codex',
+          status: 'running',
+          cwd: '/projects/argo',
+          prompt: 'Inspect the failing test.',
+          startedAt: '2026-09-13T15:17:11.000Z',
+          setup: { model: null, effort: null, mode: null },
+        }),
+      ],
+    }),
+  ])
 
   const roster = listed(await reader.listSessions(listing))
   assert.deepEqual(
@@ -103,7 +105,7 @@ test('a Codex Session Argo held before restart reads external and keeps its reco
   context.after(() => rm(root, { recursive: true, force: true }))
   const sessionId = '01a09cee-bb4c-7991-b10d-7c58aff5e0ff'
   await writeManagedRollout(root, sessionId)
-  const reader = createCodexSessionReader(root)
+  const reader = createSessionReader([codexSessionSource(root)])
 
   const roster = listed(await reader.listSessions(listing))
   assert.deepEqual(

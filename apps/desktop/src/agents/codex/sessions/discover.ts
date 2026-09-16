@@ -75,13 +75,14 @@ function named(row: SessionRosterRow, names: ReadonlyMap<string, string>): Sessi
   return name === undefined ? row : { ...row, title: { text: name, source: 'summarised' } }
 }
 
-export async function discoverSessions(
+export function nameThreads(rows: SessionRosterRow[], threadNames: ThreadNames) {
+  const names = threadNames(rows.flatMap((row) => [row.id, ...row.retiredIds]))
+  return rows.map((row) => named(row, names))
+}
+
+export function discoverSessions(
   root: string,
-  threadNames?: ThreadNames,
   options?: { cursor?: string | null },
 ): Promise<Discovery> {
-  const discovery = await reader.discoverSessions(root, options)
-  if (threadNames === undefined) return discovery
-  const names = threadNames(discovery.rows.flatMap((row) => [row.id, ...row.retiredIds]))
-  return { ...discovery, rows: discovery.rows.map((row) => named(row, names)) }
+  return reader.discoverSessions(root, options)
 }

@@ -6,7 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from '@/core/sessions/discover-transcript-sessions'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '@/core/sessions/reader'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { writeArchiveStore } from './session-fixture-files'
 import { claudeRoot, writeManySessions } from './session-window-fixture'
 
@@ -73,7 +74,7 @@ test('finds a Session archived under a retired id, by growing past the currently
   context.after(() => rm(store, { recursive: true, force: true }))
   // Archived while `ROOT_ID` was still the current id, before the later resume retired it.
   await writeArchiveStore(store, [ROOT_ID], { archived: true })
-  const reader = createClaudeSessionReader({ transcripts: root, archive: store })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root, archive: store })])
 
   const archived = await reader.archiveList({
     version: 1,

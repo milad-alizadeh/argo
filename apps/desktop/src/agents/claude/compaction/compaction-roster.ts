@@ -1,5 +1,5 @@
+import type { SessionChain } from '@/core/sessions/chains'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import type { SessionChain } from '../sessions/chains'
 import {
   type CompactionStart,
   readCompactionStarts,

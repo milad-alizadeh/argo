@@ -1,12 +1,11 @@
 // The Claude source the shared Session reader drives (#2025). Transcripts are read-only. The one
 // exception is the archive flag (#2194): `setArchivedSessions` writes it back into the Claude
 // desktop app's own store, the same file `discoverArchivedSessions` reads (`sessions/archive.ts`).
-import type { SessionReader } from '@/core/sessions/bridge'
 import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
-import { mergeManagedRoster } from '@/core/sessions/managed-row'
+import { discoverRoster } from '@/core/sessions/discover-roster'
+import { projectFeed } from '@/core/sessions/feed'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { belongsToProject, projectRootsOf } from '@/core/sessions/project-scope'
-import { createSessionReader, type SessionSource } from '@/core/sessions/reader'
+import type { SessionSource } from '@/core/sessions/reader'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import {
@@ -16,7 +15,6 @@ import {
   readSessionFiles,
   setArchivedSessions,
 } from './discover'
-import { projectFeed } from './feed'
 import { draftOverlay } from './live-feed'
 import {
   joinLiveProcesses,
@@ -87,24 +85,27 @@ async function discoverClaudeSessions(
 ) {
   roots.completeHandoffs?.()
   const live = await readLiveState(roots.processes)
-  const read = await discoverSessions(roots.transcripts, roots.archive, options)
-  const discovered = { ...read, rows: joinLiveProcesses(read.rows, live) }
+  const discovery = await discoverSessions(roots.transcripts, roots.archive, options)
   const managed = roots.managedSessions?.() ?? []
   await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
-  const roster = mergeManagedRoster(discovered, managed)
-  const rows = await markCompactingRows(lockLiveProcesses(roster.rows, live), {
-    folder: roots.compactionStarts,
-    readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
-    begin: roots.beginCompaction,
+  return discoverRoster({
+    discovery,
+    managed,
+    joins: {
+      observed: [(rows) => joinLiveProcesses(rows, live)],
+      merged: [
+        (rows) => lockLiveProcesses(rows, live),
+        (rows) =>
+          markCompactingRows(rows, {
+            folder: roots.compactionStarts,
+            readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+            begin: roots.beginCompaction,
+          }),
+        (rows) => withHandoffEdges(rows, roots.handoffEdges),
+      ],
+    },
+    projectRoot: options?.projectRoot,
   })
-  const withEdges = withHandoffEdges(rows, roots.handoffEdges)
-  // Project scope applies here, at this adapter's own discovery boundary (#2239), rather than
-  // after the shared reader has already merged every adapter's machine-wide list.
-  const projectRoots = await projectRootsOf(options?.projectRoot)
-  return {
-    ...roster,
-    rows: withEdges.filter((row) => belongsToProject(row.cwd, projectRoots)),
-  }
 }
 
 export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
@@ -144,17 +145,4 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
             return draftOverlay(liveMessages(sessionId), held)
           },
   }
-}
-
-export function createClaudeSessionReader(roots: {
-  transcripts: string
-  archive?: string
-  processes?: string
-  managedSessions?: () => SessionRosterRow[]
-  compactionStarts?: string
-  liveMessages?: (sessionId: string) => LiveMessage[]
-  rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
-  isLockedElsewhere?: (sessionId: string) => boolean
-}): SessionReader {
-  return createSessionReader([claudeSessionSource(roots)])
 }

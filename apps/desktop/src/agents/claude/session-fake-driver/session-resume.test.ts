@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { SessionReader } from '@/core/sessions/bridge'
 import { sessionListReplySchema } from '@/core/sessions/contract.ts'
 import type { SessionRosterRow } from '@/core/sessions/models.ts'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '@/core/sessions/reader'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { claudeResumeTarget } from '../sessions/resume-target.ts'
 import { fixtureRoot } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 
-async function rosterOf(reader: ReturnType<typeof createClaudeSessionReader>) {
+async function rosterOf(reader: SessionReader) {
   const reply = sessionListReplySchema.parse(await reader.listSessions(listing))
   assert.equal(reply.type, 'session.listed')
   return reply.type === 'session.listed' ? reply.sessions : []
@@ -32,7 +34,7 @@ test('finds nothing to resume for a Session with no transcript', async (context)
 
 test('reads a Session Argo held before a restart as external, same as every other', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
-  const reader = createClaudeSessionReader({ transcripts: root })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 
   const roster = await rosterOf(reader)
 
@@ -44,13 +46,15 @@ test('reads a Session Argo held before a restart as external, same as every othe
 
 test('reads a Session this window drives as managed, not external', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild'])
-  const [row] = await rosterOf(createClaudeSessionReader({ transcripts: root }))
+  const [row] = await rosterOf(createSessionReader([claudeSessionSource({ transcripts: root })]))
   assert.ok(row)
   const driven: SessionRosterRow = { ...row, posture: 'managed' }
-  const reader = createClaudeSessionReader({
-    transcripts: root,
-    managedSessions: () => [driven],
-  })
+  const reader = createSessionReader([
+    claudeSessionSource({
+      transcripts: root,
+      managedSessions: () => [driven],
+    }),
+  ])
 
   const roster = await rosterOf(reader)
 

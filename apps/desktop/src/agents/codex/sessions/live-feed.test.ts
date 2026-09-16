@@ -3,8 +3,10 @@ import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promi
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import type { SessionReader } from '@/core/sessions/bridge'
+import { createSessionReader } from '@/core/sessions/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'liveThread'
 
@@ -45,7 +47,7 @@ function reading(revision: string | null) {
   }
 }
 
-async function read(reader: ReturnType<typeof createCodexSessionReader>, revision: string | null) {
+async function read(reader: SessionReader, revision: string | null) {
   const reply = await reader.readSessionFeed(reading(revision))
   assert.ok(typeof reply === 'object' && reply !== null && 'type' in reply)
   return reply as { type: string; revision: string; rows?: { id: string; text?: string }[] }
@@ -54,7 +56,7 @@ async function read(reader: ReturnType<typeof createCodexSessionReader>, revisio
 test('shows the agent message a Turn is writing, and its growth, before the rollout holds it', async (context) => {
   const { root } = await rollout(context)
   let live: LiveMessage[] = [{ id: 'msg-1', text: 'Ducks' }]
-  const reader = createCodexSessionReader(root, { liveMessages: () => live })
+  const reader = createSessionReader([codexSessionSource(root, { liveMessages: () => live })])
 
   const first = await read(reader, null)
   assert.deepEqual(
@@ -74,9 +76,11 @@ test('shows the agent message a Turn is writing, and its growth, before the roll
 
 test('draws a finished message once, from the rollout, under the id it streamed with', async (context) => {
   const { root, file } = await rollout(context)
-  const reader = createCodexSessionReader(root, {
-    liveMessages: () => [{ id: 'msg-1', text: 'Ducks glide.' }],
-  })
+  const reader = createSessionReader([
+    codexSessionSource(root, {
+      liveMessages: () => [{ id: 'msg-1', text: 'Ducks glide.' }],
+    }),
+  ])
   const streaming = await read(reader, null)
 
   await appendFile(

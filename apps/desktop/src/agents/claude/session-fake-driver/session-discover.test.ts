@@ -3,7 +3,8 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '../../../core/sessions/reader.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixturePath, replaceInFile, writeArchiveStore } from './session-fixture-files'
 import {
   fixtureRoot,
@@ -22,7 +23,7 @@ const feed = {
 }
 
 function readFeed(value: unknown, root: string) {
-  return createClaudeSessionReader({ transcripts: root }).readSessionFeed(value)
+  return createSessionReader([claudeSessionSource({ transcripts: root })]).readSessionFeed(value)
 }
 
 test('discovers Sessions with no Project registration and states what it read', async (context) => {
@@ -100,7 +101,7 @@ test('reads a Feed for a whole Session, keyed by the Session that answered', asy
 test('changes the Feed revision when a transcript grows', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
   const request = { ...feed, sessionId: 'externalBasic' }
-  const reader = createClaudeSessionReader({ transcripts: root })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
   const first = await reader.readSessionFeed(request)
   const unchanged = await reader.readSessionFeed({
     ...request,
@@ -120,7 +121,7 @@ test('changes the Feed revision when a transcript grows', async (context) => {
 // read has changed (#2241). What the Roster says must still follow the transcripts.
 test('follows a growing transcript across repeated Roster reads', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])
-  const reader = createClaudeSessionReader({ transcripts: root })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
   const first = await reader.listSessions(listing)
   const unchanged = await reader.listSessions({ ...listing, requestId: 'list-2' })
   assert.equal(first.type, 'session.listed')

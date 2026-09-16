@@ -8,8 +8,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 import { compactSession, sendSession, startSession } from '@/core/sessions/drive.ts'
+import { createSessionReader } from '@/core/sessions/reader'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { createCodexSessionReader } from '../sessions/read-sessions.ts'
+import { codexSessionSource } from '../sessions/read-sessions.ts'
 import { driverBackedByFixture } from './fixture-driver.ts'
 
 test('starting a Codex Session over the real transport makes it appear in the shared Roster', async () => {
@@ -31,7 +32,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     const sessionId = startReply.type === 'session.started' ? startReply.sessionId : ''
 
     const transcripts = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-vertical-slice-'))
-    const reader = createCodexSessionReader(transcripts, { roster: driver.roster })
+    const reader = createSessionReader([codexSessionSource(transcripts, { roster: driver.roster })])
     const listing = (await reader.listSessions({
       version: 1,
       type: 'session.list',

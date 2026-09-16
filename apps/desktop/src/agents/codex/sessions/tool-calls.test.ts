@@ -4,8 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { createSessionReader } from '@/core/sessions/reader'
 import { fed, feedRequest, listed, rowsOf } from '@/core/sessions/reader-test-helpers'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(
@@ -18,7 +19,7 @@ async function reader(context: { after: (cleanup: () => Promise<void>) => void }
   const day = path.join(root, '2026', '09', '16')
   await mkdir(day, { recursive: true })
   await copyFile(FIXTURE, path.join(day, `${SESSION}.jsonl`))
-  return createCodexSessionReader(root)
+  return createSessionReader([codexSessionSource(root)])
 }
 
 test('shows a row for each Codex tool call, succeeded once its output arrived and running otherwise', async (context) => {

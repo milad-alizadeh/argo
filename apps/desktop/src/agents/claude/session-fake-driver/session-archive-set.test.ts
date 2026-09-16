@@ -3,7 +3,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '../../../core/sessions/reader.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { writeArchiveStore } from './session-fixture-files'
 import { fixtureRoot, unscopedListing as listing, listSessions } from './session-fixtures'
 
@@ -15,7 +16,7 @@ test("archives a Session by writing the flag back into the Claude desktop app's 
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
   context.after(() => rm(store, { recursive: true, force: true }))
   await writeArchiveStore(store, ['resumeChild'], { archived: false })
-  const reader = createClaudeSessionReader({ transcripts: root, archive: store })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root, archive: store })])
   const applied = await reader.archiveSet({
     version: 1,
     type: 'session.archive.set',
@@ -48,7 +49,7 @@ test('fails a bulk archive for a Session the store has no row for', async (conte
   const root = await fixtureRoot(context, ['resumeParent'])
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
   context.after(() => rm(store, { recursive: true, force: true }))
-  const reader = createClaudeSessionReader({ transcripts: root, archive: store })
+  const reader = createSessionReader([claudeSessionSource({ transcripts: root, archive: store })])
   const applied = await reader.archiveSet({
     version: 1,
     type: 'session.archive.set',

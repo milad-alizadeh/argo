@@ -6,7 +6,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { createClaudeSessionReader } from '../sessions/read-sessions.ts'
+import { createSessionReader } from '@/core/sessions/reader'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot, unscopedListing } from './session-fixtures'
 
 // A pid that existed and has exited, so no live process holds it.
@@ -26,13 +27,15 @@ async function listWithProcess(
     path.join(processes, `${written.pid}.json`),
     JSON.stringify({ ...written, sessionId: SESSION, kind: 'interactive' }),
   )
-  const reply = await createClaudeSessionReader({
-    transcripts,
-    processes,
-    managedSessions,
-    // The ledger sees no other Argo window: any lock below comes from the live process alone.
-    isLockedElsewhere: () => false,
-  }).listSessions(unscopedListing)
+  const reply = await createSessionReader([
+    claudeSessionSource({
+      transcripts,
+      processes,
+      managedSessions,
+      // The ledger sees no other Argo window: any lock below comes from the live process alone.
+      isLockedElsewhere: () => false,
+    }),
+  ]).listSessions(unscopedListing)
   assert.equal(reply.type, 'session.listed')
   return reply.sessions
 }

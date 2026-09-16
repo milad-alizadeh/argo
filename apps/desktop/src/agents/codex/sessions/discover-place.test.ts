@@ -4,7 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '@/core/sessions/contract'
-import { createCodexSessionReader } from './read-sessions'
+import { createSessionReader } from '@/core/sessions/reader'
+import { codexSessionSource } from './read-sessions'
 
 // Codex writes the folder a thread runs in on its `session_meta` record only, and a Project scopes
 // the Roster by that folder (#2204).
@@ -33,7 +34,7 @@ test('reads the folder a Codex Session runs in from its session_meta record', as
   )
 
   const reply = sessionListReplySchema.parse(
-    await createCodexSessionReader(root).listSessions({
+    await createSessionReader([codexSessionSource(root)]).listSessions({
       version: 1,
       type: 'session.list',
       requestId: 'list-1',

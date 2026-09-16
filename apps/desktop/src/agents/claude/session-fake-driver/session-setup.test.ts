@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../sessions/chains.ts'
-import { projectRosterRow } from '../sessions/roster.ts'
+import { stitchChains } from '../../../core/sessions/chains.ts'
+import { projectRosterRow } from '../../../core/sessions/roster.ts'
 import { fixtureFile } from './session-fixtures'
 
 test("reads the newest Turn's Model and Effort off its reply and its Mode off its prompt", async () => {

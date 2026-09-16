@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { managedRow } from '@/core/sessions/managed-row'
+import { createSessionReader } from '@/core/sessions/reader'
 import { listed, tempRoot } from '@/core/sessions/reader-test-helpers'
-import { createCodexSessionReader } from './read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 // The AC that a managed Session with no transcript yet appears in the Roster holds for each CLI
 // (claude-driver-launch.ts and managed-permission-roster.test.ts cover Claude's side).
@@ -16,7 +17,7 @@ test('a managed Codex Session with no transcript yet appears in the Roster with 
     prompt: 'Inspect the failing test.',
     startedAt: '2026-09-13T15:17:11.000Z',
   })
-  const reader = createCodexSessionReader(root, { roster: () => [row] })
+  const reader = createSessionReader([codexSessionSource(root, { roster: () => [row] })])
 
   const reply = await listed(reader)
   assert.deepEqual(
