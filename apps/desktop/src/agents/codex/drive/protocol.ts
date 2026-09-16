@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 
-import type { CodexThreadStatus } from '../../../core/sessions/session-status-rollup'
 import type { Input } from './input-items'
+import type { CodexThreadStatus } from './managed-status'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
@@ -123,7 +123,7 @@ export function readCompletedTurn(message: WireMessage) {
 }
 
 // Validates and reshapes the wire's own `thread/status/changed` envelope; deciding what each
-// shape MEANS for a Session's status is `session-status-rollup.ts`'s job, not this parser's.
+// shape MEANS for a Session's status is `managed-status.ts`'s job, not this parser's.
 export function readThreadStatus(
   message: WireMessage,
 ): { threadId: string; status: CodexThreadStatus } | undefined {
