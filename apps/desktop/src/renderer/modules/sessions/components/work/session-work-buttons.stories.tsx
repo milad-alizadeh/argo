@@ -99,7 +99,8 @@ export const ReadableAgentName: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 1' }))
-    await expect(await screen.findByRole('menuitem', { name: /Standards review/ })).toBeVisible()
+    const items = await screen.findAllByRole('menuitem', { name: /Standards review/ })
+    await expect(items.find((item) => item.checkVisibility())).toBeVisible()
   },
 }
 

@@ -46,6 +46,10 @@ export async function openSessionByClick(page: Page, sessionId: string) {
   await waitForRoute(page, sessionId)
 }
 
+export function visibleArchiveMenuItem(page: Page) {
+  return page.locator('[role="menuitem"]:visible').filter({ hasText: 'Archive' })
+}
+
 // Which Sessions the list holds is a status the reader picks in the header's filter (#2239). "All"
 // is the reading that keeps the active rows beside the archived ones, which is what the disclosure
 // the filter replaced did.

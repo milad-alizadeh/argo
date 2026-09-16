@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
-import { chooseRosterStatus, openSessionByClick } from '../gestures'
+import { chooseRosterStatus, openSessionByClick, visibleArchiveMenuItem } from '../gestures'
 import { readRosterIds, waitForActiveSessions } from '../roster-facts'
 
 function archivedRow(sessionId: string) {
@@ -76,7 +76,7 @@ async function proveArchiveOrderAndFocus(page, withParent) {
   const archivedBefore = await readRosterIds(page, 'Archived')
   const askPending = page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]')
   await askPending.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'Archive' }).click()
+  await visibleArchiveMenuItem(page).click()
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
   await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
@@ -86,7 +86,6 @@ async function proveArchiveOrderAndFocus(page, withParent) {
     ),
     true,
   )
-  // The action removes the row from Active and exposes it as visibly archived in either view.
   await chooseRosterStatus(page, 'Archived')
   const archivedAskPending = page.locator(archivedRow('askPending'))
   await expect(archivedAskPending).toBeVisible()
@@ -98,8 +97,6 @@ async function proveArchiveOrderAndFocus(page, withParent) {
   )
   await chooseRosterStatus(page, 'All')
   await expect(page.locator(archivedRow('askPending'))).toBeVisible()
-
-  // Shift extends the platform-selected row into an inclusive range; one action archives it all.
   await chooseRosterStatus(page, 'Active')
   const range = active.slice(0, 3)
   const first = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${range[0]}"]`)
@@ -112,7 +109,7 @@ async function proveArchiveOrderAndFocus(page, withParent) {
     ).toContainText('Selected')
   }
   await last.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'Archive' }).click()
+  await visibleArchiveMenuItem(page).click()
   const remaining = active.filter((sessionId) => !range.includes(sessionId))
   await waitForActiveSessions(page, remaining)
   await chooseRosterStatus(page, 'Archived')
