@@ -138,13 +138,15 @@ export function FeedToolGroup({
 }) {
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
-  // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its name.
-  const isSoleSkill = soleCall?.kind === 'skill'
+  // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its
+  // name. A lone command reads the same way: its own label (an agent-supplied description, or
+  // the command itself) is more useful than the generic "Ran a command" summary.
+  const namesItsOwnGroup = soleCall?.kind === 'skill' || soleCall?.kind === 'command'
   // While the group is still growing or a call in it runs, it names its latest call, not its summary.
   const latestCall = live
     ? group.calls.at(-1)
     : group.calls.findLast((call) => call.status === 'running')
-  const titleCall = latestCall ?? (isSoleSkill ? soleCall : undefined)
+  const titleCall = latestCall ?? (namesItsOwnGroup ? soleCall : undefined)
   return (
     <CollapsibleText
       content={group.calls.map((call) => (

@@ -23,6 +23,11 @@
     },
     "retry": "Retry"
   },
+  "openElsewhere": {
+    "title": "This session is open in another app",
+    "description": "Close it there to continue it in Argo.",
+    "retry": "Retry"
+  },
   "question": {
     "needed": "Your input is needed",
     "locked": {

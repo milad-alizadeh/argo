@@ -651,7 +651,9 @@ export const SeparateToolRuns: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Ran 2 commands' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
+    // A lone command's group takes its own call's label, not the generic count summary.
+    await expect(canvas.getByRole('button', { name: 'Ran bunx biome check .' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Ran a command' })).toBeNull()
   },
 }
 

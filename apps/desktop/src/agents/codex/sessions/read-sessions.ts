@@ -8,6 +8,7 @@ import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
 import { draftText } from './harness-envelopes'
+import { createOpenTurnReader, joinOpenTurns } from './open-turns'
 import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
@@ -72,11 +73,16 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       ? undefined
       : (sessionId: string) =>
           combinedOverlay(liveMessages?.(sessionId) ?? [], pendingQuestion?.(sessionId) ?? null)
+  const openTurns = createOpenTurnReader(root)
   return {
     cli: 'codex',
     discoverSessions: async () => {
-      const discovered = await discoverSessions(root, options?.threadNames)
-      return mergeManagedRoster(discovered, options?.roster?.() ?? [])
+      const [discovered, open] = await Promise.all([
+        discoverSessions(root, options?.threadNames),
+        openTurns(Date.now()),
+      ])
+      const roster = mergeManagedRoster(discovered, options?.roster?.() ?? [])
+      return { ...roster, rows: joinOpenTurns(roster.rows, open) }
     },
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),

@@ -20,13 +20,23 @@
   opens its Feed and composer.
 
   **Origin never gates a resume** (ADR-0040): whether Argo started a Session plays no part in
-  whether it can be resumed. What decides is a live-channel fact only the machine can hold — a
-  per-machine, never-committed ledger of which Session id a running window currently holds a
-  channel for, graded **`resumable | held-here | held-elsewhere`** at drive time. `held-elsewhere`
-  is the one case Send refuses: another live window on this machine holds the channel, so the
-  Roster marks it locked and its composer is hidden. Everything else resumes. That ledger is not
-  a roster and never promotes a Session to a stored third posture: the roster is still rebuilt
-  from the transcripts every launch (ADR-0004, ADR-0008).
+  whether it can be resumed. What decides is whether another process runs it live right now.
+  **Locked** is that reading on an `external` row. The Roster marks the row locked and hides its
+  composer. Three readings lock a Session:
+  - Another live Argo window holds its channel. A per-machine, never-committed ledger records the
+    Session id each running window holds, graded **`resumable | held-here | held-elsewhere`**.
+    `held-elsewhere` is also the one case Send refuses at drive time.
+  - A live `claude` process names the Session in its `~/.claude/sessions/<pid>.json` file. The
+    process locks it at its prompt as much as in a Turn.
+  - A Codex rollout's newest Turn opened (`task_started`) and did not end (`task_complete` or
+    `turn_aborted`), and the rollout was written in the last 30 minutes. The row also reads
+    `running`. Past 30 minutes of silence, the open Turn is one a client that quit or crashed
+    left behind.
+
+  A `managed` row is never locked, because this Argo holds it. An `external` Session that no
+  process runs stays resumable. The ledger is not a roster and never promotes a Session to a
+  stored third posture: the roster is still rebuilt from the transcripts every launch (ADR-0004,
+  ADR-0008).
 
   A Session **is the root Agent** (`parentId: null`). Key attributes: **`cli`**
   (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of

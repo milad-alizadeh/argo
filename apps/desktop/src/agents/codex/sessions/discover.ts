@@ -52,7 +52,7 @@ function normalizeRecords(records: TranscriptRecord[]): TranscriptRecord[] {
   return droppingSubagentThreads(withoutModelInputCopies(withoutDuplicateMessages(records)))
 }
 
-async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
+export async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
   const years = await directories(root)
   const months = (await Promise.all(years.map(directories))).flat()
   const days = (await Promise.all(months.map(directories))).flat()

@@ -1,6 +1,6 @@
 import { type FileHandle, open } from 'node:fs/promises'
 
-import type { TranscriptParser, TranscriptRecord } from './transcript'
+import type { TranscriptRecord } from './transcript'
 
 export const ROSTER_FILE_LIMIT = 200
 
@@ -15,7 +15,9 @@ const NEWLINE = 0x0a
 // Where parsing stopped: the byte after the last full line, and the bytes just before it.
 type ReadPoint = { end: number; seam: Buffer }
 
-type HeldTranscript = ReadPoint & { inode: number; records: TranscriptRecord[] }
+type ParsedLine = { kind: string }
+type LineParser<Entry extends ParsedLine> = (line: string) => Entry | null
+type HeldTranscript<Entry> = ReadPoint & { inode: number; records: Entry[] }
 
 function withoutReturn(line: string) {
   return line.endsWith('\r') ? line.slice(0, -1) : line
@@ -57,12 +59,12 @@ async function readLines(
 // Where to resume: the held end, if the file is the same one, no shorter, and still holds the seam.
 // An edit further back than the seam, in place and without shrinking the file, goes unseen: the
 // CLIs only append.
-async function resumeFrom(
+async function resumeFrom<Entry>(
   handle: FileHandle,
-  held: HeldTranscript | undefined,
+  held: HeldTranscript<Entry> | undefined,
   file: { ino: number; size: number },
 ) {
-  const start = { end: 0, seam: Buffer.alloc(0), records: [] as TranscriptRecord[] }
+  const start = { end: 0, seam: Buffer.alloc(0), records: [] as Entry[] }
   if (held === undefined || held.inode !== file.ino || file.size < held.end) return start
   const seam = Buffer.alloc(held.seam.length)
   await handle.read(seam, 0, seam.length, held.end - seam.length)
@@ -70,15 +72,22 @@ async function resumeFrom(
 }
 
 // A last line with no newline is a write still in flight, not yet a record, unless it parses whole.
-function finishedTail(parse: TranscriptParser, unfinished: Buffer): TranscriptRecord[] {
+function finishedTail<Entry extends ParsedLine>(
+  parse: LineParser<Entry>,
+  unfinished: Buffer,
+): Entry[] {
   const record = parse(withoutReturn(unfinished.toString('utf8')))
   return record === null || record.kind === 'unreadable' ? [] : [record]
 }
 
-function hold(held: Map<string, HeldTranscript>, filePath: string, transcript: HeldTranscript) {
+function hold<Entry>(
+  held: Map<string, HeldTranscript<Entry>>,
+  transcript: HeldTranscript<Entry> & { filePath: string; limit: number },
+) {
+  const { filePath, limit, ...point } = transcript
   held.delete(filePath)
-  held.set(filePath, transcript)
-  while (held.size > HELD_FILE_LIMIT) {
+  held.set(filePath, point)
+  while (held.size > limit) {
     const oldest = held.keys().next().value
     if (oldest === undefined) return
     held.delete(oldest)
@@ -89,8 +98,12 @@ function hold(held: Map<string, HeldTranscript>, filePath: string, transcript: H
 // read stopped rather than parsed whole again (#2127). Every read holds its end point, so a Roster
 // pass that reads a file first leaves the Feed's later read of the same file able to resume too
 // (#2145) — `HELD_FILE_LIMIT`'s LRU eviction is what bounds the memory this costs.
-export function createTranscriptRecordReader(parse: TranscriptParser) {
-  const held = new Map<string, HeldTranscript>()
+// `heldFileLimit` widens the LRU for a caller whose parse keeps a few records per file.
+export function createTranscriptRecordReader<Entry extends ParsedLine = TranscriptRecord>(
+  parse: LineParser<Entry>,
+  heldFileLimit = HELD_FILE_LIMIT,
+) {
+  const held = new Map<string, HeldTranscript<Entry>>()
   async function readRecords(filePath: string) {
     const handle = await open(filePath, 'r')
     try {
@@ -102,7 +115,7 @@ export function createTranscriptRecordReader(parse: TranscriptParser) {
         const record = parse(line)
         if (record !== null) records.push(record)
       })
-      hold(held, filePath, { ...point, inode: ino, records })
+      hold(held, { ...point, inode: ino, records, filePath, limit: heldFileLimit })
       return [...records, ...finishedTail(parse, unfinished)]
     } finally {
       await handle.close()
