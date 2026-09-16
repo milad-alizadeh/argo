@@ -1,10 +1,11 @@
 import { stat } from 'node:fs/promises'
-import { type SessionChain, stitchChains } from './chains'
+import { createChainCache, createChainHistory, type SessionChain } from './chains'
 import { createFullRecordTracker } from './full-record-tracker'
 import type { SessionRosterRow } from './models'
 import { currentSessionId } from './models'
 import { projectRosterRow } from './roster'
 import { rosterMetadata } from './roster-metadata'
+import { createTitleLedger } from './title-ledger'
 import {
   type TranscriptFile,
   type TranscriptParser,
@@ -105,22 +106,6 @@ function createTranscriptSummariser(source: TranscriptDiscoverySource, readFile:
   }
 }
 
-// The summariser hands back the same TranscriptFile objects while a file's mtime is unchanged, so
-// identity alone says whether anything worth re-stitching happened. A Roster poll runs twice a
-// second and stitching walks every record of every file it was given (#2241).
-function createChainCache() {
-  let read: TranscriptFile[] = []
-  let chains: SessionChain[] = []
-  return function stitched(files: TranscriptFile[]): SessionChain[] {
-    if (files.length === read.length && files.every((file, index) => file === read[index])) {
-      return chains
-    }
-    read = files
-    chains = stitchChains(files)
-    return chains
-  }
-}
-
 export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const tracker = createFullRecordTracker(source.parse, source.normalizeRecords)
   const metadataSource: TranscriptDiscoverySource = {
@@ -131,13 +116,16 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     },
   }
   const summarise = createTranscriptSummariser(metadataSource, createFileReader(metadataSource))
-  const rosterChains = createChainCache()
-  const sessionChains = createChainCache()
+  const chainHistory = createChainHistory()
+  const rosterChains = createChainCache(chainHistory)
+  const sessionChains = createChainCache(chainHistory)
+  const strongestTitle = createTitleLedger()
 
   function rowsFrom(files: TranscriptFile[]): SessionRosterRow[] {
     const rows = rosterChains(files.filter(holdsMessage)).map((chain) =>
       projectRosterRow(chain, source.cli),
     )
+    for (const row of rows) row.title = strongestTitle(row.id, row.title)
     rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
     return rows
   }
