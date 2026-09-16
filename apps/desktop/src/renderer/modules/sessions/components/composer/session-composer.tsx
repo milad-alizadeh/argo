@@ -1,12 +1,12 @@
 import { type ReactNode, useEffect, useState } from 'react'
 import type { SessionPlan } from '@/core/sessions/models'
 import type { HarnessControl } from '../../harness/harnesses'
+import { useComposer } from './composer'
 import { ComposerForm } from './composer-form'
 import { activeReference } from './references/composer-reference-menu'
 import './composer-content.css'
 import type { TurnSetupControlProps } from './run-setup-menu'
 import type { Send } from './use-send'
-import { useSessionComposerState } from './use-session-composer-state'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
@@ -46,7 +46,7 @@ export function SessionComposer({
   setup = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
-  const state = useSessionComposerState({ isRunning, onSend, sessionId, setup })
+  const state = useComposer({ identity: sessionId, isRunning, send: onSend, setup })
   useEffect(() => {
     if (activeReference(state.draft)?.trigger === '@') setContextPickerOpen(true)
   }, [state.draft])

@@ -11,10 +11,9 @@ import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import type { SessionFeedRow } from '../types'
-import { composerIdentityOf, findSessionRow } from './composer-identity'
-import { composerProps } from './composer-props'
+import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composer-identity'
 import { sendToDraftIdentity, sendToSessionIdentity } from './send-turn'
-import { useComposerActions } from './use-composer-actions'
+import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
 import type { Failure } from './use-session-composer-actions'
 import { useSessionMutations } from './use-session-mutations'
 import type { useSessions } from './use-sessions'
@@ -64,7 +63,15 @@ function useComposerFacts(
   })
   const marker = useTurnMarker()
   const selectedRow = findSessionRow(roster, sessionId)
-  return { identity, sessionId, control, watchTurn, marker, selectedRow }
+  return {
+    identity,
+    sessionId,
+    control,
+    watchTurn,
+    marker,
+    selectedRow,
+    isCompacting: (selectedRow?.compactionStartedAt ?? null) !== null,
+  }
 }
 
 export function useSessionComposer(options: SessionComposerOptions): ComposerResult {
@@ -73,10 +80,8 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
   const { send, start } = mutations
-  const { identity, sessionId, control, watchTurn, marker, selectedRow } = useComposerFacts(
-    { cli, cockpit, roster, selectedSessionId },
-    setFailure,
-  )
+  const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
+    useComposerFacts({ cli, cockpit, roster, selectedSessionId }, setFailure)
   const { isHandingOff, onCompact, onHandoff, onInterrupt, markerView, optimisticRow } =
     useComposerActions({
       cli,
@@ -89,7 +94,6 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       setFailure,
       queryClient,
     })
-  const isCompacting = (selectedRow?.compactionStartedAt ?? null) !== null
   const onSend: Send = useCallback(
     (prompt, setup, attachments) => {
       const turn = { prompt, setup, attachments }
@@ -113,18 +117,17 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
     retry: () => setFailure(null),
     markerView,
     optimisticRow,
-    props: composerProps({
-      roster,
-      sessionId,
+    props: {
       focusOnMount,
       isCompacting,
       isHandingOff,
+      isRunning: managedSessionIsRunning(roster, sessionId),
       onCompact,
       onHandoff,
       onInterrupt,
       onSend,
-      identity,
-      control,
-    }),
+      sessionId: composerIdentityKey(identity),
+      setup: control,
+    },
   }
 }
