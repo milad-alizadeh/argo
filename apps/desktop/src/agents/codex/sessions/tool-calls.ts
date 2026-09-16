@@ -40,12 +40,22 @@ function outputText(output: unknown): string | null {
   return texts.length === 0 ? null : texts.join('\n')
 }
 
-// Neither output record carries a structured pass/fail flag (a shell wrapper may report a
-// nonzero exit code in its own free text, but that is the tool's own formatting, not a field of
-// the record). A completed call with no signal to the contrary reads as succeeded.
+// Neither output record carries a structured pass/fail field. `exec_command`'s own wrapper
+// writes its exit code as a free-text line ("Process exited with code N"), which is the only
+// grep-able pass/fail signal Codex's rollout carries; anything else (a `custom_tool_call`'s
+// script, for instance) has no such convention and reads as succeeded.
+const EXIT_CODE = /^Process exited with code (\d+)$/m
+
+function failed(content: string | null): boolean {
+  if (content === null) return false
+  const match = content.match(EXIT_CODE)
+  return match !== null && match[1] !== '0'
+}
+
 function readToolResult(payload: Record<string, unknown>) {
   if (typeof payload.call_id !== 'string') return null
-  return { callId: payload.call_id, content: outputText(payload.output), failed: false }
+  const content = outputText(payload.output)
+  return { callId: payload.call_id, content, failed: failed(content) }
 }
 
 // The call becomes the row itself (an assistant delivery); its result carries no block of its

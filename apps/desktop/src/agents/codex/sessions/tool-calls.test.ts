@@ -39,6 +39,7 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
         label: 'Called exec',
         text: 'const found = tests.filter(t => t.failing); text(found);',
       },
+      { status: 'failed', label: 'Called exec_command', text: 'bun run lint' },
       { status: 'running', label: 'Called exec_command', text: 'bun run build' },
     ],
   )
