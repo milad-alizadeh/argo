@@ -14,6 +14,7 @@ const SURFACE = [
   'openProject',
   'registerProject',
   'relocateProject',
+  'selectProject',
   'setAppearance',
   'versions',
 ]

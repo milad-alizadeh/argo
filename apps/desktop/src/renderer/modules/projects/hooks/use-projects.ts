@@ -116,13 +116,7 @@ function useProjectMutations() {
   const selectProject = useMutation<ProjectListReply, ProjectContractError, string>({
     ...mutationOptions,
     mutationKey: projectMutationKey,
-    mutationFn: async (projectId) => {
-      const reply = await window.argo.listProjects()
-      if (reply.type !== 'project.listed') return reply
-      return reply.projects.some((project) => project.id === projectId)
-        ? { ...reply, selectedId: projectId }
-        : reply
-    },
+    mutationFn: (projectId) => window.argo.selectProject({ projectId }),
   })
   return {
     isPending: register.isPending || relocate.isPending || selectProject.isPending,
