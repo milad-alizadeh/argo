@@ -1,4 +1,11 @@
-import { FilePenLine, LoaderCircle, Search, Sparkles, SquareTerminal, Wrench } from 'lucide-react'
+import {
+  FilePenLine,
+  LoaderCircle,
+  Search,
+  SquareTerminal,
+  WandSparkles,
+  Wrench,
+} from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TaskItem } from '@/components/ai-elements/task'
@@ -17,7 +24,7 @@ export const TOOL_ICONS: Record<ToolRow['kind'], ComponentType<{ className?: str
   edited: FilePenLine,
   created: FilePenLine,
   tool: Wrench,
-  skill: Sparkles,
+  skill: WandSparkles,
 }
 
 export function StatusIcon({ status }: { status: ToolRow['status'] }) {

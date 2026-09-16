@@ -96,7 +96,7 @@ test('uses the Feed label for a non-command tool while retaining its activity me
     callMessage({ id: 'call-1', name: 'Read', input: { file_path: '/workspace/src/app.ts' } }),
   ])
   assert.deepEqual(activity, {
-    label: 'Read /workspace/src/app.ts',
+    label: 'Read app.ts',
     tool: 'Read',
     target: 'app.ts',
   })

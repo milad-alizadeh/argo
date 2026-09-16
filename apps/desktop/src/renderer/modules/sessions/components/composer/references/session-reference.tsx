@@ -1,4 +1,4 @@
-import { Command, FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lucide-react'
+import { FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { HARNESSES, type SessionCli } from '../../../harness/harnesses'
 import { InlineContext } from './inline-context'
@@ -46,8 +46,9 @@ const escapedSources = sessionReferences.map((reference) =>
 )
 const sourcePattern = new RegExp(`(^|\\s)(${escapedSources.join('|')})(?=\\s|$)`, 'g')
 
+// A slash command is a skill invoked by name, so both wear the wand rather than a keyboard glyph.
 const referenceIcons: Record<SessionReferenceKind, LucideIcon> = {
-  command: Command,
+  command: WandSparkles,
   file: FileText,
   plugin: Plug,
   skill: WandSparkles,

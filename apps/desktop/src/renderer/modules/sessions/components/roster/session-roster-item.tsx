@@ -49,10 +49,12 @@ function sessionName(session: Session): string {
   return session.title?.text ?? session.id
 }
 
+// A row that already carries a ground keeps it under the pointer: hover answers "this one is
+// reachable", and a selected row has nothing left to say (#2273).
 function rowHighlightOf(checked: boolean, selected: boolean): string {
   if (checked) return 'bg-accent text-accent-foreground'
   if (selected) return 'bg-selected text-foreground'
-  return ''
+  return 'hover:bg-muted'
 }
 
 export function SessionRosterItem({
@@ -106,7 +108,7 @@ export function SessionRosterItem({
           render={
             <button
               aria-current={selected ? 'page' : undefined}
-              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
+              className={`group flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left focus-visible:ring-2 focus-visible:ring-ring ${rowHighlight}`}
               data-archived={archived}
               data-session-id={session.id}
               onClick={handleRowClick}

@@ -1,6 +1,6 @@
 // Renders a stored prompt's skill mentions and links inline (#2049), shared by the Feed, the
 // Roster and the composer (skill-mention-node.tsx decorates with the same SkillBadge).
-import { Sparkles } from 'lucide-react'
+import { WandSparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/renderer/components/ui/badge'
@@ -23,7 +23,7 @@ export type PromptSkill = { name: string; path: string }
 export function SkillBadge({ name }: { name: string }) {
   return (
     <Badge variant="secondary" className={SKILL_BADGE_CLASS}>
-      <Sparkles data-icon="inline-start" />
+      <WandSparkles data-icon="inline-start" />
       {formatSkillLabel(name)}
     </Badge>
   )
@@ -32,7 +32,7 @@ export function SkillBadge({ name }: { name: string }) {
 function SkillLabel({ name }: { name: string }) {
   return (
     <span className={SKILL_LABEL_CLASS}>
-      <Sparkles aria-hidden="true" data-icon="inline-start" />
+      <WandSparkles aria-hidden="true" data-icon="inline-start" />
       {formatSkillLabel(name)}
     </span>
   )
@@ -57,7 +57,7 @@ function SkillButton({
       render={<button type="button" />}
       variant="outline"
     >
-      <Sparkles data-icon="inline-start" />
+      <WandSparkles data-icon="inline-start" />
       {label}
     </Badge>
   )

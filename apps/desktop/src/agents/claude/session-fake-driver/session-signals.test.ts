@@ -24,7 +24,7 @@ test('starts the Turn at the last prompt, never at a tool result', async () => {
 
 test('names the newest call of the open Turn with its canonical label and metadata', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).activity, {
-    label: 'Edited /Users/x/proj/src/SubagentDots.tsx',
+    label: 'Edited SubagentDots.tsx',
     tool: 'Edit',
     target: 'SubagentDots.tsx',
   })
