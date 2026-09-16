@@ -6,9 +6,9 @@ import { createSessionByClick } from './gestures'
 import {
   createPageBox,
   describeSessionProof,
-  test,
   type PageBox,
   type SessionProofRun,
+  test,
 } from './session-proof-run'
 
 async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
