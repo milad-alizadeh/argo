@@ -16,18 +16,22 @@ export type AccountAccess = {
   openExternal: (url: string) => Promise<void>
 }
 
+// `accountData` is where the Account records and their grants sit, and `userData` is everything
+// else this app owns. They are the same directory in a packaged app. A development app points
+// `accountData` at one store shared by every worktree, so a sign-in is done once (#2304).
 export function createAccountAccess(options: {
   userData: string
+  accountData: string
   endpoints: ProviderEndpoints
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
 }): AccountAccess {
-  const { userData, endpoints, cipher, openExternal } = options
+  const { userData, accountData, endpoints, cipher, openExternal } = options
   return {
     endpoints,
-    grants: createGrantStore(portablePath(userData, 'grants.json'), cipher),
+    grants: createGrantStore(portablePath(accountData, 'grants.json'), cipher),
     paths: {
-      accounts: portablePath(userData, 'accounts.json'),
+      accounts: portablePath(accountData, 'accounts.json'),
       connections: portablePath(userData, 'connections.json'),
       projects: portablePath(userData, 'projects.json'),
     },

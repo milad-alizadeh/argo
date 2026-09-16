@@ -5,17 +5,9 @@
 // is registered before the dynamic imports below, since a static import would resolve the real
 // `electron` package first.
 import { mock } from 'bun:test'
+import { electronStandIn } from './electron-stand-in'
 
-mock.module('electron', () => ({
-  nativeTheme: {
-    themeSource: 'system' as 'system' | 'light' | 'dark',
-    shouldUseDarkColors: false,
-    on: () => undefined,
-    off: () => undefined,
-  },
-  // Never called: an untrusted frame is refused before the Project bridge's folder chooser runs.
-  dialog: {},
-}))
+mock.module('electron', () => electronStandIn)
 
 const [
   { mkdtemp, rm },
@@ -82,6 +74,7 @@ async function domains(userData: string) {
 
   const access = createAccountAccess({
     userData,
+    accountData: userData,
     endpoints: { github: GITHUB_ENDPOINTS, linear: null },
     cipher: { available: () => false, encrypt: () => Buffer.alloc(0), decrypt: () => '' },
     openExternal: async () => undefined,
