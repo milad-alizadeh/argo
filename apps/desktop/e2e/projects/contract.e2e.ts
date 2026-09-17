@@ -19,8 +19,10 @@ const test = packagedTest.extend<{ project: ProjectRun }>({
     const fixture = await prepare(root, packagedApplication)
     const application = await launch(fixture)
     try {
+      const traced = await startRecording(performanceProfile, application, () =>
+        application.firstWindow(),
+      )
       const page = await application.firstWindow()
-      const traced = await startRecording(performanceProfile, application, page)
       page.setDefaultTimeout(30_000)
       await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
       await use({ application, page, fixture })

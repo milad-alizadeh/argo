@@ -96,7 +96,7 @@ export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tic
     const open = async () => {
       const run = await start(fixture)
       application = run.application
-      traced = await startRecording(performanceProfile, run.application, run.page)
+      traced = await startRecording(performanceProfile, run.application, async () => run.page)
       return run
     }
     try {

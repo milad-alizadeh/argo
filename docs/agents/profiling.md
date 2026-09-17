@@ -82,19 +82,22 @@ Run the packaged end-to-end flows with a CPU profile and per-case wall times:
 bun run --cwd apps/desktop test:e2e:profile
 ```
 
-The run profiles all three flows: sessions, tickets and projects. Name a Playwright project to
-profile one flow, and a file after it to profile part of that flow:
+The run profiles every project the configuration selects: sessions, tickets and projects, and the
+opt-in projects when their variable is set. Name a Playwright project to profile one flow, and a
+file after it to profile part of that flow:
 
 ```sh
 bun run --cwd apps/desktop test:e2e:profile --project=tickets
 bun run --cwd apps/desktop test:e2e:profile --project=sessions e2e/sessions/journeys.e2e.ts
 ```
 
-Each worker prints a temporary `<flow>-cpu-trace.json` and `<flow>-timings.json`, named after the
-project that ran. Read the CPU trace with the same function report as the dev instance:
+Each worker prints a temporary `<flow>-<worker>-cpu-trace.json` and `<flow>-<worker>-timings.json`,
+named after the project that ran and the worker inside it. The workers split a flow's cases between
+them, so add `--workers=1` to read one file per flow. Read the CPU trace with the same function
+report as the dev instance:
 
 ```sh
-jq -r -f scripts/profiling/hot-functions.jq <sessions-cpu-trace.json>
+jq -r -f scripts/profiling/hot-functions.jq <sessions-0-cpu-trace.json>
 ```
 
 The trace contains renderer work, including React rendering, and the timings file lists the wall

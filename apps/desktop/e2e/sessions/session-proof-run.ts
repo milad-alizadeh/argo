@@ -69,7 +69,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       backend,
       launch: { slowReply, adversarialSeed },
       launched: async (application, page) => {
-        traced = await startRecording(performanceProfile, application, page)
+        traced = await startRecording(performanceProfile, application, async () => page)
       },
       closing: async () => {
         await performanceProfile?.stop()

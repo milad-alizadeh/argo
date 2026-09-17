@@ -35,7 +35,7 @@ export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtur
   performanceProfile: [
     async ({}, use, workerInfo) => {
       const profile = performanceProfileEnabled()
-        ? new FlowPerformanceProfile(workerInfo.project.name)
+        ? new FlowPerformanceProfile(workerInfo.project.name, workerInfo.workerIndex)
         : undefined
       await use(profile)
       await profile?.write()
@@ -57,14 +57,14 @@ export { expect } from '@playwright/test'
 const TRACE = { screenshots: true, snapshots: true }
 
 // Every launch calls this: `use.trace` never sees a window from `_electron.launch()`.
-export async function startTrace(application: ElectronApplication) {
+async function startTrace(application: ElectronApplication) {
   const context = application.context()
   await context.tracing.start(TRACE)
   return context
 }
 
 // Stops the launch's recording before it closes, and keeps it only when the test failed.
-export async function finishTrace(context: BrowserContext | undefined, testInfo: TestInfo) {
+async function finishTrace(context: BrowserContext | undefined, testInfo: TestInfo) {
   if (!context) return
   // A case that closed its window without launching another leaves no recording to stop.
   if (testInfo.status === testInfo.expectedStatus) {
@@ -80,14 +80,15 @@ export async function finishTrace(context: BrowserContext | undefined, testInfo:
 }
 
 // What a launch records, one or the other: Playwright's screenshot trace and the CDP CPU trace both
-// attach to the page, so a profiled run keeps only the samples and the timings it asked for.
+// attach to the page, so a profiled run keeps only the samples and the timings it asked for. The
+// trace covers the window's own creation, which is why the page it profiles arrives as a call.
 export async function startRecording(
   profile: FlowPerformanceProfile | undefined,
   application: ElectronApplication,
-  page: Page,
+  window: () => Promise<Page>,
 ) {
   if (!profile) return await startTrace(application)
-  await profile.start(page)
+  await profile.start(await window())
   return undefined
 }
 
