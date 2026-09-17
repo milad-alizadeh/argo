@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -21,7 +21,11 @@ export type FeedRowProps = {
   questionLocked: boolean
 }
 
-export function FeedRow({
+// Memoized, because a write to the open transcript re-renders the document that holds every row,
+// and a row that did not change re-parsed its Markdown with it: 194.7ms of the 200.2ms react-markdown
+// spent in one 10.8-second idle recording (#2386). Every other prop is held stable by `useDrawnRow`,
+// so the comparison is the row itself, which the read keeps when it does not touch it.
+export const FeedRow = memo(function FeedRow({
   row,
   reveal,
   streaming = false,
@@ -70,7 +74,7 @@ export function FeedRow({
       })}
     </article>
   )
-}
+})
 
 function StreamingStatus({ hasStreamed, streaming }: { hasStreamed: boolean; streaming: boolean }) {
   const { t } = useTranslation('sessions')

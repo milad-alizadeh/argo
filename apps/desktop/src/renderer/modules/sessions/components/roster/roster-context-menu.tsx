@@ -1,5 +1,5 @@
 import { Archive } from 'lucide-react'
-import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
+import { type MouseEvent, type ReactNode, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ContextMenu,
@@ -13,6 +13,9 @@ import type { Session } from '../../types'
 import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
 
 type RosterMenuTarget = { session: Session; archived: boolean }
+
+// One element, because base-ui reads `render` as a prop: a fresh one each render is a changed prop.
+const TRIGGER = <div />
 
 function targetOf(
   element: EventTarget | null,
@@ -51,16 +54,22 @@ export function RosterContextMenu({
   // A ref beside the state, because the trigger opens the menu in the same event that names the row:
   // the state has not landed yet when it asks whether to open.
   const pointed = useRef<RosterMenuTarget | null>(null)
+  // The rows are read at click time, through a ref. A roster read rebuilds them several times a
+  // second while a Session runs, and a handler that closed over them changed the trigger's props
+  // every time, for a menu nobody had opened (#2386).
+  const list = useRef({ renamedTitles, rows })
+  list.current = { renamedTitles, rows }
 
-  function readTarget(event: MouseEvent) {
-    const found = targetOf(event.target, rows, renamedTitles)
+  const readTarget = useCallback((event: MouseEvent) => {
+    const found = targetOf(event.target, list.current.rows, list.current.renamedTitles)
     pointed.current = found
     setTarget(found)
-  }
+  }, [])
+  const openChanged = useCallback((next: boolean) => setOpen(next && pointed.current !== null), [])
 
   return (
-    <ContextMenu onOpenChange={(next) => setOpen(next && pointed.current !== null)} open={open}>
-      <ContextMenuTrigger onContextMenuCapture={readTarget} render={<div />}>
+    <ContextMenu onOpenChange={openChanged} open={open}>
+      <ContextMenuTrigger onContextMenuCapture={readTarget} render={TRIGGER}>
         {children}
       </ContextMenuTrigger>
       {target === null ? null : (

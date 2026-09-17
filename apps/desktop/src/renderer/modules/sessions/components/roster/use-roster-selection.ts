@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   clickSelection,
   EMPTY_ROSTER_SELECTION,
@@ -14,6 +14,11 @@ export function useRosterSelection(
   openSessionId: SessionId | null,
 ) {
   const [selection, setSelection] = useState(EMPTY_ROSTER_SELECTION)
+  // The list a click ranges over is read at click time, through a ref. A roster read rebuilds
+  // `visibleIds` whenever one Session changes, so a handler that closed over it changed identity
+  // with it and re-rendered all 82 memoized rows for one row's transcript (#2386).
+  const clicked = useRef({ openSessionId, visibleIds })
+  clicked.current = { openSessionId, visibleIds }
   const clear = useCallback(() => setSelection(EMPTY_ROSTER_SELECTION), [])
   const toggle = useCallback(
     (sessionId: SessionId, modifier: SelectionModifier) =>
@@ -23,12 +28,14 @@ export function useRosterSelection(
         // what the reader sees as "selected" on the screen, so it is the anchor a first Shift-click
         // expects.
         const anchored =
-          current.anchor === null && current.ids.size === 0 && openSessionId !== null
-            ? { ...current, anchor: openSessionId }
+          current.anchor === null &&
+          current.ids.size === 0 &&
+          clicked.current.openSessionId !== null
+            ? { ...current, anchor: clicked.current.openSessionId }
             : current
-        return clickSelection(anchored, visibleIds, { id: sessionId, modifier })
+        return clickSelection(anchored, clicked.current.visibleIds, { id: sessionId, modifier })
       }),
-    [openSessionId, visibleIds],
+    [],
   )
   // One stable object: the sidebar reads it into memoized rows, where a fresh object per render
   // would re-render every row on every roster read.
