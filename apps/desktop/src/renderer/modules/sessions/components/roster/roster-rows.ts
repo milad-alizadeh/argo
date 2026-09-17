@@ -47,6 +47,22 @@ export type RosterRow =
   | { kind: 'archivedSentinel' }
   | { kind: 'archivedLoadingMore' }
 
+// Two rows draw the same thing. A roster read rebuilds every row object when one Session changes,
+// so the row's memo boundary compares what the row draws rather than the object it arrived in
+// (#2386). A Session that the read did not touch keeps its own identity, which is what makes this
+// comparison a pointer comparison rather than a walk.
+export function sameRosterRow(left: RosterRow, right: RosterRow): boolean {
+  if (left.kind === 'session') {
+    return (
+      right.kind === 'session' && left.session === right.session && left.archived === right.archived
+    )
+  }
+  if (left.kind === 'archivedError') {
+    return right.kind === 'archivedError' && left.error === right.error
+  }
+  return left.kind === right.kind
+}
+
 // The status filter chooses which Sessions the one list carries. The Archive used to be a
 // disclosure row inside it, which made the reader open a place in the list rather than choose what
 // the list was of; the filter in the header decides now and there is no toggle row.

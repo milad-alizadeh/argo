@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode, useMemo } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { SessionDiagramEvidence } from '../../types'
@@ -134,7 +134,9 @@ const COMPONENTS: Components = {
 }
 
 // An assistant's prose, or a Ticket's description, as Markdown (#1835). Raw HTML stays text, which is react-markdown's default.
-export function FeedMarkdown({
+// Memoized beside the row that holds it (#2386): parsing is the largest single cost in the renderer,
+// and a caller that re-renders for its own reasons hands the same text back most of the time.
+export const FeedMarkdown = memo(function FeedMarkdown({
   text,
   rowId,
   activeEvidenceId = null,
@@ -145,10 +147,14 @@ export function FeedMarkdown({
   activeEvidenceId?: string | null
   onOpenEvidence?: (evidence: SessionDiagramEvidence) => void
 }) {
-  const diagramEvidence: DiagramEvidenceContextValue | null =
-    rowId === undefined || onOpenEvidence === undefined
-      ? null
-      : { rowId, activeEvidenceId, onOpenEvidence }
+  // A fresh value here re-renders every fence below it, whatever the text did.
+  const diagramEvidence: DiagramEvidenceContextValue | null = useMemo(
+    () =>
+      rowId === undefined || onOpenEvidence === undefined
+        ? null
+        : { rowId, activeEvidenceId, onOpenEvidence },
+    [activeEvidenceId, onOpenEvidence, rowId],
+  )
   return (
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">
       <DiagramEvidence.Provider value={diagramEvidence}>
@@ -162,4 +168,4 @@ export function FeedMarkdown({
       </DiagramEvidence.Provider>
     </div>
   )
-}
+})
