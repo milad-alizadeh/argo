@@ -18,7 +18,7 @@ describe('sameRosterRow', () => {
   const error = readFailure('test-archive-error', 'read failed')
   const otherError = readFailure('test-other-error', 'read failed again')
 
-  test('holds a Session that arrived in a rebuilt row object', () => {
+  test('reads a rebuilt row object carrying one Session as the same row', () => {
     expect(
       sameRosterRow(
         { kind: 'session', session, archived: false },
@@ -27,7 +27,7 @@ describe('sameRosterRow', () => {
     ).toBe(true)
   })
 
-  test('parts a Session the read changed', () => {
+  test('reads a Session the read changed as a different row', () => {
     expect(
       sameRosterRow(
         { kind: 'session', session, archived: false },
@@ -36,7 +36,7 @@ describe('sameRosterRow', () => {
     ).toBe(false)
   })
 
-  test('parts a Session that moved into the Archive', () => {
+  test('reads a Session that moved into the Archive as a different row', () => {
     expect(
       sameRosterRow(
         { kind: 'session', session, archived: false },
@@ -45,15 +45,15 @@ describe('sameRosterRow', () => {
     ).toBe(false)
   })
 
-  test('holds two status rows of one kind', () => {
+  test('reads two status rows of one kind as the same row', () => {
     expect(sameRosterRow({ kind: 'rosterSentinel' }, { kind: 'rosterSentinel' })).toBe(true)
   })
 
-  test('parts two status rows of different kinds', () => {
+  test('reads two status rows of different kinds as different rows', () => {
     expect(sameRosterRow({ kind: 'rosterSentinel' }, { kind: 'rosterLoadingMore' })).toBe(false)
   })
 
-  test('parts two Archive failures carrying different errors', () => {
+  test('reads two Archive failures carrying different errors as different rows', () => {
     expect(
       sameRosterRow({ kind: 'archivedError', error }, { kind: 'archivedError', error: otherError }),
     ).toBe(false)

@@ -63,6 +63,23 @@ export function sameRosterRow(left: RosterRow, right: RosterRow): boolean {
   return left.kind === right.kind
 }
 
+// What a row is in the list right now: picked out in bulk, open, and holding the list's one tab stop.
+export function rowPlace(
+  row: RosterRow,
+  list: {
+    selectedIds: ReadonlySet<SessionId>
+    selectedSessionId: SessionId | null
+    tabStop: SessionId | null
+  },
+) {
+  if (row.kind !== 'session') return { checked: false, selected: false, tabbable: false }
+  return {
+    checked: !row.archived && list.selectedIds.has(row.session.id),
+    selected: row.session.id === list.selectedSessionId,
+    tabbable: row.session.id === list.tabStop,
+  }
+}
+
 // The status filter chooses which Sessions the one list carries. The Archive used to be a
 // disclosure row inside it, which made the reader open a place in the list rather than choose what
 // the list was of; the filter in the header decides now and there is no toggle row.

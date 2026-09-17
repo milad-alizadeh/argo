@@ -1,5 +1,5 @@
 import { LoaderCircle } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 
 import { Marker, MarkerContent, MarkerIcon } from '../../../components/ui/marker'
 import { formatTurnElapsed } from './elapsed'
@@ -13,6 +13,8 @@ const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
 
 // Fast enough for the tenths the first minute shows.
 const TICK_MS = 100
+// The counter is outside React's tree, so its story finds it by this mark rather than by a role.
+export const TURN_ELAPSED_SLOT = 'turn-elapsed'
 
 // The counter is written into its own element rather than rendered. Ten state updates a second
 // re-rendered the marker and everything React drew under it, which made this the largest single
@@ -20,7 +22,8 @@ const TICK_MS = 100
 // elapsed time from the tree.
 function useElapsedCounter(startedAt: number) {
   const counter = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
+  // Layout, so the first value is there before the browser paints and the slot never shows empty.
+  useLayoutEffect(() => {
     const draw = () => {
       if (counter.current !== null) {
         counter.current.textContent = formatTurnElapsed(Date.now() - startedAt)
@@ -60,7 +63,7 @@ export function TurnMarker({
         <span
           aria-hidden="true"
           className="text-muted-foreground tabular-nums"
-          data-slot="turn-elapsed"
+          data-slot={TURN_ELAPSED_SLOT}
           ref={counter}
         />
       </MarkerContent>

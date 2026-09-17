@@ -3,8 +3,8 @@ import { useRef } from 'react'
 import type { SessionId } from '../../types'
 import { moveFocus } from './roster-arrow-keys'
 import { RosterContextMenu } from './roster-context-menu'
-import { RosterRowView, rowPlace } from './roster-row-view'
-import { ROSTER_ROW_HEIGHT, type RosterRow, type RosterRowHandlers } from './roster-rows'
+import { RosterRowView } from './roster-row-view'
+import { ROSTER_ROW_HEIGHT, type RosterRow, type RosterRowHandlers, rowPlace } from './roster-rows'
 import { useSentinelFetch } from './use-roster-sentinel-fetch'
 
 // Overscan generous enough to keep a roster's realistic session count fully mounted, so arrow-key

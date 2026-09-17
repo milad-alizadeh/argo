@@ -69,20 +69,3 @@ export const RosterRowView = memo(function RosterRowView({
     />
   )
 }, sameRowView)
-
-// What a row is in the list right now: picked out in bulk, open, and holding the list's one tab stop.
-export function rowPlace(
-  row: RosterRow,
-  list: {
-    selectedIds: ReadonlySet<SessionId>
-    selectedSessionId: SessionId | null
-    tabStop: SessionId | null
-  },
-) {
-  if (row.kind !== 'session') return { checked: false, selected: false, tabbable: false }
-  return {
-    checked: !row.archived && list.selectedIds.has(row.session.id),
-    selected: row.session.id === list.selectedSessionId,
-    tabbable: row.session.id === list.tabStop,
-  }
-}
