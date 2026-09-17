@@ -9,8 +9,96 @@
   ],
   "tasks": {
     "build": {
-      "cache": false,
-      "outputs": ["out/**"]
+      "inputs": [
+        "src/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "index.html",
+        "public/**",
+        "assets/**",
+        "forge.config.ts",
+        "vite.*.config.ts",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "tsconfig.web.json",
+        "scripts/assert-packaged-pty.mjs",
+        "scripts/packaged-pty-checks.mjs",
+        "scripts/entitlements.mjs",
+        "scripts/fuse-profile.mjs",
+        "scripts/production-install.mjs",
+        "package.json",
+        "package-lock.json",
+        "$TURBO_ROOT$/bun.lock"
+      ],
+      "env": ["ARGO_SIGNING_*", "ARGO_NOTARIZE_*"],
+      "outputs": ["out/Argo-darwin-arm64/**"]
+    },
+    "test:packaged-contents": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "scripts/assert-packaged-pty.mjs",
+        "scripts/packaged-pty-checks.mjs",
+        "scripts/packaged-mock-cli-checks.mjs",
+        "scripts/packaged-app.mjs",
+        "scripts/acceptance-protocol.mjs",
+        "mocks/cli/mock-cli-process-titles.mts",
+        "package-lock.json"
+      ],
+      "outputs": []
+    },
+    "test:packaged-manifest": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "scripts/desktop-manifest.mjs",
+        "scripts/package-manifest.mjs",
+        "scripts/packaged-pty-checks.mjs",
+        "package-manifest.json",
+        "package-lock.json"
+      ],
+      "outputs": []
+    },
+    "test:packaged-pty": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "scripts/prove-packaged-pty.mjs",
+        "scripts/packaged-app.mjs",
+        "scripts/acceptance-protocol.mjs"
+      ],
+      "outputs": []
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "e2e/**",
+        "mocks/**",
+        "src/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "scripts/acceptance-protocol.mjs",
+        "scripts/fuse-profile.mjs",
+        "playwright.config.ts",
+        "tsconfig*.json",
+        "package.json"
+      ],
+      "env": ["CI", "ARGO_SESSION_SHOTS"],
+      "outputs": []
+    },
+    "test:e2e:adversarial": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "e2e/**",
+        "mocks/**",
+        "src/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "scripts/acceptance-protocol.mjs",
+        "scripts/fuse-profile.mjs",
+        "playwright.config.ts",
+        "tsconfig*.json",
+        "package.json"
+      ],
+      "env": ["CI", "ARGO_SESSION_SHOTS"],
+      "outputs": []
     },
     "build:storybook": {
       "inputs": ["$TURBO_DEFAULT$", "!*.md"],

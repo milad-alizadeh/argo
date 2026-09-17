@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
+import { mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { accountStoreDirectory } from './account-store'
+import { createGrantStore } from '../core/accounts/grants'
+import { readAccounts, writeAccounts } from '../core/accounts/registry'
+import { readRegistry, writeRegistry } from '../core/projects/registry'
+import { DEVELOPMENT_APPLICATION_NAME, developmentStoreDirectories } from './account-store'
 import { type DevelopmentInstance, developmentInstance } from './instance'
 
 const APP_DATA = '/Users/developer/Library/Application Support'
@@ -24,35 +29,128 @@ function launched(worktree: string): DevelopmentInstance {
   return instance
 }
 
-test('a packaged app keeps its Accounts in its own application data', () => {
+test('a packaged app keeps its data in its own application data', () => {
   const userData = path.join(APP_DATA, 'Argo')
-  assert.equal(accountStoreDirectory({ userData, appData: APP_DATA, instance: null }), userData)
+  assert.deepEqual(developmentStoreDirectories({ userData, appData: APP_DATA, instance: null }), {
+    accountData: userData,
+    projectData: userData,
+  })
 })
 
-test('two development worktrees read one Account store', () => {
-  const first = launched('/Users/developer/argo')
-  const second = launched('/Users/developer/argo/.claude/worktrees/ticket-2304')
-  assert.notEqual(first.userData, second.userData)
+function worktreeStores(appData: string) {
+  const firstInstance = launched('/Users/developer/argo')
+  const secondInstance = launched('/Users/developer/argo/.claude/worktrees/ticket-2367')
+  const first = developmentStoreDirectories({
+    userData: firstInstance.userData,
+    appData,
+    instance: firstInstance,
+  })
+  const second = developmentStoreDirectories({
+    userData: secondInstance.userData,
+    appData,
+    instance: secondInstance,
+  })
+  return { first, firstInstance, second, secondInstance }
+}
+
+function testCipher() {
+  return {
+    available: () => true,
+    encrypt: (text: string) => Buffer.from(text.split('').reverse().join('')),
+    decrypt: (text: Buffer) => text.toString().split('').reverse().join(''),
+  }
+}
+
+function grantsFor(store: ReturnType<typeof developmentStoreDirectories>) {
+  return createGrantStore(path.join(store.accountData, 'portable-v1', 'grants.json'), testCipher())
+}
+
+async function persistFirstLaunch(first: ReturnType<typeof developmentStoreDirectories>) {
+  const accountsPath = path.join(first.accountData, 'portable-v1', 'accounts.json')
+  const grants = grantsFor(first)
   assert.equal(
-    accountStoreDirectory({ userData: first.userData, appData: APP_DATA, instance: first }),
-    accountStoreDirectory({ userData: second.userData, appData: APP_DATA, instance: second }),
-  )
-})
-
-test('the shared development Account store outlives a reboot that empties the instance directory', () => {
-  const instance = launched('/Users/developer/argo')
-  const store = accountStoreDirectory({ userData: instance.userData, appData: APP_DATA, instance })
-  assert.ok(store.startsWith(`${APP_DATA}${path.sep}`))
-  assert.ok(!store.startsWith(`${instance.directory}${path.sep}`))
-})
-
-test('a development app is refused an Account store outside an absolute application data path', () => {
-  const instance = launched('/Users/developer/argo')
-  assert.throws(() =>
-    accountStoreDirectory({
-      userData: instance.userData,
-      appData: 'Application Support',
-      instance,
+    await writeAccounts(accountsPath, {
+      accounts: [
+        {
+          id: 'github:583231',
+          provider: 'github',
+          providerAccountId: '583231',
+          login: 'octocat',
+          workspace: null,
+          scopes: ['repo'],
+          state: 'connected',
+        },
+      ],
+      noticeDismissed: true,
+      other: {},
     }),
+    true,
   )
+  assert.equal(
+    await grants.save('github:583231', {
+      accessToken: 'development-token',
+      scopes: ['repo'],
+      renewal: null,
+    }),
+    true,
+  )
+  assert.equal(
+    await writeRegistry(path.join(first.projectData, 'portable-v1', 'projects.json'), {
+      projects: [{ id: 'project-1', path: '/tmp/argo' }],
+      selectedId: 'project-1',
+      other: {},
+    }),
+    true,
+  )
+  return grants
+}
+
+async function assertSecondLaunch(second: ReturnType<typeof developmentStoreDirectories>) {
+  assert.deepEqual(
+    await readAccounts(path.join(second.accountData, 'portable-v1', 'accounts.json')),
+    {
+      ok: true,
+      registry: {
+        accounts: [
+          {
+            id: 'github:583231',
+            provider: 'github',
+            providerAccountId: '583231',
+            login: 'octocat',
+            workspace: null,
+            scopes: ['repo'],
+            state: 'connected',
+          },
+        ],
+        noticeDismissed: true,
+        other: {},
+      },
+    },
+  )
+  assert.deepEqual(await grantsFor(second).read('github:583231'), {
+    ok: true,
+    grant: { accessToken: 'development-token', scopes: ['repo'], renewal: null },
+  })
+  assert.deepEqual(
+    await readRegistry(path.join(second.projectData, 'portable-v1', 'projects.json')),
+    {
+      ok: true,
+      registry: {
+        projects: [{ id: 'project-1', path: '/tmp/argo' }],
+        selectedId: 'project-1',
+        other: {},
+      },
+    },
+  )
+}
+
+test('a second worktree reads the Account grant and selected Project from the first', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-development-store-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const stores = worktreeStores(path.join(root, 'Application Support'))
+  assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
+  assert.deepEqual(stores.first, stores.second)
+  assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
+  await persistFirstLaunch(stores.first)
+  await assertSecondLaunch(stores.second)
 })

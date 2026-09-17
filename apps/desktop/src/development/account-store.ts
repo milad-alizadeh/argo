@@ -2,14 +2,24 @@
 import path from 'node:path'
 import { absolute, type DevelopmentInstance } from './instance'
 
-export const DEVELOPMENT_ACCOUNT_STORE = 'Argo Development'
+export const DEVELOPMENT_APPLICATION_NAME = 'Argo Development'
+export const DEVELOPMENT_SHARED_STORE = DEVELOPMENT_APPLICATION_NAME
 
-// Per-process write queues can race between development apps.
-export function accountStoreDirectory(placement: {
+export type DevelopmentStorePlacement = {
   userData: string
   appData: string
   instance: DevelopmentInstance | null
-}): string {
+}
+
+function sharedStoreDirectory(placement: DevelopmentStorePlacement): string {
   const { userData, appData, instance } = placement
-  return instance ? path.join(absolute(appData, 'appData'), DEVELOPMENT_ACCOUNT_STORE) : userData
+  return instance ? path.join(absolute(appData, 'appData'), DEVELOPMENT_SHARED_STORE) : userData
+}
+
+export function developmentStoreDirectories(placement: DevelopmentStorePlacement) {
+  const sharedData = sharedStoreDirectory(placement)
+  return {
+    accountData: sharedData,
+    projectData: sharedData,
+  }
 }
