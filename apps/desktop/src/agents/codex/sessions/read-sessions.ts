@@ -2,6 +2,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { discoverRoster } from '@/core/sessions/discover-roster'
 import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
 import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
+import type { SessionIndex } from '@/core/sessions/session-index/contract'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import {
@@ -28,6 +29,8 @@ type ReaderOptions = {
   isLockedElsewhere?: (sessionId: string) => boolean
   // Codex Desktop's own thread names, read from its app state (ADR-0042).
   threadNames?: ThreadNames
+  // The app's Session index, when one is open. Absent, discovery parses the window itself (#2372).
+  index?: SessionIndex
 }
 
 // A streamed message takes the row id the rollout's own message will get (`feed.ts`), so the
@@ -84,7 +87,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     cli: 'codex',
     discoverSessions: async (discoverOptions) => {
       const [discovery, open] = await Promise.all([
-        discoverSessions(root, discoverOptions),
+        discoverSessions(root, { ...discoverOptions, index: options?.index }),
         openTurns(Date.now()),
       ])
       const threadNames = options?.threadNames

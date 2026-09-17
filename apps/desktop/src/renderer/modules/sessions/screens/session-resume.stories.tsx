@@ -33,6 +33,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
+      filesParsed: 0,
       nextCursor: null,
     }),
     sendSession: async ({ sessionId }) => {

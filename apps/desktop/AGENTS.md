@@ -43,6 +43,15 @@ Write `outline: none` only in a rule that draws a replacement ring in the same d
 block. A control that removes the outline and draws nothing is a keyboard cursor that vanished,
 and nothing reports it.
 
+## Test runners (#2372)
+
+`bun test` runs the suite. Bun 1.3.14 ships no `node:sqlite`, so anything that reaches the Session
+index runs on Node instead, under the `node` Vitest project. `*.vitest.ts` is that role's one
+suffix, and Bun's own matcher never claims it. `bun run test` runs both, in that order.
+
+Reach for `*.vitest.ts` only for a test that needs a runtime Bun does not have. Everything else
+stays `*.test.ts` beside the rest of the suite.
+
 ## Rendered UI tests
 
 For rendered UI work, use a Storybook `play` function as the TDD seam. The function operates the

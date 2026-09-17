@@ -4,6 +4,7 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { discoverRoster } from '@/core/sessions/discover-roster'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { SessionSource } from '@/core/sessions/reader'
+import type { SessionIndex } from '@/core/sessions/session-index/contract'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
 import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
@@ -65,6 +66,8 @@ export type ClaudeSessionRoots = {
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
+  // The app's Session index, when one is open. Absent, discovery parses the window itself (#2372).
+  index?: SessionIndex
 }
 
 async function discoverClaudeSessions(
@@ -73,7 +76,7 @@ async function discoverClaudeSessions(
 ) {
   roots.completeHandoffs?.()
   const live = await readLiveState(roots.processes)
-  const discovery = await discoverSessions(roots.transcripts, options)
+  const discovery = await discoverSessions(roots.transcripts, { ...options, index: roots.index })
   const managed = roots.managedSessions?.() ?? []
   await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
   return discoverRoster({

@@ -24,6 +24,7 @@ export function owningSource(capabilities: Partial<SessionSource> = {}): Session
       filesFound: 0,
       filesRead: 0,
       filesUnreadable: 0,
+      filesParsed: 0,
       nextCursor: null,
     }),
     readSessionFiles: async () => null,

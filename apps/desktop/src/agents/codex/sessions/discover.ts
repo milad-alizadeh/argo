@@ -4,6 +4,7 @@ import { isRecord } from '@/boundary'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
+  type TranscriptDiscoveryOptions,
 } from '@/core/sessions/discover-transcript-sessions'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
@@ -157,7 +158,7 @@ export function nameThreads(rows: SessionRosterRow[], threadNames: ThreadNames) 
 
 export function discoverSessions(
   root: string,
-  options?: { cursor?: string | null },
+  options?: TranscriptDiscoveryOptions,
 ): Promise<Discovery> {
   return reader.discoverSessions(root, options)
 }
