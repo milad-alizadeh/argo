@@ -81,7 +81,7 @@ export const rosterRowFields = [
     'null',
     'observed',
   ]),
-  field(['plan', () => sessionPlanSchema.nullable(), ({ plan }) => plan, 'null', 'observed']),
+  field(['plan', () => sessionPlanSchema.nullable(), ({ plan }) => plan, 'session', 'held']),
   field([
     'delegations',
     () => z.array(sessionDelegationSchema),
