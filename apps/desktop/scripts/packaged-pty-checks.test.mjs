@@ -83,10 +83,11 @@ describe('the root command surface', () => {
   const turbo = () => json(path.join(repoRoot, 'turbo.json'))
   const developmentLauncher = () => read(path.join(desktopRoot, 'scripts', 'dev-instance.mjs'))
 
-  test('routes the release build through one uncached desktop task', () => {
-    expect(root().scripts.build).toBe('turbo run build --filter=@argo/desktop')
-    expect(turbo().tasks.build).toEqual({ cache: false, outputs: ['out/**'] })
-    expect(desktop().scripts.build).toBe('bun run test:packaged-pty --arch arm64')
+  test('routes the release build through the cached package and its PTY proof', () => {
+    expect(root().scripts.build).toBe('turbo run build test:packaged-pty --filter=@argo/desktop')
+    expect(turbo().tasks.build.outputs).toEqual(['out/Argo-darwin-arm64/**'])
+    expect(turbo().tasks['test:packaged-pty'].dependsOn).toEqual(['build'])
+    expect(desktop().scripts.build).toBe('electron-forge package --arch arm64')
   })
 
   // Forge holds the terminal for the life of the app, and so does the Storybook server, so

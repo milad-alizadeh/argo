@@ -9,7 +9,6 @@ import { CYCLES, RESULT_PREFIX } from './acceptance-protocol.mjs'
 export { RESULT_PREFIX }
 // The endurance check is 600 spawn/exit cycles, so the launch budget is minutes, not seconds.
 export const LAUNCH_TIMEOUT_MS = 10 * 60_000
-export const PACKAGE_TIMEOUT_MS = 15 * 60_000
 
 export const APP_NAME = 'Argo'
 // One arm64 download for Apple silicon, and no Intel or universal build
@@ -53,24 +52,8 @@ export function run(command, args, { timeoutMs, env }) {
   })
 }
 
-// Never `npx electron-forge`: npx resolves the bare name against the registry and installs
-// electron-forge@5.2.4 from 2018, which then dies asking for electron-prebuilt-compile. The CLI
-// this app pins is @electron-forge/cli, and this is its binary. Bun's linker decides whether this
-// package or the workspace root holds node_modules, so look in both rather than assume a layout.
-export function forgeBinary() {
-  const candidates = [
-    path.join(desktopRoot, 'node_modules', '.bin', 'electron-forge'),
-    path.join(desktopRoot, '..', '..', 'node_modules', '.bin', 'electron-forge'),
-  ]
-  const found = candidates.find((candidate) => existsSync(candidate))
-  if (!found)
-    throw new Error(`no electron-forge binary found. Looked in:\n  ${candidates.join('\n  ')}`)
-  return found
-}
-
 // The Electron binary this app pins, for a driver that needs a browser rather than the packaged
-// app. Bun's linker decides which node_modules holds it, so probe both — same reason as
-// `forgeBinary()` above.
+// app. Bun's linker decides whether this package or the workspace root holds it, so probe both.
 export function electronBinary() {
   const candidates = [
     path.join(desktopRoot, 'node_modules', 'electron', 'dist', 'Electron.app'),

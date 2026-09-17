@@ -6,11 +6,14 @@ import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '../../../src/core/sessions/proof-protocol.ts'
+import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
 import { askQuestion, handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
+
+process.title = MOCK_CODEX_PROCESS_TITLE
 
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
