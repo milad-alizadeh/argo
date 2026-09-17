@@ -85,10 +85,12 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await openSessionByClick(archived, 'prose')
   await remove()
   const missing = await restart()
-  // What a removed Session leaves behind is no selected row and no feed. The hash is not the
-  // reading: restoring a remembered id always routes to it, and `#/sessions` was only ever
-  // observable in the gap before the Roster arrived, which a warm Session index closes (#2372).
+  // The restore navigates under a stale id too (#1593), and that id resolves to no Session.
+  await missing.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await missing.locator('nav[aria-label="Sessions"] button').first().waitFor()
+  await expect(
+    missing.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]'),
+  ).toHaveCount(0)
   await expect(
     missing.locator('nav[aria-label="Sessions"] button[aria-current="page"]'),
   ).toHaveCount(0)

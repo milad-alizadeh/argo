@@ -1,14 +1,14 @@
 import { defineConfig } from '@playwright/test'
 import type { SessionBackendOptions } from './e2e/sessions/session-backend-option'
 
-// One project per flow under `e2e/` (#2325). Each `*.e2e.ts` file shares one packaged launch across
-// its cases, so nothing runs in parallel. `e2e/packaged-proof.ts` records traces, because
-// `use.trace` never sees a window from `_electron.launch()`.
+// One project per flow under `e2e/` (#2325). Every case launches the packaged app against its own
+// root (`e2e/packaged-proof.ts`, #2326), so cases run in parallel, one app per worker.
 export default defineConfig<object, SessionBackendOptions>({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  // The default, half the cores, is one worker on the 3-core macOS runner; locally 1 took 130s, 3 took 61s.
+  workers: 3,
   // The retry records a second trace, and a test that passes only on the retry still fails CI.
   retries: process.env.CI ? 1 : 0,
   failOnFlakyTests: Boolean(process.env.CI),
@@ -42,6 +42,8 @@ export default defineConfig<object, SessionBackendOptions>({
             name: 'real-sessions',
             testDir: 'e2e/sessions',
             testMatch: 'journeys.e2e.ts',
+            // One real Turn at a time, so the subscriptions see one person's pace.
+            fullyParallel: false,
             timeout: 240_000,
             use: { sessionBackend: 'real' as const },
           },

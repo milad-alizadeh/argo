@@ -24,10 +24,10 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 export function attachProjectBridge(
   window: BrowserWindow,
-  storage: { userData: string; rendererURL: string },
+  storage: { projectData: string; rendererURL: string },
 ): void {
   const store: ProjectStore = {
-    registryPath: path.join(storage.userData, 'portable-v1', 'projects.json'),
+    registryPath: path.join(storage.projectData, 'portable-v1', 'projects.json'),
     chooseFolder: () => chooseFolder(window),
     exclusive: createWriteQueue(),
   }

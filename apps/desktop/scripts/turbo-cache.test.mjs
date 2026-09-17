@@ -1,9 +1,17 @@
 import { describe, expect, test } from 'bun:test'
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
 const json = (file) => JSON.parse(readFileSync(file, 'utf8'))
+const PACKAGED_PROOFS = [
+  'test:packaged-contents',
+  'test:packaged-manifest',
+  'test:packaged-pty',
+  'test:e2e',
+  'test:e2e:adversarial',
+]
 
 // `turbo.json` carries no comments, because this file parses it with `JSON.parse` and turbo's own
 // tolerance for them is not shared. So the reasoning behind each cache decision lives here, next
@@ -12,19 +20,20 @@ describe('what turbo caches', () => {
   const turbo = () => json(path.join(repoRoot, 'turbo.json'))
   const cached = (task) => turbo().tasks[task].cache !== false
 
-  // The release task packages the app and then RUNS it for 600 spawn/exit cycles. A cache entry
-  // is a claim that the work need not happen, and no earlier machine's green run is evidence that
-  // THIS machine's artifact starts, so the one task whose whole point is execution stays uncached.
-  // The two persistent servers are uncached for the ordinary reason: they never finish.
-  test('caches every task except the packaged test and the two servers', () => {
-    expect(cached('build')).toBe(false)
+  // The two persistent servers never finish, so they have nothing to cache.
+  test('caches every task except the two servers', () => {
     expect(cached('dev')).toBe(false)
     expect(cached('storybook')).toBe(false)
-    expect(cached('typecheck')).toBe(true)
-    expect(cached('test')).toBe(true)
-    expect(cached('build:storybook')).toBe(true)
-    expect(cached('test:storybook')).toBe(true)
-    expect(cached('test:darwin-manifest')).toBe(true)
+    for (const task of [
+      'build',
+      ...PACKAGED_PROOFS,
+      'typecheck',
+      'test',
+      'build:storybook',
+      'test:storybook',
+      'test:darwin-manifest',
+    ])
+      expect(cached(task), `${task} is cached`).toBe(true)
   })
 
   // A package's default input set stops at its own directory, so these assertions — which read
@@ -68,6 +77,7 @@ describe('what turbo caches', () => {
     expect(turbo().tasks.test.outputs).toEqual([])
     expect(turbo().tasks['test:storybook'].outputs).toEqual([])
     expect(turbo().tasks['test:darwin-manifest'].outputs).toEqual([])
+    for (const proof of PACKAGED_PROOFS) expect(turbo().tasks[proof].outputs).toEqual([])
   })
 
   // `build` is the packaged PTY test, so a `^build` edge puts a fifteen-minute package and a
@@ -85,4 +95,66 @@ describe('what turbo caches', () => {
   test('narrows the test inputs without hand-listing them', () => {
     expect(turbo().tasks.test.inputs[0]).toBe('$TURBO_DEFAULT$')
   })
+})
+
+let dryRun
+function resolved(task) {
+  if (!dryRun) {
+    const run = spawnSync(
+      'bun',
+      ['run', 'turbo', 'run', 'build', ...PACKAGED_PROOFS, '--filter=@argo/desktop', '--dry=json'],
+      { cwd: repoRoot, encoding: 'utf8' },
+    )
+    if (run.status !== 0) throw new Error(`turbo's dry run exited ${run.status}:\n${run.stderr}`)
+    dryRun = JSON.parse(run.stdout).tasks
+  }
+  const found = dryRun.find((candidate) => candidate.task === task)
+  return { files: Object.keys(found.inputs), dependencies: found.dependencies }
+}
+
+// Read back from turbo itself, so a glob that matches more or less than the list says is caught.
+// `build` is a fifteen-minute package, and a mock, a case or a journey in its hash rebuilds it on
+// every test edit (#2324).
+describe('what the packaged tasks hash', () => {
+  test('hashes the application sources, native dependencies, Electron version and lockfiles into build', () => {
+    const { files } = resolved('build')
+    for (const file of [
+      'src/main.ts',
+      'src/preload.ts',
+      'src/renderer/tokens.css',
+      'forge.config.ts',
+      'package.json',
+      'package-lock.json',
+      '../../bun.lock',
+    ])
+      expect(files).toContain(file)
+  }, 60_000)
+
+  test('keeps the mocks, the e2e flows, the tools and the tests out of build', () => {
+    const { files } = resolved('build')
+    const leaked = files.filter(
+      (file) =>
+        /^(mocks|e2e|tools)\//.test(file) ||
+        /\.(test|stories)\.[jt]sx?$/.test(file) ||
+        file === 'tsconfig.e2e.json',
+    )
+    expect(leaked).toEqual([])
+  }, 60_000)
+
+  test.each([
+    ['test:packaged-contents', 'scripts/packaged-mock-cli-checks.mjs'],
+    ['test:packaged-manifest', 'package-manifest.json'],
+    ['test:packaged-pty', 'scripts/prove-packaged-pty.mjs'],
+    ['test:e2e', 'e2e/sessions/journeys.e2e.ts'],
+    ['test:e2e', 'mocks/cli/claude/mock-claude.ts'],
+    ['test:e2e:adversarial', 'e2e/sessions/adversarial.e2e.ts'],
+  ])(
+    'reruns %s after the packaged app or %s changes',
+    (proof, file) => {
+      const { files, dependencies } = resolved(proof)
+      expect(dependencies).toEqual(['@argo/desktop#build'])
+      expect(files).toContain(file)
+    },
+    60_000,
+  )
 })

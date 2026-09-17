@@ -1,5 +1,4 @@
-// The Session cases that read seeded transcripts, in order on one packaged launch (#1831, #1910).
-import { expect } from '@playwright/test'
+// Session Feed and Roster contracts over the packaged app's real preload (#1910).
 import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBackgroundShell } from './cases/background-shell.case'
@@ -21,126 +20,106 @@ import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
 import { proveTurnSetup } from './cases/turn-setup.case'
-import {
-  appendProse,
-  growCodexTranscript,
-  removeProse,
-  selectProofProject,
-  streamProse,
-} from './fixtures/feed.fixture'
+import { appendProse, growCodexTranscript, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
-import type { PageBox, SessionProofRun } from './session-proof-run'
-import { createPageBox, describeSessionProof, test } from './session-proof-run'
+import { test } from './session-proof-run'
 
-describeSessionProof('packaged-session', (run) => {
-  // `run.fixture` stays a getter: the harness exists only once a case runs.
-  const { hold, isPackaged, launch, restart } = run
-  const box = createPageBox(hold)
+test.describe('with no Project selected', () => {
+  test.use({ projectSelected: false })
 
-  test('launch', async () => {
-    box.set(await launch())
-    expect(await isPackaged()).toBe(true)
-  })
-
-  test('session-no-project-window', async () => {
-    await proveNoProjectWindow(box.get())
-  })
-
-  // Every case below reads the Roster, which only a selected Project shows (#2307).
-  test('select-project-and-restart', async () => {
-    await selectProofProject(run.fixture.userData, run.fixture.project)
-    box.set(await restart())
-  })
-
-  registerRosterAndShellCases(run, box)
-  registerFeedAndPlanCases(run, box)
-
-  // Last: enough Sessions to cross the Roster's page size land only now, so no earlier case's own
-  // exact Roster counts or ordering has to account for them.
-  test('session-roster-window', async () => {
-    await writeWindowFillerSessions(run.fixture.claudeTranscripts, run.fixture.project)
-    await proveRosterWindow(box.get())
-  })
-
-  test('shipped fuses stay intact', async () => {
-    await assertShippedFusesIntact()
+  test('session-no-project-window', async ({ session }) => {
+    await proveNoProjectWindow(session.page())
   })
 })
 
-// The cases that read a seeded transcript a real CLI never writes, so they run on the mock backend alone.
-function registerRosterAndShellCases(run: SessionProofRun, box: PageBox) {
-  test('session-roster-contract', async () => {
-    await proveContract(box.get())
-  })
-  test('session-shell', async () => {
-    await proveSessionShell(box.get())
-  })
-  test('session-roster-selection', async () => {
-    await provePackagedRosterSelection(box.get())
-  })
-  test('session-tool-calls', async () => {
-    await proveToolCalls(box.get())
-  })
-  test('session-delegation-cards', async () => {
-    await proveDelegationCards(box.get())
-  })
-  test('session-subagent-feed', async () => {
-    await proveSubagentFeed(box.get())
-  })
-  test('session-background-shell', async () => {
-    await proveBackgroundShell(box.get(), {
-      writeOutput: (text: string) => writeWatchOutput(run.root, text),
-      complete: () => completeWatch(run.fixture.claudeTranscripts, run.root),
-    })
-  })
-}
+test('session-roster-contract', async ({ session }) => {
+  await proveContract(session.page())
+})
 
-// Continues the fixture-only group `registerRosterAndShellCases` starts.
-function registerFeedAndPlanCases(run: SessionProofRun, box: PageBox) {
-  test('session-question', async () => {
-    await proveSessionQuestion(box.get())
+test('session-shell', async ({ session }) => {
+  await proveSessionShell(session.page())
+})
+
+test('session-roster-selection', async ({ session }) => {
+  await provePackagedRosterSelection(session.page())
+})
+
+test('session-tool-calls', async ({ session }) => {
+  await proveToolCalls(session.page())
+})
+
+test('session-delegation-cards', async ({ session }) => {
+  await proveDelegationCards(session.page())
+})
+
+test('session-subagent-feed', async ({ session }) => {
+  await proveSubagentFeed(session.page())
+})
+
+test('session-background-shell', async ({ session }) => {
+  await proveBackgroundShell(session.page(), {
+    writeOutput: (text: string) => writeWatchOutput(session.root, text),
+    complete: () => completeWatch(session.fixture.claudeTranscripts, session.root),
   })
-  test('session-feed-reader-anchor', async () => {
-    await proveLiveFeed(box.get(), {
-      transcripts: run.fixture.claudeTranscripts,
-      append: appendProse,
-      stream: streamProse,
-    })
+})
+
+test('session-question', async ({ session }) => {
+  await proveSessionQuestion(session.page())
+})
+
+test('session-feed-reader-anchor', async ({ session }) => {
+  await proveLiveFeed(session.page(), {
+    transcripts: session.fixture.claudeTranscripts,
+    append: appendProse,
+    stream: streamProse,
   })
-  test('session-feed-formatted', async () => {
-    await proveFormattedFeed(box.get(), {
-      root: run.root,
-      transcripts: run.fixture.claudeTranscripts,
-      append: appendProse,
-    })
+})
+
+test('session-feed-formatted', async ({ session }) => {
+  await proveFormattedFeed(session.page(), {
+    root: session.root,
+    transcripts: session.fixture.claudeTranscripts,
+    append: appendProse,
   })
-  test('session-diagram', async () => {
-    await proveSessionDiagram(box.get(), {
-      transcripts: run.fixture.claudeTranscripts,
-      append: appendProse,
-    })
+})
+
+test('session-diagram', async ({ session }) => {
+  await proveSessionDiagram(session.page(), {
+    transcripts: session.fixture.claudeTranscripts,
+    append: appendProse,
   })
-  test('session-plan', async () => {
-    await proveSessionPlan(box.get(), () => updatePlan(run.fixture.claudeTranscripts))
+})
+
+test('session-plan', async ({ session }) => {
+  await proveSessionPlan(session.page(), () => updatePlan(session.fixture.claudeTranscripts))
+})
+
+test('session-turn-setup', async ({ session }) => {
+  await proveTurnSetup(session.page())
+})
+
+test('session-roster-stable-polling', async ({ session }) => {
+  await proveStableRosterPolling(
+    session.page(),
+    rosterOrderMutations({ transcripts: session.fixture.claudeTranscripts }),
+  )
+})
+
+test('session-roster-restart', async ({ session }) => {
+  await provePackagedRosterRestart(session.page(), {
+    remove: () => removeProse(session.fixture.claudeTranscripts),
+    restart: () => session.restart(),
+    updateRoster: () => growCodexTranscript(session.fixture.codexTranscripts),
   })
-  test('session-turn-setup', async () => {
-    await proveTurnSetup(box.get())
-  })
-  test('session-roster-stable-polling', async () => {
-    await proveStableRosterPolling(
-      box.get(),
-      rosterOrderMutations({
-        transcripts: run.fixture.claudeTranscripts,
-      }),
-    )
-  })
-  test('session-roster-restart', async () => {
-    await provePackagedRosterRestart(box.get(), {
-      remove: () => removeProse(run.fixture.claudeTranscripts),
-      restart: async () => box.set(await run.restart()),
-      updateRoster: () => growCodexTranscript(run.fixture.codexTranscripts),
-    })
-  })
-}
+})
+
+test('session-roster-window', async ({ session }) => {
+  await writeWindowFillerSessions(session.fixture.claudeTranscripts, session.fixture.project)
+  await proveRosterWindow(session.page())
+})
+
+test('shipped fuses stay intact', async () => {
+  await assertShippedFusesIntact()
+})
