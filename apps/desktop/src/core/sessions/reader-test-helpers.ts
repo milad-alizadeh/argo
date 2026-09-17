@@ -58,7 +58,8 @@ function codexMessage(text: string, updatedAt: string, id = 'm') {
   })}\n`
 }
 
-export async function writeCodexTranscript({ root, sessionId, text, updatedAt }: TranscriptLine) {
+export async function writeCodexTranscript(line: TranscriptLine) {
+  const { root, sessionId, text, updatedAt, cwd } = line
   const day = codexDay(root)
   await mkdir(day, { recursive: true })
   await writeFile(
@@ -66,7 +67,7 @@ export async function writeCodexTranscript({ root, sessionId, text, updatedAt }:
     `${JSON.stringify({
       timestamp: updatedAt,
       type: 'session_meta',
-      payload: { id: sessionId },
+      payload: { id: sessionId, cwd },
     })}\n${codexMessage(text, updatedAt)}`,
   )
 }

@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { RosterRowContext } from './roster-row-context'
 
-export type Reconciliation = 'held' | 'observed' | 'stronger-title'
+export type Reconciliation = 'held' | 'held-when-present' | 'observed' | 'stronger-title'
 export type ManagedRule =
   | 'id'
   | 'session'

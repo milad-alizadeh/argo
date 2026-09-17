@@ -1,0 +1,4 @@
+{"timestamp":"2026-09-17T11:00:00.000Z","type":"session_meta","payload":{"id":"codexReasoningSummary","cwd":"/Users/x/argo"}}
+{"timestamp":"2026-09-17T11:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Inspect the Session lifecycle."}}
+{"timestamp":"2026-09-17T11:00:02.000Z","type":"response_item","payload":{"type":"reasoning","id":"reason-1","summary":[{"type":"summary_text","text":"**Revising session lifecycle handling**"}]}}
+{"timestamp":"2026-09-17T11:00:03.000Z","type":"response_item","payload":{"type":"message","id":"answer-1","role":"assistant","content":[{"type":"output_text","text":"The lifecycle is ready."}]}}
