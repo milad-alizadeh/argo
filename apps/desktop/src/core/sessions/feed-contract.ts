@@ -53,6 +53,9 @@ export const sessionsListedSchema = z.strictObject({
   filesFound: z.number(),
   filesRead: z.number(),
   filesUnreadable: z.number(),
+  // How many of those files the pass actually opened. Zero on a warm read through the Session
+  // index, which is the difference between reaching a window and re-reading it (#2372).
+  filesParsed: z.number(),
   // Opaque; echo it back as the next request's `cursor` to read a larger window. `null` means
   // every adapter has already read every file it found (#2239).
   nextCursor: z.string().nullable(),

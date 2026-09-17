@@ -42,6 +42,7 @@ export function combineDiscoveries(
     filesFound: successful.reduce((total, reading) => total + reading.filesFound, 0),
     filesRead: successful.reduce((total, reading) => total + reading.filesRead, 0),
     filesUnreadable: successful.reduce((total, reading) => total + reading.filesUnreadable, 0),
+    filesParsed: successful.reduce((total, reading) => total + reading.filesParsed, 0),
     nextCursor: encodeRosterCursor(cursors),
   }
 }

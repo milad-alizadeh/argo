@@ -26,6 +26,7 @@ import {
   SESSION_CODEX_EXECUTABLE_ENV,
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
+import { openSessionIndexOrNone, sessionIndexPath } from './core/sessions/session-index/open-index'
 import { createSessionArchiveStore, sessionArchivePath } from './core/storage/session-archive'
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
@@ -61,6 +62,14 @@ export function watchClaudeCompactions(home: string) {
   return starts
 }
 
+// The connection is this window's, so it is handed back when the window goes rather than held
+// until the process exits: a relaunch against the same `userData` then finds nothing open.
+function indexForWindow(window: BrowserWindow, userData: string) {
+  const index = openSessionIndexOrNone(sessionIndexPath(userData))
+  if (index !== undefined) window.on('closed', () => void index.close())
+  return index
+}
+
 export function attachSessions(
   window: BrowserWindow,
   request: {
@@ -78,6 +87,9 @@ export function attachSessions(
   )
   // Argo's own archive flag, for every harness at once (#2315).
   const archive = createSessionArchiveStore(sessionArchivePath(userData))
+  // Both adapters read their bounded window through one index, so a warm Roster reopens no
+  // transcript the last pass already projected (#2372).
+  const index = indexForWindow(window, userData)
   attachSessionBridge(window, {
     reader: createSessionReader(
       [
@@ -93,6 +105,7 @@ export function attachSessions(
           liveMessages: claude.liveMessages,
           rename: (request) => renameClaudeSession(request, claude),
           isLockedElsewhere: claude.isLockedElsewhere,
+          index,
         }),
         codexSessionSource(codexTranscriptsRoot(home), {
           roster: codex.roster,
@@ -101,6 +114,7 @@ export function attachSessions(
           rename: (request) => renameCodexSession(request, codex),
           isLockedElsewhere: codex.isLockedElsewhere,
           threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
+          index,
         }),
       ],
       ticketLinks,

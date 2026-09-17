@@ -26,7 +26,14 @@ function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle
   const held = { ...row('s1', 'running'), title: heldTitle }
   const observed = { ...row('s1', 'running'), title: observedTitle }
   const merged = mergeManagedRoster(
-    { rows: [observed], filesFound: 1, filesRead: 1, filesUnreadable: 0, nextCursor: null },
+    {
+      rows: [observed],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: null,
+    },
     [held],
   )
   return merged.rows[0]?.title
@@ -39,6 +46,7 @@ function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
+      filesParsed: 0,
       nextCursor: null,
     },
     [row('s1', heldStatus)],
@@ -133,6 +141,7 @@ test('a Session with no held counterpart passes through the discovered row untou
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
+      filesParsed: 0,
       nextCursor: null,
     },
     [],
