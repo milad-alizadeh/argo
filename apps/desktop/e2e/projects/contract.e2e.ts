@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { chmod, readFile } from 'node:fs/promises'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { assertShippedFusesIntact } from '../packaged-app'
-import { finishTrace, test as packagedTest, startTrace } from '../packaged-proof'
+import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { launch, prepare } from './fixtures/project.fixture'
 import { PROJECT_PROOF_SURFACE } from './proof-surface'
 
@@ -15,17 +15,18 @@ type ProjectRun = {
 }
 
 const test = packagedTest.extend<{ project: ProjectRun }>({
-  project: async ({ root, packagedApplication }, use, testInfo) => {
+  project: async ({ root, packagedApplication, performanceProfile }, use, testInfo) => {
     const fixture = await prepare(root, packagedApplication)
     const application = await launch(fixture)
     try {
-      const traced = await startTrace(application)
       const page = await application.firstWindow()
+      const traced = await startRecording(performanceProfile, application, page)
       page.setDefaultTimeout(30_000)
       await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
       await use({ application, page, fixture })
-      await finishTrace(traced, testInfo)
+      await finishRecording(performanceProfile, traced, testInfo)
     } finally {
+      await performanceProfile?.stop()
       await application.close()
     }
   },

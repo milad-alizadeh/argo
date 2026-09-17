@@ -4,8 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test as base, type TestInfo } from '@playwright/test'
-import type { BrowserContext, ElectronApplication } from 'playwright-core'
+import type { BrowserContext, ElectronApplication, Page } from 'playwright-core'
 import { packagedTestCopy } from './packaged-app'
+import { FlowPerformanceProfile, performanceProfileEnabled } from './performance-profile'
 
 export type PackagedProofFixtures = {
   // A temporary directory this test alone writes to, removed however the test ends.
@@ -15,6 +16,8 @@ export type PackagedProofFixtures = {
 export type PackagedProofWorkerFixtures = {
   // The worker's packaged app copy.
   packagedApplication: string
+  // The CPU recorder, on an opted-in run only: one trace per worker over every case it ran.
+  performanceProfile: FlowPerformanceProfile | undefined
 }
 
 export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtures>({
@@ -26,6 +29,16 @@ export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtur
       } finally {
         await rm(root, { recursive: true, force: true })
       }
+    },
+    { scope: 'worker' },
+  ],
+  performanceProfile: [
+    async ({}, use, workerInfo) => {
+      const profile = performanceProfileEnabled()
+        ? new FlowPerformanceProfile(workerInfo.project.name)
+        : undefined
+      await use(profile)
+      await profile?.write()
     },
     { scope: 'worker' },
   ],
@@ -64,4 +77,26 @@ export async function finishTrace(context: BrowserContext | undefined, testInfo:
     () => false,
   )
   if (stopped) await testInfo.attach('trace', { path: tracePath, contentType: 'application/zip' })
+}
+
+// What a launch records, one or the other: Playwright's screenshot trace and the CDP CPU trace both
+// attach to the page, so a profiled run keeps only the samples and the timings it asked for.
+export async function startRecording(
+  profile: FlowPerformanceProfile | undefined,
+  application: ElectronApplication,
+  page: Page,
+) {
+  if (!profile) return await startTrace(application)
+  await profile.start(page)
+  return undefined
+}
+
+// Ends the case: its wall time on a profiled run, and otherwise the trace a failure keeps.
+export async function finishRecording(
+  profile: FlowPerformanceProfile | undefined,
+  traced: BrowserContext | undefined,
+  testInfo: TestInfo,
+) {
+  profile?.recordCase(testInfo)
+  await finishTrace(traced, testInfo)
 }

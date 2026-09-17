@@ -23,7 +23,7 @@
     "test:packaged-pty": "node scripts/prove-packaged-pty.mjs",
     "test:e2e": "playwright test",
     "test:e2e:adversarial": "ARGO_E2E_ADVERSARIAL=1 playwright test --project=sessions-adversarial",
-    "test:journey-profile": "ARGO_JOURNEY_PROFILE=1 playwright test --project=sessions e2e/sessions/journeys.e2e.ts",
+    "test:e2e:profile": "ARGO_E2E_PROFILE=1 playwright test",
     "e2e:real": "ARGO_E2E_REAL=1 playwright test --project=real-sessions",
     "test:live-claude-display": "node tools/run-tool.mjs tools/claude/message-display.ts",
     "capture:cockpit": "node tools/run-tool.mjs tools/cockpit/capture.ts",

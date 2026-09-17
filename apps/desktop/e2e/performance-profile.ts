@@ -4,7 +4,7 @@ import path from 'node:path'
 import type { TestInfo } from '@playwright/test'
 import type { CDPSession, Page } from 'playwright-core'
 
-const PROFILE_ENVIRONMENT_VARIABLE = 'ARGO_JOURNEY_PROFILE'
+const PROFILE_ENVIRONMENT_VARIABLE = 'ARGO_E2E_PROFILE'
 const CPU_PROFILE_CATEGORIES = [
   'blink',
   'devtools.timeline',
@@ -64,21 +64,23 @@ async function readStream(session: CDPSession, stream: string) {
   return readTraceEvents(JSON.parse(trace))
 }
 
-export function journeyProfileEnabled() {
+export function performanceProfileEnabled() {
   return process.env[PROFILE_ENVIRONMENT_VARIABLE] === '1'
 }
 
-// Keeps each renderer process's samples until the journey has restarted the app, then writes one
+// Keeps each renderer process's samples until the flow has restarted the app, then writes one
 // Chrome trace that the existing hot-functions reader can inspect.
-export class JourneyPerformanceProfile {
+export class FlowPerformanceProfile {
+  readonly #flow: string
   readonly #root: Promise<string>
   readonly #events: ProfileEvent[] = []
   readonly #timings: CaseTiming[] = []
   #session: CDPSession | undefined
   #completion: Promise<TraceStream> | undefined
 
-  constructor() {
-    this.#root = mkdtemp(path.join(os.tmpdir(), 'argo-journey-profile-'))
+  constructor(flow: string) {
+    this.#flow = flow
+    this.#root = mkdtemp(path.join(os.tmpdir(), `argo-${flow}-profile-`))
   }
 
   async start(page: Page) {
@@ -116,14 +118,14 @@ export class JourneyPerformanceProfile {
   async write() {
     await this.stop()
     const root = await this.#root
-    const trace = path.join(root, 'journey-cpu-trace.json')
-    const timings = path.join(root, 'journey-timings.json')
+    const trace = path.join(root, `${this.#flow}-cpu-trace.json`)
+    const timings = path.join(root, `${this.#flow}-timings.json`)
     await Promise.all([
       writeFile(trace, JSON.stringify({ traceEvents: this.#events })),
       writeFile(timings, JSON.stringify({ cases: this.#timings }, null, 2)),
     ])
-    console.log(`Journey CPU trace: ${trace}`)
-    console.log(`Journey timings: ${timings}`)
+    console.log(`${this.#flow} CPU trace: ${trace}`)
+    console.log(`${this.#flow} timings: ${timings}`)
     console.log(`Read hot functions: jq -r -f scripts/profiling/hot-functions.jq ${trace}`)
   }
 }

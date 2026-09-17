@@ -2,10 +2,9 @@
 import type { TestInfo } from '@playwright/test'
 import type { BrowserContext } from 'playwright-core'
 import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
-import { finishTrace, test as packagedTest, startTrace } from '../packaged-proof'
+import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
-import { JourneyPerformanceProfile, journeyProfileEnabled } from './journey-performance-profile'
 import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
 import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
 import type { SessionBackendOptions } from './session-backend-option'
@@ -31,10 +30,6 @@ export type SessionFixtures = SessionOptions & {
   session: PackagedSession
 }
 
-type SessionWorkerFixtures = SessionBackendOptions & {
-  journeyProfile: JourneyPerformanceProfile | undefined
-}
-
 async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   const snapshot = await feedStateSnapshot(session.page()).catch((error: unknown) => ({
     snapshotFailed: String(error),
@@ -50,20 +45,11 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
 }
 
 // `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
-export const test = packagedTest.extend<SessionFixtures, SessionWorkerFixtures>({
+export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>({
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
   projectSelected: [true, { option: true }],
   slowReply: [false, { option: true }],
   adversarialSeed: [undefined, { option: true }],
-  // One trace per worker holds every journey it ran, written when the worker ends.
-  journeyProfile: [
-    async ({}, use) => {
-      const profile = journeyProfileEnabled() ? new JourneyPerformanceProfile() : undefined
-      await use(profile)
-      await profile?.write()
-    },
-    { scope: 'worker' },
-  ],
   // Built per test, because a backend remembers the folders of the one root it started on.
   backend: async ({ sessionBackend }, use) => {
     await use(BACKENDS[sessionBackend]())
@@ -72,7 +58,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionWorkerFixtures>(
     await use(await prepare(root, packagedApplication, { projectSelected }))
   },
   session: async (
-    { root, sessionFixture, backend, slowReply, adversarialSeed, journeyProfile },
+    { root, sessionFixture, backend, slowReply, adversarialSeed, performanceProfile },
     use,
     testInfo,
   ) => {
@@ -82,25 +68,21 @@ export const test = packagedTest.extend<SessionFixtures, SessionWorkerFixtures>(
       fixture: sessionFixture,
       backend,
       launch: { slowReply, adversarialSeed },
-      // Playwright's own screenshot trace and the CDP CPU trace both attach to the page, so a
-      // profiled run skips the former and keeps only the timings and samples it asked for.
       launched: async (application, page) => {
-        if (journeyProfile) await journeyProfile.start(page)
-        else traced = await startTrace(application)
+        traced = await startRecording(performanceProfile, application, page)
       },
       closing: async () => {
-        await journeyProfile?.stop()
+        await performanceProfile?.stop()
       },
     })
     try {
       await session.launch()
       if (!(await session.isPackaged())) throw new Error('The case did not drive the packaged app.')
       await use(session)
-      journeyProfile?.recordCase(testInfo)
-      await finishTrace(traced, testInfo)
+      await finishRecording(performanceProfile, traced, testInfo)
       if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)
     } finally {
-      await journeyProfile?.stop()
+      await performanceProfile?.stop()
       await session.close()
     }
   },

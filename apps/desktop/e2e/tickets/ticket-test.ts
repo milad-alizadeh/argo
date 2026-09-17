@@ -1,7 +1,7 @@
 // Each Ticket case declares its starting Accounts and source, reached by a person's gestures (#2326).
 import type { BrowserContext, ElectronApplication } from 'playwright-core'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
-import { finishTrace, test as packagedTest, startTrace } from '../packaged-proof'
+import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { HUBOT, launch, OCTOCAT, prepare, type TicketFixture } from './fixtures/tickets.fixture'
 import {
   accountsDialog,
@@ -85,14 +85,18 @@ export type Tickets = {
 
 export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tickets }>({
   ticketState: ['none', { option: true }],
-  tickets: async ({ root, packagedApplication, ticketState }, use, testInfo) => {
+  tickets: async (
+    { root, packagedApplication, ticketState, performanceProfile },
+    use,
+    testInfo,
+  ) => {
     const fixture = await prepare(root, packagedApplication)
     let application: ElectronApplication | undefined
     let traced: BrowserContext | undefined
     const open = async () => {
       const run = await start(fixture)
       application = run.application
-      traced = await startTrace(run.application)
+      traced = await startRecording(performanceProfile, run.application, run.page)
       return run
     }
     try {
@@ -101,13 +105,16 @@ export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tic
       await use({
         run: () => run,
         restart: async () => {
+          // The samples belong to the window that produced them, so the recording ends with it.
+          await performanceProfile?.stop()
           await run.application.close()
           run = await open()
           return run
         },
       })
-      await finishTrace(traced, testInfo)
+      await finishRecording(performanceProfile, traced, testInfo)
     } finally {
+      await performanceProfile?.stop()
       await application?.close()
       await fixture.github.close()
       await fixture.linear.close()
