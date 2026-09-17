@@ -1,6 +1,5 @@
-// The fixture half of the packaged Session proof: the disk state `feed.e2e.ts` launches
-// the app against, and the two mutations that prove a re-read reaches the file system rather than
-// a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
+// The disk state every packaged Session case launches the app against, and the mutations that
+// prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
@@ -12,7 +11,6 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import { packagedTestCopy } from '../../packaged-app'
 
 export const FIXTURES = [
   'resumeParent',
@@ -42,10 +40,6 @@ export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
 // The Sessions Argo's own archive document says the reader archived.
 const ARCHIVED = ['plannedWork']
-
-// A directory for a person's own screenshots. The Playwright test runner owns `process.argv`, so
-// this reads an environment variable rather than a flag: `ARGO_SESSION_SHOTS=<dir> bunx playwright test`.
-export const shots = process.env.ARGO_SESSION_SHOTS ?? null
 
 // One more turn on a Session already measured, written the way the CLI writes one: appended to
 // the file it belongs to.
@@ -101,8 +95,8 @@ export async function streamProse(transcripts, text) {
   )
 }
 
-export async function prepare(root) {
-  const application = await packagedTestCopy(root)
+// The Roster shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
+export async function prepare(root, application, { projectSelected }) {
   const claudeTranscripts = path.join(root, 'claude-transcripts')
   const codexTranscripts = path.join(root, 'codex-transcripts')
   await writeFixtureTree(claudeTranscripts, FIXTURES, { inProofProject: true })
@@ -118,8 +112,7 @@ export async function prepare(root) {
   const project = proofProject(claudeTranscripts)
   await mkdir(project)
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
-  // No Project is selected yet, so the first case sees the cockpit with none (#2307).
-  await writeProjectStore(userData, project, null)
+  await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
   return { application, claudeTranscripts, codexTranscripts, userData, project }
 }
 
@@ -134,11 +127,6 @@ async function writeProjectStore(userData, project, selectedId) {
       selectedId,
     }),
   )
-}
-
-// Written to the store rather than picked in the switcher, whose choice a restart does not keep.
-export async function selectProofProject(userData, project) {
-  await writeProjectStore(userData, project, PROOF_PROJECT_ID)
 }
 
 export async function growCodexTranscript(transcripts) {
@@ -158,14 +146,4 @@ export async function growCodexTranscript(transcripts) {
       },
     })}\n`,
   )
-}
-
-// The packaged visual evidence. The window is shown from here rather than by the app, so every
-// contract case above still runs against the same hidden window the other proofs use.
-export async function capture(page, application, name) {
-  if (shots === null) return
-  await mkdir(shots, { recursive: true })
-  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
-  await page.waitForTimeout(400)
-  await page.screenshot({ path: path.join(shots, name) })
 }

@@ -18,8 +18,7 @@ async function proveArchivedPage(page) {
 
 // A real archive round trip (#2194, #2315): archiving moves the Session out of the active list and
 // into the Archived page, and restoring it (the shape a short-lived Undo calls) brings it back.
-// Both calls write Argo's own archive document, and the restore leaves the fixture exactly as
-// every other case in this file finds it. The Claude Session and the Codex one take this one path.
+// Both calls write Argo's own archive document, and the Claude Session and the Codex one take this one path.
 async function proveArchiveRoundTrip(page, sessionId) {
   const archived = await page.evaluate(
     (id) => window.argo.setSessionsArchived({ sessionIds: [id], archived: true }),
@@ -51,9 +50,6 @@ async function proveArchiveRoundTrip(page, sessionId) {
 async function proveBulkArchive(page) {
   await proveArchiveRoundTrip(page, 'harnessNoise')
   await proveArchiveRoundTrip(page, 'rollout-codexParent')
-  // A roster fetch that lands while the Session is archived drops it from the renderer's kept
-  // order, and it returns last; a reload reads the order afresh, as `session-roster-restart` expects.
-  await page.reload()
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]').waitFor()
 
   // Argo owns the flag, so a Session it has never discovered archives too: it writes its own row

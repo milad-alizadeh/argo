@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ElectronApplication, Locator, Page } from 'playwright-core'
 import type { MockUser } from '../../mocks/providers/github/mock-github'
+import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
 import { openedURLs, type TicketFixture } from './fixtures/tickets.fixture'
 
 export type Run = { application: ElectronApplication; page: Page; fixture: TicketFixture }
@@ -78,6 +79,22 @@ export async function signIn(run: Run, user: MockUser, start: { scope: Locator; 
     .getByRole('status')
     .filter({ hasText: `${user.login}.` })
     .textContent()
+}
+
+// One consent through the dialog. The browser stub loads Linear's page, which answers for Ada and
+// redirects to the cockpit's loopback, so no code is shown and none is typed.
+export async function signInToLinear(run: Run, start: { scope: Locator; name: string }) {
+  run.fixture.linear.signIn(ADA)
+  const before = (await openedURLs(run.application)).length
+  await press(start.scope, start.name)
+  const status = accountsDialog(run.page)
+    .getByRole('status')
+    .filter({ hasText: `${ADA.name}.` })
+  await status.waitFor()
+  const opened = (await openedURLs(run.application)).slice(before)
+  assert.equal(opened.length, 1)
+  assert.ok(opened[0]?.startsWith(`${run.fixture.linear.origin}/oauth/authorize?`))
+  return status.textContent()
 }
 
 export const storeText = (fixture: TicketFixture, name: string) =>

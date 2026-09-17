@@ -19,6 +19,11 @@ const SETTLE_TIMEOUT_MS = 10_000
 // only once it has stopped moving rather than on the first frame after the width lands.
 const REFLOW_SETTLE_MS = 500
 
+// A long turn after the diagram, so scrolling the diagram into view leaves the reader above the tail,
+// where the Feed holds the reader's row rather than following the tail.
+const FOLLOWING_TEXT =
+  'The turn after the diagram kept going while the reader looked back. '.repeat(120)
+
 const DIAGRAM_TEXT = [
   'The Feed draws this diagram from the transcript itself.',
   '',
@@ -63,6 +68,7 @@ export async function proveSessionDiagram(page, fixture: DiagramFixture) {
   })
   await page.waitForSelector(`${ACTIVE_VIEWPORT} [data-feed-row]`)
   await fixture.append(fixture.transcripts, DIAGRAM_ROW, DIAGRAM_TEXT)
+  await fixture.append(fixture.transcripts, 'p-diagram-after', FOLLOWING_TEXT)
   await waitForDrawnDiagrams(page)
 
   // The honest state for the fence Mermaid could not draw: its source stays readable and the

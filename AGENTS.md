@@ -50,8 +50,9 @@ of CLI and filename branches.
 Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
 the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per
 flow in `playwright.config.ts`, run by `bun run test:e2e`; add a flow as a project, never a script.
-Each flow wraps its cases in `describePackagedProof` (`e2e/packaged-proof.ts`), and a variant of a
-flow, such as the real-CLI Session backend, is a project `use` option on the same file, never a copy.
+Each flow builds its cases on the `test` in `e2e/packaged-proof.ts`: a case declares its starting
+state as a fixture option (`test.use`), never as a case that runs before it. A variant of a flow,
+such as the real-CLI Session backend, is a project `use` option on the same file, never a copy.
 `mocks/` holds `mock-*` CLIs, providers and their transcripts; `tools/` holds capture, measure
 and repro scripts. `apps/desktop/scripts/` holds runtime wrappers only.
 

@@ -9,7 +9,6 @@ export type SessionFixture = {
   application: string
   claudeTranscripts: string
   codexTranscripts: string
-  archive: string
   userData: string
   project: string
 }
@@ -25,7 +24,7 @@ export type SessionCliRun = {
   // 1. Which executables the app must run.
   executables: { claude: string; codex: string }
   // 2. Which transcript roots the app must read. Null leaves it reading the machine's own.
-  transcripts: { claude: string; codex: string; archive: string } | null
+  transcripts: { claude: string; codex: string } | null
   // What one launch adds to the app's environment.
   launchEnv: (launch: SessionCliLaunch) => Record<string, string>
   // Variables inherited from the developer shell that this backend must not pass to the app.
