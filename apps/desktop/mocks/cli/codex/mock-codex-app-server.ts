@@ -1,9 +1,3 @@
-// A minimal stand-in for `codex app-server --listen stdio://`, run as a real child process so the
-// vertical-slice test in codex-vertical-slice.test.ts exercises the real pipes and NDJSON framing
-// this adapter depends on, not just an in-memory mock of `CodexChannel`. It answers exactly the
-// verbs `codex-session-driver.ts` sends, grounded in codex-cli 0.147.0's schema
-// (docs/research/2026-09-09-codex-transport.md).
-
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
@@ -15,11 +9,7 @@ const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 const COMPLETION_DELAY_MS = 10
 const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
-
-function threadIdFor(counter: number) {
-  return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
-}
-
+type MockRequest = { id?: unknown; method?: string; params?: Record<string, unknown> }
 function recordTurn(threadId: string, text: string) {
   const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
   if (transcripts === undefined) return
@@ -44,20 +34,9 @@ function recordTurn(threadId: string, text: string) {
       .join('\n')}\n`,
   )
 }
-
 function send(message: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify(message)}\n`)
 }
-
-function request(line: string) {
-  return JSON.parse(line) as {
-    id?: unknown
-    method?: string
-    params?: Record<string, unknown>
-    result?: unknown
-  }
-}
-
 function completeTurn(threadId: unknown, turnId: string, text: string) {
   const status = text.includes('FAIL') ? 'failed' : 'completed'
   send({
@@ -69,7 +48,17 @@ function completeTurn(threadId: unknown, turnId: string, text: string) {
     params: { threadId, status: { type: status === 'failed' ? 'systemError' : 'idle' } },
   })
 }
+const PLAN = [
+  { step: 'Read the Session protocol', status: 'completed' },
+  { step: 'Project the live Plan into the Roster', status: 'inProgress' },
+]
 
+function sendPlanUpdate(turnId: string) {
+  send({
+    method: 'turn/plan/updated',
+    params: { turnId, plan: PLAN },
+  })
+}
 function compactionItem(threadId: unknown, method: 'item/started' | 'item/completed') {
   send({
     method,
@@ -81,7 +70,7 @@ function compactionItem(threadId: unknown, method: 'item/started' | 'item/comple
   })
 }
 
-function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
+function handleTurnStart(message: MockRequest) {
   const params = message.params ?? {}
   const threadId = params.threadId
   const input = Array.isArray(params.input) ? params.input : []
@@ -89,11 +78,13 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
   if (typeof threadId === 'string') recordTurn(threadId, text)
   if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
   const turnId = `mock-turn-${threadCounter}-${Date.now()}`
+  if (text.includes('PLAN_EARLY')) sendPlanUpdate(turnId)
   send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
   send({
     method: 'thread/status/changed',
     params: { threadId, status: { type: 'active', activeFlags: [] } },
   })
+  if (text.includes('PLAN') && !text.includes('PLAN_EARLY')) sendPlanUpdate(turnId)
   if (text.includes('ASK')) {
     askQuestion(send, { threadId, turnId, text })
     return
@@ -104,11 +95,7 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
   )
 }
 
-function handleRequest(message: {
-  id?: unknown
-  method?: string
-  params?: Record<string, unknown>
-}) {
+function handleRequest(message: MockRequest) {
   switch (message.method) {
     case 'initialize':
       send({ id: message.id, result: {} })
@@ -117,7 +104,12 @@ function handleRequest(message: {
       return
     case 'thread/start':
       threadCounter += 1
-      send({ id: message.id, result: { thread: { id: threadIdFor(threadCounter) } } })
+      send({
+        id: message.id,
+        result: {
+          thread: { id: `00000000-0000-4000-8000-${String(threadCounter).padStart(12, '0')}` },
+        },
+      })
       return
     case 'thread/resume':
       send({ id: message.id, result: { thread: { id: message.params?.threadId } } })
@@ -154,7 +146,7 @@ function handleRequest(message: {
 
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {
-  const message = request(line)
+  const message = JSON.parse(line) as MockRequest
   if (message.method === undefined) {
     handleAskReply(message, echoFile, completeTurn)
     return

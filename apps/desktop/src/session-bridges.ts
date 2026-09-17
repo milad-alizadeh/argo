@@ -119,6 +119,7 @@ export function attachSessions(
   registerWatching(window, {
     permissions: [claude.onPermissionsChanged],
     sessions: [
+      codex.onRosterChanged,
       watchTrees([
         claudeTranscriptsRoot(home),
         codexTranscriptsRoot(home),

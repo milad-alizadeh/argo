@@ -1,7 +1,11 @@
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionRosterRow, SessionTitle } from './models'
 import { TITLE_SOURCES } from './models'
-import { managedRosterRow, reconcileRosterRow } from './roster-row-definition'
+import {
+  type ManagedRosterSeed,
+  managedRosterRow,
+  reconcileRosterRow,
+} from './roster-row-definition'
 import { rollupSessionStatus } from './session-status-rollup'
 
 function titleRank(title: SessionTitle | null): number {
@@ -20,26 +24,8 @@ function reconcileManagedRow(observed: SessionRosterRow, held: SessionRosterRow)
 }
 
 // The row a managed Session stands on before its transcript says anything; `setup` is what Argo applied.
-export function managedRow(
-  id: string,
-  session: Pick<
-    SessionRosterRow,
-    | 'cli'
-    | 'compactionPercentage'
-    | 'compactionStartedAt'
-    | 'compactionTokens'
-    | 'handoffFailure'
-    | 'handoffStartedAt'
-    | 'cwd'
-    | 'status'
-    | 'setup'
-  > & {
-    prompt: string
-    startedAt: string
-    title?: SessionTitle
-  },
-): SessionRosterRow {
-  return managedRosterRow({ id, session })
+export function managedRow(id: string, session: ManagedRosterSeed['session']): SessionRosterRow {
+  return managedRosterRow({ id, session: { ...session, plan: session.plan ?? null } })
 }
 
 // A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
