@@ -2,7 +2,7 @@
 // grant, a Ticket's state changing on GitHub, and disconnecting the Account and the repository.
 // The initial connection and backlog cases are `github.case.ts`.
 import assert from 'node:assert/strict'
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { OCTOCAT } from '../fixtures/tickets.fixture'
 import {
   accountRow,
@@ -25,7 +25,7 @@ export async function proveRestartAndFailure(run: Run) {
   const failure = room(run).getByRole('alert').filter({ hasText: 'Unable to read Tickets' })
   await test.step('visible-failure', async () => {
     await failure.getByText('Argo cannot reach GitHub.').waitFor()
-    assert.equal(await run.page.getByRole('region', { name: 'Sign-in notice' }).count(), 0)
+    await expect(run.page.getByRole('region', { name: 'Sign-in notice' })).toHaveCount(0)
   })
   await test.step('restart', async () => {
     run.fixture.github.outage('none')

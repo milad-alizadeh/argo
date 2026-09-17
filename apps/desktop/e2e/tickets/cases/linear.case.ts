@@ -1,7 +1,7 @@
 // The Ticket proof's Linear cases: the same packaged cockpit reading a Linear team through a mock
 // Linear, beside a GitHub Account that no Linear failure may touch.
 import assert from 'node:assert/strict'
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import type { Locator } from 'playwright-core'
 import { ADA } from '../../../mocks/providers/linear/mock-linear-cast'
 import { openedURLs } from '../fixtures/tickets.fixture'
@@ -99,7 +99,7 @@ export async function proveLinearBacklog(run: Run) {
     await detail.getByRole('region', { name: 'Blocked by · 1' }).waitFor()
     await foot(run, 'Connected').waitFor()
     // Linear has no new-issue page Argo links to, so the sidebar offers none.
-    assert.equal(await run.page.getByRole('button', { name: 'New Ticket' }).count(), 0)
+    await expect(run.page.getByRole('button', { name: 'New Ticket' })).toHaveCount(0)
   })
 }
 
