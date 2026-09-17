@@ -6,6 +6,7 @@
 import { isRecord } from '@/boundary'
 import type { ToolCall, TranscriptRecord } from '@/core/sessions/transcript'
 import { messageRecord } from './message-record'
+import { nestedToolCall } from './nested-tool-call'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather
@@ -21,7 +22,6 @@ function readArguments(value: unknown): Record<string, unknown> {
 }
 
 const EXEC_COMMAND = /tools\.exec_command\s*\(\s*\{[\s\S]*?(?:"cmd"|cmd)\s*:\s*"((?:\\.|[^"\\])*)"/
-const NESTED_TOOL = /\btools\.([A-Za-z][A-Za-z0-9_]*)\s*\(/
 
 function execInput(input: string): Record<string, unknown> {
   const match = input.match(EXEC_COMMAND)
@@ -34,8 +34,8 @@ function execInput(input: string): Record<string, unknown> {
 }
 
 function customToolCall(name: string, input: string) {
-  const nested = name === 'exec' ? input.match(NESTED_TOOL)?.[1] : undefined
-  return { name: nested ?? name, input: execInput(input) }
+  const nested = name === 'exec' ? nestedToolCall(input) : null
+  return { name: nested?.name ?? name, input: execInput(input) }
 }
 
 function readToolCall(payload: Record<string, unknown>): ToolCall | null {

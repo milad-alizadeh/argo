@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { managedRow, mergeManagedRoster } from './managed-row'
-import type { SessionRosterRow, SessionStatus, SessionTitle } from './models'
+import type { SessionPlan, SessionRosterRow, SessionStatus, SessionTitle } from './models'
 import { reconcileRosterRow, rosterRowFields } from './roster-row-definition'
 
 const setup = { model: null, effort: null, mode: null } as const
@@ -75,6 +75,7 @@ test('reconciles every Roster field by its declared rule', () => {
   const reconciled = reconcileRosterRow(observed, held, () => held.title)
   const rows = {
     held,
+    'held-when-present': held,
     observed,
     'stronger-title': { ...observed, title: held.title },
   }
@@ -82,6 +83,28 @@ test('reconciles every Roster field by its declared rule', () => {
   for (const field of rosterRowFields) {
     assert.deepEqual(reconciled[field.name], rows[field.reconciliation][field.name], field.name)
   }
+})
+
+test('a managed Session keeps the newest Plan it knows from either source', () => {
+  const plan: SessionPlan = {
+    state: 'available',
+    entries: [{ content: 'Inspect the Session', position: 0, status: 'in_progress' }],
+  }
+  const observed = { ...row('s1', 'running'), plan }
+  const heldWithoutPlan = row('s1', 'running')
+  const discovered = {
+    rows: [observed],
+    filesFound: 1,
+    filesRead: 1,
+    filesUnreadable: 0,
+    nextCursor: null,
+  }
+
+  assert.deepEqual(mergeManagedRoster(discovered, [heldWithoutPlan]).rows[0]?.plan, plan)
+  assert.deepEqual(
+    mergeManagedRoster(discovered, [{ ...heldWithoutPlan, plan }]).rows[0]?.plan,
+    plan,
+  )
 })
 
 test('a managed Session shows the strongest title known for it, keeping its own on a tie', () => {

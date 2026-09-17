@@ -30,7 +30,7 @@ test('shows Codex reasoning summaries as commentary between the prompt and reply
     rows.map(({ shape, ...row }) => ({ shape, ...('text' in row ? { text: row.text } : {}) })),
     [
       { shape: 'prose', text: 'Inspect the Session lifecycle.' },
-      { shape: 'thought', text: 'Revising session lifecycle handling' },
+      { shape: 'thought', text: '**Revising session lifecycle handling**' },
       { shape: 'prose', text: 'The lifecycle is ready.' },
     ],
   )

@@ -11,7 +11,7 @@ export function reasoningSummary(
   const blocks = payload.summary.flatMap((summary) => {
     if (!isRecord(summary) || summary.type !== 'summary_text' || typeof summary.text !== 'string')
       return []
-    return [{ shape: 'thought' as const, text: summary.text.replace(/\*\*([^*\n]+)\*\*/g, '$1') }]
+    return [{ shape: 'thought' as const, text: summary.text }]
   })
   if (blocks.length === 0) return null
   return messageRecord(record, {

@@ -111,6 +111,9 @@ const reconciliationValues: Record<
   ) => unknown
 > = {
   held: (field, rows) => rows.held[field.name as keyof SessionRosterRow],
+  'held-when-present': (field, rows) =>
+    rows.held[field.name as keyof SessionRosterRow] ??
+    rows.observed[field.name as keyof SessionRosterRow],
   observed: (field, rows) => rows.observed[field.name as keyof SessionRosterRow],
   'stronger-title': (_, rows) => rows.strongerTitle(),
 }

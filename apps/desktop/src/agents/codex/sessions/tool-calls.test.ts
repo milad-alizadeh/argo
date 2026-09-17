@@ -25,8 +25,9 @@ async function reader(context: { after: (cleanup: () => Promise<void>) => void }
   return createSessionReader([codexSessionSource(root)])
 }
 
-test('shows a row for each Codex tool call, succeeded once its output arrived and running otherwise', async (context) => {
-  const rows = rowsOf(await fed(await reader(context), feedRequest(SESSION)))
+test('shows tool calls but keeps a Plan update out of the Feed', async (context) => {
+  const sessionReader = await reader(context)
+  const rows = rowsOf(await fed(sessionReader, feedRequest(SESSION)))
   const [group] = rows
   assert.equal(rows.length, 1)
   assert.ok(group?.shape === 'tool-group')
@@ -50,21 +51,22 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
         label: 'Ran bun run quality',
         text: 'bun run quality',
       },
-      {
-        status: 'succeeded',
-        label: 'Called update_plan',
-        text: 'const result = await tools.update_plan({ plan: [{ step: "Inspect the Session", status: "in_progress" }] });\ntext(result);',
-      },
     ],
   )
+  const reply = await listed(sessionReader)
+  const session = reply?.sessions.find((entry) => entry.id === SESSION)
+  assert.deepEqual(session?.plan, {
+    state: 'available',
+    entries: [{ content: 'Inspect the Session', position: 0, status: 'in_progress' }],
+  })
 })
 
 test('names the roster activity line after the newest tool call, the same way it does for Claude', async (context) => {
   const reply = await listed(await reader(context))
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
-    label: 'Called update_plan',
-    tool: 'update_plan',
+    label: 'Ran bun run quality',
+    tool: 'exec_command',
     target: null,
   })
 })
