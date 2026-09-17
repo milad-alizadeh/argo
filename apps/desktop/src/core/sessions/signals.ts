@@ -16,7 +16,7 @@ export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task'
 
 // The tools that spawn a Subagent (CONTEXT.md L3 · Subagent). The CLI renamed `Task` to `Agent`,
 // and a transcript written before the rename still names the old one.
-const DELEGATING_TOOLS = ['Task', 'Agent']
+const DELEGATING_TOOLS = ['Task', 'Agent', 'spawn_agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
 // come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
@@ -51,6 +51,7 @@ function callTimes(messages: TranscriptMessage[]): CallTimes {
 export function readDelegations(
   messages: TranscriptMessage[],
   notifications: BackgroundTask[],
+  records: TranscriptRecord[] = [],
 ): SessionDelegation[] {
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
   // A backgrounded call's receipt answers it at once; only its notification lands it (#2247).
@@ -61,15 +62,34 @@ export function readDelegations(
   )
   const times = callTimes(messages)
   const ended = endings(notifications)
-  return calls(messages)
+  const delegations = calls(messages)
     .filter((call) => DELEGATING_TOOLS.includes(call.name))
     .map((call) => ({
       id: call.id,
-      label: text(call.input.description),
+      // Codex's collaboration tool calls it `task_name`; Claude's Task and Agent tools use a
+      // reader-facing description. Both name the same Subagent.
+      label: text(call.input.task_name) ?? text(call.input.description),
       landed: receipted.has(call.id) ? ended.has(call.id) : answered.has(call.id),
       startedAt: times.started.get(call.id) ?? null,
       endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
     }))
+  const activities = new Map<string, SessionDelegation>()
+  for (const record of records) {
+    if (record.kind !== 'delegation' || record.actor !== 'agent' || record.groupId === null)
+      continue
+    const previous = activities.get(record.groupId)
+    activities.set(record.groupId, {
+      id: record.groupId,
+      label: record.action,
+      landed: record.status === 'completed',
+      startedAt:
+        record.status === 'running'
+          ? (previous?.startedAt ?? record.timestamp ?? null)
+          : (previous?.startedAt ?? null),
+      endedAt: record.status === 'completed' ? (record.timestamp ?? null) : null,
+    })
+  }
+  return [...delegations, ...activities.values()]
 }
 
 function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {

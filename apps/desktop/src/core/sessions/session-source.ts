@@ -1,7 +1,9 @@
 // What one CLI adapter gives the shared Session reader (#2025): discovery, reading one Session's
-// transcript chain, projecting a chain into Feed rows, and the two optional capabilities only
+// transcript chain, projecting a chain into Feed rows, and the optional capabilities only
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
-// depends on can reference the same shape without an import cycle.
+// depends on can reference the same shape without an import cycle. Archiving is not among them:
+// Argo owns that flag for every CLI at once (`storage/session-archive.ts`, #2315).
+import type { SessionDelegationUsage } from './background-work-contract'
 import type { SessionChain } from './chains'
 import type { SessionRenameReply, SessionRenameRequest } from './contract'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
@@ -14,16 +16,6 @@ import type { SessionFeedRow, SessionRosterRow } from './models'
 export type FeedOverlay = (rows: readonly SessionFeedRow[]) => {
   rows: SessionFeedRow[]
   changes: unknown
-}
-
-// One page of a source's Archived Sessions (#1593): `restored` names the row for `restoreId`
-// when the caller passed one, whether or not it fell inside this page — the Archive section can
-// then open already showing a Session a reader had selected before, rather than requiring a page
-// through everything to find it.
-export type ArchivedSessionsPage = {
-  rows: SessionRosterRow[]
-  nextCursor: string | null
-  restored: SessionRosterRow | null
 }
 
 // One adapter's page of the active roster (#2239): `cursor` names the window the caller already
@@ -48,25 +40,12 @@ export type SessionSource = {
   // One Subagent's own transcript, read as a chain so the Feed projects it the same way it
   // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
   readDelegationFiles?: (sessionId: string, delegationId: string) => Promise<SessionChain | null>
-  // What each of this Session's Subagents spent, keyed by the call that spawned it.
-  readDelegationUsage?: (sessionId: string) => Promise<{ id: string; tokens: number | null }[]>
+  // What each of this Session's Subagents used, keyed by the call that spawned it.
+  readDelegationUsage?: (sessionId: string) => Promise<SessionDelegationUsage[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
   // Joined over any lock discovery already read off the CLI's own live record; absent where the
   // CLI keeps no ownership ledger.
   isLockedElsewhere?: (sessionId: string) => boolean
   overlayFor?: (sessionId: string) => FeedOverlay | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
-  // Absent where the CLI has no archive concept of its own (Codex, today): the reader then
-  // answers every archive-list request with an empty page rather than guessing at one.
-  discoverArchivedSessions?: (options: {
-    cursor: string | null
-    restoreId: string | null
-  }) => Promise<ArchivedSessionsPage>
-  // Setting the archive flag for one or more Sessions (#2194), on the same store
-  // `discoverArchivedSessions` reads. A Session with no writable row there comes back in
-  // `failed`. Absent where the CLI has no archive concept of its own, same as the read above.
-  setArchived?: (options: {
-    ids: readonly string[]
-    archived: boolean
-  }) => Promise<{ applied: string[]; failed: string[] }>
 }

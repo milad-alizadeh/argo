@@ -9,14 +9,13 @@ export type SessionFixture = {
   application: string
   claudeTranscripts: string
   codexTranscripts: string
-  archive: string
   userData: string
   project: string
 }
 
 // What one launch asks of the CLI. A slow reply is the state the wait cases read (#2119): a CLI
 // that answers instantly never shows the app waiting.
-export type SessionCliLaunch = { slowReply: boolean }
+export type SessionCliLaunch = { slowReply: boolean; adversarialSeed?: string }
 
 // The Turn a case is waiting on, named the way the case sent it.
 export type SessionReply = { cli: SessionCli; prompt: string }
@@ -25,7 +24,7 @@ export type SessionCliRun = {
   // 1. Which executables the app must run.
   executables: { claude: string; codex: string }
   // 2. Which transcript roots the app must read. Null leaves it reading the machine's own.
-  transcripts: { claude: string; codex: string; archive: string } | null
+  transcripts: { claude: string; codex: string } | null
   // What one launch adds to the app's environment.
   launchEnv: (launch: SessionCliLaunch) => Record<string, string>
   // Variables inherited from the developer shell that this backend must not pass to the app.

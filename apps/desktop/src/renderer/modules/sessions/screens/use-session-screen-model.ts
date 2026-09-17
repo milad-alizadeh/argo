@@ -50,7 +50,7 @@ function useWorkArtifacts(
     shell,
     delegation,
     delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),
-    delegationTokens: useDelegationUsage(
+    delegationUsage: useDelegationUsage(
       session === null || session.delegations.length === 0 ? null : selectedSessionId,
       session?.delegations.some((candidate) => !candidate.landed) === true,
     ),

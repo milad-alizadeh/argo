@@ -18,10 +18,6 @@ export async function repository(folder) {
   return folder
 }
 
-async function copyApplication(root) {
-  return packagedTestCopy(root)
-}
-
 // A folder with no git root in it. The chooser can be answered with one, so the app has to turn it
 // away by name rather than by failing to read it.
 async function folder(at) {
@@ -29,8 +25,9 @@ async function folder(at) {
   return at
 }
 
-export async function prepare(root) {
-  const application = await copyApplication(root)
+// A caller that already holds a packaged copy passes it; a standalone tool gets its own.
+export async function prepare(root, application?) {
+  application ??= await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })

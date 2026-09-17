@@ -15,7 +15,14 @@ export function managedSessionIsRunning(
   sessionId: string | null,
 ): boolean {
   const row = findSessionRow(roster, sessionId)
-  return row?.posture === 'managed' && row.status === 'running'
+  if (row?.posture !== 'managed') return false
+  switch (row.status) {
+    case 'running':
+    case 'permission':
+      return true
+    default:
+      return false
+  }
 }
 
 // Bundles the mutations and the Turn Marker, whose availability and wiring all hinge on the same

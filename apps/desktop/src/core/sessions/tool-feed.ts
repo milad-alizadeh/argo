@@ -8,6 +8,16 @@ type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = { content: string | null; failed: boolean }
 
+export function displayedToolLabel(
+  call: Pick<ToolRow, 'kind' | 'label'>,
+  active: boolean,
+  running: string,
+) {
+  if (!active || call.kind !== 'command') return call.label
+  const label = call.label.startsWith('Ran ') ? call.label.slice('Ran '.length) : call.label
+  return `${running} ${label}`
+}
+
 // A call's result and a Skill's body both arrive as later, separate records, keyed by call id.
 export type ToolEvidence = { results: Map<string, ToolResult>; skillBodies: Map<string, string> }
 
@@ -20,17 +30,18 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-function commandLabel(call: ToolCall) {
-  return `Ran ${String(call.input.cmd ?? 'command').split('\n')[0]}`
+function commandLabel(call: ToolCall, commandKey: 'command' | 'cmd') {
+  const suppliedLabel = text(call.input.label) ?? text(call.input.description)
+  if (suppliedLabel !== null) return suppliedLabel
+  const command = text(call.input[commandKey])?.split('\n')[0]
+  return `Ran ${command ?? 'command'}`
 }
 
 const TOOL_DETAILS = {
   // The agent's own description is already a whole label; the raw command, first line, is the fallback.
   Bash: (call: ToolCall) => ({
     kind: 'command' as const,
-    label:
-      text(call.input.description) ??
-      `Ran ${String(call.input.command ?? 'command').split('\n')[0]}`,
+    label: commandLabel(call, 'command'),
   }),
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
@@ -42,11 +53,11 @@ const TOOL_DETAILS = {
   // Codex's `exec` record carries wrapper source; its adapter extracts `cmd` when the wrapper has one.
   exec_command: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: commandLabel(call),
+    label: commandLabel(call, 'cmd'),
   }),
   exec: (call: ToolCall) => ({
     kind: 'command' as const,
-    label: commandLabel(call),
+    label: commandLabel(call, 'cmd'),
   }),
 } as const
 
@@ -127,6 +138,7 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
   if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
+  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
   if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)

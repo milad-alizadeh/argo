@@ -219,12 +219,15 @@
         }
       }
     },
-    // KIND: `test.beforeEach`/`test.afterEach` read their fixture list off the literal
-    // destructuring pattern in their first parameter (#2325): Playwright's own docs write a hook
-    // that needs none of them as `async ({}, testInfo) => {`, and a named parameter in its place
-    // breaks that reading rather than just going unused.
+    // KIND: a Playwright fixture reads the fixtures it depends on off the literal destructuring
+    // pattern in its first parameter (#2325, #2326): Playwright's own docs write one that needs
+    // none as `async ({}, use) => {`, and a named parameter in its place breaks that reading
+    // rather than just going unused.
     {
-      "includes": ["apps/desktop/e2e/sessions/session-proof-run.ts"],
+      "includes": [
+        "apps/desktop/e2e/packaged-proof.ts",
+        "apps/desktop/e2e/sessions/session-proof-run.ts"
+      ],
       "linter": {
         "rules": {
           "correctness": {

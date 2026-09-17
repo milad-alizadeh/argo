@@ -1,38 +1,40 @@
-// The packaged Project contract: the preload surface, `openProject` and its refusals, read off one
-// launch of the shipped app against its own application data.
+// The packaged Project contract: the preload surface, `openProject` and its refusals, each read
+// off its own launch of the shipped app against its own application data (#2326).
 import assert from 'node:assert/strict'
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
-import { test } from '@playwright/test'
-import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
-import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mjs'
-import { PROJECT_PROOF_STORE_ENV } from '../../src/core/projects/proof-protocol'
-import { appExecutable, assertShippedFusesIntact, packagedTestCopy } from '../packaged-app'
+import { chmod, readFile } from 'node:fs/promises'
+import type { ElectronApplication, Page } from 'playwright-core'
+import { assertShippedFusesIntact } from '../packaged-app'
+import { finishTrace, test as packagedTest, startTrace } from '../packaged-proof'
+import { launch, prepare } from './fixtures/project.fixture'
 import { PROJECT_PROOF_SURFACE } from './proof-surface'
 
-async function prepare(root: string) {
-  const application = await packagedTestCopy(root)
-  const userData = path.join(root, 'userData')
-  const projectPath = path.join(userData, 'example')
-  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
-  await mkdir(projectPath)
-  const registryPath = path.join(userData, 'portable-v1', 'projects.json')
-  await writeFile(
-    registryPath,
-    JSON.stringify({
-      version: 1,
-      projects: [
-        { id: 'project-1', path: projectPath, bindings: [{ token: 'must-stay-private' }] },
-      ],
-    }),
-  )
-  return { application, userData, projectPath, registryPath }
+type ProjectRun = {
+  application: ElectronApplication
+  page: Page
+  fixture: Awaited<ReturnType<typeof prepare>>
 }
+
+const test = packagedTest.extend<{ project: ProjectRun }>({
+  project: async ({ root, packagedApplication }, use, testInfo) => {
+    const fixture = await prepare(root, packagedApplication)
+    const application = await launch(fixture)
+    try {
+      const traced = await startTrace(application)
+      const page = await application.firstWindow()
+      page.setDefaultTimeout(30_000)
+      await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
+      await use({ application, page, fixture })
+      await finishTrace(traced, testInfo)
+    } finally {
+      await application.close()
+    }
+  },
+})
 
 const invoke = (page, value) => page.evaluate((message) => window.argo.openProject(message), value)
 
-async function proveOpensProject(application, page) {
+test('opens a registered Project through the preload surface alone', async ({ project }) => {
+  const { application, page } = project
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   assert.equal(
     await application.evaluate(({ BrowserWindow }) =>
@@ -56,65 +58,34 @@ async function proveOpensProject(application, page) {
     requestId: reply.requestId,
     project: { id: 'project-1', name: 'example' },
   })
-}
+})
 
-test.describe
-  .serial('project contract', () => {
-    let root: string
-    let fixture: Awaited<ReturnType<typeof prepare>>
-    let registryBefore: string
-    let application: ElectronApplication | undefined
-    let page: Page
+test('refuses a missing Project', async ({ project }) => {
+  assert.equal((await invoke(project.page, { projectId: 'missing' })).code, 'missing-project')
+})
 
-    test.beforeAll(async () => {
-      root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
-      fixture = await prepare(root)
-      registryBefore = await readFile(fixture.registryPath, 'utf8')
-      application = await electron.launch({
-        executablePath: appExecutable(fixture.application),
-        env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
-        timeout: 30_000,
-      })
-      page = await application.firstWindow()
-      page.setDefaultTimeout(30_000)
-      await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
-    })
+test('refuses a Project it cannot read', async ({ project }) => {
+  await chmod(project.fixture.projectPath, 0)
+  try {
+    assert.equal((await invoke(project.page, { projectId: 'project-1' })).code, 'access-denied')
+  } finally {
+    await chmod(project.fixture.projectPath, 0o700)
+  }
+})
 
-    test.afterAll(async () => {
-      try {
-        await application?.close()
-      } finally {
-        await rm(root, { recursive: true, force: true })
-      }
-    })
+test('refuses a request that names a path', async ({ project }) => {
+  assert.equal(
+    (await invoke(project.page, { projectId: 'project-1', path: '/private' })).code,
+    'invalid-request',
+  )
+})
 
-    test('opens a registered Project through the preload surface alone', async () => {
-      await proveOpensProject(application, page)
-    })
+test('leaves the Project store unchanged', async ({ project }) => {
+  const before = await readFile(project.fixture.registryPath, 'utf8')
+  await invoke(project.page, { projectId: 'project-1' })
+  await invoke(project.page, { projectId: 'missing' })
+  await invoke(project.page, { projectId: 'project-1', path: '/private' })
+  assert.equal(await readFile(project.fixture.registryPath, 'utf8'), before)
+})
 
-    test('refuses a missing Project', async () => {
-      assert.equal((await invoke(page, { projectId: 'missing' })).code, 'missing-project')
-    })
-
-    test('refuses a Project it cannot read', async () => {
-      await chmod(fixture.projectPath, 0)
-      try {
-        assert.equal((await invoke(page, { projectId: 'project-1' })).code, 'access-denied')
-      } finally {
-        await chmod(fixture.projectPath, 0o700)
-      }
-    })
-
-    test('refuses a request that names a path', async () => {
-      assert.equal(
-        (await invoke(page, { projectId: 'project-1', path: '/private' })).code,
-        'invalid-request',
-      )
-    })
-
-    test('leaves the Project store unchanged', async () => {
-      assert.equal(await readFile(fixture.registryPath, 'utf8'), registryBefore)
-    })
-
-    test('the shipped app keeps its fuses', () => assertShippedFusesIntact())
-  })
+test('the shipped app keeps its fuses', () => assertShippedFusesIntact())

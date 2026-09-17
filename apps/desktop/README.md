@@ -96,9 +96,11 @@ bun run install:electron
 bun run build
 ```
 
-The last command routes the desktop task through Turbo. Forge packages the arm64 app. The package
-hook checks its native PTY files. The command then launches the packaged app and runs the full PTY
-acceptance proof. A successful run prints the absolute path in this form:
+The last command runs two Turbo tasks. `build` packages the arm64 app with Forge, and the package
+hook checks its native PTY files. `test:packaged-pty` then launches the packaged app and runs the
+full PTY acceptance proof. Turbo caches both. If nothing they read has changed, Turbo restores the
+app and replays the proof's log without launching it. A successful run prints the absolute path in
+this form:
 
 ```text
 Artifact: /path/to/argo/apps/desktop/out/Argo-darwin-arm64/Argo.app
@@ -131,12 +133,18 @@ against fixture trees.
 binary and then runs it:
 
 ```sh
-bun run package --arch arm64                              # the postPackage hook asserts on its own
-bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
-bun run test:packaged-pty --arch arm64                    # package, then run the acceptance test
-bun run test:packaged-pty --arch arm64 --skip-package
-bun run test:packaged-pty --arch arm64 --skip-endurance
+bun run turbo run build --filter=@argo/desktop                   # package; the postPackage hook asserts on its own
+bun run turbo run test:packaged-contents --filter=@argo/desktop  # the same checks, plus no mock CLI in the bundle
+bun run turbo run test:packaged-pty --filter=@argo/desktop       # launch the packaged app and run the acceptance test
+bun run test:packaged-pty --skip-endurance                       # from apps/desktop, uncached, against out/
 ```
+
+`build` and each packaged test are separate Turbo tasks, and every test depends on `build`. Turbo
+hashes only what the app is made from into `build`: the application sources, the native
+dependencies, the Electron version and the lockfiles. A change to a mock CLI, an e2e case or a
+journey therefore restores the cached app. A test reruns only when the app or its own files
+changed. The mock CLIs run from source beside the e2e flows, so `test:packaged-contents` fails if
+either one is found inside the bundle.
 
 `test:packaged-contents` is the same code `forge package` runs in its `postPackage` hook, so packaging
 already refuses an app whose `node-pty` is absent, packed inside the asar, or stripped of its
@@ -311,9 +319,9 @@ Package arm64 first. Every command here runs the copy, never the app you have in
 
 | Command | What it produces |
 | --- | --- |
-| `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. |
+| `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` packages first and caches the run. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
-| `bun run e2e:real` | Runs the portable Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. It is never a CI command. |
+| `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 

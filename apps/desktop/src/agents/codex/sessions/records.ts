@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { subagentActivity } from './subagent-activity'
 import { readToolRecord } from './tool-calls'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
@@ -32,6 +33,7 @@ function itemMessage(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   const item = isRecord(payload.item) ? payload.item : null
+  if (item?.type === 'SubAgentActivity') return subagentActivity(record, item)
   if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'
@@ -106,6 +108,18 @@ function isSubagentThread(meta: Record<string, unknown>): boolean {
   return meta.thread_source === 'subagent' || (isRecord(meta.source) && 'subagent' in meta.source)
 }
 
+function subagentDetails(meta: Record<string, unknown>) {
+  const source = isRecord(meta.source) ? meta.source : null
+  const subagent = source !== null && isRecord(source.subagent) ? source.subagent : null
+  const spawn = subagent !== null && isRecord(subagent.thread_spawn) ? subagent.thread_spawn : null
+  if (spawn === null) return {}
+  return {
+    parentSessionId: typeof spawn.parent_thread_id === 'string' ? spawn.parent_thread_id : null,
+    agentPath: typeof spawn.agent_path === 'string' ? spawn.agent_path : null,
+    agentNickname: typeof spawn.agent_nickname === 'string' ? spawn.agent_nickname : null,
+  }
+}
+
 export function parseCodexTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let record: unknown
@@ -131,6 +145,7 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
       kind: 'trace',
       uuid: payload.id,
       subagent: isSubagentThread(payload),
+      ...subagentDetails(payload),
       cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
     }
   }

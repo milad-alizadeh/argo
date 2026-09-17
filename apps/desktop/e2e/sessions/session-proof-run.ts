@@ -1,126 +1,109 @@
-// The scaffolding every packaged Session spec file shares (#2308, #2325): a fixture root that is
-// removed however the run ends, a harness on one CLI backend, and a trace recording segmented at
-// every test boundary. A spec file is then its case list and nothing else.
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
-import { expect, test } from '@playwright/test'
-import type { Page } from 'playwright-core'
-import type { SessionCliBackend, SessionFixture } from '../../mocks/sessions/session-cli-backend'
+// Each Session case declares its state with `test.use` and launches against its own root (#2326).
+import type { TestInfo } from '@playwright/test'
+import type { BrowserContext } from 'playwright-core'
+import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
+import { finishTrace, test as packagedTest, startTrace } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
-import { selectProofProject } from './fixtures/feed.fixture'
-import { createPackagedSessionHarness } from './packaged-session-harness'
+import { prepare } from './fixtures/feed.fixture'
+import { JourneyPerformanceProfile, journeyProfileEnabled } from './journey-performance-profile'
+import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
+import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
+import type { SessionBackendOptions } from './session-backend-option'
+import type { SessionCliBackend, SessionFixture } from './session-cli-backend'
 
-type Harness = Awaited<ReturnType<typeof createPackagedSessionHarness>>
+const BACKENDS = {
+  mock: createMockSessionCliBackend,
+  real: createRealSessionCliBackend,
+} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionCliBackend>
 
-export type SessionProofRun = {
-  readonly root: string
-  readonly fixture: SessionFixture
-  launch: Harness['launch']
-  restart: Harness['restart']
-  isPackaged: Harness['isPackaged']
-  // Records the page the current case is driving, so a failure's trace and console dump report
-  // that window rather than the one the run opened with.
-  hold: (page: Page) => Page
+export type SessionOptions = {
+  // The Roster shows only for a selected Project (#2307), so every case but the empty-window one wants it.
+  projectSelected: boolean
+  // A CLI that holds its reply, so a case can read the app waiting on a Turn (#2119).
+  slowReply: boolean
+  // Replays the mock CLI's seeded jitter, split bytes and failures.
+  adversarialSeed: string | undefined
 }
 
-// The page the journeys are currently driving, read and written by name so a case that restarts
-// the app (`session-claude-resume`, `session-codex-resume`, the slow-reply restart below) hands
-// the next case the window it actually has to keep.
-export type PageBox = { get: () => Page; set: (page: Page) => Page }
-
-// Both spec files build one of these right after `describeSessionProof` hands them a run, so the
-// box itself stays out of each file's own duplicated setup (#2325).
-export function createPageBox(hold: SessionProofRun['hold']): PageBox {
-  let page: Page
-  return {
-    get: () => page,
-    set: (next) => {
-      page = next
-      return hold(next)
-    },
-  }
+export type SessionFixtures = SessionOptions & {
+  backend: SessionCliBackend
+  sessionFixture: SessionFixture
+  session: PackagedSession
 }
 
-// The first case of a journeys file: every journey starts a Session, which needs a selected Project (#2204).
-export function defineLaunchWithProject(run: SessionProofRun, box: PageBox) {
-  test('launch', async () => {
-    await selectProofProject(run.fixture.userData, run.fixture.project)
-    box.set(await run.launch())
-    expect(await run.isPackaged()).toBe(true)
+type SessionWorkerFixtures = SessionBackendOptions & {
+  journeyProfile: JourneyPerformanceProfile | undefined
+}
+
+async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
+  const snapshot = await feedStateSnapshot(session.page()).catch((error: unknown) => ({
+    snapshotFailed: String(error),
+  }))
+  await testInfo.attach('feed-state', {
+    body: JSON.stringify(snapshot),
+    contentType: 'application/json',
+  })
+  await testInfo.attach('renderer-console', {
+    body: session.recentConsole().join('\n'),
+    contentType: 'text/plain',
   })
 }
 
-// Wraps a packaged Session spec file in one serial describe block: one fixture root and one
-// harness, on one CLI backend, shared across every case the way a packaged launch's cost demands
-// (`packaged-session-harness.ts:34-42`). Playwright still gives each case its own test: a failure
-// reports one name, and every later test in the file is skipped rather than run against state a
-// prior failure left inconsistent.
-export function describeSessionProof(
-  name: string,
-  backend: SessionCliBackend,
-  body: (run: SessionProofRun) => void,
-) {
-  test.describe
-    .serial(name, () => {
-      let root: string
-      let harness: Harness
-      let page: Page | undefined
-
-      test.beforeAll(async () => {
-        root = await mkdtemp(path.join(os.tmpdir(), `argo-${name}-`))
-        harness = await createPackagedSessionHarness(root, backend)
-      })
-
-      test.afterAll(async () => {
-        await harness?.close()
-        await rm(root, { recursive: true, force: true })
-      })
-
-      test.afterEach(async ({}, testInfo) => {
-        const context = harness.context()
-        if (!context) return
-        const failed = testInfo.status !== testInfo.expectedStatus
-        if (!failed) {
-          await context.tracing.stop()
-        } else {
-          const tracePath = testInfo.outputPath('trace.zip')
-          await context.tracing.stop({ path: tracePath })
-          await testInfo.attach('trace', { path: tracePath, contentType: 'application/zip' })
-          await testInfo.attach('feed-state', {
-            body: JSON.stringify(
-              await feedStateSnapshot(page).catch((error: unknown) => ({
-                snapshotFailed: String(error),
-              })),
-            ),
-            contentType: 'application/json',
-          })
-          await testInfo.attach('renderer-console', {
-            body: harness.recentConsole().join('\n'),
-            contentType: 'text/plain',
-          })
-        }
-        // A restart already opened a fresh recording (`packaged-session-harness.ts`); a context
-        // that ran unrestarted needs one for the next test.
-        await harness.context()?.tracing.start({ screenshots: true, snapshots: true })
-      })
-
-      // `harness` is only assigned once `beforeAll` runs; every member below reads it lazily, at
-      // case-execution time, rather than capturing it at this describe-registration time.
-      body({
-        get root() {
-          return root
-        },
-        get fixture() {
-          return harness.fixture
-        },
-        launch: (...arguments_) => harness.launch(...arguments_),
-        restart: (...arguments_) => harness.restart(...arguments_),
-        isPackaged: () => harness.isPackaged(),
-        hold: (next) => {
-          page = next
-          return next
-        },
-      })
+// `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
+export const test = packagedTest.extend<SessionFixtures, SessionWorkerFixtures>({
+  sessionBackend: ['mock', { option: true, scope: 'worker' }],
+  projectSelected: [true, { option: true }],
+  slowReply: [false, { option: true }],
+  adversarialSeed: [undefined, { option: true }],
+  // One trace per worker holds every journey it ran, written when the worker ends.
+  journeyProfile: [
+    async ({}, use) => {
+      const profile = journeyProfileEnabled() ? new JourneyPerformanceProfile() : undefined
+      await use(profile)
+      await profile?.write()
+    },
+    { scope: 'worker' },
+  ],
+  // Built per test, because a backend remembers the folders of the one root it started on.
+  backend: async ({ sessionBackend }, use) => {
+    await use(BACKENDS[sessionBackend]())
+  },
+  sessionFixture: async ({ root, packagedApplication, projectSelected }, use) => {
+    await use(await prepare(root, packagedApplication, { projectSelected }))
+  },
+  session: async (
+    { root, sessionFixture, backend, slowReply, adversarialSeed, journeyProfile },
+    use,
+    testInfo,
+  ) => {
+    let traced: BrowserContext | undefined
+    const session = await createPackagedSessionHarness({
+      root,
+      fixture: sessionFixture,
+      backend,
+      launch: { slowReply, adversarialSeed },
+      // Playwright's own screenshot trace and the CDP CPU trace both attach to the page, so a
+      // profiled run skips the former and keeps only the timings and samples it asked for.
+      launched: async (application, page) => {
+        if (journeyProfile) await journeyProfile.start(page)
+        else traced = await startTrace(application)
+      },
+      closing: async () => {
+        await journeyProfile?.stop()
+      },
     })
-}
+    try {
+      await session.launch()
+      if (!(await session.isPackaged())) throw new Error('The case did not drive the packaged app.')
+      await use(session)
+      journeyProfile?.recordCase(testInfo)
+      await finishTrace(traced, testInfo)
+      if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)
+    } finally {
+      await journeyProfile?.stop()
+      await session.close()
+    }
+  },
+})
+
+export { expect } from '../packaged-proof'

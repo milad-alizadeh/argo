@@ -156,7 +156,7 @@ jobs:
       # than as a missing one.
       - name: Test the signed app
         working-directory: apps/desktop
-        run: bun run test:packaged-pty --arch arm64 --skip-package --json out/packaged-pty-acceptance.json
+        run: bun run test:packaged-pty --arch arm64 --json out/packaged-pty-acceptance.json
 
       # Forge's makers write into a tree whose shape is theirs, not ours. Gathering the two
       # artifacts into one directory first means the verdict, the attestation and the upload cannot

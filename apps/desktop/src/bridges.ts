@@ -1,5 +1,6 @@
 // Wiring every renderer bridge to a fresh window, split out of `main.ts` to stay under the
 // per-function line cap: one driver setup, then one `attach*` call per domain.
+import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { createAccountAccess } from './core/accounts/access'
@@ -17,19 +18,21 @@ export function attachBridges(
   request: {
     userData: string
     accountData: string
+    projectData: string
     rendererURL: string
     proofEnabled: boolean
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, rendererURL, proofEnabled } = request
-  const home = app.getPath('home')
+  const { userData, accountData, projectData, rendererURL, proofEnabled } = request
+  // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
+  const home = os.homedir()
   const drivers = createSessionDrivers(userData, home, proofEnabled)
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
-  attachProjectBridge(window, { userData, rendererURL })
+  attachProjectBridge(window, { projectData, rendererURL })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })

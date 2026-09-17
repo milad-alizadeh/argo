@@ -11,7 +11,6 @@ import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-li
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/core/projects/proof-protocol'
 import {
-  SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/core/sessions/proof-protocol'
@@ -19,7 +18,7 @@ import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
 } from '../../../src/providers/proof-protocol'
-import { appExecutable, packagedTestCopy } from '../../packaged-app'
+import { appExecutable } from '../../packaged-app'
 import { repository } from '../../projects/fixtures/project.fixture'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
@@ -65,8 +64,7 @@ function serveTeams(linear: MockLinear) {
   linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
 }
 
-export async function prepare(root: string): Promise<TicketFixture> {
-  const application = await packagedTestCopy(root)
+export async function prepare(root: string, application: string): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   const noSessions = path.join(root, 'no-sessions')
@@ -99,7 +97,6 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
       [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
-      [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.noSessions,
       [ACCEPTANCE_ENV]: '0',
     },
     timeout: 30_000,

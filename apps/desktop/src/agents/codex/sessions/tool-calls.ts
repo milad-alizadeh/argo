@@ -41,6 +41,8 @@ function readToolCall(payload: Record<string, unknown>): ToolCall | null {
   return null
 }
 
+const COLLABORATION_CALLS = new Set(['spawn_agent', 'wait_agent'])
+
 // The Responses API's output shape: a bare string, or a list of typed blocks. Only their text
 // is read; an image or another output type has nothing this row could show.
 function outputText(output: unknown): string | null {
@@ -79,6 +81,8 @@ export function readToolRecord(
   if (payload.type === 'function_call' || payload.type === 'custom_tool_call') {
     const call = readToolCall(payload)
     if (call === null || typeof payload.id !== 'string') return null
+    if (COLLABORATION_CALLS.has(call.name))
+      return { kind: 'trace', uuid: payload.id, boundary: true }
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

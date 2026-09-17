@@ -1,13 +1,13 @@
 // A Session born by clicking, inside the shipped app, drives the plus control, harness tabs, composer and send chord (#2117).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import type { SessionCliBackend } from '../../../mocks/sessions/session-cli-backend'
 import type { SessionCli } from '../../../src/renderer/modules/sessions/harness/harnesses'
 import { createSessionByClick, rosterIds } from '../gestures'
+import type { SessionCliBackend } from '../session-cli-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// This runs before the resume cases, so its folder remains empty and the Roster row must precede a CLI transcript.
+// The mock folder starts empty, so the Roster row must precede a CLI transcript.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionCliBackend,

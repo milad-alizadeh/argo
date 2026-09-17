@@ -291,10 +291,23 @@ jobs:
         with:
           save-cache: "true"
 
+      # The same turbo cache server the Linux jobs use. `build` is the packaged app and each packaged
+      # proof is its own task over it, so an unchanged app is restored rather than packaged, and an
+      # unchanged proof over it replays its log rather than launching the app (#2324).
+      - if: steps.touched.outputs.desktop == 'true'
+        name: Turbo remote cache
+        uses: rharkor/caching-for-turbo@v2.5.1
+
+      - id: replay
+        if: steps.touched.outputs.desktop == 'true'
+        uses: ./.github/actions/turbo-replay
+        with:
+          task: build
+
       # `actions/cache` saves on every miss regardless of branch, so this writes a base-branch
       # `macOS-electron-*` cache on push to `main`, which a pull request's restore can then fall
       # back to (#2214): GitHub only restores a cache from the current branch or the default one.
-      - if: steps.touched.outputs.desktop == 'true'
+      - if: steps.touched.outputs.desktop == 'true' && steps.replay.outputs.status != 'HIT'
         uses: ./.github/actions/electron-cache
 
       # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all and
@@ -303,9 +316,9 @@ jobs:
       # first and npx's own `--no` then refuses to reinstall it.
       #
       # Bun's linker decides whether the root or apps/desktop holds `electron`, so probe both
-      # rather than assume a layout — `forgeBinary()` in packaged-app.mjs makes the same point.
+      # rather than assume a layout — `electronBinary()` in packaged-app.mjs makes the same point.
       - name: Install the Electron binary
-        if: steps.touched.outputs.desktop == 'true'
+        if: steps.touched.outputs.desktop == 'true' && steps.replay.outputs.status != 'HIT'
         shell: bash
         run: |
           set -euo pipefail
@@ -323,21 +336,19 @@ jobs:
       # is absent, packed inside the asar, or stripped of its spawn-helper exec bit.
       - name: Package arm64
         if: steps.touched.outputs.desktop == 'true'
-        working-directory: apps/desktop
-        run: bun run package --arch arm64
+        run: bun run turbo run build --filter=@argo/desktop
 
-      # The same assertions again, standalone against the artifact on disk. This is the form a
-      # downloaded release artifact would be checked in, and it keeps the checks honest if the
-      # hook is ever detached from the config.
+      # The same assertions again, standalone against the artifact on disk, plus the check that no
+      # mock CLI reached the bundle. This is the form a downloaded release artifact would be checked
+      # in, and it keeps the checks honest if the hook is ever detached from the config.
       #
       # `success()`, not `!cancelled()`: unlike the Linux gates, which are independent and worth
-      # running all of, these two are strictly downstream of the package. Running them after a
-      # failed package adds two red steps whose messages ("no app.asar", "no packaged binary")
-      # describe the symptom and bury the cause.
+      # running all of, these are strictly downstream of the package. Running them after a failed
+      # package adds red steps whose messages ("no app.asar", "no packaged binary") describe the
+      # symptom and bury the cause.
       - name: Test packaged app contents
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
+        run: bun run turbo run test:packaged-contents --filter=@argo/desktop
 
       # The same manifest the Linux tier compared, re-read off the app THIS job packaged (#1806).
       # It is not a duplicate run: signing adds files to a bundle, so the shipped bytes are the
@@ -345,16 +356,14 @@ jobs:
       # agree, and that agreement is itself worth a step once they stop.
       - name: Test package manifest
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:packaged-manifest out/Argo-darwin-arm64/Argo.app
+        run: bun run turbo run test:packaged-manifest --filter=@argo/desktop
 
       # The #1749 acceptance boundary, inside the shipped binary: start, input, output, resize,
       # interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a
       # flat descriptor count.
       - name: Test the shipped app
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:packaged-pty --arch arm64 --skip-package
+        run: bun run turbo run test:packaged-pty --filter=@argo/desktop
 
       # Every flow under `apps/desktop/e2e/`, one Playwright project each, against a packaged copy:
       # the Project contract, the Session Feed and journeys (#1831), and the Tickets workflow with
@@ -362,8 +371,11 @@ jobs:
       # assertions read the DOM, and reviewers inspect pixels in Storybook.
       - name: Test the e2e flows in a packaged copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        working-directory: apps/desktop
-        run: bun run test:e2e
+        run: bun run turbo run test:e2e --filter=@argo/desktop
+
+      - name: Test adversarial Session flows in a packaged copy
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
+        run: bun run turbo run test:e2e:adversarial --filter=@argo/desktop
 
       # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`
       # keeps both only on failure, so a red run here is the one place they exist to read.
