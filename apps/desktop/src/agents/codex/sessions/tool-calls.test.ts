@@ -50,6 +50,11 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
         label: 'Ran bun run quality',
         text: 'bun run quality',
       },
+      {
+        status: 'succeeded',
+        label: 'Called update_plan',
+        text: 'const result = await tools.update_plan({ plan: [{ step: "Inspect the Session", status: "in_progress" }] });\ntext(result);',
+      },
     ],
   )
 })
@@ -58,8 +63,8 @@ test('names the roster activity line after the newest tool call, the same way it
   const reply = await listed(await reader(context))
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
-    label: 'Ran bun run quality',
-    tool: 'exec',
+    label: 'Called update_plan',
+    tool: 'update_plan',
     target: null,
   })
 })

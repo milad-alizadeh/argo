@@ -21,6 +21,7 @@ function readArguments(value: unknown): Record<string, unknown> {
 }
 
 const EXEC_COMMAND = /tools\.exec_command\s*\(\s*\{[\s\S]*?(?:"cmd"|cmd)\s*:\s*"((?:\\.|[^"\\])*)"/
+const NESTED_TOOL = /\btools\.([A-Za-z][A-Za-z0-9_]*)\s*\(/
 
 function execInput(input: string): Record<string, unknown> {
   const match = input.match(EXEC_COMMAND)
@@ -32,12 +33,17 @@ function execInput(input: string): Record<string, unknown> {
   }
 }
 
+function customToolCall(name: string, input: string) {
+  const nested = name === 'exec' ? input.match(NESTED_TOOL)?.[1] : undefined
+  return { name: nested ?? name, input: execInput(input) }
+}
+
 function readToolCall(payload: Record<string, unknown>): ToolCall | null {
   if (typeof payload.call_id !== 'string' || typeof payload.name !== 'string') return null
   if (payload.type === 'function_call')
     return { id: payload.call_id, name: payload.name, input: readArguments(payload.arguments) }
   if (payload.type === 'custom_tool_call' && typeof payload.input === 'string')
-    return { id: payload.call_id, name: payload.name, input: execInput(payload.input) }
+    return { id: payload.call_id, ...customToolCall(payload.name, payload.input) }
   return null
 }
 

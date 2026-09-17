@@ -11,15 +11,9 @@ import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import { COMMAND_PRIORITY_HIGH, KEY_ENTER_COMMAND, type LexicalEditor } from 'lexical'
+import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
 
-import {
-  matchesChord,
-  pressedKeys,
-  SEND_MESSAGE_COMMAND,
-  shortcut,
-} from '@/core/commands/shortcuts'
 import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
 import type { SessionCli } from '../../harness/harnesses'
 import type { ComposerTicketContext } from '../../state/use-composer-store'
@@ -29,6 +23,7 @@ import { ComposerReferenceNode } from './references/composer-reference-node'
 import { ComposerReferencePlugin } from './references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from './references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from './references/composer-ticket-reference-plugin'
+import { SendOnEnterPlugin } from './session-composer-enter'
 import {
   composerNodes,
   composerTransformers,
@@ -51,33 +46,6 @@ function ComposerPlaceholder() {
       {COMPOSER_PLACEHOLDER}
     </span>
   )
-}
-
-const SEND_CHORD = shortcut(SEND_MESSAGE_COMMAND).chord
-
-// Lexical inserts a paragraph on Enter's keydown, before any React handler runs, so the send
-// claims the command first (#1999).
-function SendOnEnterPlugin({ onSend }: { onSend: () => void }) {
-  const [editor] = useLexicalComposerContext()
-
-  useEffect(
-    () =>
-      editor.registerCommand(
-        KEY_ENTER_COMMAND,
-        (event) => {
-          if (!event || event.isComposing || !matchesChord(SEND_CHORD, pressedKeys(event))) {
-            return false
-          }
-          event.preventDefault()
-          onSend()
-          return true
-        },
-        COMMAND_PRIORITY_HIGH,
-      ),
-    [editor, onSend],
-  )
-
-  return null
 }
 
 function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {

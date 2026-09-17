@@ -505,6 +505,24 @@ export const ShiftEnterAddsANewLine: Story = {
   },
 }
 
+export const ShiftEnterContinuesANumberedList: Story = {
+  render: () => <UnsettledSendStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, '1. Hello')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
+    await userEvent.keyboard('Second item')
+
+    const items = composer.querySelectorAll('ol > li')
+    await expect(items).toHaveLength(2)
+    await expect(items[0]).toHaveTextContent('Hello')
+    await expect(items[1]).toHaveTextContent('Second item')
+  },
+}
+
 export const EnterSends: Story = {
   render: () => <UnsettledSendStory />,
   play: async ({ canvasElement }) => {

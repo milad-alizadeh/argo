@@ -1,6 +1,8 @@
 // The shared Session reader's Project scoping and bounded-window pagination (#2239), split out
 // of reader.test.ts to keep that file under the line cap.
 import assert from 'node:assert/strict'
+import { mkdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { test } from 'node:test'
 import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
@@ -48,6 +50,66 @@ test("scopes each CLI's reply to the requested Project rather than merging every
   assert.deepEqual(
     scoped?.sessions.map((session) => session.id),
     ['claudeInA'],
+  )
+})
+
+test('includes a Codex Session from a linked worktree outside the Project folder', async (context) => {
+  const projectRoot = await tempRoot(context)
+  const linkedWorktree = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  const worktreeMetadata = path.join(projectRoot, '.git', 'worktrees', 'codex-linked')
+  await mkdir(worktreeMetadata, { recursive: true })
+  await writeFile(path.join(worktreeMetadata, 'gitdir'), `${path.join(linkedWorktree, '.git')}\n`)
+  await writeCodexTranscript({
+    root: codexRoot,
+    sessionId: 'codexLinked',
+    text: 'Hi.',
+    updatedAt: '2026-09-13T10:00:00.000Z',
+    cwd: linkedWorktree,
+  })
+  const reader = createSessionReader([codexSessionSource(codexRoot)])
+
+  const scoped = await listed(reader, 'list-linked', { projectRoot })
+
+  assert.deepEqual(
+    scoped?.sessions.map((session) => session.id),
+    ['codexLinked'],
+  )
+})
+
+test('includes the main and sibling worktrees when the selected Project is a linked worktree', async (context) => {
+  const mainWorktree = await tempRoot(context)
+  const selectedWorktree = await tempRoot(context)
+  const siblingWorktree = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  const selectedMetadata = path.join(mainWorktree, '.git', 'worktrees', 'selected')
+  const siblingMetadata = path.join(mainWorktree, '.git', 'worktrees', 'sibling')
+  await mkdir(selectedMetadata, { recursive: true })
+  await mkdir(siblingMetadata, { recursive: true })
+  await writeFile(path.join(selectedWorktree, '.git'), `gitdir: ${selectedMetadata}\n`)
+  await writeFile(path.join(selectedMetadata, 'commondir'), '../..\n')
+  await writeFile(path.join(selectedMetadata, 'gitdir'), `${path.join(selectedWorktree, '.git')}\n`)
+  await writeFile(path.join(siblingMetadata, 'gitdir'), `${path.join(siblingWorktree, '.git')}\n`)
+  for (const [sessionId, cwd, minute] of [
+    ['codexMain', mainWorktree, 0],
+    ['codexSelected', selectedWorktree, 1],
+    ['codexSibling', siblingWorktree, 2],
+  ] as const) {
+    await writeCodexTranscript({
+      root: codexRoot,
+      sessionId,
+      text: 'Hi.',
+      updatedAt: `2026-09-13T10:0${minute}:00.000Z`,
+      cwd,
+    })
+  }
+  const reader = createSessionReader([codexSessionSource(codexRoot)])
+
+  const scoped = await listed(reader, 'list-from-linked', { projectRoot: selectedWorktree })
+
+  assert.deepEqual(
+    scoped?.sessions.map((session) => session.id),
+    ['codexSibling', 'codexSelected', 'codexMain'],
   )
 })
 
