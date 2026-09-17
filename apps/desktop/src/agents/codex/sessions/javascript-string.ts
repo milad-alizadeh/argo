@@ -1,5 +1,7 @@
 export type Quote = '"' | "'" | '`'
 
+export const JAVASCRIPT_IDENTIFIER_SOURCE = '[A-Za-z_$][A-Za-z0-9_$]*'
+
 export function openedQuote(character: string): Quote | null {
   return character === '"' || character === "'" || character === '`' ? character : null
 }

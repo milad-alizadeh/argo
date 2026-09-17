@@ -1,6 +1,13 @@
-import { nextQuotedState, openedQuote, type Quote } from './javascript-string'
+import {
+  JAVASCRIPT_IDENTIFIER_SOURCE,
+  nextQuotedState,
+  openedQuote,
+  type Quote,
+} from './javascript-string'
 
-const TOOL_WRAPPER = /^\s*const\s+result\s*=\s*await\s+tools\.([A-Za-z][A-Za-z0-9_]*)\s*\(/
+const TOOL_WRAPPER = new RegExp(
+  `^\\s*const\\s+${JAVASCRIPT_IDENTIFIER_SOURCE}\\s*=\\s*await\\s+tools\\.([A-Za-z][A-Za-z0-9_]*)\\s*\\(`,
+)
 
 function argumentsUntilClose(input: string, start: number): string | null {
   let depth = 1

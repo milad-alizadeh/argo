@@ -135,7 +135,7 @@ const cases: { claim: string; records: unknown[]; plan: SessionPlan | null }[] =
   {
     claim: 'reads generated object keys without changing matching text inside a step',
     records: nestedPlanCall(
-      'const result = await tools.update_plan({ plan: [{ step: "Review { plan: value }", status: "in_progress" }] });\ntext(result);',
+      'const r = await tools.update_plan({ plan: [{ step: "Review { plan: value }", status: "in_progress" }] });\ntext(r);',
     ),
     plan: {
       state: 'available',

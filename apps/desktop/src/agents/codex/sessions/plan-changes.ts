@@ -4,12 +4,17 @@
 import { isRecord } from '@/boundary'
 import { readPlanSnapshot } from '@/core/sessions/plan'
 import type { PlanChange, TranscriptRecord } from '@/core/sessions/transcript'
-import { nextQuotedState, openedQuote, type Quote } from './javascript-string'
+import {
+  JAVASCRIPT_IDENTIFIER_SOURCE,
+  nextQuotedState,
+  openedQuote,
+  type Quote,
+} from './javascript-string'
 import { nestedToolCall } from './nested-tool-call'
 
 const PLAN_FUNCTION = 'update_plan'
 
-const OBJECT_KEY = /^([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/
+const OBJECT_KEY = new RegExp(`^(${JAVASCRIPT_IDENTIFIER_SOURCE})(\\s*:)`)
 
 function jsonObjectKeys(value: string): string {
   let json = ''
