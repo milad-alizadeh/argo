@@ -33,6 +33,7 @@ export type CodexSessionDriver = {
   compact: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
   roster: () => SessionRosterRow[]
+  onRosterChanged: (listener: () => void) => () => void
   liveMessages: (sessionId: string) => LiveMessage[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
@@ -54,14 +55,59 @@ export type CodexSessionDrive = Pick<
   | 'close'
 >
 
+function rosterChanges() {
+  const listeners = new Set<() => void>()
+  return {
+    notify: () => {
+      for (const listener of listeners) listener()
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+  }
+}
+
+function startManagedSession({
+  driver,
+  sessions,
+  renameWaiters,
+}: {
+  driver: ManagedSessionOptions
+  sessions: Map<string, ManagedSession>
+  renameWaiters: Map<string, (title: string) => void>
+}) {
+  return (request: Parameters<CodexSessionDriver['start']>[0]) =>
+    beginSession({ driver, renameWaiters, request, sessions })
+}
+
+function closeManagedSessions(
+  sessions: Map<string, ManagedSession>,
+  ownership: ManagedSessionOptions['ownership'],
+) {
+  return () => {
+    for (const [sessionId, session] of sessions) {
+      ownership?.release(sessionId)
+      session.channel.close()
+    }
+    sessions.clear()
+  }
+}
+
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
   const renameWaiters = new Map<string, (title: string) => void>()
+  const changes = rosterChanges()
+  const driver: ManagedSessionOptions = { ...options, onPlanUpdated: changes.notify }
   const held = (sessionId: string) => sessions.get(sessionId)
-  const channelFor = createResumingChannel({ driver: options, renameWaiters, sessions })
+  const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
 
   return {
-    start: (request) => beginSession({ driver: options, renameWaiters, request, sessions }),
+    start: startManagedSession({
+      driver,
+      sessions,
+      renameWaiters,
+    }),
     async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
       await startTurn({
@@ -82,7 +128,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
         readInterrupt,
       )
     },
-    compact: (sessionId) => compactCodexSession(sessions, options.now, sessionId),
+    compact: (sessionId) => compactCodexSession(sessions, driver.now, sessionId),
     async rename(sessionId, name) {
       const session = held(sessionId)
       if (!session) throw new Error('Codex Session is no longer running.')
@@ -91,8 +137,9 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       return accepted
     },
     roster: () => managedRoster(sessions),
+    onRosterChanged: changes.subscribe,
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
-    isLockedElsewhere: (sessionId) => options.ownership?.standing(sessionId) === 'held-elsewhere',
+    isLockedElsewhere: (sessionId) => driver.ownership?.standing(sessionId) === 'held-elsewhere',
     pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
     decideQuestion(sessionId, questionId, answers) {
       const session = held(sessionId)
@@ -103,13 +150,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       session.pendingQuestion = null
       return true
     },
-    close() {
-      for (const [sessionId, session] of sessions) {
-        options.ownership?.release(sessionId)
-        session.channel.close()
-      }
-      sessions.clear()
-    },
+    close: closeManagedSessions(sessions, driver.ownership),
   }
 }
 

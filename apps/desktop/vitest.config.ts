@@ -28,11 +28,26 @@ function storybookProject(theme: 'dark' | 'light') {
   }
 }
 
+// Bun runs every other suite here, but Bun 1.3.14 ships no `node:sqlite`, so the Session index
+// and everything read through it run on Node instead. `*.vitest.ts` is that role's one suffix,
+// and Bun's own matcher never claims it.
+const nodeProject = {
+  extends: true as const,
+  resolve: { alias: { '@': path.join(directory, 'src') } },
+  test: { name: 'node', environment: 'node' as const, include: ['src/**/*.vitest.ts'] },
+}
+
 export default defineConfig({
   optimizeDeps: {
     include: ['@storybook/react-dom-shim', 'react/jsx-dev-runtime'],
   },
   test: {
-    projects: [storybookProject('dark'), storybookProject('light')],
+    projects: [nodeProject, storybookProject('dark'), storybookProject('light')],
+    coverage: {
+      provider: 'v8',
+      reporter: ['lcov', 'text'],
+      reportsDirectory: 'coverage/storybook',
+      include: ['src/renderer/**'],
+    },
   },
 })

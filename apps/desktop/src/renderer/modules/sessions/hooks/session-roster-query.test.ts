@@ -19,6 +19,7 @@ function listedReply(requestId: string, title: string) {
     filesFound: 1,
     filesRead: 1,
     filesUnreadable: 0,
+    filesParsed: 0,
   }
 }
 

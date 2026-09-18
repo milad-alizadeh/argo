@@ -112,5 +112,6 @@ export function createFeedReader(
     },
     cancelSessionFeed: (request: SessionFeedCancelRequest) =>
       cancelFeed({ ownership, feeds, projections, reads, request }),
+    isFeedReadActive: reads.isActive,
   }
 }

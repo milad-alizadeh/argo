@@ -5,8 +5,8 @@
 // already produces, so `toolPresentation()` and `tool-groups.ts` draw them with no change.
 import { isRecord } from '@/boundary'
 import type { ToolCall, TranscriptRecord } from '@/core/sessions/transcript'
-import { nestedExecCalls } from './exec-wrapper'
 import { messageRecord } from './message-record'
+import { nestedToolCalls } from './nested-tool-call'
 import { readToolResults } from './rich-results'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
@@ -28,11 +28,15 @@ function readToolCalls(payload: Record<string, unknown>): ToolCall[] {
     return [{ id: payload.call_id, name: payload.name, input: readArguments(payload.arguments) }]
   if (payload.type !== 'custom_tool_call' || typeof payload.input !== 'string') return []
   if (payload.name !== 'exec')
-    return [{ id: payload.call_id, name: payload.name, input: { input: payload.input } }]
-  const nested = nestedExecCalls(payload.call_id, payload.input)
+    return [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: payload.input } }]
+  const nested = nestedToolCalls(payload.input)
   return nested.length === 0
     ? [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: payload.input } }]
-    : nested
+    : nested.map(({ name, argumentsText }, index) => ({
+        id: `${payload.call_id}:${index}`,
+        name,
+        input: readArguments(argumentsText),
+      }))
 }
 
 const COLLABORATION_CALLS = new Set(['spawn_agent', 'wait_agent'])

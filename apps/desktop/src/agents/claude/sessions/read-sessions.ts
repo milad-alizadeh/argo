@@ -4,9 +4,16 @@ import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/c
 import { discoverRoster } from '@/core/sessions/discover-roster'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { SessionSource } from '@/core/sessions/reader'
+import type { SessionIndex } from '@/core/sessions/session-index/contract'
 import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
 import type { LiveMessage } from '../drive/live-messages'
-import { clearFullRecords, discoverSessions, readSessionFiles } from './discover'
+import {
+  backfillTick,
+  clearFullRecords,
+  discoverSessions,
+  readSessionFiles,
+  reconcileAll,
+} from './discover'
 import { draftOverlay } from './live-feed'
 import {
   joinLiveProcesses,
@@ -65,6 +72,8 @@ export type ClaudeSessionRoots = {
   liveMessages?: (sessionId: string) => LiveMessage[]
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
+  // The app's Session index, when one is open. Absent, discovery parses the window itself (#2372).
+  index?: SessionIndex
 }
 
 async function discoverClaudeSessions(
@@ -73,7 +82,7 @@ async function discoverClaudeSessions(
 ) {
   roots.completeHandoffs?.()
   const live = await readLiveState(roots.processes)
-  const discovery = await discoverSessions(roots.transcripts, options)
+  const discovery = await discoverSessions(roots.transcripts, { ...options, index: roots.index })
   const managed = roots.managedSessions?.() ?? []
   await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
   return discoverRoster({
@@ -99,10 +108,16 @@ async function discoverClaudeSessions(
 export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
+  const index = roots.index
   return {
     cli: 'claude',
     discoverSessions: (options) => discoverClaudeSessions(roots, options),
     readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+    backfillTick:
+      index === undefined
+        ? undefined
+        : (batchSize) => backfillTick(roots.transcripts, index, batchSize),
+    reconcileAll: index === undefined ? undefined : () => reconcileAll(roots.transcripts, index),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),

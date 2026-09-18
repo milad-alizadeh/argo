@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { reasoningSummary } from './reasoning-summary'
 import { readSessionFact, readTurnRecord } from './session-facts'
 import { subagentActivity } from './subagent-activity'
 import { readToolRecord } from './tool-calls'
@@ -86,7 +87,10 @@ function responseMessage(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
-  if (payload.type !== 'message') return readPlanCall(payload) ?? readToolRecord(record, payload)
+  if (payload.type !== 'message')
+    return (
+      reasoningSummary(record, payload) ?? readPlanCall(payload) ?? readToolRecord(record, payload)
+    )
   if (typeof payload.id !== 'string') return null
   if (payload.role === 'assistant') {
     const blocks = messageBlocks(payload.content, ['output_text'])

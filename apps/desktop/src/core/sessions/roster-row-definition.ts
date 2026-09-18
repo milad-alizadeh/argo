@@ -17,18 +17,27 @@ export function createSessionRosterRowSchema(): z.ZodObject<RosterRowShape> {
 
 export type ManagedRosterSeed = {
   id: string
-  session: Pick<
-    SessionRosterRow,
-    | 'cli'
-    | 'compactionPercentage'
-    | 'compactionStartedAt'
-    | 'compactionTokens'
-    | 'handoffFailure'
-    | 'handoffStartedAt'
-    | 'cwd'
-    | 'status'
-    | 'setup'
-  > & { prompt: string; startedAt: string; title?: SessionTitle }
+  session: Omit<
+    Pick<
+      SessionRosterRow,
+      | 'cli'
+      | 'compactionPercentage'
+      | 'compactionStartedAt'
+      | 'compactionTokens'
+      | 'handoffFailure'
+      | 'handoffStartedAt'
+      | 'cwd'
+      | 'plan'
+      | 'status'
+      | 'setup'
+    >,
+    'plan'
+  > & {
+    prompt: string
+    startedAt: string
+    title?: SessionTitle
+    plan?: SessionRosterRow['plan']
+  }
 }
 
 function managedValue(field: RosterRowField, seed: ManagedRosterSeed): unknown {
@@ -40,7 +49,7 @@ const managedValues: Record<
   (field: RosterRowField, seed: ManagedRosterSeed) => unknown
 > = {
   id: (_, seed) => seed.id,
-  session: (field, seed) => seed.session[field.name as keyof typeof seed.session],
+  session: (field, seed) => seed.session[field.name as keyof typeof seed.session] ?? null,
   managed: () => 'managed',
   title: (_, seed) => seed.session.title ?? { text: seed.session.prompt, source: 'first-prompt' },
   interactive: () => 'interactive',
@@ -102,6 +111,9 @@ const reconciliationValues: Record<
   ) => unknown
 > = {
   held: (field, rows) => rows.held[field.name as keyof SessionRosterRow],
+  'held-when-present': (field, rows) =>
+    rows.held[field.name as keyof SessionRosterRow] ??
+    rows.observed[field.name as keyof SessionRosterRow],
   observed: (field, rows) => rows.observed[field.name as keyof SessionRosterRow],
   'stronger-title': (_, rows) => rows.strongerTitle(),
 }

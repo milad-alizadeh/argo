@@ -1,6 +1,6 @@
 import type { OwnershipLedger } from '@/core/sessions/ownership-ledger'
 import { managedRow } from '../../../core/sessions/managed-row'
-import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { SessionPlan, SessionRosterRow } from '../../../core/sessions/models'
 import type { CodexChannel } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { codexLaunchEnvironment } from './launch-environment'
@@ -12,6 +12,7 @@ export type ManagedSession = {
   channel: CodexChannel
   cwd: string
   prompt: string
+  plan: SessionPlan | null
   startedAt: string
   turnId: string | null
   status: SessionRosterRow['status']
@@ -26,6 +27,7 @@ export type ManagedSession = {
 export type ManagedSessionOptions = {
   findExecutable: () => string | null
   now: () => Date
+  onPlanUpdated?: () => void
   openChannel: (
     executable: string,
     options: { cwd: string; env: NodeJS.ProcessEnv },
@@ -68,11 +70,13 @@ export function rememberManagedSession(options: {
   renameWaiters: Map<string, (title: string) => void>
 }) {
   const { channel, cwd, driver, prompt, renameWaiters, sessionId, sessions } = options
+  const onPlanUpdated = driver.onPlanUpdated ?? (() => {})
   const messages = createLiveMessages(sessionId)
   sessions.set(sessionId, {
     channel,
     cwd,
     prompt,
+    plan: null,
     startedAt: driver.now().toISOString(),
     turnId: null,
     status: 'running',
@@ -87,7 +91,13 @@ export function rememberManagedSession(options: {
     driver.ownership?.release(sessionId)
   })
   channel.onNotification(
-    codexNotificationRecorder({ sessionId, sessions, renameWaiters, now: driver.now }),
+    codexNotificationRecorder({
+      sessionId,
+      sessions,
+      renameWaiters,
+      now: driver.now,
+      onPlanUpdated,
+    }),
   )
 }
 
@@ -96,6 +106,7 @@ export function managedRoster(sessions: Map<string, ManagedSession>): SessionRos
     managedRow(id, {
       ...session,
       cli: 'codex',
+      plan: session.plan,
       setup: { model: null, effort: null, mode: null },
       title: session.title,
       compactionPercentage: null,

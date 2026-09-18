@@ -11,7 +11,8 @@ export type Settled = {
 }
 
 export function awaitingAssistantReply(rows: readonly SessionFeedRow[]) {
-  return rows.length > 0 && rows.every((row) => row.shape === 'prose' && row.role === 'user')
+  const latest = rows.at(-1)
+  return latest?.shape === 'prose' && latest.role === 'user'
 }
 
 type SettledFeedOptions = {
@@ -44,7 +45,8 @@ export function useSettledFeed({
   // bound, it shows StalledFeed instead of spinning forever (#2102).
   // A kept document keeps its own hook instance for the Session it belongs to (basic-feed.tsx), so
   // this bound only ever watches a first load: a later revision leaves the previous settled
-  // document in place (the rule above) rather than making `awaitingFeed` true again.
+  // document in place (the rule above). A later prompt makes `awaitingFeed` true again until the
+  // next assistant delivery arrives.
   const awaitingFeed =
     isRunning &&
     (settled === null || settled.rows.length === 0 || awaitingAssistantReply(settled.rows))

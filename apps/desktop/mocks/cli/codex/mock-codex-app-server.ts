@@ -1,5 +1,3 @@
-// A real-child-process mock for `codex app-server --listen stdio://`, grounded in codex-cli 0.147.0's schema.
-
 import { appendFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import {
@@ -8,13 +6,13 @@ import {
 } from '../../../src/core/sessions/proof-protocol.ts'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
+import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
 import { askQuestion, handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
 
 process.title = MOCK_CODEX_PROCESS_TITLE
-
 let threadCounter = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 const COMPLETION_DELAY_MS = 10
@@ -26,9 +24,8 @@ let turnIndex = 0
 function threadIdFor(counter: number) {
   return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
 }
-function send(message: Record<string, unknown>) {
+const send = (message: Record<string, unknown>) =>
   process.stdout.write(`${JSON.stringify(message)}\n`)
-}
 function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
   const params = message.params ?? {}
   const threadId = params.threadId
@@ -41,11 +38,13 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
   }
   if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
   const turnId = `mock-turn-${threadCounter}-${Date.now()}`
+  sendPlanUpdate({ text, turnId, send, beforeTurnStart: true })
   send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
   send({
     method: 'thread/status/changed',
     params: { threadId, status: { type: 'active', activeFlags: [] } },
   })
+  sendPlanUpdate({ text, turnId, send, beforeTurnStart: false })
   if (text.includes('ASK')) {
     askQuestion(send, { threadId, turnId, text })
     return

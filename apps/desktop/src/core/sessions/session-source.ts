@@ -6,7 +6,7 @@
 import type { SessionDelegationUsage } from './background-work-contract'
 import type { SessionChain } from './chains'
 import type { SessionRenameReply, SessionRenameRequest } from './contract'
-import type { TranscriptDiscovery } from './discover-transcript-sessions'
+import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionFeedRow, SessionRosterRow } from './models'
 
 // What a driver shows over one Session's recorded Feed while a Turn streams: the rows to draw, and
@@ -48,4 +48,9 @@ export type SessionSource = {
   isLockedElsewhere?: (sessionId: string) => boolean
   overlayFor?: (sessionId: string) => FeedOverlay | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
+  // One more batch of this CLI's older history, and a full-tree reconcile (#2373). Present only
+  // when the app's Session index is open: without one, discovery parses each window itself and
+  // there is nothing for either to write.
+  backfillTick?: (batchSize?: number) => Promise<BackfillProgress>
+  reconcileAll?: () => Promise<{ filesParsed: number }>
 }

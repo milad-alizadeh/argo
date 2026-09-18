@@ -2,12 +2,15 @@
 // carries the production fuse profile with one fuse flipped, so the run reads a shipped app whose
 // only difference from the download is the inspector it is driven through.
 import { execFile } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/core/projects/proof-protocol'
+import { createProjectStore } from '../../../src/core/projects/sqlite-store'
+import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 
 const run = promisify(execFile)
@@ -30,23 +33,22 @@ export async function prepare(root, application?) {
   application ??= await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
-  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await mkdir(userData, { recursive: true })
   await mkdir(projectPath)
-  const registryPath = path.join(userData, 'portable-v1', 'projects.json')
-  await writeFile(
-    registryPath,
-    JSON.stringify({
-      version: 1,
-      projects: [
-        { id: 'project-1', path: projectPath, bindings: [{ token: 'must-stay-private' }] },
-      ],
-    }),
-  )
+  const databasePath = sharedDatabasePath(userData)
+  const projects = createProjectStore(new DatabaseSync(databasePath))
+  projects.replace({
+    projects: [
+      { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
+    ],
+    selectedId: 'project-1',
+  })
+  projects.close()
   return {
     application,
     userData,
     projectPath,
-    registryPath,
+    databasePath,
     beta: await repository(path.join(root, 'beta')),
     moved: path.join(root, 'beta-moved'),
     relocated: path.join(root, 'beta-relocated'),

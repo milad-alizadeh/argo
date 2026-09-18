@@ -1,6 +1,6 @@
 // The Account and Ticket channels exactly as the renderer reaches them, over real files and the
 // mock providers, for tests. Only the providers and Electron's `safeStorage` are stood in for.
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
@@ -16,7 +16,7 @@ import { attachAccountBridge } from './bridge'
 import { type AccountClient, createAccountClient } from './client'
 import type { Cipher } from './grants'
 import { dispatchAccount, dispatchTicket } from './harness-dispatch'
-import { PROJECT_ID } from './harness-fixtures'
+import { PROJECT_ID, projectStore } from './harness-fixtures'
 
 export { LIST, OCTOCAT, PROJECT_ID } from './harness-fixtures'
 
@@ -44,9 +44,17 @@ function bootMain(options: {
   endpoints: ReturnType<typeof accessEndpoints>
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
+  projects: ReturnType<typeof projectStore>
 }) {
-  const { userData, accountData, endpoints, cipher, openExternal } = options
-  const access = createAccountAccess({ userData, accountData, endpoints, cipher, openExternal })
+  const { userData, accountData, endpoints, cipher, openExternal, projects } = options
+  const access = createAccountAccess({
+    userData,
+    accountData,
+    endpoints,
+    cipher,
+    openExternal,
+    projects,
+  })
   const ticketWindow = createMockIpcWindow()
   attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
   const tickets: TicketClient = createTicketClient((channel, ticketRequest) =>
@@ -68,20 +76,17 @@ function accessEndpoints(github: MockGitHub, linear: MockLinear) {
 }
 
 // One cockpit's own application data, holding the one Project its Tickets are read for.
-async function makeUserData(context: TestContext, projectId: string): Promise<string> {
+async function makeUserData(context: TestContext): Promise<string> {
   const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-accounts-'))
   context.after(() => rm(userData, { recursive: true, force: true }))
-  await mkdir(path.join(userData, 'portable-v1'))
-  const projects = [{ id: projectId, path: '/tmp/argo-demo' }]
-  const document = { version: 1, projects, selectedId: projectId }
-  await writeFile(path.join(userData, 'portable-v1', 'projects.json'), JSON.stringify(document))
   return userData
 }
 
 export async function harness(context: TestContext) {
   const github: MockGitHub = await startMockGitHub()
   const linear: MockLinear = await startMockLinear()
-  const userData = await makeUserData(context, PROJECT_ID)
+  const userData = await makeUserData(context)
+  const projects = projectStore(PROJECT_ID)
   context.after(async () => {
     await github.close()
     await linear.close()
@@ -96,7 +101,7 @@ export async function harness(context: TestContext) {
   }
   // The Account store is this cockpit's own until a test points a second cockpit at it.
   const accountData = userData
-  let main = bootMain({ userData, accountData, endpoints, cipher, openExternal })
+  let main = bootMain({ userData, accountData, endpoints, cipher, openExternal, projects })
   // Every reply that crossed to the renderer, in order.
   const replies: unknown[] = []
   const record = (reply: unknown) => {
@@ -120,18 +125,19 @@ export async function harness(context: TestContext) {
       record(await dispatchTicket(main.tickets, type, fields)),
     restart: () => {
       main.accounts.signIn.dispose()
-      main = bootMain({ userData, accountData, endpoints, cipher, openExternal })
+      main = bootMain({ userData, accountData, endpoints, cipher, openExternal, projects })
     },
     // A second cockpit over the same Account store, with its own application data: two development
     // apps, each keeping its own Projects and Connections (#2304).
     otherCockpit: async (projectId: string) => {
-      const otherUserData = await makeUserData(context, projectId)
+      const otherUserData = await makeUserData(context)
       const other = bootMain({
         userData: otherUserData,
         accountData,
         endpoints,
         cipher,
         openExternal,
+        projects: projectStore(projectId),
       })
       context.after(() => other.accounts.signIn.dispose())
       return {

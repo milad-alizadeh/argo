@@ -55,6 +55,8 @@ export type SessionReader = {
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
   ownerCliFor(sessionId: string): Promise<string | undefined>
+  // A selected Feed still reading, so background indexing (#2373) can pause rather than race it.
+  isFeedReadActive(): boolean
 }
 
 type SessionContext = {
