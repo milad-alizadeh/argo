@@ -10,6 +10,7 @@ import {
 } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { AccountsDialog } from '../../accounts/components/accounts-dialog'
+import { useAccountsDialog } from '../../accounts/state/use-accounts-dialog'
 import { ConnectSourceFields, ConnectSourceForm } from '../components/connect-source-form'
 import { TicketDeck } from '../components/ticket-deck'
 import { TicketProblem } from '../components/ticket-problem'
@@ -55,6 +56,8 @@ function NoProject() {
 }
 
 function Body({ view }: { view: TicketsView }) {
+  // The Accounts dialog draws this same form inline, so it stays the one copy on screen.
+  const dialogOpen = useAccountsDialog((state) => state.open)
   switch (view.kind) {
     case 'no-project':
       return <NoProject />
@@ -63,7 +66,7 @@ function Body({ view }: { view: TicketsView }) {
     case 'problem':
       return <TicketProblem {...view} />
     case 'unconnected':
-      return <ConnectSourceForm key={view.projectId} {...view} />
+      return dialogOpen ? null : <ConnectSourceForm key={view.projectId} {...view} />
     case 'tickets':
       // A new Project starts with nothing selected, as the connect form starts empty.
       return <TicketDeck key={view.projectId} {...view} />
