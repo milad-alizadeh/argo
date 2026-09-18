@@ -70,6 +70,42 @@ function indexForWindow(window: BrowserWindow, userData: string) {
   return index
 }
 
+type SessionSourcesOptions = {
+  home: string
+  drivers: ReturnType<typeof createSessionDrivers>
+  compactionStarts: string | undefined
+  index: ReturnType<typeof openSessionIndexOrNone>
+}
+
+function sessionSources({ home, drivers, compactionStarts, index }: SessionSourcesOptions) {
+  const { claude, codex } = drivers
+  return [
+    claudeSessionSource({
+      transcripts: claudeTranscriptsRoot(home),
+      processes: claudeProcessesRoot(home),
+      managedSessions: claude.roster,
+      compactionStarts,
+      beginCompaction: claude.beginCompaction,
+      completeCompaction: claude.completeCompaction,
+      completeHandoffs: claude.completeHandoffs,
+      handoffEdges: claude.handoffEdges,
+      liveMessages: claude.liveMessages,
+      rename: (request) => renameClaudeSession(request, claude),
+      isLockedElsewhere: claude.isLockedElsewhere,
+      index,
+    }),
+    codexSessionSource(codexTranscriptsRoot(home), {
+      roster: codex.roster,
+      liveMessages: codex.liveMessages,
+      pendingQuestion: codex.pendingQuestion,
+      rename: (request) => renameCodexSession(request, codex),
+      isLockedElsewhere: codex.isLockedElsewhere,
+      threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
+      index,
+    }),
+  ]
+}
+
 export function attachSessions(
   window: BrowserWindow,
   request: {
@@ -92,31 +128,7 @@ export function attachSessions(
   const index = indexForWindow(window, userData)
   attachSessionBridge(window, {
     reader: createSessionReader(
-      [
-        claudeSessionSource({
-          transcripts: claudeTranscriptsRoot(home),
-          processes: claudeProcessesRoot(home),
-          managedSessions: claude.roster,
-          compactionStarts,
-          beginCompaction: claude.beginCompaction,
-          completeCompaction: claude.completeCompaction,
-          completeHandoffs: claude.completeHandoffs,
-          handoffEdges: claude.handoffEdges,
-          liveMessages: claude.liveMessages,
-          rename: (request) => renameClaudeSession(request, claude),
-          isLockedElsewhere: claude.isLockedElsewhere,
-          index,
-        }),
-        codexSessionSource(codexTranscriptsRoot(home), {
-          roster: codex.roster,
-          liveMessages: codex.liveMessages,
-          pendingQuestion: codex.pendingQuestion,
-          rename: (request) => renameCodexSession(request, codex),
-          isLockedElsewhere: codex.isLockedElsewhere,
-          threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
-          index,
-        }),
-      ],
+      sessionSources({ home, drivers, compactionStarts, index }),
       ticketLinks,
       archive,
     ),

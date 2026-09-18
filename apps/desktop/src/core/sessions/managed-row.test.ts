@@ -22,35 +22,28 @@ function row(id: string, status: SessionStatus): SessionRosterRow {
   })
 }
 
+function discovered(row: SessionRosterRow) {
+  return {
+    rows: [row],
+    filesFound: 1,
+    filesRead: 1,
+    filesUnreadable: 0,
+    filesParsed: 0,
+    nextCursor: null,
+  }
+}
+
 function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle | null) {
   const held = { ...row('s1', 'running'), title: heldTitle }
   const observed = { ...row('s1', 'running'), title: observedTitle }
-  const merged = mergeManagedRoster(
-    {
-      rows: [observed],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [held],
-  )
+  const merged = mergeManagedRoster(discovered(observed), [held])
   return merged.rows[0]?.title
 }
 
 function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
-  const merged = mergeManagedRoster(
-    {
-      rows: [row('s1', discoveredStatus)],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [row('s1', heldStatus)],
-  )
+  const merged = mergeManagedRoster(discovered(row('s1', discoveredStatus)), [
+    row('s1', heldStatus),
+  ])
   return merged.rows[0]?.status
 }
 
@@ -100,17 +93,11 @@ test('a managed Session keeps the newest Plan it knows from either source', () =
   }
   const observed = { ...row('s1', 'running'), plan }
   const heldWithoutPlan = row('s1', 'running')
-  const discovered = {
-    rows: [observed],
-    filesFound: 1,
-    filesRead: 1,
-    filesUnreadable: 0,
-    nextCursor: null,
-  }
+  const discovery = discovered(observed)
 
-  assert.deepEqual(mergeManagedRoster(discovered, [heldWithoutPlan]).rows[0]?.plan, plan)
+  assert.deepEqual(mergeManagedRoster(discovery, [heldWithoutPlan]).rows[0]?.plan, plan)
   assert.deepEqual(
-    mergeManagedRoster(discovered, [{ ...heldWithoutPlan, plan }]).rows[0]?.plan,
+    mergeManagedRoster(discovery, [{ ...heldWithoutPlan, plan }]).rows[0]?.plan,
     plan,
   )
 })
@@ -158,16 +145,6 @@ test('a definite discovered floor is never overridden by a held `running`', () =
 })
 
 test('a Session with no held counterpart passes through the discovered row untouched', () => {
-  const merged = mergeManagedRoster(
-    {
-      rows: [row('only-discovered', 'idle')],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [],
-  )
+  const merged = mergeManagedRoster(discovered(row('only-discovered', 'idle')), [])
   assert.equal(merged.rows[0]?.status, 'idle')
 })
