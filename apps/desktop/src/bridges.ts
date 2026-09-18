@@ -8,6 +8,7 @@ import { attachAccountBridge } from './core/accounts/bridge'
 import { safeStorageCipher } from './core/accounts/safe-storage'
 import { attachAppearanceBridge } from './core/appearance/bridge'
 import { attachProjectBridge } from './core/projects/bridge'
+import type { ProjectStore } from './core/projects/sqlite-store'
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { providerEndpoints } from './providers/endpoints'
@@ -18,13 +19,13 @@ export function attachBridges(
   request: {
     userData: string
     accountData: string
-    projectData: string
+    projects: ProjectStore
     rendererURL: string
     proofEnabled: boolean
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, projectData, rendererURL, proofEnabled } = request
+  const { userData, accountData, projects, rendererURL, proofEnabled } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   const drivers = createSessionDrivers(userData, home, proofEnabled)
@@ -32,7 +33,7 @@ export function attachBridges(
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
-  attachProjectBridge(window, { projectData, rendererURL })
+  attachProjectBridge(window, { projects, rendererURL })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })
@@ -42,6 +43,7 @@ export function attachBridges(
     endpoints: providerEndpoints(proofEnabled),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),
+    projects,
   })
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, { access, rendererURL })

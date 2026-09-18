@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { type BrowserWindow, dialog } from 'electron'
 import { registerDomainHandlers } from '../contract/domain'
 import { platformText } from '../i18n/platform'
@@ -9,6 +8,7 @@ import { openProject } from './open-project'
 import { PROJECT_OPERATIONS } from './operations'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
 import { selectProject } from './select-project'
+import type { ProjectStore as ProjectRegistryStore } from './sqlite-store'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
 // asks for the action by name and receives the resulting registry (docs/portable-integration-contracts.md).
@@ -24,10 +24,10 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 export function attachProjectBridge(
   window: BrowserWindow,
-  storage: { projectData: string; rendererURL: string },
+  storage: { projects: ProjectRegistryStore; rendererURL: string },
 ): void {
   const store: ProjectStore = {
-    registryPath: path.join(storage.projectData, 'portable-v1', 'projects.json'),
+    projects: storage.projects,
     chooseFolder: () => chooseFolder(window),
     exclusive: createWriteQueue(),
   }
@@ -37,8 +37,8 @@ export function attachProjectBridge(
     operations: PROJECT_OPERATIONS,
     context: store,
     handlers: {
-      open: (request, context) => openProject(request, context.registryPath),
-      list: (request, context) => listProjects(request, context.registryPath),
+      open: (request, context) => openProject(request, context),
+      list: (request, context) => listProjects(request, context),
       register: registerProject,
       relocate: relocateProject,
       select: selectProject,

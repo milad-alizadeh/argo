@@ -8,23 +8,32 @@ import type { ProjectErrorCode } from './contract'
 
 const run = promisify(execFile)
 
-export type RepositoryRoot = { root: string } | { failure: ProjectErrorCode }
+export type RepositoryRoot =
+  | { root: string; commonDirectory: string }
+  | { failure: ProjectErrorCode }
 
 // git decides what a git root is. Reimplementing the walk would have to answer worktrees, submodule
 // links and `GIT_DIR`, and would answer them differently from the tool the rest of Argo drives.
 export async function repositoryRoot(folder: string): Promise<RepositoryRoot> {
   let output: { stdout: string }
   try {
-    output = await run('git', ['-C', folder, 'rev-parse', '--show-toplevel'])
+    output = await run('git', [
+      '-C',
+      folder,
+      'rev-parse',
+      '--show-toplevel',
+      '--path-format=absolute',
+      '--git-common-dir',
+    ])
   } catch (error) {
     return { failure: spawnFailure(error) }
   }
-  const root = output.stdout.trim()
-  if (!root) return { failure: 'not-a-repository' }
+  const [root, commonDirectory] = output.stdout.trim().split('\n')
+  if (!root || !commonDirectory) return { failure: 'not-a-repository' }
   try {
     // Two paths to one repository must land on one Project, so the stored path is the resolved
     // one. On macOS `/tmp` is a symlink to `/private/tmp`, which is the case that shows it.
-    return { root: await realpath(root) }
+    return { root: await realpath(root), commonDirectory: await realpath(commonDirectory) }
   } catch {
     return { failure: 'project-unavailable' }
   }

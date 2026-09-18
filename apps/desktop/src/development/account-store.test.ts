@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { createGrantStore } from '../core/accounts/grants'
 import { readAccounts, writeAccounts } from '../core/accounts/registry'
-import { readRegistry, writeRegistry } from '../core/projects/registry'
+import { sharedDatabasePath } from '../core/storage/shared-database'
 import { DEVELOPMENT_APPLICATION_NAME, developmentStoreDirectories } from './account-store'
 import { type DevelopmentInstance, developmentInstance } from './instance'
 
@@ -94,14 +94,6 @@ async function persistFirstLaunch(first: ReturnType<typeof developmentStoreDirec
     }),
     true,
   )
-  assert.equal(
-    await writeRegistry(path.join(first.projectData, 'portable-v1', 'projects.json'), {
-      projects: [{ id: 'project-1', path: '/tmp/argo' }],
-      selectedId: 'project-1',
-      other: {},
-    }),
-    true,
-  )
   return grants
 }
 
@@ -131,17 +123,6 @@ async function assertSecondLaunch(second: ReturnType<typeof developmentStoreDire
     ok: true,
     grant: { accessToken: 'development-token', scopes: ['repo'], renewal: null },
   })
-  assert.deepEqual(
-    await readRegistry(path.join(second.projectData, 'portable-v1', 'projects.json')),
-    {
-      ok: true,
-      registry: {
-        projects: [{ id: 'project-1', path: '/tmp/argo' }],
-        selectedId: 'project-1',
-        other: {},
-      },
-    },
-  )
 }
 
 test('a second worktree reads the Account grant and selected Project from the first', async (context) => {
@@ -150,6 +131,10 @@ test('a second worktree reads the Account grant and selected Project from the fi
   const stores = worktreeStores(path.join(root, 'Application Support'))
   assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
   assert.deepEqual(stores.first, stores.second)
+  assert.equal(
+    sharedDatabasePath(stores.first.projectData),
+    sharedDatabasePath(stores.second.projectData),
+  )
   assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
   await persistFirstLaunch(stores.first)
   await assertSecondLaunch(stores.second)
