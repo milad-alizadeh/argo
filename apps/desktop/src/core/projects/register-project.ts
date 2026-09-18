@@ -1,29 +1,27 @@
 // Registration and relocation. Both open a folder chooser, both prove the choice is a git root,
 // and neither ever creates a second identity for a repository that already has one.
-import { type ProjectError, type ProjectErrorCode, projectError } from './contract'
+
+import { randomUUID } from 'node:crypto'
+import { type ProjectError, projectError } from './contract'
 import type {
   ProjectListed,
   ProjectListReply,
   ProjectRegisterRequest,
   ProjectRelocateRequest,
 } from './messages'
-import {
-  EMPTY_REGISTRY,
-  listed,
-  newProjectId,
-  type Registration,
-  type Registry,
-  type RegistryRead,
-  readRegistry,
-  writeRegistry,
-} from './registry'
+import { listed } from './presentation'
 import { repositoryRoot } from './repository'
+import type {
+  ProjectRegistration,
+  ProjectRegistry,
+  ProjectStore as ProjectRegistryStore,
+} from './sqlite-store'
 
 // The dialog is the main process's own authority. It is passed in so that everything below stays
 // free of Electron and runs in the ordinary suite. `exclusive` serializes registration and
 // relocation, both a read-modify-write, so two started together cannot lose one's change.
 export type ProjectStore = {
-  registryPath: string
+  projects: ProjectRegistryStore
   chooseFolder: () => Promise<string | null>
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
 }
@@ -34,23 +32,15 @@ export const cancelled = (requestId: string): ProjectListReply => ({
   requestId,
 })
 
-// A registry that has never been written is an empty cockpit, not a storage failure. Every other
-// read failure is one.
-export function openRegistry(read: RegistryRead): Registry | ProjectErrorCode {
-  if (read.ok) return read.registry
-  if (read.reason === 'missing') return EMPTY_REGISTRY
-  return read.reason === 'invalid' ? 'storage-invalid' : 'storage-unavailable'
-}
-
-// The chooser is modal and the registry is a file another window of this app can write while it is
-// open, so the snapshot the pre-checks read is stale by the time a choice comes back. Every commit
-// is built on a re-read rather than on that snapshot.
 export async function currentRegistry(
   store: ProjectStore,
   requestId: string,
-): Promise<Registry | ProjectError> {
-  const registry = openRegistry(await readRegistry(store.registryPath))
-  return typeof registry === 'string' ? projectError(registry, requestId) : registry
+): Promise<ProjectRegistry | ProjectError> {
+  try {
+    return store.projects.read()
+  } catch {
+    return projectError('storage-unavailable', requestId)
+  }
 }
 
 async function chooseRepository(store: ProjectStore) {
@@ -59,7 +49,7 @@ async function chooseRepository(store: ProjectStore) {
   return repositoryRoot(folder)
 }
 
-type Chosen = { root: string; registry: Registry }
+type Chosen = { root: string; commonDirectory: string; registry: ProjectRegistry }
 
 async function chooseAndReread(
   store: ProjectStore,
@@ -70,15 +60,17 @@ async function chooseAndReread(
   if ('failure' in chosen) return projectError(chosen.failure, requestId)
   const registry = await currentRegistry(store, requestId)
   if ('type' in registry) return registry
-  return { root: chosen.root, registry }
+  return { ...chosen, registry }
 }
 
 export async function commit(
   store: ProjectStore,
   requestId: string,
-  registry: Registry,
+  registry: ProjectRegistry,
 ): Promise<ProjectListed | ProjectError> {
-  if (!(await writeRegistry(store.registryPath, registry))) {
+  try {
+    store.projects.replace(registry)
+  } catch {
     return projectError('storage-not-written', requestId)
   }
   return listed(requestId, registry)
@@ -94,10 +86,14 @@ export function registerProject(
     if ('type' in opened) return opened
     const picked = await chooseAndReread(store, request.requestId)
     if ('type' in picked) return picked
-    const { root, registry } = picked
-    // One git root is one Project. A folder already registered is selected, never registered twice.
-    const known = registry.projects.find((project) => project.path === root)
-    const project: Registration = known ?? { id: newProjectId(), path: root }
+    const { root, commonDirectory, registry } = picked
+    // Git's common directory is shared by linked worktrees but differs for independent clones.
+    const known = registry.projects.find((project) => project.commonDirectory === commonDirectory)
+    const project: ProjectRegistration = known ?? {
+      id: `project-${randomUUID()}`,
+      path: root,
+      commonDirectory,
+    }
     const projects = known ? registry.projects : [...registry.projects, project]
     return commit(store, request.requestId, { ...registry, projects, selectedId: project.id })
   })
@@ -115,19 +111,19 @@ export function relocateProject(
     }
     const picked = await chooseAndReread(store, request.requestId)
     if ('type' in picked) return picked
-    const { root, registry } = picked
+    const { root, commonDirectory, registry } = picked
     // The identity is checked again on the re-read. A Project another window removed while the
     // chooser was open would otherwise be written back as a selection that names nothing.
     if (!registry.projects.some((project) => project.id === request.projectId)) {
       return projectError('missing-project', request.requestId)
     }
     const taken = registry.projects.find(
-      (project) => project.path === root && project.id !== request.projectId,
+      (project) => project.commonDirectory === commonDirectory && project.id !== request.projectId,
     )
     if (taken) return projectError('already-registered', request.requestId)
     // The path moves and the identity does not, which is the whole point of relocation.
     const projects = registry.projects.map((project) =>
-      project.id === request.projectId ? { ...project, path: root } : project,
+      project.id === request.projectId ? { ...project, path: root, commonDirectory } : project,
     )
     return commit(store, request.requestId, {
       ...registry,

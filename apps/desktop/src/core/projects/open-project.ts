@@ -1,21 +1,27 @@
 import { opendir } from 'node:fs/promises'
 import { isRecord } from '../../boundary'
 import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from './contract'
-import { readRegistry, toSummary } from './registry'
+import { toSummary } from './presentation'
+import type { ProjectStore } from './register-project'
+import { isProjectStoreInvalid } from './sqlite-store'
 
-// Opening reads storage that must already exist, so an absent registry is a storage failure here
-// where `project.list` reads it as an empty cockpit.
-async function loadProjects(registryPath: string) {
-  const read = await readRegistry(registryPath)
-  if (read.ok) return read.registry.projects
-  return projectError(read.reason === 'invalid' ? 'storage-invalid' : 'storage-unavailable', null)
+// A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
+function loadProjects(store: ProjectStore) {
+  try {
+    return store.projects.read().projects
+  } catch (error) {
+    return projectError(
+      isProjectStoreInvalid(error) ? 'storage-invalid' : 'storage-unavailable',
+      null,
+    )
+  }
 }
 
 export async function openProject(
   request: ProjectOpenRequest,
-  registryPath: string,
+  store: ProjectStore,
 ): Promise<ProjectOpenReply> {
-  const projects = await loadProjects(registryPath)
+  const projects = loadProjects(store)
   if (!Array.isArray(projects)) return { ...projects, requestId: request.requestId }
   const project = projects.find((entry) => entry.id === request.projectId)
   if (!project) return projectError('missing-project', request.requestId)

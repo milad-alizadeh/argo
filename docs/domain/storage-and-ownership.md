@@ -5,10 +5,11 @@ truth in a code host, Sessions in the filesystem (CLI transcripts) + terminal. A
 the **glue** — the Project registry, the Account registry, and the user-asserted links no
 external signal carries.
 
-- **Files are always the source of truth.** Argo's owned state lives in **per-machine app
-  data** (`userData`), **never committed** (sessions, paths, registration are per-machine).
+- **Argo-owned per-machine state** lives in one SQLite database under `userData`. Durable tables
+  are authoritative for registries, global settings, user-asserted links, and resumable setup
+  checkpoints. Credentials stay in the OS keychain.
 - **The join is derived, never stored.** Branch-per-session, work-item-per-branch, PR/CI state
   are all derivable. The **Hub** assembles the join in memory on launch as a throwaway
   projection (ADR-0008).
-- **SQLite, if it returns, is only ever a rebuildable cache/index** — never a source of truth.
-  Deferred until profiling forces it.
+- **Derived indexes share the database but not its authority.** Their tables are disposable and
+  rebuild from external sources. Rebuilding them never replaces or deletes durable tables.

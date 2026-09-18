@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import { fixture, register, repository } from '../../../mocks/projects/mock-registration'
 import { registerProject } from './register-project'
@@ -20,19 +19,16 @@ test('selecting a registered Project writes selectedId to the registry', async (
   const beta = await registerProject(register('r2'), setup.store)
   const reply = await selectProject(select('s1', beta.selectedId), setup.store)
   assert.equal(reply.selectedId, beta.selectedId)
-  assert.equal(
-    JSON.parse(await readFile(setup.store.registryPath, 'utf8')).selectedId,
-    beta.selectedId,
-  )
+  assert.equal(setup.store.projects.read().selectedId, beta.selectedId)
 })
 
 test('selecting an unregistered identity refuses without writing', async (context) => {
   const setup = await fixture(context)
   setup.choose(await repository(setup.root, 'alpha'))
   const alpha = await registerProject(register('r1'), setup.store)
-  const before = await readFile(setup.store.registryPath, 'utf8')
+  const before = setup.store.projects.read()
   const reply = await selectProject(select('s1', 'project-unknown'), setup.store)
   assert.equal(reply.code, 'missing-project')
-  assert.equal(await readFile(setup.store.registryPath, 'utf8'), before)
+  assert.deepEqual(setup.store.projects.read(), before)
   assert.equal(alpha.selectedId, alpha.selectedId)
 })
