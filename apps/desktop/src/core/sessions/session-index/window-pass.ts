@@ -68,8 +68,8 @@ export function indexedChains(
 ): IndexedSessionChain[] {
   return chains.map((chain) => {
     const row = project(chain)
-    const searchText = projectFeed(chain, undefined).rows
-      .flatMap((feedRow) => {
+    const searchText = projectFeed(chain, undefined)
+      .rows.flatMap((feedRow) => {
         switch (feedRow.shape) {
           case 'prose':
           case 'thought':

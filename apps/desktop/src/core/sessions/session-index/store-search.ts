@@ -7,9 +7,7 @@ import { matchesSearchQuery } from '../search-match'
 const EXCERPT_RADIUS = 80
 
 function plainTextQuery(query: string): string {
-  return (query.match(/[\p{L}\p{N}_]+/gu) ?? [])
-    .map((word) => `"${word}"`)
-    .join(' AND ')
+  return (query.match(/[\p{L}\p{N}_]+/gu) ?? []).map((word) => `"${word}"`).join(' AND ')
 }
 
 function excerptOf(text: string, query: string): string | null {
@@ -39,7 +37,9 @@ export function searchChainsOf(
             'SELECT chain_id, text FROM session_search WHERE cli = ? AND session_search MATCH ?',
           )
           .all(cli, content) as { chain_id: string; text: string }[])
-  const excerpts = new Map(contentMatches.map((match) => [match.chain_id, excerptOf(match.text, query)]))
+  const excerpts = new Map(
+    contentMatches.map((match) => [match.chain_id, excerptOf(match.text, query)]),
+  )
   return titleOrId.flatMap((record) => {
     const parsed = sessionRosterRowSchema.safeParse(JSON.parse(record.row_json))
     if (!parsed.success) return []
