@@ -4,6 +4,7 @@ export const PROJECT_PROOF_SURFACE = [
   'awaitAccount',
   'beginProjectSetup',
   'cancelAccount',
+  'cancelProjectSetup',
   'cancelSessionFeed',
   'chooseSessionAttachments',
   'compactSession',

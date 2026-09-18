@@ -45,6 +45,27 @@ test('reads one default target with its setup, run, build and test commands', as
   })
 })
 
+test('keeps a hash inside a quoted command', async (context) => {
+  const project = await fixture(context)
+  await writeFile(
+    path.join(project, '.argo', 'settings.toml'),
+    [
+      'version = 1',
+      '',
+      '[targets.app]',
+      'default = true',
+      'path = "."',
+      'setup = "true"',
+      'run = "echo #ready"',
+      'build = "true"',
+      'test = "true"',
+      '',
+    ].join('\n'),
+  )
+
+  assert.equal((await readProjectConfiguration(project))?.targets[0]?.run, 'echo #ready')
+})
+
 test('does not make commands locally overridable', async (context) => {
   const project = await fixture(context)
   await writeFile(

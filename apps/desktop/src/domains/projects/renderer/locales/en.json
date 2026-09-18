@@ -14,8 +14,13 @@
     "description": "Argo needs a shared Project configuration before it can start a managed Session.",
     "configurationLabel": "Project configuration",
     "save": "Save configuration",
+    "saving": "Saving configuration…",
     "saved": "Configuration saved in the setup worktree.",
+    "cancel": "Cancel setup",
+    "cancelling": "Cancelling setup…",
+    "cancelled": "Project setup cancelled.",
     "validate": "Validate configuration",
+    "validating": "Validating configuration…",
     "valid": "All Project commands passed validation.",
     "invalid": "A Project command failed validation."
   }

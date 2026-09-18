@@ -25,10 +25,12 @@ const tomlHighlighting = syntaxHighlighting(
     { tag: [tags.number, tags.bool], color: 'var(--chart-4)' },
   ]),
 )
+const CONFIGURATION_EDITOR_ID = 'project-configuration'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
   const setup = useManualProjectSetup(project.id, {
+    cancelled: t('setup.cancelled'),
     saved: t('setup.saved'),
     valid: t('setup.valid'),
     invalid: t('setup.invalid'),
@@ -38,8 +40,9 @@ export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
 
 type ProjectSetupViewProps = {
   message: string | null
+  cancel: () => Promise<void>
   saved: boolean
-  saving: boolean
+  saving: 'cancel' | 'save' | 'validate' | null
   source: string
   save: () => Promise<void>
   validate: () => Promise<void>
@@ -50,6 +53,7 @@ type ProjectSetupViewProps = {
 export function ProjectSetupView({
   project,
   message,
+  cancel,
   saved,
   saving,
   source,
@@ -63,10 +67,19 @@ export function ProjectSetupView({
     () => [
       tomlLanguage,
       tomlHighlighting,
-      EditorView.contentAttributes.of({ 'aria-label': t('setup.configurationLabel') }),
+      EditorView.contentAttributes.of({
+        'aria-label': t('setup.configurationLabel'),
+        id: CONFIGURATION_EDITOR_ID,
+      }),
     ],
     [t],
   )
+  const busyMessages = {
+    cancel: t('setup.cancelling'),
+    save: t('setup.saving'),
+    validate: t('setup.validating'),
+  }
+  const busyMessage = saving === null ? null : busyMessages[saving]
   return (
     <main
       aria-label={t('setup.label', { name: project.name })}
@@ -85,7 +98,7 @@ export function ProjectSetupView({
         <EmptyContent>
           <label
             className="w-full text-left type-label font-medium"
-            htmlFor="project-configuration"
+            htmlFor={CONFIGURATION_EDITOR_ID}
           >
             {t('setup.configurationLabel')}
           </label>
@@ -99,12 +112,24 @@ export function ProjectSetupView({
             }}
             value={source}
           />
-          {message ? <p role="status">{message}</p> : null}
-          <Button disabled={saving || !source} onClick={save} type="button">
-            {t('setup.save')}
+          {message || busyMessage ? (
+            <p aria-live="polite" role="status">
+              {message ?? busyMessage}
+            </p>
+          ) : null}
+          <Button disabled={saving !== null || !source} onClick={save} type="button">
+            {saving === 'save' ? t('setup.saving') : t('setup.save')}
           </Button>
-          <Button disabled={saving || !saved} onClick={validate} type="button" variant="outline">
-            {t('setup.validate')}
+          <Button
+            disabled={saving !== null || !saved}
+            onClick={validate}
+            type="button"
+            variant="outline"
+          >
+            {saving === 'validate' ? t('setup.validating') : t('setup.validate')}
+          </Button>
+          <Button disabled={saving !== null} onClick={cancel} type="button" variant="ghost">
+            {saving === 'cancel' ? t('setup.cancelling') : t('setup.cancel')}
           </Button>
         </EmptyContent>
       </Empty>

@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { parse } from '@iarna/toml'
 
 export type ProjectTarget = {
   name: string
@@ -21,7 +22,10 @@ const localConfiguration = (projectPath: string) =>
   path.join(projectPath, '.argo', 'settings.local.toml')
 
 export async function readProjectConfigurationSource(projectPath: string): Promise<string | null> {
-  return readFile(sharedConfiguration(projectPath), 'utf8').catch(() => null)
+  const shared = await readFile(sharedConfiguration(projectPath), 'utf8').catch(() => null)
+  if (shared === null) return null
+  const local = await readFile(localConfiguration(projectPath), 'utf8').catch(() => '')
+  return `${shared}\n# Local override\n${local}`
 }
 
 export async function readProjectConfiguration(
@@ -59,47 +63,33 @@ async function readToml(file: string): Promise<ParsedConfiguration | null | unde
 }
 
 function parseConfiguration(source: string): ParsedConfiguration | null {
-  const result: ParsedConfiguration = { version: undefined, targets: new Map() }
-  let target: TargetValues | undefined
-  for (const rawLine of source.split('\n')) {
-    const line = rawLine.replace(/\s*#.*/, '').trim()
-    if (!line) continue
-    const name = targetName(line)
-    if (name) {
-      target = result.targets.get(name) ?? {}
-      result.targets.set(name, target)
-      continue
+  try {
+    const parsed = parse(source)
+    const targets = parsed.targets
+    if (!isObject(targets)) return null
+    const configured = new Map<string, TargetValues>()
+    for (const [name, values] of Object.entries(targets)) {
+      if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(name) || !isObject(values)) return null
+      const target: TargetValues = {}
+      for (const [key, value] of Object.entries(values)) {
+        if (typeof value !== 'string' && typeof value !== 'boolean' && typeof value !== 'number') {
+          return null
+        }
+        target[key] = value
+      }
+      configured.set(name, target)
     }
-    if (!addAssignment(result, target, line)) return null
+    return {
+      version: typeof parsed.version === 'number' ? parsed.version : undefined,
+      targets: configured,
+    }
+  } catch {
+    return null
   }
-  return result
 }
 
-function targetName(line: string): string | null {
-  return /^\[targets\.([A-Za-z][A-Za-z0-9_-]*)\]$/.exec(line)?.[1] ?? null
-}
-
-function addAssignment(
-  configuration: ParsedConfiguration,
-  target: TargetValues | undefined,
-  line: string,
-): boolean {
-  const assignment = /^([A-Za-z][A-Za-z0-9_-]*)\s*=\s*(.+)$/.exec(line)
-  const key = assignment?.[1]
-  const value = assignment?.[2] && primitive(assignment[2])
-  if (!key || value === null || value === undefined) return false
-  if (target) target[key] = value
-  else if (key === 'version' && typeof value === 'number') configuration.version = value
-  return true
-}
-
-function primitive(source: string): string | boolean | number | null {
-  if (source === 'true') return true
-  if (source === 'false') return false
-  if (/^\d+$/.test(source)) return Number(source)
-  const string = /^"([^"\\]*(?:\\.[^"\\]*)*)"$/.exec(source)
-  const value = string?.[1]
-  return value === undefined ? null : value.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function mergeTargets(

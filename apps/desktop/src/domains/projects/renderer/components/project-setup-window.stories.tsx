@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { ProjectSetupWindow } from './project-setup-window'
+import { ProjectSetupView, ProjectSetupWindow } from './project-setup-window'
 
 const meta: Meta<typeof ProjectSetupWindow> = {
   title: 'Projects/Setup Window',
@@ -38,6 +38,12 @@ export const ManualConfiguration: Story = {
         project: { id: projectId, name: 'example' },
         valid: true,
       }),
+      cancelProjectSetup: async ({ projectId }) => ({
+        version: 1,
+        type: 'project.setup.cancelled',
+        requestId: 'setup-4',
+        project: { id: projectId, name: 'example' },
+      }),
     }
     return () => {
       window.argo = before
@@ -53,4 +59,40 @@ export const ManualConfiguration: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Validate configuration' }))
     await expect(canvas.getByText('All Project commands passed validation.')).toBeVisible()
   },
+}
+
+export const SavingConfiguration: Story = {
+  args: ManualConfiguration.args,
+  render: ({ project }) => (
+    <ProjectSetupView
+      cancel={async () => undefined}
+      message={null}
+      project={project}
+      save={async () => undefined}
+      saved={false}
+      saving="save"
+      setSaved={() => undefined}
+      setSource={() => undefined}
+      source="version = 1\n"
+      validate={async () => undefined}
+    />
+  ),
+}
+
+export const FailedValidation: Story = {
+  args: ManualConfiguration.args,
+  render: ({ project }) => (
+    <ProjectSetupView
+      cancel={async () => undefined}
+      message="A Project command failed validation."
+      project={project}
+      save={async () => undefined}
+      saved
+      saving={null}
+      setSaved={() => undefined}
+      setSource={() => undefined}
+      source="version = 1\n"
+      validate={async () => undefined}
+    />
+  ),
 }
