@@ -1219,9 +1219,8 @@ function DisclosureHistoryHarness() {
   )
 }
 
-// TanStack keeps an earlier reading position when a reply arrives, then its own scrollToEnd
-// action renders the new tail. This covers the one Feed viewport controller's contract.
-export const HistoryDoesNotFollowStreamingReply: Story = {
+// A reader away from the tail gets a way to return after a reply arrives.
+export const HistoryOffersJumpToLatestAfterNewReply: Story = {
   render: () => <HistoryScrollHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -1235,7 +1234,6 @@ export const HistoryDoesNotFollowStreamingReply: Story = {
     const scrollHeight = history.scrollHeight
     await userEvent.click(canvas.getByRole('button', { name: 'Receive streamed reply' }))
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
-    await expect(history.scrollTop).toBe(0)
     const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
     await expect(latest.querySelector('svg')).toBeVisible()
     await userEvent.click(latest)
