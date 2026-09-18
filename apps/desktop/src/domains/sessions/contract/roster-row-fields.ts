@@ -21,6 +21,7 @@ const optionalCount = () => z.number().int().nonnegative().nullable().optional()
 const optionalDate = () => z.string().datetime().nullable().optional()
 const optionalPercentage = () => z.number().int().min(0).max(100).nullable().optional()
 const optionalString = () => z.string().nullable().optional()
+const optionalSearchExcerpt = () => z.string().optional()
 const optionalIdentifier = () => identifierSchema.nullable().optional()
 
 export const rosterRowFields = [
@@ -112,6 +113,8 @@ export const rosterRowFields = [
   field(['ticket', () => sessionTicketSchema.nullable(), () => null, 'null', 'observed']),
   // Argo's own flag, joined on the Session's id and every id it has retired (`archive-store.ts`).
   field(['archived', () => z.boolean(), () => false, 'false', 'observed']),
+  // Search adds one reader-visible excerpt to matching rows; normal roster reads omit it.
+  field(['searchExcerpt', optionalSearchExcerpt, () => undefined, 'absent', 'observed']),
   field(['contextTokens', optionalCount, ({ usage }) => usage.contextTokens, 'null', 'observed']),
   field([
     'contextWindowTokens',

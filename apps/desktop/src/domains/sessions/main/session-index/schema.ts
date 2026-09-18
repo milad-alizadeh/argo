@@ -6,7 +6,7 @@
 // Bumped whenever a table below changes shape or a parser changes what a cached Roster row says:
 // `row_json` is keyed by file identity, so an unchanged file keeps the old projection until the
 // index is discarded. An index at any other version is discarded.
-export const SESSION_INDEX_VERSION = 3
+export const SESSION_INDEX_VERSION = 4
 
 // One row per transcript file Argo has parsed, keyed by the identity that says whether it changed:
 // path, modification time and size together, because a file appended to inside one mtime tick
@@ -46,6 +46,13 @@ CREATE TABLE session_chain (
   row_json TEXT NOT NULL,
   PRIMARY KEY (cli, chain_id)
 ) STRICT;
+
+CREATE VIRTUAL TABLE session_search USING fts5(
+  cli UNINDEXED,
+  chain_id UNINDEXED,
+  text,
+  tokenize = 'unicode61'
+);
 
 CREATE TABLE chain_link (
   cli TEXT NOT NULL,

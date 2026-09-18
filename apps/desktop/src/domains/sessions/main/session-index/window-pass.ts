@@ -4,6 +4,7 @@
 import type { SessionChain } from '../../contract/chains'
 import type { SessionRosterRow } from '../../contract/models'
 import type { TranscriptFile } from '../../contract/transcript'
+import { projectFeed } from '../feed-incremental'
 import type { IndexedSessionChain, IndexedTranscriptFile, TranscriptFileIdentity } from './contract'
 
 // A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript
@@ -67,7 +68,27 @@ export function indexedChains(
 ): IndexedSessionChain[] {
   return chains.map((chain) => {
     const row = project(chain)
-    return { chainId: chain.id, updatedAt: row.updatedAt, row, originUnread: chain.originUnread }
+    const searchText = projectFeed(chain, undefined)
+      .rows.flatMap((feedRow) => {
+        switch (feedRow.shape) {
+          case 'prose':
+          case 'thought':
+          case 'command-output':
+            return [feedRow.text]
+          case 'event':
+            return feedRow.text === null ? [] : [feedRow.text]
+          default:
+            return []
+        }
+      })
+      .join('\n')
+    return {
+      chainId: chain.id,
+      updatedAt: row.updatedAt,
+      row,
+      originUnread: chain.originUnread,
+      searchText,
+    }
   })
 }
 

@@ -139,6 +139,11 @@ export function SessionRosterItem({
             <SessionLockedMark session={session} />
           </span>
           <ActivityLine session={session} />
+          {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
+            <span className="mt-0.5 block truncate type-meta text-faint">
+              {session.searchExcerpt}
+            </span>
+          )}
           <SessionMetadata session={session} />
         </span>
       </button>

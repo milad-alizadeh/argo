@@ -23,6 +23,29 @@ async function search(
 }
 
 describe.each(indexedAdapters)('the $cli search read through the Session index', (adapter) => {
+  test('finds reader-visible Feed prose and returns its bounded excerpt', async () => {
+    const { root, source, reader } = await harness(adapter)
+    await adapter.write(root, [
+      {
+        id: sessionIdAt(1),
+        prompt: 'Give this Session an ordinary title.',
+        reply: 'The visible result is a café that serves saffron tea.',
+        cwd: '/proj',
+        at: '2026-09-13T12:00:00.000Z',
+      },
+    ])
+    await source.discoverSessions()
+    await finishBackfill(source)
+
+    const page = await search(reader, '"saffron" café', { status: 'all' })
+
+    expect(page.sessions).toHaveLength(1)
+    expect(page.sessions[0]).toMatchObject({
+      id: sessionIdAt(1),
+      searchExcerpt: expect.stringContaining('saffron tea'),
+    })
+  })
+
   test('finds a Session outside the recent window by id, opening no transcript file', async () => {
     const { root, source, reader, discoverCallCount } = await harness(adapter)
     // 60 sessions puts id 55 outside the 50-file recent window `discoverSessions` bounds itself to.
