@@ -1,8 +1,8 @@
 import { ArrowUp, Plus, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../../components/ui/button'
-import { InputGroupButton } from '../../../../components/ui/input-group'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { ComposerAttachment } from '../../state/use-composer-store'
 import { ModeMenu } from './mode-menu'

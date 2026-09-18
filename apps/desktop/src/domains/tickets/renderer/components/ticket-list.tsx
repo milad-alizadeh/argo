@@ -8,9 +8,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../renderer/components/ui/empty'
-import { Spinner } from '../../../../renderer/components/ui/spinner'
-import { useToastManager } from '../../../../renderer/components/ui/toast'
+} from '../../../../platform/renderer/components/ui/empty'
+import { Spinner } from '../../../../platform/renderer/components/ui/spinner'
+import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
 import { providerPresentation } from '../../../accounts/renderer/lib/providers'
 import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
 import { sourcePresentation } from '../lib/sources'

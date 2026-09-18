@@ -2,7 +2,7 @@
 // only each CLI's own adapter (agents/<cli>/) turns a readable path into that CLI's wire
 // representation of an attachment (#1886).
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { sessionErrorSchema } from './session-error'
 
 // The formats every adapter's own image input variant accepts (Codex's `localImage`, e.g.);

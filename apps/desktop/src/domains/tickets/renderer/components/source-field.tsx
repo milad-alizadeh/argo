@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-import { Button } from '../../../../renderer/components/ui/button'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
   Combobox,
   ComboboxContent,
@@ -9,13 +9,13 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from '../../../../renderer/components/ui/combobox'
+} from '../../../../platform/renderer/components/ui/combobox'
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from '../../../../renderer/components/ui/field'
+} from '../../../../platform/renderer/components/ui/field'
 import { capitalized, providerPresentation } from '../../../accounts/renderer/lib/providers'
 import { sourcePresentation } from '../lib/sources'
 

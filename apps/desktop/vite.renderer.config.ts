@@ -17,7 +17,10 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
     alias: [
       { find: '@', replacement: path.resolve(import.meta.dirname, 'src') },
-      { find: /^cn$/, replacement: path.resolve(import.meta.dirname, 'src/renderer/lib/utils.ts') },
+      {
+        find: /^cn$/,
+        replacement: path.resolve(import.meta.dirname, 'src/platform/renderer/lib/utils.ts'),
+      },
     ],
   },
   server: developmentServer,

@@ -1,4 +1,4 @@
-import { Progress } from '../../../../components/ui/progress'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 
 const COMPOSITION = [
   { label: 'Conversation', percentage: 71, value: '86k' },

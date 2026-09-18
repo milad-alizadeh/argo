@@ -1,9 +1,10 @@
 // The changes a Claude record makes to its Session's Plan (CONTEXT.md L3 · Plan). `TodoWrite`
 // writes the whole list and older transcripts still carry it; current CLIs add one step with
 // `TaskCreate` and change it with `TaskUpdate`, naming it by the id `TaskCreate`'s result gave.
-import { isRecord } from '@/boundary'
+
 import { readPlanSnapshot, readPlanStatus } from '@/core/sessions/plan'
 import type { PlanChange, ToolCall, ToolResult } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 
 const DELETED = 'deleted'
 

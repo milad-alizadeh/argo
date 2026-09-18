@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { isRecord } from '@/boundary'
 import { checkedDataImageUrl, fileImageUrl, imageBlocks } from '@/core/sessions/feed-images'
 import type { ContentBlock } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 
 // A `UserMessage` item's own image inputs: a pasted `image` as a data URL, a `local_image` by path.
 export function readImage(block: Record<string, unknown>): ContentBlock | null {

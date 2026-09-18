@@ -8,7 +8,7 @@ import {
   errorSchema,
   identifier,
   message,
-} from '../../../core/contract/messages'
+} from '../../../shared/messages'
 import { displayName, provider } from '../../accounts/contract/contract'
 import { priorityLevel, statusId, ticket, ticketKey, ticketPriority, ticketStatus } from './ticket'
 

@@ -1,6 +1,6 @@
 import { Expand } from 'lucide-react'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 import { mermaidThemeVariables } from './mermaid-theme'
 

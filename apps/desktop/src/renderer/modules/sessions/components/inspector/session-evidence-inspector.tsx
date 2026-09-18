@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CodeBlock } from '@/components/ai-elements/code-block'
+import { CodeBlock } from '@/platform/renderer/components/ai-elements/code-block'
 import { detectCodeLanguageFromPath } from '../../feed/content/code-language'
 import { FeedMermaid } from '../../feed/content/feed-mermaid'
 import type { SessionEvidence } from '../../types'

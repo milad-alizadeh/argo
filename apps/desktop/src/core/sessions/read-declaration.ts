@@ -3,8 +3,9 @@
 // code, and put the body's payload in its envelope. The version check and the schema parse are
 // not here at all — the IPC operation table does both before a body runs (ADR-0039) — so a body
 // takes its parsed request type and `reads.ts` declares nothing but resolution and body.
-import { isRecord } from '../../boundary'
-import type { SessionArchiveStore } from '../storage/session-archive'
+
+import { isRecord } from '../../shared/validation'
+import type { SessionArchiveStore } from './archive-store'
 import { sessionError } from './contract'
 import type { SessionSource } from './session-source'
 

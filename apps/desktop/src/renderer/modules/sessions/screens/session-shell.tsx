@@ -2,7 +2,7 @@ import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { InspectorSplit } from '../../../components/inspector-split'
+import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
 import { sessionName } from '../components/roster/roster-rows'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'

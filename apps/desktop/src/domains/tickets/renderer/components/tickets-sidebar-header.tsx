@@ -1,13 +1,13 @@
 import { Plus, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
-import { Button } from '../../../../renderer/components/ui/button'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from '../../../../renderer/components/ui/input-group'
+} from '../../../../platform/renderer/components/ui/input-group'
 import { sourcePresentation } from '../lib/sources'
 import { useTicketSearch } from '../state/use-ticket-search'
 

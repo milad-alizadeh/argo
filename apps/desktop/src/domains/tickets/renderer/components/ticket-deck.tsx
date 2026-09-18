@@ -1,4 +1,4 @@
-import { InspectorSplit } from '../../../../renderer/components/inspector-split'
+import { InspectorSplit } from '../../../../platform/renderer/components/inspector-split'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
 import { TicketDetail } from './ticket-detail'

@@ -1,9 +1,10 @@
 // Codex writes its Plan (CONTEXT.md L3 · Plan) whole, as an `update_plan` function call whose
 // JSON arguments are `{ explanation?, plan: [{ step, status }] }`. The `Plan` item a turn completes
 // is plan mode's written proposal, not this list, so it is not read here.
-import { isRecord } from '@/boundary'
+
 import { readPlanSnapshot } from '@/core/sessions/plan'
 import type { PlanChange, TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,
   nextQuotedState,

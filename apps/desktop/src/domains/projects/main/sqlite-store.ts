@@ -110,4 +110,4 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
 
 import path from 'node:path'
 import { z } from 'zod'
-import { identifierSchema } from '@/boundary'
+import { identifierSchema } from '@/shared/validation'

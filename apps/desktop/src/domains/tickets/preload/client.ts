@@ -1,5 +1,5 @@
-import { requestIdentifier } from '../../../boundary'
-import { createDomainClient } from '../../../core/contract/domain'
+import { createDomainClient } from '../../../shared/ipc/client'
+import { requestIdentifier } from '../../../shared/validation'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
