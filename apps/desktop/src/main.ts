@@ -9,8 +9,6 @@ import { windowBackground } from './core/appearance/appearance'
 import { applyStoredAppearance, readAppearance } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
 import { setPlatformLanguage } from './core/i18n/platform'
-import { openProjectStore } from './core/projects/main-store'
-import { PROJECT_PROOF_STORE_ENV } from './core/projects/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
 import {
@@ -19,6 +17,8 @@ import {
 } from './development/account-store'
 import { developmentIdentityArgument, developmentInstance } from './development/instance'
 import { writeDevelopmentReady } from './development/ready'
+import { openProjectStore } from './domains/projects/main/main-store'
+import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
 // constraint), so this runs at module load, ahead of every other side effect below.

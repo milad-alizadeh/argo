@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { useProjects } from '../../projects/hooks/use-projects'
+import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import type { WorkSelection } from '../components/inspector/session-inspector'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useSessionComposer } from '../hooks/use-session-composer'

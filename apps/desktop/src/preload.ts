@@ -1,14 +1,14 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './zod-jitless'
 import { createCodexCompactionClient } from './agents/codex/compaction/compaction'
-import { createAccountClient } from './core/accounts/client'
 import { APPEARANCE_CHANGED_CHANNEL, createAppearanceClient } from './core/appearance/appearance'
 import { COMMAND_CHANNEL } from './core/commands/shortcuts'
-import { createProjectClient } from './core/projects/client'
 import { createSessionClient } from './core/sessions/client'
-import { createTicketClient } from './core/tickets/client'
 import { createWatchClient, WATCHED_CHANGED_CHANNEL } from './core/watch/watch-contract'
 import { developmentIdentityFromArguments } from './development/instance'
+import { createAccountClient } from './domains/accounts/preload/client'
+import { createProjectClient } from './domains/projects/preload/client'
+import { createTicketClient } from './domains/tickets/preload/client'
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {

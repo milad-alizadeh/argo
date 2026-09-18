@@ -17,6 +17,18 @@
       "cn": ["./src/renderer/lib/utils.ts"]
     }
   },
-  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx", ".storybook/**/*.ts"],
-  "exclude": ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"]
+  "include": [
+    "src/domains/*/contract/**/*.ts",
+    "src/domains/*/renderer/**/*.ts",
+    "src/domains/*/renderer/**/*.tsx",
+    "src/renderer/**/*.ts",
+    "src/renderer/**/*.tsx",
+    ".storybook/**/*.ts"
+  ],
+  "exclude": [
+    "src/domains/*/renderer/**/*.test.ts",
+    "src/domains/*/renderer/**/*.test.tsx",
+    "src/renderer/**/*.test.ts",
+    "src/renderer/**/*.test.tsx"
+  ]
 }

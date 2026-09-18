@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { REGISTER_PROJECT_COMMAND } from '@/core/commands/shortcuts'
+import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
+import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { Button } from '../../../components/ui/button'
 import {
   DropdownMenu,
@@ -13,8 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu'
-import { ProjectSettingsDialog } from '../../projects/components/project-settings-dialog'
-import { useProjects } from '../../projects/hooks/use-projects'
 import { useCommands } from '../hooks/use-commands'
 
 export function ProjectSwitcher() {
