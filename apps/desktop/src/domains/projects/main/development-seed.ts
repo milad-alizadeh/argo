@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { repositoryRoot } from '@/domains/projects/main/repository'
-import type { ProjectRegistration, ProjectStore } from '@/domains/projects/main/sqlite-store'
-import type { DevelopmentInstance } from './instance'
+import type { DevelopmentInstance } from '@/development/instance'
+import { repositoryRoot } from './repository'
+import type { ProjectRegistration, ProjectStore } from './sqlite-store'
 
 type Repository = Pick<ProjectRegistration, 'path' | 'commonDirectory'>
 

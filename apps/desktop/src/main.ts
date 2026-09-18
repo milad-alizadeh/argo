@@ -16,8 +16,8 @@ import {
   developmentStoreDirectories,
 } from './development/account-store'
 import { developmentIdentityArgument, developmentInstance } from './development/instance'
-import { seedDevelopmentProject } from './development/project-seed'
 import { writeDevelopmentReady } from './development/ready'
+import { seedDevelopmentProject } from './domains/projects/main/development-seed'
 import { openProjectStore } from './domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
 

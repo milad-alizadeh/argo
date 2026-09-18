@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { projectStore } from '@/domains/accounts/main/harness-fixtures'
-import type { ProjectRegistry } from '@/domains/projects/main/sqlite-store'
-import { selectDevelopmentProject } from './project-seed'
+import { selectDevelopmentProject } from './development-seed'
+import type { ProjectRegistry } from './sqlite-store'
 
 function store(initial: ProjectRegistry) {
   const projects = projectStore('project-fixture')

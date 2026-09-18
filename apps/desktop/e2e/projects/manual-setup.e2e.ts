@@ -15,7 +15,11 @@ test('creates, validates, and reopens a locally ready Project through visible co
     await expect(configuration).toContainText('"version": 1')
     await configuration.fill(LOCALLY_READY_CONFIGURATION)
     await page.getByRole('button', { name: 'Test config' }).click()
-    await page.getByText('All Project commands passed validation.').waitFor()
+    await page
+      .getByText('All Project commands passed validation.', {
+        selector: '[data-slot="toast-title"]',
+      })
+      .waitFor()
     await page.getByRole('button', { name: 'Save config' }).click()
     await page.getByRole('status').getByText('Config saved.').waitFor()
     await application.close()
