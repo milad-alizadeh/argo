@@ -1,5 +1,6 @@
+import { useContext } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router'
+import { UNSAFE_LocationContext } from 'react-router'
 
 export type UnreadMarkerPrototypeVariant = 'A'
 
@@ -9,7 +10,8 @@ export function unreadMarkerPrototypeVariant(value: string | null) {
 }
 
 export function useUnreadMarkerPrototypeVariant() {
-  const [searchParams] = useSearchParams()
+  const locationContext = useContext(UNSAFE_LocationContext)
+  const searchParams = new URLSearchParams(locationContext?.location.search)
   return unreadMarkerPrototypeVariant(searchParams.get('variant'))
 }
 

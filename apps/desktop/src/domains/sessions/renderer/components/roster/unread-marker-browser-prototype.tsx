@@ -158,7 +158,7 @@ export function UnreadMarkerBrowserPrototype() {
       <PrototypeRoster />
       <section className="min-w-0 flex-1 overflow-y-auto px-8 py-7">
         <header className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">{t('loaderPrototype.title')}</h1>
+          <h1 className="type-title font-heading text-foreground">{t('loaderPrototype.title')}</h1>
           <p className="mt-1 max-w-xl type-body text-muted-foreground">
             {t('loaderPrototype.description')}
           </p>
