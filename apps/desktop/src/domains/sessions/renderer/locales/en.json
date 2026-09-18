@@ -219,8 +219,7 @@
     "done": "Done",
     "completed": "Completed",
     "failed": "Failed",
-    "killed": "Killed",
-    "stopped": "Stopped"
+    "interrupted": "Interrupted"
   },
   "skill": {
     "open": "Open the {{name}} skill",

@@ -9,10 +9,6 @@ import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
 
-// The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
-// come back is a command still running, which is what the Shell list's Running group says.
-const SHELL_TOOL = 'Bash'
-
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
 const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
@@ -66,7 +62,8 @@ function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {
   return new Map(notifications.map((notification) => [notification.callId, notification]))
 }
 
-// The shell commands the Shell list draws. A foreground `Bash` call the transcript holds no result for
+// The shell commands the Shell list draws, for every harness: a Tool Call its adapter classified
+// as `execute` (CONTEXT.md L3 · Tool Call). A foreground call the transcript holds no result for
 // is running; one that came back is what the Session did rather than what it is doing, so it is
 // not read at all (#1907). A background call is the exception: its result is only a receipt, so
 // it stays in the Shell list under the state its completion notification gives it (#1582).
@@ -85,17 +82,17 @@ export function readShellCommands(
   const times = callTimes(messages)
   const ended = endings(notifications)
   return calls(messages)
-    .filter((call) => call.name === SHELL_TOOL)
-    .flatMap((call) => {
+    .flatMap((call) => (call.execute === undefined ? [] : [{ call, execute: call.execute }]))
+    .flatMap(({ call, execute }) => {
       const receipt = receipts.get(call.id)
       if (receipt === undefined && answered.has(call.id)) return []
       const notification = ended.get(call.id)
       return [
         {
           id: call.id,
-          command: text(call.input.command)?.trim().split('\n', 1).join('') ?? null,
-          label: text(call.input.description),
-          background: receipt !== undefined || call.input.run_in_background === true,
+          command: execute.command,
+          label: execute.label,
+          background: receipt !== undefined || execute.background,
           state: notification?.state ?? ('running' as const),
           startedAt: times.started.get(call.id) ?? null,
           endedAt: notification?.timestamp ?? null,

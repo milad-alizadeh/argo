@@ -75,12 +75,25 @@ export function advancedCursors(
   return advanced
 }
 
+// A background command's end lands on the receipt its call already holds.
+function endBackgroundCall(record: TranscriptRecord, results: Map<string, ToolResult>) {
+  const ending = record.kind === 'delegation' ? record.ending : record
+  if (ending?.kind !== 'background-task') return
+  const receipt = results.get(ending.callId)
+  if (receipt !== undefined) results.set(ending.callId, { ...receipt, ended: ending.state })
+}
+
 export function updatedResults(records: PositionedRecord[], prior: Map<string, ToolResult>) {
   const results = new Map(prior)
   for (const { record } of records) {
+    endBackgroundCall(record, results)
     if (record.kind !== 'message') continue
     for (const result of record.toolResults ?? []) {
-      results.set(result.callId, { blocks: result.blocks, failed: result.failed })
+      results.set(result.callId, {
+        blocks: result.blocks,
+        failed: result.failed,
+        ...(result.background === undefined ? {} : { background: true }),
+      })
     }
   }
   return results
@@ -94,6 +107,11 @@ export function updatedSkillBodies(records: PositionedRecord[], prior: Map<strin
   return skillBodies
 }
 
+// A call with no result is open, and so is a background one whose receipt is all that came back.
+function isOpen(result: ToolResult | undefined) {
+  return result === undefined || (result.background === true && result.ended === undefined)
+}
+
 export function updatedPending(
   records: PositionedRecord[],
   prior: Set<string>,
@@ -102,8 +120,8 @@ export function updatedPending(
   const pending = new Set(prior)
   for (const { record } of records) {
     if (record.kind !== 'message' || record.sidechain) continue
-    for (const call of record.toolCalls) if (!results.has(call.id)) pending.add(call.id)
+    for (const call of record.toolCalls) if (isOpen(results.get(call.id))) pending.add(call.id)
   }
-  for (const id of pending) if (results.has(id)) pending.delete(id)
+  for (const id of pending) if (!isOpen(results.get(id))) pending.delete(id)
   return pending
 }
