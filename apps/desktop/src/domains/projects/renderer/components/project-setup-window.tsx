@@ -104,7 +104,7 @@ export function ProjectSetupView({
           </label>
           <CodeMirror
             basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
-            className="w-full overflow-hidden rounded-md border border-input bg-background text-foreground focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-72 [&_.cm-content]:py-3 [&_.cm-editor]:min-h-72 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted [&_.cm-scroller]:font-mono [&_.cm-scroller]:text-sm"
+            className="w-full overflow-hidden rounded-md border border-input bg-background text-foreground focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-72 [&_.cm-content]:py-3 [&_.cm-editor]:min-h-72 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
             extensions={editorExtensions}
             onChange={(nextSource) => {
               setSource(nextSource)
