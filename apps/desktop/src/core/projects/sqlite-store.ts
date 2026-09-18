@@ -46,6 +46,10 @@ const projectRowSchema = z.strictObject({
 })
 const selectedRowSchema = z.strictObject({ project_id: identifierSchema.nullable() })
 
+export function isProjectStoreInvalid(error: unknown): boolean {
+  return error instanceof z.ZodError
+}
+
 function projects(database: ProjectDatabase): ProjectRegistration[] {
   const rows = projectRowSchema
     .array()

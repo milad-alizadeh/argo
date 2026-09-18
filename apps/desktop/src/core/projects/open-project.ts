@@ -3,13 +3,17 @@ import { isRecord } from '../../boundary'
 import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from './contract'
 import { toSummary } from './presentation'
 import type { ProjectStore } from './register-project'
+import { isProjectStoreInvalid } from './sqlite-store'
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {
   try {
     return store.projects.read().projects
-  } catch {
-    return projectError('storage-unavailable', null)
+  } catch (error) {
+    return projectError(
+      isProjectStoreInvalid(error) ? 'storage-invalid' : 'storage-unavailable',
+      null,
+    )
   }
 }
 
