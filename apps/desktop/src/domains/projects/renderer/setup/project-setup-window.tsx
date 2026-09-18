@@ -6,7 +6,7 @@ import { Settings } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { Button } from '../../../components/ui/button'
+import { Button } from '@/renderer/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -14,8 +14,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../components/ui/empty'
-import { useManualProjectSetup } from '../hooks/use-manual-project-setup'
+} from '@/renderer/components/ui/empty'
+import { useManualProjectSetup } from './use-manual-project-setup'
 
 const tomlLanguage = StreamLanguage.define(toml)
 const tomlHighlighting = syntaxHighlighting(

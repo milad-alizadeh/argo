@@ -8,7 +8,7 @@ import {
   REGISTER_PROJECT_COMMAND,
 } from '@/core/commands/shortcuts'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
-import { ProjectSetupWindow } from '@/domains/projects/renderer/components/project-setup-window'
+import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
