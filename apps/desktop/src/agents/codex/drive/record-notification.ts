@@ -1,8 +1,9 @@
-import type { SessionRosterRow } from '../../../core/sessions/models'
+import type { SessionPlan, SessionRosterRow } from '../../../core/sessions/models'
 import { rollupSessionStatus } from '../../../core/sessions/session-status-rollup'
 import { readCompletedCompaction, readStartedCompaction } from './compact-protocol'
 import type { LiveMessages } from './live-messages'
 import { codexManagedStatus } from './managed-status'
+import { readUpdatedPlan } from './plan-protocol'
 import type { WireMessage } from './protocol'
 import { readCompletedTurn, readThreadStatus } from './protocol'
 import type { PendingCodexQuestion } from './question-protocol'
@@ -11,7 +12,9 @@ import { readUpdatedThreadName } from './rename-protocol'
 
 type HeldSession = {
   messages: LiveMessages
+  plan: SessionPlan | null
   status: SessionRosterRow['status']
+  turnId: string | null
   compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
   pendingQuestion: PendingCodexQuestion | null
@@ -23,12 +26,14 @@ export function recordCodexNotification({
   acceptTitle,
   message,
   now,
+  onPlanUpdated,
   sessionId,
   sessions,
 }: {
   acceptTitle: (title: string) => void
   message: WireMessage
   now: () => Date
+  onPlanUpdated: () => void
   sessionId: string
   sessions: Map<string, HeldSession>
 }): boolean {
@@ -40,6 +45,11 @@ export function recordCodexNotification({
     return true
   }
   if (session.messages.record(message)) return false
+  const updatedPlan = readUpdatedPlan(message)
+  if (updatedPlan !== undefined) {
+    session.plan = updatedPlan
+    onPlanUpdated()
+  }
   const renamed = readUpdatedThreadName(message)
   if (renamed?.threadId === sessionId) {
     session.title = { text: renamed.title, source: 'custom' }
@@ -78,12 +88,14 @@ export function codexNotificationRecorder(options: {
   sessions: Map<string, HeldSession>
   renameWaiters: Map<string, (title: string) => void>
   now: () => Date
+  onPlanUpdated: () => void
 }) {
-  const { now, renameWaiters, sessionId, sessions } = options
+  const { now, onPlanUpdated, renameWaiters, sessionId, sessions } = options
   return (message: WireMessage) =>
     recordCodexNotification({
       message,
       now,
+      onPlanUpdated,
       sessionId,
       sessions,
       acceptTitle: (title) => {

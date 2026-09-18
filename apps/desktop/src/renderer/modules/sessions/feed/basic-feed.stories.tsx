@@ -199,6 +199,32 @@ export const Loading: Story = {
     ).toBeInTheDocument()
   },
 }
+
+const repeatTurnFeed = {
+  ...feed,
+  sessionId: 'repeat-turn',
+  chainId: 'repeat-turn',
+  revision: 'repeat-turn-one',
+  rows: [
+    { shape: 'prose', id: 'repeat-prompt-one', role: 'user', text: 'Inspect the Session.' },
+    { shape: 'prose', id: 'repeat-reply-one', role: 'assistant', text: 'The Session is ready.' },
+    { shape: 'prose', id: 'repeat-prompt-two', role: 'user', text: 'Inspect it again.' },
+  ],
+} satisfies SessionFeed
+
+export const LoadingAfterAnotherPrompt: Story = {
+  args: {
+    feed: repeatTurnFeed,
+    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    selectedSessionId: 'repeat-turn',
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Loading this Session' }),
+    ).toBeInTheDocument()
+  },
+}
+
 export const Empty: Story = {
   args: { feed: { ...feed, rows: [] }, failure: null },
   play: async ({ canvasElement }) => {

@@ -56,7 +56,7 @@ export function createMockSessionCliBackend(): SessionCliBackend {
       }
       return {
         executables,
-        transcripts: { ...roots, archive: fixture.archive },
+        transcripts: roots,
         launchEnv: ({ slowReply, adversarialSeed }) => {
           if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
           return {

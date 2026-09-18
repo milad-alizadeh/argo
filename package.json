@@ -16,7 +16,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "turbo run build --filter=@argo/desktop",
+    "build": "turbo run build test:packaged-pty --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
     "design:tokens": "node scripts/design-token-mirror.mjs && node scripts/design-token-class-groups.mjs",
     "dev": "turbo run dev",

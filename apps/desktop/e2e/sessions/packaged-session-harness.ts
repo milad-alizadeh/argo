@@ -8,8 +8,12 @@ import {
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../src/core/sessions/proof-protocol'
 import { appExecutable } from '../packaged-app'
-import { prepare } from './fixtures/feed.fixture'
-import type { SessionCliBackend, SessionCliLaunch, SessionCliRun } from './session-cli-backend'
+import type {
+  SessionCliBackend,
+  SessionCliLaunch,
+  SessionCliRun,
+  SessionFixture,
+} from './session-cli-backend'
 
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
@@ -48,32 +52,28 @@ function launchEnvironment(run: SessionCliRun, launch: SessionCliLaunch) {
   return environment
 }
 
-// Runs a launch or restart, pushing its wall time in milliseconds for the proof's timings line.
-async function timed<T>(launches: number[], start: () => Promise<T>) {
-  const started = performance.now()
-  try {
-    return await start()
-  } finally {
-    launches.push(Math.round(performance.now() - started))
-  }
-}
+export type PackagedSession = Awaited<ReturnType<typeof createPackagedSessionHarness>>
 
-// Launches the packaged app against the CLIs the backend names, then restarts it in place so
-// roster/resume proof cases can exercise a fresh process without losing the fixture root.
-export async function createPackagedSessionHarness(
-  root: string,
-  backend: SessionCliBackend,
-  launched: (application: ElectronApplication) => Promise<void>,
-) {
-  const fixture = await prepare(root)
+// Launches the packaged app against the CLIs the backend names, and restarts it in place so a case
+// can read what a fresh process makes of the same fixture root.
+export async function createPackagedSessionHarness(request: {
+  root: string
+  fixture: SessionFixture
+  backend: SessionCliBackend
+  launch: SessionCliLaunch
+  // Runs once per process the harness opens, before the window is sized.
+  launched: (application: ElectronApplication, page: Page) => Promise<void>
+  // Runs before a restart closes the process.
+  closing: () => Promise<void>
+}) {
+  const { root, fixture, backend, launch, launched, closing } = request
   const run = await backend.start({ root, fixture })
   let application: ElectronApplication | undefined
+  let page: Page | undefined
   let recentConsole: string[] = []
-  const launches: number[] = []
-  let lastLaunch: SessionCliLaunch = { slowReply: false }
 
   // The CLIs read their launch environment when the app spawns them, so it is fixed per launch.
-  const open = async (launch: SessionCliLaunch) => {
+  const open = async () => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
       env: {
@@ -83,43 +83,37 @@ export async function createPackagedSessionHarness(
       },
       timeout: backend.budgetMs,
     })
-    const page = await application.firstWindow()
-    page.setDefaultTimeout(backend.budgetMs)
+    const opened = await application.firstWindow()
+    opened.setDefaultTimeout(backend.budgetMs)
     recentConsole = []
-    keepRecentConsole(page, recentConsole)
-    await launched(application)
+    keepRecentConsole(opened, recentConsole)
+    await launched(application, opened)
     await application.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
     }, SESSION_VIEWPORT)
-    await page.waitForFunction(
+    await opened.waitForFunction(
       (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
       SESSION_VIEWPORT,
     )
-    await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
-    return page
-  }
-
-  const launch = (options: Partial<SessionCliLaunch> = {}) => {
-    lastLaunch = { slowReply: options.slowReply ?? false, adversarialSeed: options.adversarialSeed }
-    return timed(launches, () => open(lastLaunch))
-  }
-
-  const restart = (options: Partial<SessionCliLaunch> = {}) => {
-    lastLaunch = {
-      slowReply: options.slowReply ?? lastLaunch.slowReply,
-      adversarialSeed: options.adversarialSeed ?? lastLaunch.adversarialSeed,
-    }
-    return timed(launches, async () => {
-      await application?.close()
-      return open(lastLaunch)
-    })
+    await opened.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+    page = opened
+    return opened
   }
 
   return {
+    root,
     fixture,
-    launch,
-    restart,
-    launches: () => launches,
+    launch: open,
+    restart: async () => {
+      await closing()
+      await application?.close()
+      return open()
+    },
+    // The window the case is driving now, which a restart replaces.
+    page: () => {
+      if (page === undefined) throw new Error('The packaged app did not launch.')
+      return page
+    },
     close: () => application?.close(),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,

@@ -29,7 +29,6 @@ async function started(read: (start: Started) => Promise<void>) {
     application: path.join(root, 'application'),
     claudeTranscripts: path.join(root, 'claude-transcripts'),
     codexTranscripts: path.join(root, 'codex-transcripts'),
-    archive: path.join(root, 'archive'),
     userData: path.join(root, 'userData'),
     project: path.join(root, 'project'),
   }
@@ -56,7 +55,6 @@ test('points every transcript root at the fixture tree', () =>
     expect(run.transcripts).toEqual({
       claude: fixture.claudeTranscripts,
       codex: fixture.codexTranscripts,
-      archive: fixture.archive,
     })
   }))
 

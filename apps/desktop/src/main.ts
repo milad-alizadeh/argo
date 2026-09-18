@@ -13,7 +13,10 @@ import { setPlatformLanguage } from './core/i18n/platform'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
-import { accountStoreDirectory } from './development/account-store'
+import {
+  DEVELOPMENT_APPLICATION_NAME,
+  developmentStoreDirectories,
+} from './development/account-store'
 import {
   developmentIdentityArgument,
   developmentInstance,
@@ -58,7 +61,8 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
 if (DEVELOPMENT_INSTANCE) {
-  app.setName(DEVELOPMENT_INSTANCE.label)
+  // safeStorage keys belong to an app, so every development worktree must keep one app identity.
+  app.setName(DEVELOPMENT_APPLICATION_NAME)
   const ticket = DEVELOPMENT_INSTANCE.label.match(/^#(\d+)$/)?.[1]
   app.dock?.setBadge(ticket ?? '')
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
@@ -92,7 +96,7 @@ async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
 
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
-  const accountData = accountStoreDirectory({
+  const { accountData, projectData } = developmentStoreDirectories({
     userData,
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
@@ -140,6 +144,7 @@ function createWindow(): BrowserWindow {
   attachBridges(window, {
     userData,
     accountData,
+    projectData,
     rendererURL,
     proofEnabled: PROOF_ENABLED,
     acceptance: ACCEPTANCE_ENABLED,

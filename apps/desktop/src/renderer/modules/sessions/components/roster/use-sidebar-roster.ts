@@ -18,7 +18,9 @@ function pendingRenames(renamed: Record<string, string>, sessions: SessionsListe
     const landed = sessions.find((session) => session.id === sessionId)
     if (landed === undefined || landed.title?.text !== title) pending[sessionId] = title
   }
-  return pending
+  // The empty case keeps one identity, because a roster read rebuilds this and every row compares
+  // it (#2386). Nothing is renamed most of the time.
+  return Object.keys(pending).length === 0 ? NO_TITLES : pending
 }
 
 function filteredSessions(sessions: SessionsListed['sessions'], search: string) {

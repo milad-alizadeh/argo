@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { ACTIVE_FEED } from '../feed-selectors'
+import { openSessionByClick } from '../gestures'
 
 type FormattedFixture = {
   root: string
@@ -100,6 +101,8 @@ async function settledReading(page, drawn) {
 }
 
 export async function proveFormattedFeed(page, fixture: FormattedFixture) {
+  await openSessionByClick(page, 'prose')
+  await page.waitForSelector(`${ACTIVE_FEED} .feed__viewport [data-feed-row]`)
   const localPicture = path.join(fixture.root, 'formatted-picture.svg')
   await writeFile(localPicture, PICTURE)
   await fixture.append(fixture.transcripts, 'p-formatted', formattedTurn(localPicture))

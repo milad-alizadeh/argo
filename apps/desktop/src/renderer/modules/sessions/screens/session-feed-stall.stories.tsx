@@ -40,6 +40,7 @@ function stalledFeedHost() {
       filesFound: 2,
       filesRead: 2,
       filesUnreadable: 0,
+      filesParsed: 0,
       nextCursor: null,
     }),
     readSessionFeed: () => new Promise(() => {}),

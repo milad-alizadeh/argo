@@ -18,7 +18,7 @@ import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
 } from '../../../src/providers/proof-protocol'
-import { appExecutable, packagedTestCopy } from '../../packaged-app'
+import { appExecutable } from '../../packaged-app'
 import { repository } from '../../projects/fixtures/project.fixture'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
@@ -64,8 +64,7 @@ function serveTeams(linear: MockLinear) {
   linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
 }
 
-export async function prepare(root: string): Promise<TicketFixture> {
-  const application = await packagedTestCopy(root)
+export async function prepare(root: string, application: string): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   const noSessions = path.join(root, 'no-sessions')

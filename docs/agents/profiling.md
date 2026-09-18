@@ -74,24 +74,36 @@ no CPU samples. Delete the file when you are done.
 If `profiler stop` prints `No tracing in progress` while the app still runs, start the recording
 again.
 
-## A packaged journey
+## A packaged flow
 
-Run the portable Session journeys with a CPU profile and per-case wall times:
+Run the packaged end-to-end flows with a CPU profile and per-case wall times:
 
 ```sh
-bun run --cwd apps/desktop test:journey-profile
+bun run --cwd apps/desktop test:e2e:profile
 ```
 
-The run prints a temporary `journey-cpu-trace.json` and `journey-timings.json`. Read the CPU trace
-with the same function report as the dev instance:
+The run profiles every project the configuration selects: sessions, tickets and projects, and the
+opt-in projects when their variable is set. Name a Playwright project to profile one flow, and a
+file after it to profile part of that flow:
 
 ```sh
-jq -r -f scripts/profiling/hot-functions.jq <journey-cpu-trace.json>
+bun run --cwd apps/desktop test:e2e:profile --project=tickets
+bun run --cwd apps/desktop test:e2e:profile --project=sessions e2e/sessions/journeys.e2e.ts
+```
+
+Each worker prints a temporary `<flow>-<worker>-cpu-trace.json` and `<flow>-<worker>-timings.json`,
+named after the project that ran and the worker inside it. The workers split a flow's cases between
+them, so add `--workers=1` to read one file per flow. Read the CPU trace with the same function
+report as the dev instance:
+
+```sh
+jq -r -f scripts/profiling/hot-functions.jq <sessions-0-cpu-trace.json>
 ```
 
 The trace contains renderer work, including React rendering, and the timings file lists the wall
-time for every journey case. It makes no performance assertion: compare runs on the same machine.
-Delete the temporary directory when you are done.
+time for every case. It makes no performance assertion: compare runs on the same machine. A
+profiled run records no Playwright trace, because both recordings attach to the same page. Delete
+the temporary directories when you are done.
 
 ## Dev-only noise
 

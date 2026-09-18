@@ -17,6 +17,7 @@ const listed = {
   filesFound: 0,
   filesRead: 0,
   filesUnreadable: 0,
+  filesParsed: 0,
   nextCursor: null,
 }
 const read = {

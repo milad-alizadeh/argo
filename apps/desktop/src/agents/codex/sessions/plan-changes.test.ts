@@ -46,6 +46,16 @@ function updatePlan(callId: string, plan: unknown[], explanation?: string) {
   return planCall(callId, JSON.stringify({ ...(explanation ? { explanation } : {}), plan }))
 }
 
+function nestedPlanCall(input: string) {
+  return [
+    {
+      timestamp: TIMESTAMP,
+      type: 'response_item',
+      payload: { type: 'custom_tool_call', name: 'exec', input, call_id: 'call-nested' },
+    },
+  ]
+}
+
 async function planOf(context: Parameters<typeof tempRoot>[0], records: unknown[]) {
   const root = await tempRoot(context)
   const day = path.join(root, '2026', '09', '15')
@@ -121,6 +131,16 @@ const cases: { claim: string; records: unknown[]; plan: SessionPlan | null }[] =
     claim: 'marks the Plan unreadable when its arguments are not JSON',
     records: planCall('call-1', '{"plan":['),
     plan: { state: 'malformed' },
+  },
+  {
+    claim: 'reads generated object keys without changing matching text inside a step',
+    records: nestedPlanCall(
+      'const r = await tools.update_plan({ plan: [{ step: "Review { plan: value }", status: "in_progress" }] });\ntext(r);',
+    ),
+    plan: {
+      state: 'available',
+      entries: [{ content: 'Review { plan: value }', position: 0, status: 'in_progress' }],
+    },
   },
 ]
 
