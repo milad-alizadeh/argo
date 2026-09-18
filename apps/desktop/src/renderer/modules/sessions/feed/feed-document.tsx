@@ -38,13 +38,16 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 
 function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
   const facts = liveFacts ?? INACTIVE_FEED_LIVE_FACTS
+  // A settled prompt stays only while the transcript has no rows, so it can never double one.
+  const promptRow =
+    facts.optimisticRow ?? (reading.rows.length === 0 ? facts.settledPromptRow : null)
   const readingWithOptimisticRow =
-    facts.optimisticRow === null
+    promptRow === null
       ? reading
       : {
           ...reading,
-          revision: `${reading.revision}:${facts.optimisticRow.id}`,
-          rows: [...reading.rows, facts.optimisticRow],
+          revision: `${reading.revision}:${promptRow.id}`,
+          rows: [...reading.rows, promptRow],
         }
   return { ...facts, reading: readingWithOptimisticRow }
 }

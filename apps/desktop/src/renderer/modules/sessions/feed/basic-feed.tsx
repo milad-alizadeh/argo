@@ -57,7 +57,9 @@ export function BasicFeed({
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
   // The prompt row outlives the temporary id: the real Session's first read can trail the hand-off.
   const holdsPrompt =
-    current === null && selectedSessionId !== null && liveFacts?.optimisticRow != null
+    current === null &&
+    selectedSessionId !== null &&
+    (liveFacts?.optimisticRow != null || liveFacts?.settledPromptRow != null)
   const optimisticDocument = holdsPrompt ? optimisticFeedDocument(selectedSessionId) : null
   const documents =
     optimisticDocument === null

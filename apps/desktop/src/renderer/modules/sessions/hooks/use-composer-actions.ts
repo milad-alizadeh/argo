@@ -56,7 +56,7 @@ export function useComposerActions(options: {
   const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
   const onHandoff = useHandoff(handoff, sessionId, setFailure)
   useHandoffCompletion({ isHandingOff, selectedRow, selectedSessionId: sessionId, setFailure })
-  const { onInterrupt, markerView, optimisticRow } = useComposerMarker({
+  const { onInterrupt, markerView, optimisticRow, settledPromptRow } = useComposerMarker({
     marker,
     roster,
     identity,
@@ -72,5 +72,6 @@ export function useComposerActions(options: {
     onInterrupt,
     markerView,
     optimisticRow,
+    settledPromptRow,
   }
 }
