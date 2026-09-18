@@ -1,29 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { ProjectRegistry, ProjectStore } from '../core/projects/sqlite-store'
+import { projectStore } from '@/core/accounts/harness-fixtures'
+import type { ProjectRegistry } from '@/domains/projects/main/sqlite-store'
 import { selectDevelopmentProject } from './project-seed'
 
-function store(initial: ProjectRegistry): ProjectStore {
-  let registry = initial
-  return {
-    read: () => registry,
-    replace: (next) => {
-      registry = next
-    },
-    insertProject: (project) => registry.projects.push(project),
-    selectProject: (projectId) => (registry.selectedId = projectId),
-    updateProjectPath: (projectId, projectPath) => {
-      registry = {
-        ...registry,
-        projects: registry.projects.map((project) =>
-          project.id === projectId ? { ...project, path: projectPath } : project,
-        ),
-      }
-    },
-    readSetupCheckpoint: () => null,
-    writeSetupCheckpoint: () => undefined,
-    close: () => undefined,
-  }
+function store(initial: ProjectRegistry) {
+  const projects = projectStore('project-fixture')
+  projects.replace(initial)
+  return projects
 }
 
 test('registers and selects the development worktree on first launch', () => {

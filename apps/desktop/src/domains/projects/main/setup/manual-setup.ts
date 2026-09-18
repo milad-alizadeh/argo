@@ -6,7 +6,7 @@ import {
   type ProjectSetupEditing,
   type ProjectSetupValidated,
   projectError,
-} from '../contract'
+} from '../../contract/contract'
 import { toSummary } from '../presentation'
 import type {
   ProjectStore as ProjectRegistryStore,

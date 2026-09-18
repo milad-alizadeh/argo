@@ -8,8 +8,8 @@ import {
   REGISTER_PROJECT_COMMAND,
 } from '@/core/commands/shortcuts'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
-import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
 import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
