@@ -2,9 +2,9 @@
 // Split from `indexed-window.ts` so the pass's arithmetic can be read without the index calls
 // around it.
 import type { SessionChain } from '../../contract/chains'
-import { projectFeed } from '../feed-incremental'
 import type { SessionRosterRow } from '../../contract/models'
 import type { TranscriptFile } from '../../contract/transcript'
+import { projectFeed } from '../feed-incremental'
 import type { IndexedSessionChain, IndexedTranscriptFile, TranscriptFileIdentity } from './contract'
 
 // A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript
