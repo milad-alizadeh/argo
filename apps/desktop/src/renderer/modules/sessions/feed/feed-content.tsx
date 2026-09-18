@@ -40,10 +40,10 @@ export function feedContent({
   tail: ReactNode
 }) {
   const noRows = settled === null || settled.rows.length === 0
-  // A prompt with no reply yet stays on screen under the Marker; only an empty Feed gives way to the spinner (#2430).
-  const waiting = isRunning && (noRows || awaitingAssistantReply(settled.rows))
+  // A prompt still waiting on its reply stays on screen while the Marker draws below it (#2430).
+  const waiting = isRunning && (noRows || (awaitingAssistantReply(settled.rows) && tail === null))
   if (waiting && stalled) return <StalledFeed onRetry={onRetry} posture={posture} />
-  if (isRunning && noRows) {
+  if (waiting) {
     return (
       <>
         <FeedLoading state="running" />
