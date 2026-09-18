@@ -2,11 +2,14 @@ import React, { type CSSProperties, type HTMLAttributes, useEffect, useState } f
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
-import githubDarkDefault from 'shiki/themes/github-dark-default.mjs'
-import githubLight from 'shiki/themes/github-light.mjs'
+import {
+  xcodeCodePalette,
+  xcodeCodeThemes,
+} from '@/renderer/components/ai-elements/xcode-code-theme'
 import { cn } from '@/renderer/lib/utils'
+import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
 
-const THEMES = { light: 'github-light', dark: 'github-dark-default' } as const
+const THEMES = { light: 'xcode-light', dark: 'xcode-dark' } as const
 
 type Token = { content: string; light?: string; dark?: string }
 
@@ -19,7 +22,7 @@ async function highlight(code: string, language: BundledLanguage): Promise<Token
   highlighter ??= createHighlighterCore({
     engine: createJavaScriptRegexEngine(),
     langs: [],
-    themes: [githubLight, githubDarkDefault],
+    themes: xcodeCodeThemes,
   })
   const loaded = await highlighter
   await loaded.loadLanguage(bundledLanguages[language])
@@ -116,14 +119,14 @@ export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
 }
 
 export function CodeBlock({ children, className, code, language, line, ...props }: CodeBlockProps) {
+  const dark = useDarkAppearance()
+  const palette = xcodeCodePalette[dark ? 'dark' : 'light']
   return (
     <CodeBlockContext.Provider value={code}>
       <div
-        className={cn(
-          'group relative w-full overflow-hidden rounded-md border bg-background text-foreground',
-          className,
-        )}
+        className={cn('group relative w-full overflow-hidden rounded-md border', className)}
         data-language={language ?? 'plain'}
+        style={{ backgroundColor: palette.background, color: palette.foreground }}
         {...props}
       >
         {children}

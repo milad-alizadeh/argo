@@ -1,17 +1,9 @@
 import { Expand } from 'lucide-react'
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
+import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 import { mermaidThemeVariables } from './mermaid-theme'
-
-// `useAppearance` puts `.dark` on the root element; a diagram redraws when it changes.
-function subscribeToAppearance(onChange: () => void) {
-  const observer = new MutationObserver(onChange)
-  observer.observe(document.documentElement, { attributeFilter: ['class'] })
-  return () => observer.disconnect()
-}
-
-const isDark = () => document.documentElement.classList.contains('dark')
 
 type Drawing = 'pending' | 'drawn' | 'failed'
 
@@ -65,7 +57,7 @@ export function FeedMermaid({
   const frame = useRef<HTMLDivElement>(null)
   // `useId` answers `_r_1_`-shaped ids, and Mermaid uses the id as a CSS selector.
   const diagramId = `mermaid-${useId().replace(/[^\w-]/g, '')}`
-  const dark = useSyncExternalStore(subscribeToAppearance, isDark)
+  const dark = useDarkAppearance()
   const [drawing, setDrawing] = useState<Drawing>('pending')
   useEffect(() => {
     let current = true

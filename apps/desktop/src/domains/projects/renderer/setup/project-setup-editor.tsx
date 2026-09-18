@@ -6,40 +6,52 @@ import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-code
 import { FlaskConical } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { xcodeCodePalette } from '@/renderer/components/ai-elements/xcode-code-theme'
 import { Button } from '@/renderer/components/ui/button'
 import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
+import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
 import type { ProjectSetupViewProps } from './project-setup-window'
 
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
-const jsonHighlighting = syntaxHighlighting(
-  HighlightStyle.define([
-    { tag: tags.string, color: 'var(--color-terminal-green)' },
-    { tag: tags.propertyName, color: 'var(--color-terminal-blue)' },
-    { tag: [tags.number, tags.bool, tags.null], color: 'var(--color-terminal-magenta)' },
-  ]),
-)
-const argoEditorTheme = EditorView.theme({
-  '&': {
-    backgroundColor: 'var(--popover)',
-    color: 'var(--popover-foreground)',
-  },
-  '.cm-activeLine': { backgroundColor: 'var(--selected)' },
-  '.cm-activeLineGutter': {
-    backgroundColor: 'var(--selected)',
-    color: 'var(--foreground)',
-  },
-  '.cm-cursor': { borderLeftColor: 'var(--foreground)' },
-  '.cm-gutters': {
-    backgroundColor: 'var(--muted)',
-    borderRightColor: 'var(--border)',
-    color: 'var(--muted-foreground)',
-  },
-  '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
-    backgroundColor: 'var(--selected)',
-  },
-})
 const CONFIGURATION_EDITOR_ID = 'project-configuration'
 const CONFIGURATION_ERROR_ID = 'project-configuration-error'
+
+function xcodeEditorTheme(dark: boolean) {
+  const palette = xcodeCodePalette[dark ? 'dark' : 'light']
+  return [
+    EditorView.theme(
+      {
+        '&': { backgroundColor: palette.background, color: palette.foreground },
+        '.cm-activeLine': { backgroundColor: palette.lineHighlight },
+        '.cm-activeLineGutter': {
+          backgroundColor: palette.lineHighlight,
+          color: palette.foreground,
+        },
+        '.cm-cursor': { borderLeftColor: palette.foreground },
+        '.cm-gutters': {
+          backgroundColor: palette.background,
+          borderRightColor: 'transparent',
+          color: palette.gutterForeground,
+        },
+        '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
+          backgroundColor: palette.selection,
+        },
+      },
+      { dark },
+    ),
+    syntaxHighlighting(
+      HighlightStyle.define([
+        { tag: [tags.comment, tags.quote], color: palette.comment },
+        { tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' },
+        { tag: [tags.string, tags.meta], color: palette.string },
+        { tag: tags.typeName, color: palette.type },
+        { tag: tags.definition(tags.variableName), color: palette.definition },
+        { tag: tags.name, color: palette.name },
+        { tag: tags.variableName, color: palette.variable },
+      ]),
+    ),
+  ]
+}
 
 export function ConfigurationEditor({
   saving,
@@ -48,13 +60,14 @@ export function ConfigurationEditor({
   updateSource,
 }: ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
+  const dark = useDarkAppearance()
   const editor = useRef<ReactCodeMirrorRef>(null)
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
   const invalidSource = !isJson(source)
+  const theme = useMemo(() => xcodeEditorTheme(dark), [dark])
   const extensions = useMemo(
     () => [
       jsonLanguage,
-      jsonHighlighting,
       linter(jsonDiagnostics(t('setup.invalidJson')), { delay: 0 }),
       EditorView.contentAttributes.of({
         'aria-label': t('setup.configurationLabel'),
@@ -84,7 +97,7 @@ export function ConfigurationEditor({
           onBlur={() => setShowsKeyboardFocus(false)}
           onFocus={() => setShowsKeyboardFocus(lastInputWasKeyboard())}
           ref={editor}
-          theme={argoEditorTheme}
+          theme={theme}
           value={source}
         />
         <Button
