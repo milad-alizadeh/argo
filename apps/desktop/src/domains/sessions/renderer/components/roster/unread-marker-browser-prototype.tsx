@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
 import { Loader, type LoaderSize } from '../../../../../platform/renderer/components/loader'
 import { sessionRosterRow } from '../../session-fixtures'
@@ -84,10 +85,11 @@ function clearRejectedLoaderChoice() {
 }
 
 function PrototypeRoster() {
+  const { t } = useTranslation('sessions')
   return (
     <MemoryRouter initialEntries={['/sessions?variant=A']}>
       <aside
-        aria-label="Sessions"
+        aria-label={t('loaderPrototype.sessions')}
         className="flex h-dvh w-80 shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar"
       >
         <SessionsSidebarHeader
@@ -106,7 +108,6 @@ function PrototypeRoster() {
               onFocus={() => undefined}
               onSelect={() => undefined}
               onToggleSelect={() => undefined}
-              prototypeRunningLoader={true}
               prototypeUnread={unread}
               selectable={false}
               selected={index === 0}
@@ -131,32 +132,35 @@ function LoaderSample({
   pixels: number
   use: string
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="flex min-h-20 items-center gap-4 border-b border-border/60 py-3 last:border-b-0">
       <span className="flex w-12 justify-center">
-        <Loader aria-label={`${name} loader`} size={size} />
+        <Loader aria-label={t('loaderPrototype.label', { name })} size={size} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block type-body font-medium">{name}</span>
         <span className="block type-meta text-muted-foreground">{use}</span>
       </span>
-      <span className="type-meta tabular-nums text-faint">{pixels}px</span>
+      <span className="type-meta tabular-nums text-faint">
+        {t('loaderPrototype.pixels', { pixels })}
+      </span>
     </div>
   )
 }
 
 // PROTOTYPE: the selected Loader at every production size beside the production Session roster.
 export function UnreadMarkerBrowserPrototype() {
+  const { t } = useTranslation('sessions')
   useEffect(clearRejectedLoaderChoice, [])
   return (
     <main className="flex h-dvh overflow-hidden bg-background text-foreground">
       <PrototypeRoster />
       <section className="min-w-0 flex-1 overflow-y-auto px-8 py-7">
         <header className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Argo Loader</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('loaderPrototype.title')}</h1>
           <p className="mt-1 max-w-xl type-body text-muted-foreground">
-            The moving square is now the shared loading mark. It stays neutral, while blue means
-            unread and yellow means that a Session needs you.
+            {t('loaderPrototype.description')}
           </p>
         </header>
         <div className="max-w-2xl border-y border-border/60">

@@ -19,7 +19,6 @@ import {
   STATUS_MARKS,
 } from './session-roster-status'
 import {
-  UnreadMarkerPrototypeRunning,
   unreadMarkerPrototypeDot,
   useUnreadMarkerPrototypeVariant,
 } from './unread-marker-prototype'
@@ -69,7 +68,6 @@ export function SessionRosterItem({
   selected,
   session,
   tabIndex,
-  prototypeRunningLoader,
   prototypeUnread,
 }: {
   archived: boolean
@@ -81,7 +79,6 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
-  prototypeRunningLoader?: boolean
   prototypeUnread?: boolean
 }) {
   const { t } = useTranslation('sessions')
@@ -128,6 +125,7 @@ export function SessionRosterItem({
           </span>
           <span
             className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}
+            data-slot="session-status"
           />
         </span>
         <span className="sr-only">{STATUS_LABELS[session.status]}</span>
@@ -154,13 +152,9 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
-            {running && prototypeRunningLoader ? (
-              <Loader aria-hidden={true} className="ml-auto" size="meta" />
-            ) : (
-              <UnreadMarkerPrototypeRunning running={running} variant={unreadPrototype} />
-            )}
+            {running ? <Loader aria-hidden={true} className="ml-auto" size="meta" /> : null}
             {unreadPrototype === null || prototypeUnread === false ? null : (
-              <span className="sr-only">Unread</span>
+              <span className="sr-only">{t('rosterStatusUnread')}</span>
             )}
           </span>
           <ActivityLine session={session} />

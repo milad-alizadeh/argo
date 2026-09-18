@@ -240,6 +240,32 @@ export const CommandTitledSession: Story = {
   },
 }
 
+export const RunningSessionUsesLoader: Story = {
+  beforeEach: () =>
+    withRosterHost(async () =>
+      listedReply({
+        ...listed,
+        sessions: [
+          {
+            ...session,
+            status: 'running',
+            title: { text: 'Build the approved roster layout', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const row = await canvas.findByRole('button', { name: /Build the approved roster layout/ })
+    await expect(row).toHaveAccessibleName(/Running/)
+    const loader = row.querySelector<HTMLElement>('[data-slot="loader"]')
+    if (loader === null) throw new Error('The running Session Loader is absent.')
+    await expect(loader.getBoundingClientRect().width).toBe(12)
+    await expect(loader.getBoundingClientRect().height).toBe(12)
+    await expect(row.querySelector('[data-slot="session-status"]')).toHaveClass('bg-idle')
+  },
+}
+
 // Optional activity metadata must not present `unknown` status as an activity summary.
 export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
   beforeEach: () =>
