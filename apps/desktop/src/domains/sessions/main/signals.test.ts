@@ -1,12 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readActivity, readDelegations } from '../contract/signals'
-import type {
-  BackgroundTaskRecord,
-  ToolCall,
-  ToolResult,
-  TranscriptMessage,
-} from '../contract/transcript'
+import { readActivity } from '../contract/signals'
+import type { ToolCall, ToolResult, TranscriptMessage } from '../contract/transcript'
 
 function promptMessage(): TranscriptMessage {
   return {
@@ -52,106 +47,47 @@ function resultMessage(callId: string, result: ToolResult): TranscriptMessage {
   }
 }
 
-function backgroundNotification(callId: string, state: BackgroundTaskRecord['state']) {
-  return {
-    kind: 'background-task' as const,
-    taskId: 'task-1',
-    callId,
-    outputPath: null,
-    state,
-    summary: null,
-    timestamp: '2026-09-16T00:05:00.000Z',
-  }
+// The newest call of a Turn the transcript has not answered yet.
+function openActivity(name: string, input: ToolCall['input']) {
+  return readActivity([promptMessage(), callMessage({ id: 'call-1', name, input })])
 }
 
 test('names a running Bash call by its own description, not the raw command', () => {
-  const activity = readActivity([
-    promptMessage(),
-    callMessage({
-      id: 'call-1',
-      name: 'Bash',
-      input: {
-        command: 'RTK_DISABLED=1 gh pr checks 2062 --watch',
-        description: 'Watch PR checks',
-      },
-    }),
-  ])
-  assert.deepEqual(activity, {
+  const command = 'RTK_DISABLED=1 gh pr checks 2062 --watch'
+  assert.deepEqual(openActivity('Bash', { command, description: 'Watch PR checks' }), {
     label: 'Watch PR checks',
+    kind: 'command',
+    open: true,
     tool: 'Bash',
     target: 'Watch PR checks',
   })
 })
 
 test('names a running Bash call by its command when no description was given', () => {
-  const activity = readActivity([
-    promptMessage(),
-    callMessage({ id: 'call-1', name: 'Bash', input: { command: 'bun run quality' } }),
-  ])
-  assert.deepEqual(activity, {
+  assert.deepEqual(openActivity('Bash', { command: 'bun run quality' }), {
     label: 'Ran bun run quality',
+    kind: 'command',
+    open: true,
     tool: 'Bash',
     target: 'bun run quality',
   })
 })
 
 test('uses the Feed label for a non-command tool while retaining its activity metadata', () => {
-  const activity = readActivity([
-    promptMessage(),
-    callMessage({ id: 'call-1', name: 'Read', input: { file_path: '/workspace/src/app.ts' } }),
-  ])
-  assert.deepEqual(activity, {
+  assert.deepEqual(openActivity('Read', { file_path: '/workspace/src/app.ts' }), {
     label: 'Read app.ts',
+    kind: 'read',
+    open: true,
     tool: 'Read',
     target: 'app.ts',
   })
 })
 
-function delegationMessages(result: ToolResult): TranscriptMessage[] {
-  const call: ToolCall = { id: 'call-agent', name: 'Task', input: { description: 'sweep' } }
-  return [promptMessage(), callMessage(call), resultMessage('call-agent', result)]
-}
-
-test('reads a foreground Subagent as landed as soon as its result comes back', () => {
-  const messages = delegationMessages({
-    callId: 'call-agent',
-    blocks: [{ shape: 'text', text: 'done' }],
-    failed: false,
-  })
-  assert.equal(readDelegations(messages, [])[0]?.landed, true)
-})
-
-test('reads a backgrounded Subagent as still running until its completion notification lands', () => {
-  const messages = delegationMessages({
-    callId: 'call-agent',
-    blocks: [{ shape: 'text', text: 'Async agent launched successfully.' }],
-    failed: false,
-    background: { taskId: 'task-1', outputPath: null },
-  })
-  assert.equal(readDelegations(messages, [])[0]?.landed, false)
-  const notified = readDelegations(messages, [backgroundNotification('call-agent', 'completed')])
-  assert.equal(notified[0]?.landed, true)
-})
-
-test('uses Codex agent task names as delegation labels', () => {
-  const delegations = readDelegations(
-    [
-      promptMessage(),
-      callMessage({
-        id: 'call-agent',
-        name: 'spawn_agent',
-        input: { task_name: 'standards_review' },
-      }),
-    ],
-    [],
-  )
-  assert.deepEqual(delegations, [
-    {
-      id: 'call-agent',
-      label: 'standards_review',
-      landed: false,
-      startedAt: '2026-09-15T00:00:00.000Z',
-      endedAt: null,
-    },
+test('reads a call closed once the transcript holds its result', () => {
+  const activity = readActivity([
+    promptMessage(),
+    callMessage({ id: 'call-1', name: 'Bash', input: { command: 'bun run quality' } }),
+    resultMessage('call-1', { callId: 'call-1', blocks: [], failed: false }),
   ])
+  assert.equal(activity?.open, false)
 })

@@ -1,19 +1,19 @@
 import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
+import { fileChange, patchOf, searchLabel, searchOutcome } from './tool-changes'
 import { resultText, type ToolCall, type ToolResult as TranscriptToolResult } from './transcript'
-import { createdPatch, unifiedPatch } from './unified-patch'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'>
 
 export function displayedToolLabel(
-  call: Pick<ToolRow, 'kind' | 'label'>,
+  call: { kind: ToolRow['kind'] | 'thought'; label: string },
   active: boolean,
   running: string,
 ) {
-  if (!active || call.kind !== 'command') return call.label
+  if (!active || (call.kind !== 'command' && call.kind !== 'tool')) return call.label
   const label = call.label.startsWith('Ran ') ? call.label.slice('Ran '.length) : call.label
   return `${running} ${label}`
 }
@@ -59,6 +59,15 @@ const TOOL_DETAILS = {
     kind: 'command' as const,
     label: commandLabel(call, 'cmd'),
   }),
+  // Codex names a search by its first query, or a fetch by its page; its adapter lifts those out
+  // of the script as `query` and `url`.
+  web__run: (call: ToolCall) => ({ kind: 'searched' as const, label: searchLabel(call) }),
+  apply_patch: (call: ToolCall) => {
+    const change = patchOf(call)
+    return change === null
+      ? { kind: 'edited' as const, label: 'Edited file' }
+      : { kind: change.kind, label: change.label }
+  },
 } as const
 
 const EVIDENCE_KINDS = { Bash: 'output', Read: 'document' } as const
@@ -81,40 +90,28 @@ function filePath(call: ToolCall) {
 }
 
 // Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
-// compact surface never has to rebuild reader-facing words from the CLI's execution type.
+// compact surface never has to rebuild reader-facing words from the CLI's execution type. An
+// unclassified tool reads as something the agent ran, the same verb as a command, under the
+// title the agent gave the call when it gave one (Codex's `js` writes `{title, code}`).
 export function toolPresentation(call: ToolCall) {
   return (
     TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
       kind: 'tool' as const,
-      label: `Called ${call.name}`,
+      label: text(call.input.title) ?? `Ran ${call.name}`,
     }
   )
 }
 
-// A tool no row knows still shows what it was asked: a lone string argument as itself, else the input.
+// A tool no row knows still shows what it was asked: its code, a lone string argument as itself,
+// else the input.
 function unclassifiedText(input: ToolCall['input']): string | null {
+  const code = text(input.code)
+  if (code !== null) return code
   const values = Object.values(input)
   if (values.length === 0) return null
   const [only] = values
   if (values.length === 1 && typeof only === 'string') return only
   return JSON.stringify(input, null, 2)
-}
-
-const lineCount = (text: string) => text.split('\n').length
-
-// An Edit or a Write carries its change in its own input, so its diff is ready before the result.
-function fileChange(call: ToolCall) {
-  const { old_string: oldText, new_string: newText, content } = call.input
-  if (call.name === 'Edit' && typeof oldText === 'string' && typeof newText === 'string') {
-    return {
-      patch: unifiedPatch(oldText, newText),
-      lineCounts: { added: lineCount(newText), removed: lineCount(oldText) },
-    }
-  }
-  if (call.name === 'Write' && typeof content === 'string') {
-    return { patch: createdPatch(content), lineCounts: { added: lineCount(content), removed: 0 } }
-  }
-  return null
 }
 
 function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
@@ -141,17 +138,21 @@ function toolText(call: ToolCall, skillBodies: Map<string, string>): string | nu
   if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
   if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
+  if (call.name === 'web__run') return text(call.input.url) ?? text(call.input.query)
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
 }
 
 function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {
   const result = results.get(call.id)
+  const presentation = toolPresentation(call)
+  const outcome = presentation.kind === 'searched' ? searchOutcome(result) : null
   return {
     shape: 'tool',
     id: call.id,
-    ...toolPresentation(call),
+    ...presentation,
+    label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
     lineCounts: fileChange(call)?.lineCounts ?? null,
-    status: toolStatus(result),
+    status: outcome === null ? toolStatus(result) : 'failed',
     evidence: evidenceOf(call, result),
     text: toolText(call, skillBodies),
   }

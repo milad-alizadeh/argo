@@ -20,9 +20,19 @@ const toolEvidenceSchema = z
   ])
   .nullable()
 
+export const toolCallKindSchema = z.enum([
+  'command',
+  'read',
+  'edited',
+  'created',
+  'tool',
+  'skill',
+  'searched',
+])
+
 const toolCallSchema = z.strictObject({
   id: identifierSchema,
-  kind: z.enum(['command', 'read', 'edited', 'created', 'tool', 'skill']),
+  kind: toolCallKindSchema,
   label: z.string(),
   // An Edit's line counts, the one tool call that states a size today.
   lineCounts: z
@@ -39,6 +49,15 @@ const toolCallSchema = z.strictObject({
 })
 
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
+
+// What a Session is doing now, the words the roster and the Feed both draw (`SessionActivity`).
+export const liveActivitySchema = z.strictObject({
+  label: z.string(),
+  // A `thought` is the Turn's latest reasoning headline, newer than any call it has made.
+  kind: z.union([toolCallKindSchema, z.literal('thought')]),
+  open: z.boolean(),
+})
+export type LiveActivity = z.infer<typeof liveActivitySchema>
 
 const delegationRowSchema = z.strictObject({
   shape: z.literal('delegation'),
@@ -81,6 +100,9 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     label: z.string(),
     calls: z.array(toolRowSchema),
+    // The Session's activity while the Turn runs, set by the renderer alone (`withHeadline`)
+    // from the same fact the roster draws under the title.
+    headline: liveActivitySchema.optional(),
   }),
   z.strictObject({
     shape: z.literal('prose'),
@@ -116,6 +138,13 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     role: z.enum(['user', 'assistant']),
     label: z.string(),
+    source: z.string(),
+  }),
+  // An image the assistant or a tool result carried, drawn as the picture itself.
+  z.strictObject({
+    shape: z.literal('image'),
+    id: identifierSchema,
+    role: z.enum(['user', 'assistant']),
     source: z.string(),
   }),
   z.strictObject({ shape: z.literal('unreadable'), id: identifierSchema }),

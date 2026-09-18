@@ -4,6 +4,7 @@ import {
   withoutBlocks,
 } from '../../../domains/sessions/contract/transcript'
 import { parseTranscriptLine } from './records'
+import { readingSpawnedAgents } from './spawned-agents'
 
 export type { TranscriptFile }
 export { withoutBlocks }
@@ -12,5 +13,6 @@ export function readTranscriptFile(
   path: string,
   { fileName, lines }: { fileName: string; lines: Iterable<string> },
 ) {
-  return read(path, { fileName, lines, parse: parseTranscriptLine })
+  const file = read(path, { fileName, lines, parse: parseTranscriptLine })
+  return { ...file, records: readingSpawnedAgents(file.records) }
 }

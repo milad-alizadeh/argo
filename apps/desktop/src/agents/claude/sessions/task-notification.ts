@@ -1,7 +1,17 @@
-import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
+import { isIdentifier } from '@/shared/validation'
+import type {
+  TranscriptMessage,
+  TranscriptRecord,
+} from '../../../domains/sessions/contract/transcript'
 import { taggedField } from '../../envelope-tags'
+import { readTaskEnding } from './background-task'
 
 type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>
+
+export function identifierTag(text: string, tag: string): string | null {
+  const value = taggedField(text, tag)
+  return value !== null && isIdentifier(value) ? value : null
+}
 
 // An agent's result opens with its own report; a workflow's is JSON meant for the model.
 function firstReportLine(text: string): string | null {
@@ -31,10 +41,32 @@ const SUMMARY_KINDS = [
   progress: (text: string) => string | null
 }[]
 
-// A background task's notification: which kind of work ended, its readable name, and its latest line.
-export function readTaskNotification(
+// A background task's delivery is not the person's own words: it is the CLI handing back a
+// summary, with the task's full result attached for the model, not the reader.
+export function readTaskDelivery(
+  record: Record<string, unknown>,
+  message: TranscriptMessage,
   text: string,
-): Pick<Delegation, 'actor' | 'action' | 'progress'> {
+): TranscriptRecord {
+  const ending = readTaskEnding(text, record.timestamp)
+  const notification = readTaskNotification(text)
+  const callId = identifierTag(text, 'tool-use-id')
+  const taskId = identifierTag(text, 'task-id')
+  return {
+    kind: 'delegation',
+    uuid: message.uuid,
+    timestamp: message.timestamp,
+    ...notification,
+    status: taggedField(text, 'status'),
+    // A Subagent's card is keyed by the call that spawned it (`spawned-agents.ts`).
+    groupId: notification.actor === 'agent' ? (callId ?? taskId) : taskId,
+    callId,
+    ...(ending === null ? {} : { ending }),
+  }
+}
+
+// A background task's notification: which kind of work ended, its readable name, and its latest line.
+function readTaskNotification(text: string): Pick<Delegation, 'actor' | 'action' | 'progress'> {
   const summary = taggedField(text, 'summary')
   for (const kind of SUMMARY_KINDS) {
     const name = summary?.startsWith(`${kind.prefix} "`)

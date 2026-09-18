@@ -6,6 +6,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isRecord } from '@/shared/validation'
+import type { SessionDelegationUsage } from '../../../domains/sessions/contract/background-work-contract'
 import type { SessionChain } from '../../../domains/sessions/contract/chains'
 import {
   type TranscriptFile,
@@ -13,6 +14,7 @@ import {
 } from '../../../domains/sessions/contract/transcript'
 import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
 import { parseTranscriptLine } from './records'
+import { readingSpawnedAgents } from './spawned-agents'
 
 const META = '.meta.json'
 const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)
@@ -57,7 +59,12 @@ function asOwnThread(file: TranscriptFile): TranscriptFile {
 async function readSubagentFile(filePath: string): Promise<TranscriptFile | null> {
   const records = await readRecords(filePath).catch(() => null)
   if (records === null) return null
-  return asOwnThread(transcriptFileFrom(filePath, { fileName: path.basename(filePath), records }))
+  return asOwnThread(
+    transcriptFileFrom(filePath, {
+      fileName: path.basename(filePath),
+      records: readingSpawnedAgents(records),
+    }),
+  )
 }
 
 // One Subagent's transcript as a chain of its own, so the Feed the reader already projects for a
@@ -75,24 +82,30 @@ export async function readDelegationChain(
 }
 
 // What each Subagent spent, summed the way the Roster sums a Session's own spend: the tokens the
-// work consumed, cache reads excluded. A Subagent whose transcript reports no usage reads null.
+// work consumed, cache reads excluded, and the model that answered it. A Subagent whose
+// transcript reports neither reads null for both.
 export async function readDelegationTokens(
   chain: SessionChain | null,
-): Promise<{ id: string; tokens: number | null }[]> {
+): Promise<SessionDelegationUsage[]> {
   if (chain === null) return []
   const paths = [...(await subagentPaths(chain))]
   return Promise.all(
     paths.map(async ([id, filePath]) => {
       const file = await readSubagentFile(filePath)
-      const reported = (file?.records ?? []).flatMap((record) =>
+      const replies = (file?.records ?? []).filter(
+        (record) => record.kind === 'message' && record.role === 'assistant',
+      )
+      const reported = replies.flatMap((record) =>
         record.kind === 'message' && record.usage !== null ? [record.usage] : [],
       )
+      const model = replies.findLast((record) => record.kind === 'message' && record.model !== null)
       return {
         id,
         tokens:
           reported.length === 0
             ? null
             : reported.reduce((sum, usage) => sum + usage.inputTokens + usage.outputTokens, 0),
+        model: model?.kind === 'message' ? model.model : null,
       }
     }),
   )

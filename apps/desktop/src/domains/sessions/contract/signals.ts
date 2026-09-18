@@ -9,9 +9,6 @@ import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
 
-// The tools that spawn a Subagent (CONTEXT.md L3 · Subagent). The CLI renamed `Task` to `Agent`,
-// and a transcript written before the rename still names the old one.
-const DELEGATING_TOOLS = ['Task', 'Agent', 'spawn_agent']
 // The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
 // come back is a command still running, which is what the Shell list's Running group says.
 const SHELL_TOOL = 'Bash'
@@ -43,48 +40,26 @@ function callTimes(messages: TranscriptMessage[]): CallTimes {
   return { started, ended }
 }
 
-export function readDelegations(
-  messages: TranscriptMessage[],
-  notifications: BackgroundTask[],
-  records: TranscriptRecord[] = [],
-): SessionDelegation[] {
-  const answered = new Set(messages.flatMap((message) => message.answeredCalls))
-  // A backgrounded call's receipt answers it at once; only its notification lands it (#2247).
-  const receipted = new Set(
-    messages
-      .flatMap((message) => message.toolResults ?? [])
-      .flatMap((result) => (result.background === undefined ? [] : [result.callId])),
-  )
-  const times = callTimes(messages)
-  const ended = endings(notifications)
-  const delegations = calls(messages)
-    .filter((call) => DELEGATING_TOOLS.includes(call.name))
-    .map((call) => ({
-      id: call.id,
-      // Codex's collaboration tool calls it `task_name`; Claude's Task and Agent tools use a
-      // reader-facing description. Both name the same Subagent.
-      label: text(call.input.task_name) ?? text(call.input.description),
-      landed: receipted.has(call.id) ? ended.has(call.id) : answered.has(call.id),
-      startedAt: times.started.get(call.id) ?? null,
-      endedAt: ended.get(call.id)?.timestamp ?? times.ended.get(call.id) ?? null,
-    }))
-  const activities = new Map<string, SessionDelegation>()
+// Every Subagent is read from the delegation records its adapter wrote (Codex's
+// `SubAgentActivity`, Claude's spawning call and task notification), keyed by the group the
+// adapter chose, so the Roster and the Feed name the same card for either CLI. A record with no
+// status opened the thread; any status but `running` lands it.
+export function readDelegations(records: TranscriptRecord[]): SessionDelegation[] {
+  const delegations = new Map<string, SessionDelegation>()
   for (const record of records) {
     if (record.kind !== 'delegation' || record.actor !== 'agent' || record.groupId === null)
       continue
-    const previous = activities.get(record.groupId)
-    activities.set(record.groupId, {
+    const previous = delegations.get(record.groupId)
+    const landed = record.status !== null && record.status !== 'running'
+    delegations.set(record.groupId, {
       id: record.groupId,
-      label: record.action,
-      landed: record.status === 'completed',
-      startedAt:
-        record.status === 'running'
-          ? (previous?.startedAt ?? record.timestamp ?? null)
-          : (previous?.startedAt ?? null),
-      endedAt: record.status === 'completed' ? (record.timestamp ?? null) : null,
+      label: record.action ?? previous?.label ?? null,
+      landed,
+      startedAt: previous?.startedAt ?? record.timestamp ?? null,
+      endedAt: landed ? (record.timestamp ?? null) : null,
     })
   }
-  return [...delegations, ...activities.values()]
+  return [...delegations.values()]
 }
 
 function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {
@@ -155,11 +130,33 @@ function readTarget(input: Record<string, unknown>): string | null {
   return null
 }
 
-// The newest call since the prompt that opened the Turn. A call from an earlier Turn is what
-// the Session did, not what it is doing, so a Turn that has made no call yet reads nothing.
+function callActivity(call: ToolCall, open: boolean): SessionActivity {
+  const { label, kind } = toolPresentation(call)
+  return { label, kind, open, tool: call.name, target: readTarget(call.input) }
+}
+
+function thoughtActivity(message: TranscriptMessage): SessionActivity | null {
+  const thought = message.blocks.findLast((block) => block.shape === 'thought')
+  if (thought === undefined || thought.text.trim() === '') return null
+  return { label: thought.text.trim(), kind: 'thought', open: true, tool: 'thought', target: null }
+}
+
+// What the Session is doing since the prompt that opened the Turn, the same words the Feed's
+// live tail draws: the newest call still running or headline thought, whichever came last. A
+// settled call outranks nothing but silence, as the Codex app keeps a headline over the commands
+// it ran under it. Work from an earlier Turn reads nothing.
 export function readActivity(messages: TranscriptMessage[]): SessionActivity | null {
-  const call = calls(messages.slice(lastPromptIndex(messages) + 1)).at(-1)
-  return call === undefined
-    ? null
-    : { label: toolPresentation(call).label, tool: call.name, target: readTarget(call.input) }
+  const turn = messages.slice(lastPromptIndex(messages) + 1)
+  const answered = new Set(turn.flatMap((message) => message.answeredCalls))
+  let settled: ToolCall | undefined
+  for (const message of turn.toReversed()) {
+    const call = message.toolCalls.at(-1)
+    // An unanswered call older than a settled one was abandoned, not left running.
+    if (call !== undefined && settled === undefined && !answered.has(call.id))
+      return callActivity(call, true)
+    const thought = thoughtActivity(message)
+    if (thought !== null) return thought
+    settled ??= call
+  }
+  return settled === undefined ? null : callActivity(settled, false)
 }

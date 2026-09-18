@@ -7,7 +7,7 @@ import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
 import { BasicFeed } from './basic-feed'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from './content/feed-samples'
 import { FeedJumpToLatest } from './feed-jump-to-latest'
-import { INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
+import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
 
 const feed = {
   version: 1,
@@ -105,7 +105,6 @@ const rowShapeFeed = {
       role: 'assistant',
       text: 'Every row shape has a renderer.',
     },
-    { shape: 'thought', id: 'thought-row', text: 'A private thought.' },
     { shape: 'command-output', id: 'command-output-row', text: 'Command completed.' },
     { shape: 'event', id: 'event-row', event: 'status', text: 'Session is running.' },
     {
@@ -144,6 +143,7 @@ const rowShapeFeed = {
       label: 'A source row.',
       source: 'source-row',
     },
+    { shape: 'image', id: 'image-row', role: 'assistant', source: SAMPLE_PICTURE },
     { shape: 'unreadable', id: 'unreadable-row' },
     {
       shape: 'ask',
@@ -164,10 +164,9 @@ const rowShapeFeed = {
 
 const ROW_SHAPE_ASSERTIONS = [
   ['tool-row', 'Ran a command'],
-  ['tool-group-row', 'Ran a grouped command'],
+  ['tool-group-row', 'Ran a command'],
   ['prompt-row', 'Please inspect every row shape.'],
   ['assistant-prose-row', 'Every row shape has a renderer.'],
-  ['thought-row', 'A private thought.'],
   ['command-output-row', 'Command completed.'],
   ['event-row', 'Status updated'],
   ['delegation-row', 'Review the Feed.'],
@@ -178,7 +177,8 @@ const ROW_SHAPE_ASSERTIONS = [
   ['ask-row', 'Should the Feed render every row shape?'],
 ] as const
 
-// This story renders every row shape through the public Feed surface rather than a renderer directly.
+// This story renders every settled row shape through the public Feed surface rather than a renderer
+// directly. A `thought` is not one: it draws only as the live tail (`ThoughtWhileThinking`).
 export const EveryRowShape: Story = {
   args: { feed: rowShapeFeed, selectedSessionId: 'row-shapes' },
   play: async ({ canvasElement }) => {
@@ -187,6 +187,8 @@ export const EveryRowShape: Story = {
       for (const [id, text] of ROW_SHAPE_ASSERTIONS) {
         expect(canvasElement.querySelector(`[data-feed-row="${id}"]`)).toHaveTextContent(text)
       }
+      // An image row is the picture itself, never its label.
+      expect(canvasElement.querySelector('[data-feed-row="image-row"] img')).toBeInTheDocument()
     })
   },
 }
@@ -441,11 +443,15 @@ export const DelegationCards: Story = {
     const canvas = within(canvasElement)
     const agent = canvas.getByRole('region', { name: 'Background Agent' })
     await expect(agent).toHaveTextContent('Done')
-    await expect(within(agent).getByText('Done')).toHaveClass('sr-only')
+    await expect(within(agent).getByText('Done')).not.toHaveClass('sr-only')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
-    await expect(agent).toHaveTextContent('gpt-5.6-terra1m 12s4.2k tokens')
-    await userEvent.click(within(agent).getByRole('button'))
+    await expect(agent).toHaveTextContent('gpt-5.6-terra · 1m 12s · 4.2k tokens')
+    await userEvent.click(
+      within(agent).getByRole('button', {
+        name: 'Open the Review the Feed card for keyboard access. Session',
+      }),
+    )
     await expect(
       canvas.getByText('Opened Review the Feed card for keyboard access.'),
     ).toBeInTheDocument()
@@ -811,10 +817,10 @@ export const SeparateToolRuns: Story = {
   args: { feed: separateToolRunsFeed, selectedSessionId: 'command-runs' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Ran 2 commands' })).toBeVisible()
-    // A lone command's group takes its own call's label, not the generic count summary.
-    await expect(canvas.getByRole('button', { name: 'Ran bunx biome check .' })).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'Ran a command' })).toBeNull()
+    // Settled runs side by side fold into one count; no command names itself in the Feed.
+    await expect(canvas.getByRole('button', { name: 'Ran 3 commands' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Ran 2 commands' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Ran bunx biome check .' })).toBeNull()
   },
 }
 
@@ -892,13 +898,13 @@ const allVariationsFeed = {
     {
       shape: 'tool-group' as const,
       id: 'tool-group:empty',
-      label: 'Called an unclassified tool',
+      label: 'Ran a command',
       calls: [
         {
           shape: 'tool' as const,
           id: 'empty-call',
           kind: 'tool' as const,
-          label: 'Called an unclassified tool',
+          label: 'Ran an unclassified tool',
           lineCounts: null,
           status: 'succeeded' as const,
           evidence: null,
@@ -971,7 +977,7 @@ export const AllRowVariations: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Simple english' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command, edited a file' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Called an unclassified tool' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
     await expect(canvas.getByRole('region', { name: 'Background Agent' })).toBeVisible()
     await expect(canvas.getByRole('region', { name: 'Background Task' })).toBeVisible()
     const link = canvas.getByRole('link', {
@@ -1635,6 +1641,116 @@ export const SmoothedStreamingTextReducedMotion: Story = {
     } finally {
       restore()
     }
+  },
+}
+
+const thinkingPrompt = {
+  shape: 'prose',
+  id: 'thinking-prompt',
+  role: 'user',
+  text: 'Add a single parent ticket.',
+} satisfies SessionFeedRow
+
+// Two reasoning records in a row, the way Codex writes them. The Feed never draws them as rows:
+// the newest is the Session's activity, the same fact the roster line reads.
+const thinkingFeed = {
+  ...feed,
+  sessionId: 'thinking',
+  chainId: 'thinking',
+  revision: 'thinking-one',
+  rows: [
+    thinkingPrompt,
+    { shape: 'thought', id: 'thought-one', text: 'Planning parent and child ticket labeling' },
+    { shape: 'thought', id: 'thought-two', text: 'Designing issue creation order and labeling' },
+  ],
+} satisfies SessionFeed
+const thinkingActivity = {
+  kind: 'thought',
+  label: 'Designing issue creation order and labeling',
+  open: true,
+  tool: 'reasoning',
+  target: null,
+} satisfies NonNullable<FeedLiveFacts>['activity']
+
+const thoughtDeliveredFeed = {
+  ...thinkingFeed,
+  revision: 'thinking-two',
+  rows: [
+    ...thinkingFeed.rows,
+    { shape: 'prose', id: 'thinking-reply', role: 'assistant', text: 'One parent issue, then.' },
+  ],
+} satisfies SessionFeed
+
+function ThinkingFeed() {
+  const [current, setCurrent] = useState<SessionFeed>(thinkingFeed)
+  const [running, setRunning] = useState(true)
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(thoughtDeliveredFeed)}>
+        Deliver reply
+      </button>
+      <button type="button" onClick={() => setRunning(false)}>
+        Complete turn
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          feed={current}
+          failure={null}
+          liveFacts={{ ...LIVE_FACTS, isRunning: running, activity: thinkingActivity }}
+          selectedSessionId="thinking"
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onAnswerQuestion={() => {}}
+          onRetryFeed={() => {}}
+          answeringQuestionId={null}
+          questionFailure={() => null}
+        />
+      </div>
+    </div>
+  )
+}
+
+// A thought is a status, not history: only the newest shows, only while the agent is still
+// thinking, and it leaves the Feed the moment the reply lands.
+export const ThoughtWhileThinking: Story = {
+  render: () => <ThinkingFeed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => {
+      expect(drawnRow(canvasElement, 'thinking:activity')).toHaveTextContent(
+        'Designing issue creation order and labeling',
+      )
+      expect(
+        drawnRow(canvasElement, 'thinking:activity')?.querySelector('.feed-work-shimmer'),
+      ).not.toBeNull()
+    })
+    expect(drawnRow(canvasElement, 'thought-one')).toBeUndefined()
+    expect(drawnRow(canvasElement, 'thought-two')).toBeUndefined()
+    // The shimmering thought already says the agent is working; the marker does not say it twice.
+    expect(canvas.queryByRole('status', { name: 'Working' })).toBeNull()
+    // Prose delivered mid-Turn lands above the thought, which stays the tail as Codex keeps its
+    // headline, until the Turn ends or a newer thought replaces it.
+    await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
+    await waitFor(() => {
+      expect(drawnRow(canvasElement, 'thinking-reply')).toHaveTextContent('One parent issue, then.')
+      const rows = drawnRows(canvasElement).map((row) => row.getAttribute('data-feed-row'))
+      expect(rows.indexOf('thinking:activity')).toBe(rows.indexOf('thinking-reply') + 1)
+    })
+  },
+}
+
+// The Turn can end on a thought, as an interrupted one does; a thought never outlives its Turn.
+export const ThoughtLeavesWithItsTurn: Story = {
+  render: () => <ThinkingFeed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeDefined())
+    await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined())
+    await userEvent.click(canvas.getByRole('button', { name: 'Complete turn' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
+    expect(drawnRow(canvasElement, 'thinking-prompt')).toBeDefined()
   },
 }
 

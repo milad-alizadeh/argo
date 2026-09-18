@@ -11,7 +11,7 @@ import {
   openedQuote,
   type Quote,
 } from './javascript-string'
-import { nestedToolCall } from './nested-tool-call'
+import { arrayAssignedTo, codeMatch, nestedToolCall } from './nested-tool-call'
 
 const PLAN_FUNCTION = 'update_plan'
 
@@ -57,7 +57,20 @@ function planArguments(payload: Record<string, unknown>): string | null {
   if (payload.type !== 'custom_tool_call' || payload.name !== 'exec') return null
   if (typeof payload.input !== 'string') return null
   const nested = nestedToolCall(payload.input)
-  return nested?.name === PLAN_FUNCTION ? nested.argumentsText : null
+  return nested?.name === PLAN_FUNCTION
+    ? inlinePlanVariable(payload.input, nested.argumentsText)
+    : null
+}
+
+// A script that builds the list first passes it by name: `{plan}` or `{explanation, plan: plan}`.
+const PLAN_BY_NAME = /(?<=[{,]\s*)plan(?:\s*:\s*plan)?(?=\s*[,}])/y
+
+function inlinePlanVariable(script: string, argumentsText: string): string {
+  const byName = codeMatch(argumentsText, PLAN_BY_NAME)
+  const plan = byName === null ? null : arrayAssignedTo(script, 'plan')
+  if (byName === null || plan === null) return argumentsText
+  const end = byName.index + byName[0].length
+  return `${argumentsText.slice(0, byName.index)}plan: ${plan}${argumentsText.slice(end)}`
 }
 
 function readPlanArguments(value: unknown): PlanChange {

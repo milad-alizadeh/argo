@@ -51,10 +51,10 @@ test('projects tool result images into the historical Feed', () => {
   }
   const rows = projectFeed(chain, undefined).rows
   assert.deepEqual(
-    rows.map((row) => ({ shape: row.shape, source: row.shape === 'source' ? row.source : null })),
+    rows.map((row) => ({ shape: row.shape, source: row.shape === 'image' ? row.source : null })),
     [
       { shape: 'tool-group', source: null },
-      { shape: 'source', source: 'data:image/png;base64,AAAA' },
+      { shape: 'image', source: 'data:image/png;base64,AAAA' },
     ],
   )
 })

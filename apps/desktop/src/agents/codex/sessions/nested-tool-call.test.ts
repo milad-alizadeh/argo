@@ -21,6 +21,22 @@ test('does not treat a later or quoted tool name as the wrapper call', () => {
   assert.equal(nestedToolCall('// tools.update_plan({})\ntext("done");'), null)
 })
 
+test('reads a call that is awaited inline or made inside a callback', () => {
+  assert.deepEqual(
+    nestedToolCall('const patch = "*** Begin Patch";\ntext(await tools.apply_patch(patch));'),
+    {
+      name: 'apply_patch',
+      argumentsText: 'patch',
+    },
+  )
+  assert.deepEqual(
+    nestedToolCall(
+      'const results = await Promise.all(specs.map(([title]) => tools.exec_command({cmd:`gh issue create ` + title})));',
+    ),
+    { name: 'exec_command', argumentsText: '{cmd:`gh issue create ` + title}' },
+  )
+})
+
 test('reads several wrapper calls in source order', () => {
   assert.deepEqual(
     nestedToolCalls(

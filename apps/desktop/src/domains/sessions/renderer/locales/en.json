@@ -195,7 +195,9 @@
     }
   },
   "marks": {
+    "subagents": "Subagents",
     "thought": "Thought",
+    "compacting": "Compacting conversation…",
     "compacted": "Conversation compacted",
     "interrupted": "Interrupted"
   },
@@ -207,8 +209,9 @@
     "protocolDetails": "Protocol text"
   },
   "delegation": {
-    "agent": { "label": "Background Agent", "running": "Running Background Agent" },
+    "agent": { "label": "Background Agent" },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"
   },
   "workState": {
@@ -224,6 +227,11 @@
     "inspector": "Skill",
     "reading": "Reading skill…",
     "unavailable": "This skill's file could not be read."
+  },
+  "file": {
+    "inspector": "File",
+    "reading": "Reading file…",
+    "unavailable": "This file could not be read."
   },
   "permission": {
     "title": "Allow this?",

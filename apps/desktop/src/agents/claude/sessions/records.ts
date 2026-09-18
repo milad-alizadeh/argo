@@ -13,6 +13,7 @@ import { commandSource } from './command-source'
 import { messageEnvelope } from './message-envelope'
 import { readPlanChanges } from './plan-changes'
 import { promptBlocks } from './prompt-images'
+import { queuedPromptRecord } from './queued-prompt'
 import { readSkillBody } from './skill-body'
 import { readStandaloneRecord } from './standalone-records'
 
@@ -140,6 +141,8 @@ export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (value.type === 'last-prompt' && typeof value.leafUuid === 'string') {
     return { kind: 'link', leafUuid: value.leafUuid }
   }
+  const queued = queuedPromptRecord(value)
+  if (queued !== null) return readMessage(queued, 'user') ?? { kind: 'unreadable', line }
   const read =
     readBackgroundTask(value) ?? readTitle(value) ?? readMark(value) ?? readStandaloneRecord(value)
   if (read !== null) return read

@@ -1,0 +1,62 @@
+/* The motion and rail geometry the Subagent card needs and no utility expresses. Every value
+   here is a named component-local token over the shared contract, and every animation stops
+   under `prefers-reduced-motion`. */
+
+[data-slot="feed-delegation"] {
+  --delegation-live-ink: color-mix(in oklab, var(--color-active) 62%, var(--border));
+  --delegation-node: var(--size-icon-control);
+}
+
+/* The thread between the two nodes. It travels while the child is working, and is a plain
+   hairline once it has landed. */
+.delegation-thread-line {
+  position: absolute;
+  top: var(--delegation-node);
+  bottom: var(--delegation-node);
+  left: calc(var(--delegation-node) / 2 - var(--size-border) / 2);
+  width: var(--size-border);
+  background-color: var(--border);
+}
+
+.delegation-thread-line[data-live="true"] {
+  background-image: linear-gradient(
+    180deg,
+    var(--border) 0%,
+    var(--delegation-live-ink) 50%,
+    var(--border) 100%
+  );
+  background-size: 100% 240%;
+  animation: delegation-thread-travel 1.9s linear infinite;
+}
+
+@keyframes delegation-thread-travel {
+  from {
+    background-position: 0 -140%;
+  }
+  to {
+    background-position: 0 140%;
+  }
+}
+
+/* The waiting node: a ring that breathes until the child reports back. */
+.delegation-node-waiting {
+  border-color: var(--delegation-live-ink);
+  animation: delegation-node-breathe 2.2s var(--ease-emphasized) infinite;
+}
+
+@keyframes delegation-node-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: var(--shadow-state-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delegation-thread-line[data-live="true"],
+  .delegation-node-waiting {
+    animation: none;
+  }
+}

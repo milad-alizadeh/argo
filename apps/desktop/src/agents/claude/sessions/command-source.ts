@@ -3,12 +3,17 @@ function tagContents(text: string, name: string) {
 }
 
 const commandTags = /<\/?command-(?:args|message|name)>/g
+// Text pasted into the prompt is wrapped as `<pasted_content id="c485">…</pasted_content id="c485">`.
+const pastedTags = /<\/?pasted_content id="[^"]*">/g
 
 // Claude keeps a sent slash command in tags that are not part of the person's prompt.
 export function commandSource(text: string) {
   const name = tagContents(text, 'command-name')
   if (name === null)
-    return tagContents(text, 'command-message') ?? text.replace(commandTags, '').trim()
+    return (
+      tagContents(text, 'command-message') ??
+      text.replace(commandTags, '').replace(pastedTags, '').trim()
+    )
   const argumentsText = tagContents(text, 'command-args')
   return argumentsText === null || argumentsText.length === 0 ? name : `${name} ${argumentsText}`
 }

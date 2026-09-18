@@ -18,12 +18,12 @@ const unclassified = {
   shape: 'tool' as const,
   id: 'unclassified',
   kind: 'tool' as const,
-  label: 'Called an unclassified tool',
+  label: 'Ran an unclassified tool',
   lineCounts: null,
   status: 'succeeded' as const,
   evidence: {
     kind: 'output' as const,
-    title: 'Called an unclassified tool',
+    title: 'Ran an unclassified tool',
     source: '{"ok":true}',
   },
   text: null,
@@ -115,8 +115,8 @@ export const CommandGroupOfOne = {
   ),
 }
 
-// The label is the agent's own description ("Listing changed files…"), the row expands to a
-// chevron disclosure, and the full raw command shows in a monospace block only once opened.
+// A settled command is history: the group reads as its count, and the agent's own description
+// ("Listing changed files…") and the raw command show only once opened.
 export const CommandWithDescriptionLabel = {
   render: () => (
     <FeedToolGroup
@@ -140,12 +140,14 @@ export const CommandWithDescriptionLabel = {
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    const group = canvas.getByRole('button', {
-      name: 'Listing changed files and scanning them for leftovers',
-    })
+    const group = canvas.getByRole('button', { name: 'Ran a command' })
     await expect(group).toHaveAttribute('aria-expanded', 'false')
     await expect(canvas.queryByRole('code')).toBeNull()
+    await expect(
+      canvas.queryByText('Listing changed files and scanning them for leftovers'),
+    ).toBeNull()
     await userEvent.click(group)
+    await canvas.findByText('Listing changed files and scanning them for leftovers')
     const codeBlock = await canvas.findByRole('code')
     await expect(codeBlock).toHaveTextContent('RTK_DISABLED=1')
   },
@@ -201,7 +203,8 @@ export const GroupWithARunningCommand = {
   },
 }
 
-// The tail group of a running Turn names its latest call even between calls.
+// The tail group of a running Turn carries the Session's activity as its headline, the same
+// line the roster draws, so between calls it still names the latest one.
 export const LiveGroupBetweenCalls = {
   render: () => (
     <FeedToolGroup
@@ -210,8 +213,8 @@ export const LiveGroupBetweenCalls = {
         id: 'tool-group:live',
         label: 'Ran a command, edited a file',
         calls: [command, edited],
+        headline: { kind: 'edited', label: 'Edited Composer.tsx', open: false },
       }}
-      live
       activeEvidenceId={null}
       onOpen={() => {}}
       toolGroups={closedToolGroups}
@@ -221,6 +224,8 @@ export const LiveGroupBetweenCalls = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Edited Composer.tsx/ })).toBeVisible()
     await expect(canvas.queryByText('Ran a command, edited a file')).toBeNull()
+    // Settled between two calls, the Session still runs, so the title still shimmers.
+    await expect(canvas.getByText('Edited Composer.tsx')).toHaveClass('feed-work-shimmer')
   },
 }
 

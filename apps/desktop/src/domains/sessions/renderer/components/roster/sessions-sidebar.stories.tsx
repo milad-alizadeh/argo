@@ -265,6 +265,50 @@ export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
   },
 }
 
+// A command still open in a running Session reads "Running", the Feed's own verb; the same call
+// reads "Ran" once the Session settles, whatever the transcript last said about it.
+export const OpenCommandReadsRunning: Story = {
+  beforeEach: () =>
+    withRosterHost(async () =>
+      listedReply({
+        ...listed,
+        sessions: [
+          {
+            ...session,
+            id: 'running-command',
+            activity: {
+              label: 'Ran bun run quality',
+              kind: 'command',
+              open: true,
+              tool: 'Bash',
+              target: 'bun run quality',
+            },
+            status: 'running',
+            title: { text: 'Gate the branch', source: 'first-prompt' },
+          },
+          {
+            ...session,
+            id: 'settled-command',
+            activity: {
+              label: 'Ran bun run quality',
+              kind: 'command',
+              open: true,
+              tool: 'Bash',
+              target: 'bun run quality',
+            },
+            status: 'idle',
+            title: { text: 'Gated the branch', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Running bun run quality')).toBeVisible()
+    await expect(canvas.getByText('Ran bun run quality')).toBeVisible()
+  },
+}
+
 export const RosterStructure: Story = {
   beforeEach: () =>
     withRosterHost(async () =>
@@ -275,6 +319,8 @@ export const RosterStructure: Story = {
             ...session,
             activity: {
               label: 'Watch PR checks',
+              kind: 'command',
+              open: false,
               tool: 'Bash',
               target: 'RTK_DISABLED=1 gh pr checks 2062 --watch',
             },

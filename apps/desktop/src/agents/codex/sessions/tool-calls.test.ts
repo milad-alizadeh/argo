@@ -72,6 +72,8 @@ test('names the roster activity line after the newest tool call, the same way it
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
     label: 'Ran bun run quality',
+    kind: 'command',
+    open: false,
     tool: 'exec_command',
     target: null,
   })

@@ -111,6 +111,8 @@ export type TranscriptRecord =
       agentPath?: string | null
       agentNickname?: string | null
       cwd?: string | null
+      // Codex writes the branch beside the cwd on `session_meta`, under `git`.
+      branch?: string | null
       // Codex records this on `task_started`; it is the model's actual context window, rather
       // than a capacity the cockpit can safely assume.
       contextWindowTokens?: number

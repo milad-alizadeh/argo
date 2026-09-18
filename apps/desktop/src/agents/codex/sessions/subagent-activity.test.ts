@@ -48,7 +48,7 @@ test('reads Codex subagent activity as one Agent card entry', () => {
   })
 })
 
-function collaborationCall(name: 'spawn_agent' | 'wait_agent') {
+function collaborationCall(name: string) {
   const record = parseCodexTranscriptLine(
     JSON.stringify({
       type: 'response_item',
@@ -71,11 +71,13 @@ test('hides Codex collaboration calls behind their Agent cards', () => {
     uuid: 'spawn_agent-item',
     boundary: true,
   })
-  assert.deepEqual(collaborationCall('wait_agent'), {
-    kind: 'trace',
-    uuid: 'wait_agent-item',
-    boundary: true,
-  })
+  for (const name of ['wait_agent', 'send_message', 'followup_task', 'list_agents']) {
+    assert.deepEqual(collaborationCall(name), {
+      kind: 'trace',
+      uuid: `${name}-item`,
+      boundary: true,
+    })
+  }
 })
 
 test('projects one Agent card without collaboration tool rows', () => {

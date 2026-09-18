@@ -14,6 +14,7 @@ test('reads a background task notification as its readable name, not raw envelop
   assert.deepEqual(parseTranscriptLine(line), {
     kind: 'delegation',
     uuid: 'task-1',
+    timestamp: null,
     actor: 'shell',
     action: 'Install dependencies',
     status: 'completed',
@@ -62,6 +63,7 @@ for (const { claim, body, actor, action, progress } of [
     assert.deepEqual(record, {
       kind: 'delegation',
       uuid: 'task-3',
+      timestamp: null,
       actor,
       action,
       status: null,
@@ -84,6 +86,7 @@ test('keeps a background task status without inventing a summary', () => {
   assert.deepEqual(parseTranscriptLine(line), {
     kind: 'delegation',
     uuid: 'task-2',
+    timestamp: null,
     actor: 'shell',
     action: null,
     status: 'completed',
@@ -108,6 +111,7 @@ test('reads a realtime delegation into a safe Agent card model', () => {
   assert.deepEqual(parseTranscriptLine(line), {
     kind: 'delegation',
     uuid: 'delegation-1',
+    timestamp: null,
     actor: 'agent',
     action: 'Review the Feed card.',
     status: 'running',
@@ -132,6 +136,7 @@ test('drops an invalid delegation group id at the parser boundary', () => {
   assert.deepEqual(parseTranscriptLine(line), {
     kind: 'delegation',
     uuid: 'delegation-invalid-group',
+    timestamp: null,
     actor: 'agent',
     action: 'Review the Feed card.',
     status: null,

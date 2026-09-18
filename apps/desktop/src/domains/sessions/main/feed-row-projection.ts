@@ -14,10 +14,9 @@ function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {
       block.shape === 'image'
         ? [
             {
-              shape: 'source',
+              shape: 'image',
               id: `${record.uuid}:result:${resultIndex}:${blockIndex}`,
               role: record.role,
-              label: 'image',
               source: block.url,
             },
           ]
@@ -127,7 +126,7 @@ function rowsOfBlock({
     case 'image':
       return record.role === 'user'
         ? []
-        : [{ shape: 'source', id, role: record.role, label: 'image', source: block.url }]
+        : [{ shape: 'image', id, role: record.role, source: block.url }]
     case 'source':
       return [{ shape: 'source', id, role: record.role, label: block.label, source: block.source }]
   }

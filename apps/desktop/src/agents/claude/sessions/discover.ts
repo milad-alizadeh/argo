@@ -8,6 +8,7 @@ import {
   type TranscriptDiscovery,
 } from '../../../domains/sessions/main/discover-transcript-sessions'
 import { parseTranscriptLine } from './records'
+import { readingSpawnedAgents } from './spawned-agents'
 
 export type Discovery = TranscriptDiscovery
 
@@ -28,6 +29,7 @@ const reader = createTranscriptDiscoverer({
   cli: 'claude',
   transcriptPaths,
   parse: parseTranscriptLine,
+  normalizeRecords: readingSpawnedAgents,
 })
 
 export const {

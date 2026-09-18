@@ -40,10 +40,17 @@ export type SessionSkillEvidence = {
   name: string
   path: string
 }
+// A file an assistant's prose links to by absolute path, read inside the Session's workspace.
+export type SessionFileEvidence = {
+  shape: 'file'
+  id: string
+  path: string
+}
 export type SessionEvidence =
   | Extract<SessionFeedRow, { shape: 'tool' }>
   | SessionDiagramEvidence
   | SessionSkillEvidence
+  | SessionFileEvidence
 
 // Argo can only write an answer into a Session whose channel it currently holds (#2205): every
 // other posture — another Argo window, an external terminal, or simply idle — locks the answer

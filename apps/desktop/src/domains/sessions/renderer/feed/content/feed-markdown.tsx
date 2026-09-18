@@ -1,12 +1,14 @@
-import { memo, type ReactNode, useMemo } from 'react'
+import { FileText } from 'lucide-react'
+import { memo, type ReactNode, useContext, useMemo } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import type { SessionDiagramEvidence } from '../../types'
 import { FeedCode } from './feed-code'
 import { GalleryImage, GalleryParagraph } from './feed-markdown-gallery'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
+import { LINK_CLASS } from './link-class'
+import { MarkdownEvidence, type MarkdownEvidenceContextValue } from './markdown-evidence'
 import { feedUrlTransform } from './markdown-urls'
-import { DiagramEvidence, type DiagramEvidenceContextValue, MermaidFence } from './mermaid-fence'
+import { MermaidFence } from './mermaid-fence'
 
 type MarkdownNode = ExtraProps['node']
 
@@ -30,17 +32,29 @@ function fenceOf(node: MarkdownNode) {
   return { source, language }
 }
 
+// An absolute path opens in the inspector, as recorded evidence does; every other link opens
+// in the browser. `feedUrlTransform` has already turned what neither can open into no href.
 function Link({ href, children }: { href?: string; children?: ReactNode }) {
+  const context = useContext(MarkdownEvidence)
   if (!href) return <span>{children}</span>
+  if (!href.startsWith('/'))
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={LINK_CLASS}>
+        {children}
+      </a>
+    )
+  if (context === null) return <span>{children}</span>
+  const id = `${context.rowId}:file:${href}`
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="font-semibold underline decoration-border underline-offset-4 hover:decoration-foreground"
+    <button
+      type="button"
+      aria-current={context.activeEvidenceId === id ? 'location' : undefined}
+      className={`inline-flex items-baseline gap-1 ${LINK_CLASS}`}
+      onClick={() => context.onOpenEvidence({ shape: 'file', id, path: href })}
     >
+      <FileText aria-hidden="true" className="size-(--size-icon-inline) self-center" />
       {children}
-    </a>
+    </button>
   )
 }
 
@@ -145,10 +159,10 @@ export const FeedMarkdown = memo(function FeedMarkdown({
   text: string
   rowId?: string
   activeEvidenceId?: string | null
-  onOpenEvidence?: (evidence: SessionDiagramEvidence) => void
+  onOpenEvidence?: MarkdownEvidenceContextValue['onOpenEvidence']
 }) {
-  // A fresh value here re-renders every fence below it, whatever the text did.
-  const diagramEvidence: DiagramEvidenceContextValue | null = useMemo(
+  // A fresh value here re-renders every fence and file link below it, whatever the text did.
+  const markdownEvidence: MarkdownEvidenceContextValue | null = useMemo(
     () =>
       rowId === undefined || onOpenEvidence === undefined
         ? null
@@ -157,7 +171,7 @@ export const FeedMarkdown = memo(function FeedMarkdown({
   )
   return (
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">
-      <DiagramEvidence.Provider value={diagramEvidence}>
+      <MarkdownEvidence.Provider value={markdownEvidence}>
         <Markdown
           remarkPlugins={REMARK_PLUGINS}
           components={COMPONENTS}
@@ -165,7 +179,7 @@ export const FeedMarkdown = memo(function FeedMarkdown({
         >
           {text}
         </Markdown>
-      </DiagramEvidence.Provider>
+      </MarkdownEvidence.Provider>
     </div>
   )
 })

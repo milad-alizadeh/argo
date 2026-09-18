@@ -65,14 +65,22 @@ function readTitle(chain: SessionChain): SessionTitle | null {
 
 // The relocated half is the live one, so the merged Session's cwd and branch are the newest
 // link's — read off the last message that carries them rather than off the origin. Codex writes
-// the cwd on its `session_meta` trace only (#2204).
+// the cwd and branch on its `session_meta` trace only (#2204).
 function readPlace(chain: SessionChain, messages: TranscriptMessage[]) {
   const located = messages.findLast((message) => message.cwd !== null)
-  const traced = chain.files
+  // Codex names the branch once, on session_meta, and the folder again on every command it runs.
+  const traces = chain.files
     .flatMap((file) => file.records)
-    .findLast((record) => record.kind === 'trace' && typeof record.cwd === 'string')
-  const tracedCwd = traced?.kind === 'trace' ? (traced.cwd ?? null) : null
-  return { cwd: located?.cwd ?? tracedCwd, branch: located?.branch ?? null }
+    .filter(
+      (record): record is Extract<TranscriptRecord, { kind: 'trace' }> => record.kind === 'trace',
+    )
+  return {
+    cwd: located?.cwd ?? traces.findLast((trace) => typeof trace.cwd === 'string')?.cwd ?? null,
+    branch:
+      located?.branch ??
+      traces.findLast((trace) => typeof trace.branch === 'string')?.branch ??
+      null,
+  }
 }
 
 // A chain is `headless` only where EVERY link is: a resume opened at a terminal continues the
@@ -152,7 +160,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(chain.files.flatMap((file) => file.records)),
-    delegations: readDelegations(messages, notifications, records),
+    delegations: readDelegations(records),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
     usage: readRosterUsage(messages, records),

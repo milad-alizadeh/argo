@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
-import type { SessionEvidence, SessionFeed } from '../types'
+import { foldSettledToolRuns, withHeadline } from '../../contract/tool-groups'
+import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
 import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
@@ -36,18 +37,43 @@ export type FeedDocumentProps = {
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 
+// The Feed never draws a thought from the transcript as history. While the Turn runs, the
+// Session's activity (the fact the roster draws under the title, a thought or the latest call)
+// titles the Turn's tool group; before any tool has run, a thought is its own line. It leaves
+// when the Turn ends (#2410), and the compaction marker stands in for it while compaction runs.
+function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
+  const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
+  const activity = facts.isRunning && facts.compactionStartedAt === null ? facts.activity : null
+  if (activity === null) return rows
+  const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')
+  const last = rows.at(-1)
+  if (last?.shape === 'tool-group' && rows.length - 1 > turnStart)
+    return [...rows.slice(0, -1), withHeadline(last, activity)]
+  if (activity.kind !== 'thought') return rows
+  return [...rows, { shape: 'thought', id: `${reading.sessionId}:activity`, text: activity.label }]
+}
+
+function withLiveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeed {
+  const rows = liveRows(reading, facts)
+  // The same reading when nothing moved: the scroller keys its rows on identity.
+  const unchanged =
+    rows.length === reading.rows.length && rows.every((row, index) => row === reading.rows[index])
+  return unchanged ? reading : { ...reading, rows }
+}
+
 function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
   const facts = liveFacts ?? INACTIVE_FEED_LIVE_FACTS
+  const settled = withLiveRows(reading, facts)
   // A settled prompt stays only while the transcript has no rows, so it can never double one.
   const promptRow =
     facts.optimisticRow ?? (reading.rows.length === 0 ? facts.settledPromptRow : null)
   const readingWithOptimisticRow =
     promptRow === null
-      ? reading
+      ? settled
       : {
-          ...reading,
-          revision: `${reading.revision}:${promptRow.id}`,
-          rows: [...reading.rows, promptRow],
+          ...settled,
+          revision: `${settled.revision}:${promptRow.id}`,
+          rows: [...settled.rows, promptRow],
         }
   return { ...facts, reading: readingWithOptimisticRow }
 }

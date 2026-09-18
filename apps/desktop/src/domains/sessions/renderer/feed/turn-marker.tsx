@@ -1,4 +1,4 @@
-import { LoaderCircle } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 
 import {
@@ -59,17 +59,21 @@ export function TurnMarker({
       className={`py-2 type-body ${silent ? 'invisible' : ''}`}
       role={silent ? undefined : 'status'}
     >
-      <MarkerIcon>
-        <LoaderCircle className="animate-spin" />
+      {/* A still icon: the shimmering label already moves, and a spinner beside it was two motions. */}
+      <MarkerIcon className="text-muted-foreground">
+        <Sparkles />
       </MarkerIcon>
-      <MarkerContent className="flex items-baseline gap-2">
-        <span className="feed-work-shimmer">{PHASE_LABEL[phase]}</span>
-        <span
-          aria-hidden="true"
-          className="text-muted-foreground tabular-nums"
-          data-slot={TURN_ELAPSED_SLOT}
-          ref={counter}
-        />
+      {/* Label and counter share one shimmer, in the same muted ink as a settled tool group. */}
+      <MarkerContent>
+        <span className="feed-work-shimmer inline-flex items-baseline gap-2">
+          {PHASE_LABEL[phase]}
+          <span
+            aria-hidden="true"
+            className="tabular-nums"
+            data-slot={TURN_ELAPSED_SLOT}
+            ref={counter}
+          />
+        </span>
       </MarkerContent>
     </Marker>
   )

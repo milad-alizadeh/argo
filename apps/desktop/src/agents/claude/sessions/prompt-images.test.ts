@@ -89,9 +89,49 @@ test('keeps an image the assistant sent as its source rather than dropping it', 
     rows.map((row) => [row.shape, 'images' in row]),
     [
       ['prose', false],
-      ['source', false],
+      ['image', false],
     ],
   )
+})
+
+test('draws a prompt the person sent mid-turn, which the CLI writes as a queued attachment', () => {
+  const record = parseTranscriptLine(
+    JSON.stringify({
+      type: 'attachment',
+      uuid: 'queued-1',
+      timestamp: '2026-09-18T20:37:45.436Z',
+      attachment: {
+        type: 'queued_command',
+        commandMode: 'prompt',
+        humanTurn: true,
+        prompt: [{ type: 'text', text: '[Image #53] still no ticket number' }, pasted(PIXEL)],
+      },
+    }),
+  )
+  assert.equal(record?.kind, 'message')
+  assert.deepEqual(record?.kind === 'message' ? [record.role, record.blocks] : null, [
+    'user',
+    [
+      { shape: 'prose', text: 'still no ticket number' },
+      { shape: 'image', url: `data:image/png;base64,${PIXEL}` },
+    ],
+  ])
+})
+
+test('hides a Subagent hand-back the harness queued as a prompt nobody typed', () => {
+  const record = parseTranscriptLine(
+    JSON.stringify({
+      type: 'attachment',
+      uuid: 'queued-2',
+      timestamp: '2026-09-18T20:37:45.436Z',
+      attachment: {
+        type: 'queued_command',
+        commandMode: 'prompt',
+        prompt: '<agent-message from="agent-1">\n[Subagent hand-back] Done.\n</agent-message>',
+      },
+    }),
+  )
+  assert.notEqual(record?.kind, 'message')
 })
 
 test('never reads an image from what the assistant wrote', () => {

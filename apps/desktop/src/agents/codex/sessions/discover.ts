@@ -11,6 +11,7 @@ import {
 } from '../../../domains/sessions/main/discover-transcript-sessions'
 import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
 import { withoutModelInputCopies } from './model-input-copies'
+import { answeringEveryNestedCall } from './nested-results'
 import { parseCodexTranscriptLine } from './records'
 import type { ThreadNames } from './thread-names'
 
@@ -28,7 +29,7 @@ async function transcriptPathsInDay(root: string) {
     .map((entry) => ({ path: path.join(root, entry.name), name: sessionIdFileName(entry.name) }))
 }
 
-function sessionIdFileName(fileName: string) {
+export function sessionIdFileName(fileName: string) {
   const sessionId = fileName.match(/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\.jsonl$/i)?.[1]
   return sessionId === undefined ? fileName : `${sessionId}.jsonl`
 }
@@ -53,7 +54,7 @@ function droppingSubagentThreads(records: TranscriptRecord[]): TranscriptRecord[
 }
 
 export function normalizeCodexMessageRecords(records: TranscriptRecord[]): TranscriptRecord[] {
-  return withoutModelInputCopies(withoutDuplicateMessages(records))
+  return answeringEveryNestedCall(withoutModelInputCopies(withoutDuplicateMessages(records)))
 }
 
 export function normalizeCodexRecords(records: TranscriptRecord[]): TranscriptRecord[] {

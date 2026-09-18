@@ -25,10 +25,26 @@ test('starts the Turn at the last prompt, never at a tool result', async () => {
 test('names the newest call of the open Turn with its canonical label and metadata', async () => {
   assert.deepEqual((await rowOf(['plannedWork'])).activity, {
     label: 'Edited SubagentDots.tsx',
+    kind: 'edited',
+    open: true,
     tool: 'Edit',
     target: 'SubagentDots.tsx',
   })
-  assert.equal((await rowOf(['subagentTail'])).activity?.label, 'Called Task')
+})
+
+// A spawned Subagent is a delegation, never a Tool Call, so it reads as no activity of its own.
+test('reads an open Subagent as a running delegation, not as an open call', async () => {
+  const row = await rowOf(['subagentTail'])
+  assert.equal(row.activity, null)
+  assert.deepEqual(row.delegations, [
+    {
+      id: 'call-task-1',
+      label: null,
+      landed: false,
+      startedAt: '2026-08-14T11:00:20.000Z',
+      endedAt: null,
+    },
+  ])
 })
 
 test('reads every delegation with its own label, and which of them came back', async () => {

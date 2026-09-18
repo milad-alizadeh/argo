@@ -41,6 +41,7 @@ test('reads a realtime delegation input as Agent activity', () => {
   assert.deepEqual(record, {
     kind: 'delegation',
     uuid: 'delegation-1',
+    timestamp: null,
     actor: 'agent',
     action: 'Reader text',
     status: null,
