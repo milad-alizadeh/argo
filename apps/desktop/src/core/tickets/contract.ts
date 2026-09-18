@@ -20,6 +20,7 @@ export type {
   TicketState,
   TicketStatus,
 } from './ticket'
+export { ticketKey } from './ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25

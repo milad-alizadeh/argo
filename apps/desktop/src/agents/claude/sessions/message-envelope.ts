@@ -1,4 +1,4 @@
-import type { TranscriptMessage } from '@/core/sessions/transcript'
+import type { TranscriptMessage } from '@/domains/sessions/contract/transcript'
 
 type MessageEnvelope = Pick<
   TranscriptMessage,

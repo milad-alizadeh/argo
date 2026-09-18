@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
-import { SELECTED_SESSION_KEY } from '../../sessions/components/roster/use-sidebar-actions'
+import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
+import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/components/roster/use-sidebar-actions'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function CockpitRouteLayoutStory() {

@@ -3,7 +3,7 @@
 // the same way for every domain: trust check, version check, request parse, reply parse, request
 // id check. Nothing here decides what a domain's operations are or what its errors mean.
 import type { BrowserWindow } from 'electron'
-import { requestIdentifier } from '../../boundary'
+import { requestIdentifier } from '@/boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { isOtherVersion } from './messages'
 

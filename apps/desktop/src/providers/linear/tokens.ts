@@ -1,7 +1,7 @@
 // Linear's token endpoint: a code exchanged for a grant, and a grant renewed before it lapses.
 // Linear's access tokens last a day and each refresh rotates the refresh token, so the grant this
 // returns replaces the stored one whole.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import { type Grant, grantedScopes, type TokenReply } from '../grant'
 import { formBody, readJson, send } from '../request'
 import type { LinearEndpoints } from './endpoints'

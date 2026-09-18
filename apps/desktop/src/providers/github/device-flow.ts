@@ -1,7 +1,7 @@
 // GitHub's device flow in two calls: the challenge the person is shown, then the wait for their
 // answer. Nothing here opens a browser; that is the main process's own authority.
 import { setTimeout as sleep } from 'node:timers/promises'
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import { type GrantOutcome, grantedScopes, type Identity } from '../grant'
 import { GITHUB_CLIENT_ID, GITHUB_SCOPES, type GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, get, postForm } from './http'

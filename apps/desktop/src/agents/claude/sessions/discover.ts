@@ -6,7 +6,7 @@ import path from 'node:path'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
-} from '@/core/sessions/discover-transcript-sessions'
+} from '@/domains/sessions/main/discover-transcript-sessions'
 import { parseTranscriptLine } from './records'
 
 export type Discovery = TranscriptDiscovery

@@ -1,6 +1,6 @@
 // A Linear team's workflow states, and moving one of its issues to another. Linear owns the states;
 // the cockpit reads them with every page and keeps none.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import type { StatusChange, TicketStatus } from '../../core/tickets/ticket'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'

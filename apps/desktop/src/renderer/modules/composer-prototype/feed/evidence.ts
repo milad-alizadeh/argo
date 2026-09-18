@@ -35,7 +35,7 @@ export const FEED_EVIDENCE = {
     title: 'Composer.tsx',
     kind: 'code',
     source: COMPOSER_CODE,
-    detail: 'apps/desktop/src/renderer/modules/sessions/Composer.tsx · Recorded read',
+    detail: 'apps/desktop/src/domains/sessions/renderer/Composer.tsx · Recorded read',
   },
   search: {
     id: 'search',
@@ -115,7 +115,7 @@ export const FEED_EVIDENCE = {
     title: 'queue.ts',
     kind: 'diff',
     source:
-      '@@ Move queue to Session module @@\n- import { queue } from "@/renderer/queue"\n+ import { queue } from "@/renderer/modules/sessions/queue"',
+      '@@ Move queue to Session module @@\n- import { queue } from "@/renderer/queue"\n+ import { queue } from "@/domains/sessions/renderer/queue"',
     detail: 'Recorded file move · queue.ts',
     status: 'succeeded',
   },

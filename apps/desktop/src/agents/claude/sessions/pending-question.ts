@@ -1,5 +1,5 @@
-import { chainMessages } from '@/core/sessions/roster'
-import { ASK_TOOL, pendingAskCall } from '@/core/sessions/status'
+import { chainMessages } from '@/domains/sessions/main/roster'
+import { ASK_TOOL, pendingAskCall } from '@/domains/sessions/main/status'
 import { readSessionFiles } from './discover'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared

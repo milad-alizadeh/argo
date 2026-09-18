@@ -1,7 +1,7 @@
 // Every GraphQL request to Linear, and the one place its answer becomes a failure the cockpit can
 // name. Linear refuses a token and throttles a caller with a 400 whose error carries a code, so the
 // code is read here, where the body still exists.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import { readJson, send } from '../request'
 import type { LinearEndpoints } from './endpoints'
 

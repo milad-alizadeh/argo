@@ -5,7 +5,7 @@ const utilities = await Bun.file(new URL('./typography.css', import.meta.url)).t
 const entry = await Bun.file(new URL('../main.tsx', import.meta.url)).text()
 const button = await Bun.file(new URL('../components/ui/button.tsx', import.meta.url)).text()
 const feedTools = await Bun.file(
-  new URL('../modules/sessions/feed/feed-tools.tsx', import.meta.url),
+  new URL('../../domains/sessions/renderer/feed/feed-tools.tsx', import.meta.url),
 ).text()
 const feedMarkdown = await Bun.file(
   new URL('../modules/sessions/feed/content/feed-markdown.tsx', import.meta.url),

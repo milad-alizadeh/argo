@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 
 export type DocumentRead =
   | { ok: true; document: unknown }

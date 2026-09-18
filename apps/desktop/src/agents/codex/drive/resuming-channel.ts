@@ -1,4 +1,4 @@
-import type { OwnershipStanding } from '@/core/sessions/ownership-ledger'
+import type { OwnershipStanding } from '@/domains/sessions/main/ownership-ledger'
 import { CodexSessionDriverError } from './codex-session-error'
 import {
   type ManagedSession,

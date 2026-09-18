@@ -3,10 +3,10 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '@/core/sessions/reader'
+import { stitchChains } from '@/domains/sessions/contract/chains.ts'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { projectRosterRow } from '@/domains/sessions/main/roster.ts'
 import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
-import { stitchChains } from '../../../core/sessions/chains.ts'
-import { projectRosterRow } from '../../../core/sessions/roster.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { readTranscriptFile } from '../sessions/transcript-file.ts'
 

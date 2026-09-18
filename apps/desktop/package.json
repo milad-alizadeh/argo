@@ -34,7 +34,7 @@
     "test:node": "vitest run --project=node",
     "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir=coverage/bun",
     "test:coverage:storybook": "vitest run --project=storybook-dark --coverage",
-    "test:feed": "bun test src/core/sessions src/agents/claude/sessions src/agents/claude/integration src/agents/codex/sessions mocks/sessions src/renderer/modules/sessions/feed"
+    "test:feed": "bun test src/domains/sessions/contract src/domains/sessions/main src/agents/claude/sessions src/agents/claude/integration src/agents/codex/sessions mocks/sessions src/domains/sessions/renderer/feed"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
 
-import { createOwnershipLedger, isProcessAlive } from '@/core/sessions/ownership-ledger'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/ownership-ledger'
 import { findExecutableOnLoginShellPath } from '../../executable-path'
 import { claudePendingQuestion } from '../sessions/pending-question'
 import { claudeResumeTarget } from '../sessions/resume-target'

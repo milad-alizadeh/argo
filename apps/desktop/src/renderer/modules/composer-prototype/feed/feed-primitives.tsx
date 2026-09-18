@@ -3,7 +3,7 @@ import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import { Message, MessageContent, MessageHeader } from '@/renderer/components/ui/message'
 
-export { FeedCode } from '../../sessions/feed/content/feed-code'
+export { FeedCode } from '@/domains/sessions/renderer/feed/content/feed-code'
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (

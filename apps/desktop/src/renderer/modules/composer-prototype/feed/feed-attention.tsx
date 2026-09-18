@@ -19,7 +19,7 @@ import {
   QuestionnaireSubmit,
   QuestionnaireTitle,
 } from '@/renderer/components/ui/questionnaire'
-import { FEED_CARD_RADIUS_CLASS } from '../../sessions/feed/content/feed-surface'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 
 const CONCIERGE_QUESTION = {
   name: 'concierge-placement',

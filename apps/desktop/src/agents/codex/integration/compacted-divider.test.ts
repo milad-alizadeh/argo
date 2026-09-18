@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '@/core/sessions/reader'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   appendCodexRecord,
   fed,
@@ -8,7 +8,7 @@ import {
   listed,
   tempRoot,
   writeCodexTranscript,
-} from '@/core/sessions/reader-test-helpers'
+} from '@/domains/sessions/main/reader-test-helpers'
 import { codexSessionSource } from '../sessions/read-sessions'
 
 const SESSION = '01a0a6eb-56c8-7f93-8820-cc80e2f234d3'

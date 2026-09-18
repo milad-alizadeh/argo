@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
 import { inputItemsFor } from './input-items'
 
 test('sends the draft alone when there are no attachments', () => {

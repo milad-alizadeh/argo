@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readTranscriptFile } from '@/core/sessions/transcript'
+import { readTranscriptFile } from '@/domains/sessions/contract/transcript'
 import { parseTranscriptLine } from './records'
 
 test('reads a sent command as its visible source text', () => {

@@ -6,9 +6,9 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isRecord } from '@/boundary'
-import type { SessionChain } from '@/core/sessions/chains'
-import { type TranscriptFile, transcriptFileFrom } from '@/core/sessions/transcript'
-import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import { type TranscriptFile, transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
 import { parseTranscriptLine } from './records'
 
 const META = '.meta.json'

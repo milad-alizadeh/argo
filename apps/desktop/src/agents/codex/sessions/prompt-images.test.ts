@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { rowsOfRecord } from '@/core/sessions/feed'
+import { rowsOfRecord } from '@/domains/sessions/main/feed'
 import { parseCodexTranscriptLine } from './records'
 
 function eventRows(payload: Record<string, unknown>) {

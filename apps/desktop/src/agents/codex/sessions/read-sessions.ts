@@ -1,8 +1,8 @@
-import type { SessionRenameReply, SessionRenameRequest } from '@/core/sessions/contract'
-import { discoverRoster } from '@/core/sessions/discover-roster'
-import type { SessionFeedRow, SessionRosterRow } from '@/core/sessions/models'
-import type { FeedOverlay, SessionSource } from '@/core/sessions/reader'
-import type { SessionIndex } from '@/core/sessions/session-index/contract'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import {

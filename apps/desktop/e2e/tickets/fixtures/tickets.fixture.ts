@@ -10,13 +10,13 @@ import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../../src/core/sessions/proof-protocol'
 import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
+import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from '../../../src/domains/sessions/main/proof-protocol'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,

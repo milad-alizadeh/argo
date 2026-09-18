@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('resumes a Codex Session Argo held before restart in its recorded workspace before accepting its next Turn', async (context) => {

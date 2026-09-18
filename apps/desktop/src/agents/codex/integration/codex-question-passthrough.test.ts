@@ -6,7 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { sendSession, startSession } from '@/core/sessions/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 

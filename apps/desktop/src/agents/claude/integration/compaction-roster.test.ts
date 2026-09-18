@@ -2,9 +2,13 @@ import assert from 'node:assert/strict'
 import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import type { SessionReader } from '@/core/sessions/bridge'
-import { createSessionReader } from '@/core/sessions/reader'
-import { listed, tempRoot, writeClaudeTranscript } from '@/core/sessions/reader-test-helpers'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import {
+  listed,
+  tempRoot,
+  writeClaudeTranscript,
+} from '@/domains/sessions/main/reader-test-helpers'
 import { claudeSessionSource } from '../sessions/read-sessions'
 import { startedSession } from './claude-driver-launch.ts'
 

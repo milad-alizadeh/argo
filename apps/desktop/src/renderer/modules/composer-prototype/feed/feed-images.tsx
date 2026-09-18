@@ -1,8 +1,8 @@
-import { FeedGallery } from '../../sessions/feed/content/feed-images'
-import { type FeedImageSource, ImageLightbox } from '../../sessions/feed/content/image-lightbox'
+import { FeedGallery } from '@/domains/sessions/renderer/feed/content/feed-images'
+import { type FeedImageSource, ImageLightbox } from '@/domains/sessions/renderer/feed/content/image-lightbox'
 import { FEED_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 
-export { FeedMissingImage } from '../../sessions/feed/content/feed-images'
+export { FeedMissingImage } from '@/domains/sessions/renderer/feed/content/feed-images'
 
 function prototypeImage(evidence: FeedPrototypeEvidence): FeedImageSource {
   return {

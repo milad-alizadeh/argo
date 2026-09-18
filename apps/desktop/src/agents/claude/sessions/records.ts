@@ -1,11 +1,11 @@
 import { isRecord } from '@/boundary'
-import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
+import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/models'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/core/sessions/transcript'
+} from '@/domains/sessions/contract/transcript'
 import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'

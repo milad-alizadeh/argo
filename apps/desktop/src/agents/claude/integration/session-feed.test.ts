@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../../../core/sessions/chains.ts'
-import { UNREADABLE_ROW, unreadableRowHeight } from '../../../core/sessions/feed.ts'
-import { projectFeed } from '../../../core/sessions/feed-incremental.ts'
+import { stitchChains } from '@/domains/sessions/contract/chains.ts'
+import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/feed.ts'
+import { projectFeed } from '@/domains/sessions/main/feed-incremental.ts'
 import { fixtureFiles } from './session-fixtures'
 
 async function feedOf(names) {

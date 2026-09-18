@@ -1,6 +1,6 @@
 // GitHub's closure read as a workflow: an issue is open, or closed for one of GitHub's reasons.
 // Each status's id is the `state_reason` it is closed with, or `open`.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import type { StatusChange, TicketStatus } from '../../core/tickets/ticket'
 import type { GitHubEndpoints } from './endpoints'
 import { failed, type GitHubRead, patch } from './http'

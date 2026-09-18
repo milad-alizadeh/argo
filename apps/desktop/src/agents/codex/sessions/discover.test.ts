@@ -4,8 +4,11 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
-import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
-import { createSessionReader } from '@/core/sessions/reader'
+import {
+  sessionFeedReplySchema,
+  sessionListReplySchema,
+} from '@/domains/sessions/contract/contract'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {

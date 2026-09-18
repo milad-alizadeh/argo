@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { OwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
+import type { OwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
 import { openCodexChannel } from '../../../src/agents/codex/drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../../../src/agents/codex/drive/codex-session-driver.ts'
 

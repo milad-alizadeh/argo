@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { sendSession, startSession } from '@/core/sessions/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
 import {
   driverBackedByFixture,
   ownerCliFor,

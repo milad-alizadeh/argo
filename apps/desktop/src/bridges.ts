@@ -2,6 +2,11 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
+import {
+  attachSessions,
+  createSessionDrivers,
+  watchClaudeCompactions,
+} from '@/domains/sessions/main/session-bridges'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
@@ -12,7 +17,6 @@ import { attachTicketBridge } from './core/tickets/bridge'
 import { attachProjectBridge } from './domains/projects/main/bridge'
 import type { ProjectStore } from './domains/projects/main/sqlite-store'
 import { providerEndpoints } from './providers/endpoints'
-import { attachSessions, createSessionDrivers, watchClaudeCompactions } from './session-bridges'
 
 export function attachBridges(
   window: BrowserWindow,

@@ -1,5 +1,5 @@
 import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { messageRecord } from './message-record'
 
 export function reasoningSummary(

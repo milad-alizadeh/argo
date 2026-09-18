@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '@/core/sessions/reader'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import { codexSessionSource } from './read-sessions'
 

@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionCli } from '../../src/renderer/modules/sessions/harness/harnesses'
+import type { SessionCli } from '../../src/domains/sessions/renderer/harness/harnesses'
 
 // The harness tab labels, typed against SessionCli so a new CLI cannot be left out. The strings
 // themselves live in the renderer's turn setup (claude-turn-setup.ts, codex-turn-setup.ts), which

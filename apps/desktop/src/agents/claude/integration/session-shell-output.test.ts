@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/core/sessions/reader'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   pointShellOutputAtRoot,
   shellOutputRoot,

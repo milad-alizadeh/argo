@@ -9,7 +9,7 @@ import {
 import type { FeedPrototypeEvidence } from './evidence'
 import { DiagramDrawing } from './feed-diagram'
 import { FeedCode } from './feed-primitives'
-import { FEED_CARD_RADIUS_CLASS } from '../../sessions/feed/content/feed-surface'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 
 export function EvidenceKindIcon({ kind }: { kind: FeedPrototypeEvidence['kind'] }) {
   switch (kind) {

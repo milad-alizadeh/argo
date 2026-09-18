@@ -2,7 +2,7 @@ import {
   CODEX_OPENING_SETUP,
   type CodexTurnSetup,
   codexTurnSettings,
-} from '../../../core/sessions/codex-contract'
+} from '@/domains/sessions/contract/codex-contract'
 import { CodexSessionDriverError } from './codex-session-error'
 import {
   type ManagedSession,

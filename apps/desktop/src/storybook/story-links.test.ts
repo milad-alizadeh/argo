@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { section, withSection } from './story-links'
 import { parseImporters, type Story } from './storybook-build'
 
-const MODULES = 'src/renderer/modules/sessions'
+const MODULES = 'src/domains/sessions/renderer'
 const story = (name: string, file: string, folder = 'components'): Story => ({
   id: `sessions-${file.toLowerCase()}--${name.toLowerCase()}`,
   name,

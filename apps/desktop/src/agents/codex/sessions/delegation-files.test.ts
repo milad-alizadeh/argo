@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { sessionFeedReplySchema } from '@/core/sessions/contract'
-import { createSessionReader } from '@/core/sessions/reader'
+import { sessionFeedReplySchema } from '@/domains/sessions/contract/contract'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import { codexSessionSource } from './read-sessions'
 
 test('reads a spawned agent transcript from its parent delegation', async (context) => {

@@ -3,7 +3,7 @@ import { isRecord } from '@/boundary'
 import type {
   DelegationUsageFacts,
   SessionDelegationUsage,
-} from '@/core/sessions/background-work-contract'
+} from '@/domains/sessions/contract/background-work-contract'
 import { transcriptPaths } from './discover'
 
 function delegationFacts(line: string): Partial<DelegationUsageFacts> {

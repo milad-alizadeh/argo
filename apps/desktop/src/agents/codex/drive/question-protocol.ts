@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import type { Question, QuestionAnswer, QuestionOption } from '../../../core/sessions/question'
+import type { Question, QuestionAnswer, QuestionOption } from '@/domains/sessions/contract/question'
 import type { RequestID, WireMessage } from './protocol'
 import { protocolRecord, protocolString } from './protocol'
 

@@ -1,4 +1,4 @@
-import { requestIdentifier } from '../../boundary'
+import { requestIdentifier } from '@/boundary'
 import { createDomainClient } from '../contract/domain'
 import {
   type TicketConnectedReply,

@@ -1,6 +1,6 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
 import {
   labelColor,

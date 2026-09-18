@@ -1,5 +1,5 @@
-import { attachedImageUrl } from '@/core/sessions/feed-images'
-import type { ContentBlock } from '@/core/sessions/transcript'
+import { attachedImageUrl } from '@/domains/sessions/contract/feed-images'
+import type { ContentBlock } from '@/domains/sessions/contract/transcript'
 
 // Codex desktop names a prompt's attached files in a header before the request, one `## <name>:
 // <path>` line each; an attached picture also travels as its own image item.

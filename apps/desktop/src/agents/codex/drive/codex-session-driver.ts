@@ -1,7 +1,10 @@
-import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
-import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
-import type { SessionRosterRow } from '../../../core/sessions/models'
-import type { QuestionAnswer } from '../../../core/sessions/question'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import {
+  CODEX_OPENING_SETUP,
+  type CodexTurnSetup,
+} from '@/domains/sessions/contract/codex-contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { compactCodexSession } from './compact-session'
@@ -68,19 +71,6 @@ function rosterChanges() {
   }
 }
 
-function startManagedSession({
-  driver,
-  sessions,
-  renameWaiters,
-}: {
-  driver: ManagedSessionOptions
-  sessions: Map<string, ManagedSession>
-  renameWaiters: Map<string, (title: string) => void>
-}) {
-  return (request: Parameters<CodexSessionDriver['start']>[0]) =>
-    beginSession({ driver, renameWaiters, request, sessions })
-}
-
 function closeManagedSessions(
   sessions: Map<string, ManagedSession>,
   ownership: ManagedSessionOptions['ownership'],
@@ -103,11 +93,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
   const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
 
   return {
-    start: startManagedSession({
-      driver,
-      sessions,
-      renameWaiters,
-    }),
+    start: (request) => beginSession({ driver, renameWaiters, request, sessions }),
     async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
       await startTurn({

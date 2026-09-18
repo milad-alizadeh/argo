@@ -4,7 +4,7 @@
 // onto the shared ToolCall/ToolResult shapes (CONTEXT.md L3 · Tool Call) the Claude adapter
 // already produces, so `toolPresentation()` and `tool-groups.ts` draw them with no change.
 import { isRecord } from '@/boundary'
-import type { ToolCall, TranscriptRecord } from '@/core/sessions/transcript'
+import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
 import { readToolResults } from './rich-results'

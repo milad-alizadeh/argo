@@ -1,7 +1,7 @@
 // The grant store: each Account's token, encrypted by the operating system's key through Electron
 // `safeStorage` and kept in an app-owned file (#1763). No native keychain module, and the old Swift
 // keychain items are neither read nor deleted.
-import { isRecord } from '../../boundary'
+import { isRecord } from '@/boundary'
 import type { Grant } from '../../providers/grant'
 import { readDocument, writeDocument } from '../storage/portable-file'
 
