@@ -38,7 +38,7 @@ function ConfigurationHeader({ saved, saving }: Pick<ProjectSetupViewProps, 'sav
   if (saved) status = t('setup.saved')
   if (saving === 'save') status = t('setup.saving')
   return (
-    <div className="border-b border-border px-4 py-3">
+    <div className="px-4 py-3">
       <h2 className="type-heading font-medium text-foreground">{t('setup.configurationLabel')}</h2>
       <p className="mt-0.5 type-meta text-muted-foreground">{status}</p>
     </div>

@@ -2,6 +2,24 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ProjectSetupView, ProjectSetupWindow } from './project-setup-window'
 
+const STORY_CONFIGURATION_SOURCE = `${JSON.stringify(
+  {
+    version: 1,
+    targets: {
+      app: {
+        default: true,
+        path: '.',
+        setup: 'bun install',
+        run: 'bun run dev',
+        build: 'bun run build',
+        test: 'bun test',
+      },
+    },
+  },
+  null,
+  2,
+)}\n`
+
 const meta: Meta<typeof ProjectSetupWindow> = {
   title: 'Projects/Setup Window',
   component: ProjectSetupWindow,
@@ -22,7 +40,7 @@ export const NormalConfiguration: Story = {
         type: 'project.setup.editing',
         requestId: 'setup-1',
         project: { id: projectId, name: 'example' },
-        source: '{"version":1}\n',
+        source: STORY_CONFIGURATION_SOURCE,
       }),
       saveProjectSetup: async ({ projectId, source }) => ({
         version: 1,
@@ -53,11 +71,15 @@ export const NormalConfiguration: Story = {
     const canvas = within(canvasElement)
     await canvas.findByLabelText('Project configuration')
     await userEvent.click(canvas.getByRole('button', { name: 'Save config' }))
-    await expect(canvas.getByRole('status')).toHaveTextContent('Config saved.')
+    await expect(
+      within(document.body).getByText('Config saved.', { selector: '[data-slot="toast-title"]' }),
+    ).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Test config' }))
-    await expect(canvas.getByText('All Project commands passed validation.')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Cancel setup' }))
-    await expect(canvas.queryByRole('status')).toBeNull()
+    await expect(
+      within(document.body).getByText('All Project commands passed validation.', {
+        selector: '[data-slot="toast-title"]',
+      }),
+    ).toBeVisible()
   },
 }
 
@@ -71,7 +93,7 @@ export const SavingConfiguration: Story = {
       save={async () => undefined}
       saved={false}
       saving="save"
-      source={'{"version":1}\n'}
+      source={STORY_CONFIGURATION_SOURCE}
       testConfiguration={async () => undefined}
       updateSource={() => undefined}
     />
@@ -88,7 +110,7 @@ export const CommandTestFailure: Story = {
       save={async () => undefined}
       saved
       saving={null}
-      source={'{"version":1}\n'}
+      source={STORY_CONFIGURATION_SOURCE}
       testConfiguration={async () => undefined}
       updateSource={() => undefined}
     />
@@ -126,6 +148,10 @@ export const SyntaxConfigurationError: Story = {
         selector: '[data-slot="toast-title"]',
       }),
     ).toBeVisible()
+    await expect(canvas.getByLabelText('Project configuration')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    )
     await expect(canvas.getByRole('button', { name: 'Save config' })).toBeDisabled()
   },
 }

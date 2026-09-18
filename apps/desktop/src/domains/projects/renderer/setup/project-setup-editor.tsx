@@ -4,9 +4,10 @@ import { forceLinting, linter } from '@codemirror/lint'
 import { tags } from '@lezer/highlight'
 import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-codemirror'
 import { FlaskConical } from 'lucide-react'
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
+import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
 import type { ProjectSetupViewProps } from './project-setup-window'
 
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
@@ -38,9 +39,9 @@ const argoEditorTheme = EditorView.theme({
   },
 })
 const CONFIGURATION_EDITOR_ID = 'project-configuration'
+const CONFIGURATION_ERROR_ID = 'project-configuration-error'
 
 export function ConfigurationEditor({
-  message,
   saving,
   source,
   testConfiguration,
@@ -48,6 +49,8 @@ export function ConfigurationEditor({
 }: ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
   const editor = useRef<ReactCodeMirrorRef>(null)
+  const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
+  const invalidSource = !isJson(source)
   const extensions = useMemo(
     () => [
       jsonLanguage,
@@ -55,10 +58,13 @@ export function ConfigurationEditor({
       linter(jsonDiagnostics(t('setup.invalidJson')), { delay: 0 }),
       EditorView.contentAttributes.of({
         'aria-label': t('setup.configurationLabel'),
+        ...(invalidSource
+          ? { 'aria-describedby': CONFIGURATION_ERROR_ID, 'aria-invalid': 'true' }
+          : {}),
         id: CONFIGURATION_EDITOR_ID,
       }),
     ],
-    [t],
+    [invalidSource, t],
   )
   const busyMessages = {
     cancel: t('setup.cancelling'),
@@ -71,9 +77,12 @@ export function ConfigurationEditor({
       <div className="relative">
         <CodeMirror
           basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
-          className="w-full overflow-hidden rounded-lg border border-input text-left shadow-inner focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-96 [&_.cm-content]:pt-4 [&_.cm-content]:pr-4 [&_.cm-content]:pb-14 [&_.cm-editor]:min-h-96 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
+          className="w-full overflow-hidden rounded-lg border border-input text-left shadow-inner has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring [&_.cm-content]:min-h-96 [&_.cm-content]:pt-4 [&_.cm-content]:pr-4 [&_.cm-content]:pb-14 [&_.cm-editor]:min-h-96 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
+          data-keyboard-focus={showsKeyboardFocus}
           extensions={extensions}
           onChange={updateSource}
+          onBlur={() => setShowsKeyboardFocus(false)}
+          onFocus={() => setShowsKeyboardFocus(lastInputWasKeyboard())}
           ref={editor}
           theme={argoEditorTheme}
           value={source}
@@ -93,20 +102,20 @@ export function ConfigurationEditor({
           {saving === 'test' ? t('setup.testing') : t('setup.test')}
         </Button>
       </div>
-      <ConfigurationMessage busyMessage={busyMessage} message={message} />
+      <ConfigurationMessage busyMessage={busyMessage} />
+      {invalidSource ? (
+        <p className="sr-only" id={CONFIGURATION_ERROR_ID}>
+          {t('setup.invalidJson')}
+        </p>
+      ) : null}
     </div>
   )
 }
 
-function ConfigurationMessage({
-  message,
-  busyMessage,
-}: Pick<ProjectSetupViewProps, 'message'> & { busyMessage: string | null }) {
-  if (message?.tone === 'error') return null
-  const text = message?.text ?? busyMessage
-  return text ? (
+function ConfigurationMessage({ busyMessage }: { busyMessage: string | null }) {
+  return busyMessage ? (
     <p aria-live="polite" className="mt-3 type-meta text-muted-foreground" role="status">
-      {text}
+      {busyMessage}
     </p>
   ) : null
 }

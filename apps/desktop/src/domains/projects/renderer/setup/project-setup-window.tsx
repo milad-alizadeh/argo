@@ -43,8 +43,8 @@ export function ProjectSetupView({
   const { add } = useToastManager()
   const setup = { message, cancel, saved, save, saving, source, testConfiguration, updateSource }
   useEffect(() => {
-    if (message?.tone !== 'error') return
-    add({ priority: 'high', title: message.text, type: 'error' })
+    if (!message) return
+    add({ priority: 'high', title: message.text, type: message.tone })
   }, [add, message])
   return (
     <main
