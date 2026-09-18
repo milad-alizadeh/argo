@@ -24,15 +24,18 @@ function xcodeEditorTheme(dark: boolean) {
         '&': { backgroundColor: 'var(--popover)', color: palette.foreground },
         '.cm-activeLine': { backgroundColor: palette.lineHighlight },
         '.cm-activeLineGutter': { backgroundColor: palette.lineHighlight },
-        '.cm-cursor, .cm-dropCursor': { borderLeftColor: dark ? '#fff' : palette.foreground },
+        ...(dark ? { '.cm-cursor, .cm-dropCursor': { borderLeftColor: '#fff' } } : {}),
         '.cm-gutters': {
           backgroundColor: 'var(--popover)',
-          borderRightColor: 'transparent',
-          ...(dark ? {} : { color: palette.gutterForeground }),
+          ...(!dark && palette.gutterForeground !== undefined
+            ? { color: palette.gutterForeground }
+            : {}),
         },
-        '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
-          backgroundColor: palette.selection,
-        },
+        '.cm-selectionMatch': { backgroundColor: palette.selection },
+        '&.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, .cm-content ::selection':
+          {
+            background: `${palette.selection} !important`,
+          },
       },
       { dark },
     ),

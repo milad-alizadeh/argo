@@ -3,7 +3,7 @@ import type { ThemeRegistration } from 'shiki/core'
 type CodePalette = {
   background: string
   foreground: string
-  gutterForeground: string
+  gutterForeground?: string
   lineHighlight: string
   comment: string
   definition: string
@@ -33,7 +33,6 @@ const XCODE_LIGHT: CodePalette = {
 const XCODE_DARK: CodePalette = {
   background: '#292A30',
   foreground: '#CECFD0',
-  gutterForeground: '#7F8C98',
   lineHighlight: '#ffffff0f',
   comment: '#7F8C98',
   definition: '#6BDFFF',
