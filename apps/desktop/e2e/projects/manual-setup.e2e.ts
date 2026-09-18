@@ -1,18 +1,6 @@
 import { expect, test } from '../packaged-proof'
+import { LOCALLY_READY_CONFIGURATION } from './fixtures/locally-ready-project'
 import { launch, prepareManual } from './fixtures/project.fixture'
-
-const source = [
-  'version = 1',
-  '',
-  '[targets.app]',
-  'default = true',
-  'path = "."',
-  'setup = "true"',
-  'run = "true"',
-  'build = "true"',
-  'test = "true"',
-  '',
-].join('\n')
 
 test('creates, validates, and reopens a locally ready Project through visible controls', async ({
   root,
@@ -24,8 +12,8 @@ test('creates, validates, and reopens a locally ready Project through visible co
     const page = await application.firstWindow()
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
     const configuration = page.getByLabel('Project configuration')
-    await expect(configuration).toContainText('version = 1')
-    await configuration.fill(source)
+    await expect(configuration).toContainText('"version": 1')
+    await configuration.fill(LOCALLY_READY_CONFIGURATION)
     await page.getByRole('button', { name: 'Save configuration' }).click()
     await page.getByText('Configuration saved in the setup worktree.').waitFor()
     await page.getByRole('button', { name: 'Validate configuration' }).click()

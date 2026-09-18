@@ -13,24 +13,16 @@ async function fixture(context: { after: (callback: () => Promise<void>) => void
 }
 
 function source(commands: { setup: string; run: string; build: string; test: string }) {
-  return [
-    'version = 1',
-    '',
-    '[targets.app]',
-    'default = true',
-    'path = "."',
-    `setup = "${commands.setup}"`,
-    `run = "${commands.run}"`,
-    `build = "${commands.build}"`,
-    `test = "${commands.test}"`,
-    '',
-  ].join('\n')
+  return JSON.stringify({
+    version: 1,
+    targets: { app: { default: true, path: '.', ...commands } },
+  })
 }
 
 test('validates setup, run, build, and test commands in the target path', async (context) => {
   const project = await fixture(context)
   await writeFile(
-    path.join(project, '.argo', 'settings.toml'),
+    path.join(project, '.argo', 'settings.json'),
     source({
       setup: 'touch setup-ran',
       run: 'touch run-ran',
@@ -48,7 +40,7 @@ test('validates setup, run, build, and test commands in the target path', async 
 test('stops validation when a command fails', async (context) => {
   const project = await fixture(context)
   await writeFile(
-    path.join(project, '.argo', 'settings.toml'),
+    path.join(project, '.argo', 'settings.json'),
     source({
       setup: 'false',
       run: 'touch run-ran',

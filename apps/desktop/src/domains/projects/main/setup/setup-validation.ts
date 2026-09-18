@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { readProjectConfiguration } from './project-configuration'
+import { readProjectConfiguration } from '../project-configuration'
 
 const run = promisify(execFile)
 const COMMAND_TIMEOUT_MS = 30_000

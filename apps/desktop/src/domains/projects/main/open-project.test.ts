@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { projectConfigurationSource } from '../../../test-fixtures/projects/project-configuration.fixture'
 import { openProject } from './open-project'
 import { readProjectConfigurationSource } from './project-configuration'
 import type { ProjectStore } from './register-project'
@@ -59,19 +60,8 @@ test('returns to setup when an ignored local override changes after validation',
   const { project, store, writeCheckpoint, checkpoint } = await fixture(context)
   await mkdir(path.join(project, '.argo'))
   await writeFile(
-    path.join(project, '.argo', 'settings.toml'),
-    [
-      'version = 1',
-      '',
-      '[targets.app]',
-      'default = true',
-      'path = "."',
-      'setup = "true"',
-      'run = "true"',
-      'build = "true"',
-      'test = "true"',
-      '',
-    ].join('\n'),
+    path.join(project, '.argo', 'settings.json'),
+    projectConfigurationSource({ setup: 'true', run: 'true', build: 'true', test: 'true' }),
   )
   writeCheckpoint({
     projectId: 'project-1',
@@ -80,8 +70,8 @@ test('returns to setup when an ignored local override changes after validation',
     configurationSource: (await readProjectConfigurationSource(project)) ?? '',
   })
   await writeFile(
-    path.join(project, '.argo', 'settings.local.toml'),
-    '[targets.app]\npath = "app"\n',
+    path.join(project, '.argo', 'settings.local.json'),
+    JSON.stringify({ targets: { app: { path: 'app' } } }),
   )
 
   assert.equal(
@@ -99,21 +89,7 @@ test('returns to setup when an ignored local override changes after validation',
 test('opens a Project after its shared configuration is valid', async (context) => {
   const { project, store } = await fixture(context)
   await mkdir(path.join(project, '.argo'))
-  await writeFile(
-    path.join(project, '.argo', 'settings.toml'),
-    [
-      'version = 1',
-      '',
-      '[targets.app]',
-      'default = true',
-      'path = "."',
-      'setup = "bun install"',
-      'run = "bun run dev"',
-      'build = "bun run build"',
-      'test = "bun test"',
-      '',
-    ].join('\n'),
-  )
+  await writeFile(path.join(project, '.argo', 'settings.json'), projectConfigurationSource())
 
   assert.equal(
     (

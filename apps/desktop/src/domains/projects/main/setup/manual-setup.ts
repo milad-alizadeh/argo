@@ -6,31 +6,28 @@ import {
   type ProjectSetupEditing,
   type ProjectSetupValidated,
   projectError,
-} from './contract'
-import { saveManualProjectConfiguration } from './manual-configuration'
-import { toSummary } from './presentation'
-import { readProjectConfigurationSource } from './project-configuration'
-import { validateProjectConfiguration } from './setup-validation'
-import { prepareSetupWorktree } from './setup-worktree'
+} from '../contract'
+import { toSummary } from '../presentation'
+import { readProjectConfigurationSource } from '../project-configuration'
 import type {
   ProjectStore as ProjectRegistryStore,
   SetupCheckpoint,
   SetupPhase,
-} from './sqlite-store'
+} from '../sqlite-store'
+import { saveManualProjectConfiguration } from './manual-configuration'
+import { validateProjectConfiguration } from './setup-validation'
+import { prepareSetupWorktree } from './setup-worktree'
 
-export const MANUAL_CONFIGURATION_TEMPLATE = [
-  '# Shared Project configuration. Machine-specific paths belong in settings.local.toml.',
-  'version = 1',
-  '',
-  '[targets.app]',
-  'default = true',
-  'path = "."',
-  'setup = ""',
-  'run = ""',
-  'build = ""',
-  'test = ""',
-  '',
-].join('\n')
+export const MANUAL_CONFIGURATION_TEMPLATE = `${JSON.stringify(
+  {
+    version: 1,
+    targets: {
+      app: { default: true, path: '.', setup: '', run: '', build: '', test: '' },
+    },
+  },
+  null,
+  2,
+)}\n`
 
 type SetupStore = {
   projects: Pick<
@@ -128,7 +125,7 @@ function checkpointFor(
 }
 
 async function manualSource(worktreePath: string): Promise<string> {
-  return readFile(path.join(worktreePath, '.argo', 'settings.toml'), 'utf8').catch(
+  return readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(
     () => MANUAL_CONFIGURATION_TEMPLATE,
   )
 }

@@ -4,24 +4,25 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
+import { setupWorktreeFixture } from '../../../../test-fixtures/projects/setup/setup-worktree.fixture'
+import type { SetupCheckpoint } from '../sqlite-store'
 import { saveManualProjectConfiguration } from './manual-configuration'
-import { setupWorktreeFixture } from './setup-worktree-fixture'
-import type { SetupCheckpoint } from './sqlite-store'
 
 const run = promisify(execFile)
 
-const source = [
-  'version = 1',
-  '',
-  '[targets.app]',
-  'default = true',
-  'path = "."',
-  'setup = "bun install"',
-  'run = "bun run dev"',
-  'build = "bun run build"',
-  'test = "bun test"',
-  '',
-].join('\n')
+const source = JSON.stringify({
+  version: 1,
+  targets: {
+    app: {
+      default: true,
+      path: '.',
+      setup: 'bun install',
+      run: 'bun run dev',
+      build: 'bun run build',
+      test: 'bun test',
+    },
+  },
+})
 
 test('writes manual configuration in the setup worktree, not the current checkout', async (context) => {
   const { project } = await setupWorktreeFixture(context)
@@ -39,19 +40,19 @@ test('writes manual configuration in the setup worktree, not the current checkou
 
   assert.equal(checkpoint.phase, 'editing')
   assert.equal(
-    await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.toml'), 'utf8'),
+    await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.json'), 'utf8'),
     source,
   )
   assert.equal(
-    await readFile(path.join(project, '.argo', 'settings.toml'), 'utf8').catch(() => null),
+    await readFile(path.join(project, '.argo', 'settings.json'), 'utf8').catch(() => null),
     null,
   )
   const ignored = await run('git', [
     '-C',
     checkpoint.worktreePath,
     'check-ignore',
-    '.argo/settings.local.toml',
+    '.argo/settings.local.json',
   ])
-  assert.equal(ignored.stdout.trim(), '.argo/settings.local.toml')
+  assert.equal(ignored.stdout.trim(), '.argo/settings.local.json')
   assert.deepEqual(stored, checkpoint)
 })

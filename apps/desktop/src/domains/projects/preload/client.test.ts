@@ -110,12 +110,12 @@ test('sends manual setup through the Project contract', async () => {
       type: 'project.setup.editing',
       requestId: request.requestId,
       project: { id: 'project-1', name: 'example' },
-      source: 'version = 1\n',
+      source: '{"version":1}\n',
     }
   })
 
   const began = await client.beginProjectSetup({ projectId: 'project-1' })
-  const saved = await client.saveProjectSetup({ projectId: 'project-1', source: 'version = 1\n' })
+  const saved = await client.saveProjectSetup({ projectId: 'project-1', source: '{"version":1}\n' })
   const validated = await client.validateProjectSetup({ projectId: 'project-1' })
   assert.equal(began.type, 'project.setup.editing')
   assert.equal(saved.type, 'project.setup.editing')

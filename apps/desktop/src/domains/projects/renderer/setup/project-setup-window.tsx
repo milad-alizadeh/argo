@@ -1,5 +1,5 @@
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from '@codemirror/language'
-import { toml } from '@codemirror/legacy-modes/mode/toml'
+import { json } from '@codemirror/legacy-modes/mode/javascript'
 import { tags } from '@lezer/highlight'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { Settings } from 'lucide-react'
@@ -17,10 +17,9 @@ import {
 } from '@/renderer/components/ui/empty'
 import { useManualProjectSetup } from './use-manual-project-setup'
 
-const tomlLanguage = StreamLanguage.define(toml)
-const tomlHighlighting = syntaxHighlighting(
+const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
+const jsonHighlighting = syntaxHighlighting(
   HighlightStyle.define([
-    { tag: tags.comment, color: 'var(--muted-foreground)' },
     { tag: tags.string, color: 'var(--chart-2)' },
     { tag: [tags.number, tags.bool], color: 'var(--chart-4)' },
   ]),
@@ -65,8 +64,8 @@ export function ProjectSetupView({
   const { t } = useTranslation('projects')
   const editorExtensions = useMemo(
     () => [
-      tomlLanguage,
-      tomlHighlighting,
+      jsonLanguage,
+      jsonHighlighting,
       EditorView.contentAttributes.of({
         'aria-label': t('setup.configurationLabel'),
         id: CONFIGURATION_EDITOR_ID,
@@ -104,7 +103,7 @@ export function ProjectSetupView({
           </label>
           <CodeMirror
             basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
-            className="w-full overflow-hidden rounded-md border border-input bg-background text-foreground focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-72 [&_.cm-content]:py-3 [&_.cm-editor]:min-h-72 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
+            className="w-full overflow-hidden rounded-md border border-input bg-background text-left text-foreground focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-72 [&_.cm-content]:py-3 [&_.cm-editor]:min-h-72 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
             extensions={editorExtensions}
             onChange={(nextSource) => {
               setSource(nextSource)

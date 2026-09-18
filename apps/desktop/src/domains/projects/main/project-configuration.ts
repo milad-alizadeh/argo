@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { parse } from '@iarna/toml'
 
 export type ProjectTarget = {
   name: string
@@ -17,23 +16,23 @@ export type ProjectConfiguration = { targets: ProjectTarget[] }
 type TargetValues = Record<string, string | boolean | number>
 
 const sharedConfiguration = (projectPath: string) =>
-  path.join(projectPath, '.argo', 'settings.toml')
+  path.join(projectPath, '.argo', 'settings.json')
 const localConfiguration = (projectPath: string) =>
-  path.join(projectPath, '.argo', 'settings.local.toml')
+  path.join(projectPath, '.argo', 'settings.local.json')
 
 export async function readProjectConfigurationSource(projectPath: string): Promise<string | null> {
   const shared = await readFile(sharedConfiguration(projectPath), 'utf8').catch(() => null)
   if (shared === null) return null
   const local = await readFile(localConfiguration(projectPath), 'utf8').catch(() => '')
-  return `${shared}\n# Local override\n${local}`
+  return `${shared}\n// Local override\n${local}`
 }
 
 export async function readProjectConfiguration(
   projectPath: string,
 ): Promise<ProjectConfiguration | null> {
-  const shared = await readToml(sharedConfiguration(projectPath))
+  const shared = await readJson(sharedConfiguration(projectPath))
   if (shared?.version !== 1) return null
-  const local = await readToml(localConfiguration(projectPath))
+  const local = await readJson(localConfiguration(projectPath))
   if (local === undefined) return toConfiguration(shared.targets)
   if (!local || local.version !== undefined) return null
   return toConfiguration(mergeTargets(shared.targets, local.targets))
@@ -48,13 +47,13 @@ export async function saveProjectConfiguration(
   if (toConfiguration(parsed.targets) === null) return false
   const directory = path.join(projectPath, '.argo')
   await mkdir(directory, { recursive: true })
-  await writeFile(path.join(directory, 'settings.toml'), source)
+  await writeFile(path.join(directory, 'settings.json'), source)
   return true
 }
 
 type ParsedConfiguration = { version: number | undefined; targets: Map<string, TargetValues> }
 
-async function readToml(file: string): Promise<ParsedConfiguration | null | undefined> {
+async function readJson(file: string): Promise<ParsedConfiguration | null | undefined> {
   const source = await readFile(file, 'utf8').catch((error: NodeJS.ErrnoException) =>
     error.code === 'ENOENT' ? undefined : null,
   )
@@ -64,7 +63,8 @@ async function readToml(file: string): Promise<ParsedConfiguration | null | unde
 
 function parseConfiguration(source: string): ParsedConfiguration | null {
   try {
-    const parsed = parse(source)
+    const parsed = JSON.parse(source)
+    if (!isObject(parsed)) return null
     const targets = parsed.targets
     if (!isObject(targets)) return null
     const configured = new Map<string, TargetValues>()

@@ -22,7 +22,7 @@ export const ManualConfiguration: Story = {
         type: 'project.setup.editing',
         requestId: 'setup-1',
         project: { id: projectId, name: 'example' },
-        source: 'version = 1\n',
+        source: '{"version":1}\n',
       }),
       saveProjectSetup: async ({ projectId, source }) => ({
         version: 1,
@@ -53,7 +53,7 @@ export const ManualConfiguration: Story = {
     const canvas = within(canvasElement)
     const source = await canvas.findByLabelText('Project configuration')
     await userEvent.clear(source)
-    await userEvent.type(source, 'version = 1')
+    await userEvent.type(source, '{{"version":1}')
     await userEvent.click(canvas.getByRole('button', { name: 'Save configuration' }))
     await expect(canvas.getByText('Configuration saved in the setup worktree.')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Validate configuration' }))
@@ -73,7 +73,7 @@ export const SavingConfiguration: Story = {
       saving="save"
       setSaved={() => undefined}
       setSource={() => undefined}
-      source="version = 1\n"
+      source={'{"version":1}\n'}
       validate={async () => undefined}
     />
   ),
@@ -91,7 +91,7 @@ export const FailedValidation: Story = {
       saving={null}
       setSaved={() => undefined}
       setSource={() => undefined}
-      source="version = 1\n"
+      source={'{"version":1}\n'}
       validate={async () => undefined}
     />
   ),

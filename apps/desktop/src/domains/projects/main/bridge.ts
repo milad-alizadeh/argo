@@ -5,15 +5,15 @@ import { createWriteQueue } from '@/core/storage/portable-file'
 import { projectError } from '../contract/contract'
 import { PROJECT_OPERATIONS } from '../contract/operations'
 import { listProjects } from './list-projects'
+import { openProject } from './open-project'
+import { type ProjectStore, registerProject, relocateProject } from './register-project'
+import { selectProject } from './select-project'
 import {
   beginManualSetup,
   cancelManualSetup,
   saveManualSetup,
   validateManualSetup,
-} from './manual-setup'
-import { openProject } from './open-project'
-import { type ProjectStore, registerProject, relocateProject } from './register-project'
-import { selectProject } from './select-project'
+} from './setup/manual-setup'
 import type { ProjectStore as ProjectRegistryStore } from './sqlite-store'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which

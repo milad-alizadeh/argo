@@ -55,7 +55,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     projectId: 'project-1',
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
-    configurationSource: 'version = 1\n',
+    configurationSource: '{"version":1}\n',
   })
   first.close()
 
@@ -64,7 +64,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     projectId: 'project-1',
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
-    configurationSource: 'version = 1\n',
+    configurationSource: '{"version":1}\n',
   })
   reopened.close()
 })
@@ -79,7 +79,7 @@ test('updates a Project path without discarding its setup checkpoint', async (co
     projectId: 'project-1',
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'ready',
-    configurationSource: 'version = 1\n',
+    configurationSource: '{"version":1}\n',
   })
 
   store.updateProjectPath('project-1', '/tmp/project/.argo/worktrees/setup-project-1')
@@ -121,8 +121,8 @@ test('adds configuration source to a checkpoint database from before manual setu
     projectId: 'project-1',
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
-    configurationSource: 'version = 1\n',
+    configurationSource: '{"version":1}\n',
   })
-  assert.equal(store.readSetupCheckpoint('project-1')?.configurationSource, 'version = 1\n')
+  assert.equal(store.readSetupCheckpoint('project-1')?.configurationSource, '{"version":1}\n')
   store.close()
 })
