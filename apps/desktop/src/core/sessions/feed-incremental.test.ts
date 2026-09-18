@@ -48,6 +48,10 @@ function toolResult(uuid: string, callId: string, content: string): TranscriptMe
   return message({ uuid, toolResults: [{ callId, content, failed: false }] })
 }
 
+function thoughts(uuid: string, ...texts: string[]): TranscriptMessage {
+  return message({ uuid, blocks: texts.map((text) => ({ shape: 'thought', text })) })
+}
+
 function chainOf(id: string, records: TranscriptRecord[]): SessionChain {
   return {
     id,
@@ -156,4 +160,16 @@ test('merges consecutive tool runs across a poll boundary, the same way a full p
   type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
   const group = latestRows.find((row) => row.shape === 'tool-group') as ToolGroupRow | undefined
   assert.equal(group?.calls.length, 3)
+})
+
+// Codex packs a whole reasoning item's several summary chunks into one record's blocks (#2410):
+// folding them into one thought keeps the incremental read to one updating row, not a trail.
+test('several reasoning-summary chunks in one record collapse to the latest, not a trail of rows', () => {
+  const chain = chainOf('s', [thoughts('a', 'First chunk.', 'Second chunk.', 'Third chunk.')])
+  const { rows } = projectFeed(chain, undefined)
+  assert.deepEqual(
+    rows.map((row) => row.shape),
+    ['thought'],
+  )
+  assert.equal(rows[0]?.shape === 'thought' ? rows[0].text : null, 'Third chunk.')
 })
