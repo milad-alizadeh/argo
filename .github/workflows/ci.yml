@@ -126,6 +126,11 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test:hooks
 
+      # A number to read, not a gate: no threshold, no failing exit. #2404.
+      - name: Coverage report (bun suite)
+        if: ${{ !cancelled() }}
+        run: bun run --cwd apps/desktop test:coverage
+
   storybook:
     name: storybook interaction tests
     runs-on: ubuntu-latest
@@ -163,6 +168,11 @@ jobs:
 
       - name: Storybook interaction tests
         run: bun run test:storybook
+
+      # `storybook-dark` only: `storybook-light` runs the same modules, so a second coverage pass
+      # adds time and no new covered line. A number to read, not a gate. #2404.
+      - name: Coverage report (Storybook interaction tests)
+        run: bun run --cwd apps/desktop test:coverage:storybook
 
   # The package contents, on EVERY pull request and with no path filter (#1806). The manifest's
   # likeliest regression is a lockfile refresh, and a dependency bump may touch no `apps/desktop`

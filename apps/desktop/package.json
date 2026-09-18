@@ -32,6 +32,8 @@
     "desktop:verdict": "node scripts/write-release-verdict.mjs",
     "test": "bun test && bun run test:node",
     "test:node": "vitest run --project=node",
+    "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir=coverage/bun",
+    "test:coverage:storybook": "vitest run --project=storybook-dark --coverage",
     "test:feed": "bun test src/core/sessions src/agents/claude/sessions src/agents/claude/integration src/agents/codex/sessions mocks/sessions src/renderer/modules/sessions/feed"
   },
   "dependencies": {
@@ -74,6 +76,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
     "@vitest/browser-playwright": "^4.0.0",
+    "@vitest/coverage-v8": "4.1.11",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.6",
     "electron": "44.2.0",
