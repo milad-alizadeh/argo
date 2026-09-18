@@ -15,11 +15,19 @@ export type ContentBlock =
   | { shape: 'source'; label: string; source: string }
 
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
+export type RichResultBlock =
+  | { shape: 'text'; text: string }
+  | { shape: 'image'; url: FeedImageUrl }
 export type ToolResult = {
   callId: string
-  content: string | null
+  blocks: RichResultBlock[]
   failed: boolean
   background?: { taskId: string; outputPath: string | null }
+}
+
+export function resultText(blocks: readonly RichResultBlock[]): string | null {
+  const text = blocks.flatMap((block) => (block.shape === 'text' ? [block.text] : []))
+  return text.length === 0 ? null : text.join('\n')
 }
 export type TranscriptUsage = {
   inputTokens: number
@@ -111,6 +119,20 @@ export type TranscriptRecord =
   // A CLI that writes its Plan outside any message, as Codex's `update_plan` call does.
   | { kind: 'plan'; changes: PlanChange[] }
   | { kind: 'compaction'; uuid: string; timestamp?: string; summary?: string }
+  | {
+      kind: 'setup'
+      startsTurn: boolean
+      model: string | null
+      effort: string | null
+      mode: string | null
+    }
+  | { kind: 'usage'; contextTokens: number; spentTokens: number }
+  | {
+      kind: 'turn'
+      uuid: string
+      state: 'completed' | 'aborted'
+      timestamp: string | null
+    }
   // The harness re-delivers the compaction summary as a separate, later user turn than the
   // `compact_boundary` it belongs to; `readTranscriptFile` folds it into that record and this
   // kind never reaches a row on its own (#2206).

@@ -103,7 +103,7 @@ for (const [name, end] of Object.entries(TURN_ENDS)) {
       `${JSON.stringify({ timestamp: '2026-09-15T21:56:20.000Z', type: 'event_msg', payload: end })}\n`,
     )
     assert.deepEqual(await rows(reader), [
-      { id: THREAD, posture: 'external', status: 'unknown', locked: false },
+      { id: THREAD, posture: 'external', status: 'idle', locked: false },
     ])
   })
 }
@@ -133,7 +133,7 @@ test('unlocks a completed root Turn after its Codex delegation completes', async
     `${JSON.stringify({ timestamp: '2026-09-15T21:56:22.000Z', ...delegationActivity('completed') })}\n`,
   )
   assert.deepEqual(await rows(readerFor(root)), [
-    { id: THREAD, posture: 'external', status: 'unknown', locked: false },
+    { id: THREAD, posture: 'external', status: 'idle', locked: false },
   ])
 })
 

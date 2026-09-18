@@ -49,9 +49,9 @@ test('a single command groups alone and reads "Ran a command"', () => {
   assert.equal(found.calls[0]?.text, 'bun test')
 })
 
-test('a single unclassified tool call groups alone and reads "Called a tool"', () => {
+test('a single unclassified tool call groups alone and reads "Ran a command"', () => {
   const found = group(rowsFor([unclassified('u1')]))
-  assert.equal(found.label, 'Called a tool')
+  assert.equal(found.label, 'Ran a command')
   assert.equal(found.calls.length, 1)
   assert.equal(found.calls[0]?.kind, 'tool')
 })
@@ -59,6 +59,11 @@ test('a single unclassified tool call groups alone and reads "Called a tool"', (
 test('several consecutive commands state the count', () => {
   const found = group(rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build')]))
   assert.equal(found.label, 'Ran 2 commands')
+})
+
+test('commands and unclassified tool calls share one count', () => {
+  const found = group(rowsFor([bash('c1', 'bun test'), unclassified('u1'), unclassified('u2')]))
+  assert.equal(found.label, 'Ran 3 commands')
 })
 
 test('several consecutive Codex exec calls read as commands, the same as Bash', () => {

@@ -41,6 +41,6 @@ export function rosterMetadata(record: TranscriptRecord): TranscriptRecord {
     toolCalls: record.toolCalls.map((call) => ({ ...call, input: rosterToolInput(call.input) })),
     toolResults: record.toolResults
       ?.filter((result) => result.background !== undefined)
-      .map((result) => ({ ...result, content: null })),
+      .map((result) => ({ ...result, blocks: [] })),
   }
 }
