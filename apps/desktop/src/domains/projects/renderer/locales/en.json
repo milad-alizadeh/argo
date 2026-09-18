@@ -7,5 +7,16 @@
     "title": "Add a Project to start",
     "description": "Argo shows the Sessions, Tickets and Atlas of one Project. Choose its folder to begin.",
     "add": "Add Project…"
+  },
+  "setup": {
+    "label": "Set up {{name}}",
+    "title": "Set up {{name}} before starting Sessions",
+    "description": "Argo needs a shared Project configuration before it can start a managed Session.",
+    "configurationLabel": "Project configuration",
+    "save": "Save configuration",
+    "saved": "Configuration saved in the setup worktree.",
+    "validate": "Validate configuration",
+    "valid": "All Project commands passed validation.",
+    "invalid": "A Project command failed validation."
   }
 }

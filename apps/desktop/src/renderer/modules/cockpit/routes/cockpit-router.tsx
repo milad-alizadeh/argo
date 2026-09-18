@@ -8,6 +8,7 @@ import {
   REGISTER_PROJECT_COMMAND,
 } from '@/core/commands/shortcuts'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
+import { ProjectSetupWindow } from '@/domains/projects/renderer/components/project-setup-window'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
@@ -58,6 +59,9 @@ export function CockpitRouteLayout() {
   )
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
+  if (cockpit.status === 'setup' && cockpit.project) {
+    return <ProjectSetupWindow project={cockpit.project} />
+  }
   return (
     <CockpitShell
       footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}

@@ -9,13 +9,82 @@ export const projectOpenRequestSchema = z.strictObject({
 })
 export type ProjectOpenRequest = z.infer<typeof projectOpenRequestSchema>
 
+const projectLabelSchema = z.strictObject({ id: identifierSchema, name: z.string().min(1) })
+
 export const projectOpenedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('project.opened'),
   requestId: identifierSchema,
-  project: z.strictObject({ id: identifierSchema, name: z.string().min(1) }),
+  project: projectLabelSchema,
 })
 export type ProjectOpened = z.infer<typeof projectOpenedSchema>
+
+export const projectSetupRequiredSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup-required'),
+  requestId: identifierSchema,
+  project: projectLabelSchema,
+})
+export type ProjectSetupRequired = z.infer<typeof projectSetupRequiredSchema>
+
+export const projectSetupBeginRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.begin'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectSetupBeginRequest = z.infer<typeof projectSetupBeginRequestSchema>
+
+export const projectSetupSaveRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.save'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+  source: z.string().min(1).max(100_000),
+})
+export type ProjectSetupSaveRequest = z.infer<typeof projectSetupSaveRequestSchema>
+
+export const projectSetupValidateRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.validate'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectSetupValidateRequest = z.infer<typeof projectSetupValidateRequestSchema>
+
+export const projectSetupEditingSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.editing'),
+  requestId: identifierSchema,
+  project: projectLabelSchema,
+  source: z.string(),
+})
+export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
+
+export const projectSetupValidatedSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.validated'),
+  requestId: identifierSchema,
+  project: projectLabelSchema,
+  valid: z.boolean(),
+})
+export type ProjectSetupValidated = z.infer<typeof projectSetupValidatedSchema>
+
+export const projectSetupCancelledSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.cancelled'),
+  requestId: identifierSchema,
+  project: projectLabelSchema,
+})
+export type ProjectSetupCancelled = z.infer<typeof projectSetupCancelledSchema>
+
+export const projectSetupCancelRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.cancel'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+})
+export type ProjectSetupCancelRequest = z.infer<typeof projectSetupCancelRequestSchema>
 
 export const PROJECT_ERRORS = {
   'missing-project': 'This Project is not registered.',
@@ -32,6 +101,8 @@ export const PROJECT_ERRORS = {
   'already-registered': 'Another Project is already registered at that folder.',
   'git-unavailable': 'Argo cannot run git on this computer.',
   'storage-not-written': 'Argo could not save the Project registry.',
+  'invalid-configuration': 'The Project configuration is not valid.',
+  'setup-unavailable': 'Argo could not prepare Project setup.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS
@@ -45,7 +116,12 @@ export const projectErrorSchema = z
   })
   .refine(({ code, message }) => message === PROJECT_ERRORS[code])
 export type ProjectError = z.infer<typeof projectErrorSchema>
-export type ProjectOpenReply = ProjectOpened | ProjectError
+export type ProjectOpenReply = ProjectOpened | ProjectSetupRequired | ProjectError
+export type ProjectSetupReply =
+  | ProjectSetupEditing
+  | ProjectSetupValidated
+  | ProjectSetupCancelled
+  | ProjectError
 
 export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
   return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }

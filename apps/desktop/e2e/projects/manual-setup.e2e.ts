@@ -1,0 +1,46 @@
+import { expect, test } from '../packaged-proof'
+import { launch, prepareManual } from './fixtures/project.fixture'
+
+const source = [
+  'version = 1',
+  '',
+  '[targets.app]',
+  'default = true',
+  'path = "."',
+  'setup = "true"',
+  'run = "true"',
+  'build = "true"',
+  'test = "true"',
+  '',
+].join('\n')
+
+test('creates, validates, and reopens a locally ready Project through visible controls', async ({
+  root,
+  packagedApplication,
+}) => {
+  const fixture = await prepareManual(root, packagedApplication)
+  const application = await launch(fixture)
+  try {
+    const page = await application.firstWindow()
+    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
+    const configuration = page.getByLabel('Project configuration')
+    await expect(configuration).toHaveValue(/version = 1/)
+    await configuration.fill(source)
+    await page.getByRole('button', { name: 'Save configuration' }).click()
+    await page.getByText('Configuration saved in the setup worktree.').waitFor()
+    await page.getByRole('button', { name: 'Validate configuration' }).click()
+    await page.getByText('All Project commands passed validation.').waitFor()
+    await application.close()
+
+    const restarted = await launch(fixture)
+    try {
+      await restarted.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
+      const restartedPage = await restarted.firstWindow()
+      await expect(restartedPage.getByLabel('Project configuration')).not.toBeVisible()
+    } finally {
+      await restarted.close()
+    }
+  } finally {
+    await application.close().catch(() => undefined)
+  }
+})

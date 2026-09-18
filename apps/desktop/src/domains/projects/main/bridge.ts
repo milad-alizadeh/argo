@@ -5,6 +5,12 @@ import { createWriteQueue } from '@/core/storage/portable-file'
 import { projectError } from '../contract/contract'
 import { PROJECT_OPERATIONS } from '../contract/operations'
 import { listProjects } from './list-projects'
+import {
+  beginManualSetup,
+  cancelManualSetup,
+  saveManualSetup,
+  validateManualSetup,
+} from './manual-setup'
 import { openProject } from './open-project'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
 import { selectProject } from './select-project'
@@ -38,6 +44,10 @@ export function attachProjectBridge(
     context: store,
     handlers: {
       open: (request, context) => openProject(request, context),
+      setupBegin: (request, context) => beginManualSetup(request, context),
+      setupSave: (request, context) => saveManualSetup(request, context),
+      setupValidate: (request, context) => validateManualSetup(request, context),
+      setupCancel: (request, context) => cancelManualSetup(request, context),
       list: (request, context) => listProjects(request, context),
       register: registerProject,
       relocate: relocateProject,

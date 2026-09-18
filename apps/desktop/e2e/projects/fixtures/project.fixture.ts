@@ -2,7 +2,7 @@
 // carries the production fuse profile with one fuse flipped, so the run reads a shipped app whose
 // only difference from the download is the inspector it is driven through.
 import { execFile } from 'node:child_process'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
@@ -35,6 +35,22 @@ export async function prepare(root, application?) {
   const projectPath = path.join(root, 'example')
   await mkdir(userData, { recursive: true })
   await mkdir(projectPath)
+  await mkdir(path.join(projectPath, '.argo'))
+  await writeFile(
+    path.join(projectPath, '.argo', 'settings.toml'),
+    [
+      'version = 1',
+      '',
+      '[targets.app]',
+      'default = true',
+      'path = "."',
+      'setup = "bun install"',
+      'run = "bun run dev"',
+      'build = "bun run build"',
+      'test = "bun test"',
+      '',
+    ].join('\n'),
+  )
   const databasePath = sharedDatabasePath(userData)
   const projects = createProjectStore(new DatabaseSync(databasePath))
   projects.replace({
@@ -54,6 +70,44 @@ export async function prepare(root, application?) {
     relocated: path.join(root, 'beta-relocated'),
     plain: await folder(path.join(root, 'plain')),
   }
+}
+
+export async function prepareManual(root, application?) {
+  application ??= await packagedTestCopy(root)
+  const userData = path.join(root, 'manual-userData')
+  const projectPath = path.join(root, 'manual-project')
+  const remote = path.join(root, 'manual-remote.git')
+  await mkdir(userData, { recursive: true })
+  await repository(projectPath)
+  await writeFile(path.join(projectPath, 'README.md'), 'Manual setup fixture\n')
+  await run('git', ['-C', projectPath, 'add', 'README.md'])
+  await run('git', [
+    '-C',
+    projectPath,
+    '-c',
+    'user.email=argo@example.test',
+    '-c',
+    'user.name=Argo',
+    'commit',
+    '--quiet',
+    '-m',
+    'fixture',
+  ])
+  await run('git', ['init', '--bare', '--quiet', remote])
+  await run('git', ['-C', projectPath, 'remote', 'add', 'origin', remote])
+  const branch = (await run('git', ['-C', projectPath, 'branch', '--show-current'])).stdout.trim()
+  await run('git', ['-C', projectPath, 'push', '--quiet', '-u', 'origin', branch])
+  await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', `refs/heads/${branch}`])
+  const databasePath = sharedDatabasePath(userData)
+  const projects = createProjectStore(new DatabaseSync(databasePath))
+  projects.replace({
+    projects: [
+      { id: 'project-setup', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
+    ],
+    selectedId: 'project-setup',
+  })
+  projects.close()
+  return { application, databasePath, projectPath, userData }
 }
 
 // One launch of the packaged app against the fixture's own application data. A restart is another
