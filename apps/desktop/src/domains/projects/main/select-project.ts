@@ -1,7 +1,7 @@
 // Picking a Project from the dropdown writes the selection to the shared store, so a fresh main
 // process reads the same Project a dev-server restart wiped from the renderer's Query cache (#2269).
-import { type ProjectError, projectError } from './contract'
-import type { ProjectListed, ProjectSelectRequest } from './messages'
+import { type ProjectError, projectError } from '../contract/contract'
+import type { ProjectListed, ProjectSelectRequest } from '../contract/messages'
 import { commit, currentRegistry, type ProjectStore } from './register-project'
 
 export function selectProject(

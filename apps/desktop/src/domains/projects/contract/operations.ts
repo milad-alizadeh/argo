@@ -8,6 +8,8 @@ import {
   projectSelectRequestSchema,
 } from './messages'
 
+const projectListReplySchema = projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema)
+
 // The Project IPC contract has five named operations, each on its own channel. The table is
 // consumed by the client, the preload bridge and the main-process registration, so an operation
 // cannot acquire a second hand-maintained channel.
@@ -22,19 +24,19 @@ export const PROJECT_OPERATIONS = {
     name: 'project.list',
     channel: 'argo:project:list',
     request: projectListRequestSchema,
-    reply: projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema),
+    reply: projectListReplySchema,
   },
   register: {
     name: 'project.register',
     channel: 'argo:project:register',
     request: projectRegisterRequestSchema,
-    reply: projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema),
+    reply: projectListReplySchema,
   },
   relocate: {
     name: 'project.relocate',
     channel: 'argo:project:relocate',
     request: projectRelocateRequestSchema,
-    reply: projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema),
+    reply: projectListReplySchema,
   },
   select: {
     name: 'project.select',

@@ -1,8 +1,9 @@
 // Everything the main process holds to reach a provider on an Account's behalf. Built once per
 // window in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
+
+import { toSummary } from '@/domains/projects/main/presentation'
+import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import type { ProviderEndpoints } from '../../providers/endpoints'
-import { toSummary } from '../projects/presentation'
-import type { ProjectStore } from '../projects/sqlite-store'
 import { createWriteQueue, portablePath } from '../storage/portable-file'
 import type { AccountState } from './contract'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'

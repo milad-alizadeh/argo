@@ -1,7 +1,7 @@
-import { createDomainClient } from '../contract/domain'
-import { type ProjectOpenReply, projectError } from './contract'
-import type { ProjectListReply } from './messages'
-import { PROJECT_OPERATIONS } from './operations'
+import { createDomainClient } from '../../../core/contract/domain'
+import { type ProjectOpenReply, projectError } from '../contract/contract'
+import type { ProjectListReply } from '../contract/messages'
+import { PROJECT_OPERATIONS } from '../contract/operations'
 
 export type ProjectClient = {
   openProject(request: { projectId: string }): Promise<ProjectOpenReply>

@@ -3,8 +3,12 @@
 // renderer never assembles storage out of a sequence of replies.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import type { ProjectError, ProjectErrorCode } from '@/core/projects/contract'
-import type { ProjectListed, ProjectListReply, ProjectSummary } from '@/core/projects/messages'
+import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
+import type {
+  ProjectListed,
+  ProjectListReply,
+  ProjectSummary,
+} from '@/domains/projects/contract/messages'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey, projectMutationKey } from '../project-queries'
 

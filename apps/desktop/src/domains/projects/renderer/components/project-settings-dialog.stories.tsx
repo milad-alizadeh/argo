@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { ProjectSummary } from '@/core/projects/messages'
-import { connection } from '../../tickets/components/ticket-fixtures'
+import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import { connection } from '@/renderer/modules/tickets/components/ticket-fixtures'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
 const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/Users/milad/argo' }

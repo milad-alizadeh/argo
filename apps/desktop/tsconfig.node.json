@@ -23,10 +23,11 @@
   "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts", "scripts/**/*.mjs"],
   "exclude": [
     "src/renderer",
+    "src/domains/*/renderer",
     "src/agents/claude/integration",
     "src/agents/codex/integration",
     "src/core/appearance/**/*.test.ts",
-    "src/core/projects/**/*.test.ts",
+    "src/domains/projects/**/*.test.ts",
     "src/core/commands/**/*.test.ts",
     "src/core/watch/**/*.test.ts",
     "src/core/contract/every-domain-refuses-untrusted-frames.test.ts",
