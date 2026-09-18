@@ -19,7 +19,6 @@ const STATE_PRESENTATION = {
 export type AccountRowProps = {
   account: AccountSummary
   busy: boolean
-  onConnectSource: (() => void) | undefined
   onDisconnect: () => void
   onReconnect: () => void
 }
@@ -80,19 +79,13 @@ type ConfirmProps = {
   onKeep: () => void
 }
 
-export function AccountRow({
-  account,
-  busy,
-  onConnectSource,
-  onDisconnect,
-  onReconnect,
-}: AccountRowProps) {
+export function AccountRow({ account, busy, onDisconnect, onReconnect }: AccountRowProps) {
   const { t } = useTranslation('accounts')
   const [confirming, setConfirming] = useState(false)
   const row = useRef<HTMLLIElement>(null)
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
-  const { name, scope } = providerPresentation(account.provider)
+  const { name } = providerPresentation(account.provider)
   const { variant, note } = STATE_PRESENTATION[account.state]
   const reason = note ? t(note, { provider: name }) : null
   return (
@@ -119,11 +112,6 @@ export function AccountRow({
         )}
       </div>
       <Connections account={account} />
-      {account.state === 'connected' && account.connections.length === 0 && onConnectSource ? (
-        <Button onClick={onConnectSource} size="sm" variant="outline">
-          {t('row.connect', { scope: scope.one })}
-        </Button>
-      ) : null}
       {reason ? (
         <div className="grid justify-items-start gap-(--spacing-shell-item)">
           <p className="type-meta text-destructive">{reason}</p>

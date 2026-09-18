@@ -51,13 +51,13 @@ export async function proveConnect(run: Run) {
     }
     assert.equal((await storeText(run.fixture, 'accounts.json')).includes('token-'), false)
   })
-  await test.step('open-repository-form', async () => {
-    await press(accountRow(run.page, 'octocat'), 'Connect a repository')
-    await accountsDialog(run.page).waitFor({ state: 'detached' })
+  await test.step('repository-form-inline', async () => {
+    // The repository-connect form draws inside the Accounts dialog once an Account connects (#2411).
     await connectForm(run.page)
       .getByRole('combobox', { name: 'Account' })
       .getByText('GitHub · octocat')
       .waitFor()
+    await accountsDialog(run.page).waitFor({ state: 'attached' })
   })
 }
 
@@ -80,6 +80,8 @@ export async function proveConnectRepository(run: Run) {
   await test.step('connectSource', async () => {
     await press(form, 'Connect repository')
     await backlog(run.page).waitFor()
+    // The Ticket connects and the dialog it was drawn in closes, so nothing is left over it.
+    await accountsDialog(run.page).waitFor({ state: 'detached' })
     assert.equal(
       (await storeText(run.fixture, 'connections.json')).includes('octocat/hello-world'),
       true,

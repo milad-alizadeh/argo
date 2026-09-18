@@ -1,5 +1,5 @@
 import { TriangleAlert } from 'lucide-react'
-import { useRef } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/core/accounts/contract'
@@ -26,7 +26,8 @@ export type AccountsPanelProps = {
   signIn: Omit<SignInPanelProps, 'providers'>
   disconnecting: string | null
   disconnectError: ContractFailure | null
-  onConnectSource?: (accountId: string) => void
+  // The repository-connect form's fields, drawn by the caller so this module names no Ticket type.
+  connect?: ReactNode
   onDisconnect: (accountId: string) => void
 }
 
@@ -46,7 +47,7 @@ export function AccountsPanel({
   signIn,
   disconnecting,
   disconnectError,
-  onConnectSource,
+  connect,
   onDisconnect,
 }: AccountsPanelProps) {
   const { t } = useTranslation('accounts')
@@ -65,26 +66,23 @@ export function AccountsPanel({
       {listing && accounts.length === 0 ? (
         <p className="type-body text-muted-foreground">{t('list.empty')}</p>
       ) : null}
-      {accounts.length > 0 ? (
-        <ul
-          aria-label={t('list.label')}
-          className="grid divide-y divide-border/60 rounded-lg border border-border/60"
-        >
-          {accounts.map((account) => (
-            <AccountRow
-              account={account}
-              busy={disconnecting === account.id}
-              key={account.id}
-              onConnectSource={
-                account.connections.length === 0 && onConnectSource
-                  ? () => onConnectSource(account.id)
-                  : undefined
-              }
-              onDisconnect={() => onDisconnect(account.id)}
-              onReconnect={() => signIn.start(account.provider)}
-            />
-          ))}
-        </ul>
+      {accounts.length > 0 || connect ? (
+        <div className="grid divide-y divide-border/60 rounded-lg border border-border/60">
+          {accounts.length > 0 ? (
+            <ul aria-label={t('list.label')} className="grid divide-y divide-border/60">
+              {accounts.map((account) => (
+                <AccountRow
+                  account={account}
+                  busy={disconnecting === account.id}
+                  key={account.id}
+                  onDisconnect={() => onDisconnect(account.id)}
+                  onReconnect={() => signIn.start(account.provider)}
+                />
+              ))}
+            </ul>
+          ) : null}
+          {connect ? <div className="p-(--spacing-shell-gutter)">{connect}</div> : null}
+        </div>
       ) : null}
       {disconnectError ? <Failure error={disconnectError} /> : null}
       <SignInPanel {...signIn} providers={listing?.providers ?? []} />
@@ -105,11 +103,7 @@ function returnFocus(opener: Element | null): HTMLElement | true {
 }
 
 // Closing the dialog abandons a sign-in in progress, so no code outlives the screen that showed it.
-export function AccountsDialog({
-  onConnectSource,
-}: {
-  onConnectSource?: (accountId: string) => void
-}) {
+export function AccountsDialog({ connect }: { connect?: ReactNode }) {
   const { t } = useTranslation('accounts')
   const { open, opener, setOpen } = useAccountsDialog()
   const accounts = useAccounts()
@@ -122,6 +116,15 @@ export function AccountsDialog({
     }
     setOpen(next)
   }
+  // A repository connects and the screen behind the dialog takes over, so nothing is left open.
+  const wasConnecting = useRef(false)
+  useEffect(() => {
+    if (connect) wasConnecting.current = true
+    else if (wasConnecting.current) {
+      wasConnecting.current = false
+      setOpen(false)
+    }
+  }, [connect, setOpen])
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md" finalFocus={() => returnFocus(opener)}>
@@ -130,18 +133,11 @@ export function AccountsDialog({
           <DialogDescription>{t('dialog.description')}</DialogDescription>
         </DialogHeader>
         <AccountsPanel
+          connect={connect}
           disconnectError={disconnect.error}
           disconnecting={disconnect.isPending ? (disconnect.variables ?? null) : null}
           listError={accounts.error}
           listing={accounts.data ?? null}
-          onConnectSource={
-            onConnectSource
-              ? (accountId) => {
-                  onConnectSource(accountId)
-                  onOpenChange(false)
-                }
-              : undefined
-          }
           onDisconnect={(accountId) => disconnect.mutate(accountId)}
           signIn={{ ...signIn, connected: signedIn(connected) }}
         />

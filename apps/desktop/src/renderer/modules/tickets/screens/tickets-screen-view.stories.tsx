@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '../../accounts/components/accounts-dialog'
 import { CockpitShell } from '../../cockpit/components/cockpit-shell'
-import { ConnectSourceForm } from '../components/connect-source-form'
+import { ConnectSourceFields } from '../components/connect-source-form'
 import { STATUSES } from '../components/status-fixtures'
 import {
   backlog,
@@ -40,35 +40,29 @@ function TicketsScreenStory({ view }: TicketsScreenProps) {
   )
 }
 
-// A sign-in leaves the Account dialog over the selected Project's connection form. Choosing the
-// Account's action must close that dialog and carry the Account into the form behind it.
+// The repository-connect form draws inline in the Accounts panel once an Account connects (#2411).
 function AccountToRepositoryForm() {
-  const [accountId, setAccountId] = useState<string | null>(null)
-  if (accountId) {
-    return (
-      <ConnectSourceForm
-        accountId={accountId}
-        accounts={[octocat]}
-        error={null}
-        onConnectAccount={fn()}
-        onConnectSource={fn()}
-        onSelectAccount={setAccountId}
-        pending={false}
-        projectName="argo"
-        sources={{
-          state: 'listed',
-          scopes: [{ scope: 'octocat/hello-world', label: 'octocat/hello-world' }],
-        }}
-      />
-    )
-  }
+  const [accountId, setAccountId] = useState<string | null>(octocat.id)
   return (
     <AccountsPanel
+      connect={
+        <ConnectSourceFields
+          accountId={accountId}
+          accounts={[octocat]}
+          error={null}
+          onConnectSource={fn()}
+          onSelectAccount={setAccountId}
+          pending={false}
+          sources={{
+            state: 'listed',
+            scopes: [{ scope: 'octocat/hello-world', label: 'octocat/hello-world' }],
+          }}
+        />
+      }
       disconnectError={null}
       disconnecting={null}
       listError={null}
       listing={{ accounts: [octocat], notice: false, providers: ['github'] }}
-      onConnectSource={setAccountId}
       onDisconnect={fn()}
       signIn={{
         cancel: fn(),
@@ -159,11 +153,9 @@ export const AccountToRepositoryConnection: StoryObj<typeof AccountToRepositoryF
   render: () => <AccountToRepositoryForm />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const account = canvas.getByRole('listitem', { name: 'GitHub Account octocat' })
-    await userEvent.click(within(account).getByRole('button', { name: 'Connect a repository' }))
     await expect(
-      canvas.getByRole('heading', { name: 'Connect argo to a repository' }),
-    ).toBeVisible()
+      canvas.getByRole('listitem', { name: 'GitHub Account octocat' }),
+    ).toBeInTheDocument()
     await expect(canvas.getByRole('combobox', { name: 'Account' })).toHaveTextContent(
       'GitHub · octocat',
     )
