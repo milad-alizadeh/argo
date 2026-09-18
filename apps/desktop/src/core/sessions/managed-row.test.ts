@@ -1,30 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { mockManagedRow } from '../../../mocks/sessions/mock-managed-row'
 import { managedRow, mergeManagedRoster } from './managed-row'
-import type { SessionPlan, SessionRosterRow, SessionStatus, SessionTitle } from './models'
+import type { SessionPlan, SessionTitle } from './models'
 import { reconcileRosterRow, rosterRowFields } from './roster-row-definition'
 
-const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'
 const OBSERVED_TITLE = 'Observed title'
 
-function row(id: string, status: SessionStatus): SessionRosterRow {
-  return managedRow(id, {
-    cli: 'claude',
-    compactionPercentage: null,
-    compactionStartedAt: null,
-    compactionTokens: null,
-    cwd: '/projects/argo',
-    status,
-    setup,
-    prompt: 'Do the thing.',
-    startedAt: '2026-09-14T00:00:00.000Z',
-  })
-}
-
 function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle | null) {
-  const held = { ...row('s1', 'running'), title: heldTitle }
-  const observed = { ...row('s1', 'running'), title: observedTitle }
+  const held = { ...mockManagedRow('s1', 'running'), title: heldTitle }
+  const observed = { ...mockManagedRow('s1', 'running'), title: observedTitle }
   const merged = mergeManagedRoster(
     {
       rows: [observed],
@@ -83,8 +69,8 @@ test('a managed Session keeps the newest Plan it knows from either source', () =
     state: 'available',
     entries: [{ content: 'Inspect the Session', position: 0, status: 'in_progress' }],
   }
-  const observed = { ...row('s1', 'running'), plan }
-  const heldWithoutPlan = row('s1', 'running')
+  const observed = { ...mockManagedRow('s1', 'running'), plan }
+  const heldWithoutPlan = mockManagedRow('s1', 'running')
   const discovered = {
     rows: [observed],
     filesFound: 1,
@@ -131,7 +117,7 @@ test('a managed Session shows whichever title exists when the other is missing',
 test('a Session with no held counterpart passes through the discovered row untouched', () => {
   const merged = mergeManagedRoster(
     {
-      rows: [row('only-discovered', 'idle')],
+      rows: [mockManagedRow('only-discovered', 'idle')],
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,
