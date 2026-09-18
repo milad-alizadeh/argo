@@ -18,6 +18,6 @@ test('reads no Model or Effort for a Turn Claude has not answered yet', async ()
   assert.deepEqual(projectRosterRow(stitchChains([await fixtureFile('turnSetup')])[0]).setup, {
     model: null,
     effort: null,
-    mode: 'acceptEdits',
+    mode: 'bypassPermissions',
   })
 })

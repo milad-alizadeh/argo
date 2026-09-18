@@ -3,12 +3,7 @@
 // `plan.ts`'s. Every one is DERIVED from Tool Calls the transcript names, and each is absent
 // rather than guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
-import type {
-  SessionActivity,
-  SessionDelegation,
-  SessionSetup,
-  SessionShellCommand,
-} from './models'
+import type { SessionActivity, SessionDelegation, SessionShellCommand } from './models'
 import { toolPresentation } from './tool-feed'
 import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
@@ -146,17 +141,6 @@ function lastPromptIndex(messages: TranscriptMessage[]): number {
 
 export function readTurnStartedAt(messages: TranscriptMessage[]): string | null {
   return messages[lastPromptIndex(messages)]?.timestamp ?? null
-}
-
-// Mode rides on the prompt; Model and Effort only on a reply, so an unanswered Turn has neither.
-export function readSetup(messages: TranscriptMessage[]): SessionSetup {
-  const prompt = lastPromptIndex(messages)
-  const replies = messages.slice(prompt + 1).filter((message) => message.role === 'assistant')
-  return {
-    model: replies.findLast((reply) => reply.model !== null)?.model ?? null,
-    effort: replies.findLast((reply) => reply.effort !== null)?.effort ?? null,
-    mode: messages[prompt]?.mode ?? null,
-  }
 }
 
 function readTarget(input: Record<string, unknown>): string | null {

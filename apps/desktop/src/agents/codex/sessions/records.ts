@@ -7,6 +7,7 @@ import { messageBlocks, messageRecord } from './message-record'
 import { MODEL_INPUT_PREFIX } from './model-input-copies'
 import { readPlanCall } from './plan-changes'
 import { promptBlocks, promptEventImages } from './prompt-images'
+import { readSessionFact, readTurnRecord } from './session-facts'
 import { subagentActivity } from './subagent-activity'
 import { readToolRecord } from './tool-calls'
 
@@ -69,6 +70,8 @@ function promptMessage(
 function event(record: Record<string, unknown>, payload: Record<string, unknown>) {
   const contextWindow = taskStartedContextWindow(payload)
   if (contextWindow !== null) return contextWindow
+  const turn = readTurnRecord(record, payload)
+  if (turn !== null) return turn
   if (payload.type === 'item_completed') return itemMessage(record, payload)
   if (payload.type !== 'user_message' && payload.type !== 'agent_message') return null
   if (isRecord(payload.item)) return itemMessage(record, payload)
@@ -133,6 +136,8 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
   if (payload === null) return null
   if (record.type === 'event_msg') return event(record, payload)
   if (record.type === 'response_item') return responseMessage(record, payload)
+  const fact = readSessionFact(record.type, payload)
+  if (fact !== null) return fact
   // Written once the context is replaced, by a manual `/compact` and an automatic one alike.
   if (record.type === 'compacted' && typeof record.timestamp === 'string')
     return {

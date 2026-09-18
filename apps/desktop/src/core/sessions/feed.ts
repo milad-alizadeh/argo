@@ -5,6 +5,24 @@ import type { ContentBlock, ToolCall, TranscriptMessage, TranscriptRecord } from
 
 export { UNREADABLE_ROW, unreadableRowHeight }
 
+function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {
+  return (record.toolResults ?? []).flatMap((result, resultIndex) =>
+    result.blocks.flatMap((block, blockIndex): SessionFeedRow[] =>
+      block.shape === 'image'
+        ? [
+            {
+              shape: 'source',
+              id: `${record.uuid}:result:${resultIndex}:${blockIndex}`,
+              role: record.role,
+              label: 'image',
+              source: block.url,
+            },
+          ]
+        : [],
+    ),
+  )
+}
+
 export function rowsOfRecord(
   record: TranscriptRecord,
   position: string,
@@ -20,6 +38,17 @@ export function rowsOfRecord(
         summary: record.summary ?? null,
       },
     ]
+  if (record.kind === 'turn')
+    return record.state === 'aborted'
+      ? [
+          {
+            shape: 'marker',
+            id: `${record.uuid}:interrupted`,
+            marker: 'interrupted',
+            summary: null,
+          },
+        ]
+      : []
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
@@ -44,7 +73,7 @@ export function rowsOfRecord(
   const rows = record.blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
-  return withPromptAttachments(rows, record)
+  return [...withPromptAttachments(rows, record), ...resultImageRows(record)]
 }
 
 function rowsOfBlock({

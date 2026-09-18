@@ -44,6 +44,7 @@ test('shows a row for each Codex tool call, succeeded once its output arrived an
         text: 'bun test session-store.test.ts',
       },
       { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
+      { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
       { status: 'running', label: 'Ran bun run build', text: 'bun run build' },
       {
         status: 'succeeded',
@@ -59,7 +60,7 @@ test('names the roster activity line after the newest tool call, the same way it
   const session = reply?.sessions.find((entry) => entry.id === SESSION)
   assert.deepEqual(session?.activity, {
     label: 'Ran bun run quality',
-    tool: 'exec',
+    tool: 'exec_command',
     target: null,
   })
 })

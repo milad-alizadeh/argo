@@ -8,7 +8,7 @@
 // and `ended` are managed-only or need an exit Argo witnessed, and no external posture has one.
 
 import { SESSION_STATUSES, type SessionStatus } from './models'
-import type { TranscriptMessage } from './transcript'
+import type { TranscriptMessage, TranscriptRecord } from './transcript'
 
 export type { SessionStatus }
 // The closed set, written once. The type is derived from it rather than restated beside it, so a
@@ -40,8 +40,13 @@ function isAskPending(messages: TranscriptMessage[]): boolean {
   return pendingAskCall(messages, ASK_TOOL) !== null
 }
 
-export function readExternalStatus(messages: TranscriptMessage[]): SessionStatus {
+export function readExternalStatus(
+  messages: TranscriptMessage[],
+  records: readonly TranscriptRecord[] = messages,
+): SessionStatus {
   if (isAskPending(messages)) return 'asking'
+  const boundary = records.findLast((record) => record.kind === 'message' || record.kind === 'turn')
+  if (boundary?.kind === 'turn') return 'idle'
   const last = messages.at(-1)
   // Nothing observed is a different claim from observed to be quiet, and an open Turn nothing
   // corroborates says nothing about this Turn. Both land on `unknown`, never on `idle`.

@@ -1,6 +1,11 @@
 import { isRecord } from '@/boundary'
 import { dataImageUrl, imageBlocks } from '@/core/sessions/feed-images'
-import type { ContentBlock, ToolCall, ToolResult } from '@/core/sessions/transcript'
+import type {
+  ContentBlock,
+  RichResultBlock,
+  ToolCall,
+  ToolResult,
+} from '@/core/sessions/transcript'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
@@ -79,15 +84,27 @@ export function readToolResults(content: unknown, result?: unknown): ToolResult[
   return content.flatMap((block: unknown) => {
     if (!isRecord(block) || block.type !== 'tool_result') return []
     if (typeof block.tool_use_id !== 'string') return []
-    const text = typeof block.content === 'string' ? block.content : null
-    const background = readBackground(result, text)
+    const blocks = readResultBlocks(block.content)
+    const text = blocks.flatMap((item) => (item.shape === 'text' ? [item.text] : [])).join('\n')
+    const background = readBackground(result, text || null)
     return [
       {
         callId: block.tool_use_id,
-        content: text,
+        blocks,
         failed: block.is_error === true,
         ...(background === undefined ? {} : { background }),
       },
     ]
+  })
+}
+
+function readResultBlocks(content: unknown): RichResultBlock[] {
+  if (typeof content === 'string') return [{ shape: 'text', text: content }]
+  if (!Array.isArray(content)) return []
+  return content.flatMap((block): RichResultBlock[] => {
+    if (isRecord(block) && block.type === 'text' && typeof block.text === 'string')
+      return [{ shape: 'text', text: block.text }]
+    const image = readImage(block)
+    return image?.shape === 'image' ? [{ shape: 'image', url: image.url }] : []
   })
 }

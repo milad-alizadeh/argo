@@ -28,10 +28,10 @@ test('keeps roster facts while dropping Feed payloads', () => {
       },
     ],
     toolResults: [
-      { callId: 'tool-1', content: 'x'.repeat(10_000), failed: false },
+      { callId: 'tool-1', blocks: [{ shape: 'text', text: 'x'.repeat(10_000) }], failed: false },
       {
         callId: 'tool-2',
-        content: 'x'.repeat(10_000),
+        blocks: [{ shape: 'text', text: 'x'.repeat(10_000) }],
         failed: false,
         background: { taskId: 'task-1', outputPath: '/tmp/output' },
       },
@@ -48,7 +48,7 @@ test('keeps roster facts while dropping Feed payloads', () => {
     toolResults: [
       {
         callId: 'tool-2',
-        content: null,
+        blocks: [],
         failed: false,
         background: { taskId: 'task-1', outputPath: '/tmp/output' },
       },

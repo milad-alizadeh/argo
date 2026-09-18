@@ -80,7 +80,7 @@ export function updatedResults(records: PositionedRecord[], prior: Map<string, T
   for (const { record } of records) {
     if (record.kind !== 'message') continue
     for (const result of record.toolResults ?? []) {
-      results.set(result.callId, { content: result.content, failed: result.failed })
+      results.set(result.callId, { blocks: result.blocks, failed: result.failed })
     }
   }
   return results

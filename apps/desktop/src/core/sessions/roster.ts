@@ -11,11 +11,11 @@ import {
 } from './models'
 import { readPlan } from './plan'
 import { observedRosterRow } from './roster-row-definition'
+import { readSetup } from './session-setup'
 import {
   type BackgroundTask,
   readActivity,
   readDelegations,
-  readSetup,
   readShellCommands,
   readTurnStartedAt,
 } from './signals'
@@ -109,6 +109,15 @@ function readUsage(messages: TranscriptMessage[]) {
   }
 }
 
+function readRosterUsage(messages: TranscriptMessage[], records: TranscriptRecord[]) {
+  const cumulative = records.findLast(
+    (record): record is Extract<TranscriptRecord, { kind: 'usage' }> => record.kind === 'usage',
+  )
+  return cumulative === undefined
+    ? readUsage(messages)
+    : { contextTokens: cumulative.contextTokens, spentTokens: cumulative.spentTokens }
+}
+
 function readContextWindowTokens(chain: SessionChain) {
   return (
     chain.files
@@ -122,6 +131,7 @@ function readContextWindowTokens(chain: SessionChain) {
 
 export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
+  const records = chain.files.flatMap((file) => file.records)
   const notifications = chainBackgroundTasks(chain)
   const stamps = messages.flatMap((message) =>
     message.timestamp === null ? [] : [message.timestamp],
@@ -132,7 +142,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     messages,
     notifications,
     title: readTitle(chain),
-    status: readExternalStatus(messages),
+    status: readExternalStatus(messages, records),
     entry: readChainEntry(messages),
     place: readPlace(chain, messages),
     updatedAt:
@@ -142,15 +152,11 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(chain.files.flatMap((file) => file.records)),
-    delegations: readDelegations(
-      messages,
-      notifications,
-      chain.files.flatMap((file) => file.records),
-    ),
+    delegations: readDelegations(messages, notifications, records),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
-    usage: readUsage(messages),
+    usage: readRosterUsage(messages, records),
     contextWindowTokens: readContextWindowTokens(chain),
-    setup: readSetup(messages),
+    setup: readSetup(records),
   })
 }
