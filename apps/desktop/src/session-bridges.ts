@@ -70,25 +70,40 @@ function indexForWindow(window: BrowserWindow, userData: string) {
   return index
 }
 
-function watchSessions(
-  window: BrowserWindow,
-  request: { home: string; userData: string; drivers: ReturnType<typeof createSessionDrivers> },
-): void {
-  const { home, userData, drivers } = request
+type SessionSourcesOptions = {
+  home: string
+  drivers: ReturnType<typeof createSessionDrivers>
+  compactionStarts: string | undefined
+  index: ReturnType<typeof openSessionIndexOrNone>
+}
+
+function sessionSources({ home, drivers, compactionStarts, index }: SessionSourcesOptions) {
   const { claude, codex } = drivers
-  registerWatching(window, {
-    permissions: [claude.onPermissionsChanged],
-    sessions: [
-      codex.onRosterChanged,
-      watchTrees([
-        claudeTranscriptsRoot(home),
-        codexTranscriptsRoot(home),
-        sessionArchivePath(userData),
-      ]),
-      watchWindowFocus(window),
-      watchSystemResume(powerMonitor),
-    ],
-  })
+  return [
+    claudeSessionSource({
+      transcripts: claudeTranscriptsRoot(home),
+      processes: claudeProcessesRoot(home),
+      managedSessions: claude.roster,
+      compactionStarts,
+      beginCompaction: claude.beginCompaction,
+      completeCompaction: claude.completeCompaction,
+      completeHandoffs: claude.completeHandoffs,
+      handoffEdges: claude.handoffEdges,
+      liveMessages: claude.liveMessages,
+      rename: (request) => renameClaudeSession(request, claude),
+      isLockedElsewhere: claude.isLockedElsewhere,
+      index,
+    }),
+    codexSessionSource(codexTranscriptsRoot(home), {
+      roster: codex.roster,
+      liveMessages: codex.liveMessages,
+      pendingQuestion: codex.pendingQuestion,
+      rename: (request) => renameCodexSession(request, codex),
+      isLockedElsewhere: codex.isLockedElsewhere,
+      threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
+      index,
+    }),
+  ]
 }
 
 export function attachSessions(
@@ -113,31 +128,7 @@ export function attachSessions(
   const index = indexForWindow(window, userData)
   attachSessionBridge(window, {
     reader: createSessionReader(
-      [
-        claudeSessionSource({
-          transcripts: claudeTranscriptsRoot(home),
-          processes: claudeProcessesRoot(home),
-          managedSessions: claude.roster,
-          compactionStarts,
-          beginCompaction: claude.beginCompaction,
-          completeCompaction: claude.completeCompaction,
-          completeHandoffs: claude.completeHandoffs,
-          handoffEdges: claude.handoffEdges,
-          liveMessages: claude.liveMessages,
-          rename: (request) => renameClaudeSession(request, claude),
-          isLockedElsewhere: claude.isLockedElsewhere,
-          index,
-        }),
-        codexSessionSource(codexTranscriptsRoot(home), {
-          roster: codex.roster,
-          liveMessages: codex.liveMessages,
-          pendingQuestion: codex.pendingQuestion,
-          rename: (request) => renameCodexSession(request, codex),
-          isLockedElsewhere: codex.isLockedElsewhere,
-          threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
-          index,
-        }),
-      ],
+      sessionSources({ home, drivers, compactionStarts, index }),
       ticketLinks,
       archive,
     ),
@@ -153,5 +144,17 @@ export function attachSessions(
   // store stands beside the transcripts: the roster and the Archived list are both read out of it.
   // Focus and resume stand beside the trees because FSEvents can lose events with no error and no
   // closed handle (#2303).
-  watchSessions(window, request)
+  registerWatching(window, {
+    permissions: [claude.onPermissionsChanged],
+    sessions: [
+      codex.onRosterChanged,
+      watchTrees([
+        claudeTranscriptsRoot(home),
+        codexTranscriptsRoot(home),
+        sessionArchivePath(userData),
+      ]),
+      watchWindowFocus(window),
+      watchSystemResume(powerMonitor),
+    ],
+  })
 }

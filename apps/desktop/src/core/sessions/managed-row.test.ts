@@ -1,30 +1,51 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mockManagedRow } from '../../../mocks/sessions/mock-managed-row'
 import { managedRow, mergeManagedRoster } from './managed-row'
-import type { SessionPlan, SessionTitle } from './models'
+import type { SessionPlan, SessionRosterRow, SessionStatus, SessionTitle } from './models'
 import { reconcileRosterRow, rosterRowFields } from './roster-row-definition'
 
+const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'
 const OBSERVED_TITLE = 'Observed title'
 
+function row(id: string, status: SessionStatus): SessionRosterRow {
+  return managedRow(id, {
+    cli: 'claude',
+    compactionPercentage: null,
+    compactionStartedAt: null,
+    compactionTokens: null,
+    cwd: '/projects/argo',
+    status,
+    setup,
+    prompt: 'Do the thing.',
+    startedAt: '2026-09-14T00:00:00.000Z',
+  })
+}
+
+function discovered(row: SessionRosterRow) {
+  return {
+    rows: [row],
+    filesFound: 1,
+    filesRead: 1,
+    filesUnreadable: 0,
+    filesParsed: 0,
+    nextCursor: null,
+  }
+}
+
 function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle | null) {
-  const held = { ...mockManagedRow('s1', 'running'), title: heldTitle }
-  const observed = { ...mockManagedRow('s1', 'running'), title: observedTitle }
-  const merged = mergeManagedRoster(
-    {
-      rows: [observed],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [held],
-  )
+  const held = { ...row('s1', 'running'), title: heldTitle }
+  const observed = { ...row('s1', 'running'), title: observedTitle }
+  const merged = mergeManagedRoster(discovered(observed), [held])
   return merged.rows[0]?.title
 }
 
+function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
+  const merged = mergeManagedRoster(discovered(row('s1', discoveredStatus)), [
+    row('s1', heldStatus),
+  ])
+  return merged.rows[0]?.status
+}
 test('reconciles every Roster field by its declared rule', () => {
   const held = managedRow('session-1', {
     cli: 'claude',
@@ -69,20 +90,13 @@ test('a managed Session keeps the newest Plan it knows from either source', () =
     state: 'available',
     entries: [{ content: 'Inspect the Session', position: 0, status: 'in_progress' }],
   }
-  const observed = { ...mockManagedRow('s1', 'running'), plan }
-  const heldWithoutPlan = mockManagedRow('s1', 'running')
-  const discovered = {
-    rows: [observed],
-    filesFound: 1,
-    filesRead: 1,
-    filesUnreadable: 0,
-    filesParsed: 0,
-    nextCursor: null,
-  }
+  const observed = { ...row('s1', 'running'), plan }
+  const heldWithoutPlan = row('s1', 'running')
+  const discovery = discovered(observed)
 
-  assert.deepEqual(mergeManagedRoster(discovered, [heldWithoutPlan]).rows[0]?.plan, plan)
+  assert.deepEqual(mergeManagedRoster(discovery, [heldWithoutPlan]).rows[0]?.plan, plan)
   assert.deepEqual(
-    mergeManagedRoster(discovered, [{ ...heldWithoutPlan, plan }]).rows[0]?.plan,
+    mergeManagedRoster(discovery, [{ ...heldWithoutPlan, plan }]).rows[0]?.plan,
     plan,
   )
 })
@@ -114,17 +128,22 @@ test('a managed Session shows whichever title exists when the other is missing',
   assert.deepEqual(mergedTitle(found, null), found)
 })
 
+test('the held permission status always wins over the discovered floor', () => {
+  assert.equal(mergedStatus('idle', 'permission'), 'permission')
+  assert.equal(mergedStatus('unknown', 'permission'), 'permission')
+})
+
+test('the held status wins only where the discovered floor has nothing to say', () => {
+  assert.equal(mergedStatus('unknown', 'running'), 'running')
+})
+
+test('a definite discovered floor is never overridden by a held `running`', () => {
+  assert.equal(mergedStatus('idle', 'running'), 'idle')
+  assert.equal(mergedStatus('asking', 'running'), 'asking')
+  assert.equal(mergedStatus('stopped', 'running'), 'stopped')
+})
+
 test('a Session with no held counterpart passes through the discovered row untouched', () => {
-  const merged = mergeManagedRoster(
-    {
-      rows: [mockManagedRow('only-discovered', 'idle')],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [],
-  )
+  const merged = mergeManagedRoster(discovered(row('only-discovered', 'idle')), [])
   assert.equal(merged.rows[0]?.status, 'idle')
 })
