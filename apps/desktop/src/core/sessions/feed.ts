@@ -70,10 +70,24 @@ export function rowsOfRecord(
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  const rows = record.blocks.flatMap((block, index) =>
+  const blocks = mergedThoughtBlocks(record.blocks)
+  const rows = blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
   return [...withPromptAttachments(rows, record), ...resultImageRows(record)]
+}
+
+// Codex packs a whole reasoning item's several summary chunks into one record's blocks. Folding a
+// run of them down to the latest keeps the Feed to one updating thought per turn instead of a
+// trail of bold lines, one per chunk (#2410).
+function mergedThoughtBlocks(blocks: ContentBlock[]): ContentBlock[] {
+  const merged: ContentBlock[] = []
+  for (const block of blocks) {
+    if (block.shape === 'thought' && merged.at(-1)?.shape === 'thought')
+      merged[merged.length - 1] = block
+    else merged.push(block)
+  }
+  return merged
 }
 
 function rowsOfBlock({

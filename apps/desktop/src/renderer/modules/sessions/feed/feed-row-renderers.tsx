@@ -8,15 +8,25 @@ import { FeedEvent } from './feed-event'
 import { FeedMarker } from './feed-marker'
 import { FeedPrompt } from './feed-prompt'
 import { FeedQuestion } from './feed-question'
+import { RunningText } from './feed-tool-status'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 import type { ToolGroupState } from './tool-group-state'
 
 type AssistantProseRow = Extract<SessionFeedRow, { shape: 'prose' }> & { role: 'assistant' }
 type PromptRow = Extract<SessionFeedRow, { shape: 'prose' }> & { role: 'user' }
 type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
+type ThoughtRow = Extract<SessionFeedRow, { shape: 'thought' }>
 
-export function isFeedRowStreaming(row: SessionFeedRow): row is AssistantProseRow | ToolGroupRow {
-  return row.shape === 'tool-group' || (row.shape === 'prose' && row.role === 'assistant')
+// A `thought` row shimmers only while it is the trailing row of a live read, the same as a tool
+// group's own tail; once the turn moves past it, it settles like any other historical row.
+export function isFeedRowStreaming(
+  row: SessionFeedRow,
+): row is AssistantProseRow | ToolGroupRow | ThoughtRow {
+  return (
+    row.shape === 'tool-group' ||
+    row.shape === 'thought' ||
+    (row.shape === 'prose' && row.role === 'assistant')
+  )
 }
 
 export function isFeedRowPrompt(row: SessionFeedRow): row is PromptRow {
@@ -81,7 +91,11 @@ export const FEED_ROW_RENDERERS = {
         text={streamingText}
       />
     ),
-  thought: ({ row }) => <PlainText text={row.text} />,
+  thought: ({ row, streaming }) => (
+    <p className="whitespace-pre-wrap break-words text-muted-foreground">
+      <RunningText running={streaming}>{row.text}</RunningText>
+    </p>
+  ),
   'command-output': ({ row }) => <PlainText text={row.text} />,
   event: ({ row }) => <FeedEvent row={row} />,
   delegation: ({ row }) => <FeedDelegation row={row} />,
