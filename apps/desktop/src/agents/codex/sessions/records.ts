@@ -10,6 +10,7 @@ import { promptBlocks, promptEventImages } from './prompt-images'
 import { reasoningSummary } from './reasoning-summary'
 import { readSessionFact, readTurnRecord } from './session-facts'
 import { subagentActivity } from './subagent-activity'
+import { commandPlace, gitBranch } from './thread-place'
 import { readToolRecord } from './tool-calls'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.
@@ -37,6 +38,7 @@ function itemMessage(
   const item = isRecord(payload.item) ? payload.item : null
   if (item?.type === 'SubAgentActivity') return subagentActivity(record, item)
   if (item?.type === 'FunctionCallOutput') return delegatedPrompt(record, payload, item)
+  if (item?.type === 'CommandExecution') return commandPlace(item)
   let role: 'user' | 'assistant' | null = null
   if (item?.type === 'UserMessage') role = 'user'
   if (item?.type === 'AgentMessage') role = 'assistant'
@@ -156,6 +158,7 @@ export function parseCodexTranscriptLine(line: string): TranscriptRecord | null 
       subagent: isSubagentThread(payload),
       ...subagentDetails(payload),
       cwd: typeof payload.cwd === 'string' ? payload.cwd : null,
+      branch: gitBranch(payload),
     }
   }
   return null

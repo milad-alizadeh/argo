@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
+import { FeedGallery, FeedImage } from './content/feed-images'
 import { FeedMarkdown } from './content/feed-markdown'
 import { FeedDelegation } from './feed-delegation'
 import { FeedEvent } from './feed-event'
@@ -66,11 +67,10 @@ export const FEED_ROW_RENDERERS = {
   tool: ({ row, activeEvidenceId, onOpenEvidence }) => (
     <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
   ),
-  'tool-group': ({ row, activeEvidenceId, onOpenEvidence, streaming, toolGroups }) => (
+  'tool-group': ({ row, activeEvidenceId, onOpenEvidence, toolGroups }) => (
     <FeedToolGroup
       activeEvidenceId={activeEvidenceId}
       group={row}
-      live={streaming}
       onOpen={onOpenEvidence}
       toolGroups={toolGroups}
     />
@@ -102,6 +102,11 @@ export const FEED_ROW_RENDERERS = {
   'delegation-group': ({ row }) => <FeedDelegation row={row} />,
   marker: ({ row }) => <FeedMarker row={row} />,
   source: ({ row }) => <p>{row.label}</p>,
+  image: ({ row }) => (
+    <FeedGallery>
+      <FeedImage alt="" source={row.source} />
+    </FeedGallery>
+  ),
   unreadable: () => <UnreadableRow />,
   ask: ({ row, answering, questionFailure, questionLocked, onAnswerQuestion }) => (
     <FeedQuestion

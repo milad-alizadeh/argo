@@ -1,13 +1,12 @@
-import { isIdentifier, isRecord } from '@/boundary'
+import { isRecord } from '@/boundary'
 import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
 import { taggedField, taggedText } from '../../envelope-tags'
-import { readTaskEnding } from './background-task'
 import { readableCommandOutput } from './command-output'
-import { readTaskNotification } from './task-notification'
+import { identifierTag, readTaskDelivery } from './task-notification'
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content
@@ -76,15 +75,6 @@ function harnessEvent(record: Record<string, unknown>, text: string): HarnessEve
   return { kind: 'event', uuid: '', event: presentation.event, text: eventText }
 }
 
-function trimmedTag(text: string, tag: string): string | null {
-  return taggedField(text, tag)
-}
-
-function identifierTag(text: string, tag: string): string | null {
-  const value = trimmedTag(text, tag)
-  return value !== null && isIdentifier(value) ? value : null
-}
-
 function readRealtimeDelegation(
   record: Record<string, unknown>,
   message: TranscriptMessage,
@@ -93,15 +83,16 @@ function readRealtimeDelegation(
   if (!isHarnessDelivery(record) || envelopeName(text) !== 'realtime_delegation') return null
   const body = completeEnvelope(text, 'realtime_delegation')
   if (body === null) return { kind: 'trace', uuid: message.uuid }
-  const action = trimmedTag(body, 'input')
+  const action = taggedField(body, 'input')
   if (action === null) return { kind: 'trace', uuid: message.uuid }
   return {
     kind: 'delegation',
     uuid: message.uuid,
+    timestamp: message.timestamp,
     actor: 'agent',
     action,
-    status: trimmedTag(body, 'status'),
-    progress: trimmedTag(body, 'progress'),
+    status: taggedField(body, 'status'),
+    progress: taggedField(body, 'progress'),
     groupId: identifierTag(body, 'id'),
     callId: null,
   }
@@ -122,23 +113,6 @@ function readCommandOutput(message: TranscriptMessage, text: string): Transcript
   return { kind: 'command-output', uuid: message.uuid, timestamp: message.timestamp, text: output }
 }
 
-function readTaskDelivery(
-  record: Record<string, unknown>,
-  message: TranscriptMessage,
-  text: string,
-): TranscriptRecord {
-  const ending = readTaskEnding(text, record.timestamp)
-  return {
-    kind: 'delegation',
-    uuid: message.uuid,
-    ...readTaskNotification(text),
-    status: trimmedTag(text, 'status'),
-    groupId: identifierTag(text, 'task-id'),
-    callId: identifierTag(text, 'tool-use-id'),
-    ...(ending === null ? {} : { ending }),
-  }
-}
-
 export function readCommandEnvelope(
   record: Record<string, unknown>,
   message: TranscriptMessage,
@@ -154,8 +128,6 @@ export function readCommandEnvelope(
       ? { ...event, uuid: message.uuid }
       : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
   if (text.startsWith('<local-command-stdout>')) return readCommandOutput(message, text)
-  // A background task's delivery is not the person's own words: it is the CLI handing back a
-  // summary, with the task's full result attached for the model, not the reader.
   if (text.startsWith('<task-notification>')) return readTaskDelivery(record, message, text)
   // The harness re-delivers the compaction summary as a synthetic user turn so the model can
   // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows

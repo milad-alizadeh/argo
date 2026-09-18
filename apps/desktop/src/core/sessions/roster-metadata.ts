@@ -1,3 +1,4 @@
+import { PATCH_FILE_HEADER } from './apply-patch'
 import type { ContentBlock, TranscriptRecord } from './transcript'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
@@ -9,6 +10,15 @@ function openingLine(blocks: ContentBlock[]): ContentBlock[] {
     if (line !== undefined) return [{ ...block, text: line }]
   }
   return []
+}
+
+// The file headers name what an apply_patch changed; its hunks are Feed content.
+function patchHeaders(patch: unknown): unknown {
+  if (typeof patch !== 'string') return patch
+  return patch
+    .split('\n')
+    .filter((line) => PATCH_FILE_HEADER.test(line))
+    .join('\n')
 }
 
 function rosterToolInput(input: Record<string, unknown>): Record<string, unknown> {
@@ -25,9 +35,16 @@ function rosterToolInput(input: Record<string, unknown>): Record<string, unknown
     'run_in_background',
     'url',
   ]
-  return Object.fromEntries(
-    fields.flatMap((field) => (field in input ? [[field, input[field]]] : [])),
-  )
+  return Object.fromEntries([
+    ...fields.flatMap((field) => (field in input ? [[field, input[field]]] : [])),
+    ...('patch' in input ? [['patch', patchHeaders(input.patch)]] : []),
+  ])
+}
+
+// The newest headline thought is the Roster's activity while it stands, so its one line survives.
+function headlineThought(blocks: ContentBlock[]): ContentBlock[] {
+  const thought = blocks.findLast((block) => block.shape === 'thought')
+  return thought === undefined ? [] : [{ shape: 'thought', text: thought.text.trim() }]
 }
 
 // The Roster needs Session facts, not Feed content. Keeping only the fields its projections read
@@ -37,7 +54,7 @@ export function rosterMetadata(record: TranscriptRecord): TranscriptRecord {
   if (record.kind !== 'message') return record
   return {
     ...record,
-    blocks: record.role === 'user' ? openingLine(record.blocks) : [],
+    blocks: record.role === 'user' ? openingLine(record.blocks) : headlineThought(record.blocks),
     toolCalls: record.toolCalls.map((call) => ({ ...call, input: rosterToolInput(call.input) })),
     toolResults: record.toolResults
       ?.filter((result) => result.background !== undefined)

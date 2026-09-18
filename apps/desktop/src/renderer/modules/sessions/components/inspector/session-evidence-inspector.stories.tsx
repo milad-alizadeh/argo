@@ -71,6 +71,44 @@ export const FileDiff: Story = {
   },
 }
 
+// A Codex `apply_patch` over two files: one section per file, named by its file, each hunk
+// numbered from its own start.
+export const PatchOverTwoFiles: Story = {
+  args: {
+    sessionId: null,
+    evidence: {
+      ...command,
+      id: 'patch',
+      evidence: {
+        kind: 'diff',
+        title: 'Edited 2 files',
+        source: [
+          'Update File: /repo/src/app.ts',
+          '@@ -0,0 +0,0 @@',
+          '-  return oldValue',
+          '+  return newValue',
+          'Add File: /repo/docs/note.md',
+          '+hello',
+        ].join('\n'),
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('app.ts')).toBeVisible()
+    await expect(canvas.getByText('note.md')).toBeVisible()
+    await expect(canvas.queryByText(/Update File/)).toBeNull()
+    await expect(canvas.getByText(/newValue/)).toBeVisible()
+    await expect(canvas.getByText(/hello/)).toBeVisible()
+    const headers = canvasElement.querySelectorAll('header')
+    await expect(headers).toHaveLength(2)
+    for (const header of headers) await expect(getComputedStyle(header).position).toBe('sticky')
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-language="typescript"]')).not.toBeNull(),
+    )
+  },
+}
+
 export const ReadDocument: Story = {
   args: {
     sessionId: null,

@@ -7,32 +7,28 @@ function archivedRow(sessionId: string) {
   return `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"][data-archived="true"]`
 }
 
+async function proveOneFeedRow(page, sessionId: string, hasText: string) {
+  await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
+  await expect(
+    page.locator(
+      `section[aria-label="Session history"][data-session="${sessionId}"] [data-feed-row]`,
+      { hasText },
+    ),
+  ).toHaveCount(1)
+}
+
 async function proveVisibleNames(page) {
   const claude = page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]')
   await claude.waitFor()
   await expect(claude).toContainText('/effort')
   await claude.click()
-  await page.waitForSelector('.feed__viewport[data-session="harnessNoise"] [data-feed-row]')
-  await expect(
-    page.locator(
-      'section[aria-label="Session history"][data-session="harnessNoise"] [data-feed-row]',
-      {
-        hasText: 'Set effort level to medium',
-      },
-    ),
-  ).toHaveCount(1)
+  await proveOneFeedRow(page, 'harnessNoise', 'Set effort level to medium')
   const codex = page.locator(
     'nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]',
   )
   await codex.click()
   await expect(codex).toContainText('Run Codex check')
-  await page.waitForSelector('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]')
-  await expect(
-    page.locator(
-      'section[aria-label="Session history"][data-session="rollout-codexParent"] [data-feed-row]',
-      { hasText: 'Checking...' },
-    ),
-  ).toHaveCount(1)
+  await proveOneFeedRow(page, 'rollout-codexParent', 'Checking...')
 }
 
 async function proveUpdatedRowsStayPut(page, mutations) {
@@ -64,7 +60,13 @@ async function proveUpdatedRowsStayPut(page, mutations) {
       title: 'Prose renamed in place',
       status: 'idle',
       updatedAt: '2098-01-01T00:00:00.000Z',
-      activity: { label: 'Read order.ts', tool: 'Read', target: 'order.ts' },
+      activity: {
+        label: 'Read order.ts',
+        kind: 'read',
+        open: true,
+        tool: 'Read',
+        target: 'order.ts',
+      },
     },
   )
   assert.equal(

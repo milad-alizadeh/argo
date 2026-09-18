@@ -62,7 +62,7 @@ export const RawHtmlStaysText: Story = {
 
 export const Links: Story = {
   args: {
-    text: 'Read [the ticket](https://github.com/milad-alizadeh/argo/issues/1835), [write to us](mailto:reader@example.com), [run this](javascript:alert(1)) or [a local note](docs/note.md).',
+    text: 'Read [the ticket](https://github.com/milad-alizadeh/argo/issues/1835), [write to us](mailto:reader@example.com), [run this](javascript:alert(1)), [a local note](docs/note.md) or [the report](/repo/docs/report.md).',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -74,6 +74,29 @@ export const Links: Story = {
     )
     await expect(canvas.getByText('run this').tagName).toBe('SPAN')
     await expect(canvas.getByText('a local note').tagName).toBe('SPAN')
+    // With no evidence wiring (a Ticket's description), a file path is text like any other.
+    await expect(canvas.getByText('the report').tagName).toBe('SPAN')
+  },
+}
+
+// An absolute path in an assistant's prose opens that file in the inspector, as a tool's
+// evidence does, instead of drawing as dead text.
+export const FileLinkOpensEvidence: Story = {
+  args: {
+    text: 'The complete evidence is in [the report](/repo/docs/report.md), committed as `7f2650ec5`.',
+    rowId: 'assistant-1',
+    onOpenEvidence: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'the report' }))
+    await expect(args.onOpenEvidence).toHaveBeenCalledTimes(1)
+    const evidence = (args.onOpenEvidence as ReturnType<typeof fn>).mock.calls[0]?.[0]
+    await expect(evidence).toEqual({
+      shape: 'file',
+      id: 'assistant-1:file:/repo/docs/report.md',
+      path: '/repo/docs/report.md',
+    })
   },
 }
 

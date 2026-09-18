@@ -134,5 +134,6 @@ test('keeps the thread Codex dispatched to review an approval out of the Roster'
     uuid: 'guardian-1',
     subagent: true,
     cwd: '/Users/x/argo',
+    branch: null,
   })
 })

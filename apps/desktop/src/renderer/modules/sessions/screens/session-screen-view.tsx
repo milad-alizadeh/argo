@@ -117,6 +117,7 @@ export function SessionScreenView() {
           handoffStartedAt: session?.handoffStartedAt ?? null,
           handoffTo: session?.handoffTo ?? null,
           isRunning: session?.status === 'running' || session?.status === 'permission',
+          activity: session?.activity ?? null,
           optimisticRow: composer.optimisticRow,
           posture: session?.posture ?? null,
           turnMarker: composer.markerView,

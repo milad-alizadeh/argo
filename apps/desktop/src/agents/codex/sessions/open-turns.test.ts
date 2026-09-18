@@ -1,34 +1,22 @@
 import assert from 'node:assert/strict'
-import { appendFile, copyFile, mkdir, mkdtemp, rm, utimes } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
+import { appendFile, utimes } from 'node:fs/promises'
 import { test } from 'node:test'
-import { fileURLToPath } from 'node:url'
 import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { createSessionReader } from '@/core/sessions/reader'
-import { listed } from '@/core/sessions/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
+import {
+  OPEN_TURN_COMPLETE,
+  openTurnRolloutRoot as rolloutRoot,
+  rosterRows as rows,
+  OPEN_TURN_THREAD as THREAD,
+} from './rollout-test-helpers'
 
-const THREAD = '01a0b000-0000-7000-8000-000000000001'
 const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
-const FIXTURE = fileURLToPath(
-  new URL(
-    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexOpenTurn.jsonl',
-    import.meta.url,
-  ),
-)
 
 // The two ways codex-cli 0.147.0 closes a Turn, in the shape its rollouts write them.
 const TURN_ENDS = {
-  task_complete: {
-    type: 'task_complete',
-    turn_id: '01a0b000-0000-7000-8000-00000000a001',
-    last_agent_message: 'Checked.',
-    started_at: 1789509320,
-    completed_at: 1789509380,
-    duration_ms: 60000,
-  },
+  task_complete: OPEN_TURN_COMPLETE,
   turn_aborted: {
     type: 'turn_aborted',
     turn_id: '01a0b000-0000-7000-8000-00000000a001',
@@ -66,24 +54,16 @@ async function completeTurnWithActiveDelegation(rollout: string) {
   )
 }
 
-async function rolloutRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-turns-'))
-  context.after(() => rm(root, { recursive: true, force: true }))
-  const day = path.join(root, '2026', '09', '15')
-  await mkdir(day, { recursive: true })
-  const rollout = path.join(day, `rollout-2026-09-15T22-55-19-${THREAD}.jsonl`)
-  await copyFile(FIXTURE, rollout)
-  return { root, rollout }
-}
-
+// The ledger sees no other Argo window and no Codex process holds the file: any lock below comes
+// from the rollout's own records alone.
 function readerFor(root: string, roster?: () => SessionRosterRow[]) {
-  // The ledger sees no other Argo window: any lock below comes from the rollout alone.
-  return createSessionReader([codexSessionSource(root, { roster, isLockedElsewhere: () => false })])
-}
-
-async function rows(reader: ReturnType<typeof readerFor>) {
-  const reply = await listed(reader)
-  return reply?.sessions.map(({ id, posture, status, locked }) => ({ id, posture, status, locked }))
+  return createSessionReader([
+    codexSessionSource(root, {
+      roster,
+      isLockedElsewhere: () => false,
+      listOpenFiles: async () => '',
+    }),
+  ])
 }
 
 test('locks a thread whose newest Turn another Codex client is still running', async (context) => {

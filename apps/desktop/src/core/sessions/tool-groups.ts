@@ -1,3 +1,4 @@
+import type { LiveActivity } from './feed-rows'
 import type { SessionFeedRow } from './models'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -24,7 +25,7 @@ function toolGroupId(calls: ToolRow[]) {
 export const TOOL_KIND_PRESENTATION: Record<
   ToolRow['kind'],
   {
-    icon: 'terminal' | 'search' | 'file' | 'wrench' | 'wand'
+    icon: 'terminal' | 'search' | 'file' | 'wrench' | 'wand' | 'globe'
     route: 'inline' | 'evidence'
     verb: string
     noun: string
@@ -34,10 +35,17 @@ export const TOOL_KIND_PRESENTATION: Record<
   edited: { icon: 'file', route: 'evidence', verb: 'edited', noun: 'file' },
   created: { icon: 'file', route: 'evidence', verb: 'created', noun: 'file' },
   read: { icon: 'search', route: 'evidence', verb: 'read', noun: 'file' },
-  tool: { icon: 'wrench', route: 'inline', verb: 'called', noun: 'tool' },
+  tool: { icon: 'wrench', route: 'inline', verb: 'ran', noun: 'tool' },
   skill: { icon: 'wand', route: 'inline', verb: 'invoked', noun: 'skill' },
+  searched: { icon: 'globe', route: 'inline', verb: 'searched', noun: 'the web' },
 }
 const KIND_ORDER = Object.keys(TOOL_KIND_PRESENTATION) as ToolRow['kind'][]
+
+// A skill keeps its own line under its own name, as Codex draws it, so it neither joins a run
+// nor folds into a count.
+export function standsAlone(kind: ToolRow['kind']) {
+  return kind === 'skill'
+}
 
 function countPhrase(kind: ToolRow['kind'], count: number, leading: boolean) {
   const { verb, noun } = TOOL_KIND_PRESENTATION[kind]
@@ -45,11 +53,11 @@ function countPhrase(kind: ToolRow['kind'], count: number, leading: boolean) {
   return count === 1 ? `${capitalized} a ${noun}` : `${capitalized} ${count} ${noun}s`
 }
 
-// An unclassified tool call reads to a person the same as a command: both are "the agent ran
-// something". Folding 'tool' into the 'command' count keeps the summary to one phrase instead of
-// a second "called N tools" clause that names an implementation detail nobody asked for.
+// An unclassified tool call or a web search reads to a person the same as a command: both are
+// "the agent ran something". Folding them into the 'command' count keeps the summary to one
+// phrase instead of a second clause that names an implementation detail nobody asked for.
 function labelKind(kind: ToolRow['kind']): ToolRow['kind'] {
-  return kind === 'tool' ? 'command' : kind
+  return kind === 'tool' || kind === 'searched' ? 'command' : kind
 }
 
 function toolGroupLabel(calls: ToolRow[]) {
@@ -58,7 +66,7 @@ function toolGroupLabel(calls: ToolRow[]) {
     number
   >
   for (const call of calls) counts[labelKind(call.kind)] += 1
-  const kinds = KIND_ORDER.filter((kind) => kind !== 'tool' && counts[kind] > 0)
+  const kinds = KIND_ORDER.filter((kind) => labelKind(kind) === kind && counts[kind] > 0)
   return kinds.map((kind, index) => countPhrase(kind, counts[kind], index === 0)).join(', ')
 }
 
@@ -75,9 +83,7 @@ export function groupedRowIndexes(
   const groups: number[][] = []
   for (let index = 0; index < rows.length; ) {
     const row = rows[index]
-    // A skill invocation reads as its own line, never folded into a mixed "ran a command,
-    // invoked a skill" summary alongside another kind, so it always starts (and ends) its own run.
-    if (row?.shape !== 'tool' || row.kind === 'skill') {
+    if (row?.shape !== 'tool' || standsAlone(row.kind)) {
       groups.push([index])
       index += 1
       continue
@@ -86,7 +92,7 @@ export function groupedRowIndexes(
     let next = rows[index]
     while (
       next?.shape === 'tool' &&
-      next.kind !== 'skill' &&
+      !standsAlone(next.kind) &&
       (run.length === 0 || !breakBeforeIds.has(next.id))
     ) {
       run.push(index++)
@@ -95,6 +101,42 @@ export function groupedRowIndexes(
     groups.push(run)
   }
   return groups
+}
+
+function toolGroup(calls: ToolRow[]): SessionFeedRow {
+  return { shape: 'tool-group', id: toolGroupId(calls), label: toolGroupLabel(calls), calls }
+}
+
+type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
+
+function foldableGroup(row: SessionFeedRow | undefined): ToolGroupRow | null {
+  return row?.shape === 'tool-group' && !row.calls.some((call) => standsAlone(call.kind))
+    ? row
+    : null
+}
+
+// What the Feed draws once a thought between two runs has left it: neighbouring runs fold into
+// one group, the running call included, and the group's title names what is running while its
+// count waits inside. A skill keeps its own line, as in `groupedRowIndexes`.
+export function foldSettledToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
+  const folded: SessionFeedRow[] = []
+  for (const row of rows) {
+    const previous = foldableGroup(folded.at(-1))
+    const group = foldableGroup(row)
+    // A row that folds into nothing keeps its identity: the scroller keys its rows on it.
+    if (group === null || previous === null) {
+      folded.push(row)
+      continue
+    }
+    folded[folded.length - 1] = toolGroup([...previous.calls, ...group.calls])
+  }
+  return folded
+}
+
+// The running Turn's latest thought, when it lands after a run, titles that run's group: the
+// Feed then has one shimmering line, the group's own, and the roster reads the same words.
+export function withHeadline(row: SessionFeedRow, headline: LiveActivity): SessionFeedRow {
+  return row.shape === 'tool-group' ? { ...row, headline } : row
 }
 
 export function groupToolRuns(
@@ -112,12 +154,7 @@ export function groupToolRuns(
     const calls = indexes
       .map((index) => rows[index])
       .filter((row): row is ToolRow => row?.shape === 'tool')
-    grouped.push({
-      shape: 'tool-group',
-      id: toolGroupId(calls),
-      label: toolGroupLabel(calls),
-      calls,
-    })
+    grouped.push(toolGroup(calls))
   }
   return grouped
 }

@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react'
 import { CodeBlock } from '@/components/ai-elements/code-block'
+import { patchFiles } from '@/core/sessions/patch-files'
 import { detectCodeLanguageFromPath } from '../../feed/content/code-language'
 import { FeedMermaid } from '../../feed/content/feed-mermaid'
 import type { SessionEvidence } from '../../types'
 import { InspectorTerminal } from './inspector-terminal'
 import { SessionDiffViewer } from './session-diff-viewer'
+import { SessionFileInspector } from './session-file-inspector'
+import { SessionPatchViewer } from './session-patch-viewer'
 import { SessionSkillInspector } from './session-skill-inspector'
 
 // A long path truncates at its start, so the filename at the end stays visible.
@@ -24,6 +27,8 @@ export function SessionEvidenceInspector({
   sessionId: string | null
 }) {
   if (evidence.shape === 'skill') return <SessionSkillInspector evidence={evidence} />
+  if (evidence.shape === 'file')
+    return <SessionFileInspector evidence={evidence} sessionId={sessionId} />
   if (evidence.shape === 'diagram')
     return (
       <section className="flex min-h-0 flex-1 flex-col" aria-label="Diagram inspector">
@@ -42,8 +47,12 @@ export function SessionEvidenceInspector({
       </section>
     )
   const { kind, source, title } = evidence.evidence
-  if (kind === 'diff')
-    return <SessionDiffViewer path={title} sessionId={sessionId} source={source} />
+  if (kind === 'diff') {
+    const files = patchFiles(source, title)
+    const [file] = files
+    if (files.length > 1 || file === undefined) return <SessionPatchViewer files={files} />
+    return <SessionDiffViewer path={file.path} sessionId={sessionId} source={file.diff} />
+  }
   let content: ReactNode
   if (kind === 'output') {
     content = <InspectorTerminal output={source} />

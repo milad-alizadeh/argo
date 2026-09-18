@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
 import { ticketKey } from '../tickets/ticket'
+import { liveActivitySchema } from './feed-rows'
 import { createSessionRosterRowSchema } from './roster-row-definition'
 
 export {
@@ -75,10 +76,10 @@ export const sessionPlanSchema = z.discriminatedUnion('state', [
 ])
 export type SessionPlan = z.infer<typeof sessionPlanSchema>
 
-// The newest Tool Call inside the open Turn: its canonical reader-facing label, plus the tool's
-// own name and the one thing it acted on as metadata.
-export const sessionActivitySchema = z.strictObject({
-  label: z.string(),
+// The newest Tool Call inside the open Turn: its canonical reader-facing label and kind, plus the
+// tool's own name and the one thing it acted on as metadata. `open` is the transcript holding no
+// answer to it yet, what lets the row read "Running" rather than "Ran" while the Session runs.
+export const sessionActivitySchema = liveActivitySchema.extend({
   tool: z.string(),
   target: z.string().nullable(),
 })

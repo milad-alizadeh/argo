@@ -17,6 +17,7 @@ import {
   resolveIds,
 } from './discover'
 import { draftText } from './harness-envelopes'
+import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
 import { readDelegationTokens } from './subagent-tokens'
 import { readDelegationChain } from './subagents'
@@ -31,6 +32,8 @@ type ReaderOptions = {
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
+  // The files every Codex process holds open, in `lsof -F n` form; a test hands in a listing.
+  listOpenFiles?: OpenFileListing
   // Codex Desktop's own thread names, read from its app state (ADR-0042).
   threadNames?: ThreadNames
   // The app's Session index, when one is open. Absent, discovery parses the window itself (#2372).
@@ -91,6 +94,31 @@ function indexCapabilities(root: string, index: SessionIndex | undefined) {
   }
 }
 
+// A thread another Codex process is running (open Turn) or holding (open rollout) is locked
+// (ADR-0040); both readings join after the managed roster so Argo's own threads stay resumable.
+function rosterDiscovery(root: string, options?: ReaderOptions): SessionSource['discoverSessions'] {
+  const openTurns = createOpenTurnReader(root)
+  const heldRollouts = createHeldRolloutReader(options?.listOpenFiles)
+  return async (discoverOptions) => {
+    const now = Date.now()
+    const [discovery, open, held] = await Promise.all([
+      discoverSessions(root, { ...discoverOptions, index: options?.index }),
+      openTurns(now),
+      heldRollouts(now),
+    ])
+    const threadNames = options?.threadNames
+    return discoverRoster({
+      discovery,
+      managed: options?.roster?.() ?? [],
+      joins: {
+        observed: threadNames === undefined ? [] : [(rows) => nameThreads(rows, threadNames)],
+        merged: [(rows) => joinOpenTurns(rows, open), (rows) => joinHeldRollouts(rows, held)],
+      },
+      projectRoot: discoverOptions?.projectRoot,
+    })
+  }
+}
+
 export function codexSessionSource(root: string, options?: ReaderOptions): SessionSource {
   const liveMessages = options?.liveMessages
   const pendingQuestion = options?.pendingQuestion
@@ -99,27 +127,10 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       ? undefined
       : (sessionId: string) =>
           combinedOverlay(liveMessages?.(sessionId) ?? [], pendingQuestion?.(sessionId) ?? null)
-  const openTurns = createOpenTurnReader(root)
-  const index = options?.index
   return {
     cli: 'codex',
-    ...indexCapabilities(root, index),
-    discoverSessions: async (discoverOptions) => {
-      const [discovery, open] = await Promise.all([
-        discoverSessions(root, { ...discoverOptions, index: options?.index }),
-        openTurns(Date.now()),
-      ])
-      const threadNames = options?.threadNames
-      return discoverRoster({
-        discovery,
-        managed: options?.roster?.() ?? [],
-        joins: {
-          observed: threadNames === undefined ? [] : [(rows) => nameThreads(rows, threadNames)],
-          merged: [(rows) => joinOpenTurns(rows, open)],
-        },
-        projectRoot: discoverOptions?.projectRoot,
-      })
-    },
+    ...indexCapabilities(root, options?.index),
+    discoverSessions: rosterDiscovery(root, options),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
     readDelegationFiles: async (sessionId, delegationId) =>
       (await readDelegationFilesForParent(root, sessionId, delegationId)) ??

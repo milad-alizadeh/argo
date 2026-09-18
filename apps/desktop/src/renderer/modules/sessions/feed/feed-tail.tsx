@@ -69,10 +69,11 @@ export function liveFeedTail(
     ),
     handoff: handoffMarker(liveFacts.handoffStartedAt, liveFacts.handoffTo, onOpenSession),
     turnMarker: liveFacts.turnMarker,
+    // A shimmering tail already says the agent is working: a tool group, or the thought it is on.
     markerSilent:
       liveFacts.isRunning &&
       lastRow !== undefined &&
-      isFeedToolGroup(lastRow) &&
+      (isFeedToolGroup(lastRow) || lastRow.shape === 'thought') &&
       liveFacts.turnMarker?.phase === 'working',
   })
 }

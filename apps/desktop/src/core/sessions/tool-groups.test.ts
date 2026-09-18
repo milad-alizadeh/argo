@@ -126,3 +126,32 @@ test('a long tool run keeps its group id inside the Session feed contract', () =
     true,
   )
 })
+
+test('a web search reads as its query under a globe, and a fetch as its page', () => {
+  const found = group(rowsFor([{ id: 'w', name: 'web__run', input: { query: 'argo cockpit' } }]))
+  assert.equal(found.calls[0]?.kind, 'searched')
+  assert.equal(found.calls[0]?.label, 'Searched argo cockpit')
+  assert.equal(TOOL_KIND_PRESENTATION.searched.icon, 'globe')
+  const url = 'https://rdap.verisign.com/com/v1/domain/argo.com'
+  const fetched = group(rowsFor([{ id: 'f', name: 'web__run', input: { url } }]))
+  assert.equal(fetched.calls[0]?.label, `Fetched ${url}`)
+})
+
+test('a web call that Codex reported failing carries the outcome in its title', () => {
+  const call: ToolCall = { id: 'f', name: 'web__run', input: { url: 'https://x.test/a' } }
+  const results = new Map([
+    [
+      'f',
+      {
+        blocks: [{ shape: 'text' as const, text: 'Internal Error ()\nL0: Failed' }],
+        failed: false,
+      },
+    ],
+  ])
+  const [row] = toolRows([call], { results, skillBodies: new Map() })
+  assert.equal(
+    row?.shape === 'tool' ? row.label : null,
+    'Fetched https://x.test/a · Internal Error',
+  )
+  assert.equal(row?.shape === 'tool' ? row.status : null, 'failed')
+})

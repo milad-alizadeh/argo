@@ -23,7 +23,8 @@ export type WorkEntry = {
   facts: string
 }
 
-function joined(facts: readonly (string | null)[]): string {
+// The header list and the Feed card word the same facts the same way, one separator between each.
+export function joined(facts: readonly (string | null)[]): string {
   return facts.filter((fact) => fact !== null).join(' · ')
 }
 

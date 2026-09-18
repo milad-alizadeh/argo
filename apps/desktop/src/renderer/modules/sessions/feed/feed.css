@@ -97,9 +97,11 @@
   --feed-work-ink-active: color-mix(in oklab, var(--color-active) 62%, var(--foreground));
 }
 
-/* The shimmer's glint leans to the ground, so it is a light band in light and a dark one in dark. */
+/* Live text takes the settled rows' muted ink, so a running line sits in the same column of grey.
+   The glint leans to the ground, so it is a light band in light and a dark one in dark. */
 .feed-work-shimmer {
-  --feed-work-glint: color-mix(in oklab, var(--foreground) 6%, var(--background));
+  --feed-work-ink: var(--muted-foreground);
+  --feed-work-glint: color-mix(in oklab, var(--muted-foreground) 6%, var(--background));
 }
 
 [data-slot="feed-delegation"] {
@@ -119,9 +121,9 @@
 .feed-work-shimmer {
   background-image: linear-gradient(
     90deg,
-    var(--foreground) 36%,
+    var(--feed-work-ink) 36%,
     var(--feed-work-glint) 50%,
-    var(--foreground) 64%
+    var(--feed-work-ink) 64%
   );
   background-size: 300% 100%;
   background-clip: text;
@@ -133,6 +135,6 @@
   .feed-work-shimmer {
     animation: none;
     background: none;
-    color: var(--foreground);
+    color: var(--feed-work-ink);
   }
 }

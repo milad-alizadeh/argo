@@ -1,13 +1,15 @@
-import { FilePenLine, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
+import { FilePenLine, Globe, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TaskItem } from '@/components/ai-elements/task'
 import { displayedToolLabel } from '@/core/sessions/tool-feed'
-import { TOOL_KIND_PRESENTATION } from '@/core/sessions/tool-groups'
+import { standsAlone, TOOL_KIND_PRESENTATION } from '@/core/sessions/tool-groups'
 import { CollapsibleText } from '@/renderer/components/collapsible-text'
 import type { SessionFeedRow } from '../types'
+import { groupIcon, liveActivity } from './feed-group-title'
 import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
 import { RunningText, StatusIcon } from './feed-tool-status'
+import { LiveActivityText } from './live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -19,6 +21,7 @@ const TOOL_ICONS = {
   file: FilePenLine,
   wrench: Wrench,
   wand: WandSparkles,
+  globe: Globe,
 } satisfies Record<
   (typeof TOOL_KIND_PRESENTATION)[ToolRow['kind']]['icon'],
   ComponentType<{ className?: string }>
@@ -98,39 +101,45 @@ function GroupedCall({
 }) {
   if (toolPresentation(call.kind).route !== 'inline')
     return <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
-  if (isSole) return <FeedInlineToolCall call={call} />
-  return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
+  if (!isSole) return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
+  // The group's title is its count, so the agent's own description of the call reads here.
+  return (
+    <>
+      {describesItself(call) && <p className="type-body text-muted-foreground">{call.label}</p>}
+      <FeedInlineToolCall call={call} />
+    </>
+  )
+}
+
+// A command's fallback label is its first line, which the code block below it already shows.
+function describesItself(call: ToolCall) {
+  return call.label !== `Ran ${(call.text ?? '').split('\n')[0]}`
 }
 
 export function FeedToolGroup({
   group,
-  live = false,
   activeEvidenceId,
   onOpen,
   toolGroups,
 }: {
   group: Extract<SessionFeedRow, { shape: 'tool-group' }>
-  live?: boolean
   activeEvidenceId: string | null
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
 }) {
-  const { t } = useTranslation('sessions')
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
-  // A skill call never merges with another kind (`groupedRowIndexes`), so its group takes its
-  // name. A lone command reads the same way: its own label (an agent-supplied description, or
-  // the command itself) is more useful than the generic "Ran a command" summary.
-  const namesItsOwnGroup = soleCall?.kind === 'skill' || soleCall?.kind === 'command'
-  // While the group is still growing or a call in it runs, it names its latest call, not its summary.
-  const latestCall = live
-    ? group.calls.at(-1)
-    : group.calls.findLast((call) => call.status === 'running')
-  const titleCall = latestCall ?? (namesItsOwnGroup ? soleCall : undefined)
+  const activity = liveActivity(group)
+  // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
+  // reads as its count: a command that has run is history, and its text is one disclosure away,
+  // never a stray line in the Feed.
+  const titleCall = soleCall !== undefined && standsAlone(soleCall.kind) ? soleCall : undefined
   const title =
-    titleCall === undefined
-      ? group.label
-      : displayedToolLabel(titleCall, latestCall !== undefined, t('workState.running'))
+    activity === null ? (
+      (titleCall?.label ?? group.label)
+    ) : (
+      <LiveActivityText activity={activity} running shimmer />
+    )
   return (
     <CollapsibleText
       content={group.calls.map((call) => (
@@ -145,10 +154,10 @@ export function FeedToolGroup({
         </TaskItem>
       ))}
       contentVariant="flush"
-      icon={titleCall === undefined ? SquareTerminal : toolPresentation(titleCall.kind).icon}
+      icon={groupIcon(activity, titleCall?.kind)}
       onOpenChange={onOpenChange}
       open={open}
-      title={<RunningText running={latestCall !== undefined}>{title}</RunningText>}
+      title={title}
     />
   )
 }

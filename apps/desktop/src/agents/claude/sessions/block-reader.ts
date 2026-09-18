@@ -66,15 +66,23 @@ export function readToolCalls(content: unknown): ToolCall[] {
 }
 
 // The call went to the background, so `result` is a receipt rather than the command's output.
-// The task id is a field of the record's own `toolUseResult`; the output file is only ever
-// stated in the receipt's sentence, so it is read from there and absent when it is not.
+// The task id is a field of the record's own `toolUseResult`: `backgroundTaskId` for a Shell,
+// `agentId` for an async Subagent. The output file is only ever stated in the receipt's
+// sentence, so it is read from there and absent when it is not.
+function backgroundTaskId(result: Record<string, unknown>): string | null {
+  if (typeof result.backgroundTaskId === 'string') return result.backgroundTaskId
+  if (result.isAsync === true && typeof result.agentId === 'string') return result.agentId
+  return null
+}
+
 function readBackground(
   result: unknown,
   content: string | null,
 ): ToolResult['background'] | undefined {
-  if (!isRecord(result) || typeof result.backgroundTaskId !== 'string') return undefined
+  const taskId = isRecord(result) ? backgroundTaskId(result) : null
+  if (taskId === null) return undefined
   return {
-    taskId: result.backgroundTaskId,
+    taskId,
     outputPath: (content === null ? null : OUTPUT_FILE.exec(content)?.[1]) ?? null,
   }
 }

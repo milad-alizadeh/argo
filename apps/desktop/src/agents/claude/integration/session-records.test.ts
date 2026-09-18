@@ -101,6 +101,7 @@ test('reads harness delegation and related Shell updates without protocol markup
       {
         kind: 'delegation',
         uuid: 'u-delegation',
+        timestamp: '2026-07-20T16:00:08.000Z',
         actor: 'agent',
         action: 'Review the Feed card for keyboard access.',
         status: 'running',
@@ -108,26 +109,20 @@ test('reads harness delegation and related Shell updates without protocol markup
         groupId: 'feed-review',
         callId: null,
       },
-      {
+      ...[
+        ['u-shell-start', '2026-07-20T16:00:09.000Z', 'Started bun run build', 'running'],
+        ['u-shell-end', '2026-07-20T16:00:10.000Z', 'Build completed', 'completed'],
+      ].map(([uuid, timestamp, action, status]) => ({
         kind: 'delegation',
-        uuid: 'u-shell-start',
+        uuid,
+        timestamp,
         actor: 'shell',
-        action: 'Started bun run build',
-        status: 'running',
+        action,
+        status,
         progress: null,
         groupId: 'build',
         callId: null,
-      },
-      {
-        kind: 'delegation',
-        uuid: 'u-shell-end',
-        actor: 'shell',
-        action: 'Build completed',
-        status: 'completed',
-        progress: null,
-        groupId: 'build',
-        callId: null,
-      },
+      })),
     ],
   )
 })

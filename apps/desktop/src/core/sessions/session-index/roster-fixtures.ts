@@ -123,7 +123,8 @@ const codex: IndexedAdapter = {
       )
     }
   },
-  source: (root, index) => codexSessionSource(root, { index }),
+  // No Codex process holds a fixture open, and `lsof` is the one call here the index does not own.
+  source: (root, index) => codexSessionSource(root, { index, listOpenFiles: async () => '' }),
 }
 
 export const indexedAdapters: IndexedAdapter[] = [claude, codex]

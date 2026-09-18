@@ -1,7 +1,7 @@
 import { Archive } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-
+import { useLiveActivityText } from '../../feed/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../../harness/harnesses'
 import { PromptText } from '../../prompt/prompt-text'
@@ -32,9 +32,15 @@ function knownCli(cli: string): cli is SessionCli {
   return (SESSION_CLIS as readonly string[]).includes(cli)
 }
 
-function activitySummary(session: Session): string | null {
-  if (session.activity === null) return null
-  return session.activity.label
+// The same line the Feed's live tail draws, as still text: the shimmer is the Feed's.
+function ActivityLine({ session }: { session: Session }) {
+  const text = useLiveActivityText({
+    activity: session.activity,
+    running: session.status === 'running',
+    compacting: (session.compactionStartedAt ?? null) !== null,
+  })
+  if (text === null) return null
+  return <span className="mt-0.5 block truncate type-meta text-faint">{text}</span>
 }
 
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is
@@ -70,7 +76,6 @@ export function SessionRosterItem({
 }) {
   const { t } = useTranslation('sessions')
   const [pointerFocused, setPointerFocused] = useState(false)
-  const activity = activitySummary(session)
   const rowHighlight = rowHighlightOf(checked, selected, archived)
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
@@ -133,9 +138,7 @@ export function SessionRosterItem({
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
           </span>
-          {activity === null ? null : (
-            <span className="mt-0.5 block truncate type-meta text-faint">{activity}</span>
-          )}
+          <ActivityLine session={session} />
           <SessionMetadata session={session} />
         </span>
       </button>

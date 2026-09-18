@@ -2,6 +2,12 @@ import { isRecord } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { messageRecord } from './message-record'
 
+// Codex writes each summary as a Markdown headline (`**Reading the plan**`); the Feed draws a
+// thought as plain text, so the markers come off here.
+function thoughtText(summary: string): string {
+  return summary.replaceAll('**', '')
+}
+
 export function reasoningSummary(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
@@ -11,7 +17,7 @@ export function reasoningSummary(
   const blocks = payload.summary.flatMap((summary) => {
     if (!isRecord(summary) || summary.type !== 'summary_text' || typeof summary.text !== 'string')
       return []
-    return [{ shape: 'thought' as const, text: summary.text }]
+    return [{ shape: 'thought' as const, text: thoughtText(summary.text) }]
   })
   if (blocks.length === 0) return null
   return messageRecord(record, {

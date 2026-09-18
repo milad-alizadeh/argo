@@ -74,13 +74,13 @@ test('states the unreadable row height as arithmetic', () => {
   assert.equal(unreadableRowHeight(), 44)
 })
 
-// The CLI nests a subagent's turn inside the Session's; Argo leaves it out rather than drawing
-// another agent's work as the reader's own.
+// The CLI nests a subagent's turn inside the Session's; Argo draws the Subagent as one card
+// rather than drawing another agent's work as the reader's own.
 test('leaves a subagent turn out of the Session history', async () => {
   const rows = await feedOf(['subagentTail'])
   assert.deepEqual(
     rows.map((row) => row.shape),
-    ['prose', 'tool-group'],
+    ['prose', 'delegation-group'],
   )
   assert.equal(
     rows.some((row) => row.text === 'Eleven callers, all in the same package.'),

@@ -4,6 +4,7 @@ import { WandSparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/renderer/components/ui/badge'
+import { LINK_CLASS } from '../feed/content/link-class'
 import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-segments'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name
@@ -63,14 +64,10 @@ function SkillButton({
   )
 }
 
+// The same link as the Feed's markdown draws, so a URL reads the same in a prompt and a reply.
 function PromptLink({ href, label }: { href: string; label: string }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="underline decoration-border underline-offset-4 hover:decoration-foreground"
-    >
+    <a href={href} target="_blank" rel="noreferrer" className={LINK_CLASS}>
       {label}
     </a>
   )
