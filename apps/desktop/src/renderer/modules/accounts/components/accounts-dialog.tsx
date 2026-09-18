@@ -66,28 +66,25 @@ export function AccountsPanel({
       {listing && accounts.length === 0 ? (
         <p className="type-body text-muted-foreground">{t('list.empty')}</p>
       ) : null}
-      {accounts.length > 0 ? (
-        <ul
-          aria-label={t('list.label')}
-          className="grid divide-y divide-border/60 rounded-lg border border-border/60"
-        >
-          {accounts.map((account) => (
-            <AccountRow
-              account={account}
-              busy={disconnecting === account.id}
-              key={account.id}
-              onDisconnect={() => onDisconnect(account.id)}
-              onReconnect={() => signIn.start(account.provider)}
-            />
-          ))}
-        </ul>
-      ) : null}
-      {disconnectError ? <Failure error={disconnectError} /> : null}
-      {connect ? (
-        <div className="rounded-lg border border-border/60 p-(--spacing-shell-gutter)">
-          {connect}
+      {accounts.length > 0 || connect ? (
+        <div className="grid divide-y divide-border/60 rounded-lg border border-border/60">
+          {accounts.length > 0 ? (
+            <ul aria-label={t('list.label')} className="grid divide-y divide-border/60">
+              {accounts.map((account) => (
+                <AccountRow
+                  account={account}
+                  busy={disconnecting === account.id}
+                  key={account.id}
+                  onDisconnect={() => onDisconnect(account.id)}
+                  onReconnect={() => signIn.start(account.provider)}
+                />
+              ))}
+            </ul>
+          ) : null}
+          {connect ? <div className="p-(--spacing-shell-gutter)">{connect}</div> : null}
         </div>
       ) : null}
+      {disconnectError ? <Failure error={disconnectError} /> : null}
       <SignInPanel {...signIn} providers={listing?.providers ?? []} />
     </div>
   )
