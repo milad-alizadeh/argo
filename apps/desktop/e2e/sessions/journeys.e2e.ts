@@ -4,6 +4,7 @@ import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
+import { provePackagedIndexRecovery } from './cases/index-recovery.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveComposerMemory } from './cases/turn-setup.case'
@@ -54,6 +55,13 @@ test.describe('with seeded transcripts', () => {
 
   test('session-codex-thread-name', async ({ session }) => {
     await proveCodexThreadName(session.page(), session.fixture.codexTranscripts)
+  })
+
+  test('session-index-recovery', async ({ session }) => {
+    await provePackagedIndexRecovery(session.page(), {
+      restart: session.restart,
+      userData: session.fixture.userData,
+    })
   })
 })
 

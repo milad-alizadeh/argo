@@ -1,11 +1,12 @@
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
-import { type SessionRosterRow, sessionRosterRowSchema } from '../../contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import type { BackfillProgress, IndexedTranscriptFile, SessionIndexWrite } from './contract'
 import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
 import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
 import { searchChainsOf } from './store-search'
 import { writePass } from './store-write'
+import { storedRosterRow } from './stored-row'
 
 export type SessionIndexStore = {
   filesAt: (cli: string, paths: readonly string[]) => IndexedTranscriptFile[]
@@ -51,6 +52,7 @@ type FileRecord = {
   written_at: number
   size: number
   chain_id: string
+  row_json: string | null
 }
 function indexedFile(record: FileRecord): IndexedTranscriptFile {
   return {
@@ -66,13 +68,20 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
   let open = true
   function filesBy(column: 'path' | 'chain_id', cli: string, values: readonly string[]) {
     if (values.length === 0) return []
+    const qualifiedColumn = { path: 'file.path', chain_id: 'file.chain_id' }[column]
     const rows = database
       .prepare(
-        `SELECT path, session_id, written_at, size, chain_id FROM transcript_file
-         WHERE cli = ? AND ${column} IN (${placeholders(values.length)})`,
+        `SELECT file.path, file.session_id, file.written_at, file.size, file.chain_id,
+                chain.row_json
+         FROM transcript_file AS file
+         LEFT JOIN session_chain AS chain
+           ON chain.cli = file.cli AND chain.chain_id = file.chain_id
+         WHERE file.cli = ? AND ${qualifiedColumn} IN (${placeholders(values.length)})`,
       )
       .all(cli, ...values) as FileRecord[]
-    return rows.map(indexedFile)
+    return rows.flatMap((record) => {
+      return storedRosterRow(record.row_json) === null ? [] : [indexedFile(record)]
+    })
   }
   return {
     filesAt: (cli, paths) => filesBy('path', cli, paths),
@@ -87,8 +96,8 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
         )
         .all(cli, ...chainIds) as { row_json: string }[]
       return records.flatMap((record) => {
-        const parsed = sessionRosterRowSchema.safeParse(JSON.parse(record.row_json))
-        return parsed.success ? [parsed.data] : []
+        const row = storedRosterRow(record.row_json)
+        return row === null ? [] : [row]
       })
     },
     searchChains: (cli, query) => searchChainsOf(database, cli, query),

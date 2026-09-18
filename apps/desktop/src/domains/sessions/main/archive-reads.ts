@@ -9,30 +9,12 @@
 import { z } from 'zod'
 import type { SessionArchiveListRequest, SessionArchiveSetRequest } from '../contract/contract'
 import { newestFirst, type SessionRosterRow } from '../contract/models'
+import { indexedResolution } from './archive-index-resolution'
 import { isArchivedSession } from './archive-store'
 import { growWindow } from './archive-window'
 import { fromContext, type ReadContext } from './read-declaration'
 import { rosterCursorMapSchema } from './roster-cursor'
 import type { SessionSource } from './session-source'
-
-// Every named id resolved off the index rather than a window, when every source has one open.
-// `null` means at least one source has no index at all: the caller must grow a window instead.
-async function indexedResolution(
-  sources: readonly SessionSource[],
-  ids: readonly string[],
-): Promise<{ rows: SessionRosterRow[]; unresolvedIds: string[]; historyComplete: boolean } | null> {
-  if (ids.length === 0) return { rows: [], unresolvedIds: [], historyComplete: true }
-  if (sources.some((source) => source.resolveIndexedIds === undefined)) return null
-  const resolved = await Promise.all(sources.map((source) => source.resolveIndexedIds?.(ids)))
-  // Every source that carries `resolveIndexedIds` carries `historyComplete` too (both adapters
-  // gate them on the same open index), so the guard above already proves this is defined.
-  const completeness = await Promise.all(sources.map((source) => source.historyComplete?.()))
-  const rows = resolved.flatMap((result) => result?.rows ?? [])
-  const unresolvedIds = ids.filter((id) =>
-    resolved.every((result) => result?.unresolvedIds.includes(id) ?? true),
-  )
-  return { rows, unresolvedIds, historyComplete: completeness.every(Boolean) }
-}
 
 // A page's worth of Archived Sessions, read on demand rather than on every poll (#1593).
 export const ARCHIVE_PAGE_LIMIT = 20
@@ -78,6 +60,10 @@ export const archiveListRead = fromContext(
     const idsToResolve =
       request.restoreId === null ? [...archivedIds] : [...archivedIds, request.restoreId]
     const indexed = await indexedResolution(context.sources, idsToResolve)
+    const unresolvedArchiveDuringRecovery =
+      indexed !== null &&
+      !indexed.historyComplete &&
+      [...archivedIds].some((id) => indexed.unresolvedIds.includes(id))
     // A restoreId the index has not resolved yet is not proved absent while backfill is still
     // running: falling through to the indexed branch here would answer `restored: null` for a
     // Session the mirror simply has not reached, rather than growing the window to find out.
@@ -86,7 +72,7 @@ export const archiveListRead = fromContext(
       request.restoreId !== null &&
       !indexed.historyComplete &&
       indexed.unresolvedIds.includes(request.restoreId)
-    if (indexed !== null && !restoreUnprovable) {
+    if (indexed !== null && !restoreUnprovable && !unresolvedArchiveDuringRecovery) {
       const archived = archivedIn(indexed.rows, archivedIds)
       return {
         sessions: archived.slice(offset, offset + ARCHIVE_PAGE_LIMIT),
@@ -96,6 +82,16 @@ export const archiveListRead = fromContext(
             : null,
         restored: restoredIn(archived, request.restoreId),
         historyComplete: indexed.historyComplete,
+      }
+    }
+    if (request.restoreId === null && (indexed?.recovering || unresolvedArchiveDuringRecovery)) {
+      const window = await growWindow(context.sources, windows, () => true)
+      const archived = archivedIn(window.rows, archivedIds)
+      return {
+        sessions: archived.slice(offset, offset + ARCHIVE_PAGE_LIMIT),
+        nextCursor: null,
+        restored: null,
+        historyComplete: false,
       }
     }
     // No index open on some source: fall back to growing the same bounded window the Roster pages
@@ -128,10 +124,9 @@ function answersTo(row: { id: string; retiredIds: readonly string[] }, id: strin
 // outside the loaded window resolves to itself alone, which is still the right key to remove: it
 // is the one the caller archived under.
 //
-// The index resolves every id without growing a window (#2374). It falls back to one only while
-// an id it could not resolve might simply not be backfilled yet (#2373): once every source's
-// history is complete, an id the index still does not know really is answering to itself alone,
-// exactly as an exhausted window would find.
+// The index resolves every id without opening a transcript (#2374). During recovery an unresolved
+// id gets one bounded window: its archive document write still lands, but an old id never turns a
+// restore click into a full-history scan (#2377).
 async function everyIdAnsweredTo(
   sources: SessionSource[],
   sessionIds: readonly string[],
@@ -142,11 +137,7 @@ async function everyIdAnsweredTo(
   const rows =
     indexed !== null && !stillIndexing
       ? indexed.rows
-      : (
-          await growWindow(sources, {}, (candidates) =>
-            sessionIds.every((id) => candidates.some((row) => answersTo(row, id))),
-          )
-        ).rows
+      : (await growWindow(sources, {}, () => true)).rows
   return sessionIds.flatMap((id) => {
     const row = rows.find((candidate) => answersTo(candidate, id))
     return row === undefined ? [id] : [row.id, ...row.retiredIds]

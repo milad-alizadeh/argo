@@ -20,6 +20,8 @@ export function startBackfill(
     const scheduler = createBackfillScheduler({
       tick: async () => backfillTick(),
       isPaused: () => reader.isFeedReadActive(),
+      completedRetryMs: 30_000,
+      onError: (error) => console.error('Session backfill failed', error),
     })
     scheduler.start()
     return [scheduler]
