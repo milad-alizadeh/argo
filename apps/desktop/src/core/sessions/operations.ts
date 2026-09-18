@@ -1,9 +1,6 @@
+import { SESSION_ARCHIVE_SEARCH_OPERATIONS } from './archive-search-operations'
 import {
   sessionAcceptedReplySchema,
-  sessionArchiveListReplySchema,
-  sessionArchiveListRequestSchema,
-  sessionArchiveSetReplySchema,
-  sessionArchiveSetRequestSchema,
   sessionChooseAttachmentsReplySchema,
   sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
@@ -40,18 +37,7 @@ export const SESSION_OPERATIONS = {
     request: sessionListRequestSchema,
     reply: sessionListReplySchema,
   },
-  archiveList: {
-    name: 'session.archive.list',
-    channel: 'argo:session:archive:list',
-    request: sessionArchiveListRequestSchema,
-    reply: sessionArchiveListReplySchema,
-  },
-  archiveSet: {
-    name: 'session.archive.set',
-    channel: 'argo:session:archive:set',
-    request: sessionArchiveSetRequestSchema,
-    reply: sessionArchiveSetReplySchema,
-  },
+  ...SESSION_ARCHIVE_SEARCH_OPERATIONS,
   ...SESSION_READ_OPERATIONS,
   shellOutput: {
     name: 'session.shell.output',

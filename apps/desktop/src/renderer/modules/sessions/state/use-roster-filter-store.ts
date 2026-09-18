@@ -1,8 +1,11 @@
 import { create } from 'zustand'
+import type { RosterStatus } from '@/core/sessions/contract'
 
 // Which Sessions the roster shows. The Archive used to be a disclosure row inside the list, which
 // made it a place in the list rather than a way of reading it; it is a filter over one list now.
-export type RosterStatus = 'active' | 'archived' | 'all'
+// The type is the search contract's own (#2375): search and the Roster/Archive scope by the same
+// three values, so one definition serves all of them.
+export type { RosterStatus }
 
 type RosterFilterState = {
   status: RosterStatus
