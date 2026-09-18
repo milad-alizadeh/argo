@@ -1,5 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { createConnection } from 'node:net'
+import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -10,6 +9,7 @@ import { windowBackground } from './core/appearance/appearance'
 import { applyStoredAppearance, readAppearance } from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
 import { setPlatformLanguage } from './core/i18n/platform'
+import { openProjectStore } from './core/projects/main-store'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
@@ -17,11 +17,8 @@ import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
 } from './development/account-store'
-import {
-  developmentIdentityArgument,
-  developmentInstance,
-  developmentReadyRecord,
-} from './development/instance'
+import { developmentIdentityArgument, developmentInstance } from './development/instance'
+import { writeDevelopmentReady } from './development/ready'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
 // constraint), so this runs at module load, ahead of every other side effect below.
@@ -71,27 +68,12 @@ if (DEVELOPMENT_INSTANCE) {
   app.commandLine.appendSwitch('remote-debugging-port', String(DEVELOPMENT_INSTANCE.debugPort))
 }
 
-async function writeDevelopmentReady(window: BrowserWindow): Promise<void> {
-  if (!DEVELOPMENT_INSTANCE) return
-
-  await mkdir(DEVELOPMENT_INSTANCE.directory, { recursive: true })
-  await new Promise<void>((resolve, reject) => {
-    const socket = createConnection(DEVELOPMENT_INSTANCE.controlFile)
-    socket.once('error', reject)
-    socket.once('connect', () =>
-      socket.write(`ready ${process.pid} ${DEVELOPMENT_INSTANCE?.controlToken}`),
-    )
-    socket.once('data', (reply) => {
-      if (reply.toString() === 'ready') resolve()
-      else reject(new Error('Development launcher rejected Electron readiness.'))
-      socket.end()
-    })
-  })
-  await writeFile(
-    DEVELOPMENT_INSTANCE.readyFile,
-    `${JSON.stringify(developmentReadyRecord(DEVELOPMENT_INSTANCE, window.id), null, 2)}\n`,
-    { mode: 0o600 },
-  )
+function loadRenderer(window: BrowserWindow, rendererURL: string, rendererPath: string): void {
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    void window.loadURL(rendererURL)
+  } else {
+    void window.loadFile(rendererPath)
+  }
 }
 
 function createWindow(): BrowserWindow {
@@ -134,31 +116,30 @@ function createWindow(): BrowserWindow {
       sandbox: false,
     },
   })
-
   if (DEVELOPMENT_INSTANCE) {
     window.webContents.on('page-title-updated', (event) => event.preventDefault())
   }
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
+  const projects = openProjectStore(projectData)
   attachBridges(window, {
     userData,
     accountData,
-    projectData,
+    projects,
     rendererURL,
     proofEnabled: PROOF_ENABLED,
     acceptance: ACCEPTANCE_ENABLED,
   })
+  window.once('closed', () => projects.close())
   installMenu(window)
 
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
-  } else {
-    void window.loadFile(rendererPath)
-  }
+  loadRenderer(window, rendererURL, rendererPath)
 
   window.webContents.once('did-finish-load', () => {
-    void writeDevelopmentReady(window).catch((error: unknown) => console.error(error))
+    void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window).catch((error: unknown) =>
+      console.error(error),
+    )
   })
 
   return window

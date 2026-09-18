@@ -1,6 +1,5 @@
-// Picking a Project from the dropdown writes the choice to the registry, the same file
-// `registerProject` and `relocateProject` commit to, so a fresh main process reads the same
-// selection a dev-server restart wiped from the renderer's Query cache (#2269).
+// Picking a Project from the dropdown writes the selection to the shared store, so a fresh main
+// process reads the same Project a dev-server restart wiped from the renderer's Query cache (#2269).
 import { type ProjectError, projectError } from './contract'
 import type { ProjectListed, ProjectSelectRequest } from './messages'
 import { commit, currentRegistry, type ProjectStore } from './register-project'

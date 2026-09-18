@@ -2,6 +2,7 @@
 // prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
   CODEX_FIXTURES,
@@ -11,6 +12,8 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
+import { createProjectStore } from '../../../src/core/projects/sqlite-store'
+import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 
 export const FIXTURES = [
   'resumeParent',
@@ -111,7 +114,6 @@ export async function prepare(root, application, { projectSelected }) {
   await writeArchiveStore(userData, ARCHIVED)
   const project = proofProject(claudeTranscripts)
   await mkdir(project)
-  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
   await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
   return { application, claudeTranscripts, codexTranscripts, userData, project }
 }
@@ -119,14 +121,14 @@ export async function prepare(root, application, { projectSelected }) {
 const PROOF_PROJECT_ID = 'session-proof-project'
 
 async function writeProjectStore(userData, project, selectedId) {
-  await writeFile(
-    path.join(userData, 'portable-v1', 'projects.json'),
-    JSON.stringify({
-      version: 1,
-      projects: [{ id: PROOF_PROJECT_ID, path: project, bindings: [] }],
-      selectedId,
-    }),
-  )
+  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
+  projects.replace({
+    projects: [
+      { id: PROOF_PROJECT_ID, path: project, commonDirectory: path.join(project, '.git') },
+    ],
+    selectedId,
+  })
+  projects.close()
 }
 
 export async function growCodexTranscript(transcripts) {

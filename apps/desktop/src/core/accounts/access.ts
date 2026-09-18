@@ -1,7 +1,8 @@
 // Everything the main process holds to reach a provider on an Account's behalf. Built once per
 // window in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
 import type { ProviderEndpoints } from '../../providers/endpoints'
-import { readRegistry, toSummary } from '../projects/registry'
+import { toSummary } from '../projects/presentation'
+import type { ProjectStore } from '../projects/sqlite-store'
 import { createWriteQueue, portablePath } from '../storage/portable-file'
 import type { AccountState } from './contract'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'
@@ -10,7 +11,8 @@ import { type AccountRecord, readAccounts, writeAccounts } from './registry'
 export type AccountAccess = {
   endpoints: ProviderEndpoints
   grants: GrantStore
-  paths: { accounts: string; connections: string; projects: string }
+  paths: { accounts: string; connections: string }
+  projects: ProjectStore | null
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
   // Opens a URL the main process already validated. Never a URL the renderer named.
   openExternal: (url: string) => Promise<void>
@@ -25,16 +27,17 @@ export function createAccountAccess(options: {
   endpoints: ProviderEndpoints
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
+  projects?: ProjectStore
 }): AccountAccess {
-  const { userData, accountData, endpoints, cipher, openExternal } = options
+  const { userData, accountData, endpoints, cipher, openExternal, projects } = options
   return {
     endpoints,
     grants: createGrantStore(portablePath(accountData, 'grants.json'), cipher),
     paths: {
       accounts: portablePath(accountData, 'accounts.json'),
       connections: portablePath(userData, 'connections.json'),
-      projects: portablePath(userData, 'projects.json'),
     },
+    projects: projects ?? null,
     exclusive: createWriteQueue(),
     openExternal,
   }
@@ -42,9 +45,16 @@ export function createAccountAccess(options: {
 
 // Project names by ID, for drawing a Connection. A registry that cannot be read names nothing.
 export async function projectNames(access: AccountAccess): Promise<Map<string, string>> {
-  const read = await readRegistry(access.paths.projects)
-  const registrations = read.ok ? read.registry.projects : []
-  return new Map(registrations.map((project) => [project.id, toSummary(project).name]))
+  try {
+    return new Map(
+      (access.projects?.read().projects ?? []).map((project) => [
+        project.id,
+        toSummary(project).name,
+      ]),
+    )
+  } catch {
+    return new Map()
+  }
 }
 
 // What calling the provider as this Account would meet, read afresh so the Account row and every
