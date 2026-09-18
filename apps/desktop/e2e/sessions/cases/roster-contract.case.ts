@@ -50,6 +50,8 @@ async function proveArchiveRoundTrip(page, sessionId) {
 async function proveBulkArchive(page) {
   await proveArchiveRoundTrip(page, 'harnessNoise')
   await proveArchiveRoundTrip(page, 'rollout-codexParent')
+  // The round trip above bypasses the renderer, so a refresh that landed between its two calls left the row hidden.
+  await page.reload()
   await page.locator('nav[aria-label="Sessions"] button[data-session-id="harnessNoise"]').waitFor()
 
   // Argo owns the flag, so a Session it has never discovered archives too: it writes its own row

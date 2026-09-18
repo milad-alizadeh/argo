@@ -4,6 +4,7 @@ import {
   optimisticRowFor,
   promptOf,
   runningTurnView,
+  settledPromptRowFor,
   stageFor,
   turnEnded,
   turnMarkerView,
@@ -118,6 +119,15 @@ test('optimisticRowFor draws the images and files a Send attached, before the re
 test('optimisticRowFor retires once turnStartedAt moves off the entry’s since', () => {
   const e = entry({ since: null })
   expect(optimisticRowFor(e, row({ turnStartedAt: '2026-01-01T00:00:00Z' }))).toBeNull()
+})
+
+test('settledPromptRowFor holds the prompt only once the record has settled', () => {
+  const e = entry({ since: null })
+  expect(settledPromptRowFor(e, row({ turnStartedAt: null }))).toBeNull()
+  expect(settledPromptRowFor(e, row({ turnStartedAt: '2026-01-01T00:00:00Z' }))).toMatchObject({
+    role: 'user',
+    text: 'hello',
+  })
 })
 
 test('turnEnded is false before the record settles, even if status is not running', () => {

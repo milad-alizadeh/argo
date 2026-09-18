@@ -118,7 +118,7 @@ export function SessionRosterItem({
                 renderText={(value) => (
                   <SessionReferenceText cli={sessionCliOf(session)} text={value} />
                 )}
-                text={sessionName(session)}
+                text={sessionName(session, t('newSession'))}
               />
             </span>
             {archived ? (

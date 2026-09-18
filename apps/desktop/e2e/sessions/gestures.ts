@@ -107,12 +107,12 @@ function readCreatedRow(page: Page, known: string[], prompt: string) {
       const created = [...document.querySelectorAll<HTMLButtonElement>(selector)].filter(
         (row) => !ids.includes(row.dataset.sessionId ?? ''),
       )
-      // Focused, not merely present: the row a person's gesture made is the one they are reading,
-      // and it has to be both before the CLI writes. Its label starts as the optimistic row's own
-      // placeholder (#2109) and only carries the prompt once the real Session replaces it, so this
-      // waits for that rather than reading the placeholder as the answer.
+      // Focused and on the real id: the optimistic row carries the prompt too (#2430).
       const first = created.find(
-        (row) => row.getAttribute('aria-current') === 'page' && row.textContent?.includes(prompt),
+        (row) =>
+          row.getAttribute('aria-current') === 'page' &&
+          row.textContent?.includes(prompt) &&
+          !(row.dataset.sessionId ?? '').startsWith('optimistic:'),
       )
       if (first === undefined) return null
       return {
