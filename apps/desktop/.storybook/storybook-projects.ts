@@ -1,4 +1,4 @@
-import type { ProjectClient } from '../src/core/projects/client'
+import type { ProjectClient } from '../src/domains/projects/preload/client'
 
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },

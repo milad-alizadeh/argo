@@ -6,7 +6,7 @@ import {
   registerElsewhere,
   relocate,
   repository,
-} from '../../../mocks/projects/mock-registration'
+} from '../../../../mocks/projects/mock-registration'
 import { registerProject, relocateProject } from './register-project'
 
 test('relocating moves the path and keeps the identity', async (context) => {

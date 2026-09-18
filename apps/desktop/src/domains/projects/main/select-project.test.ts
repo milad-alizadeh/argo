@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fixture, register, repository } from '../../../mocks/projects/mock-registration'
+import { fixture, register, repository } from '../../../../mocks/projects/mock-registration'
 import { registerProject } from './register-project'
 import { selectProject } from './select-project'
 

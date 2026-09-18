@@ -8,9 +8,9 @@ import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
-import { PROJECT_PROOF_STORE_ENV } from '../../../src/core/projects/proof-protocol'
-import { createProjectStore } from '../../../src/core/projects/sqlite-store'
 import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
+import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
+import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 
 const run = promisify(execFile)

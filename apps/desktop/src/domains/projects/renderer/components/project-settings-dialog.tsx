@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import type { ProjectSummary } from '@/core/projects/messages'
+import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/dialog'
-import { SourceSettings } from '../../tickets/components/source-settings'
-import { useConnection, useDisconnectSource } from '../../tickets/hooks/use-tickets'
+} from '@/renderer/components/ui/dialog'
+import { SourceSettings } from '@/renderer/modules/tickets/components/source-settings'
+import { useConnection, useDisconnectSource } from '@/renderer/modules/tickets/hooks/use-tickets'
 
 type ProjectSettingsDialogProps = {
   project: ProjectSummary

@@ -1,12 +1,12 @@
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mjs'
-import { PROJECT_PROOF_STORE_ENV } from '../../src/core/projects/proof-protocol'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../src/core/sessions/proof-protocol'
+import { PROJECT_PROOF_STORE_ENV } from '../../src/domains/projects/main/proof-protocol'
 import { appExecutable } from '../packaged-app'
 import type {
   SessionCliBackend,

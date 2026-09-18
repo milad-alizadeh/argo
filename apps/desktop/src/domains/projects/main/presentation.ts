@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { ProjectListed, ProjectSummary } from './messages'
+import type { ProjectListed, ProjectSummary } from '../contract/messages'
 import type { ProjectRegistration, ProjectRegistry } from './sqlite-store'
 
 export function toSummary(registration: Pick<ProjectRegistration, 'id' | 'path'>): ProjectSummary {

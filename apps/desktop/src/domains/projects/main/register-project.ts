@@ -2,13 +2,13 @@
 // and neither ever creates a second identity for a repository that already has one.
 
 import { randomUUID } from 'node:crypto'
-import { type ProjectError, projectError } from './contract'
+import { type ProjectError, projectError } from '../contract/contract'
 import type {
   ProjectListed,
   ProjectListReply,
   ProjectRegisterRequest,
   ProjectRelocateRequest,
-} from './messages'
+} from '../contract/messages'
 import { listed } from './presentation'
 import { repositoryRoot } from './repository'
 import type {

@@ -1,4 +1,4 @@
-import type { ProjectSummary } from '@/core/projects/messages'
+import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { useProjects } from './use-projects'
 
 // Only a Project that opened is selected: a refused one has no folder to read Tickets for.

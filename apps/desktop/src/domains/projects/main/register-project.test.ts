@@ -8,7 +8,7 @@ import {
   register,
   registerElsewhere,
   repository,
-} from '../../../mocks/projects/mock-registration'
+} from '../../../../mocks/projects/mock-registration'
 import { listProjects } from './list-projects'
 import { registerProject } from './register-project'
 

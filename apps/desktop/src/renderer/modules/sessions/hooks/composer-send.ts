@@ -1,6 +1,6 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit } from '../../projects/hooks/use-projects'
+import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
 import type { Send } from '../components/composer/use-send'
 import type { SessionCli } from '../harness/harnesses'
 import type { ComposerState } from '../state/use-composer-store'

@@ -7,11 +7,10 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '@/core/commands/shortcuts'
-
+import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
+import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { AtlasSidebar } from '../../atlas/components/atlas-sidebar'
 import { AtlasPage } from '../../atlas/pages/atlas-page'
-import { EmptyProjectWindow } from '../../projects/components/empty-project-window'
-import { useProjects } from '../../projects/hooks/use-projects'
 import { DevelopmentIdentityBar } from '../../sessions/components/composer/development-identity-bar'
 import { SessionsSidebar } from '../../sessions/components/roster/sessions-sidebar'
 import { SessionsPage } from '../../sessions/pages/sessions-page'

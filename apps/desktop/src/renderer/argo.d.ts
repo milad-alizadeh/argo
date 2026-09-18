@@ -1,11 +1,11 @@
 import type { CodexCompactionClient } from '../agents/codex/compaction/compaction'
 import type { AccountClient } from '../core/accounts/client'
 import type { AppearanceClient } from '../core/appearance/appearance'
-import type { ProjectClient } from '../core/projects/client'
 import type { SessionClient } from '../core/sessions/client'
 import type { TicketClient } from '../core/tickets/client'
 import type { WatchTopic } from '../core/watch/watch-contract'
 import type { DevelopmentIdentity } from '../development/instance'
+import type { ProjectClient } from '../domains/projects/preload/client'
 
 declare global {
   interface Window {
