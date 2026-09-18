@@ -29,10 +29,19 @@
     "cancel": "Cancel setup",
     "cancelling": "Cancelling setup…",
     "valid": "All Project commands passed validation.",
-    "invalid": "A Project command failed validation.",
+    "invalid": "A Project command failed. Make sure that the working path exists and each command exits successfully.",
     "test": "Test config",
     "testing": "Testing config…",
     "invalidJson": "Fix JSON syntax before testing the config.",
-    "sharedFile": ".argo/settings.json"
+    "invalidSetupDocument": "GitHub returned an invalid Project setup document.",
+    "setupNetworkUnavailable": "Argo could not download Project setup from GitHub.",
+    "sharedFile": ".argo/settings.json",
+    "document": {
+      "customize": "Customize plan",
+      "customization": "Plan customization",
+      "plan": "Recommended plan",
+      "progress_one": "{{current}} of {{total}} setup step complete",
+      "progress_other": "{{current}} of {{total}} setup steps complete"
+    }
   }
 }

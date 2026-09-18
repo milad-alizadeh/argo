@@ -1,23 +1,31 @@
 import { Save } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import type { SetupDocument } from '@/domains/projects/contract/setup-document'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { ConfigurationPanel } from './project-setup-configuration'
 import { type ManualSetupMessage, useManualProjectSetup } from './use-manual-project-setup'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
-  const setup = useManualProjectSetup(project.id, {
-    valid: t('setup.valid'),
-    invalid: t('setup.invalid'),
-    invalidJson: t('setup.invalidJson'),
-    saved: t('setup.saved'),
-  })
+  const messages = useMemo(
+    () => ({
+      valid: t('setup.valid'),
+      invalid: t('setup.invalid'),
+      invalidJson: t('setup.invalidJson'),
+      invalidSetupDocument: t('setup.invalidSetupDocument'),
+      saved: t('setup.saved'),
+      setupNetworkUnavailable: t('setup.setupNetworkUnavailable'),
+    }),
+    [t],
+  )
+  const setup = useManualProjectSetup(project.id, messages)
   return <ProjectSetupView project={project} {...setup} />
 }
 
 export type ProjectSetupViewProps = {
+  document: SetupDocument | null
   message: ManualSetupMessage | null
   cancel: () => Promise<void>
   saved: boolean
@@ -30,6 +38,7 @@ export type ProjectSetupViewProps = {
 
 export function ProjectSetupView({
   project,
+  document,
   message,
   cancel,
   saved,
@@ -41,7 +50,17 @@ export function ProjectSetupView({
 }: { project: ProjectSummary } & ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
   const { add } = useToastManager()
-  const setup = { message, cancel, saved, save, saving, source, testConfiguration, updateSource }
+  const setup = {
+    document,
+    message,
+    cancel,
+    saved,
+    save,
+    saving,
+    source,
+    testConfiguration,
+    updateSource,
+  }
   useEffect(() => {
     if (!message) return
     add({ priority: 'high', title: message.text, type: message.tone })

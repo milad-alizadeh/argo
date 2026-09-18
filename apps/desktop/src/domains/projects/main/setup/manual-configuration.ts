@@ -7,11 +7,13 @@ import { prepareSetupWorktree } from './setup-worktree'
 type SetupProject = { id: string; path: string }
 type CheckpointStore = Pick<ProjectStore, 'readSetupCheckpoint' | 'writeSetupCheckpoint'>
 
-export async function saveManualProjectConfiguration(
-  project: SetupProject,
-  source: string,
-  store: CheckpointStore,
-): Promise<SetupCheckpoint> {
+export async function saveManualProjectConfiguration(request: {
+  project: SetupProject
+  source: string
+  store: CheckpointStore
+  documentRevision: string
+}): Promise<SetupCheckpoint> {
+  const { documentRevision, project, source, store } = request
   const previous = store.readSetupCheckpoint(project.id)
   const worktreePath = previous?.worktreePath ?? (await prepareSetupWorktree(project))
   if (!(await saveProjectConfiguration(worktreePath, source)))
@@ -31,6 +33,7 @@ export async function saveManualProjectConfiguration(
     worktreePath,
     phase,
     configurationSource: source,
+    documentRevision,
   }
   store.writeSetupCheckpoint(checkpoint)
   return checkpoint

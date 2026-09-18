@@ -1,8 +1,12 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from 'react'
+import type { ProjectError, ProjectErrorCode } from '../../contract/contract'
+import type { SetupDocument } from '../../contract/setup-document'
 
 type Messages = {
   invalid: string
   invalidJson: string
+  invalidSetupDocument: string
+  setupNetworkUnavailable: string
   saved: string
   valid: string
 }
@@ -14,13 +18,15 @@ export type ManualSetupMessage = {
 
 function useInitialSetup(
   projectId: string,
+  messages: Messages,
   setters: {
     setSource: Dispatch<SetStateAction<string>>
+    setDocument: Dispatch<SetStateAction<SetupDocument | null>>
     setMessage: Dispatch<SetStateAction<ManualSetupMessage | null>>
     setSaved: Dispatch<SetStateAction<boolean>>
   },
 ) {
-  const { setMessage, setSaved, setSource } = setters
+  const { setDocument, setMessage, setSaved, setSource } = setters
   useEffect(() => {
     let active = true
     setMessage(null)
@@ -28,18 +34,22 @@ function useInitialSetup(
     void window.argo.beginProjectSetup({ projectId }).then((reply) => {
       if (!active) return
       if (reply.type === 'project.setup.editing') {
-        setSaved(true)
+        setSaved(false)
         setSource(reply.source)
-      } else if (reply.type === 'project.error') setMessage({ tone: 'error', text: reply.message })
+        setDocument(reply.document)
+      } else if (reply.type === 'project.error') {
+        setMessage({ tone: 'error', text: setupErrorMessage(reply, messages) })
+      }
     })
     return () => {
       active = false
     }
-  }, [projectId, setMessage, setSaved, setSource])
+  }, [messages, projectId, setDocument, setMessage, setSaved, setSource])
 }
 
 export function useManualProjectSetup(projectId: string, messages: Messages) {
   const [source, setSource] = useState('')
+  const [document, setDocument] = useState<SetupDocument | null>(null)
   const [message, setMessage] = useState<ManualSetupMessage | null>(null)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState<'cancel' | 'save' | 'test' | null>(null)
@@ -47,7 +57,7 @@ export function useManualProjectSetup(projectId: string, messages: Messages) {
     async (nextSource: string) => window.argo.saveProjectSetup({ projectId, source: nextSource }),
     [projectId],
   )
-  useInitialSetup(projectId, { setSource, setMessage, setSaved })
+  useInitialSetup(projectId, messages, { setSource, setDocument, setMessage, setSaved })
   const save = async () => {
     setSaving('save')
     setMessage(null)
@@ -55,7 +65,9 @@ export function useManualProjectSetup(projectId: string, messages: Messages) {
     if (reply.type === 'project.setup.editing') {
       setSaved(true)
       setMessage({ tone: 'success', text: messages.saved })
-    } else if (reply.type === 'project.error') setMessage({ tone: 'error', text: reply.message })
+    } else if (reply.type === 'project.error') {
+      setMessage({ tone: 'error', text: setupErrorMessage(reply, messages) })
+    }
     setSaving(null)
   }
   const testConfiguration = async () => {
@@ -87,5 +99,15 @@ export function useManualProjectSetup(projectId: string, messages: Messages) {
     if (reply.type === 'project.error') setMessage({ tone: 'error', text: reply.message })
     setSaving(null)
   }
-  return { cancel, message, saved, save, saving, source, testConfiguration, updateSource }
+  return { cancel, document, message, saved, save, saving, source, testConfiguration, updateSource }
+}
+
+const SETUP_ERROR_MESSAGES = {
+  'setup-network-unavailable': 'setupNetworkUnavailable',
+  'setup-document-invalid': 'invalidSetupDocument',
+} as const satisfies Partial<Record<ProjectErrorCode, keyof Messages>>
+
+function setupErrorMessage(error: ProjectError, messages: Messages) {
+  const key = SETUP_ERROR_MESSAGES[error.code as keyof typeof SETUP_ERROR_MESSAGES]
+  return key ? messages[key] : error.message
 }

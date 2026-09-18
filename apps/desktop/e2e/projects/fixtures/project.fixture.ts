@@ -7,8 +7,12 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
+import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
-import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
+import {
+  PROJECT_PROOF_STORE_ENV,
+  SETUP_DOCUMENT_PROOF_URL_ENV,
+} from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
@@ -58,8 +62,11 @@ export async function prepare(root, application?) {
   }
 }
 
-export async function prepareManual(root, application?) {
-  application ??= await packagedTestCopy(root)
+export async function prepareManual(
+  root: string,
+  application: string,
+  setupDocument: MockSetupDocument,
+) {
   const userData = path.join(root, 'manual-userData')
   const projectPath = path.join(root, 'manual-project')
   const remote = path.join(root, 'manual-remote.git')
@@ -93,7 +100,13 @@ export async function prepareManual(root, application?) {
     selectedId: 'project-setup',
   })
   projects.close()
-  return { application, databasePath, projectPath, userData }
+  return {
+    application,
+    databasePath,
+    projectPath,
+    setupDocument,
+    userData,
+  }
 }
 
 // One launch of the packaged app against the fixture's own application data. A restart is another
@@ -101,7 +114,14 @@ export async function prepareManual(root, application?) {
 export function launch(fixture) {
   return electron.launch({
     executablePath: appExecutable(fixture.application),
-    env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
+    env: {
+      ...process.env,
+      [PROJECT_PROOF_STORE_ENV]: fixture.userData,
+      ...(fixture.setupDocument
+        ? { [SETUP_DOCUMENT_PROOF_URL_ENV]: fixture.setupDocument.url }
+        : {}),
+      [ACCEPTANCE_ENV]: '0',
+    },
     timeout: 30_000,
   })
 }

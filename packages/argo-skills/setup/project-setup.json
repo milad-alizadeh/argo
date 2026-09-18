@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "revision": "2026-09-18.1",
+  "requiredCapabilities": [
+    "fields",
+    "recommendations",
+    "plan",
+    "descriptions",
+    "locales",
+    "progress",
+    "revisions"
+  ],
+  "locales": {
+    "en": {
+      "title": "Recommended Project setup",
+      "description": "Review the plan, customize the commands, and inspect the configuration before you save it.",
+      "fields": {
+        "target-path": {
+          "label": "Working path",
+          "description": "The path is relative to the Project root."
+        },
+        "setup-command": {
+          "label": "Setup command",
+          "description": "Argo runs this command before it starts work."
+        },
+        "run-command": {
+          "label": "Run command",
+          "description": "Argo runs this command to start the Project."
+        },
+        "build-command": {
+          "label": "Build command",
+          "description": "Argo runs this command to build the Project."
+        },
+        "test-command": {
+          "label": "Test command",
+          "description": "Argo runs this command to test the Project."
+        }
+      },
+      "plan": {
+        "review-commands": {
+          "label": "Review the Project commands",
+          "description": "Customize any command that Argo must run for this Project."
+        },
+        "inspect-settings": {
+          "label": "Inspect .argo/settings.json",
+          "description": "The configuration editor shows the exact file before Argo saves it."
+        },
+        "validate-settings": {
+          "label": "Test the configuration",
+          "description": "Argo runs the configured commands before the Project becomes ready."
+        }
+      }
+    }
+  },
+  "fields": [
+    {
+      "id": "target-path",
+      "type": "text",
+      "required": true,
+      "recommendation": ".",
+      "configurationPath": ["targets", "app", "path"]
+    },
+    {
+      "id": "setup-command",
+      "type": "text",
+      "value": "",
+      "configurationPath": ["targets", "app", "setup"]
+    },
+    {
+      "id": "run-command",
+      "type": "text",
+      "value": "",
+      "configurationPath": ["targets", "app", "run"]
+    },
+    {
+      "id": "build-command",
+      "type": "text",
+      "value": "",
+      "configurationPath": ["targets", "app", "build"]
+    },
+    {
+      "id": "test-command",
+      "type": "text",
+      "value": "",
+      "configurationPath": ["targets", "app", "test"]
+    }
+  ],
+  "configuration": {
+    "version": 1,
+    "targets": {
+      "app": {
+        "default": true,
+        "path": ".",
+        "setup": "",
+        "run": "",
+        "build": "",
+        "test": ""
+      }
+    }
+  },
+  "plan": [
+    {
+      "id": "review-commands"
+    },
+    {
+      "id": "inspect-settings"
+    },
+    {
+      "id": "validate-settings"
+    }
+  ],
+  "progress": {
+    "current": 1,
+    "total": 3
+  }
+}

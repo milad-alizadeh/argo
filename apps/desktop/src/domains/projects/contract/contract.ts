@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../../shared/validation'
+import { setupDocumentSchema } from './setup-document'
 
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),
@@ -59,6 +60,7 @@ export const projectSetupEditingSchema = z.strictObject({
   requestId: identifierSchema,
   project: projectLabelSchema,
   source: z.string(),
+  document: setupDocumentSchema,
 })
 export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
 
@@ -104,6 +106,8 @@ export const PROJECT_ERRORS = {
   'storage-not-written': 'Argo could not save the Project registry.',
   'invalid-configuration': 'The Project configuration is not valid.',
   'setup-unavailable': 'Argo could not prepare Project setup.',
+  'setup-network-unavailable': 'Argo could not download Project setup from GitHub.',
+  'setup-document-invalid': 'GitHub returned an invalid Project setup document.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS

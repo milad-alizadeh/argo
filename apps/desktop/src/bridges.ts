@@ -38,7 +38,7 @@ export function attachBridges(
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
-  attachProjectBridge(window, { projects, rendererURL })
+  attachProjectBridge(window, { projects, rendererURL, proofEnabled })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })
