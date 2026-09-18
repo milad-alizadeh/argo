@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFile, writeFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import {
   fixture,
@@ -60,13 +59,8 @@ test('a Project removed while the chooser is open relocates nothing', async (con
   const alpha = await registerProject(register('r1'), setup.store)
   setup.choose(await repository(setup.root, 'alpha-moved'))
   // Another window forgets the Project while this chooser is open.
-  setup.duringChoice(() =>
-    writeFile(setup.store.registryPath, JSON.stringify({ version: 1, projects: [] })),
-  )
+  setup.duringChoice(async () => setup.store.projects.replace({ projects: [], selectedId: null }))
   const reply = await relocateProject(relocate('m1', alpha.selectedId), setup.store)
   assert.equal(reply.code, 'missing-project')
-  assert.deepEqual(JSON.parse(await readFile(setup.store.registryPath, 'utf8')), {
-    version: 1,
-    projects: [],
-  })
+  assert.deepEqual(setup.store.projects.read(), { projects: [], selectedId: null })
 })

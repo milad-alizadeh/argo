@@ -1,7 +1,8 @@
 // The packaged app, its own application data, a mock GitHub and a mock Linear, for the Ticket proof.
 // The providers are the one thing mocked; the cockpit, its stores and safeStorage all run for real.
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
@@ -10,10 +11,12 @@ import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/core/projects/proof-protocol'
+import { createProjectStore } from '../../../src/core/projects/sqlite-store'
 import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/core/sessions/proof-protocol'
+import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
@@ -68,16 +71,16 @@ export async function prepare(root: string, application: string): Promise<Ticket
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   const noSessions = path.join(root, 'no-sessions')
-  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
-  await writeFile(
-    path.join(userData, 'portable-v1', 'projects.json'),
-    JSON.stringify({
-      version: 1,
-      projects: [{ id: 'project-1', path: projectPath }],
-      selectedId: 'project-1',
-    }),
-  )
+  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
+  projects.replace({
+    projects: [
+      { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
+    ],
+    selectedId: 'project-1',
+  })
+  projects.close()
   const github = await startMockGitHubLoopback()
   serveRepositories(github)
   const linear = await startMockLinearLoopback()

@@ -48,7 +48,7 @@ test('the token is written only as ciphertext, and only to the grant file', asyn
   await connect(cockpit)
   const directory = path.join(cockpit.userData, 'portable-v1')
   const files = (await readdir(directory)).sort()
-  assert.deepEqual(files, ['accounts.json', 'grants.json', 'projects.json'])
+  assert.deepEqual(files, ['accounts.json', 'grants.json'])
   for (const file of files) {
     assert.ok(!(await readFile(path.join(directory, file), 'utf8')).includes(TOKEN), file)
   }

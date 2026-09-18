@@ -46,7 +46,6 @@ function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus
   ])
   return merged.rows[0]?.status
 }
-
 test('reconciles every Roster field by its declared rule', () => {
   const held = managedRow('session-1', {
     cli: 'claude',
