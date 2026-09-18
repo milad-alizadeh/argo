@@ -1,7 +1,7 @@
 // Account and Ticket reads on the one Query cache (`app-query-provider.tsx`). A query settles a
 // contract reply: its data is the success, and its error is the channel's own error, code and table text intact.
-import type { AccountError } from '@/core/accounts/contract'
-import type { TicketError } from '@/core/tickets/contract'
+import type { AccountError } from '@/domains/accounts/contract/contract'
+import type { TicketError } from '@/domains/tickets/contract/contract'
 
 // Each query names it as its error type: the Session queries on the same cache throw their own.
 export type ContractFailure = AccountError | TicketError

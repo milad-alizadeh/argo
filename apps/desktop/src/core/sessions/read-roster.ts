@@ -2,8 +2,8 @@
 // pieces of Session state that are Argo's own rather than any CLI's — the Ticket link and the
 // archive flag (#2315).
 
+import type { SessionTicketLinkStore } from '../../domains/tickets/main/session-links'
 import { isArchivedSession, type SessionArchiveStore } from '../storage/session-archive'
-import type { SessionTicketLinkStore } from '../tickets/session-links'
 import { type SessionListRequest, sessionError } from './contract'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'

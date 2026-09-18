@@ -22,10 +22,10 @@ import {
 import { createSessionReader } from './core/sessions/reader'
 import { openSessionIndexOrNone, sessionIndexPath } from './core/sessions/session-index/open-index'
 import { createSessionArchiveStore, sessionArchivePath } from './core/storage/session-archive'
-import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
 import { watchTrees } from './core/watch/watch-paths'
 import { watchPeriodically, watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
+import { createSessionTicketLinkStore } from './domains/tickets/main/session-links'
 import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
 import { sessionSources } from './session-sources'
 
