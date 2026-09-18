@@ -83,7 +83,7 @@ export const FailedValidation: Story = {
   render: ({ project }) => (
     <ProjectSetupView
       cancel={async () => undefined}
-      message="A Project command failed validation."
+      message={{ tone: 'error', text: 'A Project command failed validation.' }}
       project={project}
       save={async () => undefined}
       saved
@@ -93,4 +93,35 @@ export const FailedValidation: Story = {
       updateSource={() => undefined}
     />
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'A Project command failed validation.',
+    )
+    await expect(canvas.getByRole('button', { name: 'Save config' })).toBeEnabled()
+  },
+}
+
+export const SyntaxFailure: Story = {
+  args: ManualConfiguration.args,
+  render: ({ project }) => (
+    <ProjectSetupView
+      cancel={async () => undefined}
+      message={{ tone: 'error', text: 'Fix JSON syntax before testing the config.' }}
+      project={project}
+      save={async () => undefined}
+      saved={false}
+      saving={null}
+      source={'{"version": 1,'}
+      testConfiguration={async () => undefined}
+      updateSource={() => undefined}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Fix JSON syntax before testing the config.',
+    )
+    await expect(canvas.getByRole('button', { name: 'Save config' })).toBeDisabled()
+  },
 }

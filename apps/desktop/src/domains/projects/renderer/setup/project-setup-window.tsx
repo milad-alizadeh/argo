@@ -2,7 +2,7 @@ import { Save } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { ConfigurationPanel } from './project-setup-configuration'
-import { useManualProjectSetup } from './use-manual-project-setup'
+import { type ManualSetupMessage, useManualProjectSetup } from './use-manual-project-setup'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
@@ -16,7 +16,7 @@ export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
 }
 
 export type ProjectSetupViewProps = {
-  message: string | null
+  message: ManualSetupMessage | null
   cancel: () => Promise<void>
   saved: boolean
   save: () => Promise<void>

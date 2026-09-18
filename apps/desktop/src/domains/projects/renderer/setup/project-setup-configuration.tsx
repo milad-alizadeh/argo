@@ -3,10 +3,11 @@ import { json } from '@codemirror/legacy-modes/mode/javascript'
 import { forceLinting, linter } from '@codemirror/lint'
 import { tags } from '@lezer/highlight'
 import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-codemirror'
-import { FlaskConical, Save, X } from 'lucide-react'
+import { AlertCircle, FlaskConical, Save, X } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import type { ProjectSetupViewProps } from './project-setup-window'
 
@@ -86,7 +87,7 @@ function ConfigurationEditor({
   }
   const busyMessage = saving === null ? null : busyMessages[saving]
   return (
-    <div className="relative min-h-0 flex-1 p-3">
+    <div className="flex min-h-0 flex-1 flex-col p-3">
       <div className="relative">
         <CodeMirror
           basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
@@ -111,15 +112,7 @@ function ConfigurationEditor({
           {saving === 'test' ? t('setup.testing') : t('setup.test')}
         </Button>
       </div>
-      {message || busyMessage ? (
-        <p
-          aria-live="polite"
-          className="pointer-events-none absolute bottom-6 left-6 rounded-md bg-background/90 px-2 py-1 type-meta text-muted-foreground shadow-sm"
-          role="status"
-        >
-          {message ?? busyMessage}
-        </p>
-      ) : null}
+      <ConfigurationMessage message={message} busyMessage={busyMessage} />
     </div>
   )
 }
@@ -137,12 +130,41 @@ function ConfigurationActions({
         <X aria-hidden="true" />
         {saving === 'cancel' ? t('setup.cancelling') : t('setup.cancel')}
       </Button>
-      <Button disabled={saving !== null || !source} onClick={save} type="button">
+      <Button disabled={saving !== null || !isJson(source)} onClick={save} type="button">
         <Save aria-hidden="true" />
         {saving === 'save' ? t('setup.saving') : t('setup.save')}
       </Button>
     </footer>
   )
+}
+
+function ConfigurationMessage({
+  message,
+  busyMessage,
+}: Pick<ProjectSetupViewProps, 'message'> & { busyMessage: string | null }) {
+  if (message?.tone === 'error') {
+    return (
+      <Alert className="mt-3 border-destructive/50 bg-destructive/10" variant="destructive">
+        <AlertCircle aria-hidden="true" />
+        <AlertDescription>{message.text}</AlertDescription>
+      </Alert>
+    )
+  }
+  const text = message?.text ?? busyMessage
+  return text ? (
+    <p aria-live="polite" className="mt-3 type-meta text-muted-foreground" role="status">
+      {text}
+    </p>
+  ) : null
+}
+
+function isJson(source: string): boolean {
+  try {
+    JSON.parse(source)
+    return true
+  } catch {
+    return false
+  }
 }
 
 function jsonDiagnostics(message: string) {
