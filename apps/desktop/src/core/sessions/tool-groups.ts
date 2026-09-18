@@ -45,13 +45,20 @@ function countPhrase(kind: ToolRow['kind'], count: number, leading: boolean) {
   return count === 1 ? `${capitalized} a ${noun}` : `${capitalized} ${count} ${noun}s`
 }
 
+// An unclassified tool call reads to a person the same as a command: both are "the agent ran
+// something". Folding 'tool' into the 'command' count keeps the summary to one phrase instead of
+// a second "called N tools" clause that names an implementation detail nobody asked for.
+function labelKind(kind: ToolRow['kind']): ToolRow['kind'] {
+  return kind === 'tool' ? 'command' : kind
+}
+
 function toolGroupLabel(calls: ToolRow[]) {
   const counts = Object.fromEntries(KIND_ORDER.map((kind) => [kind, 0])) as Record<
     ToolRow['kind'],
     number
   >
-  for (const call of calls) counts[call.kind] += 1
-  const kinds = KIND_ORDER.filter((kind) => counts[kind] > 0)
+  for (const call of calls) counts[labelKind(call.kind)] += 1
+  const kinds = KIND_ORDER.filter((kind) => kind !== 'tool' && counts[kind] > 0)
   return kinds.map((kind, index) => countPhrase(kind, counts[kind], index === 0)).join(', ')
 }
 
