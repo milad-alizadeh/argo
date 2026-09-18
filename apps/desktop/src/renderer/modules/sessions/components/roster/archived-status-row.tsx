@@ -13,7 +13,14 @@ export function ArchivedSectionRow({
 }: {
   row: Extract<
     RosterRow,
-    { kind: 'archivedLoading' | 'archivedLoadingMore' | 'archivedError' | 'archivedEmpty' }
+    {
+      kind:
+        | 'archivedLoading'
+        | 'archivedLoadingMore'
+        | 'archivedError'
+        | 'archivedEmpty'
+        | 'archivedIndexing'
+    }
   >
 }) {
   const { t } = useTranslation('sessions')
@@ -36,6 +43,8 @@ export function ArchivedSectionRow({
       )
     case 'archivedEmpty':
       return <p className="px-2 type-body text-muted-foreground">{t('archivedEmpty')}</p>
+    case 'archivedIndexing':
+      return <p className="px-2 type-body text-muted-foreground">{t('archivedStillIndexing')}</p>
     default:
       return null
   }

@@ -1,5 +1,10 @@
 import { createChainCache, createChainHistory, type SessionChain } from './chains'
-import { boundIndexedWindow, discoverIndexedWindow, presentedRows } from './discover-indexed-window'
+import { boundIndexedWindow, presentedRows } from './discover-indexed-window'
+import {
+  discoverSessionsWith,
+  historyCompleteFor,
+  resolveIdsAgainst,
+} from './discover-transcript-window'
 import { createFullRecordTracker } from './full-record-tracker'
 import type { SessionRosterRow } from './models'
 import { currentSessionId } from './models'
@@ -7,7 +12,6 @@ import { projectRosterRow } from './roster'
 import { rosterMetadata } from './roster-metadata'
 import { createBackgroundIndexing } from './session-index/background-indexing'
 import type { BackfillProgress, SessionIndex, TranscriptPath } from './session-index/contract'
-import { holdsMessage } from './session-index/window-pass'
 import { createTitleLedger } from './title-ledger'
 import type { TranscriptFile } from './transcript'
 import { sessionIdOfFile } from './transcript-file'
@@ -47,7 +51,7 @@ export type TranscriptDiscovery = {
 
 // A cursor names how many of the most-recently-written files the pass should read, encoded as a
 // string so the reader treats it as opaque. `null` is the cold-cache first page.
-function windowSizeFor(cursor: string | null | undefined): number {
+export function windowSizeFor(cursor: string | null | undefined): number {
   if (cursor === null || cursor === undefined) return ROSTER_PAGE_SIZE
   const parsed = Number.parseInt(cursor, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : ROSTER_PAGE_SIZE
@@ -112,7 +116,6 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const sessionChains = createChainCache(chainHistory)
   const strongestTitle = createTitleLedger()
   const presented = (rows: SessionRosterRow[]) => presentedRows(strongestTitle, rows)
-
   const projectChain = (chain: SessionChain) => projectRosterRow(chain, source.cli)
 
   const windowSource = {
@@ -123,36 +126,14 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     project: projectChain,
     history: chainHistory,
   }
-
   const indexedWindowFor = boundIndexedWindow(windowSource)
 
-  async function discoverSessions(
-    root: string,
-    options?: TranscriptDiscoveryOptions,
-  ): Promise<TranscriptDiscovery> {
-    const windowSize = windowSizeFor(options?.cursor)
-    const index = options?.index
-    if (index !== undefined) {
-      return discoverIndexedWindow({
-        root,
-        windowSize,
-        index,
-        cli: source.cli,
-        indexedWindowFor,
-        presented,
-      })
-    }
-    const { found, files, unreadable } = await summarise(root, windowSize)
-    return {
-      rows: presented(rosterChains(files.filter(holdsMessage)).map(projectChain)),
-      filesFound: found.length,
-      filesRead: files.length,
-      filesUnreadable: unreadable,
-      filesParsed: files.length,
-      nextCursor: nextCursorFor(found.length, windowSize),
-      historyComplete: true,
-    }
-  }
+  const discoverSessions = (root: string, options?: TranscriptDiscoveryOptions) =>
+    discoverSessionsWith(
+      { source, summarise, rosterChains, projectChain, presented, indexedWindowFor },
+      root,
+      options,
+    )
 
   const readSessionFiles = createChainReader({ source, summarise, chains: sessionChains, tracker })
 
@@ -167,6 +148,9 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     backfillTick: (root: string, index: SessionIndex, batchSize = ROSTER_PAGE_SIZE) =>
       background.backfillTick(root, index, batchSize),
     reconcileAll: background.reconcileAll,
+    resolveIds: (index: SessionIndex, ids: readonly string[]) =>
+      resolveIdsAgainst(indexedWindowFor, index, ids),
+    historyComplete: (index: SessionIndex) => historyCompleteFor(source.cli, index),
   }
 }
 

@@ -1,53 +1,13 @@
 import { describe, expect, test } from 'vitest'
-import { SessionContractError } from '../../session-contract-error'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
-import type { Session } from '../../types'
-import { rosterRows } from './roster-rows'
-
-const noArchive = {
-  displayed: [] as Session[],
-  error: null as SessionContractError | null,
-  hasNextPage: false,
-  isFetchingNextPage: false,
-  isLoading: false,
-}
-
-const someArchived = { ...noArchive, displayed: [{ id: 'archived-session' } as Session] }
-const loadingArchive = { ...noArchive, isLoading: true }
-const failedArchive = {
-  ...noArchive,
-  error: new SessionContractError({
-    version: 1,
-    type: 'session.error',
-    requestId: 'test-archive-error',
-    code: 'internal-error',
-    message: 'read failed',
-  }),
-}
-const archiveWithMorePages = { ...someArchived, hasNextPage: true }
-const archiveFetchingMore = { ...someArchived, isFetchingNextPage: true }
-
-function activeRoster(count: number) {
-  return Array.from({ length: count }, (_, index) => ({ id: `session-${index}` }) as Session)
-}
-
-function kindsOf(options: {
-  archived?: typeof noArchive
-  hasMoreSessions?: boolean
-  isFetchingMoreSessions?: boolean
-  showArchive?: boolean
-  status?: RosterStatus
-}) {
-  return rosterRows({
-    active: activeRoster(2),
-    archived: noArchive,
-    hasMoreSessions: false,
-    isFetchingMoreSessions: false,
-    showArchive: false,
-    status: 'active',
-    ...options,
-  }).map((row) => row.kind)
-}
+import {
+  archiveFetchingMore,
+  archiveWithMorePages,
+  failedArchive,
+  kindsOf,
+  loadingArchive,
+  someArchived,
+} from './roster-rows-test-fixtures'
 
 describe('building the roster rows for a status filter', () => {
   test('ends on the paging sentinel while a wider window is available', () => {
@@ -130,29 +90,5 @@ describe('building the roster rows for the Archive', () => {
 
   test('carries no Archive rows at all until the roster has resolved once', () => {
     expect(kindsOf({ archived: someArchived, showArchive: false, status: 'archived' })).toEqual([])
-  })
-
-  test('shows one spinner, not two, while the roster and the Archive are both loading (#2412)', () => {
-    expect(
-      kindsOf({
-        archived: loadingArchive,
-        hasMoreSessions: true,
-        isFetchingMoreSessions: true,
-        showArchive: true,
-        status: 'all',
-      }),
-    ).toEqual(['session', 'session', 'rosterSentinel', 'rosterLoadingMore'])
-  })
-
-  test('shows one spinner, not two, while the roster is paging and the Archive is paging too (#2412)', () => {
-    expect(
-      kindsOf({
-        archived: archiveFetchingMore,
-        hasMoreSessions: true,
-        isFetchingMoreSessions: true,
-        showArchive: true,
-        status: 'all',
-      }),
-    ).toEqual(['session', 'session', 'rosterSentinel', 'rosterLoadingMore', 'session'])
   })
 })

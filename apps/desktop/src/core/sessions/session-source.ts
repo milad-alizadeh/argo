@@ -8,6 +8,7 @@ import type { SessionChain } from './chains'
 import type { SessionRenameReply, SessionRenameRequest } from './contract'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 import type { SessionFeedRow, SessionRosterRow } from './models'
+import type { ResolvedIndexedIds } from './resolve-indexed-ids'
 
 // What a driver shows over one Session's recorded Feed while a Turn streams: the rows to draw, and
 // everything it changed about them, which the revision must cover. The row id convention an
@@ -53,4 +54,12 @@ export type SessionSource = {
   // there is nothing for either to write.
   backfillTick?: (batchSize?: number) => Promise<BackfillProgress>
   reconcileAll?: () => Promise<{ filesParsed: number }>
+  // Every id resolved straight off the index's persisted resume graph, with no discovery window
+  // grown to find it (#2374). Present only alongside `backfillTick`: the same index that batches
+  // older history in is what this reads back out.
+  resolveIndexedIds?: (ids: readonly string[]) => Promise<ResolvedIndexedIds>
+  // Whether this CLI's index has walked every file on disk at least once. False while background
+  // backfill (#2373) still has older history left, so a caller resolving an id through the index
+  // knows an unresolved id may only be un-indexed rather than truly gone.
+  historyComplete?: () => Promise<boolean>
 }

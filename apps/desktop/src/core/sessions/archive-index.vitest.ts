@@ -1,0 +1,178 @@
+// The Archive read and restore through the Session index's persisted resume graph (#2374), rather
+// than growing the bounded discovery window `archive-window.ts` falls back to. Node runs these for
+// the same reason `indexed-roster.vitest.ts` does: the index reaches `node:sqlite`, which Bun does
+// not ship.
+import { mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { afterEach, describe, expect, test } from 'vitest'
+import { createSessionArchiveStore, sessionArchivePath } from '../storage/session-archive'
+import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
+import { requestArchiveList } from './archive-list-request'
+import { createSessionReader } from './reader'
+import { openSessionIndex } from './session-index/open-index'
+import {
+  type IndexedAdapter,
+  indexedAdapters,
+  manyTranscripts,
+  sessionIdAt,
+} from './session-index/roster-fixtures'
+import type { SessionSource } from './session-source'
+
+const cleanUp: (() => Promise<void>)[] = []
+afterEach(async () => {
+  for (const close of cleanUp.splice(0)) await close()
+})
+
+// Counts every call to the underlying adapter's own scan, the one `archive-window.ts` falls back
+// to growing: an indexed read that never calls it proves the index answered alone.
+function spiedSource(source: SessionSource) {
+  let discoverCalls = 0
+  const spied: SessionSource = {
+    ...source,
+    discoverSessions: (options) => {
+      discoverCalls += 1
+      return source.discoverSessions(options)
+    },
+  }
+  return { spied, discoverCallCount: () => discoverCalls }
+}
+
+async function harness(adapter: IndexedAdapter) {
+  const root = await mkdtemp(path.join(os.tmpdir(), `argo-archive-index-${adapter.cli}-`))
+  cleanUp.push(() => rm(root, { recursive: true, force: true }))
+  const userData = await mkdtemp(path.join(os.tmpdir(), `argo-archive-store-${adapter.cli}-`))
+  cleanUp.push(() => rm(userData, { recursive: true, force: true }))
+  const index = openSessionIndex(path.join(root, 'sessions.db'))
+  cleanUp.push(() => index.close())
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
+  const source = adapter.source(root, index)
+  const { spied, discoverCallCount } = spiedSource(source)
+  const reader = createSessionReader([spied], createInMemorySessionTicketLinkStore(), archive)
+  return { root, archive, index, source, reader, discoverCallCount }
+}
+
+async function finishBackfill(source: SessionSource) {
+  let progress = await source.backfillTick?.(30)
+  for (
+    let batches = 0;
+    progress !== undefined && !progress.complete && batches < 20;
+    batches += 1
+  ) {
+    progress = await source.backfillTick?.(30)
+  }
+}
+
+async function archiveList(
+  reader: ReturnType<typeof createSessionReader>,
+  options: { cursor?: string | null; restoreId?: string | null; requestId?: string } = {},
+) {
+  const reply = await requestArchiveList(reader, options)
+  return reply.type === 'session.archive.listed' ? reply : Promise.reject(new Error(reply.type))
+}
+
+describe.each(indexedAdapters)('the $cli Archive read through the Session index', (adapter) => {
+  test('resolves an archived Session outside the recent window, opening no transcript file', async () => {
+    const { root, archive, source, reader, discoverCallCount } = await harness(adapter)
+    // 60 sessions puts id 55 outside the 50-file recent window `discoverSessions` bounds itself to.
+    await adapter.write(root, manyTranscripts(60))
+    await source.discoverSessions()
+    await finishBackfill(source)
+    await archive.setArchived([sessionIdAt(55)], true)
+
+    const before = discoverCallCount()
+    const page = await archiveList(reader)
+
+    expect(page.sessions.map((row) => row.id)).toEqual([sessionIdAt(55)])
+    expect(page.historyComplete).toBe(true)
+    expect(discoverCallCount()).toBe(before)
+  }, 20_000)
+
+  test('reports history incomplete rather than falling back to a scan while backfill is still running', async () => {
+    const { root, archive, source, reader, discoverCallCount } = await harness(adapter)
+    await adapter.write(root, manyTranscripts(60))
+    await source.discoverSessions()
+    await archive.setArchived([sessionIdAt(2)], true)
+
+    const before = discoverCallCount()
+    const page = await archiveList(reader)
+
+    // Id 2 sits inside the warmed window, so the index already answers for it, but backfill has not
+    // walked the rest of the tree yet: the reply says so rather than presenting this page as final.
+    expect(page.sessions.map((row) => row.id)).toEqual([sessionIdAt(2)])
+    expect(page.historyComplete).toBe(false)
+    expect(discoverCallCount()).toBe(before)
+  }, 20_000)
+})
+
+describe.each(indexedAdapters)('the $cli Archive restore through the Session index', (adapter) => {
+  test('restores a Session by a retired id resolved off the index, opening no transcript file', async () => {
+    const { root, archive, source, reader, discoverCallCount } = await harness(adapter)
+    await adapter.write(root, manyTranscripts(3))
+    const rootId = sessionIdAt(2)
+    // Codex names a rollout file after its Session's own uuid (`roster-fixtures.ts`'s
+    // `codexFileName`): a non-uuid id here would fall through the adapter's own filename match and
+    // never resolve to the id this test archives under.
+    const resumedId = sessionIdAt(999)
+    await adapter.write(root, [
+      {
+        id: resumedId,
+        prompt: 'Resumed.',
+        cwd: '/proj',
+        at: '2026-09-13T18:00:00.000Z',
+        resumeOf: rootId,
+      },
+    ])
+    await source.discoverSessions()
+    await finishBackfill(source)
+    // Archived while the root id was still current, before the later resume retired it.
+    await archive.setArchived([rootId], true)
+
+    const before = discoverCallCount()
+    const page = await archiveList(reader, { restoreId: resumedId })
+
+    expect(page.restored?.id).toBe(rootId)
+    expect(page.restored?.retiredIds).toContain(resumedId)
+    expect(discoverCallCount()).toBe(before)
+  })
+
+  test('falls back to growing the window for a restore id backfill has not reached yet', async () => {
+    const { root, archive, source, reader, discoverCallCount } = await harness(adapter)
+    // A higher range than any earlier test in this file backfills, so the adapter's shared,
+    // process-wide chain history (one per launch, by design) cannot already call it known.
+    await adapter.write(root, manyTranscripts(120))
+    await source.discoverSessions()
+    // No backfill run: history stays incomplete, so an id outside the warmed window is not yet
+    // provably absent from the index and restore must still grow the window to be correct.
+    await archive.setArchived([sessionIdAt(115)], true)
+
+    const before = discoverCallCount()
+    const restored = await reader.archiveSet({
+      version: 1,
+      type: 'session.archive.set',
+      requestId: 'archive-set-2',
+      sessionIds: [sessionIdAt(115)],
+      archived: false,
+    })
+
+    expect(restored.type).toBe('session.archive.applied')
+    expect(discoverCallCount()).toBeGreaterThan(before)
+  }, 20_000)
+
+  test('archiveList falls back to growing the window for a restore id backfill has not reached yet', async () => {
+    const { root, archive, source, reader, discoverCallCount } = await harness(adapter)
+    // Same disjoint range as the archiveSet fallback test above, plus an offset so the two never
+    // collide inside the shared, process-wide chain history.
+    await adapter.write(root, manyTranscripts(240))
+    await source.discoverSessions()
+    // No backfill run: history stays incomplete, so a `restoreId` outside the warmed window is not
+    // yet provably absent from the index and the list read must still grow the window to answer.
+    await archive.setArchived([sessionIdAt(235)], true)
+
+    const before = discoverCallCount()
+    const page = await archiveList(reader, { restoreId: sessionIdAt(235) })
+
+    expect(page.restored?.id).toBe(sessionIdAt(235))
+    expect(discoverCallCount()).toBeGreaterThan(before)
+  }, 20_000)
+})

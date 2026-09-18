@@ -145,6 +145,7 @@
   "rosterStatusArchived": "Archived",
   "rosterStatusAll": "All",
   "archivedEmpty": "No archived Sessions",
+  "archivedStillIndexing": "Still indexing older Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",

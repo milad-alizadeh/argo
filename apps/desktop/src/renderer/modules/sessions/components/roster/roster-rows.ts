@@ -46,6 +46,7 @@ export type RosterRow =
   | { kind: 'archivedEmpty' }
   | { kind: 'archivedSentinel' }
   | { kind: 'archivedLoadingMore' }
+  | { kind: 'archivedIndexing' }
 
 // Two rows draw the same thing. A roster read rebuilds every row object when one Session changes,
 // so the row's memo boundary compares what the row draws rather than the object it arrived in
@@ -84,6 +85,7 @@ type ArchivedRosterState = {
   displayed: readonly Session[]
   error: SessionContractError | null
   hasNextPage: boolean
+  historyComplete: boolean
   isFetchingNextPage: boolean
   isLoading: boolean
 }
@@ -97,7 +99,9 @@ function archivedRosterRows(
 ): RosterRow[] {
   if (archived.isLoading) return rosterLoadingMoreShown ? [] : [{ kind: 'archivedLoading' }]
   if (archived.error !== null) return [{ kind: 'archivedError', error: archived.error }]
-  if (archived.displayed.length === 0) return [{ kind: 'archivedEmpty' }]
+  if (archived.displayed.length === 0) {
+    return [archived.historyComplete ? { kind: 'archivedEmpty' } : { kind: 'archivedIndexing' }]
+  }
   const rows: RosterRow[] = archived.displayed.map((session) => ({
     kind: 'session',
     session,
@@ -106,6 +110,15 @@ function archivedRosterRows(
   if (archived.hasNextPage) rows.push({ kind: 'archivedSentinel' })
   if (archived.isFetchingNextPage && !rosterLoadingMoreShown)
     rows.push({ kind: 'archivedLoadingMore' })
+  // Reaching the end of what a source's index has backfilled so far is not reaching the end of the
+  // Archive (#2374): say so rather than letting the list look exhaustive while it is only current.
+  if (
+    !archived.hasNextPage &&
+    !(archived.isFetchingNextPage && !rosterLoadingMoreShown) &&
+    !archived.historyComplete
+  ) {
+    rows.push({ kind: 'archivedIndexing' })
+  }
   return rows
 }
 

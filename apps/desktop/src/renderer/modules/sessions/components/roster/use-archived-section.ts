@@ -31,8 +31,16 @@ export function useArchivedSection(
       ? selectedSessionId
       : null
   const enabled = showsArchived(status) || restoreId !== null
-  const { error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, restored, sessions } =
-    useArchivedSessions(enabled, restoreId)
+  const {
+    error,
+    fetchNextPage,
+    hasNextPage,
+    historyComplete,
+    isFetchingNextPage,
+    isLoading,
+    restored,
+    sessions,
+  } = useArchivedSessions(enabled, restoreId)
 
   useEffect(() => {
     for (const session of sessions) loadedIds.current.add(session.id)
@@ -58,7 +66,15 @@ export function useArchivedSection(
   // One stable object, because the caller builds the row list from it: a fresh object here rebuilds
   // every row on each render and the memoized rows lose their memo.
   return useMemo(
-    () => ({ displayed, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading }),
-    [displayed, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading],
+    () => ({
+      displayed,
+      error,
+      fetchNextPage,
+      hasNextPage,
+      historyComplete,
+      isFetchingNextPage,
+      isLoading,
+    }),
+    [displayed, error, fetchNextPage, hasNextPage, historyComplete, isFetchingNextPage, isLoading],
   )
 }

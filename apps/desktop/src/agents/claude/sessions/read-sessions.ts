@@ -11,8 +11,10 @@ import {
   backfillTick,
   clearFullRecords,
   discoverSessions,
+  historyComplete,
   readSessionFiles,
   reconcileAll,
+  resolveIds,
 } from './discover'
 import { draftOverlay } from './live-feed'
 import {
@@ -118,6 +120,8 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
         ? undefined
         : (batchSize) => backfillTick(roots.transcripts, index, batchSize),
     reconcileAll: index === undefined ? undefined : () => reconcileAll(roots.transcripts, index),
+    resolveIndexedIds: index === undefined ? undefined : (ids) => resolveIds(index, ids),
+    historyComplete: index === undefined ? undefined : () => historyComplete(index),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),

@@ -9,10 +9,12 @@ import {
   backfillTick,
   clearFullRecords,
   discoverSessions,
+  historyComplete,
   nameThreads,
   readDelegationFiles as readDelegationFilesForParent,
   readSessionFiles,
   reconcileAll,
+  resolveIds,
 } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
@@ -76,6 +78,19 @@ function combinedOverlay(
   }
 }
 
+// Archive and restore (#2374) resolve an id straight off the index's persisted resume graph, and
+// background backfill and reconciliation (#2373) tick it forward. All four are absent together
+// with no index open, so a caller with no `resolveIndexedIds` never has one of the others either.
+function indexCapabilities(root: string, index: SessionIndex | undefined) {
+  if (index === undefined) return {}
+  return {
+    backfillTick: (batchSize?: number) => backfillTick(root, index, batchSize),
+    reconcileAll: () => reconcileAll(root, index),
+    resolveIndexedIds: (ids: readonly string[]) => resolveIds(index, ids),
+    historyComplete: () => historyComplete(index),
+  }
+}
+
 export function codexSessionSource(root: string, options?: ReaderOptions): SessionSource {
   const liveMessages = options?.liveMessages
   const pendingQuestion = options?.pendingQuestion
@@ -88,9 +103,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
   const index = options?.index
   return {
     cli: 'codex',
-    backfillTick:
-      index === undefined ? undefined : (batchSize) => backfillTick(root, index, batchSize),
-    reconcileAll: index === undefined ? undefined : () => reconcileAll(root, index),
+    ...indexCapabilities(root, index),
     discoverSessions: async (discoverOptions) => {
       const [discovery, open] = await Promise.all([
         discoverSessions(root, { ...discoverOptions, index: options?.index }),
