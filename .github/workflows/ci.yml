@@ -68,6 +68,10 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
+      - name: Workflow contracts
+        if: ${{ !cancelled() }}
+        run: bun run quality:workflows
+
       - name: Domain runtime facets
         if: ${{ !cancelled() }}
         run: bun run quality:domain-facets
@@ -153,21 +157,18 @@ jobs:
       # Keyed on the CLI that installs, so a Playwright bump fetches its own browser revision (#1966).
       - id: playwright
         name: Read the Playwright version
-        if: steps.replay.outputs.status != 'HIT'
         run: |
           version=$(bunx playwright --version)
           echo "version=${version#Version }" >> "$GITHUB_OUTPUT"
 
       # The browsers only: `install` skips a present one but still runs apt for the fonts.
       - name: Playwright browser cache
-        if: steps.replay.outputs.status != 'HIT'
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
 
       - name: Install Chromium for Storybook interaction tests
-        if: steps.replay.outputs.status != 'HIT'
         run: bunx playwright install --with-deps chromium
 
       - name: Storybook interaction tests
