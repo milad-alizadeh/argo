@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { CodeBlock } from '../../../../../platform/renderer/components/ai-elements/code-block'
-import type { PatchFile } from '../../../main/patch-files'
+import type { PatchFile } from '../../../contract/patch-files'
 import { detectCodeLanguageFromPath } from '../../feed/content/code-language'
 import { diffLineDecoration, diffLines } from './session-diff-lines'
 

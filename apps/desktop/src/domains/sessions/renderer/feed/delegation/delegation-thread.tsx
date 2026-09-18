@@ -96,9 +96,10 @@ export function DelegationThread({
   agents: readonly AgentThread[]
   onOpen?: (agent: AgentThread) => void
 }) {
+  const { t } = useTranslation('sessions')
   const now = useDelegationClock(isRunning(agents))
   return (
-    <section aria-label="Subagents" className="min-w-0 py-1" data-slot="feed-delegation">
+    <section aria-label={t('marks.subagents')} className="min-w-0 py-1" data-slot="feed-delegation">
       <ol className="flex min-w-0 flex-col gap-tight">
         {agents.map((agent) => (
           <li key={agent.id}>

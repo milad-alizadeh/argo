@@ -1,5 +1,5 @@
+import { PATCH_FILE_HEADER } from '../contract/apply-patch'
 import type { ContentBlock, TranscriptRecord } from '../contract/transcript'
-import { PATCH_FILE_HEADER } from './apply-patch'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {

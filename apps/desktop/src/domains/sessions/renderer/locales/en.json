@@ -195,6 +195,7 @@
     }
   },
   "marks": {
+    "subagents": "Subagents",
     "thought": "Thought",
     "compacting": "Compacting conversation…",
     "compacted": "Conversation compacted",

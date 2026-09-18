@@ -2,30 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptMessage, TranscriptRecord } from '../contract/transcript'
 import { rosterMetadata } from './roster-metadata'
+import { transcriptMessage } from './transcript-test-fixtures'
 
-function message(overrides: Partial<TranscriptMessage>): TranscriptRecord {
-  return {
-    kind: 'message',
-    uuid: 'message-1',
-    parentUuid: null,
-    originSessionId: null,
-    role: 'assistant',
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp: null,
-    entry: 'interactive',
-    stopReason: null,
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: [],
-    toolCalls: [],
-    toolResults: [],
-    answeredCalls: [],
-    usage: null,
-    ...overrides,
-  }
+function message(overrides: Partial<TranscriptMessage>): TranscriptMessage {
+  return transcriptMessage({ uuid: 'message-1', ...overrides })
 }
 
 function messageMetadata(record: TranscriptRecord): TranscriptMessage {

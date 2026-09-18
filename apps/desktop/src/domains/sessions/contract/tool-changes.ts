@@ -1,6 +1,6 @@
 // What a Tool Call changed or fetched, read off its own input: an Edit or Write carries its
 // change, an apply_patch its patch, and a web call its query or page.
-import { readPatch } from '../main/apply-patch'
+import { readPatch } from './apply-patch'
 import type { ToolCall, ToolResult } from './transcript'
 import { resultText } from './transcript'
 import { createdPatch, unifiedPatch } from './unified-patch'

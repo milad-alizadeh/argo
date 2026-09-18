@@ -3,6 +3,7 @@ import { SessionInspector } from '../components/inspector/session-inspector'
 import { SessionWorkButtons } from '../components/work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../components/work/session-work-inspector-header'
 import { BackgroundWork, type BackgroundWorkLinks } from '../feed/background-work'
+import type { FeedLiveFacts } from '../feed/feed-live-facts'
 import type { SessionFeed } from '../types'
 import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
 import { SessionShell } from './session-shell'
@@ -94,9 +95,25 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
   return null
 }
 
+function liveFactsOf({ composer, session }: SessionScreenModel): NonNullable<FeedLiveFacts> {
+  return {
+    compactionStartedAt: session?.compactionStartedAt ?? null,
+    compactionPercentage: session?.compactionPercentage ?? null,
+    compactionTokens: session?.compactionTokens ?? null,
+    handoffStartedAt: session?.handoffStartedAt ?? null,
+    handoffTo: session?.handoffTo ?? null,
+    isRunning: session?.status === 'running' || session?.status === 'permission',
+    activity: session?.activity ?? null,
+    optimisticRow: composer.optimisticRow,
+    settledPromptRow: composer.settledPromptRow,
+    posture: session?.posture ?? null,
+    turnMarker: composer.markerView,
+  }
+}
+
 export function SessionScreenView() {
   const model = useSessionScreenModel()
-  const { composer, evidence, feed, feedError, question, session } = model
+  const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (
@@ -110,19 +127,7 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
-        liveFacts={{
-          compactionStartedAt: session?.compactionStartedAt ?? null,
-          compactionPercentage: session?.compactionPercentage ?? null,
-          compactionTokens: session?.compactionTokens ?? null,
-          handoffStartedAt: session?.handoffStartedAt ?? null,
-          handoffTo: session?.handoffTo ?? null,
-          isRunning: session?.status === 'running' || session?.status === 'permission',
-          activity: session?.activity ?? null,
-          optimisticRow: composer.optimisticRow,
-          settledPromptRow: composer.settledPromptRow,
-          posture: session?.posture ?? null,
-          turnMarker: composer.markerView,
-        }}
+        liveFacts={liveFactsOf(model)}
         onOpenSession={openSession}
         selectedSessionId={selectedSessionId}
         activeEvidenceId={evidence?.id ?? null}

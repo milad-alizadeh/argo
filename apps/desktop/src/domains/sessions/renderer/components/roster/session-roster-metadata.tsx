@@ -1,6 +1,6 @@
 import { Bot, GitPullRequestArrow, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { ticketKeyInPlace } from '../../../../tickets/main/branch-ticket'
+import { ticketKeyInPlace } from '../../../../tickets/contract/branch-ticket'
 import type { Session } from '../../types'
 import { sessionTiming } from './session-timing'
 
