@@ -12,6 +12,7 @@ import type { SessionIndex } from './contract'
 export type Transcript = {
   id: string
   prompt: string
+  reply?: string
   cwd: string
   at: string
   resumeOf?: string
@@ -63,7 +64,7 @@ const claude: IndexedAdapter = {
             message: {
               role: 'assistant',
               stop_reason: 'end_turn',
-              content: [{ type: 'text', text: 'Done.' }],
+              content: [{ type: 'text', text: transcript.reply ?? 'Done.' }],
             },
           },
         ],
@@ -114,7 +115,7 @@ const codex: IndexedAdapter = {
               item: {
                 type: 'AgentMessage',
                 id: `${transcript.id}-a`,
-                content: [{ type: 'Text', text: 'Done.' }],
+                content: [{ type: 'Text', text: transcript.reply ?? 'Done.' }],
               },
             },
           },

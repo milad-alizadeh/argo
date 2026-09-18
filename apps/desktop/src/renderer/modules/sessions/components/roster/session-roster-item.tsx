@@ -136,6 +136,11 @@ export function SessionRosterItem({
           {activity === null ? null : (
             <span className="mt-0.5 block truncate type-meta text-faint">{activity}</span>
           )}
+          {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
+            <span className="mt-0.5 block truncate type-meta text-faint">
+              {session.searchExcerpt}
+            </span>
+          )}
           <SessionMetadata session={session} />
         </span>
       </button>

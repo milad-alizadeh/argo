@@ -2,15 +2,8 @@
 // than growing the bounded discovery window `archive-window.ts` falls back to. Node runs these for
 // the same reason `indexed-roster.vitest.ts` does: the index reaches `node:sqlite`, which Bun does
 // not ship.
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
-import { afterEach, describe, expect, test } from 'vitest'
-import { createInMemorySessionTicketLinkStore } from '../../domains/tickets/main/session-links'
+import { describe, expect, test } from 'vitest'
 import { requestArchiveList } from './archive-list-request'
-import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
-import { createSessionReader } from './reader'
-import { openSessionIndex } from './session-index/open-index'
 import {
   createIndexedReadHarness,
   expectAnsweredByIndex,

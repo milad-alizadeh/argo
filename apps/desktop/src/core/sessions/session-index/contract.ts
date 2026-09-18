@@ -27,6 +27,9 @@ export type IndexedSessionChain = {
   // The chain stands under a retired id because its origin was not in the set stitched. Recorded
   // because the origin can arrive later, and only a re-stitch that reads both joins them.
   originUnread: boolean
+  // Text projected from rows the Feed reader itself can render. It is an index input, never an
+  // authoritative transcript record, so the database can rebuild it from the same files.
+  searchText: string
 }
 
 // One indexing pass, applied in a single transaction. `chains` replaces every file and link of

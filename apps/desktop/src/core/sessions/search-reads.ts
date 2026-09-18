@@ -4,7 +4,7 @@
 // `archive-reads.ts` resolves an id straight off the index rather than growing a window. Only
 // where a source has no index does this fall back to growing the same bounded window the Roster
 // and Archive already grow (`archive-window.ts`) and filtering the grown rows itself.
-import { isArchivedSession } from '../storage/session-archive'
+import { isArchivedSession } from './archive-store'
 import { growWindow } from './archive-window'
 import { newestFirst, type SessionRosterRow } from './models'
 import { belongsToProject, projectRootsOf } from './project-scope'

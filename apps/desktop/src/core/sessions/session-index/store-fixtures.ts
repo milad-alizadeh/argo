@@ -71,7 +71,7 @@ export function passOf(pass: Partial<SessionIndexWrite>): SessionIndexWrite {
 }
 
 export function chainOf(row: SessionRosterRow, originUnread = false): IndexedSessionChain {
-  return { chainId: row.id, updatedAt: row.updatedAt, row, originUnread }
+  return { chainId: row.id, updatedAt: row.updatedAt, row, originUnread, searchText: '' }
 }
 
 // The one-chain write most tests start from: one projection, and by default the one file it was

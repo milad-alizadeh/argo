@@ -2,6 +2,7 @@
 // Split from `indexed-window.ts` so the pass's arithmetic can be read without the index calls
 // around it.
 import type { SessionChain } from '../chains'
+import { projectFeed } from '../feed-incremental'
 import type { SessionRosterRow } from '../models'
 import type { TranscriptFile } from '../transcript'
 import type { IndexedSessionChain, IndexedTranscriptFile, TranscriptFileIdentity } from './contract'
@@ -67,7 +68,27 @@ export function indexedChains(
 ): IndexedSessionChain[] {
   return chains.map((chain) => {
     const row = project(chain)
-    return { chainId: chain.id, updatedAt: row.updatedAt, row, originUnread: chain.originUnread }
+    const searchText = projectFeed(chain, undefined).rows
+      .flatMap((feedRow) => {
+        switch (feedRow.shape) {
+          case 'prose':
+          case 'thought':
+          case 'command-output':
+            return [feedRow.text]
+          case 'event':
+            return feedRow.text === null ? [] : [feedRow.text]
+          default:
+            return []
+        }
+      })
+      .join('\n')
+    return {
+      chainId: chain.id,
+      updatedAt: row.updatedAt,
+      row,
+      originUnread: chain.originUnread,
+      searchText,
+    }
   })
 }
 
