@@ -111,6 +111,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const tracker = createFullRecordTracker(source.parse, source.normalizeRecords)
   const metadataSource = metadataSourceOf(source)
   const readFile = createFileReader(metadataSource)
+  const readFullFile = createFileReader(source)
   const summarise = createTranscriptSummariser(metadataSource, readFile)
   const chainHistory = createChainHistory()
   const rosterChains = createChainCache(chainHistory)
@@ -122,7 +123,10 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const windowSource = {
     cli: source.cli,
     identities: (root: string) => transcriptIdentities(metadataSource, root),
-    readTranscripts: createTranscriptParser(readFile),
+    // The roster projection stays metadata-only, but the rebuildable index also carries the Feed
+    // text search projection. It therefore parses the same normalized records the Feed reader
+    // would render, never raw transcript JSON.
+    readTranscripts: createTranscriptParser(readFullFile),
     stitch: (files: TranscriptFile[]) => rosterChains(files),
     project: projectChain,
     history: chainHistory,

@@ -4,7 +4,7 @@
 // built again rather than repaired.
 
 // Bumped whenever a table below changes shape. An index at any other version is discarded.
-export const SESSION_INDEX_VERSION = 2
+export const SESSION_INDEX_VERSION = 3
 
 // One row per transcript file Argo has parsed, keyed by the identity that says whether it changed:
 // path, modification time and size together, because a file appended to inside one mtime tick
@@ -44,6 +44,13 @@ CREATE TABLE session_chain (
   row_json TEXT NOT NULL,
   PRIMARY KEY (cli, chain_id)
 ) STRICT;
+
+CREATE VIRTUAL TABLE session_search USING fts5(
+  cli UNINDEXED,
+  chain_id UNINDEXED,
+  text,
+  tokenize = 'unicode61'
+);
 
 CREATE TABLE chain_link (
   cli TEXT NOT NULL,

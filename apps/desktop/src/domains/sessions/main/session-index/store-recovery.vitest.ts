@@ -23,6 +23,7 @@ test('treats a row that no longer parses as a cache miss rather than answering w
           updatedAt: row.updatedAt,
           row: { nonsense: true } as never,
           originUnread: false,
+          searchText: '',
         },
       ],
     }),
