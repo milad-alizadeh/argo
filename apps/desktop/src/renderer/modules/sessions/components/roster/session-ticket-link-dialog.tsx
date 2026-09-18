@@ -12,7 +12,10 @@ import {
   DialogTitle,
 } from '@/renderer/components/ui/dialog'
 import { Input } from '@/renderer/components/ui/input'
-import { useConnection, useTicketList } from '../../../tickets/hooks/use-tickets'
+import {
+  useConnection,
+  useTicketList,
+} from '../../../../../domains/tickets/renderer/hooks/use-tickets'
 import type { ConnectTicketInput } from '../../hooks/use-session-ticket-link'
 import type { Session } from '../../types'
 
