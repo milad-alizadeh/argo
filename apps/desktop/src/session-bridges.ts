@@ -70,6 +70,27 @@ function indexForWindow(window: BrowserWindow, userData: string) {
   return index
 }
 
+function watchSessions(
+  window: BrowserWindow,
+  request: { home: string; userData: string; drivers: ReturnType<typeof createSessionDrivers> },
+): void {
+  const { home, userData, drivers } = request
+  const { claude, codex } = drivers
+  registerWatching(window, {
+    permissions: [claude.onPermissionsChanged],
+    sessions: [
+      codex.onRosterChanged,
+      watchTrees([
+        claudeTranscriptsRoot(home),
+        codexTranscriptsRoot(home),
+        sessionArchivePath(userData),
+      ]),
+      watchWindowFocus(window),
+      watchSystemResume(powerMonitor),
+    ],
+  })
+}
+
 export function attachSessions(
   window: BrowserWindow,
   request: {
@@ -132,17 +153,5 @@ export function attachSessions(
   // store stands beside the transcripts: the roster and the Archived list are both read out of it.
   // Focus and resume stand beside the trees because FSEvents can lose events with no error and no
   // closed handle (#2303).
-  registerWatching(window, {
-    permissions: [claude.onPermissionsChanged],
-    sessions: [
-      codex.onRosterChanged,
-      watchTrees([
-        claudeTranscriptsRoot(home),
-        codexTranscriptsRoot(home),
-        sessionArchivePath(userData),
-      ]),
-      watchWindowFocus(window),
-      watchSystemResume(powerMonitor),
-    ],
-  })
+  watchSessions(window, request)
 }

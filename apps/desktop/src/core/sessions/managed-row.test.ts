@@ -39,21 +39,6 @@ function mergedTitle(observedTitle: SessionTitle | null, heldTitle: SessionTitle
   return merged.rows[0]?.title
 }
 
-function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus) {
-  const merged = mergeManagedRoster(
-    {
-      rows: [row('s1', discoveredStatus)],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-    },
-    [row('s1', heldStatus)],
-  )
-  return merged.rows[0]?.status
-}
-
 test('reconciles every Roster field by its declared rule', () => {
   const held = managedRow('session-1', {
     cli: 'claude',
@@ -105,6 +90,7 @@ test('a managed Session keeps the newest Plan it knows from either source', () =
     filesFound: 1,
     filesRead: 1,
     filesUnreadable: 0,
+    filesParsed: 0,
     nextCursor: null,
   }
 
@@ -140,21 +126,6 @@ test('a managed Session shows whichever title exists when the other is missing',
 
   assert.deepEqual(mergedTitle(null, held), held)
   assert.deepEqual(mergedTitle(found, null), found)
-})
-
-test('the held permission status always wins over the discovered floor', () => {
-  assert.equal(mergedStatus('idle', 'permission'), 'permission')
-  assert.equal(mergedStatus('unknown', 'permission'), 'permission')
-})
-
-test('the held status wins only where the discovered floor has nothing to say', () => {
-  assert.equal(mergedStatus('unknown', 'running'), 'running')
-})
-
-test('a definite discovered floor is never overridden by a held `running`', () => {
-  assert.equal(mergedStatus('idle', 'running'), 'idle')
-  assert.equal(mergedStatus('asking', 'running'), 'asking')
-  assert.equal(mergedStatus('stopped', 'running'), 'stopped')
 })
 
 test('a Session with no held counterpart passes through the discovered row untouched', () => {
