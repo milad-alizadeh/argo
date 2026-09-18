@@ -29,12 +29,12 @@ test('refuses imports between platform runtimes', () => {
   )
 })
 
-test('allows the platform renderer shell to compose a legacy renderer domain', () => {
+test('allows the platform renderer shell to compose a renderer domain', () => {
   const files = [
     platformFile(
       'renderer',
       'cockpit/router',
-      "import '@/renderer/modules/sessions/pages/sessions-page'",
+      "import '@/domains/sessions/renderer/pages/sessions-page'",
     ),
   ]
 

@@ -2,9 +2,9 @@
 // JSON arguments are `{ explanation?, plan: [{ step, status }] }`. The `Plan` item a turn completes
 // is plan mode's written proposal, not this list, so it is not read here.
 
-import { readPlanSnapshot } from '@/core/sessions/plan'
-import type { PlanChange, TranscriptRecord } from '@/core/sessions/transcript'
 import { isRecord } from '@/shared/validation'
+import type { PlanChange, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
+import { readPlanSnapshot } from '../../../domains/sessions/main/plan'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,
   nextQuotedState,

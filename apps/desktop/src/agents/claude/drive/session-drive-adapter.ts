@@ -2,9 +2,12 @@ import {
   type ClaudePermission,
   type ClaudeTurnSetup,
   claudeTurnSetupSchema,
-} from '@/core/sessions/contract'
-import type { Permission, PermissionDecision } from '@/core/sessions/permission'
-import type { DriveFailure, SessionDriveAdapter } from '@/core/sessions/session-drive-adapter'
+} from '../../../domains/sessions/contract/contract'
+import type { Permission, PermissionDecision } from '../../../domains/sessions/contract/permission'
+import type {
+  DriveFailure,
+  SessionDriveAdapter,
+} from '../../../domains/sessions/main/session-drive-adapter'
 import { embedAttachments, mentionableAttachments } from './attachment-prompt'
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './driver-error'

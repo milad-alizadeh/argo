@@ -3,10 +3,13 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { SessionReader } from '@/core/sessions/bridge'
-import { sessionFeedReplySchema, sessionListReplySchema } from '@/core/sessions/contract'
-import { managedRow } from '@/core/sessions/managed-row'
-import { createSessionReader } from '@/core/sessions/reader'
+import {
+  sessionFeedReplySchema,
+  sessionListReplySchema,
+} from '../../../domains/sessions/contract/contract'
+import type { SessionReader } from '../../../domains/sessions/main/bridge'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {

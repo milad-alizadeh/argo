@@ -1,7 +1,10 @@
-import type { SessionAttachmentInput } from '../../../core/sessions/attachments-contract'
-import { CODEX_OPENING_SETUP, type CodexTurnSetup } from '../../../core/sessions/codex-contract'
-import type { SessionRosterRow } from '../../../core/sessions/models'
-import type { QuestionAnswer } from '../../../core/sessions/question'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import {
+  CODEX_OPENING_SETUP,
+  type CodexTurnSetup,
+} from '@/domains/sessions/contract/codex-contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import type { CodexProcess } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'
 import { compactCodexSession } from './compact-session'
@@ -13,7 +16,7 @@ import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
 import { beginSession, startTurn } from './turn-lifecycle'
 
-export type { LiveMessage }
+export type { CodexProcess, LiveMessage, LiveMessages }
 export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
@@ -153,5 +156,3 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     close: closeManagedSessions(sessions, driver.ownership),
   }
 }
-
-export type { CodexProcess, LiveMessages }

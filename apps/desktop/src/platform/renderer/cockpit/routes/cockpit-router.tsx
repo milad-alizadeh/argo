@@ -12,10 +12,10 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '@/platform/shared/commands'
-import { DevelopmentIdentityBar } from '@/renderer/modules/sessions/components/composer/development-identity-bar'
-import { SessionsSidebar } from '@/renderer/modules/sessions/components/roster/sessions-sidebar'
-import { SessionsPage } from '@/renderer/modules/sessions/pages/sessions-page'
-import { SessionScreenView } from '@/renderer/modules/sessions/screens/session-screen-view'
+import { DevelopmentIdentityBar } from '../../../../domains/sessions/renderer/components/composer/development-identity-bar'
+import { SessionsSidebar } from '../../../../domains/sessions/renderer/components/roster/sessions-sidebar'
+import { SessionsPage } from '../../../../domains/sessions/renderer/pages/sessions-page'
+import { SessionScreenView } from '../../../../domains/sessions/renderer/screens/session-screen-view'
 import { TicketsSidebar } from '../../../../domains/tickets/renderer/components/tickets-sidebar'
 import { TicketsPage } from '../../../../domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '../../../../domains/tickets/renderer/screens/tickets-screen-view'

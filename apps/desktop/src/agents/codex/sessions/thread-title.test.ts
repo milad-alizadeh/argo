@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readTranscriptFile } from '@/core/sessions/transcript'
+import { readTranscriptFile } from '../../../domains/sessions/contract/transcript'
 import { parseCodexTranscriptLine } from './records'
 
 test('names a voice thread by the first thing the person said', () => {

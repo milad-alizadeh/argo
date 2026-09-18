@@ -5,7 +5,7 @@ import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/agents/codex/compaction/compa
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import '../src/platform/renderer/i18n/config'
 import '../src/platform/renderer/styles/globals.css'
-import { sessionRosterRow } from '../src/renderer/modules/sessions/session-fixtures'
+import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookProjectBridge } from './storybook-projects'
 import { ticketsHost } from './tickets-host'
