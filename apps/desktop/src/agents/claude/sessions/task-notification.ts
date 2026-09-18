@@ -1,5 +1,8 @@
-import { isIdentifier } from '@/boundary'
-import type { TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
+import { isIdentifier } from '@/shared/validation'
+import type {
+  TranscriptMessage,
+  TranscriptRecord,
+} from '../../../domains/sessions/contract/transcript'
 import { taggedField } from '../../envelope-tags'
 import { readTaskEnding } from './background-task'
 

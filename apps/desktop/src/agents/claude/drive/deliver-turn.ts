@@ -1,4 +1,4 @@
-import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/core/sessions/contract'
+import { CLAUDE_MODES, type ClaudeTurnSetup } from '../../../domains/sessions/contract/contract'
 import { CYCLE_MODE, footerMode, REDRAW, setupCommands } from './claude-setup'
 import { claudeTurn } from './claude-turn'
 

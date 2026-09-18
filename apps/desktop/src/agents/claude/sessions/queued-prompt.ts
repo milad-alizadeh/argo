@@ -1,6 +1,6 @@
 // A prompt the person typed while a Turn ran is absorbed mid-turn: the CLI writes it as a
 // `queued_command` attachment, with the prompt's blocks, rather than as a `user` record.
-import { isRecord } from '@/boundary'
+import { isRecord } from '@/shared/validation'
 
 export function queuedPromptRecord(
   record: Record<string, unknown>,

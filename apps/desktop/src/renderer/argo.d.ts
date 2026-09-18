@@ -1,11 +1,10 @@
 import type { CodexCompactionClient } from '../agents/codex/compaction/compaction'
-import type { AccountClient } from '../core/accounts/client'
-import type { AppearanceClient } from '../core/appearance/appearance'
-import type { ProjectClient } from '../core/projects/client'
-import type { SessionClient } from '../core/sessions/client'
-import type { TicketClient } from '../core/tickets/client'
-import type { WatchTopic } from '../core/watch/watch-contract'
-import type { DevelopmentIdentity } from '../development/instance'
+import type { AccountClient } from '../domains/accounts/preload/client'
+import type { ProjectClient } from '../domains/projects/preload/client'
+import type { SessionClient } from '../domains/sessions/preload/client'
+import type { TicketClient } from '../domains/tickets/preload/client'
+import type { PlatformClient } from '../platform/preload/client'
+import type { DevelopmentIdentity } from '../platform/shared/development-identity'
 
 declare global {
   interface Window {
@@ -13,13 +12,8 @@ declare global {
       SessionClient &
       AccountClient &
       TicketClient &
-      AppearanceClient &
+      PlatformClient &
       CodexCompactionClient & {
-        onCommand(listener: (command: string) => void): () => void
-        onWatchedChanged(listener: (topic: WatchTopic) => void): () => void
-        zoomFactor(): number
-        pathForFile(file: File): string
-        versions: { electron: string; chrome: string }
         development: DevelopmentIdentity | null
       }
   }

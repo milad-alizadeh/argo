@@ -3,11 +3,14 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
-import { hasOpenDelegation } from '@/core/sessions/delegation'
-import { isLiveElsewhere } from '@/core/sessions/live-elsewhere'
-import type { SessionRosterRow } from '@/core/sessions/models'
-import { sessionIdOfFile } from '@/core/sessions/transcript-file'
-import { createTranscriptRecordReader, ROSTER_FILE_LIMIT } from '@/core/sessions/transcript-lines'
+import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
+import { sessionIdOfFile } from '../../../domains/sessions/contract/transcript-file'
+import { hasOpenDelegation } from '../../../domains/sessions/main/delegation'
+import { isLiveElsewhere } from '../../../domains/sessions/main/live-elsewhere'
+import {
+  createTranscriptRecordReader,
+  ROSTER_FILE_LIMIT,
+} from '../../../domains/sessions/main/transcript-lines'
 import { transcriptPaths } from './discover'
 
 // The Turn marks codex-cli 0.147.0 writes as `event_msg` payloads.

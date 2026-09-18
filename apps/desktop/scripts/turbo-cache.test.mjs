@@ -121,7 +121,7 @@ describe('what the packaged tasks hash', () => {
     for (const file of [
       'src/main.ts',
       'src/preload.ts',
-      'src/renderer/tokens.css',
+      'src/platform/renderer/tokens.css',
       'forge.config.ts',
       'package.json',
       'package-lock.json',

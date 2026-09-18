@@ -1,4 +1,4 @@
-import type { ProjectClient } from '../src/core/projects/client'
+import type { ProjectClient } from '../src/domains/projects/preload/client'
 
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
@@ -23,6 +23,37 @@ export const storybookProjectBridge: ProjectClient = {
       type: 'project.opened' as const,
       requestId: 'storybook-project',
       project: { id: 'storybook-project', name: 'argo' },
+    }),
+  beginProjectSetup: ({ projectId }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.setup.editing' as const,
+      requestId: 'storybook-setup',
+      project: { id: projectId, name: 'argo' },
+      source: '',
+    }),
+  saveProjectSetup: ({ projectId, source }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.setup.editing' as const,
+      requestId: 'storybook-setup',
+      project: { id: projectId, name: 'argo' },
+      source,
+    }),
+  validateProjectSetup: ({ projectId }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.setup.validated' as const,
+      requestId: 'storybook-setup',
+      project: { id: projectId, name: 'argo' },
+      valid: true,
+    }),
+  cancelProjectSetup: ({ projectId }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.setup.cancelled' as const,
+      requestId: 'storybook-setup',
+      project: { id: projectId, name: 'argo' },
     }),
   registerProject: () => Promise.resolve(listed('storybook-worktree')),
   relocateProject: () => Promise.resolve(listed('storybook-worktree')),

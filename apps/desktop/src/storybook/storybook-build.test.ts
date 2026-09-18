@@ -7,7 +7,7 @@ const entry = (type: string, name: string) => ({
   id: `sessions-sessionfeed--${name.toLowerCase()}`,
   name,
   title: 'Sessions/SessionFeed',
-  importPath: './src/renderer/modules/sessions/components/SessionFeed.stories.tsx',
+  importPath: './src/domains/sessions/renderer/components/SessionFeed.stories.tsx',
 })
 
 test('a docs entry is not a story', () => {

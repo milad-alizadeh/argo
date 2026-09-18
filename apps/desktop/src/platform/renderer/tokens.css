@@ -1,0 +1,435 @@
+/* The desktop app's own inks and scale. The inks below are the approved Session design's, and the
+   design is graphite: it has no light appearance. The app offers one (#1820), so the block after
+   `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
+   to keep the same order of contrast on the shadcn light grounds. Read `AGENTS.md` · Appearance
+   before extending either. */
+@theme {
+  /* Transcribed from the approved roster row design (#1310, `cockpit-roster-row.html`) and the
+     Session layout prototype beside it. Only the inks are the design's: every ground the Sessions
+     surface stands on (the panes, a selected row, a row under the pointer, the hairline between
+     two panes) is a shadcn token from `globals.css`, so the surfaces follow the appearance. */
+  --color-ink: #f2f4f6;
+  /* Two steps down from --color-ink. `quiet` is a fact the reader may want; `faint` is one that
+     is true but not what they came for: a working directory, a branch, a status word beside a
+     Session name. Neither is named `muted`, because `globals.css` gives `--color-muted` the
+     shadcn surface meaning and the later declaration would win. */
+  --color-quiet: #a8aeb5;
+  --color-faint: #929aa1;
+  /* The design's `text.disabled`: the outline of a state Argo cannot place. */
+  --color-off: #4e545a;
+  /* The four state inks a state dot is drawn in. `active` is running and `warn` is attention; the
+     idle ink has its own name because `faint` is text and this is a mark. */
+  --color-active: #46d3a8;
+  --color-idle: #868e96;
+  --color-warn: #e8b24a;
+  --color-danger: #f2555c;
+  /* The Plan's inks (`cockpit-roster-row.html` · PlanBar). The accent and not the running ink,
+     because the Plan is the Session's progress rather than its state. `plan-doing` is the one
+     item in progress; `plan-still` is the fill of a Plan that stopped moving, banked rather than
+     grey so a finished Plan never reads as one nobody started. */
+  --color-plan: #3e9bff;
+  --color-plan-doing: #6fb6ff;
+  --color-plan-still: #2f5c89;
+  --color-plan-track: rgb(255 255 255 / 0.13);
+  /* The pull request's own state, in GitHub's hues (roster-row-signals.html `--pr-*`). */
+  --color-pr-open: #3fb950;
+  --color-pr-merged: #a371f7;
+  --color-pr-closed: #f85149;
+  --color-pr-draft: #8b949e;
+  /* A Ticket's completed status, in Linear's hue for it. */
+  --color-ticket-done: #5e6ad2;
+  --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --text-code: 12px;
+  /* Supporting facts and compact counts share the one smaller sans rung. */
+  --text-meta: 11px;
+  /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
+     reaches these through var() for properties no utility expresses, and the Roster reaches the
+     same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
+     and every utility built on them would silently do nothing. */
+  --spacing-hair: 2px;
+  --spacing-tight: 6px;
+  --spacing-snug: 12px;
+  --spacing-wide: 20px;
+  --radius-row: 6px;
+  /* Every bordered surface draws this width; naming it keeps a calc from restating the literal. */
+  --size-border: 1px;
+  /* The ring shadcn's own `focus-visible` utilities draw; named so a hand-built control matches it
+     without repeating shadcn's own arbitrary value. */
+  --size-focus-ring: 3px;
+  /* The height of a pane head, the Roster's and the Feed's alike, so the two heads meet on one
+     line across the handle between them. */
+  --size-pane-head: 46px;
+  /* The unavailable-composer notice takes the composer's reserved place without offering a
+     field that cannot send a Turn. */
+  --size-composer-unavailable: 48px;
+  /* The Session page's panes and composer assembly (#1937). The Feed and the composer share one
+     reading column, and the Roster widens no further than its maximum. */
+  --size-session-roster-max: 460px;
+  --size-session-feed-min: 360px;
+  --size-session-column: 48rem;
+  /* The least room the Feed and the composer keep from the window's edges. */
+  --spacing-session-gutter: var(--spacing-shell-gutter);
+  --size-queue-row: 44px;
+  --size-composer-field: 56px;
+  --size-development-identity-bar: 32px;
+  --size-composer-plan-state: calc(var(--size-composer-field) * 2);
+  --spacing-session-composer-bottom: calc(
+    var(--spacing-shell-region) *
+    2 +
+    var(--spacing-shell-inset)
+  );
+  --spacing-development-identity-bottom: calc(
+    var(--spacing-session-composer-bottom) -
+    var(--size-development-identity-bar) -
+    var(--spacing-shell-item)
+  );
+  --size-session-context-bar: 54px;
+  /* The context bar hangs out of the composer form, overlapping the card by one item, so the
+     composer's lowest ink clears the window by less than the form's own padding. A card that
+     replaces the whole composer matches that ink rather than the padding (#2273). */
+  --spacing-session-composer-ink-bottom: calc(
+    var(--spacing-session-composer-bottom) -
+    var(--size-session-context-bar) +
+    var(--spacing-shell-item)
+  );
+  --size-session-composer-overlay: calc(
+    var(--spacing-shell-section) +
+    var(--size-composer-field) +
+    var(--size-control) +
+    var(--spacing-shell-item) *
+    2 +
+    var(--spacing-session-composer-bottom) +
+    var(--spacing-hair)
+  );
+  --spacing-session-feed-composer-inset: calc(
+    var(--size-session-composer-overlay) +
+    var(--spacing-snug)
+  );
+  --size-attachment-thumbnail: 56px;
+  --size-attachment-card: 64px;
+  --size-attachment-tray: 72px;
+  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
+  --size-session-menu: 23rem;
+  /* A wider popover carrying prose and a meter: context and usage. */
+  --size-session-popover: 26rem;
+  /* The composer's file/skill autocomplete popover. */
+  --size-composer-suggestions: 30rem;
+  /* The attachment strip's own width and how far it insets from its container's edges. */
+  --size-composer-attachment-strip: 42rem;
+  --inset-composer-attachment-strip: 9rem;
+  /* The label column of a context-composition row (Conversation, System prompt, …); the trailing
+     value column reuses --size-control, the same width a control column takes everywhere else. */
+  --size-context-label-column: 6.5rem;
+  /* How far the fullscreen image lightbox insets from the viewport on each axis. */
+  --inset-lightbox-margin-y: 6rem;
+  --inset-lightbox-margin-x: 4rem;
+  /* Trailing space reserved so the last evidence item can scroll clear of the tool-sequence strip. */
+  --size-feed-scroll-spacer: 3rem;
+  /* Centres a range input's thumb over its 1.5px track: half the thumb's own height, up. */
+  --inset-slider-thumb-lift: -5px;
+  /* The state dot sits on the title's optical centre: half of what the title's line box has left
+     over once the dot is in it. Derived, never nudged, so it follows the type scale. */
+  --size-state-dot: 6px;
+  --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
+  /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
+     in the Session's own column. */
+  --size-subagent-dot: 4px;
+  --size-plan-bar: 4px;
+  /* The two marks a state dot is drawn with. The running dot glows in its own ink, and a state
+     Argo cannot place is an outline in the disabled ink: both are reached by name so neither
+     restates a colour the block above already holds. */
+  --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
+  --shadow-state-outline: inset 0 0 0 1px var(--color-off);
+}
+
+/* The light appearance of the inks above. `useAppearance` puts `.dark` on the root element, so a
+   root without it is light. Text inks read the shadcn foregrounds, so a row title and a pane
+   title are one ink. The state, Plan and PR hues are the design's exact values in both
+   appearances; only the Plan track, a white wash that vanishes on white, is restated. */
+@theme inline {
+  --font-heading: var(--font-sans);
+  /* Most product text shares one compact reading rung. Role and weight create hierarchy; the
+     title is the rare larger step and code is the technical 12px exception. */
+  --text-title: 16px;
+  --text-title--line-height: 22px;
+  --text-heading: 13px;
+  --text-heading--line-height: 19px;
+  --text-body: 13px;
+  --text-body--line-height: 19px;
+  --text-prose: 13px;
+  --text-prose--line-height: 19px;
+  --text-meta--line-height: 15px;
+  --text-code--line-height: 18px;
+  --text-control: var(--text-body);
+  --text-control--line-height: var(--text-body--line-height);
+  --text-badge: var(--text-meta);
+  /* Generated shadcn primitives keep their rung names but resolve through the app scale. */
+  --text-xs: var(--text-control);
+  --text-xs--line-height: var(--text-control--line-height);
+  --text-sm: var(--text-body);
+  --text-sm--line-height: var(--text-body--line-height);
+  --text-base: var(--text-body);
+  --text-base--line-height: var(--text-body--line-height);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-control-weight: 500;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
+  --text-control-tracking: normal;
+  --size-chrome-bar: 52px;
+  --size-navigation-rail: 64px;
+  --inset-navigation-rail-item-top: calc((var(--size-chrome-bar) - var(--size-control)) / 2);
+  --size-cockpit-sidebar-default: 368px;
+  --size-cockpit-sidebar-min: 240px;
+  --size-cockpit-sidebar-max: 460px;
+  --size-cockpit-content-min: 400px;
+  --size-navigation-item: 36px;
+  --size-navigation-control: 28px;
+  --size-icon-control: 16px;
+  --size-control: 32px;
+  --size-ticket-age-visible: 240px;
+  --size-session-inspector: 400px;
+  --size-session-inspector-min: 400px;
+  --size-session-workspace-min: 360px;
+  --spacing-shell-tight: 4px;
+  --spacing-shell-icon: 6px;
+  --spacing-shell-item: 8px;
+  --spacing-shell-gutter: 12px;
+  --spacing-shell-inset: 16px;
+  --spacing-shell-section: 24px;
+  --spacing-shell-region: 32px;
+  --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
+  --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
+  --duration-control: 150ms;
+  --duration-layout: 300ms;
+  --duration-attention: 400ms;
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-diff-added: var(--diff-added);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-selected: var(--selected);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-xs: calc(var(--radius) * 0.3);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --duration-standard: var(--duration-layout);
+  --transition-duration-standard: var(--duration-standard);
+  --size-bottom-status: 106px;
+  --size-icon-meta: 14px;
+  --size-icon-metadata: var(--size-icon-meta);
+  --size-icon-inline: 14px;
+  --size-icon-text: 1em; /* an icon set in running text, at the size of its words */
+  --size-feed-attachment-preview: 80px;
+  --size-feed-gallery: 160px;
+  --size-feed-image-frame: 208px;
+  --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
+  --size-composer-attachment: var(--size-attachment-card);
+  --size-composer-attachment-chip-min: 160px;
+  --size-composer-attachment-chip-max: 224px;
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  /* ConciergeOrb's decorative highlight: a fixed flourish, not a themed surface. */
+  --inset-concierge-highlight: 12%;
+  --position-concierge-highlight-x: 35%;
+  --position-concierge-highlight-y: 30%;
+  --gradient-concierge-highlight-fade: 35%;
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
+}
+
+@theme {
+  --color-language-typescript: var(--color-sky-600);
+  --color-language-typescript-ink: var(--color-white);
+  --color-language-go: var(--color-cyan-600);
+  --color-language-ruby: var(--color-red-600);
+  /* Terminal output's ANSI hues, dark enough to read on the light ground. */
+  --color-terminal-red: var(--color-red-700);
+  --color-terminal-green: var(--color-green-700);
+  --color-terminal-yellow: var(--color-amber-700);
+  --color-terminal-blue: var(--color-blue-700);
+  --color-terminal-magenta: var(--color-purple-700);
+  --color-terminal-cyan: var(--color-cyan-700);
+}
+
+:root {
+  /* Xcode's published syntax palette; editor and rendered code reuse these inks on Argo surfaces. */
+  --code-xcode-background: #fff;
+  --code-xcode-foreground: #3d3d3d;
+  --code-xcode-gutter-foreground: #afafaf;
+  --code-xcode-line-highlight: #d5e6ff69;
+  --code-xcode-comment: #707f8d;
+  --code-xcode-definition: #327a9e;
+  --code-xcode-keyword: #aa0d91;
+  --code-xcode-name: #032f62;
+  --code-xcode-string: #d23423;
+  --code-xcode-type: #522bb2;
+  --code-xcode-variable: #23575c;
+  --code-xcode-selection: #bbdfff;
+  --code-xcode-link: #0e0eff;
+  --code-xcode-caret: var(--code-xcode-foreground);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  /* The selected row or rail item: a step past the hover ground, so the two never read alike. */
+  --selected: oklch(0.92 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --diff-added: oklch(0.508 0.118 165.612); /* 5.5:1 on --background */
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* A provider label's tint: how far its border and its fill lean toward the label's own colour.
+     Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
+  --ticket-label-border-mix: 45%;
+  --ticket-label-fill-mix: 18%;
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --text-body. */
+  --size-ticket-key: 52px;
+  --size-ticket-key-long: 80px;
+  --size-ticket-age: 32px;
+  --size-ticket-property: 56px;
+  --size-ticket-inspector: 560px;
+  --size-ticket-inspector-min: 440px;
+  --size-ticket-workspace-min: 400px;
+  --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--background));
+}
+
+.dark {
+  --code-xcode-background: #292a30;
+  --code-xcode-foreground: #cecfd0;
+  --code-xcode-line-highlight: #ffffff0f;
+  --code-xcode-comment: #7f8c98;
+  --code-xcode-definition: #6bdfff;
+  --code-xcode-keyword: #ff7ab2;
+  --code-xcode-name: #6baa9f;
+  --code-xcode-string: #ff8170;
+  --code-xcode-type: #dabaff;
+  --code-xcode-variable: #acf2e4;
+  --code-xcode-selection: #727377;
+  --code-xcode-link: var(--code-xcode-string);
+  --code-xcode-caret: #fff;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --selected: oklch(0.34 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --diff-added: oklch(0.765 0.177 163.223);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  --color-language-go: var(--color-cyan-400);
+  --color-language-ruby: var(--color-red-400);
+  --color-terminal-red: var(--color-red-400);
+  --color-terminal-green: var(--color-green-400);
+  --color-terminal-yellow: var(--color-amber-400);
+  --color-terminal-blue: var(--color-blue-400);
+  --color-terminal-magenta: var(--color-purple-400);
+  --color-terminal-cyan: var(--color-cyan-400);
+  --ticket-label-lean: 55%;
+}
+
+:root:not(.dark) {
+  --color-ink: var(--foreground);
+  --color-quiet: oklch(0.44 0 0);
+  --color-faint: var(--muted-foreground);
+  --color-off: oklch(0.72 0 0);
+  --color-plan-track: rgb(0 0 0 / 0.1);
+  /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
+  --ticket-label-lean: 40%;
+}

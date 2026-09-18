@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionPlan } from '@/core/sessions/models'
+import type { SessionPlan } from '../../../domains/sessions/contract/models'
 import {
   nestedPlanCall,
   planCall,

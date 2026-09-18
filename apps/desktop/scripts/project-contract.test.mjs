@@ -4,8 +4,8 @@ import { chmod, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { openProject } from '../src/core/projects/open-project.ts'
-import { createProjectStore } from '../src/core/projects/sqlite-store.ts'
+import { openProject } from '../src/domains/projects/main/open-project.ts'
+import { createProjectStore } from '../src/domains/projects/main/sqlite-store.ts'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 
@@ -31,11 +31,11 @@ async function fixture(context) {
   return { database, projectPath, store }
 }
 
-test('opens a registered Project by stable ID with presentation data only', async (context) => {
+test('routes an unconfigured Project to setup by stable ID with presentation data only', async (context) => {
   const { store } = await fixture(context)
   assert.deepEqual(await openProject(request, store), {
     version: 1,
-    type: 'project.opened',
+    type: 'project.setup-required',
     requestId: 'open-1',
     project: { id: 'project-1', name: 'example' },
   })

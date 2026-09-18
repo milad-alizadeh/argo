@@ -1,0 +1,284 @@
+{
+  "navigationLabel": "Sessions",
+  "sidebarLabel": "Sessions sidebar",
+  "title": "Sessions",
+  "subtitle": "CLI messages",
+  "loading": "Argo is reading this machine's Sessions.",
+  "readAgain": "Read again",
+  "newSession": "New Session",
+  "searchSessions": "Search Sessions",
+  "subagent": "Subagent",
+  "subagentLoading": "Loading agent transcript…",
+  "findSession": "Find a Session",
+  "reading": "Reading this Session",
+  "noSessionsFound": "No Sessions found",
+  "loadingMoreSessions": "Loading more Sessions",
+  "unableToLoadSessions": "Unable to load Sessions",
+  "errors": {
+    "roster": "Argo could not read the Sessions again.",
+    "feed": "Argo cannot read this Session's history."
+  },
+  "stalled": {
+    "title": "Could not load this Session",
+    "description": {
+      "managed": "Argo tried to load the history for this Session, but the load did not finish.",
+      "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
+    },
+    "retry": "Retry"
+  },
+  "openElsewhere": {
+    "title": "This session is open in another app",
+    "description": "Close it there to continue it in Argo.",
+    "retry": "Retry"
+  },
+  "question": {
+    "needed": "Your input is needed",
+    "locked": {
+      "title": "This session is open in another app",
+      "description": "Close it there to answer from Argo."
+    }
+  },
+  "feedLabel": "Session Feed",
+  "feedRegionLabel": "Session feed",
+  "workspaceLabel": "Session workspace",
+  "composerRegionLabel": "Session composer",
+  "development": {
+    "label": "Development build",
+    "shortLabel": "Dev"
+  },
+  "historyLabel": "Session history",
+  "jumpToLatest": "Jump to latest",
+  "composer": {
+    "label": "Session input",
+    "message": "Message",
+    "placeholder": "Direct the next move…",
+    "plan": "Step {{current}}/{{total}}",
+    "addContext": "Add context",
+    "contextPicker": {
+      "label": "Context picker",
+      "search": "Search context",
+      "searchPlaceholder": "Search Tickets",
+      "close": "Close context picker",
+      "filesAndFolders": "Files & folders",
+      "tickets": "Tickets",
+      "goals": "Goals",
+      "comingSoon": "Coming soon",
+      "blocked": "Blocked",
+      "terminal": "Terminal · {{status}}",
+      "removeTicket": "Remove {{key}}",
+      "openTicket": "Open {{key}}",
+      "selectedTickets": "Selected Tickets",
+      "provider": { "github": "GitHub", "linear": "Linear" },
+      "ticket": {
+        "sharedPicker": "Add a shared context picker to the Session composer",
+        "composerSync": "Keep the Composer draft in sync",
+        "refreshToken": "Store the refresh token",
+        "ticketsPrototype": "Prototype the Tickets room",
+        "open": "Open",
+        "inProgress": "In Progress",
+        "done": "Done",
+        "closed": "Closed"
+      }
+    },
+    "attachment": {
+      "fileType": "{{extension}} file",
+      "notFound": "Not found",
+      "remove": "Remove {{title}}"
+    },
+    "attach": "Attach a file",
+    "dictate": "Dictate",
+    "send": "Send",
+    "interrupt": "Interrupt",
+    "usage": "Usage",
+    "compact": "Compact the conversation",
+    "compactAction": "Compact context",
+    "compactShort": "Compact",
+    "handoff": "Hand off to a new Session",
+    "removeQueued": "Remove queued message",
+    "pendingTurns": "Pending Turns",
+    "context": "Context",
+    "contextWindow": {
+      "details": "Context details",
+      "autoCompact": "Auto-compact",
+      "tokens": "tokens",
+      "tokenCount": "{{count}}k",
+      "used": "{{percentage}}% used · {{zone}}",
+      "workingTarget": "Working target · {{count}} tokens",
+      "current": "Current · {{count}}k tokens",
+      "unreported": "This session did not report its context window.",
+      "description": "At this level, older context can compete with the current task. Compact before starting another substantial phase.",
+      "smartZone": "Smart Zone",
+      "dumbZone": "Dumb Zone"
+    },
+    "permission": "Allow this command?",
+    "question": "Question from the agent",
+    "deny": "Deny",
+    "allow": "Allow",
+    "skip": "Skip",
+    "answer": "Answer",
+    "unavailable": {
+      "label": "Session input",
+      "read-only": "Read-only. Argo did not start this Session.",
+      "orphaned": "This Session is disconnected.",
+      "ended": "This Session ended. There is nothing left to send."
+    }
+  },
+  "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "promptSender": "You",
+  "promptImage": "Attached image {{number}}",
+  "promptImageOpen": "Open attached image {{number}}",
+  "image": {
+    "fallbackTitle": "Image",
+    "unavailable": "Image unavailable",
+    "open": "Open {{title}} in lightbox",
+    "preview": "Full-size image preview",
+    "download": "Download {{title}}",
+    "close": "Close image preview",
+    "closeBackdrop": "Close image preview backdrop"
+  },
+  "streaming": {
+    "responding": "Assistant is responding.",
+    "complete": "Assistant response complete."
+  },
+  "filterSessions": "Filter Sessions",
+  "rosterStatusActive": "Active",
+  "rosterStatusArchived": "Archived",
+  "rosterStatusAll": "All",
+  "archivedEmpty": "No archived Sessions",
+  "archivedStillIndexing": "Still indexing older Sessions",
+  "readingArchivedSessions": "Reading archived Sessions",
+  "loadingMoreArchivedSessions": "Loading more archived Sessions",
+  "unableToLoadArchivedSessions": "Unable to load archived Sessions",
+  "noSearchResults": "No Sessions match your search",
+  "searchingSessions": "Searching Sessions",
+  "loadingMoreSearchResults": "Loading more matches",
+  "unableToSearchSessions": "Unable to search Sessions",
+  "searchStillIndexing": "Still indexing older Sessions",
+  "bulkSelect": {
+    "selected": "Selected",
+    "archive": "Archive",
+    "archived_one": "Archived {{count}} Session",
+    "archived_other": "Archived {{count}} Sessions",
+    "undo": "Undo",
+    "restored_one": "Restored {{count}} Session",
+    "restored_other": "Restored {{count}} Sessions",
+    "partialFailure": "Argo could not archive every selected Session.",
+    "failure": "Argo could not archive the selected Sessions."
+  },
+  "contextMenu": {
+    "actions": "{{title}} actions",
+    "rename": "Rename",
+    "openTicket": "Open Ticket",
+    "unlinkTicket": "Unlink Ticket",
+    "linkTicket": "Link Ticket…"
+  },
+  "empty": {
+    "unselected": {
+      "title": "No Session selected",
+      "description": "Select a Session on the left to read its messages."
+    },
+    "blank": {
+      "title": "No messages",
+      "description": "This Session has no messages to show."
+    },
+    "no-sessions": {
+      "title": "No Sessions on this machine",
+      "description": "Argo lists a Session here as soon as a CLI writes one."
+    },
+    "roster": {
+      "title": "No Sessions on this machine",
+      "description": "Argo lists a Session here as soon as a CLI writes one."
+    },
+    "archived": {
+      "title": "Nothing archived",
+      "description": "A Session you archive moves in here."
+    }
+  },
+  "marks": {
+    "thought": "Thought",
+    "compacting": "Compacting conversation…",
+    "compacted": "Conversation compacted",
+    "interrupted": "Interrupted"
+  },
+  "events": {
+    "command": { "label": "Command received" },
+    "context": { "label": "System context updated" },
+    "status": { "label": "Status updated" },
+    "transcript": { "label": "Transcript delivered" },
+    "protocolDetails": "Protocol text"
+  },
+  "delegation": {
+    "agent": { "label": "Background Agent" },
+    "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "open": "Open the {{name}} Session",
+    "tokens": "{{amount}} tokens"
+  },
+  "workState": {
+    "running": "Running",
+    "done": "Done",
+    "completed": "Completed",
+    "failed": "Failed",
+    "killed": "Killed",
+    "stopped": "Stopped"
+  },
+  "skill": {
+    "open": "Open the {{name}} skill",
+    "inspector": "Skill",
+    "reading": "Reading skill…",
+    "unavailable": "This skill's file could not be read."
+  },
+  "file": {
+    "inspector": "File",
+    "reading": "Reading file…",
+    "unavailable": "This file could not be read."
+  },
+  "permission": {
+    "title": "Allow this?",
+    "deny": "Deny",
+    "allow": "Allow",
+    "more": "More ways to allow",
+    "allowSimilar": "Allow similar",
+    "allowAll": "Allow all"
+  },
+  "diff": {
+    "readingFile": "Reading current file…",
+    "fileUnavailable": "Current file is unavailable.",
+    "copyFile": "Copy file",
+    "currentFile": "Current file",
+    "diff": "Diff",
+    "label": "File diff",
+    "copyDiff": "Copy diff"
+  },
+  "row": {
+    "activity": "Ran {{tool}} {{target}}",
+    "activityBare": "Ran {{tool}}",
+    "ago": "{{age}} ago",
+    "plan": "{{completed}} of {{total}} done",
+    "delegationRunning_one": "One Subagent running",
+    "delegationRunning_other": "{{count}} Subagents running",
+    "delegationFinished": "Every delegation finished"
+  },
+  "facts": {
+    "placeUnknown": "working directory unknown"
+  },
+  "tools": {
+    "failed": "Failed",
+    "copyRun": "Copy command and result",
+    "noOutput": "No output"
+  },
+  "feedLoading": "Loading this Session",
+  "rail": {
+    "backgroundAgents": "Background agents",
+    "shellSection": "Shell",
+    "agents": "Background agents {{count}}",
+    "agentsUnknown": "Background agents",
+    "shell": "Shell {{count}}",
+    "shellBare": "a command with no text",
+    "shellInspector": "Background Shell",
+    "shellNoOutput": "This command recorded no output.",
+    "subagent": "Subagent {{index}}",
+    "finished": "{{count}} finished",
+    "unresolved_one": "One delegation, unresolved",
+    "unresolved_other": "{{count}} delegations, unresolved"
+  }
+}

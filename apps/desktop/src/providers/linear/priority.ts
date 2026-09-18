@@ -1,7 +1,8 @@
 // A Linear team's issues keep a priority, independent of their workflow state. Linear owns the
 // levels; the cockpit reads them with every page and keeps none.
-import { isRecord } from '../../boundary'
-import type { PriorityChange, TicketPriority } from '../../core/tickets/ticket'
+
+import type { PriorityChange, TicketPriority } from '../../domains/tickets/contract/ticket'
+import { isRecord } from '../../shared/validation'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearRead, query } from './http'
 import { resolvedTarget } from './issue-target'

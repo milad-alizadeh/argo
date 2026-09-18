@@ -1,7 +1,7 @@
 // Where a Codex thread works. `session_meta` names the folder and branch it opened in, and a
 // thread that moved into a worktree names that place only on each command it runs there.
-import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 
 // `session_meta.git` is `{ commit_hash, branch, repository_url }`, absent outside a repository.
 export function gitBranch(meta: Record<string, unknown>): string | null {

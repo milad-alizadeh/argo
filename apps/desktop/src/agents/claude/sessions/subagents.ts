@@ -5,11 +5,14 @@
 // and the delegation the Roster row already draws (CONTEXT.md L3 · Subagent).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isRecord } from '@/boundary'
-import type { SessionDelegationUsage } from '@/core/sessions/background-work-contract'
-import type { SessionChain } from '@/core/sessions/chains'
-import { type TranscriptFile, transcriptFileFrom } from '@/core/sessions/transcript'
-import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
+import { isRecord } from '@/shared/validation'
+import type { SessionDelegationUsage } from '../../../domains/sessions/contract/background-work-contract'
+import type { SessionChain } from '../../../domains/sessions/contract/chains'
+import {
+  type TranscriptFile,
+  transcriptFileFrom,
+} from '../../../domains/sessions/contract/transcript'
+import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
 import { parseTranscriptLine } from './records'
 import { readingSpawnedAgents } from './spawned-agents'
 

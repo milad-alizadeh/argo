@@ -1,10 +1,10 @@
-import { isRecord } from '@/boundary'
+import { isRecord } from '@/shared/validation'
 import type {
   ContentBlock,
   ToolCall,
   ToolResult,
   TranscriptRecord,
-} from '@/core/sessions/transcript'
+} from '../../../domains/sessions/contract/transcript'
 import { readHarnessEnvelopes } from './harness-envelopes'
 import { readImage } from './prompt-images'
 

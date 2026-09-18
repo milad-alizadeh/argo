@@ -2,12 +2,11 @@
 // the file's line cap: driving a Session Codex never launched, and Codex being unavailable.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-
-import { sendSession, startSession } from '@/core/sessions/drive.ts'
 import {
   driverBackedByFixture,
   ownerCliFor,
 } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { sendSession, startSession } from '../../../domains/sessions/main/drive.ts'
 import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 

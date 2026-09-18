@@ -1,15 +1,15 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isRecord } from '@/boundary'
+import { isRecord } from '@/shared/validation'
+import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
+import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '@/core/sessions/discover-transcript-sessions'
-import type { SessionRosterRow } from '@/core/sessions/models'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
-import { transcriptFileFrom } from '@/core/sessions/transcript'
-import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
+} from '../../../domains/sessions/main/discover-transcript-sessions'
+import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
 import { withoutModelInputCopies } from './model-input-copies'
 import { answeringEveryNestedCall } from './nested-results'
 import { parseCodexTranscriptLine } from './records'
@@ -82,6 +82,7 @@ export const {
   reconcileAll,
   resolveIds,
   historyComplete,
+  searchIndexed,
 } = reader
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 

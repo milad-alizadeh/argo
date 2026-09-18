@@ -1,7 +1,7 @@
 // A Session born by clicking, inside the shipped app, drives the plus control, harness tabs, composer and send chord (#2117).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import type { SessionCli } from '../../../src/renderer/modules/sessions/harness/harnesses'
+import type { SessionCli } from '../../../src/domains/sessions/renderer/harness/harnesses'
 import { createSessionByClick, rosterIds } from '../gestures'
 import type { SessionCliBackend } from '../session-cli-backend'
 

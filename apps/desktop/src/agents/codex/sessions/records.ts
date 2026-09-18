@@ -1,5 +1,5 @@
-import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { taskStartedContextWindow } from './context-window'
 import { currentUserBlocks } from './current-user-blocks'
 import { delegatedRequest } from './harness-envelopes'

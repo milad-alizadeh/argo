@@ -11,10 +11,16 @@ import {
 } from '../../../scripts/design-token-mirror.mjs'
 
 const repositoryRoot = path.resolve(import.meta.dirname, '..', '..', '..')
-const contractPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/tokens.css')
-const globalStylesPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/styles/globals.css')
+const contractPath = path.join(repositoryRoot, 'apps/desktop/src/platform/renderer/tokens.css')
+const globalStylesPath = path.join(
+  repositoryRoot,
+  'apps/desktop/src/platform/renderer/styles/globals.css',
+)
 const mirrorPath = path.join(repositoryRoot, 'docs/design/tokens.css')
-const textSizesPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/lib/text-sizes.ts')
+const textSizesPath = path.join(
+  repositoryRoot,
+  'apps/desktop/src/platform/renderer/lib/text-sizes.ts',
+)
 
 const CONTRACT = `@theme inline {
   --color-card: var(--card);

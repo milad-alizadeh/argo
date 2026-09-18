@@ -3,11 +3,17 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createGrantStore } from '../core/accounts/grants'
-import { readAccounts, writeAccounts } from '../core/accounts/registry'
-import { sharedDatabasePath } from '../core/storage/shared-database'
-import { DEVELOPMENT_APPLICATION_NAME, developmentStoreDirectories } from './account-store'
-import { type DevelopmentInstance, developmentInstance } from './instance'
+import { createGrantStore } from '../domains/accounts/main/grants'
+import { readAccounts, writeAccounts } from '../domains/accounts/main/registry'
+import {
+  DEVELOPMENT_APPLICATION_NAME,
+  developmentStoreDirectories,
+} from '../platform/main/development/account-store'
+import {
+  type DevelopmentInstance,
+  developmentInstance,
+} from '../platform/main/development/instance'
+import { sharedDatabasePath } from '../platform/main/storage/shared-database'
 
 const APP_DATA = '/Users/developer/Library/Application Support'
 
@@ -33,6 +39,7 @@ test('a packaged app keeps its data in its own application data', () => {
   const userData = path.join(APP_DATA, 'Argo')
   assert.deepEqual(developmentStoreDirectories({ userData, appData: APP_DATA, instance: null }), {
     accountData: userData,
+    connectionData: userData,
     projectData: userData,
   })
 })
@@ -135,6 +142,7 @@ test('a second worktree reads the Account grant and selected Project from the fi
     sharedDatabasePath(stores.first.projectData),
     sharedDatabasePath(stores.second.projectData),
   )
+  assert.equal(stores.first.connectionData, stores.second.connectionData)
   assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
   await persistFirstLaunch(stores.first)
   await assertSecondLaunch(stores.second)

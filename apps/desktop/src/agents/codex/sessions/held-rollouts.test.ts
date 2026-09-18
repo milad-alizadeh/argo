@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { appendFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import { managedRow } from '@/core/sessions/managed-row'
-import type { SessionRosterRow } from '@/core/sessions/models'
-import { createSessionReader } from '@/core/sessions/reader'
+import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import { createHeldRolloutReader, heldRolloutIds } from './held-rollouts'
 import { codexSessionSource } from './read-sessions'
 import {

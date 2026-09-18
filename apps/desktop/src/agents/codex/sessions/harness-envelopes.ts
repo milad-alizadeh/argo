@@ -1,5 +1,9 @@
-import { isIdentifier } from '@/boundary'
-import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
+import { isIdentifier } from '@/shared/validation'
+import type {
+  ContentBlock,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '../../../domains/sessions/contract/transcript'
 import { taggedField } from '../../envelope-tags'
 import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
 import { withoutChannelTag } from './realtime-replies'

@@ -1,8 +1,8 @@
 // The Codex Plan call as a rollout writes it, whole and nested, for the Plan reader's tests.
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { createSessionReader } from '@/core/sessions/reader'
-import { listed, tempRoot } from '@/core/sessions/reader-test-helpers'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
+import { listed, tempRoot } from '../../../domains/sessions/main/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
 
 export const SESSION_ID = '01a0870e-f790-7fd0-984c-95e8686f1f0c'

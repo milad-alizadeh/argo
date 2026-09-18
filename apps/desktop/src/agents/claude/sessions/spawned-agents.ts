@@ -1,7 +1,11 @@
 // A Subagent the Session spawned, read the way Codex's `SubAgentActivity` is read: the spawning
 // call becomes the delegation's own record and draws no tool row, and its answer lands it. The
 // Feed and the Roster then draw one Thread card for either CLI (CONTEXT.md L3 · Subagent).
-import type { ToolCall, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
+import type {
+  ToolCall,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '../../../domains/sessions/contract/transcript'
 
 // The CLI renamed `Task` to `Agent`; a transcript written before the rename still names the old one.
 const SPAWNING_TOOLS = new Set(['Task', 'Agent'])

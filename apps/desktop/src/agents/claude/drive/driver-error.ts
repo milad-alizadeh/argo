@@ -1,4 +1,4 @@
-import { driveSessionError, sessionError } from '@/core/sessions/session-error'
+import { driveSessionError, sessionError } from '../../../domains/sessions/contract/session-error'
 
 export type DriverErrorCode =
   | 'cli-unavailable'

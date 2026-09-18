@@ -4,8 +4,8 @@
 import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createTranscriptDiscoverer } from '../../src/core/sessions/discover-transcript-sessions'
-import type { TranscriptRecord } from '../../src/core/sessions/transcript'
+import type { TranscriptRecord } from '../../src/domains/sessions/contract/transcript'
+import { createTranscriptDiscoverer } from '../../src/domains/sessions/main/discover-transcript-sessions'
 
 export type MockTranscript = {
   root: string

@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
-const rendererRoot = join(repositoryRoot, 'apps/desktop/src/renderer')
+const gitDiffBufferBytes = 16 * 1024 * 1024
+const rendererRoots = [
+  join(repositoryRoot, 'apps/desktop/src/domains'),
+  join(repositoryRoot, 'apps/desktop/src/platform/renderer'),
+]
 const accessibleAttributes = new Set([
   'alt',
   'aria-description',
@@ -78,10 +82,11 @@ export function hardCodedText(input, file, changedLines) {
 function changedProductionLines() {
   const diff = execFileSync(
     'git',
-    ['diff', '--unified=0', '--no-color', 'origin/main', '--', rendererRoot],
+    ['diff', '--find-renames', '--unified=0', '--no-color', 'origin/main'],
     {
       cwd: repositoryRoot,
       encoding: 'utf8',
+      maxBuffer: gitDiffBufferBytes,
     },
   )
   const changed = new Map()
@@ -109,7 +114,7 @@ function sourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) {
-      return entry.name === 'composer-prototype' || entry.name === 'ui' ? [] : sourceFiles(path)
+      return entry.name === 'ui' ? [] : sourceFiles(path)
     }
     return entry.name.endsWith('.tsx') &&
       !entry.name.includes('.stories.') &&
@@ -121,10 +126,12 @@ function sourceFiles(directory) {
 
 function main() {
   const changed = changedProductionLines()
-  const failures = sourceFiles(rendererRoot).flatMap((path) => {
-    const file = relative(repositoryRoot, path)
-    return hardCodedText(readFileSync(path, 'utf8'), file, changed.get(file) ?? new Set())
-  })
+  const failures = rendererRoots.flatMap((root) =>
+    sourceFiles(root).flatMap((path) => {
+      const file = relative(repositoryRoot, path)
+      return hardCodedText(readFileSync(path, 'utf8'), file, changed.get(file) ?? new Set())
+    }),
+  )
 
   if (failures.length > 0) {
     console.error(failures.join('\n'))

@@ -3,29 +3,34 @@
 import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
-import { createAccountAccess } from './core/accounts/access'
-import { attachAccountBridge } from './core/accounts/bridge'
-import { safeStorageCipher } from './core/accounts/safe-storage'
-import { attachAppearanceBridge } from './core/appearance/bridge'
-import { attachProjectBridge } from './core/projects/bridge'
-import type { ProjectStore } from './core/projects/sqlite-store'
-import { attachWindowNavigation } from './core/security/window-navigation'
-import { attachTicketBridge } from './core/tickets/bridge'
+import { createAccountAccess } from './domains/accounts/main/access'
+import { attachAccountBridge } from './domains/accounts/main/bridge'
+import { safeStorageCipher } from './domains/accounts/main/safe-storage'
+import { attachProjectBridge } from './domains/projects/main/bridge'
+import type { ProjectStore } from './domains/projects/main/sqlite-store'
+import {
+  attachSessions,
+  createSessionDrivers,
+  watchClaudeCompactions,
+} from './domains/sessions/main/session-bridges'
+import { attachTicketBridge } from './domains/tickets/main/bridge'
+import { attachAppearanceBridge } from './platform/main/appearance'
+import { attachWindowNavigation } from './platform/main/security/window-navigation'
 import { providerEndpoints } from './providers/endpoints'
-import { attachSessions, createSessionDrivers, watchClaudeCompactions } from './session-bridges'
 
 export function attachBridges(
   window: BrowserWindow,
   request: {
     userData: string
     accountData: string
+    connectionData: string
     projects: ProjectStore
     rendererURL: string
     proofEnabled: boolean
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, projects, rendererURL, proofEnabled } = request
+  const { userData, accountData, connectionData, projects, rendererURL, proofEnabled } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   const drivers = createSessionDrivers(userData, home, proofEnabled)
@@ -40,6 +45,7 @@ export function attachBridges(
   const access = createAccountAccess({
     userData,
     accountData,
+    connectionData,
     endpoints: providerEndpoints(proofEnabled),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),

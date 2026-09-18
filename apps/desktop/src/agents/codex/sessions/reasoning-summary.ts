@@ -1,5 +1,5 @@
-import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { messageRecord } from './message-record'
 
 // Codex writes each summary as a Markdown headline (`**Reading the plan**`); the Feed draws a
