@@ -1,4 +1,4 @@
-import type { ClaudeQuestionAnswer } from '@/core/sessions/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
 import type { Wait } from './deliver-turn'
 
 export type AnswerTarget = { process: { write: (text: string) => void } }

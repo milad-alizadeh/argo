@@ -8,11 +8,15 @@ import { attachAccountBridge } from './domains/accounts/main/bridge'
 import { safeStorageCipher } from './domains/accounts/main/safe-storage'
 import { attachProjectBridge } from './domains/projects/main/bridge'
 import type { ProjectStore } from './domains/projects/main/sqlite-store'
+import {
+  attachSessions,
+  createSessionDrivers,
+  watchClaudeCompactions,
+} from './domains/sessions/main/session-bridges'
 import { attachTicketBridge } from './domains/tickets/main/bridge'
 import { attachAppearanceBridge } from './platform/main/appearance'
 import { attachWindowNavigation } from './platform/main/security/window-navigation'
 import { providerEndpoints } from './providers/endpoints'
-import { attachSessions, createSessionDrivers, watchClaudeCompactions } from './session-bridges'
 
 export function attachBridges(
   window: BrowserWindow,

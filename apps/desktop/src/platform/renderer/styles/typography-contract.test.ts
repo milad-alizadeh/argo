@@ -5,10 +5,10 @@ const utilities = await Bun.file(new URL('./typography.css', import.meta.url)).t
 const entry = await Bun.file(new URL('../../../renderer/main.tsx', import.meta.url)).text()
 const button = await Bun.file(new URL('../components/ui/button.tsx', import.meta.url)).text()
 const feedTools = await Bun.file(
-  new URL('../../../renderer/modules/sessions/feed/feed-tools.tsx', import.meta.url),
+  new URL('../../../domains/sessions/renderer/feed/feed-tools.tsx', import.meta.url),
 ).text()
 const feedMarkdown = await Bun.file(
-  new URL('../../../renderer/modules/sessions/feed/content/feed-markdown.tsx', import.meta.url),
+  new URL('../../../domains/sessions/renderer/feed/content/feed-markdown.tsx', import.meta.url),
 ).text()
 const components = await Bun.file(new URL('../../../../components.json', import.meta.url)).json()
 const map = await Bun.file(
@@ -68,8 +68,7 @@ test('keeps feed prose and tool summaries on the dominant rung', () => {
 
 test('keeps direct size rungs out of app-owned product components', async () => {
   const sourceGlobs = [
-    new Bun.Glob('../../../domains/{accounts,projects,tickets}/renderer/**/*.tsx'),
-    new Bun.Glob('../../../renderer/modules/sessions/**/*.tsx'),
+    new Bun.Glob('../../../domains/{accounts,projects,sessions,tickets}/renderer/**/*.tsx'),
     new Bun.Glob('../cockpit/**/*.tsx'),
   ]
   const violations = []

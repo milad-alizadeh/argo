@@ -1,7 +1,7 @@
 import path from 'node:path'
-import type { SessionChain } from '@/core/sessions/chains'
-import { transcriptFileFrom } from '@/core/sessions/transcript'
-import { createTranscriptRecordReader } from '@/core/sessions/transcript-lines'
+import type { SessionChain } from '../../../domains/sessions/contract/chains'
+import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
+import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
 import { normalizeCodexMessageRecords, transcriptPaths } from './discover'
 import { parseCodexTranscriptLine } from './records'
 

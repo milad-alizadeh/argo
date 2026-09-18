@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '@/core/sessions/chains'
-import { chainBackgroundTasks, chainMessages } from '@/core/sessions/roster'
-import { readShellCommands } from '@/core/sessions/signals'
-import { transcriptFileFrom } from '@/core/sessions/transcript'
+import type { SessionChain } from '../../../domains/sessions/contract/chains'
+import { readShellCommands } from '../../../domains/sessions/contract/signals'
+import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
+import { chainBackgroundTasks, chainMessages } from '../../../domains/sessions/main/roster'
 import { parseTranscriptLine } from './records'
 
 test('ends a background command whose notice arrived while the Session was idle', () => {

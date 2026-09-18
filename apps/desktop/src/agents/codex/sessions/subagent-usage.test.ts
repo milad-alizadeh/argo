@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/core/sessions/reader'
-import { projectRosterRow } from '@/core/sessions/roster'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
+import { projectRosterRow } from '../../../domains/sessions/main/roster'
 import { codexSessionSource } from './read-sessions'
 
 function activity(kind: 'started' | 'completed', timestamp: string, delegationId: string) {
