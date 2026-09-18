@@ -12,11 +12,31 @@ import type { ProjectSetupViewProps } from './project-setup-window'
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
 const jsonHighlighting = syntaxHighlighting(
   HighlightStyle.define([
-    { tag: tags.string, color: 'var(--chart-2)' },
-    { tag: tags.propertyName, color: 'var(--chart-3)' },
-    { tag: [tags.number, tags.bool], color: 'var(--chart-4)' },
+    { tag: tags.string, color: 'var(--color-terminal-green)' },
+    { tag: tags.propertyName, color: 'var(--color-terminal-blue)' },
+    { tag: [tags.number, tags.bool, tags.null], color: 'var(--color-terminal-magenta)' },
   ]),
 )
+const argoEditorTheme = EditorView.theme({
+  '&': {
+    backgroundColor: 'var(--popover)',
+    color: 'var(--popover-foreground)',
+  },
+  '.cm-activeLine': { backgroundColor: 'var(--selected)' },
+  '.cm-activeLineGutter': {
+    backgroundColor: 'var(--selected)',
+    color: 'var(--foreground)',
+  },
+  '.cm-cursor': { borderLeftColor: 'var(--foreground)' },
+  '.cm-gutters': {
+    backgroundColor: 'var(--muted)',
+    borderRightColor: 'var(--border)',
+    color: 'var(--muted-foreground)',
+  },
+  '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
+    backgroundColor: 'var(--selected)',
+  },
+})
 const CONFIGURATION_EDITOR_ID = 'project-configuration'
 
 export function ConfigurationEditor({
@@ -51,10 +71,11 @@ export function ConfigurationEditor({
       <div className="relative">
         <CodeMirror
           basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
-          className="w-full overflow-hidden rounded-lg border border-input bg-background text-left text-foreground shadow-inner focus-within:ring-2 focus-within:ring-ring [&_.cm-activeLine]:bg-muted/60 [&_.cm-content]:min-h-96 [&_.cm-content]:pt-4 [&_.cm-content]:pr-4 [&_.cm-content]:pb-14 [&_.cm-editor]:min-h-96 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted/70 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
+          className="w-full overflow-hidden rounded-lg border border-input text-left shadow-inner focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-96 [&_.cm-content]:pt-4 [&_.cm-content]:pr-4 [&_.cm-content]:pb-14 [&_.cm-editor]:min-h-96 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
           extensions={extensions}
           onChange={updateSource}
           ref={editor}
+          theme={argoEditorTheme}
           value={source}
         />
         <Button
