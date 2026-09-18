@@ -48,6 +48,8 @@ export default defineConfig({
       reporter: ['lcov', 'text'],
       reportsDirectory: 'coverage/storybook',
       include: ['src/renderer/**'],
+      // Vendored shadcn components, not code this repo authors or tests directly.
+      exclude: ['src/renderer/components/ui/**'],
     },
   },
 })
