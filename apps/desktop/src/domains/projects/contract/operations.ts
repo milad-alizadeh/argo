@@ -1,4 +1,16 @@
-import { projectErrorSchema, projectOpenedSchema, projectOpenRequestSchema } from './contract'
+import {
+  projectErrorSchema,
+  projectOpenedSchema,
+  projectOpenRequestSchema,
+  projectSetupBeginRequestSchema,
+  projectSetupCancelledSchema,
+  projectSetupCancelRequestSchema,
+  projectSetupEditingSchema,
+  projectSetupRequiredSchema,
+  projectSetupSaveRequestSchema,
+  projectSetupValidatedSchema,
+  projectSetupValidateRequestSchema,
+} from './contract'
 import {
   projectCancelledSchema,
   projectListedSchema,
@@ -18,7 +30,31 @@ export const PROJECT_OPERATIONS = {
     name: 'project.open',
     channel: 'argo:project:open',
     request: projectOpenRequestSchema,
-    reply: projectOpenedSchema.or(projectErrorSchema),
+    reply: projectOpenedSchema.or(projectSetupRequiredSchema).or(projectErrorSchema),
+  },
+  setupBegin: {
+    name: 'project.setup.begin',
+    channel: 'argo:project:setup:begin',
+    request: projectSetupBeginRequestSchema,
+    reply: projectSetupEditingSchema.or(projectErrorSchema),
+  },
+  setupSave: {
+    name: 'project.setup.save',
+    channel: 'argo:project:setup:save',
+    request: projectSetupSaveRequestSchema,
+    reply: projectSetupEditingSchema.or(projectErrorSchema),
+  },
+  setupValidate: {
+    name: 'project.setup.validate',
+    channel: 'argo:project:setup:validate',
+    request: projectSetupValidateRequestSchema,
+    reply: projectSetupValidatedSchema.or(projectErrorSchema),
+  },
+  setupCancel: {
+    name: 'project.setup.cancel',
+    channel: 'argo:project:setup:cancel',
+    request: projectSetupCancelRequestSchema,
+    reply: projectSetupCancelledSchema.or(projectErrorSchema),
   },
   list: {
     name: 'project.list',

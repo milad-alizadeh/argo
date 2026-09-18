@@ -5,6 +5,7 @@ import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import {
   DESTINATION_PATHS,
   DESTINATIONS,
@@ -57,6 +58,9 @@ export function CockpitRouteLayout() {
   )
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
+  if (cockpit.status === 'setup' && cockpit.project) {
+    return <ProjectSetupWindow project={cockpit.project} />
+  }
   return (
     <CockpitShell
       footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}

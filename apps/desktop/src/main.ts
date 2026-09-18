@@ -6,6 +6,7 @@ import { app, net, protocol } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { attachBridges } from './bridges'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
+import { seedDevelopmentProject } from './domains/projects/main/development-seed'
 import { openProjectStore } from './domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
 import { startDesktopApplication } from './platform/main/application/start'
@@ -71,7 +72,7 @@ if (DEVELOPMENT_INSTANCE) {
 
 function createWindow(): void {
   const userData = app.getPath('userData')
-  const { accountData, projectData } = developmentStoreDirectories({
+  const { accountData, connectionData, projectData } = developmentStoreDirectories({
     userData,
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
@@ -97,6 +98,7 @@ function createWindow(): void {
       attachBridges(window, {
         userData,
         accountData,
+        connectionData,
         projects,
         rendererURL,
         proofEnabled: PROOF_ENABLED,
@@ -120,6 +122,16 @@ async function ready(): Promise<void> {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
+  if (DEVELOPMENT_INSTANCE) {
+    const { projectData } = developmentStoreDirectories({
+      userData: app.getPath('userData'),
+      appData: app.getPath('appData'),
+      instance: DEVELOPMENT_INSTANCE,
+    })
+    const projects = openProjectStore(projectData)
+    await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
+    projects.close()
+  }
   createWindow()
 
   if (!ACCEPTANCE_ENABLED) return

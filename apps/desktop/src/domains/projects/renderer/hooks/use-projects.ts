@@ -12,7 +12,7 @@ import type {
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey, projectMutationKey } from '../project-queries'
 
-export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
+export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'setup' | 'refused'
 
 // A refusal keeps its code as well as its text. The text is what a person reads; the code is what
 // the screen is named by, so a capture and a proof cannot report a git failure under the name of a
@@ -48,6 +48,16 @@ async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
   if (opened.type === 'project.error') {
     const { message, code } = opened
     return { status: 'refused', project, projects: reply.projects, message, code, busy: false }
+  }
+  if (opened.type === 'project.setup-required') {
+    return {
+      status: 'setup',
+      project,
+      projects: reply.projects,
+      message: null,
+      code: null,
+      busy: false,
+    }
   }
   return {
     status: 'selected',

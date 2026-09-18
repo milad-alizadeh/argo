@@ -111,7 +111,7 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
     assert.equal(listed.type, 'project.listed')
     assert.equal(listed.selectedId, registered.selectedId)
     const reopenedRegistered = await invoke(page, { projectId: registered.selectedId })
-    assert.equal(reopenedRegistered.type, 'project.opened')
+    assert.equal(reopenedRegistered.type, 'project.setup-required')
     const selected = await page.evaluate(() =>
       window.argo.selectProject({ projectId: 'project-1' }),
     )

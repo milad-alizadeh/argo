@@ -4,27 +4,12 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
-import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
 import { type MockGitHub, startMockGitHub } from '../../../../mocks/providers/github/mock-github'
 import { type MockLinear, startMockLinear } from '../../../../mocks/providers/linear/mock-linear'
-import { proofEndpoints } from '../../../providers/github/endpoints'
-import { linearProofEndpoints } from '../../../providers/linear/endpoints'
-import { createDomainClient } from '../../../shared/ipc/client'
-import { ticketError } from '../../tickets/contract/contract'
-import { TICKET_OPERATIONS } from '../../tickets/contract/operations'
-import { attachTicketBridge } from '../../tickets/main/bridge'
-import { accountError } from '../contract/contract'
-import { ACCOUNT_OPERATIONS } from '../contract/operations'
-import { createAccountAccess } from './access'
-import { attachAccountBridge } from './bridge'
 import type { Cipher } from './grants'
-import {
-  type AccountDispatchClient,
-  dispatchAccount,
-  dispatchTicket,
-  type TicketDispatchClient,
-} from './harness-dispatch'
+import { dispatchAccount, dispatchTicket } from './harness-dispatch'
 import { PROJECT_ID, projectStore } from './harness-fixtures'
+import { accessEndpoints, bootMain } from './harness-main'
 
 export { LIST, OCTOCAT, PROJECT_ID } from './harness-fixtures'
 
@@ -40,52 +25,6 @@ export function testCipher(): Cipher & { enabled: boolean } {
 }
 
 export type Harness = Awaited<ReturnType<typeof harness>>
-
-const unreachable = (provider: string): never => {
-  throw new Error(`The mock ${provider} is not on a loopback origin`)
-}
-
-// A restart is a fresh main process over the same `userData`: nothing survives but the files.
-function bootMain(options: {
-  userData: string
-  accountData: string
-  endpoints: ReturnType<typeof accessEndpoints>
-  cipher: Cipher
-  openExternal: (url: string) => Promise<void>
-  projects: ReturnType<typeof projectStore>
-}) {
-  const { userData, accountData, endpoints, cipher, openExternal, projects } = options
-  const access = createAccountAccess({
-    userData,
-    accountData,
-    endpoints,
-    cipher,
-    openExternal,
-    projects,
-  })
-  const ticketWindow = createMockIpcWindow()
-  attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
-  const tickets: TicketDispatchClient = createDomainClient(
-    TICKET_OPERATIONS,
-    (channel, ticketRequest) => ticketWindow.trustedInvoke(channel, ticketRequest),
-    ticketError,
-  )
-  const accountWindow = createMockIpcWindow()
-  const accounts = attachAccountBridge(accountWindow.window, { access, rendererURL: RENDERER_URL })
-  const accountClient: AccountDispatchClient = createDomainClient(
-    ACCOUNT_OPERATIONS,
-    (channel, accountRequest) => accountWindow.trustedInvoke(channel, accountRequest),
-    accountError,
-  )
-  return { access, accounts, accountClient, accountInvoke: accountWindow.trustedInvoke, tickets }
-}
-
-function accessEndpoints(github: MockGitHub, linear: MockLinear) {
-  return {
-    github: proofEndpoints(github.origin) ?? unreachable('GitHub'),
-    linear: linearProofEndpoints(linear.origin),
-  }
-}
 
 // One cockpit's own application data, holding the one Project its Tickets are read for.
 async function makeUserData(context: TestContext): Promise<string> {
@@ -139,8 +78,7 @@ export async function harness(context: TestContext) {
       main.accounts.signIn.dispose()
       main = bootMain({ userData, accountData, endpoints, cipher, openExternal, projects })
     },
-    // A second cockpit over the same Account store, with its own application data: two development
-    // apps, each keeping its own Projects and Connections (#2304).
+    // A second cockpit over the shared development stores, with its own ephemeral application data.
     otherCockpit: async (projectId: string) => {
       const otherUserData = await makeUserData(context)
       const other = bootMain({

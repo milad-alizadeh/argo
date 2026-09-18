@@ -301,6 +301,21 @@
 }
 
 :root {
+  /* Xcode's published syntax palette; editor and rendered code reuse these inks on Argo surfaces. */
+  --code-xcode-background: #fff;
+  --code-xcode-foreground: #3d3d3d;
+  --code-xcode-gutter-foreground: #afafaf;
+  --code-xcode-line-highlight: #d5e6ff69;
+  --code-xcode-comment: #707f8d;
+  --code-xcode-definition: #327a9e;
+  --code-xcode-keyword: #aa0d91;
+  --code-xcode-name: #032f62;
+  --code-xcode-string: #d23423;
+  --code-xcode-type: #522bb2;
+  --code-xcode-variable: #23575c;
+  --code-xcode-selection: #bbdfff;
+  --code-xcode-link: #0e0eff;
+  --code-xcode-caret: var(--code-xcode-foreground);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -352,6 +367,19 @@
 }
 
 .dark {
+  --code-xcode-background: #292a30;
+  --code-xcode-foreground: #cecfd0;
+  --code-xcode-line-highlight: #ffffff0f;
+  --code-xcode-comment: #7f8c98;
+  --code-xcode-definition: #6bdfff;
+  --code-xcode-keyword: #ff7ab2;
+  --code-xcode-name: #6baa9f;
+  --code-xcode-string: #ff8170;
+  --code-xcode-type: #dabaff;
+  --code-xcode-variable: #acf2e4;
+  --code-xcode-selection: #727377;
+  --code-xcode-link: var(--code-xcode-string);
+  --code-xcode-caret: #fff;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

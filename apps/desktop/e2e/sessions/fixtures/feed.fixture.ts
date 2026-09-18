@@ -14,6 +14,7 @@ import {
 } from '../../../mocks/sessions/mock-transcript-files'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 
 export const FIXTURES = [
   'resumeParent',
@@ -114,6 +115,7 @@ export async function prepare(root, application, { projectSelected }) {
   await writeArchiveStore(userData, ARCHIVED)
   const project = proofProject(claudeTranscripts)
   await mkdir(project)
+  await makeProjectLocallyReady(project)
   await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
   return { application, claudeTranscripts, codexTranscripts, userData, project }
 }
