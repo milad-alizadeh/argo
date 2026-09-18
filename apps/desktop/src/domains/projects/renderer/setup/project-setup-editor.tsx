@@ -1,4 +1,4 @@
-import { HighlightStyle, StreamLanguage, syntaxHighlighting } from '@codemirror/language'
+import { StreamLanguage } from '@codemirror/language'
 import { json } from '@codemirror/legacy-modes/mode/javascript'
 import { forceLinting, linter } from '@codemirror/lint'
 import { tags } from '@lezer/highlight'
@@ -6,58 +6,15 @@ import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-code
 import { FlaskConical } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { xcodeCodePalette } from '@/renderer/components/ai-elements/xcode-code-theme'
 import { Button } from '@/renderer/components/ui/button'
 import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
 import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
+import { xcodeEditorTheme } from './project-setup-editor-theme'
 import type { ProjectSetupViewProps } from './project-setup-window'
 
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
 const CONFIGURATION_EDITOR_ID = 'project-configuration'
 const CONFIGURATION_ERROR_ID = 'project-configuration-error'
-
-function xcodeEditorTheme(dark: boolean) {
-  const palette = xcodeCodePalette[dark ? 'dark' : 'light']
-  return [
-    EditorView.theme(
-      {
-        '&': { backgroundColor: 'var(--popover)', color: palette.foreground },
-        '.cm-activeLine': { backgroundColor: palette.lineHighlight },
-        '.cm-activeLineGutter': { backgroundColor: palette.lineHighlight },
-        ...(dark ? { '.cm-cursor, .cm-dropCursor': { borderLeftColor: '#fff' } } : {}),
-        '.cm-gutters': {
-          backgroundColor: 'var(--popover)',
-          ...(!dark && palette.gutterForeground !== undefined
-            ? { color: palette.gutterForeground }
-            : {}),
-        },
-        '.cm-selectionMatch': { backgroundColor: palette.selection },
-        '&.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, .cm-content ::selection':
-          {
-            background: `${palette.selection} !important`,
-          },
-      },
-      { dark },
-    ),
-    syntaxHighlighting(
-      HighlightStyle.define([
-        { tag: [tags.comment, tags.quote], color: palette.comment },
-        ...(dark
-          ? [{ tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' }]
-          : [
-              { tag: [tags.typeName, tags.typeOperator], color: palette.keyword },
-              { tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' },
-            ]),
-        { tag: [tags.string, tags.meta], color: palette.string },
-        { tag: tags.typeName, color: palette.type },
-        { tag: tags.name, color: palette.name },
-        { tag: tags.variableName, color: palette.variable },
-        { tag: tags.definition(tags.variableName), color: palette.definition },
-        { tag: [tags.regexp, tags.link], color: dark ? palette.string : '#0e0eff' },
-      ]),
-    ),
-  ]
-}
 
 export function ConfigurationEditor({
   saving,

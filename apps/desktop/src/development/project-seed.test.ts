@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { projectStore } from '@/core/accounts/harness-fixtures'
+import { projectStore } from '@/domains/accounts/main/harness-fixtures'
 import type { ProjectRegistry } from '@/domains/projects/main/sqlite-store'
 import { selectDevelopmentProject } from './project-seed'
 
