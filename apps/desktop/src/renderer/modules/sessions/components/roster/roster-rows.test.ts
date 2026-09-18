@@ -8,6 +8,7 @@ const noArchive = {
   displayed: [] as Session[],
   error: null as SessionContractError | null,
   hasNextPage: false,
+  historyComplete: true,
   isFetchingNextPage: false,
   isLoading: false,
 }
@@ -26,6 +27,8 @@ const failedArchive = {
 }
 const archiveWithMorePages = { ...someArchived, hasNextPage: true }
 const archiveFetchingMore = { ...someArchived, isFetchingNextPage: true }
+const archiveStillIndexing = { ...noArchive, historyComplete: false }
+const archivedSoFarStillIndexing = { ...someArchived, historyComplete: false }
 
 function activeRoster(count: number) {
   return Array.from({ length: count }, (_, index) => ({ id: `session-${index}` }) as Session)
@@ -130,5 +133,27 @@ describe('building the roster rows for the Archive', () => {
 
   test('carries no Archive rows at all until the roster has resolved once', () => {
     expect(kindsOf({ archived: someArchived, showArchive: false, status: 'archived' })).toEqual([])
+  })
+
+  test('says older history is still indexing rather than the Archive being empty', () => {
+    expect(
+      kindsOf({ archived: archiveStillIndexing, showArchive: true, status: 'archived' }),
+    ).toEqual(['archivedIndexing'])
+  })
+
+  test('says older history is still indexing after the loaded rows once no page follows', () => {
+    expect(
+      kindsOf({ archived: archivedSoFarStillIndexing, showArchive: true, status: 'archived' }),
+    ).toEqual(['session', 'archivedIndexing'])
+  })
+
+  test('lets the paging sentinel speak for a further page over the indexing row', () => {
+    expect(
+      kindsOf({
+        archived: { ...archivedSoFarStillIndexing, hasNextPage: true },
+        showArchive: true,
+        status: 'archived',
+      }),
+    ).toEqual(['session', 'archivedSentinel'])
   })
 })

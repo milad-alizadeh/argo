@@ -8,7 +8,10 @@ import {
 import { sessionArchiveQueryKey } from '../session-queries'
 import type { SessionArchiveListed, SessionId } from '../types'
 
-type ArchivePage = Pick<SessionArchiveListed, 'sessions' | 'nextCursor' | 'restored'>
+type ArchivePage = Pick<
+  SessionArchiveListed,
+  'sessions' | 'nextCursor' | 'restored' | 'historyComplete'
+>
 
 // Archived Sessions are read on demand, one page per fetch, rather than on every roster read
 // (#1593). `restoreId` asks the reader to hand back a Session's row even when it falls outside
@@ -49,10 +52,14 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
     return true
   })
   const restored = query.data?.pages.find((page) => page.restored !== null)?.restored ?? null
+  // The most recently read page's word on it: backfill (#2373) can turn this true between one
+  // fetch and the next, and only the latest read says where it stands right now.
+  const historyComplete = query.data?.pages.at(-1)?.historyComplete ?? true
 
   return {
     sessions,
     restored,
+    historyComplete,
     isLoading: enabled && query.isPending,
     isFetchingNextPage: query.isFetchingNextPage,
     hasNextPage: query.hasNextPage,

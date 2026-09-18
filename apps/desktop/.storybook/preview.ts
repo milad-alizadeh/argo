@@ -85,6 +85,7 @@ host.argo = {
       sessions: [],
       nextCursor: null,
       restored: null,
+      historyComplete: true,
     }),
   ...storybookProjectBridge,
   ...ticketsHost,

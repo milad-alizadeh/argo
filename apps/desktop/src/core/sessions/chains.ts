@@ -59,7 +59,9 @@ function parentOf(file: TranscriptFile, owners: Map<string, string>, known: Set<
 
 // Walking to the root rather than following one link, so a chain of three resumes lands on one
 // id. The seen-set is the cycle guard: two files naming each other would otherwise never end.
-function rootOf(start: string, parents: Map<string, string>): string {
+// Exported so a caller holding only the persisted resume graph (#2374) can resolve an arbitrary
+// id, current or retired, to its chain without re-stitching any file.
+export function rootOf(start: string, parents: Map<string, string>): string {
   const seen = new Set<string>([start])
   let current = start
   for (;;) {

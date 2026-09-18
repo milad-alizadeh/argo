@@ -25,6 +25,10 @@ export const sessionArchiveListedSchema = z.strictObject({
   sessions: z.array(sessionRosterRowSchema),
   nextCursor: z.string().nullable(),
   restored: sessionRosterRowSchema.nullable(),
+  // False while a source's Session index still has older history to backfill (#2373, #2374), so
+  // the reader never presents a page the index has not finished catching up to as the whole
+  // Archive.
+  historyComplete: z.boolean(),
 })
 export type SessionArchiveListed = z.infer<typeof sessionArchiveListedSchema>
 

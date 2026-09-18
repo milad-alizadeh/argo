@@ -5,7 +5,8 @@ import { claudeSessionSource } from '../../agents/claude/sessions/read-sessions'
 import { codexSessionSource } from '../../agents/codex/sessions/read-sessions'
 import { createSessionArchiveStore, sessionArchivePath } from '../storage/session-archive'
 import { createInMemorySessionTicketLinkStore } from '../tickets/session-links'
-import { sessionArchiveListReplySchema, sessionArchiveSetReplySchema } from './contract'
+import { requestArchiveList } from './archive-list-request'
+import { sessionArchiveSetReplySchema } from './contract'
 import { createSessionReader } from './reader'
 import {
   listed,
@@ -63,15 +64,7 @@ async function archiveList(
   reader: Awaited<ReturnType<typeof twoHarnessReader>>['reader'],
   options: { cursor?: string | null; restoreId?: string | null; requestId?: string } = {},
 ) {
-  const reply = sessionArchiveListReplySchema.parse(
-    await reader.archiveList({
-      version: 1,
-      type: 'session.archive.list',
-      requestId: options.requestId ?? 'archive-list-1',
-      cursor: options.cursor ?? null,
-      restoreId: options.restoreId ?? null,
-    }),
-  )
+  const reply = await requestArchiveList(reader, options)
   assert.equal(reply.type, 'session.archive.listed')
   return reply.type === 'session.archive.listed' ? reply : assert.fail('not listed')
 }

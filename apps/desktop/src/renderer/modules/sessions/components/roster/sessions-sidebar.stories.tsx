@@ -480,6 +480,7 @@ function archiveReply(fields: {
   sessions?: unknown[]
   nextCursor?: string | null
   restored?: unknown
+  historyComplete?: boolean
 }) {
   return {
     version: 1,
@@ -488,6 +489,7 @@ function archiveReply(fields: {
     sessions: [],
     nextCursor: null,
     restored: null,
+    historyComplete: true,
     ...fields,
   }
 }
@@ -549,6 +551,19 @@ export const ArchiveFailure: Story = {
       const alert = canvas.getByRole('alert')
       await expect(alert).toHaveTextContent('Unable to load archived Sessions')
     })
+  },
+}
+
+// A source's Session index still has older history to backfill (#2373, #2374): the Archive says so
+// rather than presenting the current page as the whole thing.
+export const ArchiveStillIndexing: Story = {
+  beforeEach: () => withArchiveHost(async () => archiveReply({ historyComplete: false })),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await chooseStatus(canvasElement, 'Archived')
+    await waitFor(() =>
+      expect(canvas.getByText('Still indexing older Sessions')).toBeInTheDocument(),
+    )
   },
 }
 
