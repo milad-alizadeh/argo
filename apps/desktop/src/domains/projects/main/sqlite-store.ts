@@ -34,6 +34,8 @@ export type ProjectDatabase = {
 export type ProjectStore = {
   read: () => ProjectRegistry
   replace: (registry: ProjectRegistry) => void
+  insertProject: (project: ProjectRegistration) => void
+  selectProject: (projectId: string) => void
   updateProjectPath: (projectId: string, projectPath: string) => void
   readSetupCheckpoint: (projectId: string) => SetupCheckpoint | null
   writeSetupCheckpoint: (checkpoint: SetupCheckpoint) => void
@@ -154,6 +156,14 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
         database.exec('ROLLBACK')
         throw error
       }
+    },
+
+    insertProject: (project) => {
+      insert.run(project.id, project.path, project.commonDirectory)
+    },
+
+    selectProject: (projectId) => {
+      select.run(projectId)
     },
 
     updateProjectPath: (projectId, projectPath) => {

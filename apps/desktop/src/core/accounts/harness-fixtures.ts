@@ -22,6 +22,12 @@ export function projectStore(projectId: string): ProjectStore {
     replace: (next) => {
       registry = next
     },
+    insertProject: (project) => {
+      registry = { ...registry, projects: [...registry.projects, project] }
+    },
+    selectProject: (projectId) => {
+      registry = { ...registry, selectedId: projectId }
+    },
     updateProjectPath: (projectId, projectPath) => {
       registry = {
         ...registry,

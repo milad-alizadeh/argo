@@ -50,6 +50,7 @@ function bootMain(options: {
   const access = createAccountAccess({
     userData,
     accountData,
+    connectionData: accountData,
     endpoints,
     cipher,
     openExternal,
@@ -127,8 +128,7 @@ export async function harness(context: TestContext) {
       main.accounts.signIn.dispose()
       main = bootMain({ userData, accountData, endpoints, cipher, openExternal, projects })
     },
-    // A second cockpit over the same Account store, with its own application data: two development
-    // apps, each keeping its own Projects and Connections (#2304).
+    // A second cockpit over the shared development stores, with its own ephemeral application data.
     otherCockpit: async (projectId: string) => {
       const otherUserData = await makeUserData(context)
       const other = bootMain({
