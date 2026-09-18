@@ -56,6 +56,8 @@ export const ManualConfiguration: Story = {
     await expect(canvas.getByRole('status')).toHaveTextContent('Config saved.')
     await userEvent.click(canvas.getByRole('button', { name: 'Test config' }))
     await expect(canvas.getByText('All Project commands passed validation.')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Cancel setup' }))
+    await expect(canvas.queryByRole('status')).toBeNull()
   },
 }
 

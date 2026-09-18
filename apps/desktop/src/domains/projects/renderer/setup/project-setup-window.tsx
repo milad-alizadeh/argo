@@ -7,7 +7,6 @@ import { useManualProjectSetup } from './use-manual-project-setup'
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
   const setup = useManualProjectSetup(project.id, {
-    cancelled: t('setup.cancelled'),
     valid: t('setup.valid'),
     invalid: t('setup.invalid'),
     invalidJson: t('setup.invalidJson'),

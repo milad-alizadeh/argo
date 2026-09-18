@@ -19,7 +19,6 @@
     "unsaved": "Unsaved changes",
     "cancel": "Cancel setup",
     "cancelling": "Cancelling setup…",
-    "cancelled": "Project setup cancelled.",
     "valid": "All Project commands passed validation.",
     "invalid": "A Project command failed validation.",
     "test": "Test config",

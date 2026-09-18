@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 type Messages = {
-  cancelled: string
   invalid: string
   invalidJson: string
   saved: string
@@ -65,8 +64,7 @@ export function useManualProjectSetup(projectId: string, messages: Messages) {
     setSaving('cancel')
     setMessage(null)
     const reply = await window.argo.cancelProjectSetup({ projectId })
-    if (reply.type === 'project.setup.cancelled') setMessage(messages.cancelled)
-    else if (reply.type === 'project.error') setMessage(reply.message)
+    if (reply.type === 'project.error') setMessage(reply.message)
     setSaving(null)
   }
   return { cancel, message, saved, save, saving, source, testConfiguration, updateSource }
