@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { MemoryRouter } from 'react-router'
+import { Loader, type LoaderSize } from '../../../../../platform/renderer/components/loader'
 import { sessionRosterRow } from '../../session-fixtures'
-import {
-  isSignatureLoaderKey,
-  SIGNATURE_LOADERS,
-  type SignatureLoaderKey,
-  SignatureRunningLoader,
-} from './running-loader-gallery-prototype'
 import { SessionRosterItem } from './session-roster-item'
 import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
 
-const FAMILIES = ['Orbital', 'Linear', 'Geometric', 'Signal'] as const
+const LOADER_SIZES = [
+  { key: 'meta', name: 'Meta', pixels: 12, use: 'Session rows and metadata' },
+  { key: 'control', name: 'Control', pixels: 16, use: 'Buttons, markers, and toasts' },
+  { key: 'standard', name: 'Standard', pixels: 28, use: 'Feed and panel loading' },
+  { key: 'prominent', name: 'Prominent', pixels: 40, use: 'Large waiting states' },
+] as const satisfies readonly {
+  key: LoaderSize
+  name: string
+  pixels: number
+  use: string
+}[]
 
 const ROWS = [
   {
@@ -70,21 +75,15 @@ const ROWS = [
   },
 ] as const
 
-function loaderFromLocation(): SignatureLoaderKey {
-  const query = window.location.hash.split('?')[1] ?? ''
-  const loader = new URLSearchParams(query).get('loader')
-  return isSignatureLoaderKey(loader) ? loader : 'comet'
-}
-
-function replaceLoader(loader: SignatureLoaderKey) {
+function clearRejectedLoaderChoice() {
   const query = window.location.hash.split('?')[1] ?? ''
   const search = new URLSearchParams(query)
   search.set('variant', 'A')
-  search.set('loader', loader)
+  search.delete('loader')
   window.history.replaceState(null, '', `#/sessions?${search.toString()}`)
 }
 
-function PrototypeRoster({ loader }: { loader: SignatureLoaderKey }) {
+function PrototypeRoster() {
   return (
     <MemoryRouter initialEntries={['/sessions?variant=A']}>
       <aside
@@ -107,7 +106,7 @@ function PrototypeRoster({ loader }: { loader: SignatureLoaderKey }) {
               onFocus={() => undefined}
               onSelect={() => undefined}
               onToggleSelect={() => undefined}
-              prototypeRunningLoader={loader}
+              prototypeRunningLoader={true}
               prototypeUnread={unread}
               selectable={false}
               selected={index === 0}
@@ -121,67 +120,48 @@ function PrototypeRoster({ loader }: { loader: SignatureLoaderKey }) {
   )
 }
 
-function LoaderOption({
-  loader,
-  onSelect,
-  selected,
+function LoaderSample({
+  size,
+  name,
+  pixels,
+  use,
 }: {
-  loader: (typeof SIGNATURE_LOADERS)[number]
-  onSelect: (loader: SignatureLoaderKey) => void
-  selected: boolean
+  size: LoaderSize
+  name: string
+  pixels: number
+  use: string
 }) {
   return (
-    <button
-      aria-pressed={selected}
-      className={`group flex min-h-12 items-center gap-3 rounded-lg px-3 text-left transition-colors ${selected ? 'bg-selected text-foreground' : 'hover:bg-muted'}`}
-      onClick={() => onSelect(loader.key)}
-      type="button"
-    >
-      <span className="flex w-7 justify-center text-foreground">
-        <SignatureRunningLoader loader={loader.key} />
+    <div className="flex min-h-20 items-center gap-4 border-b border-border/60 py-3 last:border-b-0">
+      <span className="flex w-12 justify-center">
+        <Loader aria-label={`${name} loader`} size={size} />
       </span>
-      <span className="type-body font-medium">{loader.name}</span>
-    </button>
+      <span className="min-w-0 flex-1">
+        <span className="block type-body font-medium">{name}</span>
+        <span className="block type-meta text-muted-foreground">{use}</span>
+      </span>
+      <span className="type-meta tabular-nums text-faint">{pixels}px</span>
+    </div>
   )
 }
 
-// PROTOTYPE: twenty running signatures beside the production Session roster.
+// PROTOTYPE: the selected Loader at every production size beside the production Session roster.
 export function UnreadMarkerBrowserPrototype() {
-  const [selected, setSelected] = useState<SignatureLoaderKey>(loaderFromLocation)
-  const select = (loader: SignatureLoaderKey) => {
-    setSelected(loader)
-    replaceLoader(loader)
-  }
-  const selectedName = SIGNATURE_LOADERS.find((loader) => loader.key === selected)?.name
+  useEffect(clearRejectedLoaderChoice, [])
   return (
     <main className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <PrototypeRoster loader={selected} />
+      <PrototypeRoster />
       <section className="min-w-0 flex-1 overflow-y-auto px-8 py-7">
-        <header className="mb-7 flex items-end justify-between gap-8">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Choose Argo's running mark</h1>
-            <p className="mt-1 max-w-xl type-body text-muted-foreground">
-              Twenty roster-scale loaders. Blue remains unread, gray remains read, and yellow still
-              overrides both when a Session needs you.
-            </p>
-          </div>
-          <output className="shrink-0 type-meta text-faint">Selected: {selectedName}</output>
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight">Argo Loader</h1>
+          <p className="mt-1 max-w-xl type-body text-muted-foreground">
+            The moving square is now the shared loading mark. It stays neutral, while blue means
+            unread and yellow means that a Session needs you.
+          </p>
         </header>
-        <div className="space-y-7">
-          {FAMILIES.map((family) => (
-            <section key={family}>
-              <h2 className="mb-2 type-meta font-medium text-faint">{family}</h2>
-              <div className="grid grid-cols-2 gap-1">
-                {SIGNATURE_LOADERS.filter((loader) => loader.family === family).map((loader) => (
-                  <LoaderOption
-                    key={loader.key}
-                    loader={loader}
-                    onSelect={select}
-                    selected={loader.key === selected}
-                  />
-                ))}
-              </div>
-            </section>
+        <div className="max-w-2xl border-y border-border/60">
+          {LOADER_SIZES.map(({ key, ...sample }) => (
+            <LoaderSample key={key} size={key} {...sample} />
           ))}
         </div>
       </section>

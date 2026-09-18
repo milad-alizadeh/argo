@@ -1,6 +1,5 @@
-import { LoaderCircle } from 'lucide-react'
-import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loader } from '../../../../platform/renderer/components/loader'
 import type { SessionFeedRow } from '../types'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -13,26 +12,12 @@ export function StatusIcon({ status }: { status: ToolRow['status'] }) {
       return null
     case 'running':
       return (
-        <StatusMark icon={LoaderCircle} label={t('workState.running')} className="animate-spin" />
+        <>
+          <Loader aria-hidden={true} />
+          <span className="sr-only">{t('workState.running')}</span>
+        </>
       )
   }
-}
-
-function StatusMark({
-  icon: Icon,
-  label,
-  className,
-}: {
-  icon: ComponentType<{ className?: string }>
-  label: string
-  className: string
-}) {
-  return (
-    <>
-      <Icon aria-hidden="true" className={`size-4 shrink-0 ${className}`} />
-      <span className="sr-only">{label}</span>
-    </>
-  )
 }
 
 // Text for work still running carries the Feed's work shimmer.

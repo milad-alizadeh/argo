@@ -1,6 +1,7 @@
 import { Archive } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loader } from '../../../../../platform/renderer/components/loader'
 import { useLiveActivityText } from '../../feed/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../../harness/harnesses'
@@ -11,7 +12,6 @@ import { SessionReferenceText } from '../composer/references/session-reference'
 import { sessionName } from './roster-rows'
 import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'
-import { type SignatureLoaderKey, SignatureRunningLoader } from './running-loader-gallery-prototype'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
@@ -81,7 +81,7 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
-  prototypeRunningLoader?: SignatureLoaderKey
+  prototypeRunningLoader?: boolean
   prototypeUnread?: boolean
 }) {
   const { t } = useTranslation('sessions')
@@ -154,8 +154,8 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
-            {running && prototypeRunningLoader !== undefined ? (
-              <SignatureRunningLoader loader={prototypeRunningLoader} />
+            {running && prototypeRunningLoader ? (
+              <Loader aria-hidden={true} className="ml-auto" size="meta" />
             ) : (
               <UnreadMarkerPrototypeRunning running={running} variant={unreadPrototype} />
             )}
