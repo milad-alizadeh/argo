@@ -3,8 +3,11 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionArchiveStore, sessionArchivePath } from '../../../core/sessions/archive-store'
-import { createSessionReader } from '../../../core/sessions/reader.ts'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '../../../domains/sessions/main/archive-store'
+import { createSessionReader } from '../../../domains/sessions/main/reader.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot, unscopedListing as listing } from './session-fixtures'
 

@@ -1,5 +1,5 @@
-import type { TranscriptRecord } from '@/core/sessions/transcript'
 import { isIdentifier } from '@/shared/validation'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 
 const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
 

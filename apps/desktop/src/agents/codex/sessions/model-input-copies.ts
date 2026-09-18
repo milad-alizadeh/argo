@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/core/sessions/transcript'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 
 // Codex desktop writes each prompt twice: this model-input copy, then the `UserMessage` item the
 // person sees, one ordinal later and under another id. The input copy also carries injected context.

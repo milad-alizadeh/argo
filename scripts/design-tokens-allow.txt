@@ -12,7 +12,7 @@
 
 # Fabricated external-service data (a GitHub or Linear label's own colour, an inline SVG placeholder
 # image) mimics content Argo does not design, not a production visual constant (#1913).
-^apps/desktop/src/renderer/modules/sessions/feed/content/feed-samples\.ts:2:
+^apps/desktop/src/domains/sessions/renderer/feed/content/feed-samples\.ts:2:
 ^apps/desktop/src/domains/tickets/renderer/components/ticket-detail\.stories\.tsx:75:
 
 # A Storybook viewport wrapper testing narrow-width wrapping: a test viewport, not a production

@@ -3,9 +3,9 @@
 // the command means reading that file. The renderer names the CALL; the path is resolved here,
 // from the Session's own transcript, and never accepted from outside the main process.
 import { open, stat } from 'node:fs/promises'
-import type { SessionChain } from '@/core/sessions/chains'
-import { chainBackgroundTasks, chainMessages } from '@/core/sessions/roster'
-import { readShellCommands } from '@/core/sessions/signals'
+import type { SessionChain } from '../../../domains/sessions/contract/chains'
+import { readShellCommands } from '../../../domains/sessions/contract/signals'
+import { chainBackgroundTasks, chainMessages } from '../../../domains/sessions/main/roster'
 
 // How much of the tail one read carries. A watcher left running for an hour writes more than a
 // pane can draw, and the end is the part a reader is watching.

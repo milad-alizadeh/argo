@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
-import { createSessionReader } from '../../../core/sessions/reader.ts'
+import { createSessionReader } from '../../../domains/sessions/main/reader.ts'
 import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import {
   fixtureRoot,

@@ -5,10 +5,10 @@ import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { attachBridges } from './bridges'
-import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './core/sessions/feed-images'
 import { seedDevelopmentProject } from './domains/projects/main/development-seed'
 import { openProjectStore } from './domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
+import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './domains/sessions/contract/feed-images'
 import { startDesktopApplication } from './platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,

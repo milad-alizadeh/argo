@@ -1,4 +1,4 @@
-import { projectRosterRow } from '@/core/sessions/roster'
+import { projectRosterRow } from '../../../domains/sessions/main/roster'
 import type { ResumeTarget } from '../drive/drive-channel'
 import { readSessionFiles } from './discover'
 

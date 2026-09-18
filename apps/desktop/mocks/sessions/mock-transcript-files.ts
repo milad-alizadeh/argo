@@ -10,7 +10,7 @@
 import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { sessionArchivePath } from '../../src/core/sessions/archive-store'
+import { sessionArchivePath } from '../../src/domains/sessions/main/archive-store'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const FIXTURES = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'fixtures', 'sessions')
@@ -86,7 +86,7 @@ export async function writeFixtureTree(root, names, options = {}) {
 }
 
 // Argo's own archive document (#2315): one portable file under the fixture's `userData`, keyed
-// by the CLI Session id, the same shape `core/sessions/archive-store.ts` reads and writes.
+// by the CLI Session id, the same shape `domains/sessions/main/archive-store.ts` reads and writes.
 export async function writeArchiveStore(userData, names) {
   const file = sessionArchivePath(userData)
   await mkdir(path.dirname(file), { recursive: true })

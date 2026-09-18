@@ -2,9 +2,13 @@
 // writes the whole list and older transcripts still carry it; current CLIs add one step with
 // `TaskCreate` and change it with `TaskUpdate`, naming it by the id `TaskCreate`'s result gave.
 
-import { readPlanSnapshot, readPlanStatus } from '@/core/sessions/plan'
-import type { PlanChange, ToolCall, ToolResult } from '@/core/sessions/transcript'
 import { isRecord } from '@/shared/validation'
+import type {
+  PlanChange,
+  ToolCall,
+  ToolResult,
+} from '../../../domains/sessions/contract/transcript'
+import { readPlanSnapshot, readPlanStatus } from '../../../domains/sessions/main/plan'
 
 const DELETED = 'deleted'
 

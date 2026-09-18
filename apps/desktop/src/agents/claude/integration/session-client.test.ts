@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionClient } from '@/core/sessions/client.ts'
-import { sessionStartRequestSchema } from '@/core/sessions/contract.ts'
-import { SESSION_OPERATIONS } from '@/core/sessions/operations.ts'
+import { sessionStartRequestSchema } from '../../../domains/sessions/contract/contract.ts'
+import { SESSION_OPERATIONS } from '../../../domains/sessions/contract/operations.ts'
+import { createSessionClient } from '../../../domains/sessions/preload/client.ts'
 
 const feed = {
   sessionId: 'session-a',

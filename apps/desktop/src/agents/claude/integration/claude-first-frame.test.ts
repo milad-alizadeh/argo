@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createOwnershipLedger } from '@/core/sessions/ownership-ledger.ts'
+import { createOwnershipLedger } from '../../../domains/sessions/main/ownership-ledger.ts'
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { FIRST_FRAME_TIMEOUT_MS } from '../drive/first-frame.ts'
 import {
