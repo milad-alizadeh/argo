@@ -1,5 +1,5 @@
 // Linear as a Ticket source: a team is the scope, and its open issues are the Tickets.
-import type { SourceFailure, TicketSource } from '../../core/tickets/sources'
+import type { SourceFailure, TicketSource } from '../../domains/tickets/main/sources'
 import type { LinearFailure } from './http'
 import { readTicketPage } from './issues'
 import { updateIssuePriority } from './priority'

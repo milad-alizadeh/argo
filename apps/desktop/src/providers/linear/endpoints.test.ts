@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { availableProviders } from '../../core/accounts/providers'
+import { availableProviders } from '../../domains/accounts/main/providers'
 import { GITHUB_ENDPOINTS } from '../github/endpoints'
 import { LINEAR_REDIRECT_PORT, linearEndpoints } from './endpoints'
 

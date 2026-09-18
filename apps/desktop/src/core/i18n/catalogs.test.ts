@@ -11,11 +11,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { ACCOUNT_ERRORS, PROVIDERS } from '../../domains/accounts/contract/contract'
+import accounts from '../../domains/accounts/renderer/locales/en.json'
+import { CONNECTION_STATES, TICKET_ERRORS } from '../../domains/tickets/contract/contract'
+import tickets from '../../domains/tickets/renderer/locales/en.json'
 import { CATALOGS } from '../../renderer/i18n/catalogs'
-import accounts from '../../renderer/modules/accounts/locales/en.json'
-import tickets from '../../renderer/modules/tickets/locales/en.json'
-import { ACCOUNT_ERRORS, PROVIDERS } from '../accounts/contract'
-import { CONNECTION_STATES, TICKET_ERRORS } from '../tickets/contract'
 
 const NAMESPACES = Object.keys(CATALOGS)
 
