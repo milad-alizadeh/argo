@@ -6,9 +6,14 @@
   (root = `null`), never a `kind` discriminant.
 - **Session** — the **root Agent** (`parentId: null`); see L2 for identity fields. Three
   referents kept straight: **(a)** ACP's program-level "Agent" = the CLI program (root Agent's
-  identity + `cli`); **(b)** the tree **node** = any `Agent`; **(c)** CC's "Agent"/Task tool =
+  identity + `harness`); **(b)** the tree **node** = any `Agent`; **(c)** CC's "Agent"/Task tool =
   the *mechanism that spawns* a Subagent.
-- **Subagent** — a **non-root Agent** (a delegated child). Recursive.
+- **Subagent** — a **non-root Agent** (a delegated child). Recursive. Its parent observes three
+  lifecycle events, each absent rather than invented where the harness reports none:
+  **started**, **messaged** (the parent spoke to it again) and **responded**, which carries the
+  end state `completed · failed · interrupted`. What was said either way is read in the
+  Subagent's own Feed. A person's spoken request handed to a Session is a prompt, never a
+  Subagent.
 - **Turn** — one exchange within an Agent: **prompt in → stop reason out**. Stop reason ∈
   `end_turn · max_tokens · max_turn_requests · refusal · cancelled`, plus **`unknown`** where
   the reason can't be inferred — never guessed. Carries **the prompt that opened it**, verbatim
@@ -22,9 +27,17 @@
   and **never read as a Message** (different provenance claims; a Turn's final message routinely
   contradicts its own reasoning). Kept in **ONE ordered sequence** with Message, not two lists —
   emission order is the only thing that says which reasoning produced which answer.
-- **Tool Call** — the atomic observable action within a Turn (kind read/edit/execute/search/…,
-  status pending/in_progress/completed/failed, target file). Carries **when it was emitted and
-  when its result came back** — the grain at which a time is worth rendering.
+- **Tool Call** — the atomic observable action within a Turn (kind, status
+  pending/in_progress/completed/failed/interrupted, target). Carries **when it was emitted and when its
+  result came back** — the grain at which a time is worth rendering.
+
+  **Kind is a closed set, and the harness's adapter assigns it**:
+  `execute · read · search · edit · fetch · skill · other`. `edit` carries a change type
+  (`create | update | delete`); `search` carries a scope (`files | web`); `fetch` is a web page
+  read; `execute` may run in the **background**, with its own running-to-ended lifecycle. A call
+  the adapter cannot classify is `other` and keeps the harness's own name for it as its label —
+  the only place a harness tool name is shown. Where a call came from (an MCP server, say) is a
+  fact beside the kind, never a kind.
 
   What it produced is a **Result** — a kinded value object (`diff | output | media`) carrying
   **its own honesty tier**, not loose fields beside `target`.

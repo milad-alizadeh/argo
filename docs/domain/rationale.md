@@ -114,7 +114,7 @@ terminal as one of ours — which is the guess #587 refused, arriving by a diffe
 **Entry is a fact about the process, not a kind of Session.** A `claude -p` run is one logical
 resume-chain and the root Agent — a Session by L2's own definition, and #1073 declined to carve out
 a second kind for it. What is true of it is narrower: nobody is at the terminal. That is a property
-of how the process was started, so it sits beside `cli` and `cwd` rather than beside
+of how the process was started, so it sits beside `harness` and `cwd` rather than beside
 `managed | external`, and it changes what the Roster DRAWS without changing what a Session IS.
 
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
@@ -131,6 +131,11 @@ under fourteen visible rows. Folding keeps the evidence reachable and spends one
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
 already have (Workspace / Delivery / Session status) and invite drift. What is real is the
 honesty tier on each fact, not the bundle.
+
+**`harness`, not `cli`.** The attribute names the coding agent program that runs a Session. Argo
+drives Codex through its app-server, not a command line, so `cli` named the transport of one
+program and was false for the other. The composer already said "harness" for the same choice, and
+two words for one thing is the drift this model exists to stop (#2441).
 
 ## L3 — the naming rebuild
 
