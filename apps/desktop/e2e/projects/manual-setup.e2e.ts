@@ -24,7 +24,7 @@ test('creates, validates, and reopens a locally ready Project through visible co
     const page = await application.firstWindow()
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
     const configuration = page.getByLabel('Project configuration')
-    await expect(configuration).toHaveValue(/version = 1/)
+    await expect(configuration).toContainText('version = 1')
     await configuration.fill(source)
     await page.getByRole('button', { name: 'Save configuration' }).click()
     await page.getByText('Configuration saved in the setup worktree.').waitFor()
