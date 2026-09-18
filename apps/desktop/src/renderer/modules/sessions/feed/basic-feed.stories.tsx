@@ -1698,11 +1698,15 @@ export const StreamingRevealSurvivesScrollAway: Story = {
     history.scrollTop = history.scrollHeight
     fireEvent.scroll(history)
     await waitFor(() => expect(reply()).toBeDefined())
-    const revealedAfterScrollBack = reply()?.textContent ?? ''
     // A reset-to-empty regression would show only the status announcement (~25 characters); this
-    // margin tolerates the catch-up rate's own jitter around the unmount boundary while still
-    // failing if the resume did not happen.
-    await expect(revealedAfterScrollBack.length).toBeGreaterThan(revealedBeforeScroll.length * 0.5)
+    // This short wait lets React paint the cached text after the virtualizer remounts the row.
+    await waitFor(
+      () =>
+        expect((reply()?.textContent ?? '').length).toBeGreaterThan(
+          revealedBeforeScroll.length * 0.5,
+        ),
+      { timeout: 500 },
+    )
   },
 }
 
