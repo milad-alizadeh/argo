@@ -78,10 +78,9 @@ export async function validateManualSetup(
   request: { projectId: string; requestId: string },
   store: SetupStore,
 ): Promise<ProjectSetupValidated | ProjectError> {
-  const project = projectFor(request.projectId, store.projects)
-  if (!project) return projectError('missing-project', request.requestId)
-  const checkpoint = store.projects.readSetupCheckpoint(project.id)
-  if (!checkpoint) return projectError('invalid-configuration', request.requestId)
+  const context = manualSetupContext(request, store)
+  if ('type' in context) return context
+  const { checkpoint, project } = context
   store.projects.writeSetupCheckpoint({ ...checkpoint, phase: 'validating' })
   const valid = await validateProjectConfiguration(checkpoint.worktreePath)
   const configurationSource = await readProjectConfigurationSource(checkpoint.worktreePath)
@@ -107,10 +106,9 @@ export function cancelManualSetup(
   request: { projectId: string; requestId: string },
   store: SetupStore,
 ): ProjectSetupCancelled | ProjectError {
-  const project = projectFor(request.projectId, store.projects)
-  if (!project) return projectError('missing-project', request.requestId)
-  const checkpoint = store.projects.readSetupCheckpoint(project.id)
-  if (!checkpoint) return projectError('invalid-configuration', request.requestId)
+  const context = manualSetupContext(request, store)
+  if ('type' in context) return context
+  const { checkpoint, project } = context
   store.projects.writeSetupCheckpoint({ ...checkpoint, phase: 'cancelled' })
   return {
     version: 1,
@@ -146,4 +144,18 @@ function setupProject(project: Parameters<typeof toSummary>[0]) {
 
 function projectFor(projectId: string, store: Pick<ProjectRegistryStore, 'read'>) {
   return store.read().projects.find(({ id }) => id === projectId)
+}
+
+function manualSetupContext(
+  request: { projectId: string; requestId: string },
+  store: SetupStore,
+):
+  | { project: NonNullable<ReturnType<typeof projectFor>>; checkpoint: SetupCheckpoint }
+  | ProjectError {
+  const project = projectFor(request.projectId, store.projects)
+  if (!project) return projectError('missing-project', request.requestId)
+  const checkpoint = store.projects.readSetupCheckpoint(project.id)
+  return checkpoint
+    ? { project, checkpoint }
+    : projectError('invalid-configuration', request.requestId)
 }
