@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { type AccountSummary, accountError } from '@/core/accounts/contract'
 import { i18n } from '../../../i18n/config'
+import { ConnectSourceFields } from '../../tickets/components/connect-source-form'
 import { ada, octocat } from '../../tickets/components/ticket-fixtures'
 import { AccountsPanel, type AccountsPanelProps } from './accounts-dialog'
 
@@ -47,7 +48,6 @@ const meta: Meta<typeof AccountsPanel> = {
     signIn: idle,
     disconnecting: null,
     disconnectError: null,
-    onConnectSource: fn(),
     onDisconnect: fn(),
   } satisfies AccountsPanelProps,
 }
@@ -191,12 +191,30 @@ export const NoAccounts: Story = {
   },
 }
 
+// The repository-connect form draws inline once the caller passes it, replacing what used to be
+// a "Connect a repository" button that opened a second dialog on top of this one (#2411).
 export const NoTicketConnection: Story = {
-  args: { listing: listing([octocat]) },
-  play: async ({ args, canvasElement }) => {
-    const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
-    await userEvent.click(within(row).getByRole('button', { name: 'Connect a repository' }))
-    await expect(args.onConnectSource).toHaveBeenCalledWith('github:583231')
+  args: {
+    listing: listing([octocat]),
+    connect: (
+      <ConnectSourceFields
+        accountId={octocat.id}
+        accounts={[octocat]}
+        error={null}
+        onConnectSource={fn()}
+        onSelectAccount={fn()}
+        pending={false}
+        sources={{ state: 'listed', scopes: [] }}
+      />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('listitem', { name: 'GitHub Account octocat' })).toBeVisible()
+    await expect(canvas.getByRole('combobox', { name: 'Account' })).toHaveTextContent(
+      'GitHub · octocat',
+    )
+    await expect(canvas.getByRole('combobox', { name: 'Repository' })).toBeVisible()
   },
 }
 

@@ -10,7 +10,7 @@ import {
 } from '../../../components/ui/empty'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { AccountsDialog } from '../../accounts/components/accounts-dialog'
-import { ConnectSourceForm } from '../components/connect-source-form'
+import { ConnectSourceFields, ConnectSourceForm } from '../components/connect-source-form'
 import { TicketDeck } from '../components/ticket-deck'
 import { TicketProblem } from '../components/ticket-problem'
 import {
@@ -74,12 +74,23 @@ function Body({ view }: { view: TicketsView }) {
 
 export function TicketsScreenView() {
   const screen = useTicketsView()
+  const view = screen.view
   return (
     <>
       <TicketsScreen {...screen} />
       <AccountsDialog
-        onConnectSource={
-          screen.view.kind === 'unconnected' ? screen.view.onSelectAccount : undefined
+        connect={
+          view.kind === 'unconnected' ? (
+            <ConnectSourceFields
+              accountId={view.accountId}
+              accounts={view.accounts}
+              error={view.error}
+              onConnectSource={view.onConnectSource}
+              onSelectAccount={view.onSelectAccount}
+              pending={view.pending}
+              sources={view.sources}
+            />
+          ) : undefined
         }
       />
     </>
