@@ -1,6 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
-import { useWatchedQueries, useWatchedTopic } from '@/renderer/core/hooks/use-watched-topic'
+import {
+  useWatchedQueries,
+  useWatchedTopic,
+} from '@/platform/renderer/core/hooks/use-watched-topic'
 import type { SessionContractError } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import { useRosterWindowCursor, useRosterWindowStore } from '../state/use-roster-window-store'

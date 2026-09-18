@@ -1,13 +1,13 @@
 import { SlidersVertical } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@/renderer/components/ui/dropdown-menu'
+} from '@/platform/renderer/components/ui/dropdown-menu'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
 
 // The closed set of filters, each with the catalog key that names it to the reader.

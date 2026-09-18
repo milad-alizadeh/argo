@@ -1,5 +1,5 @@
 import { opendir } from 'node:fs/promises'
-import { isRecord } from '@/boundary'
+import { isRecord } from '@/shared/validation'
 import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from '../contract/contract'
 import { toSummary } from './presentation'
 import type { ProjectStore } from './register-project'

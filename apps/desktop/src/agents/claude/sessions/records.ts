@@ -1,4 +1,3 @@
-import { isRecord } from '@/boundary'
 import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
 import type {
   ContentBlock,
@@ -6,6 +5,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'

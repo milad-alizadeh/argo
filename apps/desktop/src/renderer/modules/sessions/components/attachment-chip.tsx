@@ -10,7 +10,7 @@ import {
   AttachmentDescription,
   AttachmentMedia,
   AttachmentTitle,
-} from '@/renderer/components/ui/attachment'
+} from '@/platform/renderer/components/ui/attachment'
 
 // `path` is the file's absolute path on disk.
 export function parseFilename(path: string): {

@@ -299,11 +299,11 @@ different verdict rather than an absent one.
 targets into `.vite/build` and names each output after its entry file, so two entries called
 `index.ts` silently overwrite each other and packaging then fails on a missing main entry. The
 entry basenames are the contract with `main` in `package.json` and the preload path in
-`src/main.ts`.
+`src/platform/main/window/create-window.ts`.
 
 The renderer is the cockpit shell: a chrome band, a sidebar of five destinations, and one deck.
-`src/renderer/components/ui/` is written by the shadcn CLI and is never hand-edited;
-`src/renderer/modules/` contains the maintained domain components and hooks. The frame and the surfaces are
+`src/platform/renderer/components/ui/` is written by the shadcn CLI and is never hand-edited;
+each `src/domains/*/renderer/` facet contains its domain components and hooks. The frame and the surfaces are
 [ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), the design workflow is
 [`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
 [`apps/desktop/AGENTS.md`](AGENTS.md).

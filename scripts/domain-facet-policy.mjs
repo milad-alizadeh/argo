@@ -5,13 +5,15 @@ const APPLICATION_ROOTS = {
 }
 
 export const ALLOWED_TARGETS = {
-  contract: new Set(['contract']),
-  main: new Set(['contract', 'main']),
-  preload: new Set(['contract', 'preload']),
-  renderer: new Set(['contract', 'renderer']),
+  shared: new Set(['shared']),
+  contract: new Set(['contract', 'shared']),
+  main: new Set(['contract', 'main', 'shared']),
+  preload: new Set(['contract', 'preload', 'shared']),
+  renderer: new Set(['contract', 'renderer', 'shared']),
 }
 
 export const FACETS = new Set(Object.keys(ALLOWED_TARGETS))
+export const TARGET_FACETS = new Set([...FACETS, 'shared'])
 
 export const COMPOSITION_ROOTS = new Set([
   APPLICATION_ROOTS.main,
@@ -20,6 +22,21 @@ export const COMPOSITION_ROOTS = new Set([
 ])
 
 export const FACET_POLICIES = {
+  shared: {
+    refusesNode: true,
+    refusesElectron: true,
+    refusesReact: true,
+    refusesLegacyCoreImplementation: true,
+    privilegedRoots: [
+      APPLICATION_ROOTS.main,
+      APPLICATION_ROOTS.preload,
+      'apps/desktop/src/platform/main',
+      'apps/desktop/src/platform/preload',
+      'apps/desktop/src/platform/renderer',
+      'apps/desktop/src/providers',
+      'apps/desktop/src/renderer',
+    ],
+  },
   contract: {
     refusesNode: true,
     refusesElectron: true,
@@ -28,7 +45,7 @@ export const FACET_POLICIES = {
     privilegedRoots: [
       APPLICATION_ROOTS.main,
       APPLICATION_ROOTS.preload,
-      'apps/desktop/src/core/storage',
+      'apps/desktop/src/platform/main/storage',
       'apps/desktop/src/providers',
       'apps/desktop/src/renderer',
     ],
@@ -55,7 +72,7 @@ export const FACET_POLICIES = {
     privilegedRoots: [
       APPLICATION_ROOTS.main,
       APPLICATION_ROOTS.preload,
-      'apps/desktop/src/core/storage',
+      'apps/desktop/src/platform/main/storage',
       'apps/desktop/src/providers',
     ],
   },

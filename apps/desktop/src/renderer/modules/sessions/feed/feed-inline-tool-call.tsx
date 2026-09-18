@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
+import { displayedToolLabel } from '@/core/sessions/tool-feed'
 import {
   CodeBlock,
   CodeBlockActions,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '@/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
-import { displayedToolLabel } from '@/core/sessions/tool-feed'
-import { CollapsibleText } from '@/renderer/components/collapsible-text'
+} from '@/platform/renderer/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/platform/renderer/components/ai-elements/code-block-copy-button'
+import { CollapsibleText } from '@/platform/renderer/components/collapsible-text'
 import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'

@@ -1,4 +1,4 @@
-import { createDomainClient } from '../contract/domain'
+import { createDomainClient } from '../../shared/ipc/client'
 import type { SessionAttachmentInput } from './attachments-contract'
 import type { ClaudeQuestionAnswer } from './claude-contract'
 import {

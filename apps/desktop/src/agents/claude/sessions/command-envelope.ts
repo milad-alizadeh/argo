@@ -1,9 +1,9 @@
-import { isIdentifier, isRecord } from '@/boundary'
 import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { isIdentifier, isRecord } from '@/shared/validation'
 import { taggedField, taggedText } from '../../envelope-tags'
 import { readTaskEnding } from './background-task'
 import { readableCommandOutput } from './command-output'

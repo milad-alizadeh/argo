@@ -90,3 +90,34 @@ test('refuses a domain facet importing an application composition root', () => {
     ['composition-root'],
   )
 })
+
+test('allows each domain facet to use only its matching platform facet', () => {
+  const files = [
+    projectFile('contract', 'shared', "import '@/shared/messages'"),
+    projectFile('main', 'ipc', "import '@/platform/main/ipc'"),
+    projectFile('preload', 'ipc', "import '@/platform/preload/ipc'"),
+    projectFile('renderer', 'shell', "import '@/platform/renderer/components/button'"),
+    projectFile('renderer', 'appearance', "import '@/platform/shared/appearance'"),
+  ]
+
+  assert.deepEqual(domainFacetViolations(files), [])
+})
+
+test('refuses a domain facet importing another platform runtime', () => {
+  const files = [
+    projectFile('contract', 'window', "import '@/platform/main/window'"),
+    projectFile('main', 'client', "import '@/platform/preload/ipc'"),
+    projectFile('preload', 'registration', "import '@/platform/main/ipc'"),
+    projectFile('renderer', 'menu', "import '@/platform/main/menu'"),
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [
+      ['contract', 'main'],
+      ['main', 'preload'],
+      ['preload', 'main'],
+      ['renderer', 'main'],
+    ],
+  )
+})

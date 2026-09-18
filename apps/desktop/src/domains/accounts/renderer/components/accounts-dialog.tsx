@@ -3,17 +3,17 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/domains/accounts/contract/contract'
-import { Alert, AlertDescription } from '../../../../renderer/components/ui/alert'
+import { Alert, AlertDescription } from '../../../../platform/renderer/components/ui/alert'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '../../../../renderer/components/ui/dialog'
-import { useContractText } from '../../../../renderer/i18n/contract-text'
-import { firstControl, useFocusRescue } from '../../../../renderer/lib/focus-rescue'
-import type { ContractFailure } from '../../../../renderer/lib/query-client'
+} from '../../../../platform/renderer/components/ui/dialog'
+import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
+import { firstControl, useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
+import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
 import { type AccountListing, useAccounts, useDisconnect } from '../hooks/use-accounts'
 import { useSignIn } from '../hooks/use-sign-in'
 import { useAccountsDialog } from '../state/use-accounts-dialog'

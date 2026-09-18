@@ -1,7 +1,11 @@
 import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Alert, AlertDescription, AlertTitle } from '../../../../renderer/components/ui/alert'
-import { Button } from '../../../../renderer/components/ui/button'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '../../../../platform/renderer/components/ui/alert'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 
 export type SignInNoticeProps = { onConnect: () => void; onDismiss: () => void }
 

@@ -7,7 +7,7 @@
 // not backfilled yet, does a reading fall back to growing the window (`archive-window.ts`) until
 // it has what it needs.
 import { z } from 'zod'
-import { isArchivedSession } from '../storage/session-archive'
+import { isArchivedSession } from './archive-store'
 import { growWindow } from './archive-window'
 import type { SessionArchiveListRequest, SessionArchiveSetRequest } from './contract'
 import { newestFirst, type SessionRosterRow } from './models'

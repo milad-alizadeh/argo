@@ -1,7 +1,7 @@
 import { readdir, readFile, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import { identifierSchema } from '@/boundary'
+import { identifierSchema } from '@/shared/validation'
 
 // One compaction the hook saw start: the file's write time is when it started.
 export type CompactionStart = { sessionId: string; startedAt: string; file: string }

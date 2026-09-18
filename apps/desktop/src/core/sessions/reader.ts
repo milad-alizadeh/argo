@@ -2,11 +2,8 @@ import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '../../domains/tickets/main/session-links'
-import {
-  createInMemorySessionArchiveStore,
-  type SessionArchiveStore,
-} from '../storage/session-archive'
 import { archiveListRead, archiveSetWrite } from './archive-reads'
+import { createInMemorySessionArchiveStore, type SessionArchiveStore } from './archive-store'
 import type { SessionReader } from './bridge'
 import { driveSessionError, isDriveCli, type SessionRenameRequest, sessionError } from './contract'
 import type { HeldFeed } from './feed-cache'

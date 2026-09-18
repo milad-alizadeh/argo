@@ -14,6 +14,7 @@ import {
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
+import { createSessionArchiveStore, sessionArchivePath } from './core/sessions/archive-store'
 import { attachSessionBridge } from './core/sessions/bridge'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
@@ -21,11 +22,14 @@ import {
 } from './core/sessions/proof-protocol'
 import { createSessionReader } from './core/sessions/reader'
 import { openSessionIndexOrNone, sessionIndexPath } from './core/sessions/session-index/open-index'
-import { createSessionArchiveStore, sessionArchivePath } from './core/storage/session-archive'
-import { registerWatching } from './core/watch/bridge'
-import { watchTrees } from './core/watch/watch-paths'
-import { watchPeriodically, watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
 import { createSessionTicketLinkStore } from './domains/tickets/main/session-links'
+import { registerWatching } from './platform/main/watch/bridge'
+import { watchTrees } from './platform/main/watch/watch-paths'
+import {
+  watchPeriodically,
+  watchSystemResume,
+  watchWindowFocus,
+} from './platform/main/watch/watch-signals'
 import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
 import { sessionSources } from './session-sources'
 

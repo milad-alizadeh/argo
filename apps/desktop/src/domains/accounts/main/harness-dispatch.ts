@@ -1,6 +1,6 @@
 // The harness's stringly-typed test-facing dispatch, kept separate so `harness.ts` stays about
 // booting the fixture rather than routing test call sites onto the typed clients.
-import type { createDomainClient } from '../../../core/contract/domain'
+import type { createDomainClient } from '../../../shared/ipc/client'
 import type { TicketPriority } from '../../tickets/contract/contract'
 import type { TICKET_OPERATIONS } from '../../tickets/contract/operations'
 import type { ACCOUNT_OPERATIONS } from '../contract/operations'

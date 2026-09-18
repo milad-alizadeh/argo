@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { sessionFailureState } from '../../session-failure-state'
 import type { RosterRow } from './roster-rows'
 import { RosterStatusRow } from './sessions-sidebar-chrome'

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { questionAnswerSchema, questionSchema } from './question'
 
 export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku'] as const

@@ -1,6 +1,6 @@
 import { type BrowserWindow, dialog } from 'electron'
-import { registerDomainHandlers } from '../contract/domain'
-import { platformText } from '../i18n/platform'
+import { platformText } from '../../platform/main/i18n'
+import { registerDomainHandlers } from '../../platform/main/ipc/register-domain-handlers'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
   type SessionAcceptedReply,

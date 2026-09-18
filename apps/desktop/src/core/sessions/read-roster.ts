@@ -3,7 +3,7 @@
 // archive flag (#2315).
 
 import type { SessionTicketLinkStore } from '../../domains/tickets/main/session-links'
-import { isArchivedSession, type SessionArchiveStore } from '../storage/session-archive'
+import { isArchivedSession, type SessionArchiveStore } from './archive-store'
 import { type SessionListRequest, sessionError } from './contract'
 import type { Discovered } from './merge-discovery'
 import { combineDiscoveries } from './merge-discovery'

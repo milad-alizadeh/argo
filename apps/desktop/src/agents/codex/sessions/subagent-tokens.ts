@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
-import { isRecord } from '@/boundary'
 import type {
   DelegationUsageFacts,
   SessionDelegationUsage,
 } from '@/core/sessions/background-work-contract'
+import { isRecord } from '@/shared/validation'
 import { transcriptPaths } from './discover'
 
 function delegationFacts(line: string): Partial<DelegationUsageFacts> {

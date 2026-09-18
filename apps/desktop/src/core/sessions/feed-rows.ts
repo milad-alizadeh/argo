@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { feedImageUrlSchema } from './feed-images'
 import { questionSchema } from './question'
 import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from './transcript'

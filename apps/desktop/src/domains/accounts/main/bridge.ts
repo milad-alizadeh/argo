@@ -1,7 +1,7 @@
 // The Account channel's main-process end. Every provider call and every credential stays behind it:
 // the renderer names an action and receives secret-free records (#1763).
 import type { BrowserWindow } from 'electron'
-import { registerDomainHandlers } from '../../../core/contract/domain'
+import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
 import { accountError } from '../contract/contract'
 import { ACCOUNT_OPERATIONS } from '../contract/operations'
 import type { AccountAccess } from './access'

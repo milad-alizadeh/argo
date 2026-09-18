@@ -2,7 +2,7 @@
 // that #1825 settled. Version 1 gains actions and never changes a message it already defines, so
 // a `project.open` exchange is byte-identical to the one the accepted proof asserts.
 import { z } from 'zod'
-import { identifierSchema } from '../../../boundary'
+import { identifierSchema } from '../../../shared/validation'
 import type { ProjectError } from './contract'
 
 // A Project as the cockpit draws it: the stable ID, the folder name, and the path, which is a

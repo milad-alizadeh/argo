@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/renderer/components/ui/dialog'
-import { Input } from '@/renderer/components/ui/input'
-import { Label } from '@/renderer/components/ui/label'
+} from '@/platform/renderer/components/ui/dialog'
+import { Input } from '@/platform/renderer/components/ui/input'
+import { Label } from '@/platform/renderer/components/ui/label'
 import type { Session } from '../../types'
 
 export function normalizeSessionName(value: string): string {

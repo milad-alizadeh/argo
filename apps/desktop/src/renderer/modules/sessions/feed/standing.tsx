@@ -1,12 +1,12 @@
 import { MessagesSquare, TriangleAlert } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../components/ui/empty'
+} from '@/platform/renderer/components/ui/empty'
 import { sessionFailureState } from '../session-failure-state'
 import type { SessionError } from '../types'
 import { FeedLoading } from './feed-loading'

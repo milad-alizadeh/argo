@@ -7,8 +7,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../renderer/components/ui/empty'
-import { Skeleton } from '../../../../renderer/components/ui/skeleton'
+} from '../../../../platform/renderer/components/ui/empty'
+import { Skeleton } from '../../../../platform/renderer/components/ui/skeleton'
 import { AccountsDialog } from '../../../accounts/renderer/components/accounts-dialog'
 import { useAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
 import { ConnectSourceFields, ConnectSourceForm } from '../components/connect-source-form'
