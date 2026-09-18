@@ -87,14 +87,30 @@ function ConfigurationEditor({
   const busyMessage = saving === null ? null : busyMessages[saving]
   return (
     <div className="relative min-h-0 flex-1 p-3">
-      <CodeMirror
-        basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
-        className="w-full overflow-hidden rounded-lg border border-input bg-background text-left text-foreground shadow-inner focus-within:ring-2 focus-within:ring-ring [&_.cm-activeLine]:bg-muted/60 [&_.cm-content]:min-h-96 [&_.cm-content]:py-4 [&_.cm-editor]:min-h-96 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted/70 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
-        extensions={extensions}
-        onChange={updateSource}
-        ref={editor}
-        value={source}
-      />
+      <div className="relative">
+        <CodeMirror
+          basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
+          className="w-full overflow-hidden rounded-lg border border-input bg-background text-left text-foreground shadow-inner focus-within:ring-2 focus-within:ring-ring [&_.cm-activeLine]:bg-muted/60 [&_.cm-content]:min-h-96 [&_.cm-content]:pt-4 [&_.cm-content]:pr-4 [&_.cm-content]:pb-14 [&_.cm-editor]:min-h-96 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted/70 [&_.cm-scroller]:font-mono [&_.cm-scroller]:type-body"
+          extensions={extensions}
+          onChange={updateSource}
+          ref={editor}
+          value={source}
+        />
+        <Button
+          className="absolute right-3 bottom-3 shadow-surface"
+          disabled={saving !== null || !source}
+          onClick={() => {
+            const view = editor.current?.view
+            if (view) forceLinting(view)
+            void testConfiguration()
+          }}
+          type="button"
+          variant="outline"
+        >
+          <FlaskConical aria-hidden="true" />
+          {saving === 'test' ? t('setup.testing') : t('setup.test')}
+        </Button>
+      </div>
       {message || busyMessage ? (
         <p
           aria-live="polite"
@@ -104,20 +120,6 @@ function ConfigurationEditor({
           {message ?? busyMessage}
         </p>
       ) : null}
-      <Button
-        className="absolute right-6 bottom-6 shadow-surface"
-        disabled={saving !== null || !source}
-        onClick={() => {
-          const view = editor.current?.view
-          if (view) forceLinting(view)
-          void testConfiguration()
-        }}
-        type="button"
-        variant="outline"
-      >
-        <FlaskConical aria-hidden="true" />
-        {saving === 'test' ? t('setup.testing') : t('setup.test')}
-      </Button>
     </div>
   )
 }
