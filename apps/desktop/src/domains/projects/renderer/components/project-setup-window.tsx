@@ -1,4 +1,9 @@
+import { HighlightStyle, StreamLanguage, syntaxHighlighting } from '@codemirror/language'
+import { toml } from '@codemirror/legacy-modes/mode/toml'
+import { tags } from '@lezer/highlight'
+import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { Settings } from 'lucide-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { Button } from '../../../components/ui/button'
@@ -10,8 +15,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Textarea } from '../../../components/ui/textarea'
 import { useManualProjectSetup } from '../hooks/use-manual-project-setup'
+
+const tomlLanguage = StreamLanguage.define(toml)
+const tomlHighlighting = syntaxHighlighting(
+  HighlightStyle.define([
+    { tag: tags.comment, color: 'var(--muted-foreground)' },
+    { tag: tags.string, color: 'var(--chart-2)' },
+    { tag: [tags.number, tags.bool], color: 'var(--chart-4)' },
+  ]),
+)
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
@@ -46,6 +59,14 @@ export function ProjectSetupView({
   setSource,
 }: { project: ProjectSummary } & ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
+  const editorExtensions = useMemo(
+    () => [
+      tomlLanguage,
+      tomlHighlighting,
+      EditorView.contentAttributes.of({ 'aria-label': t('setup.configurationLabel') }),
+    ],
+    [t],
+  )
   return (
     <main
       aria-label={t('setup.label', { name: project.name })}
@@ -68,12 +89,12 @@ export function ProjectSetupView({
           >
             {t('setup.configurationLabel')}
           </label>
-          <Textarea
-            aria-label={t('setup.configurationLabel')}
-            className="min-h-72 font-mono text-sm"
-            id="project-configuration"
-            onChange={(event) => {
-              setSource(event.target.value)
+          <CodeMirror
+            basicSetup={{ foldGutter: false, highlightActiveLine: true, lineNumbers: true }}
+            className="w-full overflow-hidden rounded-md border border-input bg-background text-foreground focus-within:ring-2 focus-within:ring-ring [&_.cm-content]:min-h-72 [&_.cm-content]:py-3 [&_.cm-editor]:min-h-72 [&_.cm-gutters]:border-r [&_.cm-gutters]:border-input [&_.cm-gutters]:bg-muted [&_.cm-scroller]:font-mono [&_.cm-scroller]:text-sm"
+            extensions={editorExtensions}
+            onChange={(nextSource) => {
+              setSource(nextSource)
               setSaved(false)
             }}
             value={source}
