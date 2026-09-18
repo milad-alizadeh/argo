@@ -111,6 +111,13 @@ function checkpoint(database: ProjectDatabase, projectId: string): SetupCheckpoi
 
 export function createProjectStore(database: ProjectDatabase): ProjectStore {
   database.exec(PROJECT_SCHEMA)
+  try {
+    database.exec(
+      "ALTER TABLE project_setup_checkpoint ADD COLUMN configuration_source TEXT NOT NULL DEFAULT ''",
+    )
+  } catch {
+    // A new database creates the column above; an existing one has it after this migration.
+  }
   const insert = database.prepare(
     'INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)',
   )

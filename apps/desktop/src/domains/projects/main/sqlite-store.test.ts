@@ -68,3 +68,41 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
   })
   reopened.close()
 })
+
+test('adds configuration source to a checkpoint database from before manual setup', async (context) => {
+  const databasePath = await temporaryDatabase(context)
+  const database = new Database(databasePath)
+  database.exec(`
+    CREATE TABLE project (
+      id TEXT PRIMARY KEY,
+      path TEXT NOT NULL,
+      common_directory TEXT NOT NULL UNIQUE
+    ) STRICT;
+    CREATE TABLE project_selection (
+      singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+      project_id TEXT REFERENCES project(id)
+    ) STRICT;
+    CREATE TABLE project_setup_checkpoint (
+      project_id TEXT PRIMARY KEY REFERENCES project(id),
+      worktree_path TEXT NOT NULL,
+      phase TEXT NOT NULL CHECK (phase IN ('editing', 'validating', 'ready', 'failed', 'cancelled'))
+    ) STRICT;
+  `)
+  const store = createProjectStore({
+    exec: (source) => database.exec(source),
+    prepare: (source) => database.query(source),
+    close: () => database.close(),
+  })
+  store.replace({
+    projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
+    selectedId: 'project-1',
+  })
+  store.writeSetupCheckpoint({
+    projectId: 'project-1',
+    worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
+    phase: 'editing',
+    configurationSource: 'version = 1\n',
+  })
+  assert.equal(store.readSetupCheckpoint('project-1')?.configurationSource, 'version = 1\n')
+  store.close()
+})
