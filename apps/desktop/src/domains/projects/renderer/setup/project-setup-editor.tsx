@@ -3,10 +3,9 @@ import { json } from '@codemirror/legacy-modes/mode/javascript'
 import { forceLinting, linter } from '@codemirror/lint'
 import { tags } from '@lezer/highlight'
 import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-codemirror'
-import { AlertCircle, FlaskConical } from 'lucide-react'
+import { FlaskConical } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, AlertDescription } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import type { ProjectSetupViewProps } from './project-setup-window'
 
@@ -82,14 +81,7 @@ function ConfigurationMessage({
   message,
   busyMessage,
 }: Pick<ProjectSetupViewProps, 'message'> & { busyMessage: string | null }) {
-  if (message?.tone === 'error') {
-    return (
-      <Alert className="mt-3 border-destructive/50 bg-destructive/10" variant="destructive">
-        <AlertCircle aria-hidden="true" />
-        <AlertDescription>{message.text}</AlertDescription>
-      </Alert>
-    )
-  }
+  if (message?.tone === 'error') return null
   const text = message?.text ?? busyMessage
   return text ? (
     <p aria-live="polite" className="mt-3 type-meta text-muted-foreground" role="status">

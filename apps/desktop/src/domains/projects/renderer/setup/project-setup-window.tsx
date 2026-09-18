@@ -1,6 +1,8 @@
 import { Save } from 'lucide-react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import { useToastManager } from '@/renderer/components/ui/toast'
 import { ConfigurationPanel } from './project-setup-configuration'
 import { type ManualSetupMessage, useManualProjectSetup } from './use-manual-project-setup'
 
@@ -38,7 +40,12 @@ export function ProjectSetupView({
   updateSource,
 }: { project: ProjectSummary } & ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
+  const { add } = useToastManager()
   const setup = { message, cancel, saved, save, saving, source, testConfiguration, updateSource }
+  useEffect(() => {
+    if (message?.tone !== 'error') return
+    add({ priority: 'high', title: message.text, type: 'error' })
+  }, [add, message])
   return (
     <main
       aria-label={t('setup.label', { name: project.name })}

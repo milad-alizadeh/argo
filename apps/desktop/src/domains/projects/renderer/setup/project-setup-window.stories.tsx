@@ -95,9 +95,11 @@ export const CommandTestFailure: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveTextContent(
-      'A Project command failed validation.',
-    )
+    await expect(
+      within(document.body).getByText('A Project command failed validation.', {
+        selector: '[data-slot="toast-title"]',
+      }),
+    ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Save config' })).toBeEnabled()
   },
 }
@@ -119,9 +121,11 @@ export const SyntaxConfigurationError: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('alert')).toHaveTextContent(
-      'Fix JSON syntax before testing the config.',
-    )
+    await expect(
+      within(document.body).getByText('Fix JSON syntax before testing the config.', {
+        selector: '[data-slot="toast-title"]',
+      }),
+    ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Save config' })).toBeDisabled()
   },
 }
