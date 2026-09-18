@@ -19,13 +19,14 @@ export function attachBridges(
   request: {
     userData: string
     accountData: string
+    connectionData: string
     projects: ProjectStore
     rendererURL: string
     proofEnabled: boolean
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, projects, rendererURL, proofEnabled } = request
+  const { userData, accountData, connectionData, projects, rendererURL, proofEnabled } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   const drivers = createSessionDrivers(userData, home, proofEnabled)
@@ -40,6 +41,7 @@ export function attachBridges(
   const access = createAccountAccess({
     userData,
     accountData,
+    connectionData,
     endpoints: providerEndpoints(proofEnabled),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),

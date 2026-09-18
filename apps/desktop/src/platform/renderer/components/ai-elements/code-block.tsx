@@ -2,11 +2,10 @@ import React, { type CSSProperties, type HTMLAttributes, useEffect, useState } f
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
-import githubDarkDefault from 'shiki/themes/github-dark-default.mjs'
-import githubLight from 'shiki/themes/github-light.mjs'
 import { cn } from '@/platform/renderer/lib/utils'
+import { xcodeCodeThemes } from './xcode-code-theme'
 
-const THEMES = { light: 'github-light', dark: 'github-dark-default' } as const
+const THEMES = { light: 'xcode-light', dark: 'xcode-dark' } as const
 
 type Token = { content: string; light?: string; dark?: string }
 
@@ -19,7 +18,7 @@ async function highlight(code: string, language: BundledLanguage): Promise<Token
   highlighter ??= createHighlighterCore({
     engine: createJavaScriptRegexEngine(),
     langs: [],
-    themes: [githubLight, githubDarkDefault],
+    themes: xcodeCodeThemes,
   })
   const loaded = await highlighter
   await loaded.loadLanguage(bundledLanguages[language])

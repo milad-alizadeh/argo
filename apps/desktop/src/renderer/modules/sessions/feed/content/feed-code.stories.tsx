@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { xcodeCodePalette } from '@/platform/renderer/components/ai-elements/xcode-code-theme'
 import { drawnColor } from './appearance-probe'
 import { FeedCode } from './feed-code'
 import { SAMPLE_TYPESCRIPT } from './feed-samples'
@@ -32,7 +33,8 @@ export const Highlighted: Story = {
     const keyword = canvas.getByText('type')
     const dark = drawnColor(keyword.style.getPropertyValue('--shiki-dark'))
     const light = drawnColor(keyword.style.getPropertyValue('--shiki-light'))
-    await expect(dark).not.toBe(light)
+    await expect(light).toBe(drawnColor(xcodeCodePalette.light.keyword))
+    await expect(dark).toBe(drawnColor(xcodeCodePalette.dark.keyword))
     const expected = document.documentElement.classList.contains('dark') ? dark : light
     await expect(getComputedStyle(keyword).color).toBe(expected)
   },
