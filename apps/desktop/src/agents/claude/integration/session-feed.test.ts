@@ -9,6 +9,12 @@ async function feedOf(names) {
   return projectFeed(stitchChains(await fixtureFiles(names))[0], undefined).rows
 }
 
+function rowText(row) {
+  if (row.shape === 'event') return `${row.event}:${row.text}`
+  if (row.shape === 'prose') return row.text
+  return row.shape
+}
+
 test('draws one row per content block, not one row per record', async () => {
   const rows = await feedOf(['externalBasic'])
   assert.deepEqual(
@@ -26,6 +32,16 @@ test('draws an interrupt and a compaction as markers in the order they happened'
     ['prose', 'prose', 'marker:interrupted', 'marker:compacted', 'prose'],
   )
   assert.equal(rows[3].id, 'm-c:compacted')
+})
+
+test('draws a standalone local command once at its prompt boundary', async () => {
+  const rows = await feedOf(['standaloneCommand'])
+  assert.deepEqual(rows.map(rowText), [
+    'Prepare the work.',
+    'Ready.',
+    'command:/implement 2389',
+    'Implemented.',
+  ])
 })
 
 test('gives every row an id that is stable and unique', async () => {

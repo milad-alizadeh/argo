@@ -25,7 +25,7 @@ import { createSessionArchiveStore, sessionArchivePath } from './core/storage/se
 import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
 import { watchTrees } from './core/watch/watch-paths'
-import { watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
+import { watchPeriodically, watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
 import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
 import { sessionSources } from './session-sources'
 
@@ -101,7 +101,9 @@ export function attachSessions(
   // disk: the gate that holds the CLI's hook open is what tells the screen (#2299). The archive
   // store stands beside the transcripts: the roster and the Archived list are both read out of it.
   // Focus and resume stand beside the trees because FSEvents can lose events with no error and no
-  // closed handle (#2303).
+  // closed handle (#2303). None of the three fires for a Session left running while the window sits
+  // untouched in the background, so the periodic backstop bounds how long that loss can hide one
+  // (#2414).
   registerWatching(window, {
     permissions: [claude.onPermissionsChanged],
     sessions: [
@@ -117,6 +119,7 @@ export function attachSessions(
       ),
       withReconcile(watchWindowFocus(window), sources, reader),
       withReconcile(watchSystemResume(powerMonitor), sources, reader),
+      withReconcile(watchPeriodically(), sources, reader),
     ],
   })
   // Backfill starts on attach and reconcile runs once at launch, the same signal focus and resume

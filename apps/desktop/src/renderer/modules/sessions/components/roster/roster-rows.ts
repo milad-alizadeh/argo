@@ -81,7 +81,7 @@ export function rowPlace(
   }
 }
 
-type ArchivedSection = {
+type ArchivedRosterState = {
   displayed: readonly Session[]
   error: SessionContractError | null
   hasNextPage: boolean
@@ -90,9 +90,14 @@ type ArchivedSection = {
   isLoading: boolean
 }
 
-// The Archive's own rows, given the roster has resolved once and the filter shows it.
-function archivedRows(archived: ArchivedSection): RosterRow[] {
-  if (archived.isLoading) return [{ kind: 'archivedLoading' }]
+// The Archive's own rows, once the active roster has resolved once. `rosterLoadingMoreShown` says
+// the active roster's own loader already stands at the bottom of the list, so the Archive's own
+// loader waits its turn rather than stacking a second, identical spinner under it (#2412).
+function archivedRosterRows(
+  archived: ArchivedRosterState,
+  rosterLoadingMoreShown: boolean,
+): RosterRow[] {
+  if (archived.isLoading) return rosterLoadingMoreShown ? [] : [{ kind: 'archivedLoading' }]
   if (archived.error !== null) return [{ kind: 'archivedError', error: archived.error }]
   if (archived.displayed.length === 0) {
     return [archived.historyComplete ? { kind: 'archivedEmpty' } : { kind: 'archivedIndexing' }]
@@ -103,10 +108,15 @@ function archivedRows(archived: ArchivedSection): RosterRow[] {
     archived: true,
   }))
   if (archived.hasNextPage) rows.push({ kind: 'archivedSentinel' })
-  if (archived.isFetchingNextPage) rows.push({ kind: 'archivedLoadingMore' })
+  if (archived.isFetchingNextPage && !rosterLoadingMoreShown)
+    rows.push({ kind: 'archivedLoadingMore' })
   // Reaching the end of what a source's index has backfilled so far is not reaching the end of the
   // Archive (#2374): say so rather than letting the list look exhaustive while it is only current.
-  if (!archived.hasNextPage && !archived.isFetchingNextPage && !archived.historyComplete) {
+  if (
+    !archived.hasNextPage &&
+    !(archived.isFetchingNextPage && !rosterLoadingMoreShown) &&
+    !archived.historyComplete
+  ) {
     rows.push({ kind: 'archivedIndexing' })
   }
   return rows
@@ -124,7 +134,7 @@ export function rosterRows({
   status,
 }: {
   active: readonly Session[]
-  archived: ArchivedSection
+  archived: ArchivedRosterState
   hasMoreSessions: boolean
   isFetchingMoreSessions: boolean
   showArchive: boolean
@@ -138,9 +148,10 @@ export function rosterRows({
   if (showsActive(status) && hasMoreSessions) rows.push({ kind: 'rosterSentinel' })
   // The spinner is the bottom of the list while the next window arrives, standing where the rows it
   // waits for will be, rather than a bar pinned under the list.
-  if (showsActive(status) && isFetchingMoreSessions) rows.push({ kind: 'rosterLoadingMore' })
+  const rosterLoadingMoreShown = showsActive(status) && isFetchingMoreSessions
+  if (rosterLoadingMoreShown) rows.push({ kind: 'rosterLoadingMore' })
   // The initial roster load draws its own skeleton (sessions-sidebar-chrome.tsx), so the Archive's
   // own outcome stays off the list until the roster has resolved once (#2239).
   if (!showArchive || !showsArchived(status)) return rows
-  return [...rows, ...archivedRows(archived)]
+  return [...rows, ...archivedRosterRows(archived, rosterLoadingMoreShown)]
 }
