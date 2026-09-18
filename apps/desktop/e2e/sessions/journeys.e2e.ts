@@ -4,6 +4,7 @@ import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
+import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveComposerMemory } from './cases/turn-setup.case'
 import { test } from './session-proof-run'
@@ -61,6 +62,10 @@ test.describe('with a slow CLI', () => {
 
   test('session-reply-wait', async ({ session, backend }) => {
     await proveReplyWait(session.page(), backend)
+  })
+
+  test('session-prompt-latency', async ({ session, backend }) => {
+    await provePromptLatency(session.page(), backend)
   })
 
   test('session-duplicate-send', async ({ session, backend }) => {

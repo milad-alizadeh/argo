@@ -3,6 +3,7 @@ import type { SessionRosterRow } from '../../contract/models'
 import {
   optimisticRowFor,
   runningTurnView,
+  settledPromptRowFor,
   turnEnded,
   turnMarkerView,
 } from '../feed/turn-marker-state'
@@ -41,5 +42,6 @@ export function useComposerMarker(options: {
         ? runningTurnView(selectedRow)
         : turnMarkerView(markerEntry, selectedRow),
     optimisticRow: markerEntry === null ? null : optimisticRowFor(markerEntry, selectedRow),
+    settledPromptRow: markerEntry === null ? null : settledPromptRowFor(markerEntry, selectedRow),
   }
 }

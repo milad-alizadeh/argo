@@ -119,6 +119,7 @@ export function SessionScreenView() {
           isRunning: session?.status === 'running' || session?.status === 'permission',
           activity: session?.activity ?? null,
           optimisticRow: composer.optimisticRow,
+          settledPromptRow: composer.settledPromptRow,
           posture: session?.posture ?? null,
           turnMarker: composer.markerView,
         }}

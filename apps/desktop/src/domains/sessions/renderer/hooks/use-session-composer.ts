@@ -36,6 +36,7 @@ type ComposerResult = {
   props: Omit<SessionComposerProps, 'plan' | 'harness'>
   markerView: TurnMarkerView | null
   optimisticRow: SessionFeedRow | null
+  settledPromptRow: SessionFeedRow | null
 }
 
 // The facts the setup pane, the mutations, and the Turn Marker all need before they can be wired:
@@ -82,18 +83,17 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
   const setDraft = useComposerStore((state) => state.setDraft)
   const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
     useComposerFacts({ cli, cockpit, roster, selectedSessionId }, setFailure)
-  const { isHandingOff, onCompact, onHandoff, onInterrupt, markerView, optimisticRow } =
-    useComposerActions({
-      cli,
-      identity,
-      mutations,
-      marker,
-      roster,
-      sessionId,
-      selectedRow,
-      setFailure,
-      queryClient,
-    })
+  const { isHandingOff, onCompact, onHandoff, onInterrupt, ...marks } = useComposerActions({
+    cli,
+    identity,
+    mutations,
+    marker,
+    roster,
+    sessionId,
+    selectedRow,
+    setFailure,
+    queryClient,
+  })
   const onSend = composerSend({
     cli,
     cockpit,
@@ -112,8 +112,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
     failure:
       failure?.sessionId === sessionId ? { message: failure.message, code: failure.code } : null,
     retry: () => setFailure(null),
-    markerView,
-    optimisticRow,
+    ...marks,
     props: {
       focusOnMount,
       isCompacting,

@@ -44,7 +44,7 @@ export async function startNewSession(
   if (pending === null || pending.stage !== 'draft') return false
   // A rapid second Enter/`+` finds the row already submitting and no-ops (#2109): the observable
   // contract is one user action produces at most one new Session, not which mechanism enforces it.
-  if (!creation.startSubmission(pending.id)) return false
+  if (!creation.startSubmission(pending.id, prompt)) return false
   onSubmitted()
   try {
     const reply = await start.mutateAsync({

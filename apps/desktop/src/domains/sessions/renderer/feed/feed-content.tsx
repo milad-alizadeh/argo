@@ -39,13 +39,12 @@ export function feedContent({
   streamingRowId: string | null
   tail: ReactNode
 }) {
-  if (
-    isRunning &&
-    (settled === null || settled.rows.length === 0 || awaitingAssistantReply(settled.rows))
-  ) {
-    return stalled ? (
-      <StalledFeed onRetry={onRetry} posture={posture} />
-    ) : (
+  const noRows = settled === null || settled.rows.length === 0
+  const awaitingReply = isRunning && (noRows || awaitingAssistantReply(settled.rows))
+  if (awaitingReply && stalled) return <StalledFeed onRetry={onRetry} posture={posture} />
+  // A prompt still waiting on its reply stays on screen while the Marker draws below it (#2430).
+  if (isRunning && (noRows || tail === null) && awaitingReply) {
+    return (
       <>
         <FeedLoading state="running" />
         {tail}

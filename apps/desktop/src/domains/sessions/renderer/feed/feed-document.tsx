@@ -64,13 +64,16 @@ function withLiveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): 
 function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
   const facts = liveFacts ?? INACTIVE_FEED_LIVE_FACTS
   const settled = withLiveRows(reading, facts)
+  // A settled prompt stays only while the transcript has no rows, so it can never double one.
+  const promptRow =
+    facts.optimisticRow ?? (reading.rows.length === 0 ? facts.settledPromptRow : null)
   const readingWithOptimisticRow =
-    facts.optimisticRow === null
+    promptRow === null
       ? settled
       : {
           ...settled,
-          revision: `${settled.revision}:${facts.optimisticRow.id}`,
-          rows: [...settled.rows, facts.optimisticRow],
+          revision: `${settled.revision}:${promptRow.id}`,
+          rows: [...settled.rows, promptRow],
         }
   return { ...facts, reading: readingWithOptimisticRow }
 }

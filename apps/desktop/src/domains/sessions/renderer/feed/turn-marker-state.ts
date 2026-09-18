@@ -73,7 +73,18 @@ export function optimisticRowFor(
   entry: TurnMarkerEntry,
   row: TurnMarkerRow | null,
 ): SessionFeedRow | null {
-  if (hasSettled(entry, row)) return null
+  return hasSettled(entry, row) ? null : promptRowFor(entry)
+}
+
+// The same row once the roster has settled: the transcript may not hold the prompt yet (#2430).
+export function settledPromptRowFor(
+  entry: TurnMarkerEntry,
+  row: TurnMarkerRow | null,
+): SessionFeedRow | null {
+  return hasSettled(entry, row) ? promptRowFor(entry) : null
+}
+
+function promptRowFor(entry: TurnMarkerEntry): SessionFeedRow {
   return {
     shape: 'prose',
     id: `optimistic-turn:${entry.startedAt}`,

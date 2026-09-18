@@ -12,6 +12,7 @@ export type FeedLiveFacts = {
   activity: Session['activity']
   optimisticRow: SessionFeedRow | null
   posture: Session['posture'] | null
+  settledPromptRow: SessionFeedRow | null
   turnMarker: TurnMarkerView | null
 } | null
 
@@ -25,5 +26,6 @@ export const INACTIVE_FEED_LIVE_FACTS = {
   activity: null,
   optimisticRow: null,
   posture: null,
+  settledPromptRow: null,
   turnMarker: null,
 } satisfies NonNullable<FeedLiveFacts>
