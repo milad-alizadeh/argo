@@ -17,7 +17,7 @@ test('creates, validates, and reopens a locally ready Project through visible co
     await page.getByRole('button', { name: 'Test config' }).click()
     await page.getByText('All Project commands passed validation.').waitFor()
     await page.getByRole('button', { name: 'Save config' }).click()
-    await page.getByText('Config saved.').waitFor()
+    await page.getByRole('status').getByText('Config saved.').waitFor()
     await application.close()
 
     const restarted = await launch(fixture)

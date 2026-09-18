@@ -11,7 +11,7 @@ const meta: Meta<typeof ProjectSetupWindow> = {
 export default meta
 type Story = StoryObj<typeof ProjectSetupWindow>
 
-export const ManualConfiguration: Story = {
+export const NormalConfiguration: Story = {
   args: { project: { id: 'project-1', name: 'example', path: '/workspace/example' } },
   beforeEach: () => {
     const before = window.argo
@@ -62,7 +62,7 @@ export const ManualConfiguration: Story = {
 }
 
 export const SavingConfiguration: Story = {
-  args: ManualConfiguration.args,
+  args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
       cancel={async () => undefined}
@@ -78,8 +78,8 @@ export const SavingConfiguration: Story = {
   ),
 }
 
-export const FailedValidation: Story = {
-  args: ManualConfiguration.args,
+export const CommandTestFailure: Story = {
+  args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
       cancel={async () => undefined}
@@ -102,8 +102,8 @@ export const FailedValidation: Story = {
   },
 }
 
-export const SyntaxFailure: Story = {
-  args: ManualConfiguration.args,
+export const SyntaxConfigurationError: Story = {
+  args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
       cancel={async () => undefined}
