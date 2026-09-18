@@ -44,8 +44,7 @@ export function searchChainsOf(
     const parsed = sessionRosterRowSchema.safeParse(JSON.parse(record.row_json))
     if (!parsed.success) return []
     const excerpt = excerpts.get(record.chain_id) ?? null
-    return matchesSearchQuery(parsed.data, query) || excerpt !== null
-      ? [{ ...parsed.data, searchExcerpt: excerpt }]
-      : []
+    if (!matchesSearchQuery(parsed.data, query) && excerpt === null) return []
+    return excerpt === null ? [parsed.data] : [{ ...parsed.data, searchExcerpt: excerpt }]
   })
 }
