@@ -22,6 +22,7 @@ import {
   LINEAR_PROOF_ORIGIN_ENV,
 } from '../../../src/providers/proof-protocol'
 import { appExecutable } from '../../packaged-app'
+import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository } from '../../projects/fixtures/project.fixture'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
@@ -70,6 +71,7 @@ function serveTeams(linear: MockLinear) {
 export async function prepare(root: string, application: string): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
+  await makeProjectLocallyReady(projectPath)
   const noSessions = path.join(root, 'no-sessions')
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })

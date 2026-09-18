@@ -12,6 +12,7 @@ import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
+import { makeProjectLocallyReady } from './locally-ready-project'
 
 const run = promisify(execFile)
 
@@ -35,22 +36,7 @@ export async function prepare(root, application?) {
   const projectPath = path.join(root, 'example')
   await mkdir(userData, { recursive: true })
   await mkdir(projectPath)
-  await mkdir(path.join(projectPath, '.argo'))
-  await writeFile(
-    path.join(projectPath, '.argo', 'settings.toml'),
-    [
-      'version = 1',
-      '',
-      '[targets.app]',
-      'default = true',
-      'path = "."',
-      'setup = "bun install"',
-      'run = "bun run dev"',
-      'build = "bun run build"',
-      'test = "bun test"',
-      '',
-    ].join('\n'),
-  )
+  await makeProjectLocallyReady(projectPath)
   const databasePath = sharedDatabasePath(userData)
   const projects = createProjectStore(new DatabaseSync(databasePath))
   projects.replace({
