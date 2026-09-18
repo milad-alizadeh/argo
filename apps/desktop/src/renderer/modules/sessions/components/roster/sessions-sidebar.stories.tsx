@@ -153,6 +153,21 @@ type Story = StoryObj<typeof RosterHarness>
 
 export const Discovered: Story = {
   render: (args) => <RoutedRoster {...args} />,
+  // The trailing search interaction below reads through `window.argo.searchSessions` (#2375), not
+  // the Roster's own loaded window, so this story stubs that seam too, filtered over the same
+  // fixture titles a real title match would find.
+  beforeEach: () => {
+    const restoreSearch = withSearchHost(async (request) =>
+      searchReply({
+        sessions: listed.sessions.filter((candidate) =>
+          (candidate.title?.text.toLocaleLowerCase() ?? '').includes(
+            request.query.toLocaleLowerCase(),
+          ),
+        ),
+      }),
+    )
+    return restoreSearch
+  },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
