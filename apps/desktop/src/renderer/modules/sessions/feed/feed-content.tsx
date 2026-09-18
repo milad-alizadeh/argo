@@ -39,13 +39,12 @@ export function feedContent({
   streamingRowId: string | null
   tail: ReactNode
 }) {
-  if (
-    isRunning &&
-    (settled === null || settled.rows.length === 0 || awaitingAssistantReply(settled.rows))
-  ) {
-    return stalled ? (
-      <StalledFeed onRetry={onRetry} posture={posture} />
-    ) : (
+  const noRows = settled === null || settled.rows.length === 0
+  // A prompt with no reply yet stays on screen under the Marker; only an empty Feed gives way to the spinner (#2430).
+  const waiting = isRunning && (noRows || awaitingAssistantReply(settled.rows))
+  if (waiting && stalled) return <StalledFeed onRetry={onRetry} posture={posture} />
+  if (isRunning && noRows) {
+    return (
       <>
         <FeedLoading state="running" />
         {tail}

@@ -6,6 +6,7 @@ import type { FeedLiveFacts } from './feed-live-facts'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
 import { keptDocument } from './kept-document'
 import { Standing } from './standing'
+import { useHeldPrompt } from './use-held-prompt'
 import { useKeptDocuments } from './use-kept-documents'
 import { awaitingAssistantReply } from './use-settled-feed'
 
@@ -29,7 +30,7 @@ function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
 export function BasicFeed({
   feed,
   activeEvidenceId,
-  liveFacts,
+  liveFacts: reportedLiveFacts,
   onOpenSession,
   failure,
   onRetryFeed,
@@ -51,6 +52,7 @@ export function BasicFeed({
   selectedSessionId: SessionId | null
 } & FeedQuestionHandlers) {
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
+  const liveFacts = useHeldPrompt(selectedSessionId, reportedLiveFacts)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const [retryToken, setRetryToken] = useState(0)

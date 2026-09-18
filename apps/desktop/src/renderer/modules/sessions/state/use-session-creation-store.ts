@@ -103,7 +103,7 @@ export const useSessionCreationStore = create<SessionCreationState>()((set, get)
   },
 }))
 
-// Appends the optimistic row to a real Roster read, in place of the real Session until the reader
+// Puts the optimistic row at the top of a real Roster read (a new Session is the newest), in place of the real Session until the reader
 // reports it: never a second entry once that id shows up for real (#2109).
 export function mergeOptimisticRow(
   sessions: SessionRosterRow[],
@@ -111,7 +111,7 @@ export function mergeOptimisticRow(
 ): SessionRosterRow[] {
   if (pending === null) return sessions
   if (sessions.some((session) => session.id === pending.id)) return sessions
-  return [...sessions, optimisticSessionRow(pending)]
+  return [optimisticSessionRow(pending), ...sessions]
 }
 
 // The "+" action's own dedup: a repeat activation while one row is already pending refocuses it

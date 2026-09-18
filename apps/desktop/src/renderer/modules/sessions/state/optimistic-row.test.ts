@@ -33,7 +33,7 @@ test('merges no row onto a real Roster read when nothing is pending', () => {
   expect(mergeOptimisticRow(rows, null)).toBe(rows)
 })
 
-test('appends the optimistic row once, alongside the real Roster', () => {
+test('puts the optimistic row first, once, above the real Roster', () => {
   const real = [realSessionRow('session-1')]
   const pending = {
     stage: 'draft',
@@ -44,7 +44,7 @@ test('appends the optimistic row once, alongside the real Roster', () => {
     prompt: null,
   } as const
   const merged = mergeOptimisticRow(real, pending)
-  expect(merged.map((row) => row.id)).toEqual(['session-1', 'optimistic:1'])
+  expect(merged.map((row) => row.id)).toEqual(['optimistic:1', 'session-1'])
 })
 
 test('never duplicates the row once the real Session appears under the reconciled id', () => {
