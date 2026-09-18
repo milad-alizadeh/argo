@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelectedProject } from '@/domains/projects/renderer/hooks/use-selected-project'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { useFocusRescue } from '../../../../renderer/lib/focus-rescue'
+import { useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
 import {
   SignInNotice,
   type SignInNoticeProps,

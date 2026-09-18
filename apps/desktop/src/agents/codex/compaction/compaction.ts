@@ -2,13 +2,8 @@
 // The value lives in the person's own `~/.codex/config.toml` (config-file.ts), never in git, so
 // it is custom per machine with DEFAULT_AUTO_COMPACT_LIMIT as the sensible starting point.
 import { z } from 'zod'
-import { createDomainClient } from '../../../core/contract/domain'
-import {
-  type ContractError,
-  errorFactory,
-  errorSchema,
-  message,
-} from '../../../core/contract/messages'
+import { createDomainClient } from '../../../shared/ipc/client'
+import { type ContractError, errorFactory, errorSchema, message } from '../../../shared/messages'
 
 // #1904's chosen threshold: consistent across models until Codex sessions carry their own. Kept
 // here, not in config-file.ts, so this module stays free of `node:fs` and safe for the renderer

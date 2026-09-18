@@ -4,8 +4,8 @@ import {
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '@/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
+} from '@/platform/renderer/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/platform/renderer/components/ai-elements/code-block-copy-button'
 import { codeLanguageLabel, detectCodeLanguage } from './code-language'
 import { CodeLanguageIcon } from './code-language-icon'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'

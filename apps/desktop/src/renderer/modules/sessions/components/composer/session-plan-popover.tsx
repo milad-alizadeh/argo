@@ -1,15 +1,15 @@
 import { Check } from 'lucide-react'
 
 import type { PlanEntryStatus, SessionPlan } from '@/core/sessions/models'
-import { Button } from '../../../../components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '../../../../components/ui/popover'
-import { Progress } from '../../../../components/ui/progress'
+} from '@/platform/renderer/components/ui/popover'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',

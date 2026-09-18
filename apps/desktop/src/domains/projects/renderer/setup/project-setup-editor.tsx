@@ -6,9 +6,9 @@ import CodeMirror, { EditorView, type ReactCodeMirrorRef } from '@uiw/react-code
 import { FlaskConical } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
-import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
-import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
+import { useDarkAppearance } from '@/platform/renderer/appearance/hooks/use-appearance'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 import { xcodeEditorTheme } from './project-setup-editor-theme'
 import type { ProjectSetupViewProps } from './project-setup-window'
 

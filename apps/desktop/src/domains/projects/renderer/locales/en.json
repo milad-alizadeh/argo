@@ -1,4 +1,13 @@
 {
+  "switcher": {
+    "placeholder": "Select project",
+    "current": "Current project: {{name}}",
+    "switchLabel": "Switch project",
+    "switchTo": "Switch to {{name}}",
+    "add": "Add project",
+    "addEllipsis": "Add project…",
+    "settings": "Project settings…"
+  },
   "settings": {
     "title": "Project settings"
   },

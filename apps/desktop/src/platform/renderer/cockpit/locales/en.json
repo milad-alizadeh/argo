@@ -1,0 +1,10 @@
+{
+  "rail": {
+    "label": "Main navigation",
+    "settings": "Settings"
+  },
+  "shell": {
+    "collapseSidebar": "Collapse sidebar",
+    "openSidebar": "Open sidebar"
+  }
+}

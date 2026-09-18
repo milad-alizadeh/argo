@@ -1,7 +1,7 @@
 // ADR-0041: Claude Code writes nothing while it compacts, so the file this user-level hook leaves is the only live signal.
 import { lstat, realpath, stat } from 'node:fs/promises'
-import { isRecord } from '@/boundary'
-import { readDocument, writeDocument } from '@/core/storage/portable-file'
+import { readDocument, writeDocument } from '@/platform/main/storage/portable-file'
+import { isRecord } from '@/shared/validation'
 
 export type HookInstall = 'installed' | 'present' | 'refused'
 

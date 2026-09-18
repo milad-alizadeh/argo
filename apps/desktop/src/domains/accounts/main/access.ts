@@ -3,7 +3,7 @@
 
 import { toSummary } from '@/domains/projects/main/presentation'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createWriteQueue, portablePath } from '../../../core/storage/portable-file'
+import { createWriteQueue, portablePath } from '../../../platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '../../../providers/endpoints'
 import type { AccountState } from '../contract/contract'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'

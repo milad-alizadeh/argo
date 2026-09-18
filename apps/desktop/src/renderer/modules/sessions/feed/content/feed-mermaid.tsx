@@ -1,7 +1,7 @@
 import { Expand } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { Button } from '@/renderer/components/ui/button'
-import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
+import { useDarkAppearance } from '@/platform/renderer/appearance/hooks/use-appearance'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 import { mermaidThemeVariables } from './mermaid-theme'
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { DevelopmentInstance } from '@/development/instance'
+import type { DevelopmentInstance } from '@/platform/main/development/instance'
 import { repositoryRoot } from './repository'
 import type { ProjectRegistration, ProjectStore } from './sqlite-store'
 

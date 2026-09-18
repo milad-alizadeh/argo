@@ -14,9 +14,9 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/core/sessions/proof-protocol'
-import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
+import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,

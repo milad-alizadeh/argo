@@ -1,7 +1,7 @@
 // How each Ticket source reads on screen. A view that differs by provider looks it up here, so a
 // concept one provider has and another lacks, a Linear cycle say, is one field on its entry.
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { i18n } from '../../../../renderer/i18n/config'
+import { i18n } from '../../../../platform/renderer/i18n/config'
 
 export type SourcePresentation = {
   // The provider's own page for a new Ticket until Argo writes one (#1850, #1851), or null.

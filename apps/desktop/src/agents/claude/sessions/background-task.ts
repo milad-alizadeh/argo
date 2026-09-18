@@ -1,9 +1,9 @@
-import { isRecord } from '@/boundary'
 import {
   BACKGROUND_STATES,
   type BackgroundState,
   type BackgroundTaskRecord,
 } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 import { taggedField } from '../../envelope-tags'
 
 function isBackgroundState(value: string | null): value is BackgroundState {

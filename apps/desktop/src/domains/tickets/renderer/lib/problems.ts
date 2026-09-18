@@ -14,9 +14,9 @@ import {
 } from 'lucide-react'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { ConnectionSummary, TicketErrorCode } from '@/domains/tickets/contract/contract'
-import { i18n } from '../../../../renderer/i18n/config'
-import { contractText } from '../../../../renderer/i18n/contract-text'
-import type { ContractFailure } from '../../../../renderer/lib/query-client'
+import { i18n } from '../../../../platform/renderer/i18n/config'
+import { contractText } from '../../../../platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
 import { providerPresentation } from '../../../accounts/renderer/lib/providers'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }

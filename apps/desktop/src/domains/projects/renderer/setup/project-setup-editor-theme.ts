@@ -1,7 +1,7 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { EditorView } from '@uiw/react-codemirror'
-import { xcodeCodePalette } from '@/renderer/components/ai-elements/xcode-code-theme'
+import { xcodeCodePalette } from '@/platform/renderer/components/ai-elements/xcode-code-theme'
 
 export function xcodeEditorTheme(dark: boolean) {
   const palette = xcodeCodePalette[dark ? 'dark' : 'light']

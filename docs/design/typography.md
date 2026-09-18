@@ -44,8 +44,7 @@ interface text beside 14px prose.
 | Account and project dialogs | Account name, provider, project, path, sign-in code, status, and errors | `title` for the sign-in code, `body` for primary text, `meta` for supporting facts, and `code` for paths and provider labels |
 | Shared UI primitives | Dialog, menu, input, tooltip, badge, table, and other shadcn defaults | The primitive owns its default. An app surface supplies a semantic role when it needs the product scale. |
 
-The Atlas page has no reader text yet. Story fixtures and the old composer prototype do not set
-the production contract.
+The Atlas page has no reader text yet. Story fixtures do not set the production contract.
 
 ## Role contract
 

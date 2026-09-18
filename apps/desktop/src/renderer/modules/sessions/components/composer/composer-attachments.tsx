@@ -5,7 +5,7 @@ import {
   AttachmentAction,
   AttachmentActions,
   AttachmentGroup,
-} from '@/renderer/components/ui/attachment'
+} from '@/platform/renderer/components/ui/attachment'
 import type { ComposerAttachment } from '../../state/use-composer-store'
 import { AttachmentChip, parseFilename } from '../attachment-chip'
 

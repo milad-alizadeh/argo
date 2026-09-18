@@ -22,8 +22,10 @@ async function sourceFiles(directory) {
   return files
 }
 
-const root = path.join(import.meta.dirname, '../apps/desktop/src/domains')
-const violations = domainFacetViolations(await sourceFiles(root))
+const roots = ['domains', 'platform', 'shared'].map((directory) =>
+  path.join(import.meta.dirname, '../apps/desktop/src', directory),
+)
+const violations = domainFacetViolations((await Promise.all(roots.map(sourceFiles))).flat())
 for (const violation of violations) {
   console.error(
     `${violation.path}: ${violation.sourceFacet} cannot import ${violation.specifier} (${violation.kind})`,

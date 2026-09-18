@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Separator } from '@/renderer/components/ui/separator'
+import { Separator } from '@/platform/renderer/components/ui/separator'
 
 export function ProjectSetupSteps({ projectName }: { projectName: string }) {
   const { t } = useTranslation('projects')

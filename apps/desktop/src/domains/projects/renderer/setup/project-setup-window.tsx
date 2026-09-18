@@ -2,7 +2,7 @@ import { Save } from 'lucide-react'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { useToastManager } from '@/renderer/components/ui/toast'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { ConfigurationPanel } from './project-setup-configuration'
 import { type ManualSetupMessage, useManualProjectSetup } from './use-manual-project-setup'
 

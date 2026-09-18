@@ -1,5 +1,5 @@
-import { isRecord } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 
 const SKILL_BODY_PREFIX = 'Base directory for this skill:'
 

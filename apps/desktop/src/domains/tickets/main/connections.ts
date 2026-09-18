@@ -2,8 +2,13 @@
 // Account (CONTEXT.md L1 · Connection). Its own file beside `projects.json`, because a registration's
 // identity and its validated links are separate destination files
 // (docs/portable-integration-contracts.md).
-import { isIdentifier, isRecord } from '../../../boundary'
-import { otherFields, readDocument, writeDocument } from '../../../core/storage/portable-file'
+
+import {
+  otherFields,
+  readDocument,
+  writeDocument,
+} from '../../../platform/main/storage/portable-file'
+import { isIdentifier, isRecord } from '../../../shared/validation'
 import type { Provider } from '../../accounts/contract/contract'
 import { providerOf } from '../../accounts/main/registry'
 

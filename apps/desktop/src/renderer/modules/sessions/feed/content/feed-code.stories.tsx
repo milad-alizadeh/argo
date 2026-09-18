@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { xcodeCodePalette } from '@/renderer/components/ai-elements/xcode-code-theme'
+import { xcodeCodePalette } from '@/platform/renderer/components/ai-elements/xcode-code-theme'
 import { drawnColor } from './appearance-probe'
 import { FeedCode } from './feed-code'
 import { SAMPLE_TYPESCRIPT } from './feed-samples'

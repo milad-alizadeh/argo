@@ -1,4 +1,4 @@
-import { createDomainClient } from '../../../core/contract/domain'
+import { createDomainClient } from '../../../shared/ipc/client'
 import { type ProjectOpenReply, type ProjectSetupReply, projectError } from '../contract/contract'
 import type { ProjectListReply } from '../contract/messages'
 import { PROJECT_OPERATIONS } from '../contract/operations'

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../boundary'
+import { identifierSchema } from '../../../shared/validation'
 
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),

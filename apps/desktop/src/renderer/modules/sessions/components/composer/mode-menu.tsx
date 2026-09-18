@@ -8,8 +8,8 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '../../../../components/ui/dropdown-menu'
-import { InputGroupButton } from '../../../../components/ui/input-group'
+} from '@/platform/renderer/components/ui/dropdown-menu'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { TurnSetupControlProps } from './run-setup-menu'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.

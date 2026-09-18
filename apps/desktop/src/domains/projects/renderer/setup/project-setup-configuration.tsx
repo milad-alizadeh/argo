@@ -1,7 +1,7 @@
 import { Save, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { ConfigurationEditor, isJson } from './project-setup-editor'
 import { ProjectSetupSteps } from './project-setup-steps'
 import type { ProjectSetupViewProps } from './project-setup-window'

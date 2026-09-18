@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { type DriveSessionErrorCode, driveSessionError } from '@/core/sessions/contract'
-import { CockpitShell } from '../../cockpit/components/cockpit-shell'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { SessionsSidebar } from '../components/roster/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'

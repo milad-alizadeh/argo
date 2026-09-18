@@ -123,7 +123,7 @@ const config: ForgeConfig = {
     new VitePlugin({
       // Both targets emit into .vite/build, and the output is named after the entry file. Two
       // entries both called index.ts silently overwrite each other, so the entry basenames are
-      // the contract with `main` in package.json and the preload path in src/main.ts.
+      // the contract with `main` in package.json and the preload path in create-window.ts.
       build: [
         { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
         { entry: 'src/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
