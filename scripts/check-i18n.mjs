@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
+const gitDiffBufferBytes = 16 * 1024 * 1024
 const rendererRoots = [
   join(repositoryRoot, 'apps/desktop/src/domains'),
   join(repositoryRoot, 'apps/desktop/src/platform/renderer'),
@@ -81,10 +82,11 @@ export function hardCodedText(input, file, changedLines) {
 function changedProductionLines() {
   const diff = execFileSync(
     'git',
-    ['diff', '--unified=0', '--no-color', 'origin/main', '--', ...rendererRoots],
+    ['diff', '--find-renames', '--unified=0', '--no-color', 'origin/main'],
     {
       cwd: repositoryRoot,
       encoding: 'utf8',
+      maxBuffer: gitDiffBufferBytes,
     },
   )
   const changed = new Map()
