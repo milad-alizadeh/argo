@@ -21,17 +21,14 @@ function xcodeEditorTheme(dark: boolean) {
   return [
     EditorView.theme(
       {
-        '&': { backgroundColor: palette.background, color: palette.foreground },
+        '&': { backgroundColor: 'var(--popover)', color: palette.foreground },
         '.cm-activeLine': { backgroundColor: palette.lineHighlight },
-        '.cm-activeLineGutter': {
-          backgroundColor: palette.lineHighlight,
-          color: palette.foreground,
-        },
-        '.cm-cursor': { borderLeftColor: palette.foreground },
+        '.cm-activeLineGutter': { backgroundColor: palette.lineHighlight },
+        '.cm-cursor, .cm-dropCursor': { borderLeftColor: dark ? '#fff' : palette.foreground },
         '.cm-gutters': {
-          backgroundColor: palette.background,
+          backgroundColor: 'var(--popover)',
           borderRightColor: 'transparent',
-          color: palette.gutterForeground,
+          ...(dark ? {} : { color: palette.gutterForeground }),
         },
         '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
           backgroundColor: palette.selection,
@@ -42,12 +39,18 @@ function xcodeEditorTheme(dark: boolean) {
     syntaxHighlighting(
       HighlightStyle.define([
         { tag: [tags.comment, tags.quote], color: palette.comment },
-        { tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' },
+        ...(dark
+          ? [{ tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' }]
+          : [
+              { tag: [tags.typeName, tags.typeOperator], color: palette.keyword },
+              { tag: tags.keyword, color: palette.keyword, fontWeight: 'bold' },
+            ]),
         { tag: [tags.string, tags.meta], color: palette.string },
         { tag: tags.typeName, color: palette.type },
-        { tag: tags.definition(tags.variableName), color: palette.definition },
         { tag: tags.name, color: palette.name },
         { tag: tags.variableName, color: palette.variable },
+        { tag: tags.definition(tags.variableName), color: palette.definition },
+        { tag: [tags.regexp, tags.link], color: dark ? palette.string : '#0e0eff' },
       ]),
     ),
   ]

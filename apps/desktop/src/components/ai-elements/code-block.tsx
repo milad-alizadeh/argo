@@ -2,12 +2,8 @@ import React, { type CSSProperties, type HTMLAttributes, useEffect, useState } f
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
-import {
-  xcodeCodePalette,
-  xcodeCodeThemes,
-} from '@/renderer/components/ai-elements/xcode-code-theme'
+import { xcodeCodeThemes } from '@/renderer/components/ai-elements/xcode-code-theme'
 import { cn } from '@/renderer/lib/utils'
-import { useDarkAppearance } from '@/renderer/modules/appearance/hooks/use-appearance'
 
 const THEMES = { light: 'xcode-light', dark: 'xcode-dark' } as const
 
@@ -119,14 +115,14 @@ export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
 }
 
 export function CodeBlock({ children, className, code, language, line, ...props }: CodeBlockProps) {
-  const dark = useDarkAppearance()
-  const palette = xcodeCodePalette[dark ? 'dark' : 'light']
   return (
     <CodeBlockContext.Provider value={code}>
       <div
-        className={cn('group relative w-full overflow-hidden rounded-md border', className)}
+        className={cn(
+          'group relative w-full overflow-hidden rounded-md border bg-background text-foreground',
+          className,
+        )}
         data-language={language ?? 'plain'}
-        style={{ backgroundColor: palette.background, color: palette.foreground }}
         {...props}
       >
         {children}
