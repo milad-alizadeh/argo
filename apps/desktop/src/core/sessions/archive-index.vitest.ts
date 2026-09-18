@@ -12,56 +12,14 @@ import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 import { createSessionReader } from './reader'
 import { openSessionIndex } from './session-index/open-index'
 import {
-  type IndexedAdapter,
-  indexedAdapters,
-  manyTranscripts,
-  sessionIdAt,
-} from './session-index/roster-fixtures'
-import type { SessionSource } from './session-source'
+  createIndexedReadHarness,
+  expectAnsweredByIndex,
+  finishBackfill,
+} from './indexed-read-test-harness'
+import type { createSessionReader } from './reader'
+import { indexedAdapters, manyTranscripts, sessionIdAt } from './session-index/roster-fixtures'
 
-const cleanUp: (() => Promise<void>)[] = []
-afterEach(async () => {
-  for (const close of cleanUp.splice(0)) await close()
-})
-
-// Counts every call to the underlying adapter's own scan, the one `archive-window.ts` falls back
-// to growing: an indexed read that never calls it proves the index answered alone.
-function spiedSource(source: SessionSource) {
-  let discoverCalls = 0
-  const spied: SessionSource = {
-    ...source,
-    discoverSessions: (options) => {
-      discoverCalls += 1
-      return source.discoverSessions(options)
-    },
-  }
-  return { spied, discoverCallCount: () => discoverCalls }
-}
-
-async function harness(adapter: IndexedAdapter) {
-  const root = await mkdtemp(path.join(os.tmpdir(), `argo-archive-index-${adapter.cli}-`))
-  cleanUp.push(() => rm(root, { recursive: true, force: true }))
-  const userData = await mkdtemp(path.join(os.tmpdir(), `argo-archive-store-${adapter.cli}-`))
-  cleanUp.push(() => rm(userData, { recursive: true, force: true }))
-  const index = openSessionIndex(path.join(root, 'sessions.db'))
-  cleanUp.push(() => index.close())
-  const archive = createSessionArchiveStore(sessionArchivePath(userData))
-  const source = adapter.source(root, index)
-  const { spied, discoverCallCount } = spiedSource(source)
-  const reader = createSessionReader([spied], createInMemorySessionTicketLinkStore(), archive)
-  return { root, archive, index, source, reader, discoverCallCount }
-}
-
-async function finishBackfill(source: SessionSource) {
-  let progress = await source.backfillTick?.(30)
-  for (
-    let batches = 0;
-    progress !== undefined && !progress.complete && batches < 20;
-    batches += 1
-  ) {
-    progress = await source.backfillTick?.(30)
-  }
-}
+const { harness } = createIndexedReadHarness()
 
 async function archiveList(
   reader: ReturnType<typeof createSessionReader>,
@@ -83,9 +41,13 @@ describe.each(indexedAdapters)('the $cli Archive read through the Session index'
     const before = discoverCallCount()
     const page = await archiveList(reader)
 
-    expect(page.sessions.map((row) => row.id)).toEqual([sessionIdAt(55)])
-    expect(page.historyComplete).toBe(true)
-    expect(discoverCallCount()).toBe(before)
+    expectAnsweredByIndex({
+      page,
+      expectedIds: [sessionIdAt(55)],
+      historyComplete: true,
+      discoverCallCount,
+      before,
+    })
   }, 20_000)
 
   test('reports history incomplete rather than falling back to a scan while backfill is still running', async () => {
@@ -99,9 +61,13 @@ describe.each(indexedAdapters)('the $cli Archive read through the Session index'
 
     // Id 2 sits inside the warmed window, so the index already answers for it, but backfill has not
     // walked the rest of the tree yet: the reply says so rather than presenting this page as final.
-    expect(page.sessions.map((row) => row.id)).toEqual([sessionIdAt(2)])
-    expect(page.historyComplete).toBe(false)
-    expect(discoverCallCount()).toBe(before)
+    expectAnsweredByIndex({
+      page,
+      expectedIds: [sessionIdAt(2)],
+      historyComplete: false,
+      discoverCallCount,
+      before,
+    })
   }, 20_000)
 })
 

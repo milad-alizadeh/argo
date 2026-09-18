@@ -16,6 +16,7 @@ import {
 } from './cases/roster-interaction.case'
 import { proveStableRosterPolling } from './cases/roster-order.case'
 import { proveRosterWindow } from './cases/roster-window.case'
+import { proveSearchFindsABuriedSession } from './cases/search.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
@@ -24,6 +25,7 @@ import { appendProse, growCodexTranscript, removeProse, streamProse } from './fi
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
+import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
 import { test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -118,6 +120,12 @@ test('session-roster-restart', async ({ session }) => {
 test('session-roster-window', async ({ session }) => {
   await writeWindowFillerSessions(session.fixture.claudeTranscripts, session.fixture.project)
   await proveRosterWindow(session.page())
+})
+
+test('session-search', async ({ session }) => {
+  await writeWindowFillerSessions(session.fixture.claudeTranscripts, session.fixture.project)
+  await writeBuriedSearchTarget(session.fixture.claudeTranscripts, session.fixture.project)
+  await proveSearchFindsABuriedSession(session.page())
 })
 
 test('shipped fuses stay intact', async () => {

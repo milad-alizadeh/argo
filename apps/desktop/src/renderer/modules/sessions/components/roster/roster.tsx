@@ -1,4 +1,4 @@
-import { type RefObject, useMemo, useRef, useState } from 'react'
+import { type RefObject, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRosterStatus } from '../../state/use-roster-filter-store'
 import type { Session, SessionId } from '../../types'
@@ -23,15 +23,18 @@ export type RosterActions = {
   onUnlinkTicket: (session: Session) => void
 }
 
+const NOOP = () => {}
+
 // The rows the virtual list draws, kept apart from Roster's own body so the memo dependency list
 // (each row object is what the memoized RosterRowView compares against) reads as one seam rather
 // than adding to the function the row-action wiring already fills.
 function useRosterRows(options: {
   read: ReturnType<typeof useOrderedSessions>
+  search: ReturnType<typeof useSidebarRoster>['searched'] | null
   selectedSessionId: SessionId | null
   visible: readonly Session[]
 }) {
-  const { read, selectedSessionId, visible } = options
+  const { read, search, selectedSessionId, visible } = options
   const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
   const status = useRosterStatus()
   const archived = useArchivedSection(selectedSessionId, visibleSessionIds, read.roster !== null)
@@ -42,12 +45,39 @@ function useRosterRows(options: {
         archived,
         hasMoreSessions: read.hasMoreSessions,
         isFetchingMoreSessions: read.isFetchingMoreSessions,
+        search,
         showArchive: read.roster !== null,
         status,
       }),
-    [archived, read.hasMoreSessions, read.isFetchingMoreSessions, read.roster, visible, status],
+    [
+      archived,
+      read.hasMoreSessions,
+      read.isFetchingMoreSessions,
+      read.roster,
+      search,
+      visible,
+      status,
+    ],
   )
-  return { rows, onFetchNextPage: archived.fetchNextPage }
+  return {
+    rows,
+    onFetchNextPage: archived.fetchNextPage,
+    onFetchNextSearchPage: search?.fetchNextPage ?? NOOP,
+  }
+}
+
+// The rename dialog's own state and submit handler, kept apart from Roster's body for the same
+// reason as useRosterRows: wiring, not the component's own logic.
+function useRenameDialog(
+  rename: (sessionId: SessionId, title: string) => void,
+  onRename: RosterActions['onRename'],
+) {
+  const [renameTarget, setRenameTarget] = useState<Session | null>(null)
+  const handleRename = useCallback(
+    async (session: Session, name: string) => rename(session.id, await onRename(session, name)),
+    [rename, onRename],
+  )
+  return { renameTarget, setRenameTarget, handleRename }
 }
 
 // Assembles useSidebarRoster's options, kept apart from Roster's own body for the same reason as
@@ -55,14 +85,16 @@ function useRosterRows(options: {
 // absorb it without exceeding the 50-line cap.
 function useRosterSessions(options: {
   actions: RosterActions
+  projectRoot: string | null
   read: ReturnType<typeof useOrderedSessions>
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
-  const { actions, read, selectedSessionId, sidebar } = options
+  const { actions, projectRoot, read, selectedSessionId, sidebar } = options
   return useSidebarRoster({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
+    projectRoot,
     roster: read.roster,
     rosterError: read.rosterError,
     selectedSessionId,
@@ -84,15 +116,19 @@ export function Roster({
   selectedSessionId: SessionId | null
 }) {
   const sidebar = useRef<HTMLElement>(null)
-  const [renameTarget, setRenameTarget] = useState<Session | null>(null)
   const read = useOrderedSessions(projectRoot)
-  const sessions = useRosterSessions({ actions, read, selectedSessionId, sidebar })
+  const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
   const { focus, selection } = sessions
-  const { onFetchNextPage, rows } = useRosterRows({
+  const { onFetchNextPage, onFetchNextSearchPage, rows } = useRosterRows({
     read,
+    search: sessions.searching ? sessions.searched : null,
     selectedSessionId,
     visible: sessions.visible,
   })
+  const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
+    sessions.rename,
+    actions.onRename,
+  )
   return (
     <aside
       aria-label={useTranslation('sessions').t('sidebarLabel')}
@@ -118,6 +154,7 @@ export function Roster({
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
         onFetchNextPage={onFetchNextPage}
+        onFetchNextSearchPage={onFetchNextSearchPage}
         onFocus={focus.setFocusedSessionId}
         onLinkTicket={actions.onLinkTicket}
         onOpenTicket={actions.onOpenTicket}
@@ -131,13 +168,7 @@ export function Roster({
         selectedSessionId={selectedSessionId}
         tabStop={focus.tabStop}
       />
-      <RenameDialog
-        onRename={async (session, name) =>
-          sessions.rename(session.id, await actions.onRename(session, name))
-        }
-        session={renameTarget}
-        setSession={setRenameTarget}
-      />
+      <RenameDialog onRename={handleRename} session={renameTarget} setSession={setRenameTarget} />
     </aside>
   )
 }

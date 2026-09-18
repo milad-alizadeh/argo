@@ -751,3 +751,103 @@ export const NoSentinelWhenTheWindowIsComplete: Story = {
     await expect(scroll.querySelectorAll('div[aria-hidden="true"]')).toHaveLength(0)
   },
 }
+
+// A live search reads through `window.argo.searchSessions`, not the Roster's own loaded window
+// (#2375), so every search story stubs that seam on its own rather than `withRosterHost`.
+function withSearchHost(
+  handler: (request: { query: string; status: string; cursor: string | null }) => Promise<unknown>,
+) {
+  const before = window.argo
+  window.argo = { ...before, searchSessions: handler as typeof before.searchSessions }
+  return () => {
+    window.argo = before
+  }
+}
+
+function searchReply(fields: {
+  sessions?: unknown[]
+  nextCursor?: string | null
+  historyComplete?: boolean
+}) {
+  return {
+    version: 1,
+    type: 'session.searched',
+    requestId: 'storybook-search',
+    sessions: [],
+    nextCursor: null,
+    historyComplete: true,
+    ...fields,
+  }
+}
+
+async function typeSearch(canvasElement: HTMLElement, query: string) {
+  const canvas = within(canvasElement)
+  const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
+  await userEvent.click(search)
+  await userEvent.keyboard(query)
+}
+
+// A title match reaches a Session the Roster's own window never loaded, proving the search reads
+// through the shared reader's full indexed history rather than filtering what is already on
+// screen (#2375).
+export const SearchFindsATitleMatch: Story = {
+  beforeEach: () =>
+    withSearchHost(async () =>
+      searchReply({
+        sessions: [
+          {
+            ...session,
+            id: 'outside-the-loaded-window',
+            title: { text: 'Found far back in history', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await typeSearch(canvasElement, 'far back')
+    await expect(
+      await canvas.findByRole('button', { name: /Found far back in history/ }),
+    ).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /Read the Session transcript/ })).toBeNull()
+  },
+}
+
+export const SearchNoMatches: Story = {
+  beforeEach: () => withSearchHost(async () => searchReply({})),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await typeSearch(canvasElement, 'nothing indexed holds this')
+    await waitFor(() =>
+      expect(canvas.getByText('No Sessions match your search')).toBeInTheDocument(),
+    )
+  },
+}
+
+// Background backfill (#2373) can still be walking older history while a search is already
+// running: the empty page says so rather than presenting itself as the complete answer.
+export const SearchStillIndexing: Story = {
+  beforeEach: () => withSearchHost(async () => searchReply({ historyComplete: false })),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await typeSearch(canvasElement, 'still indexing')
+    await waitFor(() =>
+      expect(canvas.getByText('Still indexing older Sessions')).toBeInTheDocument(),
+    )
+  },
+}
+
+export const SearchFailure: Story = {
+  beforeEach: () =>
+    withSearchHost(async () => {
+      throw new Error('search failed')
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await typeSearch(canvasElement, 'anything')
+    await waitFor(async () => {
+      const alert = canvas.getByRole('alert')
+      await expect(alert).toHaveTextContent('Unable to search Sessions')
+    })
+  },
+}
