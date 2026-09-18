@@ -46,6 +46,8 @@ export const ProjectActions: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Current project: worktree' }))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to argo' }))
+    // The previous menu's closing animation leaves it briefly unclickable, still in the DOM.
+    await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
     )
