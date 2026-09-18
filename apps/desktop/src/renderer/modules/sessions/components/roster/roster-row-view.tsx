@@ -48,7 +48,11 @@ export const RosterRowView = memo(function RosterRowView({
   selected,
   tabbable,
 }: RosterRowViewProps) {
-  if (row.kind === 'archivedSentinel' || row.kind === 'rosterSentinel') {
+  if (
+    row.kind === 'archivedSentinel' ||
+    row.kind === 'rosterSentinel' ||
+    row.kind === 'searchSentinel'
+  ) {
     return <div aria-hidden="true" />
   }
   if (row.kind === 'rosterLoadingMore') return <RosterLoadingMoreRow />

@@ -15,6 +15,7 @@ import {
   readSessionFiles,
   reconcileAll,
   resolveIds,
+  searchIndexed,
 } from './discover'
 import { draftOverlay } from './live-feed'
 import {
@@ -122,6 +123,7 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     reconcileAll: index === undefined ? undefined : () => reconcileAll(roots.transcripts, index),
     resolveIndexedIds: index === undefined ? undefined : (ids) => resolveIds(index, ids),
     historyComplete: index === undefined ? undefined : () => historyComplete(index),
+    searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),

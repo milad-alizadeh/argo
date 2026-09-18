@@ -81,6 +81,7 @@ export const {
   reconcileAll,
   resolveIds,
   historyComplete,
+  searchIndexed,
 } = reader
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 

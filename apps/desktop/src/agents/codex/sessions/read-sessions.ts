@@ -15,6 +15,7 @@ import {
   readSessionFiles,
   reconcileAll,
   resolveIds,
+  searchIndexed,
 } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
@@ -88,6 +89,7 @@ function indexCapabilities(root: string, index: SessionIndex | undefined) {
     reconcileAll: () => reconcileAll(root, index),
     resolveIndexedIds: (ids: readonly string[]) => resolveIds(index, ids),
     historyComplete: () => historyComplete(index),
+    searchIndexed: (query: string) => searchIndexed(index, query),
   }
 }
 

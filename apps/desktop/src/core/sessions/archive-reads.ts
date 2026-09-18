@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { isArchivedSession } from '../storage/session-archive'
 import { growWindow } from './archive-window'
 import type { SessionArchiveListRequest, SessionArchiveSetRequest } from './contract'
-import type { SessionRosterRow } from './models'
+import { newestFirst, type SessionRosterRow } from './models'
 import { fromContext, type ReadContext } from './read-declaration'
 import { rosterCursorMapSchema } from './roster-cursor'
 import type { SessionSource } from './session-source'
@@ -67,7 +67,7 @@ function archivedIn(rows: readonly SessionRosterRow[], archivedIds: ReadonlySet<
   return rows
     .filter((row) => isArchivedSession(row, archivedIds))
     .map((row) => ({ ...row, archived: true }))
-    .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
+    .sort(newestFirst)
 }
 
 export const archiveListRead = fromContext(
