@@ -12,6 +12,7 @@ import type { OwnerFor, ReadContext } from './read-declaration'
 import { listReply } from './read-roster'
 import { createFeedReader } from './read-session-feed'
 import { delegationUsageRead, shellOutputRead, skillFileRead, workspaceFileRead } from './reads'
+import { searchRead } from './search-reads'
 import type { SessionSource } from './session-source'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
@@ -85,6 +86,7 @@ export function createSessionReader(
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (request) => archiveListRead(reads, request),
     archiveSet: (request) => archiveSetWrite(reads, request),
+    search: (request) => searchRead(reads, request),
     readWorkspaceFile: (request) => workspaceFileRead(reads, request),
     readSkillFile: (request) => skillFileRead(reads, request),
     readSessionFeed: feedReader.readSessionFeed,

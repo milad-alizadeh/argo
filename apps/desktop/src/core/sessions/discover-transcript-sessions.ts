@@ -4,6 +4,7 @@ import {
   discoverSessionsWith,
   historyCompleteFor,
   resolveIdsAgainst,
+  searchAgainst,
 } from './discover-transcript-window'
 import { createFullRecordTracker } from './full-record-tracker'
 import type { SessionRosterRow } from './models'
@@ -151,6 +152,8 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     resolveIds: (index: SessionIndex, ids: readonly string[]) =>
       resolveIdsAgainst(indexedWindowFor, index, ids),
     historyComplete: (index: SessionIndex) => historyCompleteFor(source.cli, index),
+    searchIndexed: (index: SessionIndex, query: string) =>
+      searchAgainst({ index, cli: source.cli, query, presented }),
   }
 }
 

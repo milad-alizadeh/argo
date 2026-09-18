@@ -149,6 +149,11 @@
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",
+  "noSearchResults": "No Sessions match your search",
+  "searchingSessions": "Searching Sessions",
+  "loadingMoreSearchResults": "Loading more matches",
+  "unableToSearchSessions": "Unable to search Sessions",
+  "searchStillIndexing": "Still indexing older Sessions",
   "bulkSelect": {
     "selected": "Selected",
     "archive": "Archive",

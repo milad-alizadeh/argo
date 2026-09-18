@@ -2,6 +2,7 @@ import type { SessionContractError } from '../../session-contract-error'
 import type { SelectionModifier } from '../../state/roster-selection'
 import { type RosterStatus, showsActive, showsArchived } from '../../state/use-roster-filter-store'
 import type { Session, SessionId } from '../../types'
+import { type SearchRosterState, searchRosterRows } from './search-roster-rows'
 
 // What the one roster context menu does to the row under the pointer.
 export type RosterMenuHandlers = {
@@ -51,6 +52,12 @@ export type RosterRow =
   | { kind: 'archivedSentinel' }
   | { kind: 'archivedLoadingMore' }
   | { kind: 'archivedIndexing' }
+  | { kind: 'searchLoading' }
+  | { kind: 'searchError'; error: SessionContractError }
+  | { kind: 'searchEmpty' }
+  | { kind: 'searchSentinel' }
+  | { kind: 'searchLoadingMore' }
+  | { kind: 'searchIndexing' }
 
 // Two rows draw the same thing. A roster read rebuilds every row object when one Session changes,
 // so the row's memo boundary compares what the row draws rather than the object it arrived in
@@ -64,6 +71,9 @@ export function sameRosterRow(left: RosterRow, right: RosterRow): boolean {
   }
   if (left.kind === 'archivedError') {
     return right.kind === 'archivedError' && left.error === right.error
+  }
+  if (left.kind === 'searchError') {
+    return right.kind === 'searchError' && left.error === right.error
   }
   return left.kind === right.kind
 }
@@ -128,12 +138,16 @@ function archivedRosterRows(
 
 // The status filter chooses which Sessions the one list carries. The Archive used to be a
 // disclosure row inside it, which made the reader open a place in the list rather than choose what
-// the list was of; the filter in the header decides now and there is no toggle row.
+// the list was of; the filter in the header decides now and there is no toggle row. A live search
+// (#2375) replaces the whole list rather than joining it: the query already answers across the
+// complete indexed history, scoped by the same status filter, so there is nothing left for the
+// loaded active/archived rows to add.
 export function rosterRows({
   active,
   archived,
   hasMoreSessions,
   isFetchingMoreSessions,
+  search,
   showArchive,
   status,
 }: {
@@ -141,9 +155,11 @@ export function rosterRows({
   archived: ArchivedRosterState
   hasMoreSessions: boolean
   isFetchingMoreSessions: boolean
+  search: SearchRosterState | null
   showArchive: boolean
   status: RosterStatus
 }): RosterRow[] {
+  if (search !== null) return searchRosterRows(search)
   const rows: RosterRow[] = showsActive(status)
     ? active.map((session) => ({ kind: 'session', session, archived: false }))
     : []

@@ -27,6 +27,19 @@ export async function historyCompleteFor(cli: string, index: SessionIndex): Prom
   return (await index.backfillProgress(cli)).complete
 }
 
+// Every chain the index's title, id, and retired-id columns match, presented the same way a
+// window's rows are: the strongest known title, newest first (#2375). Reads no transcript, so it
+// covers whatever history background backfill has already reached rather than the loaded window.
+export async function searchAgainst(options: {
+  index: SessionIndex
+  cli: string
+  query: string
+  presented: (rows: SessionRosterRow[]) => SessionRosterRow[]
+}): Promise<SessionRosterRow[]> {
+  const { index, cli, query, presented } = options
+  return presented(await index.searchChains(cli, query))
+}
+
 export async function discoverSessionsWith(
   parts: {
     source: TranscriptDiscoverySource

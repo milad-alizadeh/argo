@@ -38,4 +38,5 @@ export const {
   reconcileAll,
   resolveIds,
   historyComplete,
+  searchIndexed,
 } = reader
