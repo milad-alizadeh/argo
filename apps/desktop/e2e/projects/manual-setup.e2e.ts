@@ -16,12 +16,11 @@ test('creates, validates, and reopens a locally ready Project through visible co
     await configuration.fill(LOCALLY_READY_CONFIGURATION)
     await page.getByRole('button', { name: 'Test config' }).click()
     await page
-      .getByText('All Project commands passed validation.', {
-        selector: '[data-slot="toast-title"]',
-      })
+      .getByRole('region', { name: 'Notifications' })
+      .getByText('All Project commands passed validation.')
       .waitFor()
     await page.getByRole('button', { name: 'Save config' }).click()
-    await page.getByRole('status').getByText('Config saved.').waitFor()
+    await page.getByRole('region', { name: 'Notifications' }).getByText('Config saved.').waitFor()
     await application.close()
 
     const restarted = await launch(fixture)
