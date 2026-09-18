@@ -6,7 +6,8 @@ import {
 } from './javascript-string'
 
 const TOOL_WRAPPER = new RegExp(
-  `^\\s*const\\s+${JAVASCRIPT_IDENTIFIER_SOURCE}\\s*=\\s*await\\s+tools\\.([A-Za-z][A-Za-z0-9_]*)\\s*\\(`,
+  `(?:^|\\n)\\s*const\\s+${JAVASCRIPT_IDENTIFIER_SOURCE}\\s*=\\s*await\\s+tools\\.([A-Za-z][A-Za-z0-9_]*)\\s*\\(`,
+  'g',
 )
 
 function argumentsUntilClose(input: string, start: number): string | null {
@@ -33,9 +34,14 @@ function argumentsUntilClose(input: string, start: number): string | null {
 }
 
 export function nestedToolCall(input: string): { name: string; argumentsText: string } | null {
-  const match = TOOL_WRAPPER.exec(input)
-  const name = match?.[1]
-  if (match === null || name === undefined) return null
-  const argumentsText = argumentsUntilClose(input, match[0].length)
-  return argumentsText === null ? null : { name, argumentsText }
+  return nestedToolCalls(input)[0] ?? null
+}
+
+export function nestedToolCalls(input: string): { name: string; argumentsText: string }[] {
+  return [...input.matchAll(TOOL_WRAPPER)].flatMap((match) => {
+    const name = match[1]
+    const start = (match.index ?? 0) + match[0].length
+    const argumentsText = argumentsUntilClose(input, start)
+    return name === undefined || argumentsText === null ? [] : [{ name, argumentsText }]
+  })
 }

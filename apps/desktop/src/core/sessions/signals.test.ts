@@ -108,14 +108,18 @@ function delegationMessages(result: ToolResult): TranscriptMessage[] {
 }
 
 test('reads a foreground Subagent as landed as soon as its result comes back', () => {
-  const messages = delegationMessages({ callId: 'call-agent', content: 'done', failed: false })
+  const messages = delegationMessages({
+    callId: 'call-agent',
+    blocks: [{ shape: 'text', text: 'done' }],
+    failed: false,
+  })
   assert.equal(readDelegations(messages, [])[0]?.landed, true)
 })
 
 test('reads a backgrounded Subagent as still running until its completion notification lands', () => {
   const messages = delegationMessages({
     callId: 'call-agent',
-    content: 'Async agent launched successfully.',
+    blocks: [{ shape: 'text', text: 'Async agent launched successfully.' }],
     failed: false,
     background: { taskId: 'task-1', outputPath: null },
   })

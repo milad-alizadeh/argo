@@ -10,9 +10,11 @@ import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
 import { commandSource } from './command-source'
+import { messageEnvelope } from './message-envelope'
 import { readPlanChanges } from './plan-changes'
 import { promptBlocks } from './prompt-images'
 import { readSkillBody } from './skill-body'
+import { readStandaloneRecord } from './standalone-records'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
@@ -66,13 +68,8 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     answeredCalls: results.map((result) => result.callId),
     kind: 'message',
     uuid: record.uuid,
-    parentUuid: typeof record.parentUuid === 'string' ? record.parentUuid : null,
-    originSessionId: typeof record.session_id === 'string' ? record.session_id : null,
+    ...messageEnvelope(record),
     role,
-    sidechain: record.isSidechain === true,
-    cwd: typeof record.cwd === 'string' ? record.cwd : null,
-    branch: typeof record.gitBranch === 'string' ? record.gitBranch : null,
-    timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
     // `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
@@ -143,7 +140,8 @@ export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (value.type === 'last-prompt' && typeof value.leafUuid === 'string') {
     return { kind: 'link', leafUuid: value.leafUuid }
   }
-  const read = readBackgroundTask(value) ?? readTitle(value) ?? readMark(value)
+  const read =
+    readBackgroundTask(value) ?? readTitle(value) ?? readMark(value) ?? readStandaloneRecord(value)
   if (read !== null) return read
   return typeof value.uuid === 'string' ? { kind: 'trace', uuid: value.uuid } : null
 }

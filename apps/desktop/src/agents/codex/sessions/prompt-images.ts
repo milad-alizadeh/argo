@@ -22,6 +22,8 @@ export function promptEventImages(payload: Record<string, unknown>): ContentBloc
 function imageUrl(block: Record<string, unknown>) {
   if (block.type === 'image' && typeof block.image_url === 'string')
     return checkedDataImageUrl(block.image_url)
+  if (block.type === 'input_image' && typeof block.image_url === 'string')
+    return checkedDataImageUrl(block.image_url)
   if (block.type === 'local_image' && typeof block.path === 'string')
     return fileImageUrl(block.path)
   return null

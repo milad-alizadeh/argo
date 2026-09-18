@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
-import type { ToolCall } from './transcript'
+import { resultText, type ToolCall, type ToolResult as TranscriptToolResult } from './transcript'
 import { createdPatch, unifiedPatch } from './unified-patch'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
-export type ToolResult = { content: string | null; failed: boolean }
+export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'>
 
 export function displayedToolLabel(
   call: Pick<ToolRow, 'kind' | 'label'>,
@@ -124,7 +124,7 @@ function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['ev
   const presentation = toolPresentation(call)
   const change = fileChange(call)
   if (change !== null) return { kind: 'diff', title: presentation.label, source: change.patch }
-  const source = result?.content ?? null
+  const source = result === undefined ? null : resultText(result.blocks)
   if (source === null) return null
   const kind = EVIDENCE_KINDS[call.name as keyof typeof EVIDENCE_KINDS] ?? 'output'
   return { kind, title: presentation.label, source }
@@ -166,7 +166,7 @@ function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null
     shape: 'ask',
     id: call.id,
     questions: parsed.data.questions,
-    answer: results.get(call.id)?.content ?? null,
+    answer: resultText(results.get(call.id)?.blocks ?? []),
     unsupported: null,
   }
 }

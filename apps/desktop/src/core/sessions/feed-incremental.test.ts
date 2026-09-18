@@ -7,30 +7,7 @@ import type { SessionChain } from './chains'
 import { projectFeed } from './feed-incremental'
 import type { SessionFeedRow } from './models'
 import type { TranscriptMessage, TranscriptRecord } from './transcript'
-
-function message(overrides: Partial<TranscriptMessage> & { uuid: string }): TranscriptMessage {
-  return {
-    kind: 'message',
-    parentUuid: null,
-    originSessionId: null,
-    role: 'assistant',
-    sidechain: false,
-    cwd: null,
-    branch: null,
-    timestamp: null,
-    entry: 'interactive',
-    stopReason: null,
-    model: null,
-    effort: null,
-    mode: null,
-    blocks: [],
-    toolCalls: [],
-    toolResults: [],
-    answeredCalls: [],
-    usage: null,
-    ...overrides,
-  }
-}
+import { transcriptMessage as message } from './transcript-test-fixtures'
 
 function prose(uuid: string, text: string): TranscriptMessage {
   return message({ uuid, blocks: [{ shape: 'prose', text }] })
@@ -45,7 +22,10 @@ function toolCall(uuid: string, callId: string, name: string): TranscriptMessage
 }
 
 function toolResult(uuid: string, callId: string, content: string): TranscriptMessage {
-  return message({ uuid, toolResults: [{ callId, content, failed: false }] })
+  return message({
+    uuid,
+    toolResults: [{ callId, blocks: [{ shape: 'text', text: content }], failed: false }],
+  })
 }
 
 function chainOf(id: string, records: TranscriptRecord[]): SessionChain {

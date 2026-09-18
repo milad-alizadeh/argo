@@ -45,6 +45,7 @@ test('shows tool calls but keeps a Plan update out of the Feed', async (context)
         text: 'bun test session-store.test.ts',
       },
       { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
+      { status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
       { status: 'running', label: 'Ran bun run build', text: 'bun run build' },
       {
         status: 'succeeded',
