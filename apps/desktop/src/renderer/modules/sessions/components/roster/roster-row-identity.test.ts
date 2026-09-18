@@ -13,7 +13,7 @@ function readFailure(requestId: string, message: string) {
   })
 }
 
-describe('sameRosterRow', () => {
+describe('deciding whether a roster row is the same row across a rebuild', () => {
   const session = { id: 'session-1' } as Session
   const error = readFailure('test-archive-error', 'read failed')
   const otherError = readFailure('test-other-error', 'read failed again')

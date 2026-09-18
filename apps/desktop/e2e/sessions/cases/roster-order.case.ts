@@ -14,9 +14,12 @@ async function proveVisibleNames(page) {
   await claude.click()
   await page.waitForSelector('.feed__viewport[data-session="harnessNoise"] [data-feed-row]')
   await expect(
-    page.locator('.feed__viewport[data-session="harnessNoise"] [data-feed-row]', {
-      hasText: 'Set effort level to medium',
-    }),
+    page.locator(
+      'section[aria-label="Session history"][data-session="harnessNoise"] [data-feed-row]',
+      {
+        hasText: 'Set effort level to medium',
+      },
+    ),
   ).toHaveCount(1)
   const codex = page.locator(
     'nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]',
@@ -25,9 +28,10 @@ async function proveVisibleNames(page) {
   await expect(codex).toContainText('Run Codex check')
   await page.waitForSelector('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]')
   await expect(
-    page.locator('.feed__viewport[data-session="rollout-codexParent"] [data-feed-row]', {
-      hasText: 'Checking...',
-    }),
+    page.locator(
+      'section[aria-label="Session history"][data-session="rollout-codexParent"] [data-feed-row]',
+      { hasText: 'Checking...' },
+    ),
   ).toHaveCount(1)
 }
 

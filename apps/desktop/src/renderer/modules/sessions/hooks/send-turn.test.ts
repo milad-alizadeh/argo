@@ -9,9 +9,15 @@ import {
   SETUP,
 } from '../../../../../mocks/sessions/mock-send-turn'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
-import { sendToDraftIdentity } from './send-draft-turn'
-import { type SendDeps, sendToNewSession, sendToSelected } from './send-turn'
-import { beginEntry, clearEntry, rekeyEntry, type TurnMarkerEntries } from './use-turn-marker'
+import { type DraftSendDeps, sendToDraftIdentity } from './send-draft-turn'
+import { sendToNewSession, sendToSelected } from './send-turn'
+import {
+  beginEntry,
+  clearEntry,
+  rekeyEntry,
+  type TurnMarkerApi,
+  type TurnMarkerEntries,
+} from './use-turn-marker'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
@@ -60,7 +66,7 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
 function turnMarker() {
   const marker = {
     entries: new Map() as TurnMarkerEntries,
-    begin: (key: string, entry: Parameters<SendDeps['marker']['begin']>[1]) => {
+    begin: (key: string, entry: Parameters<TurnMarkerApi['begin']>[1]) => {
       marker.entries = beginEntry(marker.entries, key, { ...entry, startedAt: 0 })
     },
     rekey: (from: string, to: string) => {
@@ -85,17 +91,16 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
       }),
   )
   const marker = turnMarker()
-  const deps = {
+  const deps: DraftSendDeps = {
     cli: 'claude',
     cockpit: COCKPIT,
     navigate: () => undefined as never,
     queryClient: new QueryClient(),
-    roster: null,
     marker,
     setFailure: () => {},
     start: start as never,
     watchTurn: () => {},
-  } as unknown as SendDeps
+  }
   const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
   const turn = { prompt: 'hello', setup: null, attachments: [] }
 
@@ -113,7 +118,7 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
   const started: string[] = []
   const marker = turnMarker()
-  const deps = {
+  const deps: DraftSendDeps = {
     cli: 'claude',
     cockpit: COCKPIT,
     navigate: () => undefined as never,
@@ -122,7 +127,7 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
     setFailure: () => {},
     start: mockMutation(async () => ({ sessionId: 'session-new' })) as never,
     watchTurn: () => {},
-  } as unknown as SendDeps
+  }
   const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
 
   await sendToDraftIdentity(

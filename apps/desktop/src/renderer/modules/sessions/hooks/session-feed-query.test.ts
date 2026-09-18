@@ -2,7 +2,7 @@ import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, test, vi } from 'vitest'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
-describe('sessionFeedQuery', () => {
+describe('caching and retrying the Session feed read', () => {
   test('removes an inactive transcript as soon as its observer switches away', async () => {
     const client = new QueryClient()
     const options = {

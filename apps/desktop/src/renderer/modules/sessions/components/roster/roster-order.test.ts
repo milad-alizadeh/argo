@@ -10,7 +10,7 @@ function session(id: string, retiredIds: string[] = []) {
 
 const idsOf = (sessions: Sessions) => sessions.map((entry) => entry.id)
 
-describe('rememberedRosterOrder', () => {
+describe('remembering a roster row position across reads', () => {
   test('keeps the order the read returned when nothing is remembered', () => {
     const ordered = rememberedRosterOrder([session('a'), session('b'), session('c')], [])
 

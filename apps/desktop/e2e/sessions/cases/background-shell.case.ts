@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { mountFeedRow } from '../feed-virtualization'
 
 async function openPackageReadEvidence(page) {
-  const history = page.locator('.feed__viewport[data-session="shellRunning"]')
+  const history = page.locator('section[aria-label="Session history"][data-session="shellRunning"]')
   const evidenceGroupId = await page.evaluate(async () => {
     const feed = await window.argo.readSessionFeed({
       delegationId: null,

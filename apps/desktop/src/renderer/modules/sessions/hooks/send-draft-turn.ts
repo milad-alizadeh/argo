@@ -10,7 +10,7 @@ import type { Failure } from './use-session-composer-actions'
 import type { useSessionMutations } from './use-session-mutations'
 import type { TurnMarkerApi } from './use-turn-marker'
 
-type DraftSendDeps = {
+export type DraftSendDeps = {
   cli: SessionCli
   cockpit: Cockpit
   marker: TurnMarkerApi

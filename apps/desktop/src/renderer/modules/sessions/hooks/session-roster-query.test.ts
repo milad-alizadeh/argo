@@ -54,7 +54,7 @@ async function readTwice(secondTitle: string) {
   return { first, second }
 }
 
-describe('sessionRosterQuery', () => {
+describe('caching the Session roster read by its stable identity', () => {
   test('never reads the roster on a timer', () => {
     const options = sessionRosterQuery(true, { projectRoot: null, cursor: null })
 

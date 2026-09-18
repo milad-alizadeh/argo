@@ -49,7 +49,7 @@ function kindsOf(options: {
   }).map((row) => row.kind)
 }
 
-describe('rosterRows', () => {
+describe('building the roster rows for a status filter', () => {
   test('ends on the paging sentinel while a wider window is available', () => {
     expect(kindsOf({ hasMoreSessions: true })).toEqual(['session', 'session', 'rosterSentinel'])
   })
@@ -99,7 +99,7 @@ describe('rosterRows', () => {
   })
 })
 
-describe('rosterRows archive', () => {
+describe('building the roster rows for the Archive', () => {
   test('says the Archive is empty under the archived filter rather than showing nothing', () => {
     expect(kindsOf({ showArchive: true, status: 'archived' })).toEqual(['archivedEmpty'])
   })

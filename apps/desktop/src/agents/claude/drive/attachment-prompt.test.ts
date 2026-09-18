@@ -63,7 +63,7 @@ test('quotes a path with a space so Claude Code reads it whole', () => {
   )
 })
 
-test('returns the draft unchanged when there are no attachments', () => {
+test('leaves the draft unchanged when there are no attachments', () => {
   assert.equal(embedAttachments('Review this.', []), 'Review this.')
 })
 
