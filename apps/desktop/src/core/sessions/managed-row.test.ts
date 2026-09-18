@@ -30,6 +30,7 @@ function discovered(row: SessionRosterRow) {
     filesUnreadable: 0,
     filesParsed: 0,
     nextCursor: null,
+    historyComplete: true,
   }
 }
 

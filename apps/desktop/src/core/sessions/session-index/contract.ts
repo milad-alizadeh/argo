@@ -41,6 +41,15 @@ export type SessionIndexWrite = {
   retiredChainIds: string[]
 }
 
+// How far background backfill has walked into a CLI's older history: the newest file it has not
+// yet reached, in the same newest-first order the recent window reads (written time, then path to
+// break a tie). `null` means backfill has not started. `complete` once no file on disk is older
+// than the boundary (#2373).
+export type BackfillProgress = {
+  boundary: { writtenAt: number; path: string } | null
+  complete: boolean
+}
+
 // The asynchronous port shared Session code reads the index through. One CLI's rows are addressed
 // by `cli` throughout, so shared code stays free of CLI branches (ADR-0024).
 export type SessionIndex = {
@@ -51,5 +60,7 @@ export type SessionIndex = {
   // Every chain standing under a retired id for want of its origin.
   strandedChains: (cli: string) => Promise<string[]>
   write: (cli: string, pass: SessionIndexWrite) => Promise<void>
+  backfillProgress: (cli: string) => Promise<BackfillProgress>
+  setBackfillProgress: (cli: string, progress: BackfillProgress) => Promise<void>
   close: () => Promise<void>
 }

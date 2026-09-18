@@ -48,6 +48,7 @@ host.argo = {
       filesUnreadable: 0,
       filesParsed: 0,
       nextCursor: null,
+      historyComplete: true,
     }),
   readSessionFeed: (request: { sessionId: string }) =>
     Promise.resolve({

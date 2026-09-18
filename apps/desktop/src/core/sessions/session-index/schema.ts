@@ -4,7 +4,7 @@
 // built again rather than repaired.
 
 // Bumped whenever a table below changes shape. An index at any other version is discarded.
-export const SESSION_INDEX_VERSION = 1
+export const SESSION_INDEX_VERSION = 2
 
 // One row per transcript file Argo has parsed, keyed by the identity that says whether it changed:
 // path, modification time and size together, because a file appended to inside one mtime tick
@@ -19,6 +19,11 @@ export const SESSION_INDEX_VERSION = 1
 // One row per transcript file's own Session id, naming the file it resumed. This is what
 // `ChainHistory` holds in memory, persisted: a resume link never changes, so a chain keeps its id
 // across a restart instead of promoting a resumed half to a root (#2290).
+//
+// One row per CLI naming how far background backfill has walked into older history: the newest
+// file it has not yet reached, ordered the way the recent window is (written time, then path to
+// break a tie). `complete` is set once no file on disk is older than that boundary, so a restart
+// resumes from where the last batch stopped instead of reading the whole tree again (#2373).
 export const SESSION_INDEX_SCHEMA = `
 CREATE TABLE transcript_file (
   cli TEXT NOT NULL,
@@ -45,5 +50,12 @@ CREATE TABLE chain_link (
   session_id TEXT NOT NULL,
   parent_session_id TEXT,
   PRIMARY KEY (cli, session_id)
+) STRICT;
+
+CREATE TABLE backfill_progress (
+  cli TEXT PRIMARY KEY,
+  boundary_written_at REAL,
+  boundary_path TEXT,
+  complete INTEGER NOT NULL
 ) STRICT;
 `

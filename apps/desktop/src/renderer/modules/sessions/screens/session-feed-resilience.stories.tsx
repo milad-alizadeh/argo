@@ -32,6 +32,7 @@ function flakyFeedHost() {
       filesUnreadable: 0,
       filesParsed: 0,
       nextCursor: null,
+      historyComplete: true,
     }),
     readSessionFeed: async (request) => {
       reads += 1
@@ -79,6 +80,7 @@ function flakyFirstOpenHost() {
       filesUnreadable: 0,
       filesParsed: 0,
       nextCursor: null,
+      historyComplete: true,
     }),
     readSessionFeed: async (request) => {
       reads += 1

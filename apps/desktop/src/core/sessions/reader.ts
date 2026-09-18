@@ -92,6 +92,7 @@ export function createSessionReader(
     readSkillFile: (request) => skillFileRead(reads, request),
     readSessionFeed: feedReader.readSessionFeed,
     cancelSessionFeed: feedReader.cancelSessionFeed,
+    isFeedReadActive: feedReader.isFeedReadActive,
     readShellOutput: (request) => shellOutputRead(reads, request),
     readDelegationUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),

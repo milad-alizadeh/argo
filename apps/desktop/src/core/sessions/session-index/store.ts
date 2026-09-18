@@ -4,8 +4,9 @@
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { type SessionRosterRow, sessionRosterRowSchema } from '../models'
-import type { IndexedTranscriptFile, SessionIndexWrite } from './contract'
+import type { BackfillProgress, IndexedTranscriptFile, SessionIndexWrite } from './contract'
 import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
+import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
 
 export type SessionIndexStore = {
   filesAt: (cli: string, paths: readonly string[]) => IndexedTranscriptFile[]
@@ -14,6 +15,8 @@ export type SessionIndexStore = {
   chainLinks: (cli: string) => { sessionId: string; parentSessionId: string | null }[]
   strandedChains: (cli: string) => string[]
   write: (cli: string, pass: SessionIndexWrite) => void
+  backfillProgress: (cli: string) => BackfillProgress
+  setBackfillProgress: (cli: string, progress: BackfillProgress) => void
   close: () => void
 }
 
@@ -168,6 +171,9 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
     },
 
     write: (cli, pass) => writePass(database, cli, pass),
+
+    backfillProgress: (cli) => backfillProgressOf(database, cli),
+    setBackfillProgress: (cli, progress) => writeBackfillProgress(database, cli, progress),
 
     close() {
       if (!open) return

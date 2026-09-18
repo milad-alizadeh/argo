@@ -74,7 +74,7 @@ const reader = createTranscriptDiscoverer({
   normalizeRecords: normalizeCodexRecords,
 })
 
-export const { clearFullRecords, readSessionFiles } = reader
+export const { clearFullRecords, readSessionFiles, backfillTick, reconcileAll } = reader
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 
 function spawnTaskName(line: string, delegationId: string): string | null {

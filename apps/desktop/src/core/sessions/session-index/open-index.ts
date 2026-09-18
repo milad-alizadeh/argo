@@ -35,6 +35,8 @@ export function openSessionIndex(databasePath: string): SessionIndex {
     chainLinks: async (cli) => store.chainLinks(cli),
     strandedChains: async (cli) => store.strandedChains(cli),
     write: async (cli, pass) => store.write(cli, pass),
+    backfillProgress: async (cli) => store.backfillProgress(cli),
+    setBackfillProgress: async (cli, progress) => store.setBackfillProgress(cli, progress),
     close: async () => store.close(),
   }
 }

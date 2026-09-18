@@ -7,8 +7,8 @@ import type { ChainHistory, SessionChain } from '../chains'
 import type { SessionRosterRow } from '../models'
 import type { TranscriptFile } from '../transcript'
 import type { SessionIndex, TranscriptFileIdentity, TranscriptPath } from './contract'
-import { NOTHING_REINDEXED, reindexChanged } from './reindex-pass'
-import { chainsInWindow, identitiesOf, isUnchanged } from './window-pass'
+import { reindexCandidates } from './reindex-pass'
+import { chainsInWindow } from './window-pass'
 
 export type ReadTranscripts = (
   paths: readonly TranscriptPath[],
@@ -34,8 +34,11 @@ export type IndexedWindow = {
   filesParsed: number
 }
 
-export function createIndexedWindow(source: IndexedWindowSource, index: SessionIndex) {
-  const pass = { source, index }
+// The bounded window and background backfill/reconcile (#2373) all stitch against the same
+// adapter's `ChainHistory`, so all three share one hydration rather than each racing to fill it.
+export type IndexedHistory = { ensureHydrated: () => Promise<void> }
+
+export function hydratedHistory(source: IndexedWindowSource, index: SessionIndex): IndexedHistory {
   // The promise rather than a flag it sets: two passes can overlap, and a flag set before the
   // await lets the second stitch against a history the first has not filled yet.
   let hydration: Promise<void> | null = null
@@ -51,28 +54,37 @@ export function createIndexedWindow(source: IndexedWindowSource, index: SessionI
     }
   }
 
-  return async function readWindow(root: string, windowSize: number): Promise<IndexedWindow> {
+  return {
+    ensureHydrated: async () => {
+      hydration ??= hydrate()
+      await hydration
+    },
+  }
+}
+
+export function createIndexedWindow(source: IndexedWindowSource, index: SessionIndex) {
+  const pass = { source, index }
+  const history = hydratedHistory(source, index)
+
+  async function readWindow(root: string, windowSize: number): Promise<IndexedWindow> {
     const listing = await source.identities(root)
     const window = listing.slice(0, windowSize)
-    hydration ??= hydrate()
-    await hydration
-    const found = await index.filesAt(
-      source.cli,
-      window.map((file) => file.path),
-    )
-    const held = new Map(found.map((file) => [file.path, file]))
-    const changed = window.filter((file) => !isUnchanged(held.get(file.path), file))
-    const reindexed =
-      changed.length === 0
-        ? NOTHING_REINDEXED
-        : await reindexChanged(pass, changed, { held, identities: identitiesOf(listing) })
+    await history.ensureHydrated()
+    const reindexed = await reindexCandidates(pass, window, listing)
     const unreadable = window.filter((file) => reindexed.unreadablePaths.includes(file.path)).length
     return {
-      rows: await index.rowsOfChains(source.cli, chainsInWindow(window, held, reindexed.owners)),
+      rows: await index.rowsOfChains(
+        source.cli,
+        chainsInWindow(window, reindexed.held, reindexed.owners),
+      ),
       filesFound: listing.length,
       filesRead: window.length - unreadable,
       filesUnreadable: unreadable,
       filesParsed: reindexed.parsedPaths.length,
     }
   }
+
+  // Background backfill and reconciliation (#2373) bind to this same instance so they share its
+  // hydration and never re-stitch a resumed half against a history the window read has not filled.
+  return { readWindow, ensureHydrated: history.ensureHydrated, pass }
 }

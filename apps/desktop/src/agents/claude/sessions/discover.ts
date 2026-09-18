@@ -30,4 +30,5 @@ const reader = createTranscriptDiscoverer({
   parse: parseTranscriptLine,
 })
 
-export const { clearFullRecords, discoverSessions, readSessionFiles } = reader
+export const { clearFullRecords, discoverSessions, readSessionFiles, backfillTick, reconcileAll } =
+  reader

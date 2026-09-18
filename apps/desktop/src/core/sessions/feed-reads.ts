@@ -16,6 +16,9 @@ export function createFeedReads() {
     cancel(sessionId: string) {
       reads.get(sessionId)?.abort()
     },
+    // A selected Feed still in flight, so background indexing (#2373) can pause rather than race a
+    // read for the files it is reindexing.
+    isActive: () => reads.size > 0,
   }
 }
 

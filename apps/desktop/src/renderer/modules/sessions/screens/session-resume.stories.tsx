@@ -35,6 +35,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
       filesUnreadable: 0,
       filesParsed: 0,
       nextCursor: null,
+      historyComplete: true,
     }),
     sendSession: async ({ sessionId }) => {
       if (refusal !== null) return driveSessionError(refusal, 'claude', 'storybook-send')

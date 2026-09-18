@@ -1,11 +1,12 @@
 import { createChainCache, createChainHistory, type SessionChain } from './chains'
+import { boundIndexedWindow, discoverIndexedWindow, presentedRows } from './discover-indexed-window'
 import { createFullRecordTracker } from './full-record-tracker'
 import type { SessionRosterRow } from './models'
 import { currentSessionId } from './models'
 import { projectRosterRow } from './roster'
 import { rosterMetadata } from './roster-metadata'
-import type { SessionIndex, TranscriptPath } from './session-index/contract'
-import { createIndexedWindow } from './session-index/indexed-window'
+import { createBackgroundIndexing } from './session-index/background-indexing'
+import type { BackfillProgress, SessionIndex, TranscriptPath } from './session-index/contract'
 import { holdsMessage } from './session-index/window-pass'
 import { createTitleLedger } from './title-ledger'
 import type { TranscriptFile } from './transcript'
@@ -38,6 +39,10 @@ export type TranscriptDiscovery = {
   // A larger window would find more Sessions, encoded as how many files the next pass should
   // read; null once every file `transcriptPaths` found is already inside the window (#2239).
   nextCursor: string | null
+  // False while background backfill still has older history left to index (#2373), so a caller
+  // never reads a Session index still catching up as the machine's whole history. Always true
+  // without an index: that path reads every file this call asked for directly.
+  historyComplete: boolean
 }
 
 // A cursor names how many of the most-recently-written files the pass should read, encoded as a
@@ -48,7 +53,7 @@ function windowSizeFor(cursor: string | null | undefined): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : ROSTER_PAGE_SIZE
 }
 
-function nextCursorFor(found: number, windowSize: number): string | null {
+export function nextCursorFor(found: number, windowSize: number): string | null {
   return found > windowSize ? String(windowSize + ROSTER_PAGE_SIZE) : null
 }
 
@@ -106,14 +111,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const rosterChains = createChainCache(chainHistory)
   const sessionChains = createChainCache(chainHistory)
   const strongestTitle = createTitleLedger()
-
-  // The strongest title Argo has seen for a Session outranks whatever this pass read, and the
-  // Roster is newest first. Both apply to an indexed row exactly as they do to a freshly parsed
-  // one, so they live here rather than inside either read path.
-  function presented(rows: SessionRosterRow[]): SessionRosterRow[] {
-    for (const row of rows) row.title = strongestTitle(row.id, row.title)
-    return rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
-  }
+  const presented = (rows: SessionRosterRow[]) => presentedRows(strongestTitle, rows)
 
   const projectChain = (chain: SessionChain) => projectRosterRow(chain, source.cli)
 
@@ -126,14 +124,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     history: chainHistory,
   }
 
-  // One indexed reader per index handed in, kept because it holds the hydration the first pass
-  // paid for. A different index rebinds it rather than reusing another database's history.
-  let bound: { index: SessionIndex; read: ReturnType<typeof createIndexedWindow> } | null = null
-
-  function indexedWindowFor(index: SessionIndex) {
-    if (bound?.index !== index) bound = { index, read: createIndexedWindow(windowSource, index) }
-    return bound.read
-  }
+  const indexedWindowFor = boundIndexedWindow(windowSource)
 
   async function discoverSessions(
     root: string,
@@ -142,12 +133,14 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     const windowSize = windowSizeFor(options?.cursor)
     const index = options?.index
     if (index !== undefined) {
-      const window = await indexedWindowFor(index)(root, windowSize)
-      return {
-        ...window,
-        rows: presented(window.rows),
-        nextCursor: nextCursorFor(window.filesFound, windowSize),
-      }
+      return discoverIndexedWindow({
+        root,
+        windowSize,
+        index,
+        cli: source.cli,
+        indexedWindowFor,
+        presented,
+      })
     }
     const { found, files, unreadable } = await summarise(root, windowSize)
     return {
@@ -157,15 +150,24 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
       filesUnreadable: unreadable,
       filesParsed: files.length,
       nextCursor: nextCursorFor(found.length, windowSize),
+      historyComplete: true,
     }
   }
 
-  const readSessionFiles = createChainReader({
-    source,
-    summarise,
-    chains: sessionChains,
-    tracker,
-  })
+  const readSessionFiles = createChainReader({ source, summarise, chains: sessionChains, tracker })
 
-  return { clearFullRecords: tracker.clearFullRecords, discoverSessions, readSessionFiles }
+  // Background backfill and reconcile (#2373) share this same bound index's hydration, so a
+  // resumed half never re-stitches against a history the window read has not filled.
+  const background = createBackgroundIndexing(windowSource, indexedWindowFor)
+
+  return {
+    clearFullRecords: tracker.clearFullRecords,
+    discoverSessions,
+    readSessionFiles,
+    backfillTick: (root: string, index: SessionIndex, batchSize = ROSTER_PAGE_SIZE) =>
+      background.backfillTick(root, index, batchSize),
+    reconcileAll: background.reconcileAll,
+  }
 }
+
+export type { BackfillProgress }

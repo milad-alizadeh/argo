@@ -6,11 +6,13 @@ import type { SessionIndex } from '@/core/sessions/session-index/contract'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import type { PendingCodexQuestion } from '../drive/question-protocol'
 import {
+  backfillTick,
   clearFullRecords,
   discoverSessions,
   nameThreads,
   readDelegationFiles as readDelegationFilesForParent,
   readSessionFiles,
+  reconcileAll,
 } from './discover'
 import { draftText } from './harness-envelopes'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
@@ -83,8 +85,12 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       : (sessionId: string) =>
           combinedOverlay(liveMessages?.(sessionId) ?? [], pendingQuestion?.(sessionId) ?? null)
   const openTurns = createOpenTurnReader(root)
+  const index = options?.index
   return {
     cli: 'codex',
+    backfillTick:
+      index === undefined ? undefined : (batchSize) => backfillTick(root, index, batchSize),
+    reconcileAll: index === undefined ? undefined : () => reconcileAll(root, index),
     discoverSessions: async (discoverOptions) => {
       const [discovery, open] = await Promise.all([
         discoverSessions(root, { ...discoverOptions, index: options?.index }),
