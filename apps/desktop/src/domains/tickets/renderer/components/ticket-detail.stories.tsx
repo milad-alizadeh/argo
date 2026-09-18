@@ -72,7 +72,7 @@ export const Default: Story = {
     // A label GitHub colours is tinted with that colour; one without a colour stays plain.
     const tint = (name: string) =>
       within(article).getByText(name).style.getPropertyValue('--ticket-label')
-    await expect(tint('wayfinder')).toBe('#5319e7')
+    await expect(tint('wayfinder')).toBe(`#${wayfinder.labels[0]?.color}`)
     await expect(tint('prd')).toBe('')
   },
 }

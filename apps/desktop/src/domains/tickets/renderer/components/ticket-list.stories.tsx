@@ -74,7 +74,7 @@ export const LongTitleWithLabels: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-[400px]">
+      <div className="h-dvh w-100">
         <Story />
       </div>
     ),
