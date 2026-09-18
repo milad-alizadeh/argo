@@ -83,7 +83,11 @@ export function AccountsPanel({
         </ul>
       ) : null}
       {disconnectError ? <Failure error={disconnectError} /> : null}
-      {connect}
+      {connect ? (
+        <div className="rounded-lg border border-border/60 p-(--spacing-shell-gutter)">
+          {connect}
+        </div>
+      ) : null}
       <SignInPanel {...signIn} providers={listing?.providers ?? []} />
     </div>
   )
