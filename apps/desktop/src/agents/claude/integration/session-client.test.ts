@@ -19,6 +19,7 @@ const listed = {
   filesUnreadable: 0,
   filesParsed: 0,
   nextCursor: null,
+  historyComplete: true,
 }
 const read = {
   version: 1,

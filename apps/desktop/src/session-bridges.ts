@@ -4,22 +4,16 @@
 import path from 'node:path'
 import { type BrowserWindow, powerMonitor } from 'electron'
 import { installCompactionHook } from './agents/claude/compaction/compaction-hook'
-import { renameClaudeSession } from './agents/claude/drive/rename-session'
 import { createClaudeDriveAdapter } from './agents/claude/drive/session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
-import { claudeSessionSource } from './agents/claude/sessions/read-sessions'
 import {
   claudeCompactionStartsRoot,
-  claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
 } from './agents/claude/sessions/roots'
-import { renameCodexSession } from './agents/codex/drive/rename-session'
 import { createCodexDriveAdapter } from './agents/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
-import { codexSessionSource } from './agents/codex/sessions/read-sessions'
-import { codexStatePath, codexTranscriptsRoot } from './agents/codex/sessions/roots'
-import { codexThreadNames } from './agents/codex/sessions/state-store'
+import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { attachSessionBridge } from './core/sessions/bridge'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
@@ -32,6 +26,8 @@ import { createSessionTicketLinkStore } from './core/tickets/session-links'
 import { registerWatching } from './core/watch/bridge'
 import { watchTrees } from './core/watch/watch-paths'
 import { watchSystemResume, watchWindowFocus } from './core/watch/watch-signals'
+import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
+import { sessionSources } from './session-sources'
 
 export function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
   const claude = createSystemClaudeSessionDriver({
@@ -70,42 +66,6 @@ function indexForWindow(window: BrowserWindow, userData: string) {
   return index
 }
 
-type SessionSourcesOptions = {
-  home: string
-  drivers: ReturnType<typeof createSessionDrivers>
-  compactionStarts: string | undefined
-  index: ReturnType<typeof openSessionIndexOrNone>
-}
-
-function sessionSources({ home, drivers, compactionStarts, index }: SessionSourcesOptions) {
-  const { claude, codex } = drivers
-  return [
-    claudeSessionSource({
-      transcripts: claudeTranscriptsRoot(home),
-      processes: claudeProcessesRoot(home),
-      managedSessions: claude.roster,
-      compactionStarts,
-      beginCompaction: claude.beginCompaction,
-      completeCompaction: claude.completeCompaction,
-      completeHandoffs: claude.completeHandoffs,
-      handoffEdges: claude.handoffEdges,
-      liveMessages: claude.liveMessages,
-      rename: (request) => renameClaudeSession(request, claude),
-      isLockedElsewhere: claude.isLockedElsewhere,
-      index,
-    }),
-    codexSessionSource(codexTranscriptsRoot(home), {
-      roster: codex.roster,
-      liveMessages: codex.liveMessages,
-      pendingQuestion: codex.pendingQuestion,
-      rename: (request) => renameCodexSession(request, codex),
-      isLockedElsewhere: codex.isLockedElsewhere,
-      threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
-      index,
-    }),
-  ]
-}
-
 export function attachSessions(
   window: BrowserWindow,
   request: {
@@ -126,12 +86,10 @@ export function attachSessions(
   // Both adapters read their bounded window through one index, so a warm Roster reopens no
   // transcript the last pass already projected (#2372).
   const index = indexForWindow(window, userData)
+  const sources = sessionSources({ home, drivers, compactionStarts, index })
+  const reader = createSessionReader(sources, ticketLinks, archive)
   attachSessionBridge(window, {
-    reader: createSessionReader(
-      sessionSources({ home, drivers, compactionStarts, index }),
-      ticketLinks,
-      archive,
-    ),
+    reader,
     adapters: {
       claude: createClaudeDriveAdapter(claude),
       codex: createCodexDriveAdapter(codex),
@@ -148,13 +106,21 @@ export function attachSessions(
     permissions: [claude.onPermissionsChanged],
     sessions: [
       codex.onRosterChanged,
-      watchTrees([
-        claudeTranscriptsRoot(home),
-        codexTranscriptsRoot(home),
-        sessionArchivePath(userData),
-      ]),
-      watchWindowFocus(window),
-      watchSystemResume(powerMonitor),
+      withReconcile(
+        watchTrees([
+          claudeTranscriptsRoot(home),
+          codexTranscriptsRoot(home),
+          sessionArchivePath(userData),
+        ]),
+        sources,
+        reader,
+      ),
+      withReconcile(watchWindowFocus(window), sources, reader),
+      withReconcile(watchSystemResume(powerMonitor), sources, reader),
     ],
   })
+  // Backfill starts on attach and reconcile runs once at launch, the same signal focus and resume
+  // give it later (#2373).
+  startBackfill(window, sources, reader)
+  reconcileSessions(sources, reader)
 }

@@ -29,6 +29,7 @@ const listed = {
   filesUnreadable: 0,
   filesParsed: 0,
   nextCursor: null,
+  historyComplete: true,
 } satisfies SessionsListed
 
 const readFailure = {

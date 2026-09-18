@@ -13,8 +13,10 @@ import {
   chainIdByPath,
   type FileIdentities,
   holdsMessage,
+  identitiesOf,
   indexedChains,
   indexedFiles,
+  isUnchanged,
   NO_CHAIN,
   pathOfIndexed,
 } from './window-pass'
@@ -94,4 +96,25 @@ export async function reindexChanged(
     removedPaths: unreadablePaths.filter((path) => !known.identities.has(path)),
   })
   return { owners, parsedPaths: [...opened.keys()], unreadablePaths }
+}
+
+// What every caller of `reindexChanged` must do first: ask the index what it already holds for a
+// set of candidate files, and reindex only the ones whose identity moved. The bounded window,
+// backfill and reconciliation all read a different slice of the tree but share this one step, so
+// each treats "unseen" and "changed" the same way (#2373).
+export async function reindexCandidates(
+  pass: Pass,
+  candidates: readonly TranscriptFileIdentity[],
+  listing: readonly TranscriptFileIdentity[],
+): Promise<Reindexed & { held: ReadonlyMap<string, IndexedTranscriptFile> }> {
+  if (candidates.length === 0) return { ...NOTHING_REINDEXED, held: new Map() }
+  const found = await pass.index.filesAt(
+    pass.source.cli,
+    candidates.map((file) => file.path),
+  )
+  const held = new Map(found.map((file) => [file.path, file]))
+  const changed = candidates.filter((file) => !isUnchanged(held.get(file.path), file))
+  if (changed.length === 0) return { ...NOTHING_REINDEXED, held }
+  const reindexed = await reindexChanged(pass, changed, { held, identities: identitiesOf(listing) })
+  return { ...reindexed, held }
 }

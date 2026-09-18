@@ -44,5 +44,8 @@ export function combineDiscoveries(
     filesUnreadable: successful.reduce((total, reading) => total + reading.filesUnreadable, 0),
     filesParsed: successful.reduce((total, reading) => total + reading.filesParsed, 0),
     nextCursor: encodeRosterCursor(cursors),
+    // False the moment any adapter's older history is still backfilling (#2373), so the reply
+    // never claims a Session index still catching up already holds the whole machine.
+    historyComplete: successful.every((reading) => reading.historyComplete),
   }
 }
