@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
-import { setupWorktreeFixture } from '../../../../test-fixtures/projects/setup/setup-worktree.fixture'
+import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import { prepareSetupWorktree } from './setup-worktree'
 
 const run = promisify(execFile)
