@@ -369,7 +369,10 @@ export const RosterStructure: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Watch PR checks')).toBeVisible()
     await expect(canvas.queryByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeNull()
-    await expect(canvas.getByText('#2062')).toBeVisible()
+    await expect(
+      canvasElement.querySelector('[data-slot="session-pull-request"] svg'),
+    ).not.toBeNull()
+    await expect(canvas.queryByText('#2062')).toBeNull()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
     const timing = canvas.getByTitle(/^Running /)
     await expect(timing).toBeVisible()
