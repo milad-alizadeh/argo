@@ -1,4 +1,3 @@
-import { isRecord } from '@/boundary'
 import { dataImageUrl, imageBlocks } from '@/core/sessions/feed-images'
 import type {
   ContentBlock,
@@ -6,6 +5,7 @@ import type {
   ToolCall,
   ToolResult,
 } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/

@@ -2,7 +2,7 @@ import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/core/sessions/question'
-import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Questionnaire,
   QuestionnaireChoice,
@@ -13,7 +13,7 @@ import {
   QuestionnaireItem,
   QuestionnaireSubmit,
   QuestionnaireTitle,
-} from '@/renderer/components/ui/questionnaire'
+} from '@/platform/renderer/components/ui/questionnaire'
 import type { SessionFeedRow } from '../types'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
 

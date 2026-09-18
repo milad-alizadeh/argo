@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { sessionErrorSchema } from './session-error'
 
 // A skill a prompt mentions, read by the absolute path the CLI wrote into the prompt.

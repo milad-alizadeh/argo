@@ -47,11 +47,11 @@ so a step dropped from `package.json` or `ci.yml` is caught by review or not at 
 **`turbo.json` must carry no comments.** Turbo itself reads JSONC and would accept them; the file
 stays comment-free by convention, with nothing enforcing it.
 
-**The renderer boundary is specifier spelling in one directory, and that is all it is.** A
-`noRestrictedImports` override scoped to `apps/desktop/src/renderer/**` refuses `electron` and
-`node:*`, and it reads `import type` too, because compilation erases a type-only import and the
-reach would otherwise be invisible. The preload and the main process are deliberately out of
-scope: importing `electron` is their job. The limits worth knowing before trusting it:
+**The renderer boundary starts with specifier spelling in each renderer facet.** A
+`noRestrictedImports` override covers the renderer roots under `apps/desktop/src/`. It refuses
+`electron` and `node:*`. It also reads `import type`, because compilation erases a type-only
+import. The domain-facet gate rejects imports into another runtime facet. The preload and main
+facets can import `electron`. The limits worth knowing before trusting these gates:
 
 - **One hop of indirection walks straight through.** A renderer file importing `../preload`,
   which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer
@@ -61,7 +61,8 @@ scope: importing `electron` is their job. The limits worth knowing before trusti
   inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
   type-checks clean in the one process that must never hold a token, with no import statement for
   a specifier rule to see.
-- **`contextIsolation: true` and `nodeIntegration: false` in `apps/desktop/src/main.ts` are
+- **`contextIsolation: true` and `nodeIntegration: false` in
+  `apps/desktop/src/platform/main/window/create-window.ts` are
   asserted by nothing.** Those two values make any Node reach from the renderer inert at
   runtime, and a one-word edit to either passes every gate in the repository. `sandbox` stays `false` and is
   deliberately not asserted: the preload needs it, and changing it is a behaviour decision rather

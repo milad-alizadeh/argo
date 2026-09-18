@@ -1,6 +1,6 @@
 // The Linear teams an Account can read, and whether it can read one. A team is the scope of a Linear
 // Connection, checked when the Connection is made (ADR-0018).
-import { isIdentifier, isRecord } from '../../boundary'
+import { isIdentifier, isRecord } from '../../shared/validation'
 import type { LinearEndpoints } from './endpoints'
 import { failed, type LinearFailure, type LinearRead, query } from './http'
 

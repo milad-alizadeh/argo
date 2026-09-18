@@ -22,9 +22,10 @@
     "tools/**/*.ts",
     "src/agents/claude/integration/**/*.ts",
     "src/agents/codex/integration/**/*.ts",
-    "src/core/appearance/**/*.test.ts",
+    "src/platform/shared/appearance.test.ts",
+    "src/platform/main/appearance.test.ts",
     "src/domains/projects/**/*.test.ts",
-    "src/core/commands/**/*.test.ts",
-    "src/core/contract/every-domain-refuses-untrusted-frames.test.ts"
+    "src/platform/shared/commands.test.ts",
+    "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts"
   ]
 }

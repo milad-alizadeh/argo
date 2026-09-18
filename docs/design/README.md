@@ -10,7 +10,7 @@ than a copy of it.
 | `design-template.html` | The starting point for a screen's design page. |
 | `kit.js` | Render functions for shapes a design page repeats. |
 
-The contract itself is `apps/desktop/src/renderer/tokens.css`. Edit it there, then
+The contract itself is `apps/desktop/src/platform/renderer/tokens.css`. Edit it there, then
 regenerate the mirror.
 
 A screen's approved design lives in its **design ticket** and on a `design/#<N>-<screen>` branch,

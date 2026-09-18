@@ -2,7 +2,7 @@ import { GitBranch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { SessionTicket } from '@/core/sessions/models'
-import type { DevelopmentIdentity } from '@/development/instance'
+import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
 
 type DevelopmentIdentityBarProps = {
   identity: DevelopmentIdentity | null

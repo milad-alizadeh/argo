@@ -1,7 +1,7 @@
 import { FolderPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -9,7 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '@/renderer/components/ui/empty'
+} from '@/platform/renderer/components/ui/empty'
 
 // Every cockpit surface reads one Project, so with none selected there is no roster to show: the
 // window names the one next step instead (#2307).

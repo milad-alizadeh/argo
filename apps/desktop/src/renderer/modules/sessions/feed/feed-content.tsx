@@ -6,7 +6,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../components/ui/empty'
+} from '@/platform/renderer/components/ui/empty'
 import { AnchoredFeed } from './anchored-feed'
 import type { DrawnRowProps } from './drawn-row'
 import { FeedLoading } from './feed-loading'

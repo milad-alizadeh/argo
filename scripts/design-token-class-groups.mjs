@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const repositoryRoot = path.resolve(import.meta.dirname, '..')
-const contractPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/tokens.css')
-const outputPath = path.join(repositoryRoot, 'apps/desktop/src/renderer/lib/text-sizes.ts')
+const contractPath = path.join(repositoryRoot, 'apps/desktop/src/platform/renderer/tokens.css')
+const outputPath = path.join(repositoryRoot, 'apps/desktop/src/platform/renderer/lib/text-sizes.ts')
 
 export function textSizes(contract) {
   return [...new Set([...contract.matchAll(/^\s*--text-([a-z0-9-]+):/gm)].map(([, name]) => name))]

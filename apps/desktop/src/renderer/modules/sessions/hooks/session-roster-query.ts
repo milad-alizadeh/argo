@@ -32,7 +32,7 @@ export function sessionRosterQuery(
     // list a larger window is still in flight.
     placeholderData: keepPreviousData,
     // Nothing here re-reads on a timer. The transcript trees bring a new Session in, and the window
-    // taking focus and the machine waking cover what a lost watch missed (core/watch, #2303).
+    // taking focus and the machine waking cover what a lost watch missed (platform/main/watch, #2303).
     retry: false,
     queryFn: async () => {
       const reply = await window.argo.listSessions({ projectRoot, cursor })

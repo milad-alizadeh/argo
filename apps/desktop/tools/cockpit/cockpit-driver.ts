@@ -94,8 +94,8 @@ export async function chooseThen(run, folder, { button, state }) {
 // The real menu item, found on the built application menu and clicked there. A menu accelerator is
 // matched in the main process against a native key event, and a key dispatched into the renderer
 // over the debugging protocol never becomes one, so the item itself is what stands in for the
-// chord. Going through the built menu is what puts `src/menu.ts` under the proof: its accelerator
-// is read back and asserted, and its click closure is the thing that sends the command.
+// chord. Going through the built menu is what puts `platform/main/menu.ts` under the proof: its
+// accelerator is read back and asserted, and its click closure sends the command.
 export async function clickMenuItem(run, label, { accelerator, state }) {
   await recordDeck(run.page)
   const found = await run.application.evaluate(({ Menu }, name) => {

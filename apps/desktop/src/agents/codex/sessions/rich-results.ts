@@ -1,6 +1,6 @@
-import { isRecord } from '@/boundary'
 import { dataImageUrl } from '@/core/sessions/feed-images'
 import { type RichResultBlock, resultText, type ToolResult } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 import { readImage } from './prompt-images'
 
 function resultBlocks(output: unknown): RichResultBlock[] {

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { sessionRosterRowSchema } from './models'
 import { sessionErrorSchema } from './session-error'
 

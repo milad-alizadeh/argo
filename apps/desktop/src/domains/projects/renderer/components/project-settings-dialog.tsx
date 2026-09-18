@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/renderer/components/ui/dialog'
+} from '@/platform/renderer/components/ui/dialog'
 
 type ProjectSettingsDialogProps = {
   project: ProjectSummary

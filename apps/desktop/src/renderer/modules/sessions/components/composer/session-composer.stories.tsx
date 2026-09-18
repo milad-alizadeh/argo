@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionPlan } from '@/core/sessions/models'
-import { Button } from '../../../../components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { BasicFeed } from '../../feed/basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionCli } from '../../harness/harnesses'

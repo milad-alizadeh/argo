@@ -5,7 +5,7 @@ import {
   ALLOWED_TARGETS,
   COMPOSITION_ROOTS,
   FACET_POLICIES,
-  FACETS,
+  TARGET_FACETS,
 } from './domain-facet-policy.mjs'
 
 const BUILT_INS = new Set(builtinModules.map((name) => name.replace(/^node:/, '')))
@@ -21,11 +21,20 @@ function withoutExtension(filePath) {
 function facetAddress(filePath) {
   const parts = normalized(filePath).split('/')
   const domains = parts.indexOf('domains')
-  if (domains < 0) return null
-  const domain = parts[domains + 1]
-  const facet = parts[domains + 2]
-  if (!domain || !facet || !FACETS.has(facet)) return null
-  return { domain, facet }
+  if (domains >= 0) {
+    const domain = parts[domains + 1]
+    const facet = parts[domains + 2]
+    if (!domain || !facet || !TARGET_FACETS.has(facet)) return null
+    return { domain, facet }
+  }
+  const platform = parts.indexOf('platform')
+  if (platform >= 0) {
+    const facet = parts[platform + 1]
+    if (!facet || !TARGET_FACETS.has(facet)) return null
+    return { domain: 'platform', facet }
+  }
+  const source = parts.indexOf('src')
+  return parts[source + 1] === 'shared' ? { domain: 'shared', facet: 'shared' } : null
 }
 
 function resolvedImport(sourcePath, specifier) {

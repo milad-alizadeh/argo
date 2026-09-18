@@ -1,5 +1,5 @@
-import { isIdentifier } from '@/boundary'
 import type { TranscriptRecord } from '@/core/sessions/transcript'
+import { isIdentifier } from '@/shared/validation'
 
 const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
 

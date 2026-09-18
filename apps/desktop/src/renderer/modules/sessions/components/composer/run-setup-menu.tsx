@@ -1,8 +1,8 @@
 import { Check, ChevronDown } from 'lucide-react'
 import { Fragment, useId } from 'react'
 
-import { InputGroupButton } from '../../../../components/ui/input-group'
-import { Popover, PopoverContent, PopoverTrigger } from '../../../../components/ui/popover'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { HarnessTabs } from '../../harness/harness-tabs'
 import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
@@ -24,7 +24,6 @@ type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps
 
 const WIDE_ONLY = 'hidden @[36rem]:inline'
 
-// Extracted from the composer prototype (602bcce2).
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
   const harnessLabel = HARNESSES[harness.cli].label
   const facts = setupFacts(setup)

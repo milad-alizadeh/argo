@@ -1,5 +1,5 @@
 import type { SessionError, SessionErrorCode } from '@/core/sessions/contract'
-import { ContractError } from '../../contract-error'
+import { ContractError } from '@/platform/renderer/contract-error'
 
 export class SessionContractError extends ContractError<SessionError> {
   declare code: SessionErrorCode
