@@ -20,10 +20,8 @@ test('registering a folder creates one Project, selects it and writes it down', 
   assert.equal(reply.type, 'project.listed')
   assert.deepEqual(reply.projects, [{ id: reply.selectedId, name: 'alpha', path: folder }])
   assert.match(reply.selectedId, /^project-/)
-  const stored = JSON.parse(await readFile(setup.store.registryPath, 'utf8'))
-  assert.deepEqual(stored, {
-    version: 1,
-    projects: [{ id: reply.selectedId, path: folder }],
+  assert.deepEqual(setup.store.projects.read(), {
+    projects: [{ id: reply.selectedId, path: folder, commonDirectory: path.join(folder, '.git') }],
     selectedId: reply.selectedId,
   })
 })
@@ -48,7 +46,7 @@ test('a folder that is not a git repository registers nothing', async (context) 
   setup.choose(plain)
   const reply = await registerProject(register('r1'), setup.store)
   assert.equal(reply.code, 'not-a-repository')
-  assert.deepEqual((await listProjects(list('l1'), setup.store.registryPath)).projects, [])
+  assert.deepEqual((await listProjects(list('l1'), setup.store)).projects, [])
 })
 
 test('dismissing the chooser writes nothing and says so', async (context) => {
@@ -59,12 +57,12 @@ test('dismissing the chooser writes nothing and says so', async (context) => {
     type: 'project.cancelled',
     requestId: 'r1',
   })
-  assert.equal((await listProjects(list('l1'), setup.store.registryPath)).projects.length, 0)
+  assert.equal((await listProjects(list('l1'), setup.store)).projects.length, 0)
 })
 
 test('a fresh machine lists an empty cockpit rather than a storage failure', async (context) => {
   const setup = await fixture(context)
-  assert.deepEqual(await listProjects(list('l1'), setup.store.registryPath), {
+  assert.deepEqual(await listProjects(list('l1'), setup.store), {
     version: 1,
     type: 'project.listed',
     requestId: 'l1',
@@ -77,43 +75,28 @@ test('the next launch lists the Project that was open', async (context) => {
   const setup = await fixture(context)
   setup.choose(await repository(setup.root, 'alpha'))
   const registered = await registerProject(register('r1'), setup.store)
-  const relaunched = await listProjects(list('l1'), setup.store.registryPath)
+  const relaunched = await listProjects(list('l1'), setup.store)
   assert.equal(relaunched.selectedId, registered.selectedId)
   assert.deepEqual(relaunched.projects, registered.projects)
 })
 
-test('registering keeps the fields another portable client owns', async (context) => {
+test('does not migrate portable-v1 registrations', async (context) => {
   const setup = await fixture(context)
   const folder = await repository(setup.root, 'alpha')
-  await mkdir(path.dirname(setup.store.registryPath), { recursive: true })
-  await writeFile(
-    setup.store.registryPath,
-    JSON.stringify({
-      version: 1,
-      importedFrom: 'swift',
-      projects: [{ id: 'project-kept', path: folder, bindings: [{ token: 'must-stay-private' }] }],
-      selectedId: null,
-    }),
-  )
+  const portablePath = path.join(setup.root, 'userData', 'portable-v1', 'projects.json')
+  await mkdir(path.dirname(portablePath), { recursive: true })
+  const portableData = JSON.stringify({
+    version: 1,
+    importedFrom: 'swift',
+    projects: [{ id: 'project-kept', path: folder, bindings: [{ token: 'must-stay-private' }] }],
+    selectedId: null,
+  })
+  await writeFile(portablePath, portableData)
   setup.choose(folder)
   const reply = await registerProject(register('r1'), setup.store)
-  assert.equal(reply.selectedId, 'project-kept')
-  assert.deepEqual(JSON.parse(await readFile(setup.store.registryPath, 'utf8')), {
-    importedFrom: 'swift',
-    version: 1,
-    projects: [{ id: 'project-kept', path: folder, bindings: [{ token: 'must-stay-private' }] }],
-    selectedId: 'project-kept',
-  })
-  // The renderer receives presentation data only, never the fields it does not own.
-  assert.deepEqual(reply.projects, [{ id: 'project-kept', name: 'alpha', path: folder }])
-})
-
-test('a registry that cannot be read in this format refuses every action', async (context) => {
-  const setup = await fixture(context)
-  await mkdir(path.dirname(setup.store.registryPath), { recursive: true })
-  await writeFile(setup.store.registryPath, '{ not json')
-  assert.equal((await registerProject(register('r1'), setup.store)).code, 'storage-invalid')
-  assert.equal((await listProjects(list('l1'), setup.store.registryPath)).code, 'storage-invalid')
+  assert.notEqual(reply.selectedId, 'project-kept')
+  assert.deepEqual(reply.projects, [{ id: reply.selectedId, name: 'alpha', path: folder }])
+  assert.equal(await readFile(portablePath, 'utf8'), portableData)
 })
 
 test('two registrations started together both land in the registry', async (context) => {
@@ -125,8 +108,13 @@ test('two registrations started together both land in the registry', async (cont
     registerProject(register('r1'), setup.store),
     registerProject(register('r2'), setup.store),
   ])
-  const stored = JSON.parse(await readFile(setup.store.registryPath, 'utf8'))
-  assert.deepEqual(stored.projects.map((project) => project.path).sort(), [alpha, beta].sort())
+  assert.deepEqual(
+    setup.store.projects
+      .read()
+      .projects.map((project) => project.path)
+      .sort(),
+    [alpha, beta].sort(),
+  )
 })
 
 test('a registry written while the chooser is open survives the registration', async (context) => {

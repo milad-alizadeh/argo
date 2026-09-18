@@ -2,9 +2,10 @@
 
 - **Project** — the scope of one cockpit window: a **registered git repo, keyed to a stable
   id** (path is a mutable attribute), carrying an **optional** Ticket **Connection** and an
-  **optional** Code host Connection. One git root = one Project (a monorepo is one Project).
-  Registration is the act that creates it — an unregistered repo on disk is not a Project. One
-  active Project per window; the known set lives in a per-machine file registry. The **only
+  **optional** Code host Connection. One git common directory = one Project: linked worktrees
+  share it, while independent clones of the same remote are separate Projects. A monorepo is one
+  Project. Registration is the act that creates it — an unregistered repo on disk is not a
+  Project. One active Project per window; the known set lives in the per-machine database. The **only
   entity in the L1 triangle that Argo owns rather than observes** (Account is owned too, but
   sits outside it), and the shared base ref every session's Workspace branches from.
 
