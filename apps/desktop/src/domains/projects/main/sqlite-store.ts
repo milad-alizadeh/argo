@@ -34,6 +34,7 @@ export type ProjectDatabase = {
 export type ProjectStore = {
   read: () => ProjectRegistry
   replace: (registry: ProjectRegistry) => void
+  updateProjectPath: (projectId: string, projectPath: string) => void
   readSetupCheckpoint: (projectId: string) => SetupCheckpoint | null
   writeSetupCheckpoint: (checkpoint: SetupCheckpoint) => void
   close: () => void
@@ -127,6 +128,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
   const writeCheckpoint = database.prepare(
     'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source) VALUES (?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source',
   )
+  const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
 
   return {
     read: () => {
@@ -152,6 +154,10 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
         database.exec('ROLLBACK')
         throw error
       }
+    },
+
+    updateProjectPath: (projectId, projectPath) => {
+      updatePath.run(projectPath, projectId)
     },
 
     readSetupCheckpoint: (projectId) => checkpoint(database, projectId),

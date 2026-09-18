@@ -16,6 +16,7 @@ async function fixture(context: { after: (callback: () => Promise<void>) => void
         selectedId: 'project-1',
       }),
       replace: () => undefined,
+      updateProjectPath: () => undefined,
       readSetupCheckpoint: () => null,
       writeSetupCheckpoint: () => undefined,
       close: () => undefined,

@@ -69,6 +69,26 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
   reopened.close()
 })
 
+test('updates a Project path without discarding its setup checkpoint', async (context) => {
+  const { store } = openStore(await temporaryDatabase(context))
+  store.replace({
+    projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
+    selectedId: 'project-1',
+  })
+  store.writeSetupCheckpoint({
+    projectId: 'project-1',
+    worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
+    phase: 'ready',
+    configurationSource: 'version = 1\n',
+  })
+
+  store.updateProjectPath('project-1', '/tmp/project/.argo/worktrees/setup-project-1')
+
+  assert.equal(store.read().projects[0]?.path, '/tmp/project/.argo/worktrees/setup-project-1')
+  assert.equal(store.readSetupCheckpoint('project-1')?.phase, 'ready')
+  store.close()
+})
+
 test('adds configuration source to a checkpoint database from before manual setup', async (context) => {
   const databasePath = await temporaryDatabase(context)
   const database = new Database(databasePath)

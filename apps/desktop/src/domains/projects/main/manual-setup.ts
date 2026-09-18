@@ -32,7 +32,12 @@ export const MANUAL_CONFIGURATION_TEMPLATE = [
   '',
 ].join('\n')
 
-type SetupStore = { projects: ProjectRegistryStore }
+type SetupStore = {
+  projects: Pick<
+    ProjectRegistryStore,
+    'read' | 'readSetupCheckpoint' | 'updateProjectPath' | 'writeSetupCheckpoint'
+  >
+}
 
 export async function beginManualSetup(
   request: { projectId: string; requestId: string },
@@ -87,13 +92,7 @@ export async function validateManualSetup(
   }
   store.projects.writeSetupCheckpoint(next)
   if (valid) {
-    const registry = store.projects.read()
-    store.projects.replace({
-      ...registry,
-      projects: registry.projects.map((entry) =>
-        entry.id === project.id ? { ...entry, path: checkpoint.worktreePath } : entry,
-      ),
-    })
+    store.projects.updateProjectPath(project.id, checkpoint.worktreePath)
   }
   return {
     version: 1,
@@ -145,6 +144,6 @@ function setupProject(project: Parameters<typeof toSummary>[0]) {
   return { id, name }
 }
 
-function projectFor(projectId: string, store: ProjectRegistryStore) {
+function projectFor(projectId: string, store: Pick<ProjectRegistryStore, 'read'>) {
   return store.read().projects.find(({ id }) => id === projectId)
 }

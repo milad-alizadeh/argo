@@ -22,6 +22,14 @@ export function projectStore(projectId: string): ProjectStore {
     replace: (next) => {
       registry = next
     },
+    updateProjectPath: (projectId, projectPath) => {
+      registry = {
+        ...registry,
+        projects: registry.projects.map((project) =>
+          project.id === projectId ? { ...project, path: projectPath } : project,
+        ),
+      }
+    },
     readSetupCheckpoint: (id) => (checkpoint?.projectId === id ? checkpoint : null),
     writeSetupCheckpoint: (next) => {
       checkpoint = next
