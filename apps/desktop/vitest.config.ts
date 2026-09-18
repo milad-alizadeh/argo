@@ -43,5 +43,11 @@ export default defineConfig({
   },
   test: {
     projects: [nodeProject, storybookProject('dark'), storybookProject('light')],
+    coverage: {
+      provider: 'v8',
+      reporter: ['lcov', 'text'],
+      reportsDirectory: 'coverage/storybook',
+      include: ['src/renderer/**'],
+    },
   },
 })
