@@ -13,6 +13,7 @@ import {
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
   type SessionRenameReply,
+  type SessionSearchReply,
   type SessionShellOutputReply,
   type SessionSkillReply,
   type SessionStartReply,
@@ -20,6 +21,7 @@ import {
   sessionError,
 } from './contract'
 import { SESSION_OPERATIONS } from './operations'
+import type { RosterStatus } from './search-contract'
 
 export type SessionClient = {
   startSession(request: {
@@ -61,6 +63,12 @@ export type SessionClient = {
     sessionIds: string[]
     archived: boolean
   }): Promise<SessionArchiveSetReply>
+  searchSessions(request: {
+    projectRoot: string | null
+    status: RosterStatus
+    query: string
+    cursor: string | null
+  }): Promise<SessionSearchReply>
   readSessionFeed(request: {
     sessionId: string
     delegationId: string | null
@@ -100,6 +108,7 @@ export function createSessionClient(
     listSessions: (request) => client.list(request),
     listArchivedSessions: (request) => client.archiveList(request),
     setSessionsArchived: (request) => client.archiveSet(request),
+    searchSessions: (request) => client.search(request),
     readWorkspaceFile: (request) => client.file(request),
     readSkillFile: (request) => client.skill(request),
     readShellOutput: (request) => client.shellOutput(request),

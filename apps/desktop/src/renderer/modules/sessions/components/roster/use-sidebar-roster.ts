@@ -1,4 +1,5 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
+import { useSessionSearch } from '../../hooks/use-session-search'
 import { useRosterFilterStore, useRosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import { rosterState } from './sessions-sidebar-chrome'
@@ -23,19 +24,15 @@ function pendingRenames(renamed: Record<string, string>, sessions: SessionsListe
   return Object.keys(pending).length === 0 ? NO_TITLES : pending
 }
 
-function filteredSessions(sessions: SessionsListed['sessions'], search: string) {
-  const query = search.trim().toLocaleLowerCase()
-  if (query === '') return sessions
-  return sessions.filter((session) =>
-    (session.title?.text ?? session.id).toLocaleLowerCase().includes(query),
-  )
-}
-
 // Everything the sidebar reads off one roster: what the search and the status filter leave visible,
-// which rows are selected, where the keyboard is, and the titles a rename is still waiting on.
+// which rows are selected, where the keyboard is, and the titles a rename is still waiting on. A
+// non-empty search reads across the complete indexed history through the shared reader (#2375)
+// rather than filtering the rows the roster's own window has already loaded, so `visible` comes
+// from the search hook instead of the loaded roster while a query is live.
 export function useSidebarRoster({
   onArchiveSelected,
   onSelect,
+  projectRoot,
   roster,
   rosterError,
   selectedSessionId,
@@ -43,6 +40,7 @@ export function useSidebarRoster({
 }: {
   onArchiveSelected: (sessionIds: SessionId[]) => void
   onSelect: (sessionId: SessionId) => void
+  projectRoot: string | null
   roster: SessionRoster | null
   rosterError: SessionError | null
   selectedSessionId: SessionId | null
@@ -53,9 +51,9 @@ export function useSidebarRoster({
   const status = useRosterStatus()
   const setStatus = useRosterFilterStore((state) => state.setStatus)
   const sessions = roster?.sessions ?? NO_SESSIONS
-  // Memoized like every other value a row reads: a non-empty search built a new array on each render,
-  // which rebuilt the row list and re-rendered every memoized row while the reader was typing.
-  const visible = useMemo(() => filteredSessions(sessions, search), [sessions, search])
+  const searching = search.trim() !== ''
+  const searched = useSessionSearch(search, projectRoot, status)
+  const visible = searching ? searched.sessions : sessions
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)
@@ -85,6 +83,8 @@ export function useSidebarRoster({
     rename: (sessionId: SessionId, title: string) =>
       setRenamed((current) => ({ ...current, [sessionId]: title })),
     search,
+    searched,
+    searching,
     select,
     selection,
     sessionCount: sessions.length,

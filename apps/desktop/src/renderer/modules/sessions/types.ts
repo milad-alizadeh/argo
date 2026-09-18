@@ -4,6 +4,7 @@ import type {
   SessionFeedRead,
   SessionFeedRequest,
   SessionListRequest,
+  SessionSearched,
   SessionsListed,
 } from '@/core/sessions/contract'
 
@@ -13,6 +14,7 @@ export type {
   SessionFeedRead as SessionFeed,
   SessionFeedRequest,
   SessionListRequest,
+  SessionSearched,
   SessionsListed,
 }
 

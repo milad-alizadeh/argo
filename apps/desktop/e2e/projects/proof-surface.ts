@@ -44,6 +44,7 @@ export const PROJECT_PROOF_SURFACE = [
   'relocateProject',
   'renameSession',
   'saveProjectSetup',
+  'searchSessions',
   'selectProject',
   'sendSession',
   'setAppearance',

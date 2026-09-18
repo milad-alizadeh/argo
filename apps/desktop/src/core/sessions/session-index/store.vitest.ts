@@ -101,3 +101,47 @@ test('answers nothing for an empty list of chains rather than everything it hold
   expect(store.filesOfChains('claude', [])).toEqual([])
   expect(store.filesAt('claude', [])).toEqual([])
 })
+
+test('finds a chain by a case-insensitive substring of its title, newest first', async () => {
+  const { store } = await stores.open()
+  const older = {
+    ...rowFor('one', '2026-09-17T10:00:00.000Z'),
+    title: { text: 'Fix the roster', source: 'custom' as const },
+  }
+  const newer = {
+    ...rowFor('two', '2026-09-17T11:00:00.000Z'),
+    title: { text: 'ROSTER search', source: 'custom' as const },
+  }
+  const other = {
+    ...rowFor('three', '2026-09-17T12:00:00.000Z'),
+    title: { text: 'Unrelated', source: 'custom' as const },
+  }
+  writeChain(store, older)
+  writeChain(store, newer)
+  writeChain(store, other)
+
+  expect(store.searchChains('claude', 'roster')).toEqual([newer, older])
+})
+
+test('finds a chain by its current id and by a retired id', async () => {
+  const { store } = await stores.open()
+  const row = { ...rowFor('current', '2026-09-17T10:00:00.000Z'), retiredIds: ['retired'] }
+  writeChain(store, row)
+
+  expect(store.searchChains('claude', 'current')).toEqual([row])
+  expect(store.searchChains('claude', 'retired')).toEqual([row])
+})
+
+test('keeps one CLI’s rows out of another CLI’s search', async () => {
+  const { store } = await stores.open()
+  writeChain(store, rowFor('shared', '2026-09-17T10:00:00.000Z'))
+
+  expect(store.searchChains('codex', 'shared')).toEqual([])
+})
+
+test('answers nothing for a blank query rather than every chain it holds', async () => {
+  const { store } = await stores.open()
+  writeChain(store, rowFor('one', '2026-09-17T10:00:00.000Z'))
+
+  expect(store.searchChains('claude', '  ')).toEqual([])
+})

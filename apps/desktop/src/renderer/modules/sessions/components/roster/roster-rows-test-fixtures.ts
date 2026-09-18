@@ -2,6 +2,7 @@ import { SessionContractError } from '../../session-contract-error'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
 import type { Session } from '../../types'
 import { rosterRows } from './roster-rows'
+import type { SearchRosterState } from './search-roster-rows'
 
 export const noArchive = {
   displayed: [] as Session[],
@@ -37,6 +38,7 @@ export function kindsOf(options: {
   archived?: typeof noArchive
   hasMoreSessions?: boolean
   isFetchingMoreSessions?: boolean
+  search?: SearchRosterState | null
   showArchive?: boolean
   status?: RosterStatus
 }) {
@@ -45,6 +47,7 @@ export function kindsOf(options: {
     archived: noArchive,
     hasMoreSessions: false,
     isFetchingMoreSessions: false,
+    search: null,
     showArchive: false,
     status: 'active',
     ...options,

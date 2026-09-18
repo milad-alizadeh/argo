@@ -32,6 +32,7 @@ export function openSessionIndex(databasePath: string): SessionIndex {
     filesAt: async (cli, paths) => store.filesAt(cli, paths),
     filesOfChains: async (cli, chainIds) => store.filesOfChains(cli, chainIds),
     rowsOfChains: async (cli, chainIds) => store.rowsOfChains(cli, chainIds),
+    searchChains: async (cli, query) => store.searchChains(cli, query),
     chainLinks: async (cli) => store.chainLinks(cli),
     strandedChains: async (cli) => store.strandedChains(cli),
     write: async (cli, pass) => store.write(cli, pass),
