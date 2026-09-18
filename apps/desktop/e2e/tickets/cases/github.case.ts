@@ -52,8 +52,7 @@ export async function proveConnect(run: Run) {
     assert.equal((await storeText(run.fixture, 'accounts.json')).includes('token-'), false)
   })
   await test.step('repository-form-inline', async () => {
-    // The repository-connect form draws inside the Accounts dialog once an Account connects, so
-    // it never needs a second, stacked dialog (#2411).
+    // The repository-connect form draws inside the Accounts dialog once an Account connects (#2411).
     await connectForm(run.page)
       .getByRole('combobox', { name: 'Account' })
       .getByText('GitHub · octocat')

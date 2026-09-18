@@ -40,8 +40,7 @@ function TicketsScreenStory({ view }: TicketsScreenProps) {
   )
 }
 
-// The repository-connect form draws inline in the Accounts panel once an Account connects, so
-// picking a repository never leaves that one panel.
+// The repository-connect form draws inline in the Accounts panel once an Account connects (#2411).
 function AccountToRepositoryForm() {
   const [accountId, setAccountId] = useState<string | null>(octocat.id)
   return (

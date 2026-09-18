@@ -191,8 +191,7 @@ export const NoAccounts: Story = {
   },
 }
 
-// The repository-connect form draws inline once the caller passes it, replacing what used to be
-// a "Connect a repository" button that opened a second dialog on top of this one (#2411).
+// The repository-connect form draws inline once the caller passes it (#2411).
 export const NoTicketConnection: Story = {
   args: {
     listing: listing([octocat]),
