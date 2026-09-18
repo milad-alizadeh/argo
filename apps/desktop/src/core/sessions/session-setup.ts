@@ -21,7 +21,7 @@ function promptSetup(state: SetupState, record: TranscriptMessage): SetupState {
     setup: {
       model: state.pendingTurnSetup ? state.setup.model : null,
       effort: state.pendingTurnSetup ? state.setup.effort : null,
-      mode: record.mode ?? (state.pendingTurnSetup ? state.setup.mode : null),
+      mode: record.mode ?? state.setup.mode,
     },
     pendingTurnSetup: false,
   }

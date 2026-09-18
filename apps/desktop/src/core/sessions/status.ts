@@ -44,9 +44,9 @@ export function readExternalStatus(
   messages: TranscriptMessage[],
   records: readonly TranscriptRecord[] = messages,
 ): SessionStatus {
-  if (isAskPending(messages)) return 'asking'
   const boundary = records.findLast((record) => record.kind === 'message' || record.kind === 'turn')
   if (boundary?.kind === 'turn') return 'idle'
+  if (isAskPending(messages)) return 'asking'
   const last = messages.at(-1)
   // Nothing observed is a different claim from observed to be quiet, and an open Turn nothing
   // corroborates says nothing about this Turn. Both land on `unknown`, never on `idle`.

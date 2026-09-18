@@ -1,6 +1,6 @@
 import { isRecord } from '@/boundary'
 import { dataImageUrl } from '@/core/sessions/feed-images'
-import type { RichResultBlock, ToolResult } from '@/core/sessions/transcript'
+import { type RichResultBlock, resultText, type ToolResult } from '@/core/sessions/transcript'
 import { readImage } from './prompt-images'
 
 function resultBlocks(output: unknown): RichResultBlock[] {
@@ -62,21 +62,23 @@ function completionItems(output: unknown): unknown[] {
   )
 }
 
+function completionResult(item: unknown) {
+  const typed = typedItem(item)
+  if (typed !== null) return typed
+  const blocks = resultBlocks([item])
+  return { blocks, failed: failedText(resultText(blocks)) }
+}
+
 export function readToolResults(payload: Record<string, unknown>): ToolResult[] {
   if (typeof payload.call_id !== 'string') return []
-  const typed = completionItems(payload.output).flatMap((item) => {
-    const completion = typedItem(item)
-    return completion === null ? [] : [completion]
-  })
-  if (typed.length > 0)
-    return typed.map((completion, index) => ({
+  const completions = completionItems(payload.output)
+  if (payload.type === 'custom_tool_call_output' && completions.length > 0)
+    return completions.map((item, index) => ({
       callId: `${payload.call_id}:${index}`,
-      blocks: completion.blocks,
-      failed: completion.failed,
+      ...completionResult(item),
     }))
   const blocks = resultBlocks(payload.output)
-  const text = blocks.flatMap((block) => (block.shape === 'text' ? [block.text] : [])).join('\n')
   const callId =
     payload.type === 'custom_tool_call_output' ? `${payload.call_id}:0` : payload.call_id
-  return [{ callId, blocks, failed: failedText(text || null) }]
+  return [{ callId, blocks, failed: failedText(resultText(blocks)) }]
 }
