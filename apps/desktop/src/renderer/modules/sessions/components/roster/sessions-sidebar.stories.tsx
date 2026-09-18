@@ -215,8 +215,12 @@ export const Discovered: Story = {
     ).toHaveLength(2)
     await userEvent.click(search)
     await userEvent.keyboard('second')
+    // The query debounces 250ms and answers through window.argo.searchSessions (#2375), so the
+    // filtered result lands asynchronously rather than on the same tick as the keystroke.
+    await expect(
+      await canvas.findByRole('button', { name: /A second Session/ }),
+    ).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: /Keep the roster stable/ })).toBeNull()
-    await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeInTheDocument()
   },
 }
 
