@@ -23,13 +23,14 @@ test('a Send against an already-pending row reuses it instead of beginning a sec
     id: 'session-new',
     cli: 'claude',
     cwd: PROJECT.path,
+    prompt: 'hello',
   })
 })
 
 // One user action produces at most one new Session, even under N rapid Enter presses (#2109).
 test('a second rapid Send while the first is still starting is dropped', async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
-  useSessionCreationStore.getState().startSubmission(opened.id)
+  useSessionCreationStore.getState().startSubmission(opened.id, 'hello')
   const start = mockStart(async () => ({ sessionId: 'session-new' }))
   const sent = await sendToNewSession(newSessionDeps(start, pendingIdentity(opened.id)))
   expect(sent).toBe(false)

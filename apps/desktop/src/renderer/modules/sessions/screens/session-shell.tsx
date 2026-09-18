@@ -1,7 +1,9 @@
 import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { InspectorSplit } from '../../../components/inspector-split'
+import { sessionName } from '../components/roster/roster-rows'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
@@ -13,7 +15,7 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
-  session?: Pick<Session, 'cwd' | 'id' | 'title'> | null
+  session?: Pick<Session, 'cwd' | 'id' | 'status' | 'title'> | null
   inspector: ReactNode
   inspectorBar?: ReactNode
   defaultInspectorCollapsed?: boolean
@@ -21,11 +23,12 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
 }
 
 function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
+  const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
   const worktree = worktreeName(session.cwd)
   return (
     <div className="min-w-0 flex-1 overflow-hidden">
-      <h1 className="truncate type-heading">{session.title?.text ?? session.id}</h1>
+      <h1 className="truncate type-heading">{sessionName(session, t('newSession'))}</h1>
       {worktree ? (
         <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
           <GitFork aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />

@@ -20,8 +20,15 @@ export function readableSessionId(id: string | null): string | null {
 // with a real Session id, `id` becomes that real id, and the row stays synthetic until the Roster
 // reader reports it for real (CONTEXT.md L2 · Session, `starting` status).
 export type PendingSession =
-  | { stage: 'draft'; id: string; cli: SessionCli; cwd: string; submitting: boolean }
-  | { stage: 'reconciling'; id: string; cli: SessionCli; cwd: string }
+  | {
+      stage: 'draft'
+      id: string
+      cli: SessionCli
+      cwd: string
+      submitting: boolean
+      prompt: string | null
+    }
+  | { stage: 'reconciling'; id: string; cli: SessionCli; cwd: string; prompt: string | null }
 
 type SessionCreationState = {
   pending: PendingSession | null
@@ -30,7 +37,7 @@ type SessionCreationState = {
   begin: (cli: SessionCli, cwd: string) => PendingSession
   // Claims the one `start` submission for a draft row. Returns false when a submission for it is
   // already in flight, which is the dedup signal a caller no-ops on.
-  startSubmission: (id: string) => boolean
+  startSubmission: (id: string, prompt: string) => boolean
   // The `start` call answered with a real Session id: the row now displays under that id.
   resolved: (id: string, realId: string) => void
   // The `start` call failed: the row is gone, never a lingering `starting` ghost.
@@ -39,6 +46,12 @@ type SessionCreationState = {
   confirmed: (realId: string) => void
   // The person moved on without sending anything on this draft row.
   abandon: (id: string) => void
+}
+
+// The prompt's first line names the row until a ranked title replaces it (core/sessions/roster.ts readTitle).
+function promptTitle(prompt: string): string | null {
+  const line = prompt.split('\n').find((candidate) => candidate.trim() !== '')
+  return line === undefined ? null : line.trim()
 }
 
 export const useSessionCreationStore = create<SessionCreationState>()((set, get) => ({
@@ -52,22 +65,31 @@ export const useSessionCreationStore = create<SessionCreationState>()((set, get)
       cli,
       cwd,
       submitting: false,
+      prompt: null,
     }
     set({ pending: created })
     return created
   },
-  startSubmission: (id) => {
+  startSubmission: (id, prompt) => {
     const current = get().pending
     if (current === null || current.stage !== 'draft' || current.id !== id || current.submitting) {
       return false
     }
-    set({ pending: { ...current, submitting: true } })
+    set({ pending: { ...current, submitting: true, prompt: promptTitle(prompt) } })
     return true
   },
   resolved: (id, realId) => {
     const current = get().pending
     if (current === null || current.id !== id) return
-    set({ pending: { stage: 'reconciling', id: realId, cli: current.cli, cwd: current.cwd } })
+    set({
+      pending: {
+        stage: 'reconciling',
+        id: realId,
+        cli: current.cli,
+        cwd: current.cwd,
+        prompt: current.prompt,
+      },
+    })
   },
   failed: (id) => {
     if (get().pending?.id === id) set({ pending: null })
@@ -110,7 +132,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     retiredIds: [],
     cli: pending.cli,
     posture: 'managed',
-    title: null,
+    title: pending.prompt === null ? null : { text: pending.prompt, source: 'first-prompt' },
     ticket: null,
     status: 'starting',
     entry: 'interactive',

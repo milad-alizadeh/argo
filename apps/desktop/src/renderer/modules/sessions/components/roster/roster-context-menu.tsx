@@ -74,7 +74,9 @@ export function RosterContextMenu({
       </ContextMenuTrigger>
       {target === null ? null : (
         <ContextMenuContent
-          aria-label={t('contextMenu.actions', { title: sessionName(target.session) })}
+          aria-label={t('contextMenu.actions', {
+            title: sessionName(target.session, t('newSession')),
+          })}
         >
           <ContextMenuGroup>
             <ContextMenuItem onClick={() => onRename(target.session)}>

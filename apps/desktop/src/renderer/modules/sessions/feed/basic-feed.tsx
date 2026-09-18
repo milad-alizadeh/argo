@@ -13,6 +13,19 @@ import './feed.css'
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 
+// A pending id has no Feed to read, so this empty document lets the prompt row and Turn Marker mount at once (#2430).
+function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
+  return {
+    version: 1,
+    type: 'session.feed.read',
+    requestId: sessionId,
+    sessionId,
+    chainId: sessionId,
+    revision: 'optimistic',
+    rows: [],
+  }
+}
+
 export function BasicFeed({
   feed,
   activeEvidenceId,
@@ -42,6 +55,14 @@ export function BasicFeed({
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const [retryToken, setRetryToken] = useState(0)
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
+  // The prompt row outlives the temporary id: the real Session's first read can trail the hand-off.
+  const holdsPrompt =
+    current === null && selectedSessionId !== null && liveFacts?.optimisticRow != null
+  const optimisticDocument = holdsPrompt ? optimisticFeedDocument(selectedSessionId) : null
+  const documents =
+    optimisticDocument === null
+      ? ordered
+      : [[optimisticDocument.sessionId, optimisticDocument] as const]
   const awaitingFeed =
     failure === null &&
     selectedSessionId !== null &&
@@ -72,8 +93,8 @@ export function BasicFeed({
 
   return (
     <section aria-label="Session Feed" className="feed">
-      {!stalled && ordered.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || stalled || (current === null && !optimisticSession) ? (
+      {!stalled && documents.map(([id, document]) => keptDocument(id, document, shared))}
+      {failure !== null || stalled || (current === null && !optimisticSession && !holdsPrompt) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}
