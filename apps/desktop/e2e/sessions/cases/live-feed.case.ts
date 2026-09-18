@@ -23,15 +23,9 @@ async function activeRevision(page) {
 }
 
 async function fixedRow(page) {
-  const viewport = page.locator(ACTIVE_VIEWPORT)
-  await viewport.focus()
-  await page.keyboard.press('Home')
-  // Chromium animates a keyboard scroll, so read the anchor only once it has reached the top.
-  await page.waitForFunction(
-    (selector) => document.querySelector(selector).scrollTop === 0,
-    ACTIVE_VIEWPORT,
-    { timeout: LIVE_TIMEOUT_MS },
-  )
+  await page.evaluate((selector) => {
+    document.querySelector(selector).scrollTop = 0
+  }, ACTIVE_VIEWPORT)
   return { ...(await viewportAnchor(page)), revision: await activeRevision(page) }
 }
 
