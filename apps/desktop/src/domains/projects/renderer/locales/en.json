@@ -13,15 +13,18 @@
     "title": "Set up {{name}} before starting Sessions",
     "description": "Argo needs a shared Project configuration before it can start a managed Session.",
     "configurationLabel": "Project configuration",
-    "save": "Save configuration",
-    "saving": "Saving configuration…",
-    "saved": "Configuration saved in the setup worktree.",
+    "save": "Save config",
+    "saving": "Saving config…",
+    "saved": "Config saved.",
+    "unsaved": "Unsaved changes",
     "cancel": "Cancel setup",
     "cancelling": "Cancelling setup…",
     "cancelled": "Project setup cancelled.",
-    "validate": "Validate configuration",
-    "validating": "Validating configuration…",
     "valid": "All Project commands passed validation.",
-    "invalid": "A Project command failed validation."
+    "invalid": "A Project command failed validation.",
+    "test": "Test config",
+    "testing": "Testing config…",
+    "invalidJson": "Fix JSON syntax before testing the config.",
+    "sharedFile": ".argo/settings.json"
   }
 }

@@ -8,7 +8,6 @@ import {
   projectError,
 } from '../contract'
 import { toSummary } from '../presentation'
-import { readProjectConfigurationSource } from '../project-configuration'
 import type {
   ProjectStore as ProjectRegistryStore,
   SetupCheckpoint,
@@ -61,6 +60,8 @@ export async function saveManualSetup(
   if (!project) return projectError('missing-project', request.requestId)
   try {
     const checkpoint = await saveManualProjectConfiguration(project, request.source, store.projects)
+    if (checkpoint.phase === 'ready')
+      store.projects.updateProjectPath(project.id, checkpoint.worktreePath)
     return editing(
       request.requestId,
       setupProject(project),
@@ -72,24 +73,18 @@ export async function saveManualSetup(
 }
 
 export async function validateManualSetup(
-  request: { projectId: string; requestId: string },
+  request: { projectId: string; requestId: string; source: string },
   store: SetupStore,
 ): Promise<ProjectSetupValidated | ProjectError> {
   const context = manualSetupContext(request, store)
   if ('type' in context) return context
   const { checkpoint, project } = context
-  store.projects.writeSetupCheckpoint({ ...checkpoint, phase: 'validating' })
-  const valid = await validateProjectConfiguration(checkpoint.worktreePath)
-  const configurationSource = await readProjectConfigurationSource(checkpoint.worktreePath)
-  const next: SetupCheckpoint = {
+  const valid = await validateProjectConfiguration(checkpoint.worktreePath, request.source)
+  store.projects.writeSetupCheckpoint({
     ...checkpoint,
-    configurationSource: configurationSource ?? '',
+    configurationSource: request.source,
     phase: valid ? 'ready' : 'failed',
-  }
-  store.projects.writeSetupCheckpoint(next)
-  if (valid) {
-    store.projects.updateProjectPath(project.id, checkpoint.worktreePath)
-  }
+  })
   return {
     version: 1,
     type: 'project.setup.validated',

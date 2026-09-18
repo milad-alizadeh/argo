@@ -51,12 +51,10 @@ export const ManualConfiguration: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const source = await canvas.findByLabelText('Project configuration')
-    await userEvent.clear(source)
-    await userEvent.type(source, '{{"version":1}')
-    await userEvent.click(canvas.getByRole('button', { name: 'Save configuration' }))
-    await expect(canvas.getByText('Configuration saved in the setup worktree.')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Validate configuration' }))
+    await canvas.findByLabelText('Project configuration')
+    await userEvent.click(canvas.getByRole('button', { name: 'Save config' }))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Config saved.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Test config' }))
     await expect(canvas.getByText('All Project commands passed validation.')).toBeVisible()
   },
 }
@@ -71,10 +69,9 @@ export const SavingConfiguration: Story = {
       save={async () => undefined}
       saved={false}
       saving="save"
-      setSaved={() => undefined}
-      setSource={() => undefined}
       source={'{"version":1}\n'}
-      validate={async () => undefined}
+      testConfiguration={async () => undefined}
+      updateSource={() => undefined}
     />
   ),
 }
@@ -89,10 +86,9 @@ export const FailedValidation: Story = {
       save={async () => undefined}
       saved
       saving={null}
-      setSaved={() => undefined}
-      setSource={() => undefined}
       source={'{"version":1}\n'}
-      validate={async () => undefined}
+      testConfiguration={async () => undefined}
+      updateSource={() => undefined}
     />
   ),
 }

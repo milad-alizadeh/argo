@@ -49,6 +49,7 @@ export const projectSetupValidateRequestSchema = z.strictObject({
   type: z.literal('project.setup.validate'),
   requestId: identifierSchema,
   projectId: identifierSchema,
+  source: z.string(),
 })
 export type ProjectSetupValidateRequest = z.infer<typeof projectSetupValidateRequestSchema>
 

@@ -51,6 +51,11 @@ export async function saveProjectConfiguration(
   return true
 }
 
+export function parseProjectConfiguration(source: string): ProjectConfiguration | null {
+  const parsed = parseConfiguration(source)
+  return parsed?.version === 1 ? toConfiguration(parsed.targets) : null
+}
+
 type ParsedConfiguration = { version: number | undefined; targets: Map<string, TargetValues> }
 
 async function readJson(file: string): Promise<ParsedConfiguration | null | undefined> {

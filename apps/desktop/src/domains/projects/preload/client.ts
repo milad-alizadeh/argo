@@ -7,7 +7,7 @@ export type ProjectClient = {
   openProject(request: { projectId: string }): Promise<ProjectOpenReply>
   beginProjectSetup(request: { projectId: string }): Promise<ProjectSetupReply>
   saveProjectSetup(request: { projectId: string; source: string }): Promise<ProjectSetupReply>
-  validateProjectSetup(request: { projectId: string }): Promise<ProjectSetupReply>
+  validateProjectSetup(request: { projectId: string; source: string }): Promise<ProjectSetupReply>
   cancelProjectSetup(request: { projectId: string }): Promise<ProjectSetupReply>
   listProjects(): Promise<ProjectListReply>
   registerProject(): Promise<ProjectListReply>

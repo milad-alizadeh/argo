@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -51,4 +51,21 @@ test('stops validation when a command fails', async (context) => {
 
   assert.equal(await validateProjectConfiguration(project), false)
   await assert.rejects(access(path.join(project, 'run-ran')))
+})
+
+test('validates an unsaved configuration without replacing the configuration file', async (context) => {
+  const project = await fixture(context)
+  const savedSource = source({ setup: 'false', run: 'false', build: 'false', test: 'false' })
+  await writeFile(path.join(project, '.argo', 'settings.json'), savedSource)
+
+  const draftSource = source({
+    setup: 'touch setup-ran',
+    run: 'touch run-ran',
+    build: 'touch build-ran',
+    test: 'touch test-ran',
+  })
+
+  assert.equal(await validateProjectConfiguration(project, draftSource), true)
+  assert.equal(await readFile(path.join(project, '.argo', 'settings.json'), 'utf8'), savedSource)
+  await access(path.join(project, 'test-ran'))
 })

@@ -14,10 +14,10 @@ test('creates, validates, and reopens a locally ready Project through visible co
     const configuration = page.getByLabel('Project configuration')
     await expect(configuration).toContainText('"version": 1')
     await configuration.fill(LOCALLY_READY_CONFIGURATION)
-    await page.getByRole('button', { name: 'Save configuration' }).click()
-    await page.getByText('Configuration saved in the setup worktree.').waitFor()
-    await page.getByRole('button', { name: 'Validate configuration' }).click()
+    await page.getByRole('button', { name: 'Test config' }).click()
     await page.getByText('All Project commands passed validation.').waitFor()
+    await page.getByRole('button', { name: 'Save config' }).click()
+    await page.getByText('Config saved.').waitFor()
     await application.close()
 
     const restarted = await launch(fixture)

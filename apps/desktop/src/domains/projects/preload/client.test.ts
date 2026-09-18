@@ -116,7 +116,10 @@ test('sends manual setup through the Project contract', async () => {
 
   const began = await client.beginProjectSetup({ projectId: 'project-1' })
   const saved = await client.saveProjectSetup({ projectId: 'project-1', source: '{"version":1}\n' })
-  const validated = await client.validateProjectSetup({ projectId: 'project-1' })
+  const validated = await client.validateProjectSetup({
+    projectId: 'project-1',
+    source: '{"version":1}\n',
+  })
   assert.equal(began.type, 'project.setup.editing')
   assert.equal(saved.type, 'project.setup.editing')
   assert.equal(validated.type, 'project.setup.validated')

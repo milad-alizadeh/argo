@@ -1,13 +1,19 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { readProjectConfiguration } from '../project-configuration'
+import { parseProjectConfiguration, readProjectConfiguration } from '../project-configuration'
 
 const run = promisify(execFile)
 const COMMAND_TIMEOUT_MS = 30_000
 
-export async function validateProjectConfiguration(projectPath: string): Promise<boolean> {
-  const configuration = await readProjectConfiguration(projectPath)
+export async function validateProjectConfiguration(
+  projectPath: string,
+  source?: string,
+): Promise<boolean> {
+  const configuration =
+    source === undefined
+      ? await readProjectConfiguration(projectPath)
+      : parseProjectConfiguration(source)
   const target = configuration?.targets.find(({ default: isDefault }) => isDefault)
   if (!target) return false
   const directory = path.resolve(projectPath, target.path)
