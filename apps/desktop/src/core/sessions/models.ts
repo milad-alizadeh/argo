@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import { ticketKey } from '../tickets/ticket'
+import { ticketKey } from '../../domains/tickets/contract/ticket'
 import { createSessionRosterRowSchema } from './roster-row-definition'
 
 export {

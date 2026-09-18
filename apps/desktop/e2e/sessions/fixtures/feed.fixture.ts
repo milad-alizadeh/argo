@@ -12,8 +12,8 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import { createProjectStore } from '../../../src/core/projects/sqlite-store'
 import { sharedDatabasePath } from '../../../src/core/storage/shared-database'
+import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 
 export const FIXTURES = [
   'resumeParent',

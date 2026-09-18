@@ -1,6 +1,6 @@
-import type { AccountClient } from '../src/core/accounts/client'
-import { PROVIDERS } from '../src/core/accounts/contract'
-import type { TicketClient } from '../src/core/tickets/client'
+import { PROVIDERS } from '../src/domains/accounts/contract/contract'
+import type { AccountClient } from '../src/domains/accounts/preload/client'
+import type { TicketClient } from '../src/domains/tickets/preload/client'
 
 // No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.
 export const ticketsHost: Pick<AccountClient, 'listAccounts'> &

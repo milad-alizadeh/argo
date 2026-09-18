@@ -3,7 +3,7 @@
 // how a caller reads the link back; these two operations are only how it changes.
 import { z } from 'zod'
 import { identifierSchema } from '../../boundary'
-import { ticketKey } from '../tickets/ticket'
+import { ticketKey } from '../../domains/tickets/contract/ticket'
 
 export const sessionTicketConnectRequestSchema = z.strictObject({
   version: z.literal(1),
