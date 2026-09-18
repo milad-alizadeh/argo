@@ -4,7 +4,7 @@ import { clickSelection, EMPTY_ROSTER_SELECTION } from './roster-selection'
 
 const ORDER = ['a', 'b', 'c', 'd', 'e']
 
-describe('clickSelection', () => {
+describe('clicking a roster row with a modifier key', () => {
   test('a plain click selects one row and replaces any prior selection', () => {
     const first = clickSelection(EMPTY_ROSTER_SELECTION, ORDER, { id: 'b', modifier: 'plain' })
     expect([...first.ids]).toEqual(['b'])

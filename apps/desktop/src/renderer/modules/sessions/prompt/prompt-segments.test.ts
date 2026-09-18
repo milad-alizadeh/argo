@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { formatSkillLabel, parsePromptText } from './prompt-segments'
 
-describe('parsePromptText', () => {
+describe('splitting a prompt into skill, link, and text segments', () => {
   test('reads a skill mention as its own segment', () => {
     const text = '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md)'
     expect(parsePromptText(text)).toEqual([
@@ -74,7 +74,7 @@ describe('parsePromptText', () => {
   })
 })
 
-describe('formatSkillLabel', () => {
+describe('turning a skill slug into a readable label', () => {
   test('capitalises a single-word slug', () => {
     expect(formatSkillLabel('implement')).toBe('Implement')
   })

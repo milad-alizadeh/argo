@@ -48,7 +48,7 @@ test('hands each MessageDisplay batch to the Session it was opened for', async (
   display.close()
 })
 
-test('returns at once, leaving the terminal text alone, when Argo is not listening', async () => {
+test('the hook returns at once, leaving the terminal text alone, when Argo is not listening', async () => {
   const display = createMessageDisplay()
   const opened = display.open(randomUUID(), () => {})
   opened.close()

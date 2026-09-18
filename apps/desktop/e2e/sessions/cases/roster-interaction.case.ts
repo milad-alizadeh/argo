@@ -94,7 +94,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
   await expect(
     missing.locator('nav[aria-label="Sessions"] button[aria-current="page"]'),
   ).toHaveCount(0)
-  await expect(missing.locator('.feed__viewport')).toHaveCount(0)
+  await expect(missing.getByRole('region', { name: 'Session history' })).toHaveCount(0)
 
   await proveRetiredSelection(missing, restart)
 }

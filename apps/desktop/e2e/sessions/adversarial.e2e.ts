@@ -54,17 +54,16 @@ test.describe('session-adversarial-permission', () => {
     })
     const composer = page.getByRole('textbox', { name: 'Message' })
     // Under parallel workers the seeded Claude start alone measured past the 5s default.
-    await expect(page.locator('.session-page__composer-permission')).toBeVisible({
+    await expect(page.getByRole('region', { name: 'Allow this?' })).toBeVisible({
       timeout: 15_000,
     })
     await composer.click()
     await page.keyboard.type('Queue this after Permission.')
     await page.keyboard.press('Enter')
-    await expect(page.locator('.session-page__queued-message')).toContainText(
-      'Queue this after Permission.',
-    )
+    const queuedTurns = page.getByRole('region', { name: 'Pending Turns' })
+    await expect(queuedTurns.getByText('Queue this after Permission.')).toBeVisible()
     await page.getByRole('button', { name: 'Allow', exact: true }).click()
-    await expect(page.locator('.session-page__queued-message')).toBeHidden()
+    await expect(queuedTurns.getByText('Queue this after Permission.')).toBeHidden()
     await expect(page.getByText('Mock Claude read: Queue this after Permission. 🦜')).toBeVisible()
   })
 })
