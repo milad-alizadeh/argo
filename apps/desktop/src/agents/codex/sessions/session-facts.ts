@@ -1,5 +1,5 @@
-import { isRecord } from '@/boundary'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 
 export function readTurnRecord(
   record: Record<string, unknown>,

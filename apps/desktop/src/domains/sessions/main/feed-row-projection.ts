@@ -1,11 +1,11 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
-import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/tool-feed'
+import type { SessionFeedRow } from '../contract/models'
+import { type ToolEvidence, toolRows } from '../contract/tool-feed'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '../contract/transcript'
 import { withPromptAttachments } from './prompt-attachments'
 
 function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {
@@ -69,14 +69,20 @@ export function rowsOfRecord(
         callId: record.callId,
       },
     ]
+  // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
+  // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))
-  const rows = mergedThoughtBlocks(record.blocks).flatMap((block, index) =>
+  const blocks = mergedThoughtBlocks(record.blocks)
+  const rows = blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
   return [...withPromptAttachments(rows, record), ...resultImageRows(record)]
 }
 
+// Codex packs a whole reasoning item's several summary chunks into one record's blocks. Folding a
+// run of them down to the latest keeps the Feed to one updating thought per turn instead of a
+// trail of bold lines, one per chunk (#2410).
 function mergedThoughtBlocks(blocks: ContentBlock[]): ContentBlock[] {
   const merged: ContentBlock[] = []
   for (const block of blocks) {
@@ -103,6 +109,8 @@ function rowsOfBlock({
   switch (block.shape) {
     case 'prose':
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
+    // An empty thinking block (redacted or summarized away by the API) draws nothing, so it must
+    // not count as a delivery either, or it silently splits a tool run across it (#2100).
     case 'thought':
       return block.text.trim() === '' ? [] : [{ shape: 'thought', id, text: block.text }]
     case 'marker':
@@ -113,6 +121,7 @@ function rowsOfBlock({
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)
     }
+    // A prompt's attachments are drawn in its bubble by `withPromptAttachments`.
     case 'file':
       return []
     case 'image':
@@ -124,6 +133,11 @@ function rowsOfBlock({
   }
 }
 
+// Tool results, and an assistant message left with nothing to show (an empty or redacted
+// thinking block), are deliberately silent in the Feed: they carry no delivery of their own, so
+// a Tool run spanning them merges. A sidechain message is a subagent's own turn (see
+// `rowsOfRecord`, which already drops its rows), a real delivery this Session never made, so a
+// Tool run must not read across it.
 export function isHiddenToolRunBoundary(record: TranscriptRecord, rows: SessionFeedRow[]) {
   return (
     rows.length === 0 &&

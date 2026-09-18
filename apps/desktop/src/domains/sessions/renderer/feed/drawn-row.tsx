@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './feed-row'
 import type { Reveal } from './reveal'

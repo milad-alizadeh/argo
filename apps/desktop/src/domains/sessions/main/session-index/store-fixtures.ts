@@ -3,7 +3,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import { managedRow } from '../managed-row'
 import type { IndexedSessionChain, IndexedTranscriptFile, SessionIndexWrite } from './contract'
 import { createSessionIndexStore, type SessionIndexStore } from './store'

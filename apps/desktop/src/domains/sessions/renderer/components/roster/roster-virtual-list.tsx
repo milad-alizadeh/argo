@@ -17,6 +17,7 @@ export function RosterVirtualList({
   onArchive,
   onFetchMoreSessions,
   onFetchNextPage,
+  onFetchNextSearchPage,
   onFocus,
   onLinkTicket,
   onOpenTicket,
@@ -32,6 +33,7 @@ export function RosterVirtualList({
 }: RosterRowHandlers & {
   label: string
   onFetchNextPage: () => void
+  onFetchNextSearchPage: () => void
   renamedTitles: Record<string, string>
   rows: readonly RosterRow[]
   selectedIds: ReadonlySet<SessionId>
@@ -50,6 +52,7 @@ export function RosterVirtualList({
   const range = virtualizer.range
   useSentinelFetch({ rows, kind: 'rosterSentinel', range, onFetch: onFetchMoreSessions })
   useSentinelFetch({ rows, kind: 'archivedSentinel', range, onFetch: onFetchNextPage })
+  useSentinelFetch({ rows, kind: 'searchSentinel', range, onFetch: onFetchNextSearchPage })
 
   return (
     <div

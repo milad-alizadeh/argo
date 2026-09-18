@@ -1,23 +1,23 @@
 // Projecting one stitched chain into the row the Roster draws. A throwaway projection rebuilt
 // from the transcripts every launch (ADR-0004, ADR-0008); nothing here is stored.
 
-import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionChain } from '../contract/chains'
 import {
   type SessionRosterRow as RosterRow,
   SESSION_POSTURES,
   type SessionEntry,
   type SessionTitle,
   TITLE_SOURCES,
-} from '@/domains/sessions/contract/models'
-import { observedRosterRow } from '@/domains/sessions/contract/roster-row-definition'
+} from '../contract/models'
+import { observedRosterRow } from '../contract/roster-row-definition'
 import {
   type BackgroundTask,
   readActivity,
   readDelegations,
   readShellCommands,
   readTurnStartedAt,
-} from '@/domains/sessions/contract/signals'
-import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+} from '../contract/signals'
+import type { TranscriptMessage, TranscriptRecord } from '../contract/transcript'
 import { readPlan } from './plan'
 import { readSetup } from './session-setup'
 import { readExternalStatus } from './status'

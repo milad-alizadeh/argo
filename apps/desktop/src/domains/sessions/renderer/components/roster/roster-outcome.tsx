@@ -1,7 +1,16 @@
 import { Inbox, TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/renderer/components/ui/empty'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '../../../../../platform/renderer/components/ui/alert'
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../../../../../platform/renderer/components/ui/empty'
 import { type RosterStatus, showsActive } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'
 import { RosterLoading } from './sessions-sidebar-chrome'

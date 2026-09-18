@@ -2,9 +2,8 @@
 // under the file's line cap: reading a pending Permission and deciding one.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-
-import type { ClaudePermission } from '@/domains/sessions/contract/contract'
 import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
+import type { ClaudePermission } from '../../../domains/sessions/contract/contract'
 import type { ClaudePermissionDecision } from '../drive/permission-gate'
 import { createClaudeDriveAdapter } from '../drive/session-drive-adapter.ts'
 

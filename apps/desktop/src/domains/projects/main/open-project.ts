@@ -1,7 +1,8 @@
 import { opendir } from 'node:fs/promises'
-import { isRecord } from '@/boundary'
+import { isRecord } from '@/shared/validation'
 import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from '../contract/contract'
 import { toSummary } from './presentation'
+import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
 import type { ProjectStore } from './register-project'
 import { isProjectStoreInvalid } from './sqlite-store'
 
@@ -30,6 +31,27 @@ export async function openProject(
   // The display name is the registry's, so the cockpit's listing and its opened Project cannot
   // disagree about what a Project is called.
   const summary = toSummary(project)
+  const configuration = await readProjectConfiguration(project.path)
+  const configurationSource = await readProjectConfigurationSource(project.path)
+  const checkpoint = store.projects.readSetupCheckpoint(project.id)
+  if (
+    configuration === null ||
+    (checkpoint?.phase === 'ready' && checkpoint.configurationSource !== configurationSource)
+  ) {
+    if (checkpoint) {
+      store.projects.writeSetupCheckpoint({
+        ...checkpoint,
+        phase: 'editing',
+        configurationSource: configurationSource ?? '',
+      })
+    }
+    return {
+      version: 1,
+      type: 'project.setup-required',
+      requestId: request.requestId,
+      project: { id: summary.id, name: summary.name },
+    }
+  }
   return {
     version: 1,
     type: 'project.opened',

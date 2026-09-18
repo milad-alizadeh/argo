@@ -1,7 +1,7 @@
 // A GitHub Account's sign-in: the device flow, then the identity it granted. GitHub's OAuth App
 // tokens do not lapse, so there is no renewal.
-import type { AccountErrorCode } from '../../core/accounts/contract'
-import type { AccountProvider, SignInEnd } from '../../core/accounts/providers'
+import type { AccountErrorCode } from '../../domains/accounts/contract/contract'
+import type { AccountProvider, SignInEnd } from '../../domains/accounts/main/providers'
 import type { GrantOutcome } from '../grant'
 import { awaitGrant, readIdentity, requestChallenge } from './device-flow'
 import type { GitHubFailure } from './http'

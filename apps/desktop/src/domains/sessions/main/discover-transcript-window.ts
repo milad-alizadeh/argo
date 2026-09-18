@@ -1,7 +1,7 @@
 // Split out of `discover-transcript-sessions.ts` (150-line file ceiling, AGENTS.md): the index-backed
 // half of one discoverer's window, kept beside the model it reads but out of the file that builds it.
-import type { createChainCache, SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { createChainCache, SessionChain } from '../contract/chains'
+import type { SessionRosterRow } from '../contract/models'
 import { type boundIndexedWindow, discoverIndexedWindow } from './discover-indexed-window'
 import type {
   TranscriptDiscovery,
@@ -25,6 +25,19 @@ export function resolveIdsAgainst(
 
 export async function historyCompleteFor(cli: string, index: SessionIndex): Promise<boolean> {
   return (await index.backfillProgress(cli)).complete
+}
+
+// Every chain the index's title, id, and retired-id columns match, presented the same way a
+// window's rows are: the strongest known title, newest first (#2375). Reads no transcript, so it
+// covers whatever history background backfill has already reached rather than the loaded window.
+export async function searchAgainst(options: {
+  index: SessionIndex
+  cli: string
+  query: string
+  presented: (rows: SessionRosterRow[]) => SessionRosterRow[]
+}): Promise<SessionRosterRow[]> {
+  const { index, cli, query, presented } = options
+  return presented(await index.searchChains(cli, query))
 }
 
 export async function discoverSessionsWith(

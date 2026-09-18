@@ -10,8 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/renderer/components/ui/dropdown-menu'
-import { cn } from '@/renderer/lib/utils'
+} from '../../../../../platform/renderer/components/ui/dropdown-menu'
+import { cn } from '../../../../../platform/renderer/lib/utils'
 import type { WorkEntry } from './session-work-entries'
 
 function Row({

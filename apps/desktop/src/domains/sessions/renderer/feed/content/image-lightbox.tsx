@@ -1,14 +1,14 @@
 import { Download, X } from 'lucide-react'
 import type { ReactEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '../../../../../platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@/renderer/components/ui/dialog'
+} from '../../../../../platform/renderer/components/ui/dialog'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 import { useImageLightboxTransition } from './image-lightbox-transition'
 

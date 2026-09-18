@@ -1,6 +1,6 @@
 // What the Session index answers, and what one indexing pass writes back. Shared Session code and
 // the CLI adapters speak only this; the SQL that serves it lives behind one worker (#2372).
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 
 // A transcript file addressed for parsing: where it is, and the name its Session id is read off.
 export type TranscriptPath = { path: string; name: string }
@@ -56,6 +56,8 @@ export type SessionIndex = {
   filesAt: (cli: string, paths: readonly string[]) => Promise<IndexedTranscriptFile[]>
   filesOfChains: (cli: string, chainIds: readonly string[]) => Promise<IndexedTranscriptFile[]>
   rowsOfChains: (cli: string, chainIds: readonly string[]) => Promise<SessionRosterRow[]>
+  // Every chain a title, current id, or retired id matches, newest first (#2375).
+  searchChains: (cli: string, query: string) => Promise<SessionRosterRow[]>
   chainLinks: (cli: string) => Promise<{ sessionId: string; parentSessionId: string | null }[]>
   // Every chain standing under a retired id for want of its origin.
   strandedChains: (cli: string) => Promise<string[]>

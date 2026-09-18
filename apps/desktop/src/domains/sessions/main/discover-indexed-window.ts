@@ -4,7 +4,7 @@
 // machine's whole history. Split out of discover-transcript-sessions.ts to keep it under the file
 // line ceiling.
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../contract/models'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { nextCursorFor } from './discover-transcript-sessions'
 import type { SessionIndex } from './session-index/contract'

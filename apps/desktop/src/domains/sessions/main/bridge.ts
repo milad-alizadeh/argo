@@ -1,6 +1,6 @@
 import { type BrowserWindow, dialog } from 'electron'
-import { registerDomainHandlers } from '@/core/contract/domain'
-import { platformText } from '@/core/i18n/platform'
+import { platformText } from '../../../platform/main/i18n'
+import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -18,6 +18,8 @@ import {
   type SessionListRequest,
   type SessionRenameReply,
   type SessionRenameRequest,
+  type SessionSearchReply,
+  type SessionSearchRequest,
   type SessionShellOutputReply,
   type SessionShellOutputRequest,
   type SessionSkillReply,
@@ -25,8 +27,8 @@ import {
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+} from '../contract/contract'
+import { SESSION_OPERATIONS } from '../contract/operations'
 import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
 import {
   compactSession,
@@ -45,6 +47,7 @@ export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   archiveList(request: SessionArchiveListRequest): Promise<SessionArchiveListReply>
   archiveSet(request: SessionArchiveSetRequest): Promise<SessionArchiveSetReply>
+  search(request: SessionSearchRequest): Promise<SessionSearchReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
   readWorkspaceFile(request: SessionFileRequest): Promise<SessionFileReply>
   readSkillFile(request: SessionSkillRequest): Promise<SessionSkillReply>
@@ -100,6 +103,7 @@ export function attachSessionBridge(
       list: (request, context) => context.reader.listSessions(request),
       archiveList: (request, context) => context.reader.archiveList(request),
       archiveSet: (request, context) => context.reader.archiveSet(request),
+      search: (request, context) => context.reader.search(request),
       feed: (request, context) => context.reader.readSessionFeed(request),
       file: (request, context) => context.reader.readWorkspaceFile(request),
       skill: (request, context) => context.reader.readSkillFile(request),

@@ -1,8 +1,4 @@
-import type {
-  TranscriptFile,
-  TranscriptParser,
-  TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+import type { TranscriptFile, TranscriptParser, TranscriptRecord } from './transcript'
 
 function earliestTimestamp(records: TranscriptRecord[]): string {
   const stamps = records.flatMap((record) =>

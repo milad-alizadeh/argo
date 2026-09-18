@@ -1,11 +1,11 @@
-import { isRecord } from '@/boundary'
-import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/feed-images'
+import { isRecord } from '@/shared/validation'
+import { dataImageUrl, imageBlocks } from '../../../domains/sessions/contract/feed-images'
 import type {
   ContentBlock,
   RichResultBlock,
   ToolCall,
   ToolResult,
-} from '@/domains/sessions/contract/transcript'
+} from '../../../domains/sessions/contract/transcript'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/

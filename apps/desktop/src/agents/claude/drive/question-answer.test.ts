@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
 import { deliverAnswer } from './question-answer'
 
 const DOWN = '[B'

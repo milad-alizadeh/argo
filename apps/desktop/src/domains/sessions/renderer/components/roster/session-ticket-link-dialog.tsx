@@ -3,16 +3,16 @@
 // connect hook resolves. A custom title asks before it is replaced; a summarised or first-prompt
 // one is replaced without asking, since it cost the reader nothing to make.
 import { useState } from 'react'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '../../../../../platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/renderer/components/ui/dialog'
-import { Input } from '@/renderer/components/ui/input'
-import { useConnection, useTicketList } from '@/renderer/modules/tickets/hooks/use-tickets'
+} from '../../../../../platform/renderer/components/ui/dialog'
+import { Input } from '../../../../../platform/renderer/components/ui/input'
+import { useConnection, useTicketList } from '../../../../tickets/renderer/hooks/use-tickets'
 import type { ConnectTicketInput } from '../../hooks/use-session-ticket-link'
 import type { Session } from '../../types'
 

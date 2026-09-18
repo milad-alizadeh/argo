@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '../contract/transcript'
 import { rosterMetadata } from './roster-metadata'
 
 test('keeps roster facts while dropping Feed payloads', () => {

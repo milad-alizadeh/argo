@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '@/boundary'
+import { identifierSchema } from '../../../shared/validation'
 import {
   sessionActivitySchema,
   sessionDelegationSchema,
@@ -12,10 +12,10 @@ import {
   sessionStatusSchema,
   sessionTicketSchema,
   sessionTitleSchema,
-} from '@/domains/sessions/contract/models'
-import { rosterRowField as field } from '@/domains/sessions/contract/roster-row-field'
+} from './models'
+import { rosterRowField as field } from './roster-row-field'
 
-export type { RosterRowField } from '@/domains/sessions/contract/roster-row-field'
+export type { RosterRowField } from './roster-row-field'
 
 const optionalCount = () => z.number().int().nonnegative().nullable().optional()
 const optionalDate = () => z.string().datetime().nullable().optional()
@@ -110,7 +110,7 @@ export const rosterRowFields = [
     'observed',
   ]),
   field(['ticket', () => sessionTicketSchema.nullable(), () => null, 'null', 'observed']),
-  // Argo's own flag, joined on the Session's id and every id it has retired (`session-archive-store.ts`).
+  // Argo's own flag, joined on the Session's id and every id it has retired (`archive-store.ts`).
   field(['archived', () => z.boolean(), () => false, 'false', 'observed']),
   field(['contextTokens', optionalCount, ({ usage }) => usage.contextTokens, 'null', 'observed']),
   field([

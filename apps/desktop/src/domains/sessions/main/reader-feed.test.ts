@@ -3,9 +3,9 @@
 import assert from 'node:assert/strict'
 import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { sessionListReplySchema } from '@/domains/sessions/contract/contract'
+import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
+import { sessionListReplySchema } from '../contract/contract'
 import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,

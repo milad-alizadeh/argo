@@ -2,7 +2,9 @@
 // added since (#1825).
 export const PROJECT_PROOF_SURFACE = [
   'awaitAccount',
+  'beginProjectSetup',
   'cancelAccount',
+  'cancelProjectSetup',
   'cancelSessionFeed',
   'chooseSessionAttachments',
   'compactSession',
@@ -41,6 +43,8 @@ export const PROJECT_PROOF_SURFACE = [
   'registerProject',
   'relocateProject',
   'renameSession',
+  'saveProjectSetup',
+  'searchSessions',
   'selectProject',
   'sendSession',
   'setAppearance',
@@ -50,6 +54,7 @@ export const PROJECT_PROOF_SURFACE = [
   'statSessionAttachments',
   'updatePriority',
   'updateStatus',
+  'validateProjectSetup',
   'verifyAccount',
   'versions',
   'zoomFactor',

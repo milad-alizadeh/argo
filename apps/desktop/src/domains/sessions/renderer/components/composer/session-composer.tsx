@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '../../../contract/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { useComposer } from './composer'
 import { ComposerForm } from './composer-form'

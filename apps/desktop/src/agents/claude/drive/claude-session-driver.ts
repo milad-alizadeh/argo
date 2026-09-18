@@ -1,8 +1,8 @@
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
-import type { ClaudePermission } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
+import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
+import type { ClaudePermission } from '../../../domains/sessions/contract/contract'
+import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
+import { rollupSessionStatus } from '../../../domains/sessions/main/session-status-rollup'
 import {
   beginCompaction,
   clearCompaction,

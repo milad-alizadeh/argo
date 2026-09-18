@@ -5,7 +5,7 @@ import {
   CLAUDE_MODELS,
   CLAUDE_MODES,
   claudeTurnSetupSchema,
-} from '@/domains/sessions/contract/contract'
+} from '../../contract/contract'
 import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
 import {
   refusalOf,

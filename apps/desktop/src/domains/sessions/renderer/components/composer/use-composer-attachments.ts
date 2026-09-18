@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import {
   attachmentKindOf,
   type SessionAttachmentInput,
-} from '@/domains/sessions/contract/attachments-contract'
+} from '../../../contract/attachments-contract'
 import {
   type ComposerAttachment,
   type ComposerTicketContext,

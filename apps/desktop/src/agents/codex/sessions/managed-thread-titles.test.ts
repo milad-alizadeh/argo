@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { managedRow } from '@/domains/sessions/main/managed-row'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
 import {
   CREATED_THREAD,
   codexHome,

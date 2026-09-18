@@ -6,7 +6,7 @@
 // running under it, so its open delegations are unresolved rather than running (#1076). And a
 // Session whose own state Argo cannot place cannot be claimed to be delegating either, so its
 // delegations are not read at all.
-import type { SessionDelegation, SessionStatus } from '@/domains/sessions/contract/models'
+import type { SessionDelegation, SessionStatus } from '../contract/models'
 
 const LIVE: readonly SessionStatus[] = ['starting', 'running', 'permission', 'asking']
 

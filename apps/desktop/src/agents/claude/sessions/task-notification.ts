@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { taggedField } from '../../envelope-tags'
 
 type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>

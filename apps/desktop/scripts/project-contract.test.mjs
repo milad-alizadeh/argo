@@ -31,11 +31,11 @@ async function fixture(context) {
   return { database, projectPath, store }
 }
 
-test('opens a registered Project by stable ID with presentation data only', async (context) => {
+test('routes an unconfigured Project to setup by stable ID with presentation data only', async (context) => {
   const { store } = await fixture(context)
   assert.deepEqual(await openProject(request, store), {
     version: 1,
-    type: 'project.opened',
+    type: 'project.setup-required',
     requestId: 'open-1',
     project: { id: 'project-1', name: 'example' },
   })

@@ -1,5 +1,5 @@
 import { defaultUrlTransform, type UrlTransform } from 'react-markdown'
-import { isExternalLink, loadableImageSource } from '@/core/security/urls-contract'
+import { isExternalLink, loadableImageSource } from '../../../../../platform/shared/urls'
 
 // Replaces react-markdown's own filter, which drops `data:` and `file:` images. A link that cannot
 // open in the browser becomes '' and draws as text.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '../../../../contract/attachments-contract'
 import { type PendingTurn, useComposerStore } from '../../../state/use-composer-store'
 import type { TurnSetup } from '../../../turn-setup/turn-setup'
 import type { Send } from '../use-send'

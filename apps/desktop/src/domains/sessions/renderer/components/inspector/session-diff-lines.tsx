@@ -42,15 +42,15 @@ export function diffLineDecoration(line: DiffLine): { className?: string; prefix
       className = 'hidden'
       break
   }
+  const displayedLine = line.kind === 'removed' ? line.oldLine : line.newLine
   return {
     className,
     prefix: (
       <span
         aria-hidden="true"
-        className="mr-2 grid w-12 shrink-0 grid-cols-2 gap-1 text-right text-muted-foreground select-none"
+        className="mr-2 w-6 shrink-0 text-right text-muted-foreground select-none"
       >
-        <span>{line.oldLine ?? ''}</span>
-        <span>{line.newLine ?? ''}</span>
+        {displayedLine ?? ''}
       </span>
     ),
   }

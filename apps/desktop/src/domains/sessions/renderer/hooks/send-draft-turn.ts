@@ -1,6 +1,6 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
+import type { Cockpit } from '../../../projects/renderer/hooks/use-projects'
 import { promptOf } from '../feed/turn-marker-state'
 import type { SessionCli } from '../harness/harnesses'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'

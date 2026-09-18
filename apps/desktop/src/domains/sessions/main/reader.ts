@@ -1,26 +1,24 @@
 import {
+  createInMemorySessionTicketLinkStore,
+  type SessionTicketLinkStore,
+} from '../../tickets/main/session-links'
+import {
   driveSessionError,
   isDriveCli,
   type SessionRenameRequest,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import type { HeldFeed } from '@/domains/sessions/main/feed-cache'
+} from '../contract/contract'
 import { archiveListRead, archiveSetWrite } from './archive-reads'
+import { createInMemorySessionArchiveStore, type SessionArchiveStore } from './archive-store'
 import type { SessionReader } from './bridge'
+import type { HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import type { OwnerFor, ReadContext } from './read-declaration'
 import { listReply } from './read-roster'
 import { createFeedReader } from './read-session-feed'
 import { delegationUsageRead, shellOutputRead, skillFileRead, workspaceFileRead } from './reads'
-import {
-  createInMemorySessionArchiveStore,
-  type SessionArchiveStore,
-} from './session-archive-store'
+import { searchRead } from './search-reads'
 import type { SessionSource } from './session-source'
-import {
-  createInMemorySessionTicketLinkStore,
-  type SessionTicketLinkStore,
-} from './session-ticket-link-store'
 import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
 
 export type { FeedOverlay, SessionSource } from './session-source'
@@ -93,6 +91,7 @@ export function createSessionReader(
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (request) => archiveListRead(reads, request),
     archiveSet: (request) => archiveSetWrite(reads, request),
+    search: (request) => searchRead(reads, request),
     readWorkspaceFile: (request) => workspaceFileRead(reads, request),
     readSkillFile: (request) => skillFileRead(reads, request),
     readSessionFeed: feedReader.readSessionFeed,

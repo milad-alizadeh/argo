@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '../../../contract/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { ComposerAttachment, ComposerTicketContext } from '../../state/use-composer-store'
 import { ComposerCard } from './composer-card'

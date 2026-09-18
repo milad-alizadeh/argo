@@ -7,15 +7,12 @@
 // not backfilled yet, does a reading fall back to growing the window (`archive-window.ts`) until
 // it has what it needs.
 import { z } from 'zod'
-import type {
-  SessionArchiveListRequest,
-  SessionArchiveSetRequest,
-} from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionArchiveListRequest, SessionArchiveSetRequest } from '../contract/contract'
+import { newestFirst, type SessionRosterRow } from '../contract/models'
+import { isArchivedSession } from './archive-store'
 import { growWindow } from './archive-window'
 import { fromContext, type ReadContext } from './read-declaration'
 import { rosterCursorMapSchema } from './roster-cursor'
-import { isArchivedSession } from './session-archive-store'
 import type { SessionSource } from './session-source'
 
 // Every named id resolved off the index rather than a window, when every source has one open.
@@ -70,7 +67,7 @@ function archivedIn(rows: readonly SessionRosterRow[], archivedIds: ReadonlySet<
   return rows
     .filter((row) => isArchivedSession(row, archivedIds))
     .map((row) => ({ ...row, archived: true }))
-    .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
+    .sort(newestFirst)
 }
 
 export const archiveListRead = fromContext(

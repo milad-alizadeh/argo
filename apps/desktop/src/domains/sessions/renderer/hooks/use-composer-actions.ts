@@ -1,5 +1,5 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import type { SessionCli } from '../harness/harnesses'
 import { type ComposerIdentity, findSessionRow } from './composer-identity'
 import { useComposerMarker } from './use-composer-marker'

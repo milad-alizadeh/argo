@@ -2,11 +2,7 @@
 // live overlay applied when the source supplies one (#2025).
 import { createHash } from 'node:crypto'
 
-import {
-  type SessionFeedReply,
-  type SessionFeedRequest,
-  sessionError,
-} from '@/domains/sessions/contract/contract'
+import { type SessionFeedReply, type SessionFeedRequest, sessionError } from '../contract/contract'
 import {
   appendedReply,
   feedReply,
@@ -14,7 +10,7 @@ import {
   keepFeed,
   stableChain,
   unchangedReply,
-} from '@/domains/sessions/main/feed-cache'
+} from './feed-cache'
 import { type FeedProjectionState, projectFeed } from './feed-incremental'
 import type { SessionSource } from './session-source'
 

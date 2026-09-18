@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
+import { useWatchedQueries } from '../../../../platform/renderer/core/hooks/use-watched-topic'
 import {
   type SessionContractError,
   throwSessionContractError,

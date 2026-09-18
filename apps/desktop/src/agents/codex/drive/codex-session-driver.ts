@@ -16,7 +16,7 @@ import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
 import { beginSession, startTurn } from './turn-lifecycle'
 
-export type { LiveMessage }
+export type { CodexProcess, LiveMessage, LiveMessages }
 export { CodexSessionDriverError }
 
 export type CodexSessionDriver = {
@@ -71,6 +71,19 @@ function rosterChanges() {
   }
 }
 
+function startManagedSession({
+  driver,
+  sessions,
+  renameWaiters,
+}: {
+  driver: ManagedSessionOptions
+  sessions: Map<string, ManagedSession>
+  renameWaiters: Map<string, (title: string) => void>
+}) {
+  return (request: Parameters<CodexSessionDriver['start']>[0]) =>
+    beginSession({ driver, renameWaiters, request, sessions })
+}
+
 function closeManagedSessions(
   sessions: Map<string, ManagedSession>,
   ownership: ManagedSessionOptions['ownership'],
@@ -93,7 +106,11 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
   const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
 
   return {
-    start: (request) => beginSession({ driver, renameWaiters, request, sessions }),
+    start: startManagedSession({
+      driver,
+      sessions,
+      renameWaiters,
+    }),
     async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
       await startTurn({
@@ -139,5 +156,3 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     close: closeManagedSessions(sessions, driver.ownership),
   }
 }
-
-export type { CodexProcess, LiveMessages }

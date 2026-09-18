@@ -2,7 +2,7 @@
 // each Subagent of a Session has spent. Both are asked for only while a reader is looking at the
 // work rail, so neither rides the Roster or Feed reply.
 import { z } from 'zod'
-import { identifierSchema } from '@/boundary'
+import { identifierSchema } from '../../../shared/validation'
 import { sessionErrorSchema } from './session-error'
 
 // What one background Shell has written so far, read from the file the CLI's own receipt named

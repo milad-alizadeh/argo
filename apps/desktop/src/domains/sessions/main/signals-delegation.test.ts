@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readDelegations } from '@/domains/sessions/contract/signals'
+import { readDelegations } from '../contract/signals'
 
 function activity(status: 'running' | 'completed', timestamp: string) {
   return {

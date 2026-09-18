@@ -3,9 +3,9 @@
 // bridge calls, so a refactor inside it leaves these green.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
+import type { SessionRosterRow } from '../contract/models'
 import { managedRow } from './managed-row'
 import { createSessionReader } from './reader'
 import {

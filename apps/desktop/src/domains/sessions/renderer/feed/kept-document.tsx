@@ -1,4 +1,4 @@
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
 import type { FeedDocumentContext } from './feed-document'
 import { FeedDocument } from './feed-document'

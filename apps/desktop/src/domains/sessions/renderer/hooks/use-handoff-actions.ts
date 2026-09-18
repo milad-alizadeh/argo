@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import { codeFrom, type Failure, messageFrom } from './use-session-composer-actions'
 import type { useSessionMutations } from './use-session-mutations'
 

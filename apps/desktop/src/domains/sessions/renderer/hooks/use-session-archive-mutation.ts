@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useToastManager } from '@/renderer/components/ui/toast'
+import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
 import { throwSessionContractError, throwUnexpectedSessionReply } from '../session-contract-error'
 import { invalidateSessionRoster } from '../session-queries'
 import type { SessionId } from '../types'

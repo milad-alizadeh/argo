@@ -1,8 +1,8 @@
 // The state an incremental Feed projection carries between polls (#2145): per-file cursors saying
 // how far each file's records have already been turned into rows, plus the Tool Call bookkeeping
 // that spans records. Split out of feed-incremental.ts, which owns turning open records into rows.
-import type { ToolResult } from '@/domains/sessions/contract/tool-feed'
-import type { TranscriptFile, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { ToolResult } from '../contract/tool-feed'
+import type { TranscriptFile, TranscriptRecord } from '../contract/transcript'
 
 export type PositionedRecord = { record: TranscriptRecord; position: string; fileIndex: number }
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../contract/models'
 import { discoverRoster } from './discover-roster'
 import { managedRow } from './managed-row'
 

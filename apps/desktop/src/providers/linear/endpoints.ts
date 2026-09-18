@@ -1,4 +1,4 @@
-import { isLoopbackOrigin } from '@/boundary'
+import { isLoopbackOrigin } from '../../shared/validation'
 
 // The OAuth App the desktop authorizes to Linear as. Linear serves no device flow, so the grant is
 // authorization code + PKCE through a loopback redirect, and the client id is public on the same

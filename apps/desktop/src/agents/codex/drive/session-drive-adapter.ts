@@ -1,11 +1,11 @@
 import {
   type CodexTurnSetup,
   codexTurnSetupSchema,
-} from '@/domains/sessions/contract/codex-contract'
+} from '../../../domains/sessions/contract/codex-contract'
 import type {
   DriveFailure,
   SessionDriveAdapter,
-} from '@/domains/sessions/main/session-drive-adapter'
+} from '../../../domains/sessions/main/session-drive-adapter'
 import type { CodexSessionDrive } from './codex-session-driver'
 import { CodexSessionDriverError } from './codex-session-error'
 

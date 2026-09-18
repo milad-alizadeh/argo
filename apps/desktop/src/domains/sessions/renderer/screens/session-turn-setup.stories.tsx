@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import type { SessionSetup } from '@/domains/sessions/contract/models'
+import type { SessionSetup } from '../../contract/models'
 import { sessionRosterRow } from '../session-fixtures'
 import { useComposerStore } from '../state/use-composer-store'
 import { SessionScreenView } from './session-screen-view'

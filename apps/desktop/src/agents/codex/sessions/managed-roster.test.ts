@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
+import { listed, tempRoot } from '../../../domains/sessions/main/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
 
 // The AC that a managed Session with no transcript yet appears in the Roster holds for each CLI

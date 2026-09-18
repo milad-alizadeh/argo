@@ -1,7 +1,7 @@
 import { LoaderCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { Progress } from '@/renderer/components/ui/progress'
+import { Progress } from '../../../../platform/renderer/components/ui/progress'
 import { formatElapsed } from './elapsed'
 
 function elapsedSince(startedAt: string, now: number) {

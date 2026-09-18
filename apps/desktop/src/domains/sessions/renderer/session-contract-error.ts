@@ -1,5 +1,5 @@
-import type { SessionError, SessionErrorCode } from '@/domains/sessions/contract/contract'
-import { ContractError } from '@/renderer/contract-error'
+import { ContractError } from '../../../platform/renderer/contract-error'
+import type { SessionError, SessionErrorCode } from '../contract/contract'
 
 export class SessionContractError extends ContractError<SessionError> {
   declare code: SessionErrorCode

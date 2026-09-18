@@ -1,4 +1,4 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/feed-rows'
+import type { SessionFeedRow } from '../contract/feed-rows'
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 type DelegationGroup = Extract<SessionFeedRow, { shape: 'delegation-group' }>

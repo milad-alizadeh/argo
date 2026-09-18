@@ -4,8 +4,8 @@
 // ids a row has retired. So a reading grows the same window `discoverSessions` pages by, one step
 // at a time, and stops as soon as its own predicate is satisfied. A predicate no row can satisfy
 // grows to the whole tree, which is what restoring an id that is no longer on disk costs.
-import { sessionError } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { sessionError } from '../contract/contract'
+import type { SessionRosterRow } from '../contract/models'
 import { combineDiscoveries, type Discovered } from './merge-discovery'
 import { readFailure } from './read-declaration'
 import { decodeRosterCursor, type RosterCursorMap } from './roster-cursor'

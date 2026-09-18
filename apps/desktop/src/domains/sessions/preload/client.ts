@@ -1,6 +1,6 @@
-import { createDomainClient } from '@/core/contract/domain'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import { createDomainClient } from '../../../shared/ipc/client'
+import type { SessionAttachmentInput } from '../contract/attachments-contract'
+import type { ClaudeQuestionAnswer } from '../contract/claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -13,13 +13,15 @@ import {
   type SessionPermissionDecisionRequest,
   type SessionPermissionReply,
   type SessionRenameReply,
+  type SessionSearchReply,
   type SessionShellOutputReply,
   type SessionSkillReply,
   type SessionStartReply,
   type SessionStatAttachmentsReply,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+} from '../contract/contract'
+import { SESSION_OPERATIONS } from '../contract/operations'
+import type { RosterStatus } from '../contract/search-contract'
 
 export type SessionClient = {
   startSession(request: {
@@ -61,6 +63,12 @@ export type SessionClient = {
     sessionIds: string[]
     archived: boolean
   }): Promise<SessionArchiveSetReply>
+  searchSessions(request: {
+    projectRoot: string | null
+    status: RosterStatus
+    query: string
+    cursor: string | null
+  }): Promise<SessionSearchReply>
   readSessionFeed(request: {
     sessionId: string
     delegationId: string | null
@@ -100,6 +108,7 @@ export function createSessionClient(
     listSessions: (request) => client.list(request),
     listArchivedSessions: (request) => client.archiveList(request),
     setSessionsArchived: (request) => client.archiveSet(request),
+    searchSessions: (request) => client.search(request),
     readWorkspaceFile: (request) => client.file(request),
     readSkillFile: (request) => client.skill(request),
     readShellOutput: (request) => client.shellOutput(request),

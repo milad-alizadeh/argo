@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import type { SessionRosterRow } from '../../contract/models'
+import type { TurnSetupControlProps } from '../components/composer/run-setup-menu'
 import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
 import { useComposerStore } from '../state/use-composer-store'
 import {

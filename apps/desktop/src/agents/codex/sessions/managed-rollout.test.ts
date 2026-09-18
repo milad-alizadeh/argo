@@ -6,10 +6,10 @@ import { test } from 'node:test'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/contract'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+} from '../../../domains/sessions/contract/contract'
+import type { SessionReader } from '../../../domains/sessions/main/bridge'
+import { managedRow } from '../../../domains/sessions/main/managed-row'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {

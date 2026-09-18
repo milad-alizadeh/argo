@@ -4,8 +4,13 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/renderer/components/ui/collapsible'
-import { Marker, MarkerContent, MarkerIcon, markerVariants } from '@/renderer/components/ui/marker'
+} from '../../../../platform/renderer/components/ui/collapsible'
+import {
+  Marker,
+  MarkerContent,
+  MarkerIcon,
+  markerVariants,
+} from '../../../../platform/renderer/components/ui/marker'
 import type { SessionFeedRow } from '../types'
 
 type MarkerRow = Extract<SessionFeedRow, { shape: 'marker' }>

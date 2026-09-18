@@ -3,10 +3,10 @@
 // own change announcements already use. Both pause while a selected Feed is reading, so neither
 // races the file it is reading. Split from `session-bridges.ts` to keep that composition root short.
 import type { BrowserWindow } from 'electron'
-import type { WatchedSource } from '@/core/watch/watch-source'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createBackfillScheduler } from '@/domains/sessions/main/session-index/backfill-scheduler'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { WatchedSource } from '../../../platform/main/watch/watch-source'
+import type { SessionReader } from './bridge'
+import { createBackfillScheduler } from './session-index/backfill-scheduler'
+import type { SessionSource } from './session-source'
 
 // One backfill batch at a time, per adapter that has an index to backfill into.
 export function startBackfill(

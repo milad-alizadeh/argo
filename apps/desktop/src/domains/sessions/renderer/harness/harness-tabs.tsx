@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/renderer/components/ui/tabs'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../../../platform/renderer/components/ui/tabs'
 import { HarnessLogo } from './harness-logo'
 import { HARNESSES, SESSION_CLIS, type SessionCli } from './harnesses'
 
-// Extracted from the composer prototype (602bcce2): the run setup's harness tabs, whose panel is
-// the chosen harness's own Model and Effort.
 export function HarnessTabs({
   cli,
   onChange,

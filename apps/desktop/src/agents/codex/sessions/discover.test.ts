@@ -7,8 +7,8 @@ import { test } from 'node:test'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/contract'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+} from '../../../domains/sessions/contract/contract'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {

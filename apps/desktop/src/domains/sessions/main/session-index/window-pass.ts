@@ -1,9 +1,9 @@
 // One indexing pass over the bounded recent window: what it must parse, and what it writes back.
 // Split from `indexed-window.ts` so the pass's arithmetic can be read without the index calls
 // around it.
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import type { SessionChain } from '../../contract/chains'
+import type { SessionRosterRow } from '../../contract/models'
+import type { TranscriptFile } from '../../contract/transcript'
 import type { IndexedSessionChain, IndexedTranscriptFile, TranscriptFileIdentity } from './contract'
 
 // A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript

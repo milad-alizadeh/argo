@@ -14,8 +14,8 @@ import {
   type SessionStartReply,
   type SessionStartRequest,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import { driveSessionError, isDriveCli } from '@/domains/sessions/contract/session-error'
+} from '../contract/contract'
+import { driveSessionError, isDriveCli } from '../contract/session-error'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,

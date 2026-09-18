@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readActivity, readDelegations } from '@/domains/sessions/contract/signals'
+import { readActivity, readDelegations } from '../contract/signals'
 import type {
   BackgroundTaskRecord,
   ToolCall,
   ToolResult,
   TranscriptMessage,
-} from '@/domains/sessions/contract/transcript'
+} from '../contract/transcript'
 
 function promptMessage(): TranscriptMessage {
   return {

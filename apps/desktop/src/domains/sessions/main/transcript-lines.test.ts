@@ -4,7 +4,7 @@ import { appendFile, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '../contract/transcript'
 import { createTranscriptRecordReader } from './transcript-lines'
 
 async function tempFile(context: { after: (cleanup: () => Promise<void>) => void }) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { ToolResult } from '@/domains/sessions/contract/tool-feed'
+import type { ToolResult } from '../contract/tool-feed'
 import { toolCall as call, onlyToolRow } from './tool-feed-test-fixtures'
 
 test('an Edit call carries its diff evidence before the result lands', () => {

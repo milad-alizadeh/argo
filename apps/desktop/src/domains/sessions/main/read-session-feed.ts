@@ -7,8 +7,8 @@ import {
   type SessionFeedReply,
   type SessionFeedRequest,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import { disposeFeed, type HeldFeed } from '@/domains/sessions/main/feed-cache'
+} from '../contract/contract'
+import { disposeFeed, type HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import { createFeedReads, isAbortError } from './feed-reads'
 import { type OwnerFor, readFailure } from './read-declaration'

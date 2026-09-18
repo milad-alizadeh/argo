@@ -4,8 +4,9 @@ import type {
   SessionFeedRead,
   SessionFeedRequest,
   SessionListRequest,
+  SessionSearched,
   SessionsListed,
-} from '@/domains/sessions/contract/contract'
+} from '../contract/contract'
 
 export type {
   SessionArchiveListed,
@@ -13,6 +14,7 @@ export type {
   SessionFeedRead as SessionFeed,
   SessionFeedRequest,
   SessionListRequest,
+  SessionSearched,
   SessionsListed,
 }
 

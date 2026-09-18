@@ -1,8 +1,12 @@
 import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/renderer/components/ui/input-group'
-import { Skeleton } from '@/renderer/components/ui/skeleton'
+import { Button } from '../../../../../platform/renderer/components/ui/button'
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '../../../../../platform/renderer/components/ui/input-group'
+import { Skeleton } from '../../../../../platform/renderer/components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
 import type { RosterStatus } from '../../state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '../../types'

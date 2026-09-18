@@ -1,7 +1,7 @@
 import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { InspectorSplit } from '@/renderer/components/inspector-split'
+import { InspectorSplit } from '../../../../platform/renderer/components/inspector-split'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'

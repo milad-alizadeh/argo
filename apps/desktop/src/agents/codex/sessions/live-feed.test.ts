@@ -3,8 +3,8 @@ import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promi
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionReader } from '../../../domains/sessions/main/bridge'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import type { LiveMessage } from '../drive/codex-session-driver'
 import { codexSessionSource } from './read-sessions'
 

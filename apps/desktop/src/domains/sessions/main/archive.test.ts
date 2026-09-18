@@ -1,10 +1,12 @@
 // Archiving through the shared reader (#2315): one Argo-owned flag, the same path for every CLI.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/contract'
+import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
+import { createInMemorySessionTicketLinkStore } from '../../tickets/main/session-links'
+import { sessionArchiveSetReplySchema } from '../contract/contract'
 import { requestArchiveList } from './archive-list-request'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 import { createSessionReader } from './reader'
 import {
   listed,
@@ -12,8 +14,6 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from './reader-test-helpers'
-import { createSessionArchiveStore, sessionArchivePath } from './session-archive-store'
-import { createInMemorySessionTicketLinkStore } from './session-ticket-link-store'
 
 type Context = { after: (cleanup: () => Promise<void>) => void }
 

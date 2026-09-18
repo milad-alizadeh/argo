@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { identifierSchema } from '@/boundary'
-import { ticketKey } from '@/core/tickets/contract'
+import { identifierSchema } from '../../../shared/validation'
+import { ticketKey } from '../../tickets/contract/ticket'
 import { createSessionRosterRowSchema } from './roster-row-definition'
 
 export {
@@ -151,4 +151,13 @@ export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | '
       (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
     )?.id ?? null
   )
+}
+
+// The Roster's own order (#1593, #2239): newest-first by `updatedAt`, shared by every read that
+// re-sorts a set of rows rather than trusting an already-ordered source.
+export function newestFirst(
+  left: Pick<SessionRosterRow, 'updatedAt'>,
+  right: Pick<SessionRosterRow, 'updatedAt'>,
+): number {
+  return (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')
 }

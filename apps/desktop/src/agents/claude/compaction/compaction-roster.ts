@@ -1,5 +1,5 @@
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionChain } from '../../../domains/sessions/contract/chains'
+import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
 import {
   type CompactionStart,
   readCompactionStarts,

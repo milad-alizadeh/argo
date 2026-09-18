@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import type { SessionRoster } from '../types'
 
 // Whether the composer has a real Session yet, and what it is keyed on until it does

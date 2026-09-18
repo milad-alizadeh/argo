@@ -2,23 +2,25 @@ import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, nativeTheme, net, protocol } from 'electron'
-import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/contract/feed-images'
+import { app, net, protocol } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { attachBridges } from './bridges'
-import { windowBackground } from './core/appearance/appearance'
-import { applyStoredAppearance, readAppearance } from './core/appearance/bridge'
-import { installMenu } from './core/commands/menu'
-import { setPlatformLanguage } from './core/i18n/platform'
-import { WINDOW_MINIMUM_WIDTH } from './core/window/minimum-width'
+import { seedDevelopmentProject } from './domains/projects/main/development-seed'
+import { openProjectStore } from './domains/projects/main/main-store'
+import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
+import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from './domains/sessions/contract/feed-images'
+import { startDesktopApplication } from './platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
-} from './development/account-store'
-import { developmentIdentityArgument, developmentInstance } from './development/instance'
-import { writeDevelopmentReady } from './development/ready'
-import { openProjectStore } from './domains/projects/main/main-store'
-import { PROJECT_PROOF_STORE_ENV } from './domains/projects/main/proof-protocol'
+} from './platform/main/development/account-store'
+import {
+  developmentIdentityArgument,
+  developmentInstance,
+} from './platform/main/development/instance'
+import { writeDevelopmentReady } from './platform/main/development/ready'
+import { installMenu } from './platform/main/menu'
+import { createDesktopWindow } from './platform/main/window/create-window'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
 // constraint), so this runs at module load, ahead of every other side effect below.
@@ -68,96 +70,68 @@ if (DEVELOPMENT_INSTANCE) {
   app.commandLine.appendSwitch('remote-debugging-port', String(DEVELOPMENT_INSTANCE.debugPort))
 }
 
-function loadRenderer(window: BrowserWindow, rendererURL: string, rendererPath: string): void {
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    void window.loadURL(rendererURL)
-  } else {
-    void window.loadFile(rendererPath)
-  }
-}
-
-function createWindow(): BrowserWindow {
+function createWindow(): void {
   const userData = app.getPath('userData')
-  const { accountData, projectData } = developmentStoreDirectories({
+  const { accountData, connectionData, projectData } = developmentStoreDirectories({
     userData,
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const window = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: WINDOW_MINIMUM_WIDTH,
-    ...(DEVELOPMENT_INSTANCE ? { title: DEVELOPMENT_INSTANCE.title } : {}),
+  const projects = openProjectStore(projectData)
+  createDesktopWindow({
+    buildDirectory: __dirname,
+    rendererName: MAIN_WINDOW_VITE_NAME,
+    developmentServerURL: MAIN_WINDOW_VITE_DEV_SERVER_URL,
+    title: DEVELOPMENT_INSTANCE?.title,
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
-    // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
-    // the frame keeps the native controls and gives up the native title bar.
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
-    // The window paints before the renderer does. Without this it paints white, which is a flash
-    // of the wrong appearance on every launch into the dark one.
-    backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
-    webPreferences: {
-      ...(DEVELOPMENT_INSTANCE
-        ? {
-            additionalArguments: [
-              developmentIdentityArgument({
-                id: DEVELOPMENT_INSTANCE.id,
-                label: DEVELOPMENT_INSTANCE.label,
-                title: DEVELOPMENT_INSTANCE.title,
-                worktree: DEVELOPMENT_INSTANCE.worktree,
-              }),
-            ],
-          }
-        : {}),
-      // Forge's Vite plugin emits main and preload side by side in .vite/build.
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
+    additionalArguments: DEVELOPMENT_INSTANCE
+      ? [
+          developmentIdentityArgument({
+            id: DEVELOPMENT_INSTANCE.id,
+            label: DEVELOPMENT_INSTANCE.label,
+            title: DEVELOPMENT_INSTANCE.title,
+            worktree: DEVELOPMENT_INSTANCE.worktree,
+          }),
+        ]
+      : undefined,
+    attach: (window, rendererURL) => {
+      attachBridges(window, {
+        userData,
+        accountData,
+        connectionData,
+        projects,
+        rendererURL,
+        proofEnabled: PROOF_ENABLED,
+        acceptance: ACCEPTANCE_ENABLED,
+      })
+      window.once('closed', () => projects.close())
+      installMenu(window)
+    },
+    loaded: (window) => {
+      void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window).catch((error: unknown) =>
+        console.error(error),
+      )
     },
   })
-  if (DEVELOPMENT_INSTANCE) {
-    window.webContents.on('page-title-updated', (event) => event.preventDefault())
-  }
-
-  const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
-  const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
-  const projects = openProjectStore(projectData)
-  attachBridges(window, {
-    userData,
-    accountData,
-    projects,
-    rendererURL,
-    proofEnabled: PROOF_ENABLED,
-    acceptance: ACCEPTANCE_ENABLED,
-  })
-  window.once('closed', () => projects.close())
-  installMenu(window)
-
-  loadRenderer(window, rendererURL, rendererPath)
-
-  window.webContents.once('did-finish-load', () => {
-    void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window).catch((error: unknown) =>
-      console.error(error),
-    )
-  })
-
-  return window
 }
 
-void app.whenReady().then(async () => {
-  // The menu and the native dialogs are the only words the main process draws, and it reads the
-  // language from the operating system. `app.getLocale()` answers only once Electron is ready.
-  setPlatformLanguage(app.getLocale())
-  // The stored choice is applied before the first window exists, so the frame is never drawn in
-  // one appearance and corrected into the other.
-  applyStoredAppearance(await readAppearance(app.getPath('userData')))
+async function ready(): Promise<void> {
   // Main-process `net.fetch` reads `file://` directly, unlike a renderer's own subresource
   // requests, so this is immune to the restriction the scheme itself exists to route around.
   protocol.handle(ATTACHMENT_SCHEME, (request) => {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
+  if (DEVELOPMENT_INSTANCE) {
+    const { projectData } = developmentStoreDirectories({
+      userData: app.getPath('userData'),
+      appData: app.getPath('appData'),
+      instance: DEVELOPMENT_INSTANCE,
+    })
+    const projects = openProjectStore(projectData)
+    await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
+    projects.close()
+  }
   createWindow()
 
   if (!ACCEPTANCE_ENABLED) return
@@ -169,12 +143,11 @@ void app.whenReady().then(async () => {
   await reportAcceptance(result)
   if (result.ok) app.quit()
   else app.exit(1)
-})
+}
 
-app.on('window-all-closed', () => {
-  app.quit()
-})
-
-app.on('will-quit', () => {
-  if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
+startDesktopApplication({
+  ready,
+  willQuit: () => {
+    if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
+  },
 })

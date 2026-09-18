@@ -1,7 +1,7 @@
 // What one pass does with the files whose identity moved: parse them, pull in the rest of each
 // chain they belong to, and write the whole re-stitched result back to the index (#2372). Split
 // from `indexed-window.ts` so reading the window stays readable beside it.
-import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import type { TranscriptFile } from '../../contract/transcript'
 import type {
   IndexedTranscriptFile,
   SessionIndex,

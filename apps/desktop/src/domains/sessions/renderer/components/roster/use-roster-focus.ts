@@ -1,5 +1,5 @@
 import { type RefObject, useLayoutEffect, useState } from 'react'
-import { currentSessionId } from '@/domains/sessions/contract/models'
+import { currentSessionId } from '../../../contract/models'
 import type { SessionId, SessionsListed } from '../../types'
 
 export function useRosterFocus(

@@ -3,15 +3,20 @@
 // Node 24.20.0, whose `node:sqlite` is built with FTS5.
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
-import { type SessionRosterRow, sessionRosterRowSchema } from '@/domains/sessions/contract/models'
+import { type SessionRosterRow, sessionRosterRowSchema } from '../../contract/models'
 import type { BackfillProgress, IndexedTranscriptFile, SessionIndexWrite } from './contract'
 import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
 import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
+import { searchChainsOf } from './store-search'
 
 export type SessionIndexStore = {
   filesAt: (cli: string, paths: readonly string[]) => IndexedTranscriptFile[]
   filesOfChains: (cli: string, chainIds: readonly string[]) => IndexedTranscriptFile[]
   rowsOfChains: (cli: string, chainIds: readonly string[]) => SessionRosterRow[]
+  // Every chain whose title, current id, or a retired id holds `query` as a case-insensitive
+  // substring, newest first. Never opens a transcript: an answer this reads is exactly what a
+  // Roster row it already indexed would show (#2375).
+  searchChains: (cli: string, query: string) => SessionRosterRow[]
   chainLinks: (cli: string) => { sessionId: string; parentSessionId: string | null }[]
   strandedChains: (cli: string) => string[]
   write: (cli: string, pass: SessionIndexWrite) => void
@@ -152,6 +157,8 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
         return parsed.success ? [parsed.data] : []
       })
     },
+
+    searchChains: (cli, query) => searchChainsOf(database, cli, query),
 
     strandedChains(cli) {
       const records = database

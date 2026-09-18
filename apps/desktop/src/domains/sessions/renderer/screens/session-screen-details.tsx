@@ -1,12 +1,17 @@
 import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/components/composer/composer-form'
-import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
-import { PermissionPrompt } from '@/domains/sessions/renderer/components/composer/tray/permission-prompt'
-import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
-import { Button } from '@/renderer/components/ui/button'
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from '../../../../platform/renderer/components/ui/alert'
+import { Button } from '../../../../platform/renderer/components/ui/button'
+import type { SessionErrorCode } from '../../contract/contract'
+import type { SessionRosterRow } from '../../contract/models'
+import { COMPOSER_COLUMN } from '../components/composer/composer-form'
+import { SessionComposer } from '../components/composer/session-composer'
+import { PermissionPrompt } from '../components/composer/tray/permission-prompt'
 import type { HarnessControl } from '../harness/harnesses'
 import type { SessionRoster } from '../types'
 

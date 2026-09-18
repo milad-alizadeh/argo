@@ -37,10 +37,15 @@
     "test:feed": "bun test src/domains/sessions/contract src/domains/sessions/main src/agents/claude/sessions src/agents/claude/integration src/agents/codex/sessions mocks/sessions src/domains/sessions/renderer/feed"
   },
   "dependencies": {
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.4",
+    "@codemirror/lint": "^6.9.7",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
+    "@lezer/highlight": "^1.2.3",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-virtual": "^3.14.13",
+    "@uiw/react-codemirror": "^4.25.11",
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",

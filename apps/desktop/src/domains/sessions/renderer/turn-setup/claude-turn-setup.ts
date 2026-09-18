@@ -1,10 +1,6 @@
 import { FileCheck2, Hand, ListTodo, ShieldAlert, ShieldX, WandSparkles } from 'lucide-react'
 
-import {
-  CLAUDE_EFFORTS,
-  CLAUDE_MODELS,
-  type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/contract'
+import { CLAUDE_EFFORTS, CLAUDE_MODELS, type ClaudeTurnSetup } from '../../contract/contract'
 import type { ModeChoice, SetupChoice, TurnSetupChoices } from './turn-setup'
 
 type ClaudeModel = ClaudeTurnSetup['model']

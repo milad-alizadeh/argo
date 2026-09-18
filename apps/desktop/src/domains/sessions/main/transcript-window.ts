@@ -7,7 +7,7 @@ import {
   type TranscriptParser,
   type TranscriptRecord,
   transcriptFileFrom,
-} from '@/domains/sessions/contract/transcript'
+} from '../contract/transcript'
 import type { TranscriptFileIdentity, TranscriptPath } from './session-index/contract'
 import { createTranscriptRecordReader } from './transcript-lines'
 

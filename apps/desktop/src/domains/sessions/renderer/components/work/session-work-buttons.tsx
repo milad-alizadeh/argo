@@ -3,8 +3,8 @@
 // header control at all.
 import { Bot, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { DelegationUsageFacts } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
+import type { DelegationUsageFacts } from '../../../contract/background-work-contract'
+import type { SessionDelegation, SessionShellCommand } from '../../../contract/models'
 import { delegationEntries, shellEntries } from './session-work-entries'
 import { SessionWorkMenu } from './session-work-menu'
 

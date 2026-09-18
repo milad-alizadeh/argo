@@ -1,7 +1,11 @@
 import { LoaderCircle } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 
-import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
+import {
+  Marker,
+  MarkerContent,
+  MarkerIcon,
+} from '../../../../platform/renderer/components/ui/marker'
 import { formatTurnElapsed } from './elapsed'
 import type { TurnMarkerView } from './turn-marker-state'
 

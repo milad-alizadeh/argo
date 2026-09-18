@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionFeedRowSchema } from '@/domains/sessions/contract/feed-rows'
+import { sessionFeedRowSchema } from '../contract/feed-rows'
 import { groupDelegations } from './delegation-groups'
 
 const started = {

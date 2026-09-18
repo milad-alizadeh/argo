@@ -1,13 +1,19 @@
 import { type BrowserWindow, dialog } from 'electron'
-import { registerDomainHandlers } from '@/core/contract/domain'
-import { platformText } from '@/core/i18n/platform'
-import { createWriteQueue } from '@/core/storage/portable-file'
+import { platformText } from '@/platform/main/i18n'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { createWriteQueue } from '@/platform/main/storage/portable-file'
 import { projectError } from '../contract/contract'
 import { PROJECT_OPERATIONS } from '../contract/operations'
 import { listProjects } from './list-projects'
 import { openProject } from './open-project'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
 import { selectProject } from './select-project'
+import {
+  beginManualSetup,
+  cancelManualSetup,
+  saveManualSetup,
+  validateManualSetup,
+} from './setup/manual-setup'
 import type { ProjectStore as ProjectRegistryStore } from './sqlite-store'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
@@ -38,6 +44,10 @@ export function attachProjectBridge(
     context: store,
     handlers: {
       open: (request, context) => openProject(request, context),
+      setupBegin: (request, context) => beginManualSetup(request, context),
+      setupSave: (request, context) => saveManualSetup(request, context),
+      setupValidate: (request, context) => validateManualSetup(request, context),
+      setupCancel: (request, context) => cancelManualSetup(request, context),
       list: (request, context) => listProjects(request, context),
       register: registerProject,
       relocate: relocateProject,

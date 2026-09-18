@@ -1,7 +1,7 @@
 // The renderer holds no threshold state of its own: it shows what the main process read from
 // `~/.codex/config.toml`, and asks it to write a new one (agents/codex/compaction/bridge.ts).
 import { useCallback, useEffect, useState } from 'react'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/agents/codex/compaction/compaction'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '../../../../agents/codex/compaction/compaction'
 
 export function useCodexAutoCompactThreshold(): [number, (limit: number) => void] {
   const [limit, setLimit] = useState(DEFAULT_AUTO_COMPACT_LIMIT)

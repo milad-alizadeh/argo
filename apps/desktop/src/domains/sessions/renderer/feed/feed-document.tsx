@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
 import type { SessionEvidence, SessionFeed } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
 import { useDrawnRow } from './drawn-row'

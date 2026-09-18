@@ -2,8 +2,8 @@
 // file-length gate.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
 import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,

@@ -5,8 +5,8 @@
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import type { SessionRosterRow, SessionStatus } from '@/domains/sessions/contract/models'
-import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
+import type { SessionRosterRow, SessionStatus } from '../../../domains/sessions/contract/models'
+import { isLiveElsewhere } from '../../../domains/sessions/main/live-elsewhere'
 import { readJsonFile } from './json-file'
 
 export type ProcessState = 'busy' | 'idle'

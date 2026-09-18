@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
+import type { RosterStatus } from '../contract/contract'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
@@ -19,6 +20,13 @@ export const sessionPermissionQueryKey = (sessionId: SessionId) =>
 // outside the loaded pages, so it is a different query rather than a refetch of the same one.
 export const sessionArchiveQueryKey = (restoreId: SessionId | null) =>
   ['sessions', 'archive', restoreId] as const
+// Keyed on everything that scopes a search's answer, so a changed Project, status filter or query
+// text reads as a different query rather than a stale page of a different scope's results.
+export const sessionSearchQueryKey = (
+  projectRoot: string | null,
+  status: RosterStatus,
+  query: string,
+) => ['sessions', 'search', projectRoot, status, query] as const
 
 export function invalidateSessionRoster(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: sessionRosterQueryKey })

@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
-import type { SessionSetup } from '@/domains/sessions/contract/models'
+import type { SessionSetup } from '../../contract/models'
 import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).

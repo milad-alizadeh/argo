@@ -1,17 +1,14 @@
-import {
-  createChainCache,
-  createChainHistory,
-  type SessionChain,
-} from '@/domains/sessions/contract/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { currentSessionId } from '@/domains/sessions/contract/models'
-import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
-import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
+import { createChainCache, createChainHistory, type SessionChain } from '../contract/chains'
+import type { SessionRosterRow } from '../contract/models'
+import { currentSessionId } from '../contract/models'
+import type { TranscriptFile } from '../contract/transcript'
+import { sessionIdOfFile } from '../contract/transcript-file'
 import { boundIndexedWindow, presentedRows } from './discover-indexed-window'
 import {
   discoverSessionsWith,
   historyCompleteFor,
   resolveIdsAgainst,
+  searchAgainst,
 } from './discover-transcript-window'
 import { createFullRecordTracker } from './full-record-tracker'
 import { projectRosterRow } from './roster'
@@ -155,6 +152,8 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     resolveIds: (index: SessionIndex, ids: readonly string[]) =>
       resolveIdsAgainst(indexedWindowFor, index, ids),
     historyComplete: (index: SessionIndex) => historyCompleteFor(source.cli, index),
+    searchIndexed: (index: SessionIndex, query: string) =>
+      searchAgainst({ index, cli: source.cli, query, presented }),
   }
 }
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { assertRichResult } from '@/domains/sessions/main/rich-result-test-assertion'
+import { assertRichResult } from '../../../domains/sessions/main/rich-result-test-assertion'
 import { parseTranscriptLine } from '../sessions/records'
 
 test('keeps array-valued tool result text and images in source order', () => {

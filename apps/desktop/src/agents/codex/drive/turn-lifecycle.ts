@@ -1,9 +1,9 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '../../../domains/sessions/contract/attachments-contract'
 import {
   CODEX_OPENING_SETUP,
   type CodexTurnSetup,
   codexTurnSettings,
-} from '@/domains/sessions/contract/codex-contract'
+} from '../../../domains/sessions/contract/codex-contract'
 import { CodexSessionDriverError } from './codex-session-error'
 import { inputItemsFor } from './input-items'
 import type { ManagedSession, ManagedSessionOptions } from './managed-session'

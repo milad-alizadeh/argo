@@ -4,7 +4,7 @@
 // Read's evidence comes from the result, so it stays null until the call resolves (#2201).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { displayedToolLabel, type ToolResult } from '@/domains/sessions/contract/tool-feed'
+import { displayedToolLabel, type ToolResult } from '../contract/tool-feed'
 import { toolCall as call, onlyToolRow } from './tool-feed-test-fixtures'
 
 test('a Bash call with no result yet is running with no evidence', () => {

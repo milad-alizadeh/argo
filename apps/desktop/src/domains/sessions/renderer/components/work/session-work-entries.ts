@@ -2,8 +2,8 @@
 // between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
-import type { DelegationUsageFacts } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
+import type { DelegationUsageFacts } from '../../../contract/background-work-contract'
+import type { SessionDelegation, SessionShellCommand } from '../../../contract/models'
 import {
   delegationState,
   readableDelegationName,

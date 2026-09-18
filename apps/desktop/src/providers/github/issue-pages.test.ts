@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
+import { TICKET_PAGE_SIZE } from '../../domains/tickets/contract/contract'
 import { github, githubWithRepository, OCTOCAT, signIn } from './harness'
 import { readTicketPage, searchQuery } from './issues'
 

@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type {
-  Permission,
-  SessionPermissionDecisionRequest,
-} from '@/domains/sessions/contract/contract'
-import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
+import { useWatchedQueries } from '../../../../platform/renderer/core/hooks/use-watched-topic'
+import type { Permission, SessionPermissionDecisionRequest } from '../../contract/contract'
 import {
   type SessionContractError,
   throwSessionContractError,

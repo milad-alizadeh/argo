@@ -1,5 +1,8 @@
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
-import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main/ownership-ledger'
+import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
+import type {
+  OwnershipLedger,
+  OwnershipStanding,
+} from '../../../domains/sessions/main/ownership-ledger'
 import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import { ClaudeSessionDriverError } from './driver-error'

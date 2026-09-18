@@ -1,10 +1,10 @@
-import type { SessionRosterRow, SessionTitle } from '@/domains/sessions/contract/models'
-import { TITLE_SOURCES } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow, SessionTitle } from '../contract/models'
+import { TITLE_SOURCES } from '../contract/models'
 import {
   type ManagedRosterSeed,
   managedRosterRow,
   reconcileRosterRow,
-} from '@/domains/sessions/contract/roster-row-definition'
+} from '../contract/roster-row-definition'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { rollupSessionStatus } from './session-status-rollup'
 

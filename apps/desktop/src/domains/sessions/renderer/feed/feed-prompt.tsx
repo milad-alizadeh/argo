@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { AttachmentChip } from '@/domains/sessions/renderer/components/attachment-chip'
+import { AttachmentChip } from '../components/attachment-chip'
 import { PromptText } from '../prompt/prompt-text'
 import type { SessionEvidence } from '../types'
 import { FeedImage } from './content/feed-images'

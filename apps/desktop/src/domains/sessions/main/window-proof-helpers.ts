@@ -2,10 +2,7 @@
 // is unread on first discovery, but reachable once the window grows or the id is asked for
 // directly. Each adapter still owns its own fixture; only this assertion shape is common.
 import assert from 'node:assert/strict'
-import {
-  sessionFeedReplySchema,
-  sessionListReplySchema,
-} from '@/domains/sessions/contract/contract'
+import { sessionFeedReplySchema, sessionListReplySchema } from '../contract/contract'
 import type { SessionReader } from './bridge'
 
 const listing = {

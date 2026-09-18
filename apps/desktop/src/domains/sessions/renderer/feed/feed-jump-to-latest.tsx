@@ -1,11 +1,11 @@
 import { ArrowDown } from 'lucide-react'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/renderer/components/ui/tooltip'
+} from '../../../../platform/renderer/components/ui/tooltip'
 
 export function FeedJumpToLatest({
   className,

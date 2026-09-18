@@ -2,8 +2,8 @@
 // runs over both adapters rather than over shared code with a stub CLI beneath it (#2372).
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { claudeSessionSource } from '../../../../agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '../../../../agents/codex/sessions/read-sessions'
 import type { SessionSource } from '../reader'
 import type { SessionIndex } from './contract'
 

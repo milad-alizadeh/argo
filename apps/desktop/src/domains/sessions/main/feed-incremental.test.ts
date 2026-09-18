@@ -3,9 +3,9 @@
 // a frozen row is the very same object a later poll returns, never rebuilt equal-but-new.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
-import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { SessionChain } from '../contract/chains'
+import type { SessionFeedRow } from '../contract/models'
+import type { TranscriptMessage, TranscriptRecord } from '../contract/transcript'
 import { projectFeed } from './feed-incremental'
 import { transcriptMessage as message } from './transcript-test-fixtures'
 

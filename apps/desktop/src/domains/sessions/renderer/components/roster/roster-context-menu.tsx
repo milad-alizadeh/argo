@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from '@/renderer/components/ui/context-menu'
+} from '../../../../../platform/renderer/components/ui/context-menu'
 import type { Session } from '../../types'
 import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
 

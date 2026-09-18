@@ -1,5 +1,5 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
-import type { FeedOverlay } from '@/domains/sessions/main/reader'
+import type { SessionFeedRow } from '../../../domains/sessions/contract/models'
+import type { FeedOverlay } from '../../../domains/sessions/main/reader'
 import type { LiveMessage } from '../drive/live-messages'
 
 type Prose = Extract<SessionFeedRow, { shape: 'prose' }>

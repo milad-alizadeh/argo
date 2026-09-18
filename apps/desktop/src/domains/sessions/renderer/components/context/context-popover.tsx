@@ -1,6 +1,6 @@
 import { Info, Layers3 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '../../../../../platform/renderer/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -8,7 +8,7 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/renderer/components/ui/popover'
+} from '../../../../../platform/renderer/components/ui/popover'
 import { ContextDetails } from './context-details'
 import { contextZone } from './context-zone'
 

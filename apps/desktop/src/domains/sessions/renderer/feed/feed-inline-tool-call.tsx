@@ -5,10 +5,10 @@ import {
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '@/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/components/ai-elements/code-block-copy-button'
-import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
-import { CollapsibleText } from '@/renderer/components/collapsible-text'
+} from '../../../../platform/renderer/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '../../../../platform/renderer/components/ai-elements/code-block-copy-button'
+import { CollapsibleText } from '../../../../platform/renderer/components/collapsible-text'
+import { displayedToolLabel } from '../../contract/tool-feed'
 import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
 import { CodeLanguageIcon } from './content/code-language-icon'
 import { FeedMarkdown } from './content/feed-markdown'

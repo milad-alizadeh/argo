@@ -1,9 +1,5 @@
 // Combining every CLI source's discovery into one Roster reply (#2025).
-import {
-  type SessionError,
-  type SessionListReply,
-  sessionError,
-} from '@/domains/sessions/contract/contract'
+import { type SessionError, type SessionListReply, sessionError } from '../contract/contract'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 import { encodeRosterCursor, type RosterCursorMap } from './roster-cursor'
 

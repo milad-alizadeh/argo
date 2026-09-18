@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-
-import type { SessionPlan } from '@/domains/sessions/contract/models'
-import { Button } from '@/renderer/components/ui/button'
+import { Button } from '../../../../../platform/renderer/components/ui/button'
+import type { SessionPlan } from '../../../contract/models'
 import { BasicFeed } from '../../feed/basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionCli } from '../../harness/harnesses'

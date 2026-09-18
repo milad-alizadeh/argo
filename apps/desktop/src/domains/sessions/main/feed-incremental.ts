@@ -2,10 +2,10 @@
 // the records the last poll already turned into rows only when it must. A row freezes once
 // nothing later in the chain can still change it — every Tool Call it draws has a result, and it
 // is not part of a trailing Tool Call or damaged-line run. Frozen rows are never rebuilt.
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
-import type { ToolEvidence, ToolResult } from '@/domains/sessions/contract/tool-feed'
-import { groupedRowIndexes, groupToolRuns } from '@/domains/sessions/contract/tool-groups'
+import type { SessionChain } from '../contract/chains'
+import type { SessionFeedRow } from '../contract/models'
+import type { ToolEvidence, ToolResult } from '../contract/tool-feed'
+import { groupedRowIndexes, groupToolRuns } from '../contract/tool-groups'
 import { groupDelegations } from './delegation-groups'
 import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {

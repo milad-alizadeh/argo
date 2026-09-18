@@ -2,8 +2,8 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { DelegationUsageFacts } from '@/domains/sessions/contract/background-work-contract'
-import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
+import { useWatchedQueries } from '../../../../platform/renderer/core/hooks/use-watched-topic'
+import type { DelegationUsageFacts } from '../../contract/background-work-contract'
 import type { SessionContractError } from '../session-contract-error'
 import {
   SESSION_REFRESH_MS,

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
-import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
-import { CockpitShell } from '@/renderer/modules/cockpit/components/cockpit-shell'
+
+import { CockpitShell } from '../../../../platform/renderer/cockpit/components/cockpit-shell'
+import { SessionsSidebar } from '../components/roster/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 

@@ -1,4 +1,4 @@
-import type { SessionTitle } from '@/domains/sessions/contract/models'
+import type { SessionTitle } from '../contract/models'
 
 // The strongest title ever seen for a chain id, kept once the founding file that carried a custom
 // or summarised title falls out of the read window (#2290): without it, `readTitle` can only draw

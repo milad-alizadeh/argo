@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import type { RosterRowContext } from '@/domains/sessions/contract/roster-row-context'
-import { type RosterRowField, rosterRowFields } from '@/domains/sessions/contract/roster-row-fields'
 import { type SessionRosterRow, type SessionTitle, sessionRosterRowSchema } from './models'
+import type { RosterRowContext } from './roster-row-context'
+import { type RosterRowField, rosterRowFields } from './roster-row-fields'
 
-export { rosterRowFields } from '@/domains/sessions/contract/roster-row-fields'
+export { rosterRowFields } from './roster-row-fields'
 
 type RosterRowShape = {
   [Field in (typeof rosterRowFields)[number] as Field['name']]: ReturnType<Field['schema']>

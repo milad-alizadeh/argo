@@ -7,10 +7,9 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-
-import { decideSessionQuestion, startSession } from '@/domains/sessions/main/drive.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { decideSessionQuestion, startSession } from '../../../domains/sessions/main/drive.ts'
+import { createSessionReader } from '../../../domains/sessions/main/reader'
 import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 import { codexSessionSource } from '../sessions/read-sessions.ts'
 

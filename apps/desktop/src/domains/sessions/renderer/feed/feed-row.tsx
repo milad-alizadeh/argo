@@ -1,6 +1,6 @@
 import { memo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { isFeedRowStreaming, renderFeedRow } from './feed-row-renderers'
 import { type Reveal, useRevealAnimation } from './reveal'

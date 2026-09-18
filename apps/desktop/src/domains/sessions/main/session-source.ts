@@ -2,11 +2,11 @@
 // transcript chain, projecting a chain into Feed rows, and the optional capabilities only
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
-// Argo owns that flag for every CLI at once (`session-archive-store.ts`, #2315).
-import type { SessionDelegationUsage } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
+// Argo owns that flag for every CLI at once (`archive-store.ts`, #2315).
+import type { SessionDelegationUsage } from '../contract/background-work-contract'
+import type { SessionChain } from '../contract/chains'
+import type { SessionRenameReply, SessionRenameRequest } from '../contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '../contract/models'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 import type { ResolvedIndexedIds } from './resolve-indexed-ids'
 
@@ -62,4 +62,7 @@ export type SessionSource = {
   // backfill (#2373) still has older history left, so a caller resolving an id through the index
   // knows an unresolved id may only be un-indexed rather than truly gone.
   historyComplete?: () => Promise<boolean>
+  // Every Session this CLI's index title, current id, or a retired id matches (#2375). Present
+  // only alongside `resolveIndexedIds`: title/id search reads the same index backfill fills.
+  searchIndexed?: (query: string) => Promise<SessionRosterRow[]>
 }

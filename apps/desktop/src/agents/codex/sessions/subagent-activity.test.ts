@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
+import { projectFeed } from '../../../domains/sessions/main/feed-incremental'
 import { parseCodexTranscriptLine } from './records'
 
 function subagentActivity(kind: string, agentThreadId: string, agentPath: string) {

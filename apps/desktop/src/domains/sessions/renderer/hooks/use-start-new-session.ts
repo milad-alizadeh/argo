@@ -1,5 +1,5 @@
-import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { Cockpit } from '../../../projects/renderer/hooks/use-projects'
+import type { SessionAttachmentInput } from '../../contract/attachments-contract'
 import type { SessionCli } from '../harness/harnesses'
 import { useSessionCreationStore } from '../state/use-session-creation-store'
 import type { TurnSetup } from '../turn-setup/turn-setup'

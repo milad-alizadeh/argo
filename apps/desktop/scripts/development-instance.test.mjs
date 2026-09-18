@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import path from 'node:path'
 import {
-  developmentIdentity,
   developmentIdentityArgument,
-  developmentIdentityFromArguments,
   developmentInstance,
   developmentReadyRecord,
-} from '../src/development/instance.ts'
+} from '../src/platform/main/development/instance.ts'
+import { developmentIdentityFromArguments } from '../src/platform/preload/development-identity.ts'
 
 const directory = path.join(path.sep, 'tmp', 'argo-desktop-dev', 'ticket-2173')
 const environment = {
@@ -44,16 +43,6 @@ describe('development instances', () => {
     )
   })
 
-  test('exposes only the non-secret renderer identity', () => {
-    expect(developmentIdentity(environment)).toEqual({
-      id: environment.ARGO_DESKTOP_INSTANCE_ID,
-      label: '#2173',
-      title: environment.ARGO_DESKTOP_WINDOW_TITLE,
-      worktree: environment.ARGO_DESKTOP_WORKTREE,
-    })
-    expect(developmentIdentity({ ARGO_DESKTOP_INSTANCE_ID: 'partial' })).toBeNull()
-  })
-
   test('refuses a debugging port outside the unprivileged range', () => {
     expect(() => developmentInstance({ ...environment, ARGO_DESKTOP_DEBUG_PORT: '80' })).toThrow(
       'ARGO_DESKTOP_DEBUG_PORT must be between 1024 and 65535.',
@@ -81,8 +70,12 @@ describe('development instances', () => {
 
 describe('development identity argument', () => {
   test('passes the renderer identity through the Electron argument boundary', () => {
-    const identity = developmentIdentity(environment)
-    if (!identity) throw new Error('development identity was not created')
+    const identity = {
+      id: environment.ARGO_DESKTOP_INSTANCE_ID,
+      label: environment.ARGO_DESKTOP_BUILD_LABEL,
+      title: environment.ARGO_DESKTOP_WINDOW_TITLE,
+      worktree: environment.ARGO_DESKTOP_WORKTREE,
+    }
 
     expect(
       developmentIdentityFromArguments(['electron', developmentIdentityArgument(identity)]),

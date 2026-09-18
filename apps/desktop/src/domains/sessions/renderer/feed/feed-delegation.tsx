@@ -9,7 +9,7 @@ import {
   WORK_STATE_MARKS,
   type WorkState,
   workDuration,
-} from '@/domains/sessions/renderer/components/work/session-work'
+} from '../components/work/session-work'
 import type { SessionFeedRow } from '../types'
 import { BackgroundWork, backgroundWorkBlock } from './background-work'
 import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
