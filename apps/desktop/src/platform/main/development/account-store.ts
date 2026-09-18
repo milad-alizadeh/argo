@@ -1,4 +1,4 @@
-// Development apps share Account records and grants across worktrees (#2304).
+// Development apps share the Project, Account, and Ticket connection state across worktrees.
 import path from 'node:path'
 import { absolute, type DevelopmentInstance } from './instance'
 
@@ -20,6 +20,7 @@ export function developmentStoreDirectories(placement: DevelopmentStorePlacement
   const sharedData = sharedStoreDirectory(placement)
   return {
     accountData: sharedData,
+    connectionData: sharedData,
     projectData: sharedData,
   }
 }

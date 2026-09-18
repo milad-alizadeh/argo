@@ -39,6 +39,7 @@ test('a packaged app keeps its data in its own application data', () => {
   const userData = path.join(APP_DATA, 'Argo')
   assert.deepEqual(developmentStoreDirectories({ userData, appData: APP_DATA, instance: null }), {
     accountData: userData,
+    connectionData: userData,
     projectData: userData,
   })
 })
@@ -141,6 +142,7 @@ test('a second worktree reads the Account grant and selected Project from the fi
     sharedDatabasePath(stores.first.projectData),
     sharedDatabasePath(stores.second.projectData),
   )
+  assert.equal(stores.first.connectionData, stores.second.connectionData)
   assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
   await persistFirstLaunch(stores.first)
   await assertSecondLaunch(stores.second)

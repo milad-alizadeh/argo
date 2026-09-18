@@ -16,17 +16,17 @@ test('an Account connected in one cockpit is listed by another over the same Acc
   )
 })
 
-test('a cockpit sharing the Account store keeps its own Projects and Connections', async (context) => {
+test('a cockpit sharing development state reads the Ticket connection for the same Project', async (context) => {
   const cockpit = await harness(context)
   cockpit.github.signIn(OCTOCAT)
   cockpit.github.addRepository({ fullName: 'Octo/Hello', visibleTo: [OCTOCAT.id], issues: [] })
   await connect(cockpit)
   await cockpit.ticket('ticket.connect', { accountId: 'github:583231', scope: 'octo/hello' })
-  const other = await cockpit.otherCockpit('project-2')
+  const other = await cockpit.otherCockpit('project-1')
   const listed = await other.account('account.list')
-  assert.deepEqual((listed.accounts as { connections: unknown[] }[])[0]?.connections, [])
-  const read = await other.ticket('ticket.connection', { projectId: 'project-2' })
-  assert.equal(read.connection, null)
+  assert.equal((listed.accounts as { connections: unknown[] }[])[0]?.connections.length, 1)
+  const read = await other.ticket('ticket.connection', { projectId: 'project-1' })
+  assert.equal((read.connection as { scope: string }).scope, 'Octo/Hello')
   const here = await cockpit.account('account.list')
   assert.equal((here.accounts as { connections: unknown[] }[])[0]?.connections.length, 1)
 })

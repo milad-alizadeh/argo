@@ -1,6 +1,6 @@
 // The renderer holds no appearance state of its own: it shows what the main process resolved, and
 // asks the main process to change it (src/appearance/bridge.ts).
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import {
   type Appearance,
   type AppearanceState,
@@ -8,6 +8,20 @@ import {
 } from '@/platform/shared/appearance'
 
 const INITIAL: AppearanceState = { appearance: DEFAULT_APPEARANCE, dark: true }
+
+function subscribeToAppearance(onChange: () => void) {
+  const observer = new MutationObserver(onChange)
+  observer.observe(document.documentElement, { attributeFilter: ['class'] })
+  return () => observer.disconnect()
+}
+
+function isDarkAppearance() {
+  return document.documentElement.classList.contains('dark')
+}
+
+export function useDarkAppearance() {
+  return useSyncExternalStore(subscribeToAppearance, isDarkAppearance)
+}
 
 export function useAppearance(): [Appearance, (chosen: Appearance) => void] {
   const [state, setState] = useState<AppearanceState>(INITIAL)

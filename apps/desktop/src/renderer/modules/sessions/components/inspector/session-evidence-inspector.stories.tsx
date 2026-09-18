@@ -61,6 +61,10 @@ export const FileDiff: Story = {
     await expect(canvas.getByText(/oldValue/)).toBeVisible()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
     await expect(canvas.getAllByText('9')).toHaveLength(2)
+    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"].w-6')].filter(
+      (line) => line.textContent !== '',
+    )
+    await expect(lineNumbers.map((line) => line.textContent)).toEqual(['8', '9', '9', '10'])
     await expect(canvas.getByRole('button', { name: 'Copy diff' })).toBeVisible()
     const pre = canvasElement.querySelector('pre')
     await expect(pre).not.toBeNull()
