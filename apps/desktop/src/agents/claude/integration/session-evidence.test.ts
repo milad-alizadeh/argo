@@ -34,7 +34,7 @@ function assertToolRows(reply) {
   assert.equal(reply.rows[1]?.shape, 'prose')
   const unknownGroup = reply.rows[2]
   assert.equal(unknownGroup?.shape, 'tool-group')
-  assert.equal(unknownGroup?.label, 'Called a tool')
+  assert.equal(unknownGroup?.label, 'Ran a command')
   const [unknown] = unknownGroup?.calls ?? []
   assert.equal(unknown?.label, 'Called NewTool')
   assert.equal(unknown?.text, 'select:Read')

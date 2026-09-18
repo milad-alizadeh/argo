@@ -230,7 +230,7 @@ export const UnclassifiedToolGroupOfOne = {
       group={{
         shape: 'tool-group',
         id: 'tool-group:unclassified',
-        label: 'Called a tool',
+        label: 'Ran a command',
         calls: [unclassified],
       }}
       activeEvidenceId={null}
