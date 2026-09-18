@@ -3,7 +3,7 @@
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { DelegationUsageFacts } from '@/core/sessions/background-work-contract'
-import { useWatchedQueries } from '@/renderer/core/hooks/use-watched-topic'
+import { useWatchedQueries } from '@/platform/renderer/core/hooks/use-watched-topic'
 import type { SessionContractError } from '../session-contract-error'
 import {
   SESSION_REFRESH_MS,

@@ -1,5 +1,5 @@
 import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
-import { ContractError } from '@/renderer/contract-error'
+import { ContractError } from '@/platform/renderer/contract-error'
 
 export class ProjectContractError extends ContractError<ProjectError> {
   declare code: ProjectErrorCode

@@ -2,14 +2,14 @@ import { ChevronDown, ShieldQuestion } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Permission } from '@/core/sessions/contract'
-import { Button } from '../../../../../components/ui/button'
-import { ButtonGroup, ButtonGroupSeparator } from '../../../../../components/ui/button-group'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../../../../../components/ui/dropdown-menu'
+} from '@/platform/renderer/components/ui/dropdown-menu'
 import type { SessionCli } from '../../../harness/harnesses'
 import type { PermissionAnswer } from '../../../hooks/use-session-permission'
 import { focusAfterLeaving, useExitPresence } from './use-exit-presence'

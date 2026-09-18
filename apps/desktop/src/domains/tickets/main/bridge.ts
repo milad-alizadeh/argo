@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import { registerDomainHandlers } from '../../../core/contract/domain'
+import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
 import type { AccountAccess } from '../../accounts/main/access'
 import { ticketError } from '../contract/contract'
 import { TICKET_OPERATIONS } from '../contract/operations'

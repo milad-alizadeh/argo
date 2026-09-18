@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../../components/ui/tooltip'
+} from '@/platform/renderer/components/ui/tooltip'
 import { ContextPopover } from '../context/context-popover'
 import { SessionContextActions } from './session-context-actions'
 import { UsagePopover } from './usage-popover'

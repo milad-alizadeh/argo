@@ -1,7 +1,7 @@
 // A stored prompt can carry a CLI's own markdown-link mention syntax, `[$skill](path)`, and plain
 // or markdown-wrapped URLs. This turns that raw text into segments the Feed, Roster and the
 // composer draw the same way (#2049): a skill badge, a clean link, or plain text.
-import { isExternalLink } from '@/core/security/urls'
+import { isExternalLink } from '@/platform/shared/urls'
 
 // Shared with the composer's Lexical transformer (skill-mention-node.tsx), so the two recognisers
 // never drift: two capture groups, the skill name and its path.

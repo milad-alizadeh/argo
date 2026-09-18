@@ -9,7 +9,7 @@ import type {
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
-import type { ContractFailure } from '../../../../renderer/lib/query-client'
+import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
 import type { AccountListing } from '../../../accounts/renderer/hooks/use-accounts'
 import { openAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
 import type { ConnectSourceFormProps } from '../components/connect-source-form'

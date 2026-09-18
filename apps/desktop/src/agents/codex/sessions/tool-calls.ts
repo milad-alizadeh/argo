@@ -3,8 +3,9 @@
 // `custom_tool_call_output` (its result), linked by a shared `call_id`. This reads both pairs
 // onto the shared ToolCall/ToolResult shapes (CONTEXT.md L3 · Tool Call) the Claude adapter
 // already produces, so `toolPresentation()` and `tool-groups.ts` draw them with no change.
-import { isRecord } from '@/boundary'
+
 import type { ToolCall, TranscriptRecord } from '@/core/sessions/transcript'
+import { isRecord } from '@/shared/validation'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
 import { readToolResults } from './rich-results'

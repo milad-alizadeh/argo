@@ -3,8 +3,8 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { Alert, AlertDescription } from '../../../../renderer/components/ui/alert'
-import { Button } from '../../../../renderer/components/ui/button'
+import { Alert, AlertDescription } from '../../../../platform/renderer/components/ui/alert'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
   Item,
   ItemActions,
@@ -12,11 +12,11 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle,
-} from '../../../../renderer/components/ui/item'
-import { Spinner } from '../../../../renderer/components/ui/spinner'
-import { useContractText } from '../../../../renderer/i18n/contract-text'
-import { useFocusRescue } from '../../../../renderer/lib/focus-rescue'
-import type { ContractFailure } from '../../../../renderer/lib/query-client'
+} from '../../../../platform/renderer/components/ui/item'
+import { Spinner } from '../../../../platform/renderer/components/ui/spinner'
+import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
+import { useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
+import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
 import { providerPresentation } from '../../../accounts/renderer/lib/providers'
 import { ConnectionStatusMark } from './connection-status-mark'
 

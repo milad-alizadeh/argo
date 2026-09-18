@@ -2,19 +2,19 @@
 
 # Vendored shadcn ui/ component source arrives with its own measurements inline. It stays outside
 # the token contract rather than being edited to match it (#1913).
-^apps/desktop/src/renderer/components/ui/
+^apps/desktop/src/platform/renderer/components/ui/
 
 # The Electron main process paints its window before the renderer's CSS exists, so it cannot read
 # --background through a stylesheet: WINDOW_BACKGROUND mirrors it in TypeScript by design, and the
 # mirror's own comment already explains why it is not a token (#1913).
-^apps/desktop/src/core/appearance/appearance\.ts:67:
-^apps/desktop/src/core/appearance/appearance\.test\.ts:8[23]:
+^apps/desktop/src/platform/shared/appearance\.ts:67:
+^apps/desktop/src/platform/shared/appearance\.test\.ts:8[23]:
 
 # Fabricated external-service data (a GitHub or Linear label's own colour, an inline SVG placeholder
 # image) mimics content Argo does not design, not a production visual constant (#1913).
 ^apps/desktop/src/renderer/modules/sessions/feed/content/feed-samples\.ts:2:
-^apps/desktop/src/renderer/modules/tickets/components/ticket-detail\.stories\.tsx:75:
+^apps/desktop/src/domains/tickets/renderer/components/ticket-detail\.stories\.tsx:75:
 
 # A Storybook viewport wrapper testing narrow-width wrapping: a test viewport, not a production
 # size (#1913).
-^apps/desktop/src/renderer/modules/tickets/components/ticket-list\.stories\.tsx:77:
+^apps/desktop/src/domains/tickets/renderer/components/ticket-list\.stories\.tsx:77:

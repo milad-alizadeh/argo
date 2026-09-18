@@ -2,8 +2,13 @@ import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/core/sessions/contract'
 import type { SessionRosterRow } from '@/core/sessions/models'
-import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import { Button } from '../../../components/ui/button'
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { COMPOSER_COLUMN } from '../components/composer/composer-form'
 import { SessionComposer } from '../components/composer/session-composer'
 import { PermissionPrompt } from '../components/composer/tray/permission-prompt'

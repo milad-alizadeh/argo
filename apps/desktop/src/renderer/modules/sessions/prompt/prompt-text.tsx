@@ -3,7 +3,7 @@
 import { WandSparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge } from '@/renderer/components/ui/badge'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-segments'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name

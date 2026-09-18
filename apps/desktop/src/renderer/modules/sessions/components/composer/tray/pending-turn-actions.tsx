@@ -1,6 +1,6 @@
 import { Pencil, Route, Trash2 } from 'lucide-react'
 
-import { Button } from '../../../../../components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import type { PendingTurn } from './use-pending-turns'
 
 export function PendingTurnActions({

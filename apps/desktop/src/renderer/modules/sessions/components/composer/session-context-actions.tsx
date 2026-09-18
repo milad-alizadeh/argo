@@ -1,6 +1,6 @@
 import { GitFork, Minimize2 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from '../../../../components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 
 type ContextAction = {
   accessibleName: string

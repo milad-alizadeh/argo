@@ -2,7 +2,7 @@
 // the one shared drive operation table every CLI answers through (ADR-0024, #2030). Named
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
-import { identifierSchema } from '../../boundary'
+import { identifierSchema } from '../../shared/validation'
 import { sessionAttachmentInputSchema } from './attachments-contract'
 import { permissionSchema, READER_DECISIONS } from './permission'
 import { sessionErrorSchema } from './session-error'

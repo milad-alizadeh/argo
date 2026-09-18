@@ -14,7 +14,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
 
-import { lastInputWasKeyboard } from '@/renderer/lib/input-modality'
+import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 import type { SessionCli } from '../../harness/harnesses'
 import type { ComposerTicketContext } from '../../state/use-composer-store'
 import { referenceMenu } from './references/composer-reference-menu'

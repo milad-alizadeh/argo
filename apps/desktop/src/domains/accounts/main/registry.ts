@@ -1,7 +1,12 @@
 // The secret-free Account records, one per provider identity, under `userData` (#1763). The key is
 // the provider's own stable id and never the login, which renames (ADR-0018).
-import { isIdentifier, isRecord } from '../../../boundary'
-import { otherFields, readDocument, writeDocument } from '../../../core/storage/portable-file'
+
+import {
+  otherFields,
+  readDocument,
+  writeDocument,
+} from '../../../platform/main/storage/portable-file'
+import { isIdentifier, isRecord } from '../../../shared/validation'
 import { type AccountState, displayName, PROVIDERS, type Provider } from '../contract/contract'
 
 // What is written down about an Account. An unreadable grant is found on reading, never stored.

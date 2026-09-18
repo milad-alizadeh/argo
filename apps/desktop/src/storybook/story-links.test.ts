@@ -42,7 +42,7 @@ const IMPORTERS = parseImporters(
         `${MODULES}/components/SessionStatus.stories.tsx`,
       ),
       ...STORIES.map((entry) => built(entry.importPath)),
-      built('src/renderer/styles/globals.css', '.storybook/preview.ts'),
+      built('src/platform/renderer/styles/globals.css', '.storybook/preview.ts'),
     ],
   }),
   'built stats',
@@ -88,7 +88,7 @@ test('a changed story file links its own stories', () => {
 })
 
 test('a file the Storybook preview loads lists every story, and says why', () => {
-  const changed = ['src/renderer/styles/globals.css']
+  const changed = ['src/platform/renderer/styles/globals.css']
   assert.equal(linked(changed).length, STORIES.length)
   assert.ok(section(BUILD, changed, PREVIEW).includes('every story is listed'))
 })
@@ -96,7 +96,7 @@ test('a file the Storybook preview loads lists every story, and says why', () =>
 test('a file no story renders produces no section', () => {
   const cases = [
     [],
-    ['src/core/appearance/bridge.ts'],
+    ['src/platform/main/appearance.ts'],
     [`../../packages/other/${MODULES}/components/SessionFeed.tsx`],
   ]
   for (const changed of cases) assert.equal(section(BUILD, changed, PREVIEW), '')

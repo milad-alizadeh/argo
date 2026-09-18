@@ -6,7 +6,7 @@ import type {
   AccountConnected,
   Provider,
 } from '@/domains/accounts/contract/contract'
-import { type ContractFailure, settle } from '../../../../renderer/lib/query-client'
+import { type ContractFailure, settle } from '../../../../platform/renderer/lib/query-client'
 import { storeListing } from './use-accounts'
 
 export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'

@@ -1,6 +1,6 @@
 import { Lock } from 'lucide-react'
 
-import { Badge } from '@/renderer/components/ui/badge'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import type { Session } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 

@@ -1,4 +1,4 @@
-import { Button } from '../../../../renderer/components/ui/button'
+import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -6,7 +6,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../renderer/components/ui/empty'
+} from '../../../../platform/renderer/components/ui/empty'
 import type { TicketProblemProps } from '../lib/problems'
 
 export function TicketProblem({
