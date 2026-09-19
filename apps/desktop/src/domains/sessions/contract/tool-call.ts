@@ -20,11 +20,23 @@ export type ExecuteFacts = {
   background: boolean
 }
 
-// The new shape lives beside the raw one: a call an adapter classified carries `execute`, and
-// every other kind still reads `name` and `input`.
+// A file read: `target` is the file, or the image an agent looked at.
+export type ReadFacts = { kind: 'read'; target: string | null }
+
+// A search: `query` is the pattern or the words searched, in the scope it ran over.
+export type SearchFacts = { kind: 'search'; scope: 'files' | 'web'; query: string | null }
+
+// A web page read.
+export type FetchFacts = { kind: 'fetch'; url: string | null }
+
+// The new shape lives beside the raw one: a call an adapter classified carries its kind's facts,
+// and every other kind still reads `name` and `input`.
 export type ToolCall = {
   id: string
   name: string
   input: Record<string, unknown>
   execute?: ExecuteFacts
+  read?: ReadFacts
+  search?: SearchFacts
+  fetch?: FetchFacts
 }

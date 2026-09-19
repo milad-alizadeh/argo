@@ -2,7 +2,14 @@ import type { FeedImageUrl } from './feed-images'
 import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
 import type { ToolCall } from './tool-call'
 
-export type { ExecuteFacts, ToolCall, ToolCallStatus } from './tool-call'
+export type {
+  ExecuteFacts,
+  FetchFacts,
+  ReadFacts,
+  SearchFacts,
+  ToolCall,
+  ToolCallStatus,
+} from './tool-call'
 export { TOOL_CALL_STATUSES } from './tool-call'
 
 export type ContentBlock =

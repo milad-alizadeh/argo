@@ -7,6 +7,7 @@ import type {
   ToolResult,
 } from '../../../domains/sessions/contract/transcript'
 import { bashFacts } from './bash-facts'
+import { lookupFacts } from './lookup-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
@@ -56,7 +57,13 @@ export function readBlocks(content: unknown): ContentBlock[] {
 
 function readToolCall(id: string, name: string, input: Record<string, unknown>): ToolCall {
   const execute = name === 'Bash' ? bashFacts(input) : undefined
-  return { id, name, input, ...(execute === undefined ? {} : { execute }) }
+  return {
+    id,
+    name,
+    input,
+    ...(execute === undefined ? {} : { execute }),
+    ...lookupFacts(name, input),
+  }
 }
 
 export function readToolCalls(content: unknown): ToolCall[] {
