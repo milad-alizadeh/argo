@@ -248,7 +248,7 @@ export const CompleteSetupJourney: Story = {
     await expect(canvas.getByRole('checkbox', { name: 'Add Playwright journeys' })).toBeChecked()
     await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
     await expect(
       within(document.body).getByText('Config saved.', { selector: '[data-slot="toast-title"]' }),
     ).toBeVisible()
@@ -357,6 +357,6 @@ export const SyntaxConfigurationError: Story = {
       'aria-invalid',
       'true',
     )
-    await expect(canvas.getByRole('button', { name: 'Import config' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Save' })).toBeDisabled()
   },
 }

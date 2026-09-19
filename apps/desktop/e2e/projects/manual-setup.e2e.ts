@@ -129,7 +129,7 @@ test('keeps raw configuration in Import config and opens the tested Project', as
     await page.getByRole('button', { name: 'Import config' }).click()
     await page.getByRole('button', { name: 'Test configuration' }).click()
     await dismissValidationToast(page)
-    await page.getByRole('button', { name: 'Import config' }).click()
+    await page.getByRole('button', { name: 'Save' }).click()
     await expectProjectOpen(page)
   } finally {
     await application.close().catch(() => undefined)

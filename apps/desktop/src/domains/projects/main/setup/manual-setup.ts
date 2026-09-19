@@ -10,6 +10,7 @@ import {
 import { setupConfiguration } from '../../contract/setup-configuration'
 import type { SetupDocument } from '../../contract/setup-document'
 import { toSummary } from '../presentation'
+import { parseProjectConfiguration } from '../project-configuration'
 import type { SetupCheckpoint } from '../sqlite-store'
 import { saveManualProjectConfiguration } from './manual-configuration'
 import { projectFor, type SetupStore, setupContext } from './setup-context'
@@ -88,6 +89,9 @@ export async function validateManualSetup(
   const context = manualSetupContext(request, store)
   if ('type' in context) return context
   const { checkpoint, project } = context
+  if (parseProjectConfiguration(request.source) === null) {
+    return projectError('invalid-configuration', request.requestId)
+  }
   const valid = await validateProjectConfiguration(checkpoint.worktreePath, request.source)
   store.projects.writeSetupCheckpoint({
     ...checkpoint,
