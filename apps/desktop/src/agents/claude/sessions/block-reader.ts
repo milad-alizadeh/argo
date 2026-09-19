@@ -8,7 +8,7 @@ import type {
 } from '../../../domains/sessions/contract/transcript'
 import { bashFacts } from './bash-facts'
 import { lookupFacts } from './lookup-facts'
-import { otherFacts, POLL_TOOLS } from './other-facts'
+import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
@@ -67,7 +67,7 @@ function readToolCall(id: string, name: string, input: Record<string, unknown>):
     input,
     ...(execute === undefined ? {} : { execute }),
     ...lookupFacts(name, input),
-    ...otherFacts(name, input),
+    ...skillOrOtherFacts(name, input),
   }
 }
 
