@@ -138,7 +138,7 @@ async function ready(): Promise<void> {
 
   // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
   // case: the driver outside fails the build if the process does not go away on its own.
-  const { reportAcceptance, runAcceptance } = await import('./pty-acceptance')
+  const { reportAcceptance, runAcceptance } = await import('./platform/main/testing/pty-acceptance')
   const result = await runAcceptance(os.homedir())
   await reportAcceptance(result)
   if (result.ok) app.quit()
