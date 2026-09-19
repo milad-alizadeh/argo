@@ -1,17 +1,17 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 
-import { TICKET_PAGE_SIZE } from '../../domains/tickets/contract/contract'
+import { TICKET_PAGE_SIZE } from '@/domains/tickets/contract/contract'
 import {
   labelColor,
   type Ticket,
   type TicketLabel,
   type TicketLink,
-} from '../../domains/tickets/contract/ticket'
-import { isRecord } from '../../shared/validation'
-import type { GitHubEndpoints } from './endpoints'
-import { failed, type GitHubRead, getAll, getPage } from './http'
-import { githubStatus } from './statuses'
+} from '@/domains/tickets/contract/ticket'
+import type { GitHubEndpoints } from '@/providers/github/endpoints'
+import { failed, type GitHubRead, getAll, getPage } from '@/providers/github/http'
+import { githubStatus } from '@/providers/github/statuses'
+import { isRecord } from '@/shared/validation'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
 // requests in flight, bounded because GitHub's secondary limits refuse a wide fan-out.

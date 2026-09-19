@@ -9,7 +9,7 @@ import {
   type ToolCall,
   type TranscriptMessage,
   type TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/transcript'
 import { responded, started } from './subagent-events'
 import { Agents, messaged, stopped } from './subagent-targets'
 

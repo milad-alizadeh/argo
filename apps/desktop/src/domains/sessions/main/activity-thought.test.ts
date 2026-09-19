@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readActivity } from '../contract/signals'
-import type { ContentBlock, ToolCall, TranscriptMessage } from '../contract/transcript'
+import { readActivity } from '@/domains/sessions/contract/signals'
+import type {
+  ContentBlock,
+  ToolCall,
+  TranscriptMessage,
+} from '@/domains/sessions/contract/transcript'
 
 const BASE: Omit<TranscriptMessage, 'uuid' | 'role' | 'blocks' | 'toolCalls'> = {
   kind: 'message',

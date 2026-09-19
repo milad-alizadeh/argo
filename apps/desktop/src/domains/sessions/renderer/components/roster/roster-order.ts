@@ -1,7 +1,10 @@
 import { useEffect, useMemo } from 'react'
-import { useSessions } from '../../hooks/use-sessions'
-import { useRememberedRosterOrder, useRosterWindowStore } from '../../state/use-roster-window-store'
-import type { SessionId, SessionRoster, SessionsListed } from '../../types'
+import { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
+import {
+  useRememberedRosterOrder,
+  useRosterWindowStore,
+} from '@/domains/sessions/renderer/state/use-roster-window-store'
+import type { SessionId, SessionRoster, SessionsListed } from '@/domains/sessions/renderer/types'
 
 type Sessions = SessionsListed['sessions']
 

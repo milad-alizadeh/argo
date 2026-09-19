@@ -1,5 +1,5 @@
 // Finds the Subagent a `SendMessage` or a stop call names, and reports it as an event.
-import type { SubagentEvent, ToolCall } from '../../../domains/sessions/contract/transcript'
+import type { SubagentEvent, ToolCall } from '@/domains/sessions/contract/transcript'
 import { facts, responded, text } from './subagent-events'
 
 // The Subagents a transcript has spawned and not yet ended, found by the id of the call, of its

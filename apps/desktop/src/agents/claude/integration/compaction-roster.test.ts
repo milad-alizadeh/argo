@@ -2,15 +2,15 @@ import assert from 'node:assert/strict'
 import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import type { SessionReader } from '../../../domains/sessions/main/bridge'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
+import { startedSession } from '@/agents/claude/integration/claude-driver-launch.ts'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '../../../domains/sessions/main/reader-test-helpers'
-import { claudeSessionSource } from '../sessions/read-sessions'
-import { startedSession } from './claude-driver-launch.ts'
+} from '@/domains/sessions/main/reader-test-helpers'
 
 const SESSION = 'session-a'
 const MINUTE = 60_000

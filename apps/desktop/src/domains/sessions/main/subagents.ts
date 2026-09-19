@@ -1,5 +1,5 @@
 // One reading of a Session's Subagents for the row's dots and the Agents rail (#1269); an open one is running only while its Session is live (#1076).
-import type { SessionStatus, SessionSubagent } from '../contract/models'
+import type { SessionStatus, SessionSubagent } from '@/domains/sessions/contract/models'
 
 const LIVE: readonly SessionStatus[] = ['starting', 'running', 'permission', 'asking']
 

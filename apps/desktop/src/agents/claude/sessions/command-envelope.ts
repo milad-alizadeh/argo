@@ -1,10 +1,10 @@
-import { isRecord } from '@/shared/validation'
+import { taggedField, taggedText } from '@/agents/envelope-tags'
 import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField, taggedText } from '../../envelope-tags'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 import { readableCommandOutput } from './command-output'
 import { readTaskDelivery } from './task-notification'
 

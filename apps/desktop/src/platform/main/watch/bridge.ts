@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
-import { WATCHED_CHANGED_CHANNEL, type WatchTopic } from '../../shared/watch'
-import type { WatchedSource } from './watch-source'
+import type { WatchedSource } from '@/platform/main/watch/watch-source'
+import { WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/shared/watch'
 
 // What stands behind each topic. Trees on disk are the usual source, a Permission in main-process
 // memory is another, and a topic may name several: a module that wants its own topic adds its

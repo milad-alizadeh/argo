@@ -1,8 +1,8 @@
 // An image a prompt carries reaches the Feed as a URL the renderer's CSP `img-src` already
 // allows: inline bytes as `data:`, a file on disk as `argo-attachment://`.
 import { z } from 'zod'
-import { attachmentKindOf } from './attachments-contract'
-import type { ContentBlock } from './transcript'
+import { attachmentKindOf } from '@/domains/sessions/contract/attachments-contract'
+import type { ContentBlock } from '@/domains/sessions/contract/transcript'
 
 // Never `file://`: Chromium refuses a `file://` subresource load from a document the Vite dev
 // server serves over `http://`, which left every locally-attached image thumbnail unrendered in

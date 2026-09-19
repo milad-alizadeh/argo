@@ -2,15 +2,15 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useWatchedQueries } from '../../../../platform/renderer/core/hooks/use-watched-topic'
-import type { SubagentUsageFacts } from '../../contract/background-work-contract'
-import type { SessionContractError } from '../session-contract-error'
+import type { SubagentUsageFacts } from '@/domains/sessions/contract/background-work-contract'
+import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
   sessionSubagentUsageQueryKey,
-} from '../session-queries'
-import type { SessionFeed, SessionId } from '../types'
+} from '@/domains/sessions/renderer/session-queries'
+import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
+import { useWatchedQueries } from '@/platform/renderer/core/hooks/use-watched-topic'
 import { sessionFeedQuery } from './session-feed-query'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have

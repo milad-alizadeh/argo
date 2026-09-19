@@ -1,0 +1,21 @@
+engine biome(1.0)
+language js(typescript, jsx)
+
+or {
+  JsxText() as $match where {
+    $match <: r"(?s).*[\p{L}\p{N}].*",
+    register_diagnostic(span=$match, message="Reader text must use the locale catalog.")
+  },
+  JsxAttribute($name, $value) as $attribute where {
+    $name <: or {
+      `alt`,
+      `aria-description`,
+      `aria-label`,
+      `placeholder`,
+      `title`
+    },
+    $value <: contains JsxString() as $literal,
+    $literal <: r"(?s).*[\p{L}\p{N}].*",
+    register_diagnostic(span=$attribute, message="Reader text must use the locale catalog.")
+  }
+}

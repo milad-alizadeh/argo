@@ -7,18 +7,23 @@
 import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import {
+  DECLARATIONS,
+  type Declaration,
+  owningSource,
+  type Reply,
+} from '@/domains/sessions/main/reads-failure-cases'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
-import { electronStandIn } from '../../../platform/main/testing/electron-stand-in'
-import { SESSION_OPERATIONS } from '../contract/operations'
-import { createSessionReader } from './reader'
-import { DECLARATIONS, type Declaration, owningSource, type Reply } from './reads-failure-cases'
-import type { SessionSource } from './session-source'
 
 // The Session bridge opens the attachment chooser over Electron's `dialog`, which no read
 // reaches. The stand-in goes in before the bridge is imported, as a static import would resolve
 // the real `electron` package first.
 mock.module('electron', () => electronStandIn)
-const { attachSessionBridge } = await import('./bridge')
+const { attachSessionBridge } = await import('@/domains/sessions/main/bridge')
 
 function invoking(sources: SessionSource[]) {
   const ipc = createMockIpcWindow()

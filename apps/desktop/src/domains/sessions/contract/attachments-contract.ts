@@ -2,8 +2,8 @@
 // only each CLI's own adapter (agents/<cli>/) turns a readable path into that CLI's wire
 // representation of an attachment (#1886).
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { sessionErrorSchema } from './session-error'
+import { sessionErrorSchema } from '@/domains/sessions/contract/session-error'
+import { identifierSchema } from '@/shared/validation'
 
 // The formats every adapter's own image input variant accepts (Codex's `localImage`, e.g.);
 // anything else is a generic file reference. Kept as one classifier so the composer's preview

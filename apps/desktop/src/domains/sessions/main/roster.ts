@@ -1,26 +1,26 @@
 // Projecting one stitched chain into the row the Roster draws. A throwaway projection rebuilt
 // from the transcripts every launch (ADR-0004, ADR-0008); nothing here is stored.
 
-import type { SessionChain } from '../contract/chains'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
 import {
   type SessionRosterRow as RosterRow,
   SESSION_POSTURES,
   type SessionEntry,
   type SessionTitle,
   TITLE_SOURCES,
-} from '../contract/models'
-import { observedRosterRow } from '../contract/roster-row-definition'
+} from '@/domains/sessions/contract/models'
+import { observedRosterRow } from '@/domains/sessions/contract/roster-row-definition'
 import {
   type BackgroundTask,
   readActivity,
   readShellCommands,
   readSubagents,
   readTurnStartedAt,
-} from '../contract/signals'
-import type { TranscriptMessage, TranscriptRecord } from '../contract/transcript'
-import { readPlan } from './plan'
-import { readSetup } from './session-setup'
-import { readExternalStatus } from './status'
+} from '@/domains/sessions/contract/signals'
+import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import { readPlan } from '@/domains/sessions/main/plan'
+import { readSetup } from '@/domains/sessions/main/session-setup'
+import { readExternalStatus } from '@/domains/sessions/main/status'
 
 export type { RosterRow, SessionTitle }
 // The `managed | external` axis (CONTEXT.md L2). This slice discovers Sessions from transcripts

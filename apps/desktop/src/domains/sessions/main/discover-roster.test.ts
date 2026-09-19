@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '../contract/models'
-import { discoverRoster } from './discover-roster'
-import { managedRow } from './managed-row'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import { managedRow } from '@/domains/sessions/main/managed-row'
 
 const PROJECT = '/projects/argo'
 

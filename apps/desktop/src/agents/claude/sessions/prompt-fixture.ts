@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { rowsOfRecord } from '../../../domains/sessions/main/feed'
-import { parseTranscriptLine } from './records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
+import { rowsOfRecord } from '@/domains/sessions/main/feed'
 
 // The Feed rows one transcript message draws, read through the real parser.
 export function promptRows(content: unknown, role: 'user' | 'assistant' = 'user') {

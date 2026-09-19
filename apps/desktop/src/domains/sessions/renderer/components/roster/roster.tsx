@@ -1,33 +1,25 @@
-import { type RefObject, useCallback, useMemo, useRef, useState } from 'react'
+import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRosterStatus } from '../../state/use-roster-filter-store'
-import type { Session, SessionId } from '../../types'
-import { RenameDialog } from './rename-dialog'
-import { useOrderedSessions } from './roster-order'
-import { RosterOutcome } from './roster-outcome'
-import { rosterRows } from './roster-rows'
-import { RosterVirtualList } from './roster-virtual-list'
-import { rosterState, SessionsSidebarHeader } from './sessions-sidebar-chrome'
-import { useArchivedSection } from './use-archived-section'
-import { useSidebarRoster } from './use-sidebar-roster'
+import { RenameDialog } from '@/domains/sessions/renderer/components/roster/rename-dialog'
+import type { RosterActions } from '@/domains/sessions/renderer/components/roster/roster-actions'
+import { useOrderedSessions } from '@/domains/sessions/renderer/components/roster/roster-order'
+import { RosterOutcome } from '@/domains/sessions/renderer/components/roster/roster-outcome'
+import { rosterRows } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { RosterVirtualList } from '@/domains/sessions/renderer/components/roster/roster-virtual-list'
+import {
+  rosterState,
+  SessionsSidebarHeader,
+} from '@/domains/sessions/renderer/components/roster/sessions-sidebar-chrome'
+import { useArchivedSection } from '@/domains/sessions/renderer/components/roster/use-archived-section'
+import { useRenameDialog } from '@/domains/sessions/renderer/components/roster/use-rename-dialog'
+import { useSidebarRoster } from '@/domains/sessions/renderer/components/roster/use-sidebar-roster'
+import { useRosterStatus } from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { Session, SessionId } from '@/domains/sessions/renderer/types'
 
-// The one named record of row actions Roster takes from its caller: everything else a row does
-// (focus, selection, opening the rename dialog, paging) is this module's own concern (#2284).
-export type RosterActions = {
-  onArchiveSelected: (sessionIds: SessionId[]) => void
-  onLinkTicket: (session: Session) => void
-  onNew: () => void
-  onOpenTicket: (session: Session) => void
-  onRename: (session: Session, name: string) => Promise<string>
-  onSelect: (sessionId: SessionId) => void
-  onUnlinkTicket: (session: Session) => void
-}
+export type { RosterActions } from '@/domains/sessions/renderer/components/roster/roster-actions'
 
 const NOOP = () => {}
 
-// The rows the virtual list draws, kept apart from Roster's own body so the memo dependency list
-// (each row object is what the memoized RosterRowView compares against) reads as one seam rather
-// than adding to the function the row-action wiring already fills.
 function useRosterRows(options: {
   read: ReturnType<typeof useOrderedSessions>
   search: ReturnType<typeof useSidebarRoster>['searched'] | null
@@ -66,23 +58,6 @@ function useRosterRows(options: {
   }
 }
 
-// The rename dialog's own state and submit handler, kept apart from Roster's body for the same
-// reason as useRosterRows: wiring, not the component's own logic.
-function useRenameDialog(
-  rename: (sessionId: SessionId, title: string) => void,
-  onRename: RosterActions['onRename'],
-) {
-  const [renameTarget, setRenameTarget] = useState<Session | null>(null)
-  const handleRename = useCallback(
-    async (session: Session, name: string) => rename(session.id, await onRename(session, name)),
-    [rename, onRename],
-  )
-  return { renameTarget, setRenameTarget, handleRename }
-}
-
-// Assembles useSidebarRoster's options, kept apart from Roster's own body for the same reason as
-// useRosterRows: it is wiring, not the component's own logic, and Roster's function body cannot
-// absorb it without exceeding the 50-line cap.
 function useRosterSessions(options: {
   actions: RosterActions
   projectRoot: string | null
@@ -102,10 +77,7 @@ function useRosterSessions(options: {
   })
 }
 
-// The Roster: the sidebar's header, its outcome (loading, empty, failed), and its rows, reading its
-// own Session list for the given Project and rendering it under one named record of row actions.
-// The sidebar content, the rows module, the virtual list and the row view that used to sit between
-// this and a rendered row all fold into it (#2284).
+// The sidebar header, outcome and rows, under one named record of row actions (#2284).
 export function Roster({
   actions,
   projectRoot,

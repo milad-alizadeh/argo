@@ -1,10 +1,9 @@
 import type { BrowserWindow } from 'electron'
-import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
-import type { AccountAccess } from '../../accounts/main/access'
-import { ticketError } from '../contract/contract'
-import { TICKET_OPERATIONS } from '../contract/operations'
-import { updatePriority } from './priority-service'
-import type { Call } from './read-as'
+import type { AccountAccess } from '@/domains/accounts/main/access'
+import { ticketError } from '@/domains/tickets/contract/contract'
+import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
+import { updatePriority } from '@/domains/tickets/main/priority-service'
+import type { Call } from '@/domains/tickets/main/read-as'
 import {
   connectSource,
   disconnectSource,
@@ -12,7 +11,8 @@ import {
   listTickets,
   readConnection,
   updateStatus,
-} from './service'
+} from '@/domains/tickets/main/service'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
 function callFor(access: AccountAccess, request: { requestId: string; projectId: string }): Call {
   return { access, requestId: request.requestId, projectId: request.projectId }

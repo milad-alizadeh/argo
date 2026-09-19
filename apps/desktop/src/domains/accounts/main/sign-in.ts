@@ -6,12 +6,16 @@ import {
   type AccountConnectReply,
   accountError,
   type Provider,
-} from '../contract/contract'
-import type { AccountAccess } from './access'
-import { listed } from './listing'
-import { ACCOUNT_PROVIDERS, type SignInEnd, type SignInStart } from './providers'
-import { accountId } from './registry'
-import { saveIdentity } from './save-identity'
+} from '@/domains/accounts/contract/contract'
+import type { AccountAccess } from '@/domains/accounts/main/access'
+import { listed } from '@/domains/accounts/main/listing'
+import {
+  ACCOUNT_PROVIDERS,
+  type SignInEnd,
+  type SignInStart,
+} from '@/domains/accounts/main/providers'
+import { accountId } from '@/domains/accounts/main/registry'
+import { saveIdentity } from '@/domains/accounts/main/save-identity'
 
 type Pending = { provider: Provider; start: SignInStart; outcome: Promise<SignInEnd> | null }
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { PassThrough } from 'node:stream'
 import { test } from 'node:test'
 
-import { openCodexChannel } from '../drive/codex-channel.ts'
+import { openCodexChannel } from '@/agents/codex/drive/codex-channel.ts'
 
 function mockProcess() {
   const stdout = new PassThrough()

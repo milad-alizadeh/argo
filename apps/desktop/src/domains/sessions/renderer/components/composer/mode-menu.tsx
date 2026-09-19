@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react'
-
+import { useTranslation } from 'react-i18next'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,12 +9,12 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '../../../../../platform/renderer/components/ui/dropdown-menu'
-import { InputGroupButton } from '../../../../../platform/renderer/components/ui/input-group'
-import type { TurnSetupControlProps } from './run-setup-menu'
+} from '@/platform/renderer/components/ui/dropdown-menu'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.
 export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
+  const { t } = useTranslation('sessions')
   const current = choices.modes.find((mode) => mode.value === value.mode) ?? choices.modes[0]
   const CurrentIcon = current?.icon
   return (
@@ -23,7 +24,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
           <InputGroupButton
             variant="ghost"
             className="shrink-0 type-control text-foreground"
-            aria-label={`Choose permission mode: ${current?.label}`}
+            aria-label={t('composer.setup.choosePermissionMode', { mode: current?.label })}
           />
         }
       >
@@ -34,7 +35,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">
-            {choices.label} permissions
+            {t('composer.setup.permissions', { harness: choices.label })}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={value.mode}

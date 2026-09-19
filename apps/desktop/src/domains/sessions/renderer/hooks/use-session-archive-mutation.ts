@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
-import { throwSessionContractError, throwUnexpectedSessionReply } from '../session-contract-error'
-import { invalidateSessionRoster } from '../session-queries'
-import type { SessionId } from '../types'
+import {
+  throwSessionContractError,
+  throwUnexpectedSessionReply,
+} from '@/domains/sessions/renderer/session-contract-error'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
+import type { SessionId } from '@/domains/sessions/renderer/types'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
 
 export type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
 

@@ -3,14 +3,10 @@
 // identity and its validated links are separate destination files
 // (docs/portable-integration-contracts.md).
 
-import {
-  otherFields,
-  readDocument,
-  writeDocument,
-} from '../../../platform/main/storage/portable-file'
-import { isIdentifier, isRecord } from '../../../shared/validation'
-import type { Provider } from '../../accounts/contract/contract'
-import { providerOf } from '../../accounts/main/registry'
+import type { Provider } from '@/domains/accounts/contract/contract'
+import { providerOf } from '@/domains/accounts/main/registry'
+import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
+import { isIdentifier, isRecord } from '@/shared/validation'
 
 // `scope` is the provider's id for the source, and `label` its name when it was connected: a
 // GitHub repository is both at once, a Linear team an id and a name.

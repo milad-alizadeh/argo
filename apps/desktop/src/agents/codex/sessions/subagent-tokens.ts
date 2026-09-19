@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
-import { isRecord } from '@/shared/validation'
 import type {
   SessionSubagentUsage,
   SubagentUsageFacts,
-} from '../../../domains/sessions/contract/background-work-contract'
+} from '@/domains/sessions/contract/background-work-contract'
+import { isRecord } from '@/shared/validation'
 import { transcriptPaths } from './discover'
 
 function subagentFacts(line: string): Partial<SubagentUsageFacts> {

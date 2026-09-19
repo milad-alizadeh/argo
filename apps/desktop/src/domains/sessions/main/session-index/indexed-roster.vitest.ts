@@ -2,8 +2,12 @@
 // these rather than Bun, which ships no `node:sqlite`; `apps/desktop/AGENTS.md` says why. The
 // warm-page budget over a large tree is `indexed-roster-budget.vitest.ts`.
 import { afterEach, describe, expect, test } from 'vitest'
-import { indexedAdapters, manyTranscripts, sessionIdAt } from './roster-fixtures'
-import { rosterHarness } from './roster-harness'
+import {
+  indexedAdapters,
+  manyTranscripts,
+  sessionIdAt,
+} from '@/domains/sessions/main/session-index/roster-fixtures'
+import { rosterHarness } from '@/domains/sessions/main/session-index/roster-harness'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

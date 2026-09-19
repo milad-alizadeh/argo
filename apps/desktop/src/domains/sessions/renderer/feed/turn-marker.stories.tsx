@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
-import { FeedLoading } from './feed-loading'
-import { TURN_ELAPSED_SLOT, TurnMarker } from './turn-marker'
+import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
+import { TURN_ELAPSED_SLOT, TurnMarker } from '@/domains/sessions/renderer/feed/turn-marker'
 
 const meta = {
   title: 'Sessions/Feed/Turn Marker',

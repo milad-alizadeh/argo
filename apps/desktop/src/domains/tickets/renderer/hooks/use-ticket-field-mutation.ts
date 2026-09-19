@@ -2,10 +2,10 @@
 // once, a listing not yet reloaded moves too, and a refusal puts every moved row back and says why.
 import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Ticket } from '@/domains/tickets/contract/contract'
-import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
-import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
-import { type ContractFailure, settle } from '../../../../platform/renderer/lib/query-client'
-import { listKey, onRefused, type TicketPages } from './use-tickets'
+import { listKey, onRefused, type TicketPages } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { useContractText } from '@/platform/renderer/i18n/contract-text'
+import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
 
 export type TicketChange = { projectId: string; key: string }
 type Snapshot = [QueryKey, TicketPages | undefined][]

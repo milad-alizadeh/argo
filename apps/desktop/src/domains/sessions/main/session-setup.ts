@@ -1,5 +1,5 @@
-import type { SessionSetup } from '../contract/models'
-import type { TranscriptMessage, TranscriptRecord } from '../contract/transcript'
+import type { SessionSetup } from '@/domains/sessions/contract/models'
+import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 type SetupState = { setup: SessionSetup; pendingTurnSetup: boolean }
 

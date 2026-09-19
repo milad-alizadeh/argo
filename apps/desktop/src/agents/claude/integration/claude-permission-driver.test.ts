@@ -3,9 +3,15 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createClaudePermissionGate } from '../drive/permission-gate.ts'
-import { launch, ledgerFile, OPENING, ownedBeforeRestart, settle } from './claude-driver-launch.ts'
-import { hookSocket, raisePermission } from './claude-permission-hook.ts'
+import { createClaudePermissionGate } from '@/agents/claude/drive/permission-gate.ts'
+import {
+  launch,
+  ledgerFile,
+  OPENING,
+  ownedBeforeRestart,
+  settle,
+} from '@/agents/claude/integration/claude-driver-launch.ts'
+import { hookSocket, raisePermission } from '@/agents/claude/integration/claude-permission-hook.ts'
 
 test('a started Session with a pending Permission reads `permission` in the Roster and reports it', async (context) => {
   const gate = createClaudePermissionGate()

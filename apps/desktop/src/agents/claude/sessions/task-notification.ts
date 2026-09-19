@@ -1,9 +1,6 @@
+import { taggedField } from '@/agents/envelope-tags'
+import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isIdentifier } from '@/shared/validation'
-import type {
-  TranscriptMessage,
-  TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField } from '../../envelope-tags'
 import { backgroundState, readTaskEnding } from './background-task'
 import { replyLine } from './subagent-events'
 

@@ -1,13 +1,13 @@
-import type { SessionFeedRow } from '../contract/models'
-import { type ToolEvidence, toolRows } from '../contract/tool-feed'
+import type { SessionFeedRow } from '@/domains/sessions/contract/models'
+import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/tool-feed'
 import type {
   ContentBlock,
   SubagentEvent,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '../contract/transcript'
-import { withPromptAttachments } from './prompt-attachments'
+} from '@/domains/sessions/contract/transcript'
+import { withPromptAttachments } from '@/domains/sessions/main/prompt-attachments'
 
 function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {
   return (record.toolResults ?? []).flatMap((result, resultIndex) =>

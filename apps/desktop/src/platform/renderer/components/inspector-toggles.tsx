@@ -1,6 +1,6 @@
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
 
-import { Button } from './ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 
 type InspectorState = 'open' | 'collapsed' | 'expanded'
 

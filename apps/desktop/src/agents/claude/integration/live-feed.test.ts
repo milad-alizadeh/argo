@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import type { LiveMessage } from '../drive/live-messages'
-import { feedOf, type Row, records, said, transcript } from './live-feed-transcript'
+import type { LiveMessage } from '@/agents/claude/drive/live-messages'
+import {
+  feedOf,
+  type Row,
+  records,
+  said,
+  transcript,
+} from '@/agents/claude/integration/live-feed-transcript'
 
 test('shows the reply a Claude Turn is drawing, and its growth, before the transcript holds it', async (context) => {
   const { root, append } = await transcript(context)

@@ -1,12 +1,12 @@
-import { isRecord } from '@/shared/validation'
+import { readHarnessEnvelopes } from '@/agents/codex/sessions/harness-envelopes'
+import { readImage } from '@/agents/codex/sessions/prompt-images'
 import type {
   ContentBlock,
   ToolCall,
   ToolResult,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { readHarnessEnvelopes } from './harness-envelopes'
-import { readImage } from './prompt-images'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 
 export function messageBlocks(
   value: unknown,

@@ -1,12 +1,14 @@
 import { ArrowUp, Plus, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
-import { Button } from '../../../../../platform/renderer/components/ui/button'
-import { InputGroupButton } from '../../../../../platform/renderer/components/ui/input-group'
-import type { HarnessControl } from '../../harness/harnesses'
-import type { ComposerAttachment } from '../../state/use-composer-store'
-import { ModeMenu } from './mode-menu'
-import { RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
+import { ModeMenu } from '@/domains/sessions/renderer/components/composer/mode-menu'
+import {
+  RunSetupMenu,
+  type TurnSetupControlProps,
+} from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import type { ComposerAttachment } from '@/domains/sessions/renderer/state/use-composer-store'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation('sessions')
@@ -45,6 +47,7 @@ export function ComposerToolbar({
   onInterrupt?: () => Promise<boolean>
   interruptRef: Parameters<typeof Button>[0]['ref']
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
       <AddContextButton onOpen={onOpenContextPicker} />
@@ -53,7 +56,7 @@ export function ComposerToolbar({
         {setup ? <ModeMenu {...setup} /> : null}
         {isRunning ? (
           <Button
-            aria-label="Interrupt"
+            aria-label={t('composer.interrupt')}
             onClick={() => void onInterrupt?.()}
             ref={interruptRef}
             size="icon-sm"
@@ -63,7 +66,7 @@ export function ComposerToolbar({
           </Button>
         ) : (
           <Button
-            aria-label="Send message"
+            aria-label={t('composer.sendMessage')}
             disabled={disabled || (!draft.trim() && attachments.length === 0)}
             size="icon-sm"
             type="submit"

@@ -1,6 +1,6 @@
 import { type RefObject, useLayoutEffect, useState } from 'react'
-import { currentSessionId } from '../../../contract/models'
-import type { SessionId, SessionsListed } from '../../types'
+import { currentSessionId } from '@/domains/sessions/contract/models'
+import type { SessionId, SessionsListed } from '@/domains/sessions/renderer/types'
 
 export function useRosterFocus(
   sidebar: RefObject<HTMLElement | null>,

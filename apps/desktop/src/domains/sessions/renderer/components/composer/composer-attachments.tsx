@@ -1,13 +1,15 @@
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
+import {
+  AttachmentChip,
+  parseFilename,
+} from '@/domains/sessions/renderer/components/attachment-chip'
+import type { ComposerAttachment } from '@/domains/sessions/renderer/state/use-composer-store'
 import {
   AttachmentAction,
   AttachmentActions,
   AttachmentGroup,
-} from '../../../../../platform/renderer/components/ui/attachment'
-import type { ComposerAttachment } from '../../state/use-composer-store'
-import { AttachmentChip, parseFilename } from '../attachment-chip'
+} from '@/platform/renderer/components/ui/attachment'
 
 export type ComposerAttachmentsProps = {
   attachments: ComposerAttachment[]

@@ -1,4 +1,5 @@
-import { Button } from '../../../../platform/renderer/components/ui/button'
+import type { TicketProblemProps } from '@/domains/tickets/renderer/lib/problems'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -6,8 +7,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import type { TicketProblemProps } from '../lib/problems'
+} from '@/platform/renderer/components/ui/empty'
 
 export function TicketProblem({
   icon: Icon,

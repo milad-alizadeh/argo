@@ -1,15 +1,11 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import process from 'node:process'
-
-import {
-  createOwnershipLedger,
-  isProcessAlive,
-} from '../../../domains/sessions/main/ownership-ledger'
-import { findExecutableOnLoginShellPath } from '../../executable-path'
-import { codexResumeTarget } from '../sessions/resume-target'
-import { openCodexChannel } from './codex-channel'
-import { createCodexSessionDriver } from './codex-session-driver'
+import { openCodexChannel } from '@/agents/codex/drive/codex-channel'
+import { createCodexSessionDriver } from '@/agents/codex/drive/codex-session-driver'
+import { codexResumeTarget } from '@/agents/codex/sessions/resume-target'
+import { findExecutableOnLoginShellPath } from '@/agents/executable-path'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/ownership-ledger'
 
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong

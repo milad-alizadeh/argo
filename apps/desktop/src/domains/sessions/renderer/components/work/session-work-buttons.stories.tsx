@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 
-import { sessionShellCommand, sessionSubagent } from '../../session-fixtures'
+import { sessionShellCommand, sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
 import { SessionWorkButtons } from './session-work-buttons'
 
 // A fixed clock, so every duration these stories draw is the same on every run.

@@ -2,8 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/domains/tickets/contract/contract'
-import { ConnectSourceForm, type ConnectSourceFormProps } from './connect-source-form'
-import { ada, octocat } from './ticket-fixtures'
+import {
+  ConnectSourceForm,
+  type ConnectSourceFormProps,
+} from '@/domains/tickets/renderer/components/connect-source-form'
+import { ada, octocat } from '@/domains/tickets/renderer/components/ticket-fixtures'
 
 const hubot = { ...octocat, id: 'github:1', login: 'hubot' }
 const repository = (scope: string) => ({ scope, label: scope })

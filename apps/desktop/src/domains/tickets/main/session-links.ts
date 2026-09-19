@@ -4,13 +4,13 @@
 // by sessionId; content (title, state) is a cached echo, never authoritative (CONTEXT.md L1 ·
 // Ticket), read fresh from the provider whenever a caller needs more than the cached fields.
 import { z } from 'zod'
+import { ticketKey } from '@/domains/tickets/contract/ticket'
 import {
   createWriteQueue,
   readDocument,
   writeDocument,
-} from '../../../platform/main/storage/portable-file'
-import { identifierSchema } from '../../../shared/validation'
-import { ticketKey } from '../contract/ticket'
+} from '@/platform/main/storage/portable-file'
+import { identifierSchema } from '@/shared/validation'
 
 const linkedTicketSchema = z.strictObject({
   projectId: identifierSchema,

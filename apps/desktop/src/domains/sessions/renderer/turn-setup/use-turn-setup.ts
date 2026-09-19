@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
-import type { SessionRosterRow } from '../../contract/models'
-import type { TurnSetupControlProps } from '../components/composer/run-setup-menu'
-import { type ComposerIdentity, composerIdentityKey } from '../hooks/composer-identity'
-import { useComposerStore } from '../state/use-composer-store'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import {
+  type ComposerIdentity,
+  composerIdentityKey,
+} from '@/domains/sessions/renderer/hooks/composer-identity'
+import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
 import {
   refusalOf,
   resolvedTurnSetup,
   type TurnSetup,
   type TurnSetupChoices,
   turnSettled,
-} from './turn-setup'
+} from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 // Each harness remembers its own Model and Effort for a new composer (CONTEXT.md L2 · Model and Effort).
 const REMEMBERED_STORAGE_KEY = 'argo.composer-model-effort'

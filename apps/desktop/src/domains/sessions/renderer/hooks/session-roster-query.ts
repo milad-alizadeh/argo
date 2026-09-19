@@ -5,9 +5,9 @@ import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import { sessionRosterQueryKey } from '../session-queries'
-import type { SessionRoster } from '../types'
+} from '@/domains/sessions/renderer/session-contract-error'
+import { sessionRosterQueryKey } from '@/domains/sessions/renderer/session-queries'
+import type { SessionRoster } from '@/domains/sessions/renderer/types'
 
 type RosterQuerySource = {
   cursor: string | null

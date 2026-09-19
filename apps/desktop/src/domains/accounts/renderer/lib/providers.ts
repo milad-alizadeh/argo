@@ -1,7 +1,7 @@
 // How each provider reads on screen. A view that differs by provider looks it up here, so a new
 // provider is one entry in the catalog and a provider's own concept is one key on that entry.
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { i18n } from '../../../../platform/renderer/i18n/config'
+import { i18n } from '@/platform/renderer/i18n/config'
 
 export type ProviderPresentation = {
   name: string

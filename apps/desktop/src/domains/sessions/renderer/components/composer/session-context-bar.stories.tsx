@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { SessionContextBar } from './session-context-bar'
+import { SessionContextBar } from '@/domains/sessions/renderer/components/composer/session-context-bar'
 
 const meta = {
   args: {

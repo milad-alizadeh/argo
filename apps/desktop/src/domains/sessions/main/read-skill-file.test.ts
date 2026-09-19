@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { skillFileContent } from './read-skill-file'
+import { skillFileContent } from '@/domains/sessions/main/read-skill-file'
 
 async function tempDirectory(context: { after: (cleanup: () => unknown) => void }) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-skill-'))

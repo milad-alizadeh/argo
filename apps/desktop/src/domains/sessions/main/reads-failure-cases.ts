@@ -2,9 +2,9 @@
 // source at all, a source without the capability it wants, and a source whose own read throws.
 // `reads.test.ts` drives each row through the real Session bridge.
 import assert from 'node:assert/strict'
-import type { SESSION_OPERATIONS } from '../contract/operations'
-import { managedRow } from './managed-row'
-import type { SessionSource } from './session-source'
+import type { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
 
 export type Reply = Record<string, unknown>
 

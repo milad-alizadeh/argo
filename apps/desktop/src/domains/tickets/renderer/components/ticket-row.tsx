@@ -5,13 +5,17 @@ import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticketAge } from '@/domains/tickets/contract/ticket-age'
-import { TreeRails, TreeStem, TreeTwig } from '../../../../platform/renderer/components/tree-lines'
-import { type BacklogRow, closedChildren, openBlockers } from '../lib/backlog'
-import type { SourcePresentation } from '../lib/sources'
-import { ChildProgress } from './child-progress'
-import { PriorityMenu } from './priority-menu'
-import { StatusMenu } from './status-menu'
-import { TicketLabel } from './ticket-label'
+import { ChildProgress } from '@/domains/tickets/renderer/components/child-progress'
+import { PriorityMenu } from '@/domains/tickets/renderer/components/priority-menu'
+import { StatusMenu } from '@/domains/tickets/renderer/components/status-menu'
+import { TicketLabel } from '@/domains/tickets/renderer/components/ticket-label'
+import {
+  type BacklogRow,
+  closedChildren,
+  openBlockers,
+} from '@/domains/tickets/renderer/lib/backlog'
+import type { SourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { TreeRails, TreeStem, TreeTwig } from '@/platform/renderer/components/tree-lines'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>

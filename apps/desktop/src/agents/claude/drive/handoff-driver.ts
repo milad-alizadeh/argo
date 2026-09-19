@@ -1,6 +1,10 @@
-import type { channelActions, DriverOptions, ManagedSession } from './drive-channel'
-import { ClaudeSessionDriverError } from './driver-error'
-import { briefPath, handoffCommand, handoffOpening } from './handoff-script'
+import type {
+  channelActions,
+  DriverOptions,
+  ManagedSession,
+} from '@/agents/claude/drive/drive-channel'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
+import { briefPath, handoffCommand, handoffOpening } from '@/agents/claude/drive/handoff-script'
 
 // Generous because `/handoff` is a whole turn of real work on the fullest Session there is
 // (ported from the deprecated Swift app's `HandoffPatience.default`, `apps/macOS`, read-only).

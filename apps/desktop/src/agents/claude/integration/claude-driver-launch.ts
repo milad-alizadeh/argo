@@ -3,14 +3,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
-
-import type { ClaudeTurnSetup } from '../../../domains/sessions/contract/contract.ts'
-import { createOwnershipLedger } from '../../../domains/sessions/main/ownership-ledger.ts'
-import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
-import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
-import type { ResumeTarget } from '../drive/drive-channel.ts'
-import { createHandoffLedger, type HandoffLedger } from '../drive/handoff-ledger.ts'
-import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
+import { createClaudeSessionDriver } from '@/agents/claude/drive/claude-session-driver.ts'
+import { CYCLE_MODE, REDRAW } from '@/agents/claude/drive/claude-setup.ts'
+import type { ResumeTarget } from '@/agents/claude/drive/drive-channel.ts'
+import { createHandoffLedger, type HandoffLedger } from '@/agents/claude/drive/handoff-ledger.ts'
+import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate.ts'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/contract.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
 
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

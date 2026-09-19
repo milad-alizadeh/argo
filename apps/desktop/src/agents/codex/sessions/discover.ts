@@ -1,15 +1,15 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isRecord } from '@/shared/validation'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
-import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '../../../domains/sessions/main/discover-transcript-sessions'
-import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
+} from '@/domains/sessions/main/discover-transcript-sessions'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
+import { isRecord } from '@/shared/validation'
 import { withoutModelInputCopies } from './model-input-copies'
 import { answeringEveryNestedCall } from './nested-results'
 import { parseCodexTranscriptLine } from './records'

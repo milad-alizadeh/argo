@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { questionAnswerSchema } from './question'
+import { questionAnswerSchema } from '@/domains/sessions/contract/question'
+import { identifierSchema } from '@/shared/validation'
 
 // A pending question is answered rather than read: it already reaches the renderer through the
 // Feed's own `ask` row (tool-feed.ts), sourced off the same transcript every posture reads. There

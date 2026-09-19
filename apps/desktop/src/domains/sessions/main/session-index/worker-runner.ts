@@ -1,12 +1,12 @@
 import { parentPort, workerData } from 'node:worker_threads'
-import { sessionIndexRecoveryKind } from './recovery'
-import type { SessionIndexStore } from './store'
-import { createSessionIndexStore } from './store'
+import { sessionIndexRecoveryKind } from '@/domains/sessions/main/session-index/recovery'
+import type { SessionIndexStore } from '@/domains/sessions/main/session-index/store'
+import { createSessionIndexStore } from '@/domains/sessions/main/session-index/store'
 import {
   type SessionIndexWorkerResponse,
   sessionIndexWorkerDataSchema,
   sessionIndexWorkerRequestSchema,
-} from './worker-protocol'
+} from '@/domains/sessions/main/session-index/worker-protocol'
 
 const port = parentPort
 if (port === null) throw new Error('The Session index worker needs a parent port.')

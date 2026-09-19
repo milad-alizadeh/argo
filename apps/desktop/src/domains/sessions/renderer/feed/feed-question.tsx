@@ -1,6 +1,9 @@
 import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { Question, QuestionAnswer } from '@/domains/sessions/contract/question'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Questionnaire,
@@ -13,9 +16,6 @@ import {
   QuestionnaireSubmit,
   QuestionnaireTitle,
 } from '@/platform/renderer/components/ui/questionnaire'
-import type { Question, QuestionAnswer } from '../../contract/question'
-import type { SessionFeedRow } from '../types'
-import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
 
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 
@@ -51,6 +51,7 @@ function QuestionField({
   onSelect: (selected: string[]) => void
   onText: (text: string) => void
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <QuestionnaireItem name={`question-${index}`} multiple={question.multiSelect}>
       {question.header ? (
@@ -78,8 +79,8 @@ function QuestionField({
           </QuestionnaireChoice>
         ))}
         <QuestionnaireInput
-          aria-label="Write another answer"
-          placeholder="Or write another answer…"
+          aria-label={t('question.writeAnother')}
+          placeholder={t('question.writeAnotherPlaceholder')}
           value={text}
           disabled={disabled}
           className="min-h-10 type-body"
@@ -129,6 +130,7 @@ export function FeedQuestion({
   locked: boolean
   onAnswer: (questionId: string, answers: QuestionAnswer[]) => void
 }) {
+  const { t } = useTranslation('sessions')
   const [selections, setSelections] = useState<Record<number, string[]>>({})
   const [texts, setTexts] = useState<Record<number, string>>({})
 
@@ -172,7 +174,7 @@ export function FeedQuestion({
         onAnswer(row.id, answers)
       }}
     >
-      <p className="type-meta text-muted-foreground">Your input is needed</p>
+      <p className="type-meta text-muted-foreground">{t('question.needed')}</p>
       {row.questions.map((question, index) => (
         <QuestionField
           key={question.question}
@@ -195,7 +197,7 @@ export function FeedQuestion({
           disabled={!canSubmit || answering}
           className="bg-foreground type-control text-background hover:bg-foreground/80"
         >
-          Send answer
+          {t('question.send')}
         </QuestionnaireSubmit>
       </div>
     </Questionnaire>

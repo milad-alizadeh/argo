@@ -3,9 +3,13 @@
 // posture and the client-owned Send that opened this Turn optimistically, before any record
 // confirms it.
 
-import type { SessionAttachmentInput } from '../../contract/attachments-contract'
-import { attachedImageUrl } from '../../contract/feed-images'
-import type { SessionFeedRow, SessionPosture, SessionStatus } from '../../contract/models'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import { attachedImageUrl } from '@/domains/sessions/contract/feed-images'
+import type {
+  SessionFeedRow,
+  SessionPosture,
+  SessionStatus,
+} from '@/domains/sessions/contract/models'
 
 export const TURN_MARKER_STAGES = ['starting', 'resuming', 'live'] as const
 export type TurnMarkerStage = (typeof TURN_MARKER_STAGES)[number]

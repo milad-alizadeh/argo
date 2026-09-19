@@ -1,5 +1,5 @@
-import { attachedImageUrl, imageBlocks } from '../../../domains/sessions/contract/feed-images'
-import type { ContentBlock } from '../../../domains/sessions/contract/transcript'
+import { attachedImageUrl, imageBlocks } from '@/domains/sessions/contract/feed-images'
+import type { ContentBlock } from '@/domains/sessions/contract/transcript'
 
 // Claude's TUI writes `[Image #N]` where a pasted image sat; the image block beside it is the
 // picture. Only a run at either end is dropped: one inside a sentence is part of what it says.

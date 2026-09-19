@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { clickSelection, EMPTY_ROSTER_SELECTION } from './roster-selection'
+import {
+  clickSelection,
+  EMPTY_ROSTER_SELECTION,
+} from '@/domains/sessions/renderer/state/roster-selection'
 
 const ORDER = ['a', 'b', 'c', 'd', 'e']
 

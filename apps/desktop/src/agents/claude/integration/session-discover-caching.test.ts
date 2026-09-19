@@ -4,13 +4,13 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 import {
   fixtureRoot,
   LATER_TURN,
   unscopedListing as listing,
   listSessions,
-} from './session-fixtures'
+} from '@/agents/claude/integration/session-fixtures'
+import { writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 
 // Reading a Roster and then opening a Feed are two passes over the same tree, and only the
 // parsing is kept between them. What is kept is keyed on the mtime it was read at, so a file

@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { ticketKey } from '../../tickets/contract/ticket'
-import { liveActivitySchema } from './feed-rows'
-import { createSessionRosterRowSchema } from './roster-row-definition'
+import { liveActivitySchema } from '@/domains/sessions/contract/feed-rows'
+import { createSessionRosterRowSchema } from '@/domains/sessions/contract/roster-row-definition'
+import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { identifierSchema } from '@/shared/validation'
 
 export {
   FEED_EVENT_KINDS,
@@ -15,7 +15,7 @@ export {
   sessionFeedRowSchema,
   UNREADABLE_ROW,
   unreadableRowHeight,
-} from './feed-rows'
+} from '@/domains/sessions/contract/feed-rows'
 
 export const SESSION_POSTURES = ['managed', 'external'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)

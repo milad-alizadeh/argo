@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { SessionWork } from '../components/work/session-work'
+import type { SessionWork } from '@/domains/sessions/renderer/components/work/session-work'
 
 export type BackgroundWorkLinks = {
   // By the call a notification names, or else by the name an agent was given when it was sent.

@@ -5,9 +5,9 @@
 // changing, which is why the port is asynchronous already.
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
-import type { SessionIndex } from './contract'
-import { recoverableIndexOperation } from './recovery'
-import { createSessionIndexStore } from './store'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import { recoverableIndexOperation } from '@/domains/sessions/main/session-index/recovery'
+import { createSessionIndexStore } from '@/domains/sessions/main/session-index/store'
 
 // Everything here is rebuilt from the transcripts that remain the authoritative store, so it sits
 // beside `portable-v1` rather than inside it: nothing in this directory is the user's to keep.

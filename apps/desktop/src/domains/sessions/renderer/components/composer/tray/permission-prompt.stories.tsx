@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
-import type { Permission } from '../../../../contract/contract'
-import { PendingTurns } from './pending-turns'
-import { PermissionPrompt } from './permission-prompt'
+import type { Permission } from '@/domains/sessions/contract/contract'
+import { PendingTurns } from '@/domains/sessions/renderer/components/composer/tray/pending-turns'
+import { PermissionPrompt } from '@/domains/sessions/renderer/components/composer/tray/permission-prompt'
 import '../composer-content.css'
-import { AttachmentTray } from './attachment-tray'
+import { AttachmentTray } from '@/domains/sessions/renderer/components/composer/tray/attachment-tray'
 
 const permission: Permission = {
   id: 'permission-one',

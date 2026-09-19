@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readSubagents } from '../contract/signals'
-import type { SubagentEvent } from '../contract/transcript'
+import { readSubagents } from '@/domains/sessions/contract/signals'
+import type { SubagentEvent } from '@/domains/sessions/contract/transcript'
 
 function event(
   name: 'started' | 'messaged' | 'responded',

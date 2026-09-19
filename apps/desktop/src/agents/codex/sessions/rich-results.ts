@@ -1,11 +1,11 @@
-import { isRecord } from '@/shared/validation'
-import { dataImageUrl } from '../../../domains/sessions/contract/feed-images'
+import { readImage } from '@/agents/codex/sessions/prompt-images'
+import { dataImageUrl } from '@/domains/sessions/contract/feed-images'
 import {
   type RichResultBlock,
   resultText,
   type ToolResult,
-} from '../../../domains/sessions/contract/transcript'
-import { readImage } from './prompt-images'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 
 function resultBlocks(output: unknown): RichResultBlock[] {
   if (typeof output === 'string') return [{ shape: 'text', text: output }]

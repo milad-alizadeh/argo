@@ -1,4 +1,4 @@
-import type { SessionId } from '../types'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 export type SelectionModifier = 'plain' | 'additive' | 'range'
 
