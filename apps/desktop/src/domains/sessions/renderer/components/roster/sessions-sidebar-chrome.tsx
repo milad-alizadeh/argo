@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RosterFilterMenu } from '@/domains/sessions/renderer/components/roster/roster-filter-menu'
 import { ROSTER_ROW_HEIGHT } from '@/domains/sessions/renderer/components/roster/roster-rows'
@@ -35,7 +35,7 @@ export function RosterStatusRow({ label }: { label: string }) {
       role="status"
       style={{ height: ROSTER_ROW_HEIGHT }}
     >
-      <Loader aria-hidden={true} className="text-muted-foreground" />
+      <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
     </div>
   )
 }

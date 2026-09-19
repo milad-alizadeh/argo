@@ -9,6 +9,10 @@ import {
   relocateProject,
 } from '@/domains/projects/main/register-project'
 import { selectProject } from '@/domains/projects/main/select-project'
+import { platformText } from '@/platform/main/i18n'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { createWriteQueue } from '@/platform/main/storage/portable-file'
+import { send } from '@/providers/request'
 import {
   beginManualSetup,
   cancelManualSetup,
@@ -16,9 +20,7 @@ import {
   validateManualSetup,
 } from '@/domains/projects/main/setup/manual-setup'
 import type { ProjectStore as ProjectRegistryStore } from '@/domains/projects/main/sqlite-store'
-import { platformText } from '@/platform/main/i18n'
-import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
-import { createWriteQueue } from '@/platform/main/storage/portable-file'
+import { loadSetupDocument, type SetupDocumentSource, setupDocumentURL } from './setup/setup-bundle'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
 // asks for the action by name and receives the resulting registry (docs/portable-integration-contracts.md).
@@ -34,12 +36,22 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 export function attachProjectBridge(
   window: BrowserWindow,
-  storage: { projects: ProjectRegistryStore; rendererURL: string },
+  storage: {
+    projects: ProjectRegistryStore
+    rendererURL: string
+    setupDocumentSource?: SetupDocumentSource
+  },
 ): void {
-  const store: ProjectStore = {
+  const setupDocument = () =>
+    loadSetupDocument({
+      documentURL: setupDocumentURL(storage.setupDocumentSource),
+      request: (url) => send(url, { method: 'GET' }),
+    })
+  const store = {
     projects: storage.projects,
     chooseFolder: () => chooseFolder(window),
     exclusive: createWriteQueue(),
+    loadSetupDocument: setupDocument,
   }
   registerDomainHandlers({
     window,

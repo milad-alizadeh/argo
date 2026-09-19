@@ -11,7 +11,15 @@ import {
   saveManualSetup,
 } from '@/domains/projects/main/setup/manual-setup'
 import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
+import { setupStoreFixture } from '../../../../../test-fixtures/projects/setup/setup-store.fixture'
 import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
+import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
+import {
+  SETUP_DOCUMENT_REVISION,
+  setupDocumentFixture,
+} from '../../../../../test-fixtures/projects/setup-document.fixture'
+import { parseSetupDocument } from '../../contract/setup-document'
+import { SetupDocumentLoadError } from './setup-bundle'
 
 const run = promisify(execFile)
 
@@ -29,19 +37,85 @@ const source = JSON.stringify({
   },
 })
 
+const setupDocument = parseSetupDocument(
+  setupDocumentFixture({
+    locales: {
+      en: {
+        title: 'Set up this Project',
+        description: 'Review the plan.',
+        fields: { 'target-path': { label: 'Working path' } },
+        plan: {},
+      },
+    },
+    fields: [
+      {
+        id: 'target-path',
+        type: 'text',
+        recommendation: 'apps/desktop',
+        configurationPath: ['targets', 'app', 'path'],
+      },
+    ],
+    configuration: { version: 1, targets: { app: { default: true, path: '.' } } },
+    plan: [],
+  }),
+)
+
+test('reports the GitHub Setup document failure', async () => {
+  for (const [reason, code] of [
+    ['network-unavailable', 'setup-network-unavailable'],
+    ['document-invalid', 'setup-document-invalid'],
+  ] as const) {
+    const reply = await beginManualSetup(
+      { projectId: 'project-1', requestId: `setup-${reason}` },
+      {
+        projects: {
+          read: () => ({
+            projects: [{ id: 'project-1', path: '/project', commonDirectory: '/project' }],
+            selectedId: 'project-1',
+          }),
+          readSetupCheckpoint: () => null,
+          updateProjectPath: () => undefined,
+          writeSetupCheckpoint: () => undefined,
+        },
+        loadSetupDocument: async () => {
+          throw new SetupDocumentLoadError(reason)
+        },
+      },
+    )
+    assert.equal(reply.type, 'project.error')
+    if (reply.type === 'project.error') assert.equal(reply.code, code)
+  }
+})
+
+test('starts Setup with the configuration from the GitHub document', async (context) => {
+  const { project } = await setupWorktreeFixture(context)
+  const setup = setupStoreFixture(project, setupDocument)
+  const reply = await beginManualSetup(
+    { projectId: 'project-1', requestId: 'setup-1' },
+    setup.store,
+  )
+
+  assert.equal(reply.type, 'project.setup.editing')
+  if (reply.type !== 'project.setup.editing') return
+  assert.equal(reply.document.locales.en.title, 'Set up this Project')
+  assert.equal(JSON.parse(reply.source).targets.app.path, 'apps/desktop')
+  assert.equal(setup.checkpoint()?.configurationSource, reply.source)
+})
+
 test('writes manual configuration in the setup worktree, not the current checkout', async (context) => {
   const { project } = await setupWorktreeFixture(context)
   let stored: SetupCheckpoint | null = null
-  const checkpoint = await saveManualProjectConfiguration(
-    { id: 'project-1', path: project },
+  const checkpoint = await saveManualProjectConfiguration({
+    documentRevision: SETUP_DOCUMENT_REVISION,
+    project: { id: 'project-1', path: project },
     source,
-    {
+    store: {
       readSetupCheckpoint: () => stored,
       writeSetupCheckpoint: (next) => {
         stored = next
       },
     },
-  )
+  })
 
   assert.equal(checkpoint.phase, 'editing')
   assert.equal(
@@ -60,48 +134,4 @@ test('writes manual configuration in the setup worktree, not the current checkou
   ])
   assert.equal(ignored.stdout.trim(), '.argo/settings.local.json')
   assert.deepEqual(stored, checkpoint)
-})
-
-function registryFor(project: string) {
-  let stored: SetupCheckpoint | null = null
-  return {
-    projects: {
-      read: () => ({ projects: [{ id: 'project-1', path: project }], selectedId: 'project-1' }),
-      readSetupCheckpoint: () => stored,
-      updateProjectPath: () => {},
-      writeSetupCheckpoint: (next: SetupCheckpoint) => {
-        stored = next
-      },
-    },
-  } as unknown as Parameters<typeof beginManualSetup>[1]
-}
-
-test('opens the starter configuration as unsaved', async (context) => {
-  const { project } = await setupWorktreeFixture(context)
-  const reply = await beginManualSetup(
-    { projectId: 'project-1', requestId: 'r1' },
-    registryFor(project),
-  )
-
-  assert.equal(reply.type === 'project.setup.editing' && reply.saved, false)
-})
-
-test('opens a saved configuration as saved', async (context) => {
-  const { project } = await setupWorktreeFixture(context)
-  const store = registryFor(project)
-  await saveManualSetup({ projectId: 'project-1', requestId: 'r1', source }, store)
-  const reply = await beginManualSetup({ projectId: 'project-1', requestId: 'r2' }, store)
-
-  assert.equal(reply.type === 'project.setup.editing' && reply.saved, true)
-})
-
-test('tells the reader that every target needs its four commands', async (context) => {
-  const { project } = await setupWorktreeFixture(context)
-  const reply = await saveManualSetup(
-    { projectId: 'project-1', requestId: 'r1', source: MANUAL_CONFIGURATION_TEMPLATE },
-    registryFor(project),
-  )
-
-  assert.equal(reply.type, 'project.error')
-  assert.match(reply.type === 'project.error' ? reply.message : '', /setup, run, build and test/)
 })

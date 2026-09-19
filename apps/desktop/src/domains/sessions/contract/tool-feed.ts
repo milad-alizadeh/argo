@@ -45,16 +45,9 @@ function commandLabel({ label, command }: ExecuteFacts) {
   return label ?? `Ran ${command ?? 'command'}`
 }
 
-const TOOL_DETAILS = {
-  Skill: (call: ToolCall) => ({
-    kind: 'skill' as const,
-    label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
-  }),
-} as const
-
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
-function skillTitle(slug: string): string {
+export function skillTitle(slug: string): string {
   const words = slug.split('-').filter((word) => word.length > 0)
   const [first, ...rest] = words
   if (first === undefined) return slug
@@ -74,14 +67,15 @@ export function toolPresentation(call: ToolCall, file = 0) {
   if (edited !== undefined) return editPresentation(edited)
   if (call.read !== undefined)
     return { kind: 'read' as const, label: `Read ${fileName(call.read.target)}` }
+  if (call.skill !== undefined)
+    return { kind: 'skill' as const, label: call.skill.title ?? 'Skill' }
+  if (call.other !== undefined) return { kind: 'tool' as const, label: call.other.label }
   if (call.search !== undefined || call.fetch !== undefined)
     return { kind: 'searched' as const, label: searchLabel(call) }
-  return (
-    TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
-      kind: 'tool' as const,
-      label: text(call.input.title) ?? `Ran ${call.name}`,
-    }
-  )
+  return {
+    kind: 'tool' as const,
+    label: text(call.input.title) ?? `Ran ${call.name}`,
+  }
 }
 
 // A tool no row knows still shows what it was asked: its code, a lone string argument as itself,
@@ -103,7 +97,7 @@ function evidenceOf(
 ): ToolRow['evidence'] {
   // A Skill call's own result is a fixed placeholder ("Launching skill: X"); its real content is
   // the skill body, carried through `text` (see `toolText`), not the evidence panel.
-  if (call.name === 'Skill') return null
+  if (call.skill !== undefined) return null
   const presentation = toolPresentation(call, file)
   const edited = call.edit?.files[file]
   if (edited !== undefined) return { kind: 'diff', title: presentation.label, source: edited.diff }
@@ -128,11 +122,13 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.execute !== undefined) return call.execute.text
-  if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
+  if (call.skill !== undefined) return skillBodies.get(call.id) ?? null
   if (call.fetch !== undefined) return call.fetch.url
   if (call.search !== undefined) return call.search.query
   if (call.read !== undefined || call.edit !== undefined) return null
-  return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
+  if (call.other !== undefined)
+    return call.other.source === null ? unclassifiedText(call.input) : null
+  return unclassifiedText(call.input)
 }
 
 function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 0): ToolRow {

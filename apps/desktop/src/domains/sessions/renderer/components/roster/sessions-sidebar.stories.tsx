@@ -826,6 +826,8 @@ export const GrowingTheWindow: Story = {
     const spinner = await canvas.findByRole('status', { name: 'Loading more Sessions' })
     await expect(spinner).toBeVisible()
     await expect(spinner.getBoundingClientRect().height).toBe(56)
+    await expect(spinner.querySelector('[data-slot="loader"]')).toBeNull()
+    await expect(spinner.querySelector('svg.animate-spin')).not.toBeNull()
     const rows = [...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li')]
     await expect(rows.indexOf(spinner.closest('li') as HTMLLIElement)).toBe(rows.length - 1)
   },

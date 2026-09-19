@@ -7,6 +7,7 @@ import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { attachProjectBridge } from '@/domains/projects/main/bridge'
+import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   attachSessions,
@@ -27,6 +28,7 @@ export function attachBridges(
     projects: ProjectStore
     rendererURL: string
     proofEnabled: boolean
+    setupDocumentSource: SetupDocumentSource
     acceptance: boolean
   },
 ) {
@@ -38,7 +40,11 @@ export function attachBridges(
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
-  attachProjectBridge(window, { projects, rendererURL })
+  attachProjectBridge(window, {
+    projects,
+    rendererURL,
+    setupDocumentSource: request.setupDocumentSource,
+  })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })

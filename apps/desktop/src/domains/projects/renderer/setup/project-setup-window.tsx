@@ -1,31 +1,36 @@
 import { Save } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { ConfigurationPanel } from '@/domains/projects/renderer/setup/project-setup-configuration'
-import {
-  type ManualSetupMessage,
-  useManualProjectSetup,
-} from '@/domains/projects/renderer/setup/use-manual-project-setup'
+import type { SetupDocument } from '@/domains/projects/contract/setup-document'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { ConfigurationPanel } from '@/domains/projects/renderer/setup/project-setup-configuration'
+import { type ProjectSetupMessage, useProjectSetup } from '@/domains/projects/renderer/setup/use-project-setup'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
-  const setup = useManualProjectSetup(project.id, {
-    valid: t('setup.valid'),
-    invalid: t('setup.invalid'),
-    invalidJson: t('setup.invalidJson'),
-    saved: t('setup.saved'),
-  })
+  const messages = useMemo(
+    () => ({
+      valid: t('setup.valid'),
+      invalid: t('setup.invalid'),
+      invalidJson: t('setup.invalidJson'),
+      invalidSetupDocument: t('setup.invalidSetupDocument'),
+      saved: t('setup.saved'),
+      setupNetworkUnavailable: t('setup.setupNetworkUnavailable'),
+    }),
+    [t],
+  )
+  const setup = useProjectSetup(project.id, messages)
   return <ProjectSetupView project={project} {...setup} />
 }
 
 export type ProjectSetupViewProps = {
-  message: ManualSetupMessage | null
-  cancel: () => Promise<void>
-  saved: boolean
-  save: () => Promise<void>
-  saving: 'cancel' | 'save' | 'test' | null
+  document: SetupDocument | null
+  message: ProjectSetupMessage | null
+  applyConfiguration: () => Promise<void>
+  loading: boolean
+  retry: () => void
+  saving: 'apply' | 'test' | null
   source: string
   testConfiguration: () => Promise<void>
   updateSource: (source: string) => void
@@ -33,10 +38,11 @@ export type ProjectSetupViewProps = {
 
 export function ProjectSetupView({
   project,
+  document,
   message,
-  cancel,
-  saved,
-  save,
+  applyConfiguration,
+  loading,
+  retry,
   saving,
   source,
   testConfiguration,
@@ -44,7 +50,17 @@ export function ProjectSetupView({
 }: { project: ProjectSummary } & ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
   const { add } = useToastManager()
-  const setup = { message, cancel, saved, save, saving, source, testConfiguration, updateSource }
+  const setup = {
+    applyConfiguration,
+    document,
+    loading,
+    message,
+    retry,
+    saving,
+    source,
+    testConfiguration,
+    updateSource,
+  }
   useEffect(() => {
     if (!message) return
     add({ priority: 'high', title: message.text, type: message.tone })
@@ -79,7 +95,7 @@ function SetupWorkspace({
           <p className="mt-1 max-w-2xl type-body text-muted-foreground">{t('setup.description')}</p>
         </div>
       </header>
-      <ConfigurationPanel project={project} {...setup} />
+      <ConfigurationPanel {...setup} />
     </section>
   )
 }

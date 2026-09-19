@@ -16,38 +16,40 @@ import type {
   SetupCheckpoint,
   SetupPhase,
 } from '@/domains/projects/main/sqlite-store'
-
-export const MANUAL_CONFIGURATION_TEMPLATE = `${JSON.stringify(
-  {
-    version: 1,
-    targets: {
-      app: { default: true, path: '.', setup: '', run: '', build: '', test: '' },
-    },
-  },
-  null,
-  2,
-)}\n`
-
-type SetupStore = {
-  projects: Pick<
-    ProjectRegistryStore,
-    'read' | 'readSetupCheckpoint' | 'updateProjectPath' | 'writeSetupCheckpoint'
-  >
-}
+import { setupConfiguration } from '../../contract/setup-configuration'
+import type { SetupDocument } from '../../contract/setup-document'
+import { projectFor, type SetupStore, setupContext } from './setup-context'
 
 export async function beginManualSetup(
   request: { projectId: string; requestId: string },
   store: SetupStore,
 ): Promise<ProjectSetupEditing | ProjectError> {
-  const project = projectFor(request.projectId, store.projects)
-  if (!project) return projectError('missing-project', request.requestId)
+  const context = await setupContext(request, store)
+  if ('type' in context) return context
+  const { document, project } = context
   try {
     const checkpoint = store.projects.readSetupCheckpoint(project.id)
     const worktreePath = checkpoint?.worktreePath ?? (await prepareSetupWorktree(project))
-    const stored = await storedSource(worktreePath)
-    const source = stored ?? MANUAL_CONFIGURATION_TEMPLATE
-    store.projects.writeSetupCheckpoint(checkpointFor(project.id, worktreePath, source))
-    return editing(request.requestId, setupProject(project), { source, saved: stored !== null })
+    const stored = await readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(
+      () => null,
+    )
+    const file = {
+      source: stored ?? setupConfiguration(document, {}),
+      saved: stored !== null,
+    }
+    store.projects.writeSetupCheckpoint({
+      projectId: project.id,
+      worktreePath,
+      phase: 'editing',
+      configurationSource: file.source,
+      documentRevision: document.revision,
+    })
+    return editing({
+      requestId: request.requestId,
+      project: setupProject(project),
+      ...file,
+      document,
+    })
   } catch {
     return projectError('setup-unavailable', request.requestId)
   }
@@ -57,15 +59,26 @@ export async function saveManualSetup(
   request: { projectId: string; requestId: string; source: string },
   store: SetupStore,
 ): Promise<ProjectSetupEditing | ProjectError> {
-  const project = projectFor(request.projectId, store.projects)
-  if (!project) return projectError('missing-project', request.requestId)
+  const context = await setupContext(request, store)
+  if ('type' in context) return context
+  const { document, project } = context
   try {
-    const checkpoint = await saveManualProjectConfiguration(project, request.source, store.projects)
+    const reviewedRevision =
+      store.projects.readSetupCheckpoint(project.id)?.documentRevision ?? document.revision
+    const checkpoint = await saveManualProjectConfiguration({
+      documentRevision: reviewedRevision,
+      project,
+      source: request.source,
+      store: store.projects,
+    })
     if (checkpoint.phase === 'ready')
       store.projects.updateProjectPath(project.id, checkpoint.worktreePath)
-    return editing(request.requestId, setupProject(project), {
+    return editing({
+      requestId: request.requestId,
+      project: setupProject(project),
       source: request.source,
       saved: true,
+      document,
     })
   } catch {
     return projectError('invalid-configuration', request.requestId)
@@ -110,40 +123,23 @@ export function cancelManualSetup(
   }
 }
 
-function checkpointFor(
-  projectId: string,
-  worktreePath: string,
-  configurationSource: string,
-): SetupCheckpoint {
-  const phase: SetupPhase = 'editing'
-  return { projectId, worktreePath, phase, configurationSource }
-}
-
-async function storedSource(worktreePath: string): Promise<string | null> {
-  return readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(() => null)
-}
-
-function editing(
-  requestId: string,
-  project: { id: string; name: string },
-  file: { source: string; saved: boolean },
-) {
+function editing(reply: {
+  requestId: string
+  project: { id: string; name: string }
+  source: string
+  saved: boolean
+  document: SetupDocument
+}) {
   return {
     version: 1 as const,
     type: 'project.setup.editing' as const,
-    requestId,
-    project,
-    ...file,
+    ...reply,
   }
 }
 
 function setupProject(project: Parameters<typeof toSummary>[0]) {
   const { id, name } = toSummary(project)
   return { id, name }
-}
-
-function projectFor(projectId: string, store: Pick<ProjectRegistryStore, 'read'>) {
-  return store.read().projects.find(({ id }) => id === projectId)
 }
 
 function manualSetupContext(

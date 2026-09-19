@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { createConnection, createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
+import { developmentSetupDocumentEnvironment } from '../src/domains/projects/main/setup/setup-document-source.mjs'
 import { stopDevelopmentInstance } from './dev-control.mjs'
 import {
   assertPortAvailable,
@@ -34,6 +35,13 @@ describe('desktop development instances', () => {
     ).toMatchObject({
       label: '#2173',
       title: 'Argo dev · #2173 · :45173',
+    })
+  })
+
+  test('loads Project setup from the current GitHub branch', () => {
+    expect(developmentSetupDocumentEnvironment('argo/#2173-isolate-launches')).toEqual({
+      ARGO_SETUP_DOCUMENT_DEVELOPMENT_URL:
+        'https://raw.githubusercontent.com/milad-alizadeh/argo/argo/%232173-isolate-launches/packages/argo-skills/setup/project-setup.json',
     })
   })
 

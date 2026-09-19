@@ -52,8 +52,13 @@ test('a run that folds into nothing keeps its row identity', () => {
   assert.equal(folded[0], grouped[0])
 })
 
-test('a skill never folds into a neighbouring count', () => {
-  const skill: ToolCall = { id: 's', name: 'Skill', input: { skill: 'simple-english' } }
+test('a loaded skill never folds into a neighbouring count', () => {
+  const skill: ToolCall = {
+    id: 's',
+    name: 'skill-tool',
+    input: {},
+    skill: { kind: 'skill', title: 'Simple english' },
+  }
   const grouped = groupToolRuns(
     settledRows([bash('1', 'bun test'), skill, bash('2', 'bun run typecheck')]),
   )

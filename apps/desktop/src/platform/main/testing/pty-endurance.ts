@@ -9,8 +9,8 @@
 // instrument rather than compared against an absolute number.
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { PtySession } from '@/pty-session'
-import { CYCLES } from '../scripts/acceptance-protocol.mjs'
+import { CYCLES } from '../../../../scripts/acceptance-protocol.mjs'
+import { PtySession } from '@/platform/main/testing/pty-session'
 
 const execFileAsync = promisify(execFile)
 

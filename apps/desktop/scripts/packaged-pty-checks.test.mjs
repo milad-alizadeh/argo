@@ -20,7 +20,7 @@ const json = (file) => JSON.parse(read(file))
 // Both ends of the app-to-driver protocol, across the Vite bundling boundary.
 const PROTOCOL_USERS = [
   'src/main.ts',
-  'src/pty-acceptance.ts',
+  'src/platform/main/testing/pty-acceptance.ts',
   'scripts/prove-packaged-pty.mjs',
   'scripts/packaged-app.mjs',
 ]
@@ -125,6 +125,10 @@ describe('the root command surface', () => {
 
 describe('forge.config.ts', () => {
   const config = read(path.join(desktopRoot, 'forge.config.ts'))
+
+  test('drops development caches from the packaged app', () => {
+    expect(config).toContain('/^\\/node_modules\\/\\.cache($|\\/)/')
+  })
 
   // AutoUnpackNativesPlugin only knows `**/*.node`, and `spawn-helper` has no extension. Under
   // the plugin alone the helper stays inside the archive, node-pty's `app.asar.unpacked` rewrite

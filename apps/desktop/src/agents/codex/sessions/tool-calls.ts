@@ -12,6 +12,7 @@ import { nestedToolCalls } from '@/agents/codex/sessions/nested-tool-call'
 import { readToolResults } from '@/agents/codex/sessions/rich-results'
 import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isRecord } from '@/shared/validation'
+import { withOtherFacts } from './other-facts'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather
@@ -140,6 +141,7 @@ export function readToolRecord(
       .map(withCommandFacts)
       .map(withLookupFacts)
       .map(withEditFacts)
+      .map(withOtherFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

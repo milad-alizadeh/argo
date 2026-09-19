@@ -59,6 +59,7 @@ function threadPort(databasePath: string): SessionIndexWorkerPort {
   worker.on('exit', () => {
     if (!closed) stop(new SessionIndexWorkerStoppedError())
   })
+  worker.unref()
 
   return {
     call: (operation, args) =>
