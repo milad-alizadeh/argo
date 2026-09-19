@@ -11,11 +11,7 @@ import { toSummary } from '@/domains/projects/main/presentation'
 import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
 import { validateProjectConfiguration } from '@/domains/projects/main/setup/setup-validation'
 import { prepareSetupWorktree } from '@/domains/projects/main/setup/setup-worktree'
-import type {
-  ProjectStore as ProjectRegistryStore,
-  SetupCheckpoint,
-  SetupPhase,
-} from '@/domains/projects/main/sqlite-store'
+import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 import { setupConfiguration } from '../../contract/setup-configuration'
 import type { SetupDocument } from '../../contract/setup-document'
 import { projectFor, type SetupStore, setupContext } from './setup-context'

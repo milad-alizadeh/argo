@@ -5,14 +5,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
 import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
-import {
-  beginManualSetup,
-  MANUAL_CONFIGURATION_TEMPLATE,
-  saveManualSetup,
-} from '@/domains/projects/main/setup/manual-setup'
+import { beginManualSetup } from '@/domains/projects/main/setup/manual-setup'
 import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 import { setupStoreFixture } from '../../../../../test-fixtures/projects/setup/setup-store.fixture'
-import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import {
   SETUP_DOCUMENT_REVISION,

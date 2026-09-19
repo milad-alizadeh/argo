@@ -3,9 +3,12 @@ import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import type { SetupDocument } from '@/domains/projects/contract/setup-document'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { ConfigurationPanel } from '@/domains/projects/renderer/setup/project-setup-configuration'
-import { type ProjectSetupMessage, useProjectSetup } from '@/domains/projects/renderer/setup/use-project-setup'
+import {
+  type ProjectSetupMessage,
+  useProjectSetup,
+} from '@/domains/projects/renderer/setup/use-project-setup'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')

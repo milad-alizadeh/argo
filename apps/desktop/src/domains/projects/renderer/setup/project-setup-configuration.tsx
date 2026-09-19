@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import type { ProjectSetupViewProps } from '@/domains/projects/renderer/setup/project-setup-window'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { ProjectSetupViewProps } from '@/domains/projects/renderer/setup/project-setup-window'
 import { SetupDocumentForm } from './setup-document-form'
 import './project-setup.css'
 

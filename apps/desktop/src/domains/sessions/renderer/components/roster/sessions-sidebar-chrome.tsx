@@ -5,7 +5,6 @@ import { ROSTER_ROW_HEIGHT } from '@/domains/sessions/renderer/components/roster
 import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
 import type { RosterStatus } from '@/domains/sessions/renderer/state/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
-import { Loader } from '@/platform/renderer/components/loader'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,
