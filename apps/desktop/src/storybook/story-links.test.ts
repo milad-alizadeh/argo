@@ -82,7 +82,7 @@ test('a changed story file links its own stories', () => {
   ])
 })
 
-test('a file the Storybook preview loads links no story', () => {
+test('a file that only the Storybook preview imports links no story', () => {
   assert.deepEqual(linked(['src/platform/renderer/styles/globals.css']), [])
 })
 
