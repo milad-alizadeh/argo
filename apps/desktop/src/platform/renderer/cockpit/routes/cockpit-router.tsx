@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
+import { createHashRouter, Navigate, Outlet, useMatches, useSearchParams } from 'react-router'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { ProjectOnboardingPrototype } from '@/domains/projects/renderer/setup/project-onboarding-prototype'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/components/composer/development-identity-bar'
 import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
@@ -21,6 +22,10 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '@/platform/shared/commands'
+import {
+  PROJECT_ONBOARDING_PROTOTYPE_KEY,
+  PROJECT_ONBOARDING_PROTOTYPE_VALUE,
+} from '@/platform/shared/project-onboarding-prototype'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode
@@ -46,6 +51,17 @@ function EmptyProjectScreen() {
 }
 
 export function CockpitRouteLayout() {
+  const [searchParams] = useSearchParams()
+  if (
+    window.argo.development !== null &&
+    searchParams.get(PROJECT_ONBOARDING_PROTOTYPE_KEY) === PROJECT_ONBOARDING_PROTOTYPE_VALUE
+  ) {
+    return <ProjectOnboardingPrototype />
+  }
+  return <CockpitRouteLayoutContent />
+}
+
+function CockpitRouteLayoutContent() {
   const [cockpit] = useProjects()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)

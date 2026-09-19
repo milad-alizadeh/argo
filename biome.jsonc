@@ -233,12 +233,20 @@
         "!apps/desktop/src/platform/renderer/components/ui/**",
         "!**/*.{test,stories}.{ts,tsx}",
         "!**/*-samples.{ts,tsx}",
+        "!apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype.tsx",
+        "!apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype-parts.tsx",
+        "!apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype-variants.tsx",
+        "!apps/desktop/src/platform/shared/project-onboarding-prototype.ts",
         "!apps/desktop/src/platform/shared/appearance.ts"
       ],
       "plugins": ["./lint/biome/design-values-js.grit", "./lint/biome/i18n.grit"]
     },
     {
-      "includes": ["apps/desktop/src/**/*.css", "!**/tokens.css"],
+      "includes": [
+        "apps/desktop/src/**/*.css",
+        "!**/tokens.css",
+        "!apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype.css"
+      ],
       "plugins": ["./lint/biome/design-values-css.grit"]
     },
     {
@@ -425,7 +433,14 @@
     // KIND: throwaway research prototypes (output of the `prototype` skill). Deliberately
     // quick, deleted rather than maintained — the caps would tax exploration for no return.
     {
-      "includes": ["prototypes/**"],
+      "includes": [
+        "prototypes/**",
+        "apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype.tsx",
+        "apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype-parts.tsx",
+        "apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype-variants.tsx",
+        "apps/desktop/src/domains/projects/renderer/setup/project-onboarding-prototype.css",
+        "apps/desktop/src/platform/shared/project-onboarding-prototype.ts"
+      ],
       "linter": {
         "rules": {
           "complexity": {
