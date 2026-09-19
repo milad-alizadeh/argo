@@ -41,6 +41,7 @@ export const NormalConfiguration: Story = {
         requestId: 'setup-1',
         project: { id: projectId, name: 'example' },
         source: STORY_CONFIGURATION_SOURCE,
+        saved: false,
       }),
       saveProjectSetup: async ({ projectId, source }) => ({
         version: 1,
@@ -48,6 +49,7 @@ export const NormalConfiguration: Story = {
         requestId: 'setup-2',
         project: { id: projectId, name: 'example' },
         source,
+        saved: true,
       }),
       validateProjectSetup: async ({ projectId }) => ({
         version: 1,

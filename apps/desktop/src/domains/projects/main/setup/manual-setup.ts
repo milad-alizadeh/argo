@@ -44,9 +44,10 @@ export async function beginManualSetup(
   try {
     const checkpoint = store.projects.readSetupCheckpoint(project.id)
     const worktreePath = checkpoint?.worktreePath ?? (await prepareSetupWorktree(project))
-    const source = await manualSource(worktreePath)
+    const stored = await storedSource(worktreePath)
+    const source = stored ?? MANUAL_CONFIGURATION_TEMPLATE
     store.projects.writeSetupCheckpoint(checkpointFor(project.id, worktreePath, source))
-    return editing(request.requestId, setupProject(project), source)
+    return editing(request.requestId, setupProject(project), { source, saved: stored !== null })
   } catch {
     return projectError('setup-unavailable', request.requestId)
   }
@@ -62,11 +63,10 @@ export async function saveManualSetup(
     const checkpoint = await saveManualProjectConfiguration(project, request.source, store.projects)
     if (checkpoint.phase === 'ready')
       store.projects.updateProjectPath(project.id, checkpoint.worktreePath)
-    return editing(
-      request.requestId,
-      setupProject(project),
-      await manualSource(checkpoint.worktreePath),
-    )
+    return editing(request.requestId, setupProject(project), {
+      source: request.source,
+      saved: true,
+    })
   } catch {
     return projectError('invalid-configuration', request.requestId)
   }
@@ -119,14 +119,22 @@ function checkpointFor(
   return { projectId, worktreePath, phase, configurationSource }
 }
 
-async function manualSource(worktreePath: string): Promise<string> {
-  return readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(
-    () => MANUAL_CONFIGURATION_TEMPLATE,
-  )
+async function storedSource(worktreePath: string): Promise<string | null> {
+  return readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(() => null)
 }
 
-function editing(requestId: string, project: { id: string; name: string }, source: string) {
-  return { version: 1 as const, type: 'project.setup.editing' as const, requestId, project, source }
+function editing(
+  requestId: string,
+  project: { id: string; name: string },
+  file: { source: string; saved: boolean },
+) {
+  return {
+    version: 1 as const,
+    type: 'project.setup.editing' as const,
+    requestId,
+    project,
+    ...file,
+  }
 }
 
 function setupProject(project: Parameters<typeof toSummary>[0]) {

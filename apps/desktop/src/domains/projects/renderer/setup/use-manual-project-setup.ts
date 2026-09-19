@@ -28,7 +28,7 @@ function useInitialSetup(
     void window.argo.beginProjectSetup({ projectId }).then((reply) => {
       if (!active) return
       if (reply.type === 'project.setup.editing') {
-        setSaved(true)
+        setSaved(reply.saved)
         setSource(reply.source)
       } else if (reply.type === 'project.error') setMessage({ tone: 'error', text: reply.message })
     })
