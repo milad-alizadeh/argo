@@ -2,10 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-import { CockpitShell } from '../../../../platform/renderer/cockpit/components/cockpit-shell'
-import { AccountsPanel } from '../../../accounts/renderer/components/accounts-dialog'
-import { ConnectSourceFields } from '../components/connect-source-form'
-import { STATUSES } from '../components/status-fixtures'
+import { AccountsPanel } from '@/domains/accounts/renderer/components/accounts-dialog'
+import { ConnectSourceFields } from '@/domains/tickets/renderer/components/connect-source-form'
+import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
 import {
   backlog,
   connection,
@@ -14,10 +13,11 @@ import {
   octocat,
   standalone,
   ticketsView,
-} from '../components/ticket-fixtures'
-import { TicketsSidebarContent } from '../components/tickets-sidebar'
-import type { TicketsScreenProps } from '../hooks/use-tickets-view'
-import { TicketsScreen } from './tickets-screen-view'
+} from '@/domains/tickets/renderer/components/ticket-fixtures'
+import { TicketsSidebarContent } from '@/domains/tickets/renderer/components/tickets-sidebar'
+import type { TicketsScreenProps } from '@/domains/tickets/renderer/hooks/use-tickets-view'
+import { TicketsScreen } from '@/domains/tickets/renderer/screens/tickets-screen-view'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
 // same Ticket after a reload), so a story stands in for the router state that owns it in the app.

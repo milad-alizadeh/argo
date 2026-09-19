@@ -1,16 +1,16 @@
 // One indexing pass over the bounded recent window: what it must parse, and what it writes back.
 // Split from `indexed-window.ts` so the pass's arithmetic can be read without the index calls
 // around it.
-import type { SessionChain } from '../../contract/chains'
-import type { SessionRosterRow } from '../../contract/models'
-import type { TranscriptFile } from '../../contract/transcript'
-import { projectFeed } from '../feed-incremental'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import { projectFeed } from '@/domains/sessions/main/feed-incremental'
 import {
   type IndexedSessionChain,
   type IndexedTranscriptFile,
   NO_CHAIN,
   type TranscriptFileIdentity,
-} from './contract'
+} from '@/domains/sessions/main/session-index/contract'
 
 export type FileIdentities = ReadonlyMap<string, { writtenAt: number; size: number }>
 

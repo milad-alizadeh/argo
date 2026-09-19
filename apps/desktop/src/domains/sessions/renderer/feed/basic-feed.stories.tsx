@@ -1,13 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-
-import type { SessionError, SessionFeed, SessionFeedRow } from '../types'
-import { BackgroundWork, type BackgroundWorkLinks } from './background-work'
-import { BasicFeed } from './basic-feed'
-import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from './content/feed-samples'
-import { FeedJumpToLatest } from './feed-jump-to-latest'
-import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
+import {
+  BackgroundWork,
+  type BackgroundWorkLinks,
+} from '@/domains/sessions/renderer/feed/background-work'
+import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
+import {
+  BROKEN_PICTURE,
+  RICH_MARKDOWN,
+  SAMPLE_PICTURE,
+} from '@/domains/sessions/renderer/feed/content/feed-samples'
+import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/feed-jump-to-latest'
+import {
+  type FeedLiveFacts,
+  INACTIVE_FEED_LIVE_FACTS,
+} from '@/domains/sessions/renderer/feed/feed-live-facts'
+import type { SessionError, SessionFeed, SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 const feed = {
   version: 1,

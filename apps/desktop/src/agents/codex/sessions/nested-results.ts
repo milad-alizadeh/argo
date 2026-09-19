@@ -1,7 +1,7 @@
 // One `exec` script wraps several `tools.exec_command(...)` calls (`nested-tool-call.ts`), and its
 // `custom_tool_call_output` answers as many of them as it holds completion items, which is often
 // fewer. The rest would read as running forever, so the script's last completion answers them too.
-import type { ToolResult, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
+import type { ToolResult, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 // A nested id is `<call_id>:<index>`; a plain function call has no script and stands for itself.
 function scriptOf(callId: string): string {

@@ -3,10 +3,17 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import type { SessionRosterRow } from '../../contract/models'
-import { managedRow } from '../managed-row'
-import type { IndexedSessionChain, IndexedTranscriptFile, SessionIndexWrite } from './contract'
-import { createSessionIndexStore, type SessionIndexStore } from './store'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import type {
+  IndexedSessionChain,
+  IndexedTranscriptFile,
+  SessionIndexWrite,
+} from '@/domains/sessions/main/session-index/contract'
+import {
+  createSessionIndexStore,
+  type SessionIndexStore,
+} from '@/domains/sessions/main/session-index/store'
 
 export function storeHarness() {
   const opened: SessionIndexStore[] = []

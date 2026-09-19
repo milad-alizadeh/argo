@@ -1,14 +1,15 @@
 // The renderer's Account operations. Each reply is parsed here before a component sees it, so a
 // reply carrying any field the contract does not name, a token included, never arrives.
-import { createDomainClient } from '../../../shared/ipc/client'
+
 import {
   type AccountChallengeReply,
   type AccountConnectReply,
   type AccountListReply,
   accountError,
   type Provider,
-} from '../contract/contract'
-import { ACCOUNT_OPERATIONS } from '../contract/operations'
+} from '@/domains/accounts/contract/contract'
+import { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
+import { createDomainClient } from '@/shared/ipc/client'
 
 export type AccountClient = {
   listAccounts(): Promise<AccountListReply>

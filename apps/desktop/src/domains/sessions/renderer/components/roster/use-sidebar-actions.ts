@@ -1,9 +1,12 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
-import { useComposerStore } from '../../state/use-composer-store'
-import { newSessionTarget, useSessionCreationStore } from '../../state/use-session-creation-store'
-import type { Session, SessionId } from '../../types'
+import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
+import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
+import {
+  newSessionTarget,
+  useSessionCreationStore,
+} from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { Session, SessionId } from '@/domains/sessions/renderer/types'
 
 export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 

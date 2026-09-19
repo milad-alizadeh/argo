@@ -1,13 +1,20 @@
-import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
-import { SessionInspector } from '../components/inspector/session-inspector'
-import { SessionWorkButtons } from '../components/work/session-work-buttons'
-import { SessionWorkInspectorHeader } from '../components/work/session-work-inspector-header'
-import { BackgroundWork, type BackgroundWorkLinks } from '../feed/background-work'
-import type { FeedLiveFacts } from '../feed/feed-live-facts'
-import type { SessionFeed } from '../types'
-import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
-import { SessionShell } from './session-shell'
-import { type SessionScreenModel, useSessionScreenModel } from './use-session-screen-model'
+import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
+import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
+import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
+import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { backgroundWorkLinks } from '@/domains/sessions/renderer/screens/background-work-links'
+import {
+  SessionComposerArea,
+  SessionHandoffFacts,
+} from '@/domains/sessions/renderer/screens/session-screen-details'
+import { SessionShell } from '@/domains/sessions/renderer/screens/session-shell'
+import {
+  type SessionScreenModel,
+  useSessionScreenModel,
+} from '@/domains/sessions/renderer/screens/use-session-screen-model'
+import type { SessionFeed } from '@/domains/sessions/renderer/types'
 
 // An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
@@ -32,30 +39,6 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
       shell={session?.shell ?? []}
     />
   )
-}
-
-// A background work block in the Feed opens the same inspector its header button does.
-function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {
-  const { pick, selectedSessionId, session } = model
-  return {
-    find: ({ callId, name }) => {
-      const command = session?.shell.find((entry) => entry.id === callId)
-      if (command !== undefined) return { kind: 'shell', command }
-      // A realtime delegation's envelope names no call, only the name the agent was sent with.
-      const delegation =
-        session?.delegations.find((entry) => entry.id === callId) ??
-        session?.delegations.findLast((entry) => name !== null && entry.label === name)
-      if (delegation === undefined) return null
-      const usage = model.delegationUsage[delegation.id] ?? { tokens: null, model: null }
-      return { kind: 'delegation', delegation, usage }
-    },
-    open: (target) =>
-      pick(
-        target.kind === 'shell'
-          ? { sessionId: selectedSessionId, delegationId: null, shellId: target.command.id }
-          : { sessionId: selectedSessionId, delegationId: target.delegation.id, shellId: null },
-      ),
-  }
 }
 
 function Inspector({ model }: { model: SessionScreenModel }) {

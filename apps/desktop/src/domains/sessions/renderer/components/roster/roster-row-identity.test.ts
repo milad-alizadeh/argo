@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { SessionContractError } from '../../session-contract-error'
-import type { Session } from '../../types'
-import { sameRosterRow } from './roster-rows'
+import { sameRosterRow } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 function readFailure(requestId: string, message: string) {
   return new SessionContractError({

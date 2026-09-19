@@ -1,11 +1,19 @@
 import { opendir } from 'node:fs/promises'
+import {
+  type ProjectOpenReply,
+  type ProjectOpenRequest,
+  projectError,
+} from '@/domains/projects/contract/contract'
+import { toSummary } from '@/domains/projects/main/presentation'
+import {
+  readProjectConfiguration,
+  readProjectConfigurationSource,
+} from '@/domains/projects/main/project-configuration'
+import type { ProjectStore } from '@/domains/projects/main/register-project'
+import { isProjectStoreInvalid } from '@/domains/projects/main/sqlite-store'
 import { isRecord } from '@/shared/validation'
-import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from '../contract/contract'
 import type { SetupDocument } from '../contract/setup-document'
-import { toSummary } from './presentation'
-import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
-import type { ProjectStore } from './register-project'
-import { isProjectStoreInvalid, type SetupCheckpoint } from './sqlite-store'
+import type { SetupCheckpoint } from './sqlite-store'
 
 type OpenProjectStore = ProjectStore & { loadSetupDocument: () => Promise<SetupDocument> }
 

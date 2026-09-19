@@ -5,7 +5,7 @@ import {
   type SessionWork,
   spentTokens,
   workDuration,
-} from './session-work'
+} from '@/domains/sessions/renderer/components/work/session-work'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
 export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {

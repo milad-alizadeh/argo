@@ -1,5 +1,3 @@
-import { createDomainClient } from '../../../shared/ipc/client'
-import { requestIdentifier } from '../../../shared/validation'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
@@ -8,8 +6,10 @@ import {
   type TicketPriorityReply,
   type TicketUpdateReply,
   ticketError,
-} from '../contract/contract'
-import { TICKET_OPERATIONS } from '../contract/operations'
+} from '@/domains/tickets/contract/contract'
+import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
+import { createDomainClient } from '@/shared/ipc/client'
+import { requestIdentifier } from '@/shared/validation'
 
 export type TicketClient = {
   readConnection(request: { projectId: string }): Promise<TicketConnectedReply>

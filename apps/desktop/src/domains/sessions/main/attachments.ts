@@ -7,7 +7,7 @@ import type {
   SessionAttachmentsStatted,
   SessionChooseAttachmentsRequest,
   SessionStatAttachmentsRequest,
-} from '../contract/contract'
+} from '@/domains/sessions/contract/contract'
 
 export type AttachmentsStore = { chooseFiles: () => Promise<string[]> }
 

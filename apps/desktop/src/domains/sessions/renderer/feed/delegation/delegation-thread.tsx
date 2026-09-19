@@ -3,13 +3,13 @@
 import { Bot, Check, ChevronRight, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import {
   type AgentThread,
   delegationFacts,
   isRunning,
   useDelegationClock,
-} from './delegation-facts'
+} from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
 import './delegation-thread.css'
 
 const NODE_BOX = 'flex size-(--size-icon-control) shrink-0 items-center justify-center'

@@ -1,11 +1,15 @@
-import type { Cockpit } from '../../../projects/renderer/hooks/use-projects'
-import type { SessionAttachmentInput } from '../../contract/attachments-contract'
-import type { SessionCli } from '../harness/harnesses'
-import { useSessionCreationStore } from '../state/use-session-creation-store'
-import type { TurnSetup } from '../turn-setup/turn-setup'
-import type { ComposerIdentity } from './composer-identity'
-import { codeFrom, type Failure, messageFrom } from './use-session-composer-actions'
-import type { useSessionMutations } from './use-session-mutations'
+import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { ComposerIdentity } from '@/domains/sessions/renderer/hooks/composer-identity'
+import {
+  codeFrom,
+  type Failure,
+  messageFrom,
+} from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import type { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import { useSessionCreationStore } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 export async function startNewSession(
   request: {

@@ -6,10 +6,14 @@ import {
   createIndexedReadHarness,
   expectAnsweredByIndex,
   finishBackfill,
-} from './indexed-read-test-harness'
-import type { createSessionReader } from './reader'
-import { requestSearch } from './search-request'
-import { indexedAdapters, manyTranscripts, sessionIdAt } from './session-index/roster-fixtures'
+} from '@/domains/sessions/main/indexed-read-test-harness'
+import type { createSessionReader } from '@/domains/sessions/main/reader'
+import { requestSearch } from '@/domains/sessions/main/search-request'
+import {
+  indexedAdapters,
+  manyTranscripts,
+  sessionIdAt,
+} from '@/domains/sessions/main/session-index/roster-fixtures'
 
 const { harness } = createIndexedReadHarness()
 

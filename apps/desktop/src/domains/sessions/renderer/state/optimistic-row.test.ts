@@ -1,12 +1,12 @@
 import { beforeEach, expect, test } from 'bun:test'
 
-import type { SessionRosterRow } from '../../contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import {
   mergeOptimisticRow,
   newSessionTarget,
   optimisticSessionRow,
   useSessionCreationStore,
-} from './use-session-creation-store'
+} from '@/domains/sessions/renderer/state/use-session-creation-store'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

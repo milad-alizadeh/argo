@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Loader } from '../../../../platform/renderer/components/loader'
+import { Loader } from '@/platform/renderer/components/loader'
 import './feed-loading.css'
 
 // A Feed still loading. The mark stays hidden for a moment, so a quick Session switch shows none.

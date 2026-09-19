@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '../../../domains/sessions/main/reader.ts'
-import { claudeSessionSource } from '../sessions/read-sessions.ts'
-import { launch, ledgerFile, OPENING } from './claude-driver-launch.ts'
-import { fixtureRoot } from './session-fixtures'
+import { launch, ledgerFile, OPENING } from '@/agents/claude/integration/claude-driver-launch.ts'
+import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
+import { createSessionReader } from '@/domains/sessions/main/reader.ts'
 
 const feed = {
   version: 1,

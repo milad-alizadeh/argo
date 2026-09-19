@@ -2,7 +2,7 @@
 // toward it from the foreground, so it reads in both appearances.
 import type { CSSProperties } from 'react'
 import type { TicketLabel as Label } from '@/domains/tickets/contract/contract'
-import { Badge } from '../../../../platform/renderer/components/ui/badge'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 
 const TINTED =
   'border-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-border-mix),transparent)] bg-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-fill-mix),transparent)] text-[color-mix(in_oklab,var(--ticket-label)_var(--ticket-label-lean),var(--foreground))]'

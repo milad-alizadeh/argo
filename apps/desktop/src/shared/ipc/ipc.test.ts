@@ -3,10 +3,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { z } from 'zod'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { createDomainClient } from '@/shared/ipc/client'
+import { errorFactory, errorSchema, message } from '@/shared/messages'
 import { createMockIpcWindow, RENDERER_URL } from '../../../mocks/contract/mock-ipc-window'
-import { registerDomainHandlers } from '../../platform/main/ipc/register-domain-handlers'
-import { errorFactory, errorSchema, message } from '../messages'
-import { createDomainClient } from './client'
 
 const ECHO_ERRORS = {
   'access-denied': 'Argo cannot do this from here.',

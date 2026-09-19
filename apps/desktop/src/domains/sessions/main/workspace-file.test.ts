@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fileInWorkspace } from './workspace-file'
+import { fileInWorkspace } from '@/domains/sessions/main/workspace-file'
 
 const WORKSPACE = '/work/argo'
 

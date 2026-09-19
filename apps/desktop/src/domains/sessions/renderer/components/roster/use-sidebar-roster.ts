@@ -1,10 +1,18 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
-import { useSessionSearch } from '../../hooks/use-session-search'
-import { useRosterFilterStore, useRosterStatus } from '../../state/use-roster-filter-store'
-import type { SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
-import { rosterState } from './sessions-sidebar-chrome'
-import { useRosterFocus } from './use-roster-focus'
-import { useRosterSelection } from './use-roster-selection'
+import { rosterState } from '@/domains/sessions/renderer/components/roster/sessions-sidebar-chrome'
+import { useRosterFocus } from '@/domains/sessions/renderer/components/roster/use-roster-focus'
+import { useRosterSelection } from '@/domains/sessions/renderer/components/roster/use-roster-selection'
+import { useSessionSearch } from '@/domains/sessions/renderer/hooks/use-session-search'
+import {
+  useRosterFilterStore,
+  useRosterStatus,
+} from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type {
+  SessionError,
+  SessionId,
+  SessionRoster,
+  SessionsListed,
+} from '@/domains/sessions/renderer/types'
 
 const NO_SESSIONS: SessionsListed['sessions'] = []
 const NO_TITLES: Record<string, string> = {}

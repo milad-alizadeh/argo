@@ -8,13 +8,19 @@ import {
   WORK_STATE_MARKS,
   type WorkState,
   workDuration,
-} from '../components/work/session-work'
-import type { SessionFeedRow } from '../types'
-import { BackgroundWork, backgroundWorkBlock } from './background-work'
-import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import { agentThread } from './delegation/agent-thread'
-import { PHASE_STATES, useDelegationClock } from './delegation/delegation-facts'
-import { ThreadCard } from './delegation/delegation-thread'
+} from '@/domains/sessions/renderer/components/work/session-work'
+import {
+  BackgroundWork,
+  backgroundWorkBlock,
+} from '@/domains/sessions/renderer/feed/background-work'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import { agentThread } from '@/domains/sessions/renderer/feed/delegation/agent-thread'
+import {
+  PHASE_STATES,
+  useDelegationClock,
+} from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import { ThreadCard } from '@/domains/sessions/renderer/feed/delegation/delegation-thread'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 type DelegationGroup = Extract<SessionFeedRow, { shape: 'delegation-group' }>

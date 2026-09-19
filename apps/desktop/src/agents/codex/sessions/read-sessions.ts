@@ -1,13 +1,5 @@
-import type {
-  SessionRenameReply,
-  SessionRenameRequest,
-} from '../../../domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { discoverRoster } from '../../../domains/sessions/main/discover-roster'
-import type { FeedOverlay, SessionSource } from '../../../domains/sessions/main/reader'
-import type { SessionIndex } from '../../../domains/sessions/main/session-index/contract'
-import type { LiveMessage } from '../drive/codex-session-driver'
-import type { PendingCodexQuestion } from '../drive/question-protocol'
+import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
+import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
 import {
   backfillTick,
   clearFullRecords,
@@ -19,13 +11,22 @@ import {
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from './discover'
-import { draftText } from './harness-envelopes'
-import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
-import { createOpenTurnReader, joinOpenTurns } from './open-turns'
-import { readDelegationTokens } from './subagent-tokens'
-import { readDelegationChain } from './subagents'
-import type { ThreadNames } from './thread-names'
+} from '@/agents/codex/sessions/discover'
+import { draftText } from '@/agents/codex/sessions/harness-envelopes'
+import {
+  createHeldRolloutReader,
+  joinHeldRollouts,
+  type OpenFileListing,
+} from '@/agents/codex/sessions/held-rollouts'
+import { createOpenTurnReader, joinOpenTurns } from '@/agents/codex/sessions/open-turns'
+import { readDelegationTokens } from '@/agents/codex/sessions/subagent-tokens'
+import { readDelegationChain } from '@/agents/codex/sessions/subagents'
+import type { ThreadNames } from '@/agents/codex/sessions/thread-names'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 type ReaderOptions = {

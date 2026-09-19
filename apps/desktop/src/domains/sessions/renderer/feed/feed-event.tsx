@@ -1,6 +1,6 @@
 import { BellRing, FileInput, SlidersHorizontal, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../types'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type FeedEventRow = Extract<SessionFeedRow, { shape: 'event' }>
 

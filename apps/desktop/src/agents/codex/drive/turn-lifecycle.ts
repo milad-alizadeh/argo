@@ -1,14 +1,14 @@
-import type { SessionAttachmentInput } from '../../../domains/sessions/contract/attachments-contract'
+import { CodexSessionDriverError } from '@/agents/codex/drive/codex-session-error'
+import { inputItemsFor } from '@/agents/codex/drive/input-items'
+import type { ManagedSession, ManagedSessionOptions } from '@/agents/codex/drive/managed-session'
+import { openManagedChannel, rememberManagedSession } from '@/agents/codex/drive/managed-session'
+import { readStartedTurn, readThreadId } from '@/agents/codex/drive/protocol'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
 import {
   CODEX_OPENING_SETUP,
   type CodexTurnSetup,
   codexTurnSettings,
-} from '../../../domains/sessions/contract/codex-contract'
-import { CodexSessionDriverError } from './codex-session-error'
-import { inputItemsFor } from './input-items'
-import type { ManagedSession, ManagedSessionOptions } from './managed-session'
-import { openManagedChannel, rememberManagedSession } from './managed-session'
-import { readStartedTurn, readThreadId } from './protocol'
+} from '@/domains/sessions/contract/codex-contract'
 
 export async function beginSession(options: {
   driver: ManagedSessionOptions

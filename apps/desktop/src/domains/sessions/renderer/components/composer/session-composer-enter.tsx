@@ -15,7 +15,7 @@ import {
   pressedKeys,
   SEND_MESSAGE_COMMAND,
   shortcut,
-} from '../../../../../platform/shared/commands'
+} from '@/platform/shared/commands'
 
 const SEND_CHORD = shortcut(SEND_MESSAGE_COMMAND).chord
 

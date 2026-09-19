@@ -2,19 +2,24 @@ import type { TFunction } from 'i18next'
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader } from '../../../../platform/renderer/components/loader'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { TicketRow } from '@/domains/tickets/renderer/components/ticket-row'
+import {
+  type Backlog,
+  backlogRows,
+  treeRails,
+  unfoldedRows,
+} from '@/domains/tickets/renderer/lib/backlog'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Loader } from '@/platform/renderer/components/loader'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
-import { providerPresentation } from '../../../accounts/renderer/lib/providers'
-import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
-import { sourcePresentation } from '../lib/sources'
-import { TicketRow } from './ticket-row'
+} from '@/platform/renderer/components/ui/empty'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
 
 export type TicketListProps = {
   backlog: Backlog

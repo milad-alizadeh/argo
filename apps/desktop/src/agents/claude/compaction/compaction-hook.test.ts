@@ -4,8 +4,11 @@ import { lstat, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import { compactionHookCommand, installCompactionHook } from './compaction-hook'
-import { readCompactionStarts } from './compaction-starts'
+import {
+  compactionHookCommand,
+  installCompactionHook,
+} from '@/agents/claude/compaction/compaction-hook'
+import { readCompactionStarts } from '@/agents/claude/compaction/compaction-starts'
 
 async function claudeHome(context: TestContext) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo compaction '))

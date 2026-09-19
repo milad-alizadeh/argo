@@ -1,8 +1,8 @@
 import { CheckIcon, CopyIcon } from 'lucide-react'
 import React, { type ComponentProps, useCallback, useContext, useState } from 'react'
+import { CodeBlockContext } from '@/platform/renderer/components/ai-elements/code-block'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { cn } from '@/platform/renderer/lib/utils'
-import { CodeBlockContext } from './code-block'
 
 export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & { timeout?: number }
 

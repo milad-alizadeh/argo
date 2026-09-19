@@ -6,7 +6,7 @@ import {
   watchPeriodically,
   watchSystemResume,
   watchWindowFocus,
-} from './watch-signals'
+} from '@/platform/main/watch/watch-signals'
 
 // An Electron window and the power monitor are the two things here that cannot run for real outside
 // a packaged app. Both are event emitters, so a plain one stands in and the wiring is the same.

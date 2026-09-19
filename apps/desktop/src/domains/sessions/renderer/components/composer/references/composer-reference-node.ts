@@ -1,8 +1,12 @@
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
-import type { SessionCli } from '../../../harness/harnesses'
-import { composerReferenceIcon } from './composer-reference-icon'
-import { cliLabel, referenceBySource, referenceSupportsCli } from './session-reference'
+import { composerReferenceIcon } from '@/domains/sessions/renderer/components/composer/references/composer-reference-icon'
+import {
+  cliLabel,
+  referenceBySource,
+  referenceSupportsCli,
+} from '@/domains/sessions/renderer/components/composer/references/session-reference'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
 
 const SUPPORTED_CLASS =
   'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text !font-semibold text-foreground type-body'

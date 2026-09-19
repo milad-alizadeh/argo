@@ -1,6 +1,7 @@
 import { CircleGauge } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -8,8 +9,8 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '../../../../../platform/renderer/components/ui/popover'
-import { Progress } from '../../../../../platform/renderer/components/ui/progress'
+} from '@/platform/renderer/components/ui/popover'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 
 const PLAN_USAGE = {
   claude: [
@@ -24,6 +25,7 @@ const PLAN_USAGE = {
 } as const
 
 export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
+  const { t } = useTranslation('sessions')
   const usage = PLAN_USAGE[harness]
   const primaryPercentage = usage[0].percentage
   const harnessLabel = harness === 'codex' ? 'Codex' : 'Claude Code'
@@ -41,13 +43,14 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
       >
         <CircleGauge />
         <span className="inline-flex items-center gap-1">
-          Usage <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>
+          {t('composer.allowance.label')}{' '}
+          <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>
         </span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
-          <PopoverTitle>{harnessLabel} plan usage</PopoverTitle>
-          <PopoverDescription>Account allowance, separate from context health</PopoverDescription>
+          <PopoverTitle>{t('composer.allowance.title', { harness: harnessLabel })}</PopoverTitle>
+          <PopoverDescription>{t('composer.allowance.description')}</PopoverDescription>
         </PopoverHeader>
         {usage.map((item) => (
           <div className="grid gap-1.5" key={item.label}>

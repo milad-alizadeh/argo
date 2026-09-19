@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { CockpitShell } from '../../../../platform/renderer/cockpit/components/cockpit-shell'
-import { type DriveSessionErrorCode, driveSessionError } from '../../contract/contract'
-import { SessionsSidebar } from '../components/roster/sessions-sidebar'
-import { sessionRosterRow } from '../session-fixtures'
-import { SessionScreenView } from './session-screen-view'
+import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/contract/contract'
+import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
+import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
+import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next
 // Send is what resumes it, regardless of whether Argo started it originally.

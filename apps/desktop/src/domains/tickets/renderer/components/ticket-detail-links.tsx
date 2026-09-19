@@ -2,8 +2,8 @@ import { Ban, CircleCheck, CircleDot } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketLink, TicketState } from '@/domains/tickets/contract/contract'
-import { sourcePresentation } from '../lib/sources'
-import { TicketDetailSection } from './ticket-detail-section'
+import { TicketDetailSection } from '@/domains/tickets/renderer/components/ticket-detail-section'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 
 const STATE_ICONS: Record<TicketState, { Icon: typeof CircleDot; tone: string }> = {
   open: { Icon: CircleDot, tone: 'text-active' },

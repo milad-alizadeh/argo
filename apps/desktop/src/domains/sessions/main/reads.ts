@@ -3,17 +3,17 @@
 // all sit behind the declaration, in `read-declaration.ts`. The two archive
 // operations are declared in `archive-reads.ts`, because the flag they read is Argo's own.
 import { readFile } from 'node:fs/promises'
-import type { SessionChain } from '../contract/chains'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type {
   SessionDelegationUsageRequest,
   SessionFileRequest,
   SessionShellOutputRequest,
   SessionSkillRequest,
-} from '../contract/contract'
-import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
-import { skillFileContent } from './read-skill-file'
-import type { SessionSource } from './session-source'
-import { fileInWorkspace } from './workspace-file'
+} from '@/domains/sessions/contract/contract'
+import { fromNothing, fromOwner, MISSING_SESSION } from '@/domains/sessions/main/read-declaration'
+import { skillFileContent } from '@/domains/sessions/main/read-skill-file'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import { fileInWorkspace } from '@/domains/sessions/main/workspace-file'
 
 // The workspace one Session ran in, as its last record named it.
 function workspaceOf(chain: SessionChain) {

@@ -1,8 +1,8 @@
-import { InspectorSplit } from '../../../../platform/renderer/components/inspector-split'
-import { useLinkedSessions } from '../hooks/use-linked-sessions'
-import type { Backlog } from '../lib/backlog'
-import { TicketDetail } from './ticket-detail'
-import { TicketList } from './ticket-list'
+import { TicketDetail } from '@/domains/tickets/renderer/components/ticket-detail'
+import { TicketList } from '@/domains/tickets/renderer/components/ticket-list'
+import { useLinkedSessions } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
+import type { Backlog } from '@/domains/tickets/renderer/lib/backlog'
+import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
 
 export type TicketDeckProps = {
   backlog: Backlog

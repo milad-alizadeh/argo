@@ -1,11 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import type { SessionAttachmentInput } from '../../contract/attachments-contract'
-import type { SessionErrorCode } from '../../contract/contract'
-import { SessionContractError } from '../session-contract-error'
-import { invalidateSessionRoster } from '../session-queries'
-import type { TurnSetup } from '../turn-setup/turn-setup'
-import type { useSessionMutations } from './use-session-mutations'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
+import type { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.
 export type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }

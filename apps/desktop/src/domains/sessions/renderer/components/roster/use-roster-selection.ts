@@ -3,8 +3,8 @@ import {
   clickSelection,
   EMPTY_ROSTER_SELECTION,
   type SelectionModifier,
-} from '../../state/roster-selection'
-import type { SessionId } from '../../types'
+} from '@/domains/sessions/renderer/state/roster-selection'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 // The one place #2194's click/Shift/Cmd rules turn into state: a plain click on the row still
 // opens it (SessionsSidebarContainer's `onSelect`) and clears this instead of adding to it, so

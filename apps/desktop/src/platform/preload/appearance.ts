@@ -1,4 +1,3 @@
-import { createDomainClient } from '../../shared/ipc/client'
 import {
   APPEARANCE_OPERATIONS,
   type Appearance,
@@ -9,7 +8,8 @@ import {
   DEFAULT_APPEARANCE,
   isAppearance,
   isAppearanceState,
-} from '../shared/appearance'
+} from '@/platform/shared/appearance'
+import { createDomainClient } from '@/shared/ipc/client'
 
 export type AppearanceClient = {
   getAppearance(): Promise<AppearanceState>

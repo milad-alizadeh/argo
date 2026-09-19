@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { CodexChannel } from '../drive/codex-channel.ts'
-import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
-import type { RequestParams } from '../drive/protocol.ts'
+import type { CodexChannel } from '@/agents/codex/drive/codex-channel.ts'
+import { createCodexSessionDriver } from '@/agents/codex/drive/codex-session-driver.ts'
+import type { RequestParams } from '@/agents/codex/drive/protocol.ts'
 
 test('renames a Codex Session through thread/name/set and accepts its native notification', async () => {
   const calls: Array<{ method: string; params: unknown }> = []

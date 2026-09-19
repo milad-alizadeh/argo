@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { SessionDiagramEvidence, SessionFileEvidence } from '../../types'
+import type { SessionDiagramEvidence, SessionFileEvidence } from '@/domains/sessions/renderer/types'
 
 export type MarkdownEvidenceContextValue = {
   rowId: string

@@ -1,4 +1,4 @@
-import { isRecord } from '../../../../shared/validation'
+import { isRecord } from '@/shared/validation'
 
 const RECOVERABLE_SQLITE_CODES = new Set([5, 6, 11, 17, 26])
 const DAMAGED_SQLITE_CODES = new Set([11, 17, 26])

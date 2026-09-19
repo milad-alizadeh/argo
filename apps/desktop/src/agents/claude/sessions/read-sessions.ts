@@ -1,16 +1,9 @@
 // The Claude source the shared Session reader drives (#2025). Transcripts are read-only, with no
 // exception: archiving is Argo's own store, shared by every adapter
 // (`domains/sessions/main/archive-store.ts`).
-import type {
-  SessionRenameReply,
-  SessionRenameRequest,
-} from '../../../domains/sessions/contract/contract'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { discoverRoster } from '../../../domains/sessions/main/discover-roster'
-import type { SessionSource } from '../../../domains/sessions/main/reader'
-import type { SessionIndex } from '../../../domains/sessions/main/session-index/contract'
-import { compactionEndedAt, markCompactingRows } from '../compaction/compaction-roster'
-import type { LiveMessage } from '../drive/live-messages'
+
+import { compactionEndedAt, markCompactingRows } from '@/agents/claude/compaction/compaction-roster'
+import type { LiveMessage } from '@/agents/claude/drive/live-messages'
 import {
   backfillTick,
   clearFullRecords,
@@ -20,16 +13,21 @@ import {
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from './discover'
-import { draftOverlay } from './live-feed'
+} from '@/agents/claude/sessions/discover'
+import { draftOverlay } from '@/agents/claude/sessions/live-feed'
 import {
   joinLiveProcesses,
   lockLiveProcesses,
   type ProcessState,
   readLiveProcesses,
-} from './live-processes'
-import { readShellOutput } from './shell-output'
-import { readDelegationChain, readDelegationTokens } from './subagents'
+} from '@/agents/claude/sessions/live-processes'
+import { readShellOutput } from '@/agents/claude/sessions/shell-output'
+import { readDelegationChain, readDelegationTokens } from '@/agents/claude/sessions/subagents'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import type { SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 
 async function completeCompactions(
   transcripts: string,

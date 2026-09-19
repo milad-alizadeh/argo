@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { editCall, onlyToolRow, readCall } from './tool-feed-test-fixtures'
+import { editCall, onlyToolRow, readCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
 
 test('a file read with no result yet has no evidence to open', () => {
   const row = onlyToolRow([readCall('call-1', 'src/app.ts')])

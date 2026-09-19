@@ -1,7 +1,7 @@
 // The appearance contract, shared by the bundled main process and renderer. System, Light and
 // Dark, with System the default and System following the operating system (#1820).
 import { z } from 'zod'
-import { type ContractError, errorFactory, errorSchema, message } from '../../shared/messages'
+import { type ContractError, errorFactory, errorSchema, message } from '@/shared/messages'
 
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 

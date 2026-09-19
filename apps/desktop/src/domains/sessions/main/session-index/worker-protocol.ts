@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { sessionRosterRowSchema } from '../../contract/models'
+import { sessionRosterRowSchema } from '@/domains/sessions/contract/models'
 
 const cliSchema = z.string().min(1)
 const identifiersSchema = z.array(z.string().min(1))

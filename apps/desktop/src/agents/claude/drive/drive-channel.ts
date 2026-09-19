@@ -1,16 +1,18 @@
-import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
-import type {
-  OwnershipLedger,
-  OwnershipStanding,
-} from '../../../domains/sessions/main/ownership-ledger'
-import type { CompanionPart } from './companion-plugin'
-import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
-import { ClaudeSessionDriverError } from './driver-error'
-import type { HandoffLedger } from './handoff-ledger'
-import type { LiveMessages } from './live-messages'
-import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
-import type { ClaudePermissionGate } from './permission-gate'
-import { deliverAnswer } from './question-answer'
+import type { CompanionPart } from '@/agents/claude/drive/companion-plugin'
+import {
+  type ClaudeTurnRequest,
+  deliverTurn,
+  type TurnTarget,
+  type Wait,
+} from '@/agents/claude/drive/deliver-turn'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
+import type { HandoffLedger } from '@/agents/claude/drive/handoff-ledger'
+import type { LiveMessages } from '@/agents/claude/drive/live-messages'
+import { type ClaudeProcess, openChannel, type Seed } from '@/agents/claude/drive/open-channel'
+import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate'
+import { deliverAnswer } from '@/agents/claude/drive/question-answer'
+import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main/ownership-ledger'
 
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.

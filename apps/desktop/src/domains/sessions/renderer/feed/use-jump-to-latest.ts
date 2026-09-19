@@ -1,6 +1,6 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect } from 'react'
-import type { useFeedTailFollow } from './use-feed-tail-follow'
+import type { useFeedTailFollow } from '@/domains/sessions/renderer/feed/use-feed-tail-follow'
 
 // Offers the Session screen a Jump to latest action while the active Feed is away from its tail.
 export function useJumpToLatest({

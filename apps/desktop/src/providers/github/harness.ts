@@ -1,9 +1,9 @@
 // A mock GitHub per test, and a signed-in token on it.
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
+import { awaitGrant, requestChallenge } from '@/providers/github/device-flow'
+import { type GitHubEndpoints, proofEndpoints } from '@/providers/github/endpoints'
 import { type MockGitHub, startMockGitHub } from '../../../mocks/providers/github/mock-github'
-import { awaitGrant, requestChallenge } from './device-flow'
-import { type GitHubEndpoints, proofEndpoints } from './endpoints'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
 

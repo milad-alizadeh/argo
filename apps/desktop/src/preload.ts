@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
-import { createCodexCompactionClient } from './agents/codex/compaction/compaction'
-import { createAccountClient } from './domains/accounts/preload/client'
-import { createProjectClient } from './domains/projects/preload/client'
-import { createSessionClient } from './domains/sessions/preload/client'
-import { createTicketClient } from './domains/tickets/preload/client'
-import { createPlatformClient } from './platform/preload/client'
-import { developmentIdentityFromArguments } from './platform/preload/development-identity'
+import { createCodexCompactionClient } from '@/agents/codex/compaction/compaction'
+import { createAccountClient } from '@/domains/accounts/preload/client'
+import { createProjectClient } from '@/domains/projects/preload/client'
+import { createSessionClient } from '@/domains/sessions/preload/client'
+import { createTicketClient } from '@/domains/tickets/preload/client'
+import { createPlatformClient } from '@/platform/preload/client'
+import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 const invoke = (channel: string, request: unknown) => ipcRenderer.invoke(channel, request)
 

@@ -2,10 +2,14 @@
 // files' full parse held here, evicted only when the reader is done with it (#1717's HELD_FILE_LIMIT
 // eviction lives one level down in transcript-lines.ts; this layer just tracks which paths belong to
 // which Session id so a discard reaches every id that chain has ever answered to).
-import type { SessionChain } from '../contract/chains'
-import type { TranscriptFile, TranscriptParser, TranscriptRecord } from '../contract/transcript'
-import { transcriptFileFrom } from '../contract/transcript'
-import { createTranscriptRecordReader } from './transcript-lines'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type {
+  TranscriptFile,
+  TranscriptParser,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
 
 export type FullRecordTracker = {
   readChainFiles: (chain: SessionChain) => Promise<TranscriptFile[]>

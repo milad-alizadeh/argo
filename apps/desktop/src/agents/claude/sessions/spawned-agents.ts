@@ -5,7 +5,7 @@ import type {
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/transcript'
 
 // The CLI renamed `Task` to `Agent`; a transcript written before the rename still names the old one.
 const SPAWNING_TOOLS = new Set(['Task', 'Agent'])

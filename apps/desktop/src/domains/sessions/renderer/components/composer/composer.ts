@@ -1,6 +1,6 @@
-import type { TurnSetupControlProps } from './run-setup-menu'
-import type { Send } from './use-send'
-import { useSessionComposerState } from './use-session-composer-state'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import type { Send } from '@/domains/sessions/renderer/components/composer/use-send'
+import { useSessionComposerState } from '@/domains/sessions/renderer/components/composer/use-session-composer-state'
 
 type ComposerOptions = {
   identity: string

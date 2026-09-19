@@ -1,6 +1,6 @@
-import { projectRosterRow } from '../../../domains/sessions/main/roster'
-import type { ResumeTarget } from '../drive/drive-channel'
-import { readSessionFiles } from './discover'
+import type { ResumeTarget } from '@/agents/claude/drive/drive-channel'
+import { readSessionFiles } from '@/agents/claude/sessions/discover'
+import { projectRosterRow } from '@/domains/sessions/main/roster'
 
 // ADR-0026: a resume continues the chain's latest link, in the folder that link last worked in.
 export async function claudeResumeTarget(

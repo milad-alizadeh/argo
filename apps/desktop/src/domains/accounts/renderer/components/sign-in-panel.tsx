@@ -6,12 +6,12 @@ import type {
   AccountConnected,
   Provider,
 } from '@/domains/accounts/contract/contract'
-import { Alert, AlertDescription } from '../../../../platform/renderer/components/ui/alert'
-import { Button } from '../../../../platform/renderer/components/ui/button'
-import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
-import { useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
-import type { SignIn } from '../hooks/use-sign-in'
-import { providerPresentation } from '../lib/providers'
+import type { SignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { useContractText } from '@/platform/renderer/i18n/contract-text'
+import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 
 export type SignedIn = { login: string; outcome: AccountConnected['outcome'] }
 export type SignInPanelProps = Omit<SignIn, 'connected'> & {

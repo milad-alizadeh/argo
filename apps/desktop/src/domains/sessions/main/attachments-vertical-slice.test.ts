@@ -7,7 +7,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { chooseAttachments, statAttachments } from './attachments'
+import { chooseAttachments, statAttachments } from '@/domains/sessions/main/attachments'
 
 test('a chosen file that is still readable reaches the Turn as an @-mention', async (context) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-attachments-slice-'))

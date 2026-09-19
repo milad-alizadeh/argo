@@ -1,6 +1,6 @@
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
-import { CODEX_TURN_SETUP } from '../turn-setup/codex-turn-setup'
-import type { TurnSetupChoices } from '../turn-setup/turn-setup'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
+import { CODEX_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/codex-turn-setup'
+import type { TurnSetupChoices } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 export const SESSION_CLIS = ['claude', 'codex'] as const
 export type SessionCli = (typeof SESSION_CLIS)[number]

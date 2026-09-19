@@ -2,10 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { type AccountSummary, accountError } from '@/domains/accounts/contract/contract'
-import { i18n } from '../../../../platform/renderer/i18n/config'
-import { ConnectSourceFields } from '../../../tickets/renderer/components/connect-source-form'
-import { ada, octocat } from '../../../tickets/renderer/components/ticket-fixtures'
-import { AccountsPanel, type AccountsPanelProps } from './accounts-dialog'
+import {
+  AccountsPanel,
+  type AccountsPanelProps,
+} from '@/domains/accounts/renderer/components/accounts-dialog'
+import { ConnectSourceFields } from '@/domains/tickets/renderer/components/connect-source-form'
+import { ada, octocat } from '@/domains/tickets/renderer/components/ticket-fixtures'
+import { i18n } from '@/platform/renderer/i18n/config'
 
 const idle: AccountsPanelProps['signIn'] = {
   phase: 'idle',

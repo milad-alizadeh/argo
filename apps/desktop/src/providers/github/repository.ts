@@ -1,9 +1,10 @@
 // Can this Account see this repository, and does the repository source Tickets? Asked when a
 // repository is connected, the only moment a wrong Account and a missing Ticket can be told
 // apart (ADR-0018).
-import { isRecord } from '../../shared/validation'
-import type { GitHubEndpoints } from './endpoints'
-import { failed, type GitHubFailure, type GitHubRead, get, getAll } from './http'
+
+import type { GitHubEndpoints } from '@/providers/github/endpoints'
+import { failed, type GitHubFailure, type GitHubRead, get, getAll } from '@/providers/github/http'
+import { isRecord } from '@/shared/validation'
 
 export type RepositoryCheck =
   | { ok: true; fullName: string }

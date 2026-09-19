@@ -1,10 +1,16 @@
 import type { ReactNode } from 'react'
-
-import { readCssSize } from '../lib/read-css-size'
-import { cn } from '../lib/utils'
-import { InspectorToggles } from './inspector-toggles'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable'
-import { type InspectorSizes, useInspectorPanels } from './use-inspector-panels'
+import { InspectorToggles } from '@/platform/renderer/components/inspector-toggles'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/platform/renderer/components/ui/resizable'
+import {
+  type InspectorSizes,
+  useInspectorPanels,
+} from '@/platform/renderer/components/use-inspector-panels'
+import { readCssSize } from '@/platform/renderer/lib/read-css-size'
+import { cn } from '@/platform/renderer/lib/utils'
 
 export type InspectorSplitProps = {
   // Names the panels and their controls: `Collapse ${noun} inspector`, `Expand ${noun} sidebar`.

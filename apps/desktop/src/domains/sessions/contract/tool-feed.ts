@@ -1,15 +1,15 @@
 import { z } from 'zod'
-import { claudeQuestionSchema } from './claude-contract'
-import { editPresentation, fileName } from './file-presentation'
-import type { SessionFeedRow } from './models'
-import { searchLabel, searchOutcome } from './tool-changes'
+import { claudeQuestionSchema } from '@/domains/sessions/contract/claude-contract'
+import { editPresentation, fileName } from '@/domains/sessions/contract/file-presentation'
+import type { SessionFeedRow } from '@/domains/sessions/contract/models'
+import { searchLabel, searchOutcome } from '@/domains/sessions/contract/tool-changes'
 import {
   type BackgroundState,
   type ExecuteFacts,
   resultText,
   type ToolCall,
   type ToolResult as TranscriptToolResult,
-} from './transcript'
+} from '@/domains/sessions/contract/transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>

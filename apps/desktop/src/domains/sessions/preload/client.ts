@@ -1,6 +1,5 @@
-import { createDomainClient } from '../../../shared/ipc/client'
-import type { SessionAttachmentInput } from '../contract/attachments-contract'
-import type { ClaudeQuestionAnswer } from '../contract/claude-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -19,9 +18,10 @@ import {
   type SessionStartReply,
   type SessionStatAttachmentsReply,
   sessionError,
-} from '../contract/contract'
-import { SESSION_OPERATIONS } from '../contract/operations'
-import type { RosterStatus } from '../contract/search-contract'
+} from '@/domains/sessions/contract/contract'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import type { RosterStatus } from '@/domains/sessions/contract/search-contract'
+import { createDomainClient } from '@/shared/ipc/client'
 
 export type SessionClient = {
   startSession(request: {

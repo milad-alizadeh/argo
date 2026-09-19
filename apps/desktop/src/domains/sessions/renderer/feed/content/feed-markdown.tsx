@@ -2,13 +2,19 @@ import { FileText } from 'lucide-react'
 import { memo, type ReactNode, useContext, useMemo } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { FeedCode } from './feed-code'
-import { GalleryImage, GalleryParagraph } from './feed-markdown-gallery'
-import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
-import { LINK_CLASS } from './link-class'
-import { MarkdownEvidence, type MarkdownEvidenceContextValue } from './markdown-evidence'
-import { feedUrlTransform } from './markdown-urls'
-import { MermaidFence } from './mermaid-fence'
+import { FeedCode } from '@/domains/sessions/renderer/feed/content/feed-code'
+import {
+  GalleryImage,
+  GalleryParagraph,
+} from '@/domains/sessions/renderer/feed/content/feed-markdown-gallery'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import { LINK_CLASS } from '@/domains/sessions/renderer/feed/content/link-class'
+import {
+  MarkdownEvidence,
+  type MarkdownEvidenceContextValue,
+} from '@/domains/sessions/renderer/feed/content/markdown-evidence'
+import { feedUrlTransform } from '@/domains/sessions/renderer/feed/content/markdown-urls'
+import { MermaidFence } from '@/domains/sessions/renderer/feed/content/mermaid-fence'
 
 type MarkdownNode = ExtraProps['node']
 

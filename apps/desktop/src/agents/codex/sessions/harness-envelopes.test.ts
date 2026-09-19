@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { draftText } from './harness-envelopes'
-import { parseCodexTranscriptLine } from './records'
+import { draftText } from '@/agents/codex/sessions/harness-envelopes'
+import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
 
 function agentMessage(text: string) {
   return parseCodexTranscriptLine(

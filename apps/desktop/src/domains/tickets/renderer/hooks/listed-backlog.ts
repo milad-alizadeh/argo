@@ -1,9 +1,9 @@
 // A connected Project's pages of Tickets, read into the Backlog the deck draws.
 import type { UseInfiniteQueryResult } from '@tanstack/react-query'
-import { contractText } from '../../../../platform/renderer/i18n/contract-text'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import { type Backlog, uniqueTickets } from '../lib/backlog'
-import type { TicketPages } from './use-tickets'
+import type { TicketPages } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { type Backlog, uniqueTickets } from '@/domains/tickets/renderer/lib/backlog'
+import { contractText } from '@/platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export type TicketListing = UseInfiniteQueryResult<TicketPages, ContractFailure>
 
