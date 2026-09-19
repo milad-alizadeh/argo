@@ -69,3 +69,8 @@ export type SessionIndex = {
   setBackfillProgress: (cli: string, progress: BackfillProgress) => Promise<void>
   close: () => Promise<void>
 }
+
+// A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript
+// file). Its identity is still recorded, so the pass stops re-reading it until the CLI writes
+// that first Message and its size changes.
+export const NO_CHAIN = ''

@@ -32,6 +32,31 @@ test('treats a row that no longer parses as a cache miss rather than answering w
   expect(store.rowsOfChains('claude', ['one', 'two'])).toEqual([row])
 })
 
+test('does not let a malformed cached row break an indexed search', async () => {
+  const { store } = await stores.open()
+  const row = {
+    ...rowFor('one', '2026-09-17T10:00:00.000Z'),
+    title: { text: 'Search me', source: 'custom' as const },
+  }
+  store.write('claude', passOf({ chains: [chainOf(row)] }))
+  store.write(
+    'claude',
+    passOf({
+      chains: [
+        {
+          chainId: 'broken',
+          updatedAt: row.updatedAt,
+          row: { nonsense: true } as never,
+          originUnread: false,
+          searchText: 'Search me too',
+        },
+      ],
+    }),
+  )
+
+  expect(store.searchChains('claude', 'search')).toEqual([row])
+})
+
 test('starts an index written by an unknown schema version again from empty', async () => {
   const { store, databasePath } = await stores.open()
   writeChain(store, rowFor('one', '2026-09-17T10:00:00.000Z'))

@@ -6,6 +6,7 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import type { SessionIndex } from './contract'
+import { recoverableIndexOperation } from './recovery'
 import { createSessionIndexStore } from './store'
 
 // Everything here is rebuilt from the transcripts that remain the authoritative store, so it sits
@@ -29,15 +30,19 @@ export function openSessionIndex(databasePath: string): SessionIndex {
   mkdirSync(path.dirname(databasePath), { recursive: true })
   const store = createSessionIndexStore(databasePath)
   return {
-    filesAt: async (cli, paths) => store.filesAt(cli, paths),
-    filesOfChains: async (cli, chainIds) => store.filesOfChains(cli, chainIds),
-    rowsOfChains: async (cli, chainIds) => store.rowsOfChains(cli, chainIds),
-    searchChains: async (cli, query) => store.searchChains(cli, query),
-    chainLinks: async (cli) => store.chainLinks(cli),
-    strandedChains: async (cli) => store.strandedChains(cli),
-    write: async (cli, pass) => store.write(cli, pass),
-    backfillProgress: async (cli) => store.backfillProgress(cli),
-    setBackfillProgress: async (cli, progress) => store.setBackfillProgress(cli, progress),
+    filesAt: async (cli, paths) => recoverableIndexOperation(() => store.filesAt(cli, paths)),
+    filesOfChains: async (cli, chainIds) =>
+      recoverableIndexOperation(() => store.filesOfChains(cli, chainIds)),
+    rowsOfChains: async (cli, chainIds) =>
+      recoverableIndexOperation(() => store.rowsOfChains(cli, chainIds)),
+    searchChains: async (cli, query) =>
+      recoverableIndexOperation(() => store.searchChains(cli, query)),
+    chainLinks: async (cli) => recoverableIndexOperation(() => store.chainLinks(cli)),
+    strandedChains: async (cli) => recoverableIndexOperation(() => store.strandedChains(cli)),
+    write: async (cli, pass) => recoverableIndexOperation(() => store.write(cli, pass)),
+    backfillProgress: async (cli) => recoverableIndexOperation(() => store.backfillProgress(cli)),
+    setBackfillProgress: async (cli, progress) =>
+      recoverableIndexOperation(() => store.setBackfillProgress(cli, progress)),
     close: async () => store.close(),
   }
 }

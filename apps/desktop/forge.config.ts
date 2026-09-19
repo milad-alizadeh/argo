@@ -126,6 +126,11 @@ const config: ForgeConfig = {
       // the contract with `main` in package.json and the preload path in create-window.ts.
       build: [
         { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
+        {
+          entry: 'src/domains/sessions/main/session-index/session-index-worker.ts',
+          config: 'vite.main.config.ts',
+          target: 'main',
+        },
         { entry: 'src/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
       ],
       renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
