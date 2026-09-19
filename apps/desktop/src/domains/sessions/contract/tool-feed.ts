@@ -1,22 +1,20 @@
 import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
-import { fileChange, patchOf, searchLabel, searchOutcome } from './tool-changes'
+import { fileChange, searchOutcome } from './tool-changes'
+import { commandText, hasToolPresentation, toolPresentation } from './tool-presentation'
 import { resultText, type ToolCall, type ToolResult as TranscriptToolResult } from './transcript'
+
+export {
+  displayedToolLabel,
+  executableToolCall,
+  toolPresentation,
+  toolTarget,
+} from './tool-presentation'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'>
-
-export function displayedToolLabel(
-  call: { kind: ToolRow['kind'] | 'thought'; label: string },
-  active: boolean,
-  running: string,
-) {
-  if (!active || (call.kind !== 'command' && call.kind !== 'tool')) return call.label
-  const label = call.label.startsWith('Ran ') ? call.label.slice('Ran '.length) : call.label
-  return `${running} ${label}`
-}
 
 // A call's result and a Skill's body both arrive as later, separate records, keyed by call id.
 export type ToolEvidence = { results: Map<string, ToolResult>; skillBodies: Map<string, string> }
@@ -26,118 +24,12 @@ const claudeQuestionCallInputSchema = z.strictObject({
   questions: z.array(claudeQuestionSchema).min(1),
 })
 
-function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value : null
-}
-
-function commandLabel(call: ToolCall, commandKey: 'command' | 'cmd') {
-  const suppliedLabel = text(call.input.label) ?? text(call.input.description)
-  if (suppliedLabel !== null) return suppliedLabel
-  const command = text(call.input[commandKey])?.split('\n')[0]
-  return `Ran ${command ?? 'command'}`
-}
-
-function commandText(call: ToolCall): string | null {
-  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
-  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
-  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
-  return null
-}
-
-const TOOL_DETAILS = {
-  // The agent's own description is already a whole label; the raw command, first line, is the fallback.
-  Bash: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'command'),
-  }),
-  Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
-  Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
-  Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
-  Skill: (call: ToolCall) => ({
-    kind: 'skill' as const,
-    label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
-  }),
-  // Codex's `exec` record carries wrapper source; its adapter extracts `cmd` when the wrapper has one.
-  exec_command: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'cmd'),
-  }),
-  exec: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'cmd'),
-  }),
-  // Codex names a search by its first query, or a fetch by its page; its adapter lifts those out
-  // of the script as `query` and `url`.
-  web__run: (call: ToolCall) => ({ kind: 'searched' as const, label: searchLabel(call) }),
-  apply_patch: (call: ToolCall) => {
-    const change = patchOf(call)
-    return change === null
-      ? { kind: 'edited' as const, label: 'Edited file' }
-      : { kind: change.kind, label: change.label }
-  },
-} as const
-
 const EVIDENCE_KINDS = { Bash: 'output', Read: 'document' } as const
-
-// The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
-// reader-facing sentence form ("Simple english") instead.
-function skillTitle(slug: string): string {
-  const words = slug.split('-').filter((word) => word.length > 0)
-  const [first, ...rest] = words
-  if (first === undefined) return slug
-  return [`${first[0]?.toUpperCase()}${first.slice(1)}`, ...rest].join(' ')
-}
-
-// A row names the file, never the path that reached it: every surface drawing this label is narrow
-// and the absolute path is both too long to read and the same prefix on every line (#2273).
-function filePath(call: ToolCall) {
-  const path = call.input.file_path
-  if (typeof path !== 'string') return 'file'
-  return path.split('/').findLast((segment) => segment.length > 0) ?? path
-}
-
-// Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
-// compact surface never has to rebuild reader-facing words from the CLI's execution type. An
-// unclassified tool reads as something the agent ran, the same verb as a command, under the
-// title the agent gave the call when it gave one (Codex's `js` writes `{title, code}`).
-export function toolPresentation(call: ToolCall) {
-  return (
-    TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
-      kind: 'tool' as const,
-      label: text(call.input.title) ?? `Ran ${call.name}`,
-    }
-  )
-}
-
-const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
-const TEXT_FIELDS = ['pattern', 'description', 'command', 'cmd', 'url', 'query']
-
-export function toolTarget(call: ToolCall): string | null {
-  for (const field of PATH_FIELDS) {
-    const path = text(call.input[field])
-    if (path !== null) return path.split('/').findLast((segment) => segment.length > 0) ?? path
-  }
-  for (const field of TEXT_FIELDS) {
-    const value = text(call.input[field])
-    if (value !== null) return value.trim().split('\n', 1).join('')
-  }
-  return null
-}
-
-export function executableToolCall(call: ToolCall) {
-  if (toolPresentation(call).kind !== 'command') return null
-  const command = commandText(call)
-  return {
-    command: command === null ? null : command.trim().split('\n', 1).join(''),
-    label: text(call.input.label) ?? text(call.input.description),
-    background: call.input.run_in_background === true,
-  }
-}
 
 // A tool no row knows still shows what it was asked: its code, a lone string argument as itself,
 // else the input.
 function unclassifiedText(input: ToolCall['input']): string | null {
-  const code = text(input.code)
+  const code = typeof input.code === 'string' && input.code.trim().length > 0 ? input.code : null
   if (code !== null) return code
   const values = Object.values(input)
   if (values.length === 0) return null
@@ -169,8 +61,11 @@ function toolText(call: ToolCall, skillBodies: Map<string, string>): string | nu
   if (command !== null) return command
   if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
-  if (call.name === 'web__run') return text(call.input.url) ?? text(call.input.query)
-  return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
+  if (call.name === 'web__run') {
+    const url = typeof call.input.url === 'string' ? call.input.url : null
+    return url ?? (typeof call.input.query === 'string' ? call.input.query : null)
+  }
+  return hasToolPresentation(call) ? null : unclassifiedText(call.input)
 }
 
 function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {

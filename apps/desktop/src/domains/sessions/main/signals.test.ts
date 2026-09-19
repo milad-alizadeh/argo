@@ -73,7 +73,7 @@ test('names a running Bash call by its command when no description was given', (
   })
 })
 
-test("names a running Codex command by its command when no description was given", () => {
+test('names a running Codex command by its command when no description was given', () => {
   assert.deepEqual(openActivity('exec_command', { cmd: 'bun run quality' }), {
     label: 'Ran bun run quality',
     kind: 'command',
