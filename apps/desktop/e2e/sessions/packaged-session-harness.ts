@@ -104,9 +104,10 @@ export async function createPackagedSessionHarness(request: {
     root,
     fixture,
     launch: open,
-    restart: async () => {
+    restart: async (beforeOpen?: () => Promise<void>) => {
       await closing()
       await application?.close()
+      await beforeOpen?.()
       return open()
     },
     // The window the case is driving now, which a restart replaces.

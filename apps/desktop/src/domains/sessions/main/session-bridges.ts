@@ -27,7 +27,8 @@ import { attachSessionBridge } from './bridge'
 import { SESSION_CLAUDE_EXECUTABLE_ENV, SESSION_CODEX_EXECUTABLE_ENV } from './proof-protocol'
 import { createSessionReader } from './reader'
 import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
-import { openSessionIndexOrNone, sessionIndexPath } from './session-index/open-index'
+import { sessionIndexPath } from './session-index/open-index'
+import { createWorkerSessionIndex } from './session-index/worker-index'
 import { sessionSources } from './session-sources'
 
 export function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
@@ -62,8 +63,8 @@ export function watchClaudeCompactions(home: string) {
 // The connection is this window's, so it is handed back when the window goes rather than held
 // until the process exits: a relaunch against the same `userData` then finds nothing open.
 function indexForWindow(window: BrowserWindow, userData: string) {
-  const index = openSessionIndexOrNone(sessionIndexPath(userData))
-  if (index !== undefined) window.on('closed', () => void index.close())
+  const index = createWorkerSessionIndex(sessionIndexPath(userData))
+  window.on('closed', () => void index.close())
   return index
 }
 
