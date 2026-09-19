@@ -59,6 +59,14 @@ if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStor
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
+
+function currentSetupDocumentSource() {
+  if (PROOF_ENABLED) return 'proof'
+  if (DEVELOPMENT_INSTANCE) return 'development'
+  return 'production'
+}
+
+const SETUP_DOCUMENT_SOURCE = currentSetupDocumentSource()
 if (DEVELOPMENT_INSTANCE) {
   // safeStorage keys belong to an app, so every development worktree must keep one app identity.
   app.setName(DEVELOPMENT_APPLICATION_NAME)
@@ -102,6 +110,7 @@ function createWindow(): void {
         projects,
         rendererURL,
         proofEnabled: PROOF_ENABLED,
+        setupDocumentSource: SETUP_DOCUMENT_SOURCE,
         acceptance: ACCEPTANCE_ENABLED,
       })
       window.once('closed', () => projects.close())

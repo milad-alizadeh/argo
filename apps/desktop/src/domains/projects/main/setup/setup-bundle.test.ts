@@ -1,9 +1,29 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { setupDocumentFixture } from '../../../../../test-fixtures/projects/setup-document.fixture'
-import { loadSetupDocument, SetupDocumentLoadError } from './setup-bundle'
+import {
+  ARGO_SETUP_DOCUMENT_URL,
+  loadSetupDocument,
+  SetupDocumentLoadError,
+  setupDocumentURL,
+} from './setup-bundle'
 
 const document = setupDocumentFixture()
+
+test('loads the Setup document from the current GitHub branch during development', () => {
+  const environmentName = 'ARGO_SETUP_DOCUMENT_DEVELOPMENT_URL'
+  const previous = process.env[environmentName]
+  const developmentURL =
+    'https://raw.githubusercontent.com/milad-alizadeh/argo/argo/%232392-guided-plan/packages/argo-skills/setup/project-setup.json'
+  process.env[environmentName] = developmentURL
+  try {
+    assert.equal(setupDocumentURL('production'), ARGO_SETUP_DOCUMENT_URL)
+    assert.equal(setupDocumentURL('development'), developmentURL)
+  } finally {
+    if (previous === undefined) delete process.env[environmentName]
+    else process.env[environmentName] = previous
+  }
+})
 
 test('loads a compatible Setup document from GitHub', async () => {
   const loaded = await loadSetupDocument({

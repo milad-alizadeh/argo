@@ -3,7 +3,9 @@
 Status: accepted (#2392) · 2026-09-18
 
 The desktop app loads the Setup document from the Argo repository on GitHub. The app uses a fixed
-URL for the `main` branch. Project setup requires a network connection. There is no offline path.
+URL for the `main` branch. A development launch uses the current GitHub branch so that an unmerged
+Setup document can drive the app. Project setup requires a network connection. There is no offline
+path.
 
 The app does not use a signed manifest while it is in pre-release development. The Setup document
 contains a revision, generic fields, a recommended plan, and the initial Project configuration.

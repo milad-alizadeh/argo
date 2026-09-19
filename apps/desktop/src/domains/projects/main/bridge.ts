@@ -15,7 +15,7 @@ import {
   saveManualSetup,
   validateManualSetup,
 } from './setup/manual-setup'
-import { loadSetupDocument, setupDocumentURL } from './setup/setup-bundle'
+import { loadSetupDocument, type SetupDocumentSource, setupDocumentURL } from './setup/setup-bundle'
 import type { ProjectStore as ProjectRegistryStore } from './sqlite-store'
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
@@ -32,11 +32,15 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 export function attachProjectBridge(
   window: BrowserWindow,
-  storage: { projects: ProjectRegistryStore; rendererURL: string; proofEnabled?: boolean },
+  storage: {
+    projects: ProjectRegistryStore
+    rendererURL: string
+    setupDocumentSource?: SetupDocumentSource
+  },
 ): void {
   const setupDocument = () =>
     loadSetupDocument({
-      documentURL: setupDocumentURL(storage.proofEnabled ?? false),
+      documentURL: setupDocumentURL(storage.setupDocumentSource),
       request: (url) => send(url, { method: 'GET' }),
     })
   const store = {
