@@ -1,0 +1,23 @@
+{
+  "skill_name": "improve-codebase-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review why our Claude and Codex session feeds show different text for equivalent tool calls. Map both adapter paths, the shared contract, feed rendering, roster rendering, and tests. Produce the architecture report only after every research agent returns.",
+      "expected_output": "A source-backed report that maps both harnesses and both consumers, waits for all investigations, applies the deletion test, separates adapter parsing from shared session meaning, and leaves source files and Git history unchanged.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Find the strongest architecture improvement in a large repository without a named subsystem. Use recent history to select scope, inspect the domain model and ADRs, and show why the top candidate is more than a folder cleanup.",
+      "expected_output": "A scoped report with independent evidence passes, source verification, a deletion-test result, a test-surface analysis, and explicit uncertainty.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Assess whether provider adapters belong inside the sessions domain. Trace current dependencies and consumers, identify any ADR constraint, and report a negative finding if the proposed move does not survive the deletion test.",
+      "expected_output": "A report that can reject the requested move, cites the inspected dependency flow, and distinguishes protocol knowledge from shared domain meaning.",
+      "files": []
+    }
+  ]
+}
