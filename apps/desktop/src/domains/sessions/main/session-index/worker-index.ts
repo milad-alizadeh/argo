@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import type { SessionIndex } from './contract'
@@ -19,6 +20,7 @@ export class SessionIndexWorkerStoppedError extends Error {
 }
 
 function threadPort(databasePath: string): SessionIndexWorkerPort {
+  mkdirSync(path.dirname(databasePath), { recursive: true })
   const worker = new Worker(path.join(__dirname, 'session-index-worker.js'), {
     workerData: { databasePath },
   })
