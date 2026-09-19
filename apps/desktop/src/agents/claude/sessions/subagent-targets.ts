@@ -6,10 +6,12 @@ import { facts, responded, text } from './subagent-events'
 // task, or by the name the call gave it.
 export class Agents {
   private readonly open = new Map<string, ToolCall>()
+  private readonly spawned = new Map<string, ToolCall>()
   private readonly tasks = new Map<string, string>()
 
   spawn(call: ToolCall) {
     this.open.set(call.id, call)
+    this.spawned.set(call.id, call)
   }
 
   receipt(callId: string, taskId: string) {
@@ -24,9 +26,10 @@ export class Agents {
     return this.open.get(callId)
   }
 
-  named(target: string): ToolCall | undefined {
+  // A message can reach a Subagent that already responded, so it looks through every spawn.
+  named(target: string, ended = false): ToolCall | undefined {
     const byTask = this.tasks.get(target)
-    return [...this.open.values()].find(
+    return [...(ended ? this.spawned : this.open).values()].find(
       (call) => call.id === target || call.id === byTask || text(call.input, 'name') === target,
     )
   }
@@ -39,7 +42,7 @@ export function messaged(
   agents: Agents,
 ): SubagentEvent[] {
   const target = text(call.input, 'to')
-  const spawn = target === undefined ? undefined : agents.named(target)
+  const spawn = target === undefined ? undefined : agents.named(target, true)
   if (spawn === undefined) return []
   return [
     {

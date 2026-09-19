@@ -1,11 +1,4 @@
-// What a Session's subagents amount to, read the one way the row's dots and the Agents rail
-// both read them (`cockpit-roster-row.html` · SubagentDots, #1269: the two must never disagree).
-//
-// A Subagent that responded is finished. One that has not responded is running
-// only while the Session that made it is live: a Session that settled cannot have work still
-// running under it, so its open subagents are unresolved rather than running (#1076). And a
-// Session whose own state Argo cannot place cannot be claimed to be delegating either, so its
-// subagents are not read at all.
+// One reading of a Session's Subagents for the row's dots and the Agents rail (#1269); an open one is running only while its Session is live (#1076).
 import type { SessionStatus, SessionSubagent } from '../contract/models'
 
 const LIVE: readonly SessionStatus[] = ['starting', 'running', 'permission', 'asking']

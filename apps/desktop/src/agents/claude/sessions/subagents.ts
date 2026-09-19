@@ -2,7 +2,7 @@
 // `<project>/<sessionId>.jsonl` has a folder `<project>/<sessionId>/subagents/` next to it
 // holding one `agent-<id>.jsonl` per Subagent, each with an `agent-<id>.meta.json` naming the
 // `Task` call that spawned it. That meta file is the only join between a Subagent's transcript
-// and the delegation the Roster row already draws (CONTEXT.md L3 · Subagent).
+// and the Subagent the Roster row already draws (CONTEXT.md L3 · Subagent).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isRecord } from '@/shared/validation'
