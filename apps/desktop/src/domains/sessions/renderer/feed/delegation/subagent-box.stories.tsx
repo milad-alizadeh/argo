@@ -100,6 +100,14 @@ export const MissingFact: Story = {
   },
 }
 
+export const StartedMissingFact: Story = {
+  render: () => box({ ...STARTED, model: undefined }),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('Started')).toBeVisible()
+    await expect(within(canvasElement).queryByText(/·|gpt/)).toBeNull()
+  },
+}
+
 export const ClickOpensTheSubagentFeed: Story = {
   render: () => box(RESPONDED, OPEN),
   play: async ({ canvasElement }) => {
