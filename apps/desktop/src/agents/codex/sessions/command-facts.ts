@@ -1,4 +1,4 @@
-import type { ExecuteFacts, ToolCall } from '@/domains/sessions/contract/transcript'
+import type { ExecuteFacts } from '@/domains/sessions/contract/transcript'
 
 type Input = Record<string, unknown>
 
@@ -31,16 +31,15 @@ function firstLine(command: string | null): string | null {
   return command?.trim().split('\n', 1).join('') ?? null
 }
 
-export function withCommandFacts(call: ToolCall): ToolCall {
-  const read = Object.hasOwn(COMMANDS, call.name) ? COMMANDS[call.name] : undefined
-  if (read === undefined) return call
-  const { command, wrapper = null } = read(call.input)
-  const execute: ExecuteFacts = {
+export function commandFacts(name: string, input: Input): ExecuteFacts | null {
+  const read = Object.hasOwn(COMMANDS, name) ? COMMANDS[name] : undefined
+  if (read === undefined) return null
+  const { command, wrapper = null } = read(input)
+  return {
     kind: 'execute',
     command: firstLine(command),
-    label: text(call.input.label) ?? text(call.input.description),
+    label: text(input.label) ?? text(input.description),
     text: command ?? wrapper,
     background: false,
   }
-  return { ...call, execute }
 }

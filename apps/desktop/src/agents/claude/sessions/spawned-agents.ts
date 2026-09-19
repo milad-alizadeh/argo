@@ -13,10 +13,7 @@ import {
 import { responded, started } from './subagent-events'
 import { Agents, messaged, stopped } from './subagent-targets'
 
-// The CLI renamed `Task` to `Agent`; a transcript written before the rename still names the old one.
-const SPAWNING_TOOLS = new Set(['Task', 'Agent'])
-const MESSAGING_TOOLS = new Set(['SendMessage'])
-const STOP_TOOLS = new Set(['TaskStop', 'KillShell'])
+type Control = Extract<ToolCall, { kind: 'subagent-control' }>
 
 export function withoutCalls(message: TranscriptMessage, calls: ToolCall[]): TranscriptMessage {
   const ids = new Set(calls.map((call) => call.id))
@@ -52,13 +49,17 @@ export function readingSpawnedAgents(records: TranscriptRecord[]): TranscriptRec
   const agents = new Agents()
   return records.flatMap((record): TranscriptRecord[] => {
     if (record.kind !== 'message') return [record]
-    const spawns = record.toolCalls.filter((call) => SPAWNING_TOOLS.has(call.name))
+    const spawns = record.toolCalls.filter(
+      (call): call is Control => call.kind === 'subagent-control' && call.intent === 'start',
+    )
     for (const call of spawns) agents.spawn(call)
-    const messages = record.toolCalls.filter((call) => MESSAGING_TOOLS.has(call.name))
+    const messages = record.toolCalls.filter(
+      (call): call is Control => call.kind === 'subagent-control' && call.intent === 'message',
+    )
     const ended = responses(record, agents)
     // A stop call that names no Subagent is a Shell's, which `background-stop.ts` reads.
     const stops = record.toolCalls
-      .filter((call) => STOP_TOOLS.has(call.name))
+      .filter((call): call is Control => call.kind === 'subagent-control' && call.intent === 'stop')
       .flatMap((call) => {
         const events = stopped(call, record.timestamp, agents)
         return events.length === 0 ? [] : [{ call, events }]

@@ -30,7 +30,7 @@ export function pendingAskCall(messages: TranscriptMessage[]): string | null {
   const last = messages.at(-1)
   if (last === undefined || last.role !== 'assistant') return null
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
-  const pending = last.toolCalls.find((call) => call.ask !== undefined && !answered.has(call.id))
+  const pending = last.toolCalls.find((call) => call.kind === 'ask' && !answered.has(call.id))
   return pending?.id ?? null
 }
 

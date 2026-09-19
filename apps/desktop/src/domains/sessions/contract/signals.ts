@@ -12,15 +12,8 @@ export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task'
 
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
-const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
-const TEXT_FIELDS = ['pattern', 'description', 'command', 'url', 'query']
-
 function calls(messages: TranscriptMessage[]): ToolCall[] {
   return messages.flatMap((message) => message.toolCalls)
-}
-
-function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
 // When each call was written, and when the record answering it was. A call the transcript holds
@@ -80,7 +73,7 @@ export function readShellCommands(
   const times = callTimes(messages)
   const ended = endings(notifications)
   return calls(messages)
-    .flatMap((call) => (call.execute === undefined ? [] : [{ call, execute: call.execute }]))
+    .flatMap((call) => (call.kind === 'execute' ? [{ call, execute: call }] : []))
     .flatMap(({ call, execute }) => {
       const receipt = receipts.get(call.id)
       if (receipt === undefined && answered.has(call.id)) return []
@@ -113,32 +106,39 @@ export function readTurnStartedAt(messages: TranscriptMessage[]): string | null 
   return messages[lastPromptIndex(messages)]?.timestamp ?? null
 }
 
-function readTarget(input: Record<string, unknown>): string | null {
-  for (const field of PATH_FIELDS) {
-    const path = text(input[field])
-    if (path !== null) return path.split('/').findLast((segment) => segment.length > 0) ?? path
-  }
-  for (const field of TEXT_FIELDS) {
-    const value = text(input[field])
-    if (value !== null) return value.trim().split('\n', 1).join('')
-  }
-  return null
-}
-
-// What a classified call was about, read from the adapter's facts before any raw input field.
+// What a classified call was about, expressed only in the typed adapter facts.
 function callTarget(call: ToolCall): string | null {
-  const edited = call.edit?.files.at(-1)
-  if (edited !== undefined) return edited.file === null ? null : fileName(edited.file)
-  if (call.read !== undefined) return call.read.target === null ? null : fileName(call.read.target)
-  if (call.search !== undefined) return call.search.query
-  if (call.fetch !== undefined) return call.fetch.url
-  return readTarget(call.input)
+  switch (call.kind) {
+    case 'edit': {
+      const edited = call.files.at(-1)
+      return edited?.file === null || edited === undefined ? null : fileName(edited.file)
+    }
+    case 'read':
+      return call.target === null ? null : fileName(call.target)
+    case 'search':
+      return call.query
+    case 'fetch':
+      return call.url
+    case 'execute':
+      return null
+    case 'skill':
+      return call.title
+    case 'other':
+      return call.label
+    case 'ask':
+      return call.questions[0]?.question ?? null
+    case 'subagent-control':
+      return call.name
+  }
 }
 
 function callActivity(call: ToolCall, open: boolean): SessionActivity {
   // An edit over several files is named by its newest file.
-  const { label, kind } = toolPresentation(call, Math.max(0, (call.edit?.files.length ?? 1) - 1))
-  return { label, kind, open, tool: call.name, target: callTarget(call) }
+  const { label, kind } = toolPresentation(
+    call,
+    Math.max(0, (call.kind === 'edit' ? call.files.length : 1) - 1),
+  )
+  return { label, kind, open, tool: call.kind, target: callTarget(call) }
 }
 
 function thoughtActivity(message: TranscriptMessage): SessionActivity | null {
@@ -156,7 +156,9 @@ export function readActivity(messages: TranscriptMessage[]): SessionActivity | n
   const answered = new Set(turn.flatMap((message) => message.answeredCalls))
   let settled: ToolCall | undefined
   for (const message of turn.toReversed()) {
-    const call = message.toolCalls.at(-1)
+    const call = message.toolCalls.findLast(
+      (candidate) => candidate.kind !== 'ask' && candidate.kind !== 'subagent-control',
+    )
     // An unanswered call older than a settled one was abandoned, not left running.
     if (call !== undefined && settled === undefined && !answered.has(call.id))
       return callActivity(call, true)

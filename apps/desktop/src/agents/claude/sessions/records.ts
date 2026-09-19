@@ -61,7 +61,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   if (typeof record.uuid !== 'string') return null
   const results = readToolResults(content, record.toolUseResult)
   const calls = readToolCalls(content)
-  const planChanges = readPlanChanges(calls, results, record.toolUseResult)
+  const planChanges = readPlanChanges(content, results, record.toolUseResult)
   const parsed: TranscriptMessage = {
     ...(planChanges.length === 0 ? {} : { planChanges }),
     toolCalls: calls,

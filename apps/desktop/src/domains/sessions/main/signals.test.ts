@@ -61,7 +61,7 @@ test('uses the Feed label for a non-command tool while retaining its activity me
     label: 'Read app.ts',
     kind: 'read',
     open: true,
-    tool: 'file',
+    tool: 'read',
     target: 'app.ts',
   })
 })
@@ -71,15 +71,11 @@ test('reads a call closed once the transcript holds its result', () => {
     promptMessage(),
     callMessage({
       id: 'call-1',
-      name: 'command',
-      input: {},
-      execute: {
-        kind: 'execute',
-        command: 'bun run quality',
-        label: null,
-        text: 'bun run quality',
-        background: false,
-      },
+      kind: 'execute',
+      command: 'bun run quality',
+      label: null,
+      text: 'bun run quality',
+      background: false,
     }),
     resultMessage('call-1', { callId: 'call-1', blocks: [], failed: false }),
   ])

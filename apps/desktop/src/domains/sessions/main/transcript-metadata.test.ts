@@ -24,8 +24,11 @@ test('keeps roster facts while dropping Feed payloads', () => {
     toolCalls: [
       {
         id: 'tool-1',
-        name: 'Bash',
-        input: { command: 'git status', irrelevant: 'x'.repeat(10_000) },
+        kind: 'execute',
+        command: 'git status',
+        label: null,
+        text: `x`.repeat(10_000),
+        background: false,
       },
     ],
     toolResults: [
@@ -43,7 +46,16 @@ test('keeps roster facts while dropping Feed payloads', () => {
   assert.deepEqual(rosterMetadata(record), {
     ...record,
     blocks: [{ shape: 'prose', text: '  First prompt' }],
-    toolCalls: [{ id: 'tool-1', name: 'Bash', input: { command: 'git status' } }],
+    toolCalls: [
+      {
+        id: 'tool-1',
+        kind: 'execute',
+        command: 'git status',
+        label: null,
+        text: null,
+        background: false,
+      },
+    ],
     toolResults: [
       {
         callId: 'tool-2',
@@ -74,24 +86,20 @@ test('keeps the files an edit touched and drops its diff', () => {
       toolCalls: [
         {
           id: 'edit-1',
-          name: 'files',
-          input: {},
-          edit: {
-            kind: 'edit',
-            files: [
-              {
-                change: 'update',
-                file: 'src/app.ts',
-                diff: `@@ -1,1 +1,1 @@\n-${'x'.repeat(10_000)}\n+y`,
-                lineCounts: { added: 1, removed: 1 },
-              },
-            ],
-          },
+          kind: 'edit',
+          files: [
+            {
+              change: 'update',
+              file: 'src/app.ts',
+              diff: `@@ -1,1 +1,1 @@\n-${'x'.repeat(10_000)}\n+y`,
+              lineCounts: { added: 1, removed: 1 },
+            },
+          ],
         },
       ],
     }),
   )
-  assert.deepEqual(metadata.toolCalls[0]?.edit?.files, [
+  assert.deepEqual(metadata.toolCalls[0]?.kind === 'edit' ? metadata.toolCalls[0].files : [], [
     { change: 'update', file: 'src/app.ts', diff: '', lineCounts: { added: 1, removed: 1 } },
   ])
 })

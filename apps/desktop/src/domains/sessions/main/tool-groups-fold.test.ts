@@ -7,7 +7,7 @@ import type { ToolCall } from '@/domains/sessions/contract/transcript'
 import { searchCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
-  return { id, name: 'Bash', input: { command } }
+  return { id, kind: 'execute', command, label: null, text: command, background: false }
 }
 
 // A call with a result has settled; one without is still running.
@@ -55,9 +55,8 @@ test('a run that folds into nothing keeps its row identity', () => {
 test('a loaded skill never folds into a neighbouring count', () => {
   const skill: ToolCall = {
     id: 's',
-    name: 'skill-tool',
-    input: {},
-    skill: { kind: 'skill', title: 'Simple english' },
+    kind: 'skill',
+    title: 'Simple english',
   }
   const grouped = groupToolRuns(
     settledRows([bash('1', 'bun test'), skill, bash('2', 'bun run typecheck')]),

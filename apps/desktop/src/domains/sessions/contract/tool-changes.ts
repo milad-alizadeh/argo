@@ -2,10 +2,9 @@
 import type { ToolCall, ToolResult } from '@/domains/sessions/contract/transcript'
 import { resultText } from '@/domains/sessions/contract/transcript'
 
-export function searchLabel({ search, fetch }: ToolCall) {
-  if (fetch !== undefined) return `Fetched ${fetch.url ?? 'a page'}`
-  if (search === undefined) return 'Searched'
-  return `Searched ${search.query ?? (search.scope === 'web' ? 'the web' : 'files')}`
+export function searchLabel(call: Extract<ToolCall, { kind: 'search' | 'fetch' }>) {
+  if (call.kind === 'fetch') return `Fetched ${call.url ?? 'a page'}`
+  return `Searched ${call.query ?? (call.scope === 'web' ? 'the web' : 'files')}`
 }
 
 // A web call's outcome is the first line of its output, which the Codex app shows beside the
