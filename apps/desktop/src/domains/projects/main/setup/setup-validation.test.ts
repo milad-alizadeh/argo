@@ -69,3 +69,10 @@ test('validates an unsaved configuration without replacing the configuration fil
   assert.equal(await readFile(path.join(project, '.argo', 'settings.json'), 'utf8'), savedSource)
   await access(path.join(project, 'test-ran'))
 })
+
+test('passes a run command that is still running after the grace period', async (context) => {
+  const project = await fixture(context)
+  const draftSource = source({ setup: 'true', run: 'sleep 60', build: 'true', test: 'true' })
+
+  assert.equal(await validateProjectConfiguration(project, draftSource), true)
+})

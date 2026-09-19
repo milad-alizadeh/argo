@@ -112,7 +112,7 @@ test('writes manual configuration in the setup worktree, not the current checkou
     },
   })
 
-  assert.equal(checkpoint.phase, 'editing')
+  assert.equal(checkpoint.phase, 'ready')
   assert.equal(
     await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.json'), 'utf8'),
     source,
