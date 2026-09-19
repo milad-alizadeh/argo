@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { ToolResult } from '../contract/tool-feed'
-import { toolCall as call, onlyToolRow } from './tool-feed-test-fixtures'
+import { toolCall as call, onlyToolRow, readCall } from './tool-feed-test-fixtures'
 
 test('an Edit call carries its diff evidence before the result lands', () => {
   const row = onlyToolRow([
@@ -38,18 +38,17 @@ test('a Write call opens as a diff of added lines, never its result text', () =>
   assert.deepEqual(row.lineCounts, { added: 2, removed: 0 })
 })
 
-test('a Read call with no result yet has no evidence to open', () => {
-  const row = onlyToolRow([
-    call({ id: 'call-1', name: 'Read', input: { file_path: 'src/app.ts' } }),
-  ])
+test('a file read with no result yet has no evidence to open', () => {
+  const row = onlyToolRow([readCall('call-1', 'src/app.ts')])
   assert.equal(row.label, 'Read app.ts')
   assert.equal(row.status, 'running')
   assert.equal(row.evidence, null)
 })
 
 test('names a file by its last segment, not the absolute path that reached it', () => {
+  const read = onlyToolRow([readCall('call-1', '/Users/someone/project/src/app.ts')])
+  assert.equal(read.label, 'Read app.ts')
   for (const { name, label } of [
-    { name: 'Read', label: 'Read app.ts' },
     { name: 'Edit', label: 'Edited app.ts' },
     { name: 'Write', label: 'Created app.ts' },
   ]) {

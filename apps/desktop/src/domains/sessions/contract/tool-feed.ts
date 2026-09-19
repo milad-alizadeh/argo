@@ -46,15 +46,11 @@ function commandLabel({ label, command }: ExecuteFacts) {
 
 const TOOL_DETAILS = {
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
-  Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
   Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
   Skill: (call: ToolCall) => ({
     kind: 'skill' as const,
     label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
   }),
-  // Codex names a search by its first query, or a fetch by its page; its adapter lifts those out
-  // of the script as `query` and `url`.
-  web__run: (call: ToolCall) => ({ kind: 'searched' as const, label: searchLabel(call) }),
   apply_patch: (call: ToolCall) => {
     const change = patchOf(call)
     return change === null
@@ -62,8 +58,6 @@ const TOOL_DETAILS = {
       : { kind: change.kind, label: change.label }
   },
 } as const
-
-const EVIDENCE_KINDS = { Read: 'document' } as const
 
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
@@ -76,11 +70,12 @@ function skillTitle(slug: string): string {
 
 // A row names the file, never the path that reached it: every surface drawing this label is narrow
 // and the absolute path is both too long to read and the same prefix on every line (#2273).
-function filePath(call: ToolCall) {
-  const path = call.input.file_path
+export function fileName(path: unknown) {
   if (typeof path !== 'string') return 'file'
   return path.split('/').findLast((segment) => segment.length > 0) ?? path
 }
+
+const filePath = (call: ToolCall) => fileName(call.input.file_path)
 
 // Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
 // compact surface never has to rebuild reader-facing words from the CLI's execution type. An
@@ -90,6 +85,10 @@ export function toolPresentation(call: ToolCall) {
   // The agent's own description is already a whole label; the command's first line is the fallback.
   if (call.execute !== undefined)
     return { kind: 'command' as const, label: commandLabel(call.execute) }
+  if (call.read !== undefined)
+    return { kind: 'read' as const, label: `Read ${fileName(call.read.target)}` }
+  if (call.search !== undefined || call.fetch !== undefined)
+    return { kind: 'searched' as const, label: searchLabel(call) }
   return (
     TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
       kind: 'tool' as const,
@@ -119,7 +118,7 @@ function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['ev
   if (change !== null) return { kind: 'diff', title: presentation.label, source: change.patch }
   const source = result === undefined ? null : resultText(result.blocks)
   if (source === null) return null
-  const kind = EVIDENCE_KINDS[call.name as keyof typeof EVIDENCE_KINDS] ?? 'output'
+  const kind = call.read === undefined ? 'output' : 'document'
   return { kind, title: presentation.label, source }
 }
 
@@ -139,7 +138,9 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.execute !== undefined) return call.execute.text
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
-  if (call.name === 'web__run') return text(call.input.url) ?? text(call.input.query)
+  if (call.fetch !== undefined) return call.fetch.url
+  if (call.search !== undefined) return call.search.query
+  if (call.read !== undefined) return null
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
 }
 

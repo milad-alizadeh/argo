@@ -28,6 +28,19 @@ export function executeCall({
   }
 }
 
+// A file read, a search and a web page read the way an adapter hands them over.
+export function readCall(id: string, target: string | null): ToolCall {
+  return { id, name: 'file', input: {}, read: { kind: 'read', target } }
+}
+
+export function searchCall(id: string, query: string | null, scope: 'files' | 'web'): ToolCall {
+  return { id, name: 'search', input: {}, search: { kind: 'search', scope, query } }
+}
+
+export function fetchCall(id: string, url: string | null): ToolCall {
+  return { id, name: 'page', input: {}, fetch: { kind: 'fetch', url } }
+}
+
 export function onlyToolRow(calls: ToolCall[], results = new Map<string, ToolResult>()): ToolRow {
   const [row] = toolRows(calls, { results, skillBodies: new Map() })
   if (row === undefined || row.shape !== 'tool') throw new Error('expected a tool row')

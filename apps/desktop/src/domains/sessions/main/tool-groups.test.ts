@@ -5,6 +5,7 @@ import { type SessionFeedRow, sessionFeedRowSchema } from '../contract/feed-rows
 import { toolRows } from '../contract/tool-feed'
 import { groupToolRuns, TOOL_KIND_PRESENTATION } from '../contract/tool-groups'
 import type { ToolCall } from '../contract/transcript'
+import { fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
@@ -128,17 +129,17 @@ test('a long tool run keeps its group id inside the Session feed contract', () =
 })
 
 test('a web search reads as its query under a globe, and a fetch as its page', () => {
-  const found = group(rowsFor([{ id: 'w', name: 'web__run', input: { query: 'argo cockpit' } }]))
+  const found = group(rowsFor([searchCall('w', 'argo cockpit', 'web')]))
   assert.equal(found.calls[0]?.kind, 'searched')
   assert.equal(found.calls[0]?.label, 'Searched argo cockpit')
   assert.equal(TOOL_KIND_PRESENTATION.searched.icon, 'globe')
   const url = 'https://rdap.verisign.com/com/v1/domain/argo.com'
-  const fetched = group(rowsFor([{ id: 'f', name: 'web__run', input: { url } }]))
+  const fetched = group(rowsFor([fetchCall('f', url)]))
   assert.equal(fetched.calls[0]?.label, `Fetched ${url}`)
 })
 
 test('a web call that Codex reported failing carries the outcome in its title', () => {
-  const call: ToolCall = { id: 'f', name: 'web__run', input: { url: 'https://x.test/a' } }
+  const call = fetchCall('f', 'https://x.test/a')
   const results = new Map([
     [
       'f',
