@@ -34,6 +34,15 @@ async function expectProjectOpen(page: Page) {
   await expect(page.getByRole('heading', { name: /before starting Sessions/ })).toHaveCount(0)
 }
 
+async function dismissValidationToast(page: Page) {
+  const successToast = page
+    .getByRole('region', { name: 'Notifications' })
+    .getByText('All Project commands passed validation.')
+  await successToast.waitFor()
+  await page.mouse.move(0, 0)
+  await expect(successToast).toBeHidden({ timeout: 10_000 })
+}
+
 async function openRemoteSetup(
   root: string,
   packagedApplication: string,
@@ -76,12 +85,7 @@ test('applies the guided plan and keeps the Project ready after restart', async 
     await expect(page.getByRole('textbox', { name: 'Run command' })).toHaveValue('true')
     await expect(page.getByRole('textbox', { name: 'Test command' })).toHaveValue('true')
     await page.getByRole('button', { name: 'Test setup' }).click()
-    const successToast = page
-      .getByRole('region', { name: 'Notifications' })
-      .getByText('All Project commands passed validation.')
-    await successToast.waitFor()
-    await page.mouse.move(0, 0)
-    await expect(successToast).toBeHidden({ timeout: 10_000 })
+    await dismissValidationToast(page)
     await page.getByRole('button', { name: 'Apply setup' }).click()
     await expectProjectOpen(page)
     const saved = JSON.parse(await readManualSetupConfiguration(fixture))
@@ -124,10 +128,7 @@ test('keeps raw configuration in Import config and opens the tested Project', as
     await page.getByRole('button', { name: 'Back' }).click()
     await page.getByRole('button', { name: 'Import config' }).click()
     await page.getByRole('button', { name: 'Test configuration' }).click()
-    await page
-      .getByRole('region', { name: 'Notifications' })
-      .getByText('All Project commands passed validation.')
-      .waitFor()
+    await dismissValidationToast(page)
     await page.getByRole('button', { name: 'Import config' }).click()
     await expectProjectOpen(page)
   } finally {
