@@ -25,3 +25,12 @@ export type SubagentEvent = SubagentFacts & {
     | { event: 'started' | 'messaged' }
     | { event: 'responded'; state: BackgroundState; reply?: string }
   )
+
+// A collaboration call the Subagent events read a fact from: the model a spawn chose, or the target a stop names.
+export type SubagentCall = {
+  intent: 'start' | 'stop'
+  callId: string
+  timestamp: string | null
+  target: string | null
+  model: string | null
+}

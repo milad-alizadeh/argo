@@ -1,6 +1,6 @@
 import type { FeedImageUrl } from './feed-images'
 import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
-import type { SubagentEvent } from './subagent-event'
+import type { SubagentCall, SubagentEvent } from './subagent-event'
 import type { ToolCall } from './tool-call'
 
 export type {
@@ -118,13 +118,7 @@ export type TranscriptRecord =
       subagent?: boolean
       // A collaboration call the Subagent events read a fact from: the model a spawn chose, or the
       // target a stop names (`codex/sessions/subagent-calls.ts`).
-      subagentCall?: {
-        intent: 'start' | 'stop'
-        callId: string
-        timestamp: string | null
-        target: string | null
-        model: string | null
-      }
+      subagentCall?: SubagentCall
       // Codex records a spawned thread's parent and path in its session metadata. The adapter
       // uses them to open that thread from the parent Session's Subagent row.
       parentSessionId?: string | null
