@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import type { SetupCheckpoint } from '../sqlite-store'
 import { saveManualProjectConfiguration } from './manual-configuration'
+import { beginManualSetup, MANUAL_CONFIGURATION_TEMPLATE, saveManualSetup } from './manual-setup'
 
 const run = promisify(execFile)
 
@@ -55,4 +56,48 @@ test('writes manual configuration in the setup worktree, not the current checkou
   ])
   assert.equal(ignored.stdout.trim(), '.argo/settings.local.json')
   assert.deepEqual(stored, checkpoint)
+})
+
+function registryFor(project: string) {
+  let stored: SetupCheckpoint | null = null
+  return {
+    projects: {
+      read: () => ({ projects: [{ id: 'project-1', path: project }], selectedId: 'project-1' }),
+      readSetupCheckpoint: () => stored,
+      updateProjectPath: () => {},
+      writeSetupCheckpoint: (next: SetupCheckpoint) => {
+        stored = next
+      },
+    },
+  } as unknown as Parameters<typeof beginManualSetup>[1]
+}
+
+test('opens the starter configuration as unsaved', async (context) => {
+  const { project } = await setupWorktreeFixture(context)
+  const reply = await beginManualSetup(
+    { projectId: 'project-1', requestId: 'r1' },
+    registryFor(project),
+  )
+
+  assert.equal(reply.type === 'project.setup.editing' && reply.saved, false)
+})
+
+test('opens a saved configuration as saved', async (context) => {
+  const { project } = await setupWorktreeFixture(context)
+  const store = registryFor(project)
+  await saveManualSetup({ projectId: 'project-1', requestId: 'r1', source }, store)
+  const reply = await beginManualSetup({ projectId: 'project-1', requestId: 'r2' }, store)
+
+  assert.equal(reply.type === 'project.setup.editing' && reply.saved, true)
+})
+
+test('tells the reader that every target needs its four commands', async (context) => {
+  const { project } = await setupWorktreeFixture(context)
+  const reply = await saveManualSetup(
+    { projectId: 'project-1', requestId: 'r1', source: MANUAL_CONFIGURATION_TEMPLATE },
+    registryFor(project),
+  )
+
+  assert.equal(reply.type, 'project.error')
+  assert.match(reply.type === 'project.error' ? reply.message : '', /setup, run, build and test/)
 })
