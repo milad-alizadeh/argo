@@ -1,10 +1,10 @@
-import { LoaderCircle } from 'lucide-react'
+import { Loader } from '../../../../platform/renderer/components/loader'
 
 export function HandoffMarker() {
   return (
     <article className="feed-row feed-row--marker grid gap-2 type-body" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+        <Loader aria-hidden={true} />
         <span>Handing off to a new session…</span>
       </div>
     </article>

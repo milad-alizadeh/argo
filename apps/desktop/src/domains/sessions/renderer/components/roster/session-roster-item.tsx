@@ -1,6 +1,7 @@
 import { Archive } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loader } from '../../../../../platform/renderer/components/loader'
 import { useLiveActivityText } from '../../feed/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../../harness/harnesses'
@@ -17,6 +18,10 @@ import {
   STATUS_LABELS,
   STATUS_MARKS,
 } from './session-roster-status'
+import {
+  unreadMarkerPrototypeDot,
+  useUnreadMarkerPrototypeVariant,
+} from './unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -63,6 +68,7 @@ export function SessionRosterItem({
   selected,
   session,
   tabIndex,
+  prototypeUnread,
 }: {
   archived: boolean
   checked: boolean
@@ -73,13 +79,21 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
+  prototypeUnread?: boolean
 }) {
   const { t } = useTranslation('sessions')
+  const unreadPrototype = useUnreadMarkerPrototypeVariant()
   const [pointerFocused, setPointerFocused] = useState(false)
   const rowHighlight = rowHighlightOf(checked, selected, archived)
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
+  const running = session.status === 'running' || session.status === 'starting'
+  const prototypeDot = unreadMarkerPrototypeDot({
+    blocked: session.status === 'asking' || session.status === 'permission',
+    failed: session.status === 'ended' || session.status === 'stopped',
+    unread: prototypeUnread ?? unreadPrototype !== null,
+  })
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -94,7 +108,7 @@ export function SessionRosterItem({
     <div className="min-w-0">
       <button
         aria-current={selected ? 'page' : undefined}
-        className={`group flex w-full select-none items-start gap-2 rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
+        className={`group relative flex w-full select-none items-start gap-2 overflow-hidden rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
         data-archived={archived}
         data-session-id={session.id}
         onBlur={() => setPointerFocused(false)}
@@ -110,7 +124,8 @@ export function SessionRosterItem({
             {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
           </span>
           <span
-            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${STATUS_MARKS[session.status]}`}
+            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}
+            data-slot="session-status"
           />
         </span>
         <span className="sr-only">{STATUS_LABELS[session.status]}</span>
@@ -137,6 +152,10 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
+            {running ? <Loader aria-hidden={true} className="ml-auto" size="meta" /> : null}
+            {unreadPrototype === null || prototypeUnread === false ? null : (
+              <span className="sr-only">{t('rosterStatusUnread')}</span>
+            )}
           </span>
           <ActivityLine session={session} />
           {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
