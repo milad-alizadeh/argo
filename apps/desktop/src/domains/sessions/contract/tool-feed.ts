@@ -2,11 +2,21 @@ import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
 import type { SessionFeedRow } from './models'
 import { fileChange, patchOf, searchLabel, searchOutcome } from './tool-changes'
-import { resultText, type ToolCall, type ToolResult as TranscriptToolResult } from './transcript'
+import {
+  type BackgroundState,
+  type ExecuteFacts,
+  resultText,
+  type ToolCall,
+  type ToolResult as TranscriptToolResult,
+} from './transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
-export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'>
+// A background command's receipt is its only result until a later record ends it: `ended` is how.
+export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'> & {
+  background?: true
+  ended?: BackgroundState
+}
 
 export function displayedToolLabel(
   call: { kind: ToolRow['kind'] | 'thought'; label: string },
@@ -30,34 +40,17 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-function commandLabel(call: ToolCall, commandKey: 'command' | 'cmd') {
-  const suppliedLabel = text(call.input.label) ?? text(call.input.description)
-  if (suppliedLabel !== null) return suppliedLabel
-  const command = text(call.input[commandKey])?.split('\n')[0]
-  return `Ran ${command ?? 'command'}`
+function commandLabel({ label, command }: ExecuteFacts) {
+  return label ?? `Ran ${command ?? 'command'}`
 }
 
 const TOOL_DETAILS = {
-  // The agent's own description is already a whole label; the raw command, first line, is the fallback.
-  Bash: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'command'),
-  }),
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Read: (call: ToolCall) => ({ kind: 'read' as const, label: `Read ${filePath(call)}` }),
   Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
   Skill: (call: ToolCall) => ({
     kind: 'skill' as const,
     label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
-  }),
-  // Codex's `exec` record carries wrapper source; its adapter extracts `cmd` when the wrapper has one.
-  exec_command: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'cmd'),
-  }),
-  exec: (call: ToolCall) => ({
-    kind: 'command' as const,
-    label: commandLabel(call, 'cmd'),
   }),
   // Codex names a search by its first query, or a fetch by its page; its adapter lifts those out
   // of the script as `query` and `url`.
@@ -70,7 +63,7 @@ const TOOL_DETAILS = {
   },
 } as const
 
-const EVIDENCE_KINDS = { Bash: 'output', Read: 'document' } as const
+const EVIDENCE_KINDS = { Read: 'document' } as const
 
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
@@ -94,6 +87,9 @@ function filePath(call: ToolCall) {
 // unclassified tool reads as something the agent ran, the same verb as a command, under the
 // title the agent gave the call when it gave one (Codex's `js` writes `{title, code}`).
 export function toolPresentation(call: ToolCall) {
+  // The agent's own description is already a whole label; the command's first line is the fallback.
+  if (call.execute !== undefined)
+    return { kind: 'command' as const, label: commandLabel(call.execute) }
   return (
     TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
       kind: 'tool' as const,
@@ -127,16 +123,21 @@ function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['ev
   return { kind, title: presentation.label, source }
 }
 
+const ENDED_STATUS = {
+  completed: 'succeeded',
+  failed: 'failed',
+  interrupted: 'interrupted',
+} as const satisfies Record<BackgroundState, ToolRow['status']>
+
 function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
   if (result === undefined) return 'running'
+  if (result.background === true)
+    return result.ended === undefined ? 'running' : ENDED_STATUS[result.ended]
   return result.failed ? 'failed' : 'succeeded'
 }
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
-  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
-  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
-  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
-  if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
+  if (call.execute !== undefined) return call.execute.text
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
   if (call.name === 'web__run') return text(call.input.url) ?? text(call.input.query)
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)

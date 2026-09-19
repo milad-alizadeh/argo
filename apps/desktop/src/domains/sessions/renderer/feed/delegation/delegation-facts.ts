@@ -35,7 +35,7 @@ export const PHASE_STATES: Record<DelegationPhase, WorkState> = {
   failed: 'failed',
 }
 
-const FAILED_STATES: ReadonlySet<WorkState> = new Set(['failed', 'killed', 'stopped'])
+const FAILED_STATES: ReadonlySet<WorkState> = new Set(['failed', 'interrupted'])
 
 // A block whose linked work is unknown still runs, as far as the Feed can tell.
 export function phaseOfState(state: WorkState | null): DelegationPhase {

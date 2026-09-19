@@ -40,7 +40,7 @@ function landed(call: ToolCall, message: TranscriptMessage): Delegation {
   return { ...spawned(call, message), uuid: `${call.id}:landed`, status: 'completed' }
 }
 
-function withoutSpawns(message: TranscriptMessage, spawns: ToolCall[]): TranscriptMessage {
+export function withoutCalls(message: TranscriptMessage, spawns: ToolCall[]): TranscriptMessage {
   const ids = new Set(spawns.map((call) => call.id))
   return {
     ...message,
@@ -69,7 +69,7 @@ export function readingSpawnedAgents(records: TranscriptRecord[]): TranscriptRec
     if (record.kind !== 'message') return [record]
     const spawns = record.toolCalls.filter(isSpawn)
     for (const call of spawns) open.set(call.id, call)
-    const message = spawns.length === 0 ? record : withoutSpawns(record, spawns)
+    const message = spawns.length === 0 ? record : withoutCalls(record, spawns)
     return [message, ...spawns.map((call) => spawned(call, record)), ...landings(record, open)]
   })
 }

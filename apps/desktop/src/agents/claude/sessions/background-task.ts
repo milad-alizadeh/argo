@@ -1,21 +1,30 @@
 import { isRecord } from '@/shared/validation'
-import {
-  BACKGROUND_STATES,
-  type BackgroundState,
-  type BackgroundTaskRecord,
+import type {
+  BackgroundState,
+  BackgroundTaskRecord,
 } from '../../../domains/sessions/contract/transcript'
 import { taggedField } from '../../envelope-tags'
 
-function isBackgroundState(value: string | null): value is BackgroundState {
-  return value !== null && (BACKGROUND_STATES as readonly string[]).includes(value)
+// The CLI's notification words, folded into the states the contract holds.
+const NOTIFICATION_STATES = {
+  completed: 'completed',
+  failed: 'failed',
+  killed: 'interrupted',
+  stopped: 'interrupted',
+} as const satisfies Record<string, BackgroundState>
+
+function backgroundState(value: string | null): BackgroundState | null {
+  return value !== null && Object.hasOwn(NOTIFICATION_STATES, value)
+    ? NOTIFICATION_STATES[value as keyof typeof NOTIFICATION_STATES]
+    : null
 }
 
 // The ending a `<task-notification>` body names, or null when it names no task, call or state.
 export function readTaskEnding(body: string, timestamp: unknown): BackgroundTaskRecord | null {
   const taskId = taggedField(body, 'task-id')
   const callId = taggedField(body, 'tool-use-id')
-  const state = taggedField(body, 'status')
-  if (taskId === null || callId === null || !isBackgroundState(state)) return null
+  const state = backgroundState(taggedField(body, 'status'))
+  if (taskId === null || callId === null || state === null) return null
   return {
     kind: 'background-task',
     taskId,
