@@ -17,8 +17,8 @@ export async function saveManualProjectConfiguration(request: {
   documentRevision: string
 }): Promise<SetupCheckpoint> {
   const { documentRevision, project, source, store } = request
-  const previous = store.readSetupCheckpoint(project.id)
-  const worktreePath = previous?.worktreePath ?? (await prepareSetupWorktree(project))
+  const worktreePath =
+    store.readSetupCheckpoint(project.id)?.worktreePath ?? (await prepareSetupWorktree(project))
   if (!(await saveProjectConfiguration(worktreePath, source)))
     throw new Error('Invalid configuration.')
   const file = path.join(worktreePath, '.gitignore')
@@ -29,14 +29,11 @@ export async function saveManualProjectConfiguration(request: {
     const separator = current && !current.endsWith('\n') ? '\n' : ''
     await writeFile(file, `${current}${separator}${missing.join('\n')}\n`)
   }
-  const phase: SetupCheckpoint['phase'] =
-    previous?.phase === 'ready' && previous.configurationSource === source ? 'ready' : 'editing'
-  const configurationSource =
-    phase === 'ready' ? ((await readProjectConfigurationSource(worktreePath)) ?? source) : source
+  const configurationSource = (await readProjectConfigurationSource(worktreePath)) ?? source
   const checkpoint = {
     projectId: project.id,
     worktreePath,
-    phase,
+    phase: 'ready' as const,
     configurationSource,
     documentRevision,
   }

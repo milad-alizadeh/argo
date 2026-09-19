@@ -8,6 +8,7 @@ import {
   projectError,
 } from '@/domains/projects/contract/contract'
 import { toSummary } from '@/domains/projects/main/presentation'
+import { parseProjectConfiguration } from '@/domains/projects/main/project-configuration'
 import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
 import { validateProjectConfiguration } from '@/domains/projects/main/setup/setup-validation'
 import { prepareSetupWorktree } from '@/domains/projects/main/setup/setup-worktree'
@@ -88,6 +89,9 @@ export async function validateManualSetup(
   const context = manualSetupContext(request, store)
   if ('type' in context) return context
   const { checkpoint, project } = context
+  if (parseProjectConfiguration(request.source) === null) {
+    return projectError('invalid-configuration', request.requestId)
+  }
   const valid = await validateProjectConfiguration(checkpoint.worktreePath, request.source)
   store.projects.writeSetupCheckpoint({
     ...checkpoint,

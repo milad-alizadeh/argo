@@ -78,14 +78,6 @@ async function applySetup(
   if (!validJson(context)) return
   context.setSaving('apply')
   context.setMessage(null)
-  const validated = await window.argo.validateProjectSetup({
-    projectId: context.projectId,
-    source: context.source,
-  })
-  if (validated.type !== 'project.setup.validated' || !validated.valid) {
-    setReplyError(context, validated)
-    return
-  }
   const saved = await window.argo.saveProjectSetup({
     projectId: context.projectId,
     source: context.source,
