@@ -65,11 +65,7 @@ function draftRows(rows: readonly SessionFeedRow[], live: LiveMessage[]): Sessio
 // the request's own item ID, unprefixed: a decision names it back to `decideQuestion`, which
 // checks it against the same pending question's `itemId` (question-protocol.ts).
 function questionRow(pending: PendingCodexQuestion): SessionFeedRow {
-  return askRow(
-    pending.itemId,
-    { kind: 'ask', questions: pending.questions, unsupported: pending.unsupported },
-    null,
-  )
+  return askRow(pending.itemId, pending, null)
 }
 
 function combinedOverlay(

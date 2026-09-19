@@ -42,7 +42,7 @@ export function recordCodexNotification({
   const question = readRequestUserInput(message)
   if (question?.threadId === sessionId) {
     session.pendingQuestion = question
-    session.status = 'asking'
+    if (session.status === 'running') session.status = 'asking'
     return true
   }
   if (session.messages.record(message)) return false

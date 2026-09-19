@@ -11,7 +11,7 @@ import { compactCodexSession } from './compact-session'
 import { readInterrupt } from './interrupt-protocol'
 import type { LiveMessage, LiveMessages } from './live-messages'
 import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
-import { codexAnswersFor, type PendingCodexQuestion } from './question-protocol'
+import { codexAnswersFor, type PendingCodexQuestion, settleQuestion } from './question-protocol'
 import { readRename } from './rename-protocol'
 import { createResumingChannel } from './resuming-channel'
 import { beginSession, startTurn } from './turn-lifecycle'
@@ -150,7 +150,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       const pending = session.pendingQuestion
       if (pending.itemId !== questionId) return false
       session.channel.respond(pending.requestId, codexAnswersFor(pending, answers))
-      Object.assign(session, { pendingQuestion: null, status: 'running' })
+      settleQuestion(session)
       return true
     },
     close: closeManagedSessions(sessions, driver.ownership),

@@ -143,7 +143,11 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 
 
 // The one ask row both harnesses draw: the question verbatim, never summarised into a label the
 // way every other tool call is described.
-export function askRow(id: string, ask: AskFacts, answer: string | null): AskRow {
+export function askRow(
+  id: string,
+  ask: Pick<AskFacts, 'questions' | 'unsupported'>,
+  answer: string | null,
+): AskRow {
   return { shape: 'ask', id, questions: ask.questions, answer, unsupported: ask.unsupported }
 }
 

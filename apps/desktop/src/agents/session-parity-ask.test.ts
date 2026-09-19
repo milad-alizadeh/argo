@@ -129,6 +129,7 @@ test('a pending question reads the same for Claude and for Codex', async (contex
 })
 
 test('a settled Codex question is absent after the Session reopens', async (context) => {
+  assert.equal((await read(await codexReader(context))).asks.length, 1)
   const reopened = await readerOverRollout(context, {
     fixture: `rollout-${SESSION}.jsonl`,
     session: SESSION,

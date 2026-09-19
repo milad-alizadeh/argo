@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { SessionStatus } from '../../../domains/sessions/contract/models'
 import type {
   Question,
   QuestionAnswer,
@@ -96,4 +97,13 @@ export function readRequestUserInput(message: WireMessage): PendingCodexQuestion
         ? null
         : 'This question asks for a secret value, which Argo cannot show or submit.',
   }
+}
+
+// A decided question leaves the Session running, unless a later status already replaced `asking`.
+export function settleQuestion(session: {
+  pendingQuestion: PendingCodexQuestion | null
+  status: SessionStatus
+}) {
+  session.pendingQuestion = null
+  if (session.status === 'asking') session.status = 'running'
 }
