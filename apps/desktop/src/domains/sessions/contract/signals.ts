@@ -130,7 +130,7 @@ function readTarget(input: Record<string, unknown>): string | null {
 
 // What a classified call was about, read from the adapter's facts before any raw input field.
 function callTarget(call: ToolCall): string | null {
-  const [edited] = call.edit?.files ?? []
+  const edited = call.edit?.files.at(-1)
   if (edited !== undefined) return edited.file === null ? null : fileName(edited.file)
   if (call.read !== undefined) return call.read.target === null ? null : fileName(call.read.target)
   if (call.search !== undefined) return call.search.query
@@ -139,7 +139,8 @@ function callTarget(call: ToolCall): string | null {
 }
 
 function callActivity(call: ToolCall, open: boolean): SessionActivity {
-  const { label, kind } = toolPresentation(call)
+  // An edit over several files is named by its newest file.
+  const { label, kind } = toolPresentation(call, Math.max(0, (call.edit?.files.length ?? 1) - 1))
   return { label, kind, open, tool: call.name, target: callTarget(call) }
 }
 

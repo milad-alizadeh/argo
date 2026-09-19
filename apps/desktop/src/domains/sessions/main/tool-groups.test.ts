@@ -11,8 +11,6 @@ function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
 }
 
-const edit = (id: string, path: string) => editCall(id, path)
-
 function unclassified(id: string): ToolCall {
   return { id, name: 'SomeMcpTool', input: {} }
 }
@@ -71,13 +69,13 @@ test('several consecutive Codex exec calls read as commands, the same as Bash', 
 })
 
 test('several consecutive file edits state the count', () => {
-  const found = group(rowsFor([edit('e1', 'a.ts'), edit('e2', 'b.ts')]))
+  const found = group(rowsFor([editCall('e1', 'a.ts'), editCall('e2', 'b.ts')]))
   assert.equal(found.label, 'Edited 2 files')
 })
 
 test('a mixed run states both counts in one summary', () => {
   const found = group(
-    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), edit('e1', 'a.ts')]),
+    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), editCall('e1', 'a.ts')]),
   )
   assert.equal(found.label, 'Ran 2 commands, edited a file')
 })

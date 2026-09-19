@@ -114,4 +114,10 @@ test('a written file and two edits read the same for Claude and for Codex', asyn
   assert.deepEqual(toolCallsOf(claude.feed), expected)
   assert.deepEqual(toolCallsOf(codex.feed), expected)
   assert.equal(claude.roster.status, codex.roster.status)
+  // The Roster names the newest file either way; `tool` is the harness's own name and differs.
+  const activity = (row: typeof claude.roster) => {
+    const { kind, label, target } = row.activity ?? { kind: null, label: null, target: null }
+    return { kind, label, target }
+  }
+  assert.deepEqual(activity(claude.roster), activity(codex.roster))
 })

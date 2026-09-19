@@ -165,8 +165,7 @@ function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null
   }
 }
 
-// An edit that touched several files draws one row per file, as the same edits made one call at a
-// time would.
+// An edit over several files draws one row per file.
 function feedRows(call: ToolCall, evidence: ToolEvidence): SessionFeedRow[] {
   if (call.name === ASK_TOOL) return [askRow(call, evidence.results) ?? toolRow(call, evidence)]
   const files = call.edit?.files ?? []

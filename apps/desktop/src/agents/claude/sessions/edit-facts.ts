@@ -2,7 +2,7 @@ import type { EditedFile, ToolCall } from '../../../domains/sessions/contract/tr
 import { createdPatch, unifiedPatch } from '../../../domains/sessions/contract/unified-patch'
 
 type Input = Record<string, unknown>
-type EditFacts = Pick<ToolCall, 'edit'>
+type Edits = Pick<ToolCall, 'edit'>
 
 const lineCount = (text: string) => text.split('\n').length
 
@@ -10,13 +10,13 @@ function text(value: unknown): string | null {
   return typeof value === 'string' ? value : null
 }
 
-const one = (file: EditedFile): EditFacts => ({ edit: { kind: 'edit', files: [file] } })
+const single = (file: EditedFile): Edits => ({ edit: { kind: 'edit', files: [file] } })
 
 // Claude records an edit's old and new text, so its diff is known before the result lands.
-function edit(input: Input): EditFacts {
+function edit(input: Input): Edits {
   const oldText = text(input.old_string)
   const newText = text(input.new_string)
-  return one({
+  return single({
     change: 'update',
     file: text(input.file_path),
     diff: oldText === null || newText === null ? '' : unifiedPatch(oldText, newText),
@@ -27,9 +27,9 @@ function edit(input: Input): EditFacts {
   })
 }
 
-function write(input: Input): EditFacts {
+function write(input: Input): Edits {
   const content = text(input.content)
-  return one({
+  return single({
     change: 'create',
     file: text(input.file_path),
     diff: content === null ? '' : createdPatch(content),
@@ -38,9 +38,9 @@ function write(input: Input): EditFacts {
 }
 
 // A notebook cell change is an update of the notebook; deleting a cell adds no lines.
-function notebookEdit(input: Input): EditFacts {
+function notebookEdit(input: Input): Edits {
   const source = text(input.edit_mode) === 'delete' ? null : text(input.new_source)
-  return one({
+  return single({
     change: 'update',
     file: text(input.notebook_path),
     diff: source === null ? '' : createdPatch(source),
@@ -49,13 +49,13 @@ function notebookEdit(input: Input): EditFacts {
 }
 
 // Claude's file-changing tools as the domain's `edit` Tool Call (CONTEXT.md L3 · Tool Call).
-const EDITS: Record<string, (input: Input) => EditFacts> = {
+const EDITS: Record<string, (input: Input) => Edits> = {
   Edit: edit,
   Write: write,
   NotebookEdit: notebookEdit,
 }
 
-export function editFacts(name: string, input: Input): EditFacts {
+export function editFacts(name: string, input: Input): Edits {
   const read = Object.hasOwn(EDITS, name) ? EDITS[name] : undefined
   return read === undefined ? {} : read(input)
 }
