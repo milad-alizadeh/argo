@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionListReplySchema } from '../../../domains/sessions/contract/contract.ts'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models.ts'
-import type { SessionReader } from '../../../domains/sessions/main/bridge'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { claudeSessionSource } from '../sessions/read-sessions.ts'
-import { claudeResumeTarget } from '../sessions/resume-target.ts'
-import { fixtureRoot } from './session-fixtures'
+import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
+import { claudeResumeTarget } from '@/agents/claude/sessions/resume-target.ts'
+import { sessionListReplySchema } from '@/domains/sessions/contract/contract.ts'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models.ts'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 

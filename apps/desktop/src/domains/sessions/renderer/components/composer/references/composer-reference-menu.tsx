@@ -1,12 +1,13 @@
 import { TriangleAlert } from 'lucide-react'
-import type { SessionCli } from '../../../harness/harnesses'
+import { Trans, useTranslation } from 'react-i18next'
 import {
   cliLabel,
   referenceSuggestions,
   referenceSupportsCli,
   type SessionReference,
   SessionReferenceIcon,
-} from './session-reference'
+} from '@/domains/sessions/renderer/components/composer/references/session-reference'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {
@@ -21,7 +22,7 @@ export const composerPlaceholder = (
     aria-hidden="true"
     className="pointer-events-none absolute px-4 py-3 type-body text-muted-foreground"
   >
-    Direct the next move…
+    <Trans i18nKey="composer.placeholder" ns="sessions" />
   </span>
 )
 
@@ -93,9 +94,10 @@ export function ComposerReferenceMenu({
   onChoose: (choice: ReferenceSuggestion) => void
   selected: number
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <div
-      aria-label="References"
+      aria-label={t('composer.references.label')}
       className="absolute bottom-full -inset-x-px z-40 mb-2 overflow-hidden rounded-xl border bg-card p-1 shadow-xl"
       id="composer-references"
       role="listbox"
@@ -124,7 +126,9 @@ export function ComposerReferenceMenu({
             <span className="min-w-0 flex-1">
               <span className="block type-control">{choice.label}</span>
               <span className="block type-meta text-muted-foreground">
-                {unsupported ? `Not available for ${cliLabel(cli)}` : choice.detail}
+                {unsupported
+                  ? t('composer.references.unavailable', { cli: cliLabel(cli) })
+                  : choice.detail}
               </span>
             </span>
             <span className="type-meta capitalize text-muted-foreground">{choice.kind}</span>

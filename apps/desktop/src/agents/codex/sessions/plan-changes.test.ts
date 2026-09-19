@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionPlan } from '../../../domains/sessions/contract/models'
 import {
   nestedPlanCall,
   planCall,
@@ -8,7 +7,8 @@ import {
   SESSION_ID,
   TIMESTAMP,
   updatePlan,
-} from './plan-call-fixtures'
+} from '@/agents/codex/sessions/plan-call-fixtures'
+import type { SessionPlan } from '@/domains/sessions/contract/models'
 
 const cases: { claim: string; records: unknown[]; plan: SessionPlan | null }[] = [
   {

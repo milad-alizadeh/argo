@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { SessionId } from '../types'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 type SessionsState = {
   selectedSessionId: SessionId | null

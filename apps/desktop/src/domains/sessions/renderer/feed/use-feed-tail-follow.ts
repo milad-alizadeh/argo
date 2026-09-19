@@ -1,6 +1,6 @@
 import type { Virtualizer } from '@tanstack/virtual-core'
 import { useCallback, useRef, useState } from 'react'
-import { useDisclosureHold } from './use-disclosure-hold'
+import { useDisclosureHold } from '@/domains/sessions/renderer/feed/use-disclosure-hold'
 
 const TAIL_THRESHOLD_PX = 80
 

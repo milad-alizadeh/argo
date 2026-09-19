@@ -1,6 +1,6 @@
 // What the Session index answers, and what one indexing pass writes back. Shared Session code and
 // the CLI adapters speak only this; the SQL that serves it lives behind one worker (#2372).
-import type { SessionRosterRow } from '../../contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 
 // A transcript file addressed for parsing: where it is, and the name its Session id is read off.
 export type TranscriptPath = { path: string; name: string }

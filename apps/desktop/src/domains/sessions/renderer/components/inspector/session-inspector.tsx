@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import type { SessionDelegation, SessionShellCommand } from '../../../contract/models'
-import type { SessionEvidence, SessionFeed } from '../../types'
-import { SessionDelegationInspector } from './session-delegation-inspector'
-import { SessionEvidenceInspector } from './session-evidence-inspector'
-import { SessionShellInspector } from './session-shell-inspector'
+import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
+import { SessionDelegationInspector } from '@/domains/sessions/renderer/components/inspector/session-delegation-inspector'
+import { SessionEvidenceInspector } from '@/domains/sessions/renderer/components/inspector/session-evidence-inspector'
+import { SessionShellInspector } from '@/domains/sessions/renderer/components/inspector/session-shell-inspector'
+import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 
 // What the reader picked out of the header's work buttons, held against the Session it was picked
 // in: a selection made in one Session says nothing about the next, and keying it this way retires

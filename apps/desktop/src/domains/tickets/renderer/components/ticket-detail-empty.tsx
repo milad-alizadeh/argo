@@ -7,7 +7,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
+} from '@/platform/renderer/components/ui/empty'
 
 export function TicketDetailEmpty() {
   const { t } = useTranslation('tickets')

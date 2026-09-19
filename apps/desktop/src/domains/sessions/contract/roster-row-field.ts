@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import type { RosterRowContext } from './roster-row-context'
+import type { RosterRowContext } from '@/domains/sessions/contract/roster-row-context'
 
 export type Reconciliation = 'held' | 'held-when-present' | 'observed' | 'stronger-title'
 export type ManagedRule =

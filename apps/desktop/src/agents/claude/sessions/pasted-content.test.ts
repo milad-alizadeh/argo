@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from './records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 
 test('draws pasted text as the prompt, without the wrapper the CLI keeps it in', () => {
   const record = parseTranscriptLine(

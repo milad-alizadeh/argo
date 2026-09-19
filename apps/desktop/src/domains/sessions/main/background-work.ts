@@ -1,5 +1,5 @@
-import type { SessionRosterRow } from '../contract/models'
-import { readDelegation } from './delegation'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { readDelegation } from '@/domains/sessions/main/delegation'
 
 export function hasRunningBackgroundWork(session: SessionRosterRow): boolean {
   if (session.posture !== 'managed') return false

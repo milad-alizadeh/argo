@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readActivity } from '../contract/signals'
-import type { ToolCall, ToolResult, TranscriptMessage } from '../contract/transcript'
-import { readCall } from './tool-feed-test-fixtures'
+import { readActivity } from '@/domains/sessions/contract/signals'
+import type {
+  ToolCall,
+  ToolResult,
+  TranscriptMessage,
+} from '@/domains/sessions/contract/transcript'
+import { readCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
 
 function promptMessage(): TranscriptMessage {
   return {

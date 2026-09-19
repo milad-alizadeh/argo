@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
+import { identifierSchema } from '@/shared/validation'
 
 export const sessionHandoffRequestSchema = z.strictObject({
   version: z.literal(1),

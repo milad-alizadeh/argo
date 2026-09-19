@@ -4,10 +4,10 @@ import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import { sessionSearchQueryKey } from '../session-queries'
-import type { RosterStatus } from '../state/use-roster-filter-store'
-import type { SessionSearched } from '../types'
+} from '@/domains/sessions/renderer/session-contract-error'
+import { sessionSearchQueryKey } from '@/domains/sessions/renderer/session-queries'
+import type { RosterStatus } from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { SessionSearched } from '@/domains/sessions/renderer/types'
 
 const SEARCH_DEBOUNCE_MS = 250
 

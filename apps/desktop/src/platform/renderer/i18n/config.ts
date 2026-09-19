@@ -1,8 +1,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-
-import { FALLBACK_LANGUAGE } from '../../shared/i18n'
-import { CATALOGS, DEFAULT_NAMESPACE } from './catalogs'
+import { CATALOGS, DEFAULT_NAMESPACE } from '@/platform/renderer/i18n/catalogs'
+import { FALLBACK_LANGUAGE } from '@/platform/shared/i18n'
 
 // English is the only language this build ships, so the reader's language settles the plural rules
 // and nothing else until a second catalog lands (#2130). A test proves a second one is drawn.

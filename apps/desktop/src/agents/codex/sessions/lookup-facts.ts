@@ -1,4 +1,4 @@
-import type { ToolCall } from '../../../domains/sessions/contract/transcript'
+import type { ToolCall } from '@/domains/sessions/contract/transcript'
 
 type Input = Record<string, unknown>
 type LookupFacts = Pick<ToolCall, 'read' | 'search' | 'fetch'>

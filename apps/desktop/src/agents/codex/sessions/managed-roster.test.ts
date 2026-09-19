@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { listed, tempRoot } from '../../../domains/sessions/main/reader-test-helpers'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
 
 // The AC that a managed Session with no transcript yet appears in the Roster holds for each CLI
 // (claude-driver-launch.ts and managed-permission-roster.test.ts cover Claude's side).

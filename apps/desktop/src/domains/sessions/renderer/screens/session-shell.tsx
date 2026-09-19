@@ -1,13 +1,15 @@
 import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-
-import { InspectorSplit } from '../../../../platform/renderer/components/inspector-split'
-import { sessionName } from '../components/roster/roster-rows'
-import type { Session } from '../types'
-import { SESSION_SPLIT } from './session-screen-layout'
-import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
-import { worktreeName } from './session-worktree'
+import { sessionName } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { SESSION_SPLIT } from '@/domains/sessions/renderer/screens/session-screen-layout'
+import {
+  SessionWorkspace,
+  type SessionWorkspaceProps,
+} from '@/domains/sessions/renderer/screens/session-workspace'
+import { worktreeName } from '@/domains/sessions/renderer/screens/session-worktree'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
 
 import './session-screen.css'
 

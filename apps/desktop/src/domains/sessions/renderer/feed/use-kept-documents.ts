@@ -1,4 +1,4 @@
-import type { SessionFeed, SessionId } from '../types'
+import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
 
 // One active document is enough now that the Feed is virtualized. Retaining inactive documents
 // retains their row data, mounted virtualizer state, and rich-content work; repeated switching

@@ -3,11 +3,11 @@
 // bridge calls, so a refactor inside it leaves these green.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import type { SessionRosterRow } from '../contract/models'
-import { managedRow } from './managed-row'
-import { createSessionReader } from './reader'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   fed,
   feedRequest,
@@ -15,7 +15,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
   writeCodexTranscript,
-} from './reader-test-helpers'
+} from '@/domains/sessions/main/reader-test-helpers'
 
 test('reads a Feed from the adapter the Roster names as owner, not the first one registered', async (context) => {
   const claudeRoot = await tempRoot(context)

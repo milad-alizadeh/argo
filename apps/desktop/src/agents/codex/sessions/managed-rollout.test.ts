@@ -3,14 +3,14 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '../../../domains/sessions/contract/contract'
-import type { SessionReader } from '../../../domains/sessions/main/bridge'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { codexSessionSource } from './read-sessions'
+} from '@/domains/sessions/contract/contract'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 const listing = {
   version: 1 as const,

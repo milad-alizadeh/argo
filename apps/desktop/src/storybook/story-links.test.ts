@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { section, withSection } from './story-links'
-import { parseImporters, type Story } from './storybook-build'
+import { section, withSection } from '@/storybook/story-links'
+import { parseImporters, type Story } from '@/storybook/storybook-build'
 
 const MODULES = 'src/domains/sessions/renderer'
 const story = (name: string, file: string, folder = 'components'): Story => ({

@@ -3,7 +3,7 @@
 // own vocabulary (Claude's `toolName`/`input`, Codex's `itemId`/request kind) stays behind each
 // adapter's own seam and never reaches this type.
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
+import { identifierSchema } from '@/shared/validation'
 
 export const permissionSchema = z.strictObject({
   id: identifierSchema,

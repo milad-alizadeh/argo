@@ -1,4 +1,4 @@
-import type { ExecuteFacts, ToolCall } from '../../../domains/sessions/contract/transcript'
+import type { ExecuteFacts, ToolCall } from '@/domains/sessions/contract/transcript'
 
 type Input = Record<string, unknown>
 

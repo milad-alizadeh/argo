@@ -1,18 +1,27 @@
 // Split out of `discover-transcript-sessions.ts` (150-line file ceiling, AGENTS.md): the index-backed
 // half of one discoverer's window, kept beside the model it reads but out of the file that builds it.
-import type { createChainCache, SessionChain } from '../contract/chains'
-import type { SessionRosterRow } from '../contract/models'
-import { type boundIndexedWindow, discoverIndexedWindow } from './discover-indexed-window'
+import type { createChainCache, SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import {
+  type boundIndexedWindow,
+  discoverIndexedWindow,
+} from '@/domains/sessions/main/discover-indexed-window'
 import type {
   TranscriptDiscovery,
   TranscriptDiscoveryOptions,
-} from './discover-transcript-sessions'
-import { nextCursorFor, windowSizeFor } from './discover-transcript-sessions'
-import { type ResolvedIndexedIds, resolveIndexedIds } from './resolve-indexed-ids'
-import type { SessionIndex } from './session-index/contract'
-import { isSessionIndexFallback } from './session-index/recovery'
-import { holdsMessage } from './session-index/window-pass'
-import type { createTranscriptSummariser, TranscriptDiscoverySource } from './transcript-window'
+} from '@/domains/sessions/main/discover-transcript-sessions'
+import { nextCursorFor, windowSizeFor } from '@/domains/sessions/main/discover-transcript-sessions'
+import {
+  type ResolvedIndexedIds,
+  resolveIndexedIds,
+} from '@/domains/sessions/main/resolve-indexed-ids'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import { isSessionIndexFallback } from '@/domains/sessions/main/session-index/recovery'
+import { holdsMessage } from '@/domains/sessions/main/session-index/window-pass'
+import type {
+  createTranscriptSummariser,
+  TranscriptDiscoverySource,
+} from '@/domains/sessions/main/transcript-window'
 
 // Archive and restore (#2374) resolve an id straight off the index's persisted resume graph
 // rather than growing a discovery window to find it.

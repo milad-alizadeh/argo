@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionActivity } from '../../contract/models'
-import { displayedToolLabel } from '../../contract/tool-feed'
-import { RunningText } from './feed-tool-status'
+import type { SessionActivity } from '@/domains/sessions/contract/models'
+import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
+import { RunningText } from '@/domains/sessions/renderer/feed/feed-tool-status'
 
 export type LiveActivity = {
   activity: Pick<SessionActivity, 'kind' | 'label' | 'open'> | null

@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { sharedDatabasePath } from '@/platform/main/storage/shared-database'
-import { createProjectStore } from './sqlite-store'
 
 export function openProjectStore(projectData: string) {
   return createProjectStore(new DatabaseSync(sharedDatabasePath(projectData)))

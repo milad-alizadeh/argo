@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, userEvent, within } from 'storybook/test'
+import {
+  ProjectSetupView,
+  ProjectSetupWindow,
+} from '@/domains/projects/renderer/setup/project-setup-window'
 import { parseSetupDocument } from '../../contract/setup-document'
-import { ProjectSetupView, ProjectSetupWindow } from './project-setup-window'
 
 const STORY_CONFIGURATION_SOURCE = `${JSON.stringify(
   {

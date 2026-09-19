@@ -2,16 +2,22 @@ import { Plug } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-
-import { Button } from '../../../../platform/renderer/components/ui/button'
+import {
+  offered,
+  type SourceDiscovery,
+  SourceField,
+} from '@/domains/tickets/renderer/components/source-field'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../platform/renderer/components/ui/card'
+} from '@/platform/renderer/components/ui/card'
 import {
   Empty,
   EmptyContent,
@@ -19,20 +25,17 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import { Field, FieldGroup, FieldLabel } from '../../../../platform/renderer/components/ui/field'
+} from '@/platform/renderer/components/ui/empty'
+import { Field, FieldGroup, FieldLabel } from '@/platform/renderer/components/ui/field'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../platform/renderer/components/ui/select'
-import { contractText } from '../../../../platform/renderer/i18n/contract-text'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import { providerPresentation } from '../../../accounts/renderer/lib/providers'
-import { sourcePresentation } from '../lib/sources'
-import { offered, type SourceDiscovery, SourceField } from './source-field'
+} from '@/platform/renderer/components/ui/select'
+import { contractText } from '@/platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export type ConnectTarget = { accountId: string; scope: string }
 

@@ -2,8 +2,8 @@
 // links to (CONTEXT.md L1 · Session → Ticket, ADR-0017). The roster row's own `ticket` field is
 // how a caller reads the link back; these two operations are only how it changes.
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { ticketKey } from '../../tickets/contract/ticket'
+import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { identifierSchema } from '@/shared/validation'
 
 export const sessionTicketConnectRequestSchema = z.strictObject({
   version: z.literal(1),

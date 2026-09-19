@@ -1,21 +1,21 @@
-import { isRecord } from '@/shared/validation'
-import { SESSION_ENTRIES, type SessionEntry } from '../../../domains/sessions/contract/models'
+import { readBackgroundTask } from '@/agents/claude/sessions/background-task'
+import { readBlocks, readToolCalls, readToolResults } from '@/agents/claude/sessions/block-reader'
+import { readCommandEnvelope } from '@/agents/claude/sessions/command-envelope'
+import { commandSource } from '@/agents/claude/sessions/command-source'
+import { messageEnvelope } from '@/agents/claude/sessions/message-envelope'
+import { readPlanChanges } from '@/agents/claude/sessions/plan-changes'
+import { promptBlocks } from '@/agents/claude/sessions/prompt-images'
+import { queuedPromptRecord } from '@/agents/claude/sessions/queued-prompt'
+import { readSkillBody } from '@/agents/claude/sessions/skill-body'
+import { readStandaloneRecord } from '@/agents/claude/sessions/standalone-records'
+import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/models'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { readBackgroundTask } from './background-task'
-import { readBlocks, readToolCalls, readToolResults } from './block-reader'
-import { readCommandEnvelope } from './command-envelope'
-import { commandSource } from './command-source'
-import { messageEnvelope } from './message-envelope'
-import { readPlanChanges } from './plan-changes'
-import { promptBlocks } from './prompt-images'
-import { queuedPromptRecord } from './queued-prompt'
-import { readSkillBody } from './skill-body'
-import { readStandaloneRecord } from './standalone-records'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }

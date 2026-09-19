@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ACCOUNT_OPERATIONS } from '../contract/operations'
-import { markRevoked } from './access'
-import { connect, harness, OCTOCAT } from './harness'
-import { tokenFor } from './tokens'
+import { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
+import { markRevoked } from '@/domains/accounts/main/access'
+import { connect, harness, OCTOCAT } from '@/domains/accounts/main/harness'
+import { tokenFor } from '@/domains/accounts/main/tokens'
 
 const WORK = { id: 9001, login: 'octocat-at-work' }
 const GITHUB = { provider: 'github' }

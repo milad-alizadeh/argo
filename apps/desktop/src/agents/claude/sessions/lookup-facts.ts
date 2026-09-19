@@ -1,4 +1,4 @@
-import type { ToolCall } from '../../../domains/sessions/contract/transcript'
+import type { ToolCall } from '@/domains/sessions/contract/transcript'
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null

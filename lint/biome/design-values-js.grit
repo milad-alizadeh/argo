@@ -1,0 +1,14 @@
+engine biome(1.0)
+language js(typescript, jsx)
+
+or {
+  JsxAttribute($name, $value) as $attribute where {
+    $name <: `className`,
+    $value <: r"(?s).*-\[[^\]]*(?:#|[0-9]+(?:\.[0-9]+)?(?:px|rem|em|ms|vh|vw)|\b[0-9]{1,2}(?:\.[0-9]+)?%|\b[0-9]{4,}(?:\.[0-9]+)?%)[^\]]*\].*",
+    register_diagnostic(span=$attribute, message="Use a named design token instead of a raw design value.")
+  },
+  string() as $value where {
+    $value <: r"(?s).*#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?.*",
+    register_diagnostic(span=$value, message="Use a named design token instead of a raw design value.")
+  }
+}

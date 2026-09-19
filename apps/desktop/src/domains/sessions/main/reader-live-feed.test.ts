@@ -4,8 +4,8 @@
 // was gone.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import { createSessionReader } from './reader'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   appendCodexTranscript,
   appendHalfCodexTranscript,
@@ -14,7 +14,7 @@ import {
   rowsOf,
   tempRoot,
   writeCodexTranscript,
-} from './reader-test-helpers'
+} from '@/domains/sessions/main/reader-test-helpers'
 
 const SESSION = 'still-writing'
 const READ_BUDGET_MS = 2_000

@@ -3,12 +3,12 @@
 // every launch (ADR-0004, ADR-0008).
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
+import { normalizeClaudeRecords } from '@/agents/claude/sessions/normalize-records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
-} from '../../../domains/sessions/main/discover-transcript-sessions'
-import { normalizeClaudeRecords } from './normalize-records'
-import { parseTranscriptLine } from './records'
+} from '@/domains/sessions/main/discover-transcript-sessions'
 
 export type Discovery = TranscriptDiscovery
 

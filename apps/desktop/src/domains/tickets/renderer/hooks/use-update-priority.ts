@@ -2,7 +2,11 @@
 // it back and says why.
 import type { QueryClient } from '@tanstack/react-query'
 import type { TicketPrioritized, TicketPriority } from '@/domains/tickets/contract/contract'
-import { patchTicket, type TicketChange, useTicketFieldMutation } from './use-ticket-field-mutation'
+import {
+  patchTicket,
+  type TicketChange,
+  useTicketFieldMutation,
+} from '@/domains/tickets/renderer/hooks/use-ticket-field-mutation'
 
 export type PriorityChange = TicketChange & { priority: TicketPriority | null }
 

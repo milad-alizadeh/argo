@@ -6,16 +6,16 @@ import {
   type ProjectSetupEditing,
   type ProjectSetupValidated,
   projectError,
-} from '../../contract/contract'
+} from '@/domains/projects/contract/contract'
+import { toSummary } from '@/domains/projects/main/presentation'
+import { parseProjectConfiguration } from '@/domains/projects/main/project-configuration'
+import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
+import { validateProjectConfiguration } from '@/domains/projects/main/setup/setup-validation'
+import { prepareSetupWorktree } from '@/domains/projects/main/setup/setup-worktree'
+import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 import { setupConfiguration } from '../../contract/setup-configuration'
 import type { SetupDocument } from '../../contract/setup-document'
-import { toSummary } from '../presentation'
-import { parseProjectConfiguration } from '../project-configuration'
-import type { SetupCheckpoint } from '../sqlite-store'
-import { saveManualProjectConfiguration } from './manual-configuration'
 import { projectFor, type SetupStore, setupContext } from './setup-context'
-import { validateProjectConfiguration } from './setup-validation'
-import { prepareSetupWorktree } from './setup-worktree'
 
 export async function beginManualSetup(
   request: { projectId: string; requestId: string },

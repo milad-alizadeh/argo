@@ -1,0 +1,207 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "root": false,
+  "vcs": {
+    "enabled": false
+  },
+  "files": {
+    "ignoreUnknown": false
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "assist": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["../*", "./*/*"],
+                "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "lint/biome/fixtures/imports/apps/desktop/src/domains/*/contract/**",
+        "lint/biome/fixtures/imports/apps/desktop/src/platform/shared/**",
+        "lint/biome/fixtures/imports/apps/desktop/src/shared/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "electron": "Contract and shared code stay runtime-neutral.",
+                  "node-pty": "Contract and shared code stay runtime-neutral.",
+                  "react": "Contract and shared code stay free of React."
+                },
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+                  },
+                  {
+                    "group": ["node:*", "node:*/**"],
+                    "message": "Contract and shared code stay runtime-neutral."
+                  },
+                  {
+                    "group": [
+                      "@/domains/*/main",
+                      "@/domains/*/main/**",
+                      "@/domains/*/preload",
+                      "@/domains/*/preload/**",
+                      "@/domains/*/renderer",
+                      "@/domains/*/renderer/**",
+                      "@/platform/main",
+                      "@/platform/main/**",
+                      "@/platform/preload",
+                      "@/platform/preload/**",
+                      "@/platform/renderer",
+                      "@/platform/renderer/**",
+                      "@/providers",
+                      "@/providers/**",
+                      "@/renderer",
+                      "@/renderer/**",
+                      "@/core",
+                      "@/core/**"
+                    ],
+                    "message": "Contract and shared code can import only contract or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["lint/biome/fixtures/imports/apps/desktop/src/domains/*/main/**", "lint/biome/fixtures/imports/apps/desktop/src/platform/main/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+                  },
+                  {
+                    "group": [
+                      "@/domains/*/preload",
+                      "@/domains/*/preload/**",
+                      "@/domains/*/renderer",
+                      "@/domains/*/renderer/**",
+                      "@/platform/preload",
+                      "@/platform/preload/**",
+                      "@/platform/renderer",
+                      "@/platform/renderer/**"
+                    ],
+                    "message": "Main facets can import only contract, main, or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["lint/biome/fixtures/imports/apps/desktop/src/domains/*/preload/**", "lint/biome/fixtures/imports/apps/desktop/src/platform/preload/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+                  },
+                  {
+                    "group": [
+                      "@/domains/*/main",
+                      "@/domains/*/main/**",
+                      "@/domains/*/renderer",
+                      "@/domains/*/renderer/**",
+                      "@/platform/main",
+                      "@/platform/main/**",
+                      "@/platform/renderer",
+                      "@/platform/renderer/**"
+                    ],
+                    "message": "Preload facets can import only contract, preload, or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "lint/biome/fixtures/imports/apps/desktop/src/domains/*/renderer/**",
+        "lint/biome/fixtures/imports/apps/desktop/src/platform/renderer/**",
+        "lint/biome/fixtures/imports/apps/desktop/src/renderer/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "electron": "Renderer facets use the preload bridge instead of Electron directly.",
+                  "node-pty": "Renderer facets use the preload bridge instead of Node directly."
+                },
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+                  },
+                  {
+                    "group": ["node:*", "node:*/**", "electron/**", "node-pty/**"],
+                    "message": "Renderer facets use the preload bridge instead of runtime-only APIs."
+                  },
+                  {
+                    "group": [
+                      "@/domains/*/main",
+                      "@/domains/*/main/**",
+                      "@/domains/*/preload",
+                      "@/domains/*/preload/**",
+                      "@/platform/main",
+                      "@/platform/main/**",
+                      "@/platform/preload",
+                      "@/platform/preload/**",
+                      "@/providers",
+                      "@/providers/**",
+                      "@/core",
+                      "@/core/**"
+                    ],
+                    "message": "Renderer facets can import only contract, renderer, or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -4,14 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import {
-  fed,
-  feedRequest,
-  listed,
-  rowsOf,
-} from '../../../domains/sessions/main/reader-test-helpers'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(

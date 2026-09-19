@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
-import { Loader, type LoaderSize } from '../../../../../platform/renderer/components/loader'
-import { sessionRosterRow } from '../../session-fixtures'
-import { SessionRosterItem } from './session-roster-item'
-import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
+import { SessionRosterItem } from '@/domains/sessions/renderer/components/roster/session-roster-item'
+import { SessionsSidebarHeader } from '@/domains/sessions/renderer/components/roster/sessions-sidebar-chrome'
+import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { Loader, type LoaderSize } from '@/platform/renderer/components/loader'
 
 const LOADER_SIZES = [
   { key: 'meta', name: 'Meta', pixels: 12, use: 'Session rows and metadata' },

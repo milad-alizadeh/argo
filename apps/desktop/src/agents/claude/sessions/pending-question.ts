@@ -1,6 +1,6 @@
-import { chainMessages } from '../../../domains/sessions/main/roster'
-import { ASK_TOOL, pendingAskCall } from '../../../domains/sessions/main/status'
-import { readSessionFiles } from './discover'
+import { readSessionFiles } from '@/agents/claude/sessions/discover'
+import { chainMessages } from '@/domains/sessions/main/roster'
+import { ASK_TOOL, pendingAskCall } from '@/domains/sessions/main/status'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared
 // `pendingAskCall` predicate: a structured question in the last assistant record that no later

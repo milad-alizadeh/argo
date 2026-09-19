@@ -1,6 +1,9 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
-import { parseProjectConfiguration, readProjectConfiguration } from '../project-configuration'
+import {
+  parseProjectConfiguration,
+  readProjectConfiguration,
+} from '@/domains/projects/main/project-configuration'
 
 const COMMAND_TIMEOUT_MS = 30_000
 const RUN_COMMAND_GRACE_MS = 2_000

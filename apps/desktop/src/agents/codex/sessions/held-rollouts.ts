@@ -5,10 +5,10 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { sessionIdOfFile } from '../../../domains/sessions/contract/transcript-file'
-import { isLiveElsewhere } from '../../../domains/sessions/main/live-elsewhere'
-import { sessionIdFileName } from './discover'
+import { sessionIdFileName } from '@/agents/codex/sessions/discover'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
+import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
 
 const run = promisify(execFile)
 

@@ -1,9 +1,9 @@
-import { APPEARANCE_CHANGED_CHANNEL } from '../shared/appearance'
-import { COMMAND_CHANNEL } from '../shared/commands'
-import type { DevelopmentIdentity } from '../shared/development-identity'
-import { WATCHED_CHANGED_CHANNEL } from '../shared/watch'
-import { type AppearanceClient, createAppearanceClient } from './appearance'
-import { createWatchClient, type WatchClient } from './watch'
+import { type AppearanceClient, createAppearanceClient } from '@/platform/preload/appearance'
+import { createWatchClient, type WatchClient } from '@/platform/preload/watch'
+import { APPEARANCE_CHANGED_CHANNEL } from '@/platform/shared/appearance'
+import { COMMAND_CHANNEL } from '@/platform/shared/commands'
+import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
+import { WATCHED_CHANGED_CHANNEL } from '@/platform/shared/watch'
 
 type Subscribe = (channel: string, listener: (value: unknown) => void) => () => void
 

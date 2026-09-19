@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionFeedRow } from '../contract/feed-rows'
-import { type ToolResult, toolRows } from '../contract/tool-feed'
-import { foldSettledToolRuns, groupToolRuns } from '../contract/tool-groups'
-import type { ToolCall } from '../contract/transcript'
-import { searchCall } from './tool-feed-test-fixtures'
+import type { SessionFeedRow } from '@/domains/sessions/contract/feed-rows'
+import { type ToolResult, toolRows } from '@/domains/sessions/contract/tool-feed'
+import { foldSettledToolRuns, groupToolRuns } from '@/domains/sessions/contract/tool-groups'
+import type { ToolCall } from '@/domains/sessions/contract/transcript'
+import { searchCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }

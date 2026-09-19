@@ -1,12 +1,15 @@
 // A Linear Account's sign-in: authorization code + PKCE on a loopback redirect, then the viewer the
 // grant belongs to. Linear's access tokens last a day and are renewed with the refresh token.
-import type { AccountErrorCode } from '../../domains/accounts/contract/contract'
-import type { AccountProvider, SignInEnd } from '../../domains/accounts/main/providers'
-import type { GrantOutcome } from '../grant'
-import { AUTHORIZATION_PATIENCE_MILLISECONDS, beginAuthorization } from './authorization'
-import type { LinearFailure } from './http'
-import { readViewer } from './identity'
-import { refreshGrant } from './tokens'
+import type { AccountErrorCode } from '@/domains/accounts/contract/contract'
+import type { AccountProvider, SignInEnd } from '@/domains/accounts/main/providers'
+import type { GrantOutcome } from '@/providers/grant'
+import {
+  AUTHORIZATION_PATIENCE_MILLISECONDS,
+  beginAuthorization,
+} from '@/providers/linear/authorization'
+import type { LinearFailure } from '@/providers/linear/http'
+import { readViewer } from '@/providers/linear/identity'
+import { refreshGrant } from '@/providers/linear/tokens'
 
 const OUTCOME_ERRORS: Record<Exclude<GrantOutcome['kind'], 'granted'>, AccountErrorCode> = {
   declined: 'sign-in-declined',

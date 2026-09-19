@@ -1,0 +1,46 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "root": false,
+  "vcs": {
+    "enabled": false
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**", "!**/components/ui/**", "**/components/ui/**"]
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "assist": {
+    "enabled": false
+  },
+  "plugins": [
+    {
+      "path": "../../components-style.grit",
+      "includes": ["**/components.json"]
+    }
+  ],
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": [
+                  "radix-ui",
+                  "radix-ui/**",
+                  "react-aria-components",
+                  "react-aria-components/**"
+                ],
+                "message": "components.json uses base-nova. UI primitives must come from @base-ui/react."
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

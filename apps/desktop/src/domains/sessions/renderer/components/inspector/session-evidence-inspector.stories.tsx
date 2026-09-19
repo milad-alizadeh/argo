@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { SessionEvidenceInspector } from './session-evidence-inspector'
+import { SessionEvidenceInspector } from '@/domains/sessions/renderer/components/inspector/session-evidence-inspector'
 
 const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
 

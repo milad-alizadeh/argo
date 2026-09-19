@@ -1,19 +1,19 @@
 import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/components/composer/composer-form'
+import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
+import { PermissionPrompt } from '@/domains/sessions/renderer/components/composer/tray/permission-prompt'
+import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionRoster } from '@/domains/sessions/renderer/types'
 import {
   Alert,
   AlertAction,
   AlertDescription,
   AlertTitle,
-} from '../../../../platform/renderer/components/ui/alert'
-import { Button } from '../../../../platform/renderer/components/ui/button'
-import type { SessionErrorCode } from '../../contract/contract'
-import type { SessionRosterRow } from '../../contract/models'
-import { COMPOSER_COLUMN } from '../components/composer/composer-form'
-import { SessionComposer } from '../components/composer/session-composer'
-import { PermissionPrompt } from '../components/composer/tray/permission-prompt'
-import type { HarnessControl } from '../harness/harnesses'
-import type { SessionRoster } from '../types'
+} from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
 
 // Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
 // way to the lock card instead of sitting under it (#2053, #2092). Every other failure code keeps
@@ -22,10 +22,14 @@ const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere']
 
 type SessionScreenDetailsProps = {
   composer: Pick<
-    ReturnType<typeof import('../hooks/use-session-composer').useSessionComposer>,
+    ReturnType<
+      typeof import('@/domains/sessions/renderer/hooks/use-session-composer').useSessionComposer
+    >,
     'failure' | 'props' | 'retry'
   >
-  permission: ReturnType<typeof import('../hooks/use-session-permission').useSessionPermission>
+  permission: ReturnType<
+    typeof import('@/domains/sessions/renderer/hooks/use-session-permission').useSessionPermission
+  >
   questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl
@@ -104,13 +108,14 @@ export function SessionHandoffFacts({
   roster?: SessionRoster | null
   onNavigate?: (path: string) => void
 }) {
+  const { t } = useTranslation('sessions')
   if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
   return (
-    <section aria-label="Session handoff" className="p-4 type-meta text-muted-foreground">
-      <h2 className="font-medium text-foreground">Handoff</h2>
+    <section aria-label={t('handoff.label')} className="p-4 type-meta text-muted-foreground">
+      <h2 className="font-medium text-foreground">{t('handoff.title')}</h2>
       {session.handoffTo ? (
         <HandoffLink
-          label="Handed off to"
+          label={t('handoff.to')}
           onNavigate={onNavigate}
           roster={roster}
           sessionId={session.handoffTo}
@@ -118,7 +123,7 @@ export function SessionHandoffFacts({
       ) : null}
       {session.handoffFrom ? (
         <HandoffLink
-          label="Handed off from"
+          label={t('handoff.from')}
           onNavigate={onNavigate}
           roster={roster}
           sessionId={session.handoffFrom}

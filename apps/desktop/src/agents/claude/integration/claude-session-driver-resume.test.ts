@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
-
-import { createOwnershipLedger } from '../../../domains/sessions/main/ownership-ledger.ts'
-import { ClaudeSessionDriverError } from '../drive/driver-error.ts'
-import { launch, ledgerFile, OPENING, ownedBeforeRestart, PASTED } from './claude-driver-launch.ts'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error.ts'
+import {
+  launch,
+  ledgerFile,
+  OPENING,
+  ownedBeforeRestart,
+  PASTED,
+} from '@/agents/claude/integration/claude-driver-launch.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
 
 const turn = (prompt: string) => ({ prompt, setup: OPENING })
 

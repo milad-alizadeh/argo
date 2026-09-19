@@ -4,15 +4,15 @@
 // onto the shared ToolCall/ToolResult shapes (CONTEXT.md L3 · Tool Call) the Claude adapter
 // already produces, so `toolPresentation()` and `tool-groups.ts` draw them with no change.
 
+import { withCommandFacts } from '@/agents/codex/sessions/command-facts'
+import { withEditFacts } from '@/agents/codex/sessions/edit-facts'
+import { withLookupFacts } from '@/agents/codex/sessions/lookup-facts'
+import { messageRecord } from '@/agents/codex/sessions/message-record'
+import { nestedToolCalls } from '@/agents/codex/sessions/nested-tool-call'
+import { readToolResults } from '@/agents/codex/sessions/rich-results'
+import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isRecord } from '@/shared/validation'
-import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
-import { withCommandFacts } from './command-facts'
-import { withEditFacts } from './edit-facts'
-import { withLookupFacts } from './lookup-facts'
-import { messageRecord } from './message-record'
-import { nestedToolCalls } from './nested-tool-call'
 import { withOtherFacts } from './other-facts'
-import { readToolResults } from './rich-results'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather

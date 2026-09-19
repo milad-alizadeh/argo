@@ -1,14 +1,14 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
-import type { SessionFeedRow } from '../types'
-import { type FeedRowComponent, FeedViewport } from './feed-viewport'
-import type { Reveal } from './reveal'
-import { useFeedTailFollow } from './use-feed-tail-follow'
-import { useFeedViewport } from './use-feed-viewport'
-import { useInitialFeedPosition } from './use-initial-feed-position'
-import { useJumpToLatest } from './use-jump-to-latest'
-import { usePromptAtTop, usePromptHold } from './use-prompt-at-top'
-import type { Settled } from './use-settled-feed'
+import { type FeedRowComponent, FeedViewport } from '@/domains/sessions/renderer/feed/feed-viewport'
+import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
+import { useFeedTailFollow } from '@/domains/sessions/renderer/feed/use-feed-tail-follow'
+import { useFeedViewport } from '@/domains/sessions/renderer/feed/use-feed-viewport'
+import { useInitialFeedPosition } from '@/domains/sessions/renderer/feed/use-initial-feed-position'
+import { useJumpToLatest } from '@/domains/sessions/renderer/feed/use-jump-to-latest'
+import { usePromptAtTop, usePromptHold } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
+import type { Settled } from '@/domains/sessions/renderer/feed/use-settled-feed'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type AnchoredFeedProps = {
   active: boolean

@@ -1,19 +1,19 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isRecord } from '@/shared/validation'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
-import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
+import { withoutModelInputCopies } from '@/agents/codex/sessions/model-input-copies'
+import { answeringEveryNestedCall } from '@/agents/codex/sessions/nested-results'
+import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
+import type { ThreadNames } from '@/agents/codex/sessions/thread-names'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '../../../domains/sessions/main/discover-transcript-sessions'
-import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
-import { withoutModelInputCopies } from './model-input-copies'
-import { answeringEveryNestedCall } from './nested-results'
-import { parseCodexTranscriptLine } from './records'
-import type { ThreadNames } from './thread-names'
+} from '@/domains/sessions/main/discover-transcript-sessions'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
+import { isRecord } from '@/shared/validation'
 
 export type Discovery = TranscriptDiscovery
 

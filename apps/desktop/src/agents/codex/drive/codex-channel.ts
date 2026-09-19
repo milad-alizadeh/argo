@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline'
-import type { RequestID, RequestParams, WireMessage } from './protocol'
-import { readMessage } from './protocol'
+import type { RequestID, RequestParams, WireMessage } from '@/agents/codex/drive/protocol'
+import { readMessage } from '@/agents/codex/drive/protocol'
 
 export type CodexProcess = {
   stdout: NodeJS.ReadableStream

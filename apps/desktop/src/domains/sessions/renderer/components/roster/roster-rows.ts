@@ -1,8 +1,15 @@
-import type { SessionContractError } from '../../session-contract-error'
-import type { SelectionModifier } from '../../state/roster-selection'
-import { type RosterStatus, showsActive, showsArchived } from '../../state/use-roster-filter-store'
-import type { Session, SessionId } from '../../types'
-import { type SearchRosterState, searchRosterRows } from './search-roster-rows'
+import {
+  type SearchRosterState,
+  searchRosterRows,
+} from '@/domains/sessions/renderer/components/roster/search-roster-rows'
+import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import type { SelectionModifier } from '@/domains/sessions/renderer/state/roster-selection'
+import {
+  type RosterStatus,
+  showsActive,
+  showsArchived,
+} from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { Session, SessionId } from '@/domains/sessions/renderer/types'
 
 // What the one roster context menu does to the row under the pointer.
 export type RosterMenuHandlers = {

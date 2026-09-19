@@ -1,8 +1,7 @@
 import { Lock } from 'lucide-react'
-
-import { Badge } from '../../../../../platform/renderer/components/ui/badge'
-import type { Session } from '../../types'
-import { sessionPostureLocksAnswer } from '../../types'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 
 export const STATUS_MARKS: Record<Session['status'], string> = {
   asking: 'bg-warn',

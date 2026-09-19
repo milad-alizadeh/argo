@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { registerProject, relocateProject } from '@/domains/projects/main/register-project'
 import {
   fixture,
   register,
@@ -7,7 +8,6 @@ import {
   relocate,
   repository,
 } from '../../../../mocks/projects/mock-registration'
-import { registerProject, relocateProject } from './register-project'
 
 test('relocating moves the path and keeps the identity', async (context) => {
   const setup = await fixture(context)

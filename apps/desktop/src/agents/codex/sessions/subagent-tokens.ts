@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises'
-import { isRecord } from '@/shared/validation'
+import { transcriptPaths } from '@/agents/codex/sessions/discover'
 import type {
   DelegationUsageFacts,
   SessionDelegationUsage,
-} from '../../../domains/sessions/contract/background-work-contract'
-import { transcriptPaths } from './discover'
+} from '@/domains/sessions/contract/background-work-contract'
+import { isRecord } from '@/shared/validation'
 
 function delegationFacts(line: string): Partial<DelegationUsageFacts> {
   let parsed: unknown

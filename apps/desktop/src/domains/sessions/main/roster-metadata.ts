@@ -1,4 +1,8 @@
-import type { ContentBlock, EditFacts, TranscriptRecord } from '../contract/transcript'
+import type {
+  ContentBlock,
+  EditFacts,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/transcript'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {

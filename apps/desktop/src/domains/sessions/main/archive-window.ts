@@ -4,12 +4,12 @@
 // ids a row has retired. So a reading grows the same window `discoverSessions` pages by, one step
 // at a time, and stops as soon as its own predicate is satisfied. A predicate no row can satisfy
 // grows to the whole tree, which is what restoring an id that is no longer on disk costs.
-import { sessionError } from '../contract/contract'
-import type { SessionRosterRow } from '../contract/models'
-import { combineDiscoveries, type Discovered } from './merge-discovery'
-import { readFailure } from './read-declaration'
-import { decodeRosterCursor, type RosterCursorMap } from './roster-cursor'
-import type { SessionSource } from './session-source'
+import { sessionError } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { combineDiscoveries, type Discovered } from '@/domains/sessions/main/merge-discovery'
+import { readFailure } from '@/domains/sessions/main/read-declaration'
+import { decodeRosterCursor, type RosterCursorMap } from '@/domains/sessions/main/roster-cursor'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
 
 // The merged reply below needs a request id for its error case, which no caller ever reads: an
 // archive reading answers under its own request id, in its own envelope.

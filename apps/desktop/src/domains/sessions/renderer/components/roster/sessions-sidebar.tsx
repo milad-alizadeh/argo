@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { useProjects } from '../../../../projects/renderer/hooks/use-projects'
-import { useSelectedProject } from '../../../../projects/renderer/hooks/use-selected-project'
-import { currentSessionId } from '../../../contract/models'
-import { useArchiveSelected } from '../../hooks/use-session-archive-mutation'
-import { useSessionTicketLink } from '../../hooks/use-session-ticket-link'
-import type { Session } from '../../types'
-import { Roster, type RosterActions } from './roster'
-import { useOrderedSessions } from './roster-order'
-import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
-import { UnreadMarkerPrototypeSwitcher } from './unread-marker-prototype'
-import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
+import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { useSelectedProject } from '@/domains/projects/renderer/hooks/use-selected-project'
+import { currentSessionId } from '@/domains/sessions/contract/models'
+import { Roster, type RosterActions } from '@/domains/sessions/renderer/components/roster/roster'
+import { useOrderedSessions } from '@/domains/sessions/renderer/components/roster/roster-order'
+import { SessionTicketLinkDialog } from '@/domains/sessions/renderer/components/roster/session-ticket-link-dialog'
+import { UnreadMarkerPrototypeSwitcher } from '@/domains/sessions/renderer/components/roster/unread-marker-prototype'
+import {
+  SELECTED_SESSION_KEY,
+  useSidebarActions,
+} from '@/domains/sessions/renderer/components/roster/use-sidebar-actions'
+import { useArchiveSelected } from '@/domains/sessions/renderer/hooks/use-session-archive-mutation'
+import { useSessionTicketLink } from '@/domains/sessions/renderer/hooks/use-session-ticket-link'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 // A stored id absent from the active Roster is not necessarily gone: the active list never
 // carries an archived Session, so this can still be one, restored by the Archive section

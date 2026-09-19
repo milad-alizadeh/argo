@@ -2,15 +2,22 @@
 // Linear team, and that source's open Tickets read through it (CONTEXT.md L1 · Connection, Ticket).
 // Shared by main and renderer, so it imports neither Electron nor Node.
 import { z } from 'zod'
+import { displayName, provider } from '@/domains/accounts/contract/contract'
+import {
+  priorityLevel,
+  statusId,
+  ticket,
+  ticketKey,
+  ticketPriority,
+  ticketStatus,
+} from '@/domains/tickets/contract/ticket'
 import {
   type ContractError,
   errorFactory,
   errorSchema,
   identifier,
   message,
-} from '../../../shared/messages'
-import { displayName, provider } from '../../accounts/contract/contract'
-import { priorityLevel, statusId, ticket, ticketKey, ticketPriority, ticketStatus } from './ticket'
+} from '@/shared/messages'
 
 export type {
   Ticket,
@@ -19,7 +26,7 @@ export type {
   TicketPriority,
   TicketState,
   TicketStatus,
-} from './ticket'
+} from '@/domains/tickets/contract/ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25

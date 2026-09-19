@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
+import { SessionContextActions } from '@/domains/sessions/renderer/components/composer/session-context-actions'
+import { UsagePopover } from '@/domains/sessions/renderer/components/composer/usage-popover'
+import { ContextPopover } from '@/domains/sessions/renderer/components/context/context-popover'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../../../platform/renderer/components/ui/tooltip'
-import { ContextPopover } from '../context/context-popover'
-import { SessionContextActions } from './session-context-actions'
-import { UsagePopover } from './usage-popover'
+} from '@/platform/renderer/components/ui/tooltip'
 
 const WORKING_TARGET_PERCENTAGE = 20
 

@@ -1,12 +1,12 @@
-import { isIdentifier } from '@/shared/validation'
+import { mentionedBlocks, readMentionedFiles } from '@/agents/codex/sessions/mentioned-files'
+import { withoutChannelTag } from '@/agents/codex/sessions/realtime-replies'
+import { taggedField } from '@/agents/envelope-tags'
 import type {
   ContentBlock,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField } from '../../envelope-tags'
-import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
-import { withoutChannelTag } from './realtime-replies'
+} from '@/domains/sessions/contract/transcript'
+import { isIdentifier } from '@/shared/validation'
 
 // The envelopes a user message can carry that `userRecord` reads.
 export const USER_HARNESS_ENVELOPES = new Set([

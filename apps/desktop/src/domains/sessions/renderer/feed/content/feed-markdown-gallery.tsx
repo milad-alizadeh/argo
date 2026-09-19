@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext } from 'react'
 import type { ExtraProps } from 'react-markdown'
-import { FeedGallery, FeedImage } from './feed-images'
+import { FeedGallery, FeedImage } from '@/domains/sessions/renderer/feed/content/feed-images'
 
 type MarkdownNode = ExtraProps['node']
 

@@ -1,6 +1,8 @@
 import { Info, Layers3 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { ContextDetails } from '@/domains/sessions/renderer/components/context/context-details'
+import { contextZone } from '@/domains/sessions/renderer/components/context/context-zone'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -8,9 +10,7 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '../../../../../platform/renderer/components/ui/popover'
-import { ContextDetails } from './context-details'
-import { contextZone } from './context-zone'
+} from '@/platform/renderer/components/ui/popover'
 
 type ContextTriggerProps = {
   capacityTokens: number | null
@@ -127,6 +127,7 @@ export function ContextPopover({
   percentage: number | null
   usedTokens: number
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <Popover>
       <ContextPopoverTrigger
@@ -138,10 +139,9 @@ export function ContextPopover({
       />
       <PopoverContent align="end" side="top" className="w-(--size-session-popover) gap-3 p-4">
         <PopoverHeader className="gap-1">
-          <PopoverTitle>Context window</PopoverTitle>
+          <PopoverTitle>{t('composer.contextWindow.title')}</PopoverTitle>
           <PopoverDescription className="type-prose">
-            The working memory for the next response: instructions, tools, files, and conversation.
-            As it fills, new information competes with older details.
+            {t('composer.contextWindow.explanation')}
           </PopoverDescription>
         </PopoverHeader>
         <ContextDetails

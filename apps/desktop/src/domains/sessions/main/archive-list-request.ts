@@ -1,5 +1,5 @@
-import { sessionArchiveListReplySchema } from '../contract/contract'
-import type { createSessionReader } from './reader'
+import { sessionArchiveListReplySchema } from '@/domains/sessions/contract/contract'
+import type { createSessionReader } from '@/domains/sessions/main/reader'
 
 // The one `session.archive.list` request shape both the Bun and Node archive suites build,
 // shared so a test-runner split (#2372) does not also duplicate the request itself.

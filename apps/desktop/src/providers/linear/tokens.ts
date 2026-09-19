@@ -1,10 +1,11 @@
 // Linear's token endpoint: a code exchanged for a grant, and a grant renewed before it lapses.
 // Linear's access tokens last a day and each refresh rotates the refresh token, so the grant this
 // returns replaces the stored one whole.
-import { isRecord } from '../../shared/validation'
-import { type Grant, grantedScopes, type TokenReply } from '../grant'
-import { formBody, readJson, send } from '../request'
-import type { LinearEndpoints } from './endpoints'
+
+import { type Grant, grantedScopes, type TokenReply } from '@/providers/grant'
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
+import { formBody, readJson, send } from '@/providers/request'
+import { isRecord } from '@/shared/validation'
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 

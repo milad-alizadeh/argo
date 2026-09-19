@@ -5,7 +5,7 @@
 // wrote by hand; reading and writing one line among the top-level keys does not.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from './compaction'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/agents/codex/compaction/compaction'
 
 const KEY = 'model_auto_compact_token_limit'
 

@@ -1,14 +1,18 @@
 import type { LexicalEditor } from 'lexical'
 import type { DragEvent, RefObject } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import type { SessionPlan } from '../../../contract/models'
-import type { HarnessControl } from '../../harness/harnesses'
-import type { ComposerAttachment, ComposerTicketContext } from '../../state/use-composer-store'
-import { DraftContextPicker } from '../context/draft-context-picker'
-import { ComposerEditorArea } from './composer-editor-area'
-import { ComposerToolbar } from './composer-toolbar'
-import type { TurnSetupControlProps } from './run-setup-menu'
-import { SessionContextBar } from './session-context-bar'
+import type { SessionPlan } from '@/domains/sessions/contract/models'
+import { ComposerEditorArea } from '@/domains/sessions/renderer/components/composer/composer-editor-area'
+import { ComposerToolbar } from '@/domains/sessions/renderer/components/composer/composer-toolbar'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import { SessionContextBar } from '@/domains/sessions/renderer/components/composer/session-context-bar'
+import { DraftContextPicker } from '@/domains/sessions/renderer/components/context/draft-context-picker'
+import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import type {
+  ComposerAttachment,
+  ComposerTicketContext,
+} from '@/domains/sessions/renderer/state/use-composer-store'
 
 type ComposerCardProps = {
   attachments: ComposerAttachment[]
@@ -48,6 +52,11 @@ function closeContextPicker(
   editorRef.current?.focus()
 }
 
+function dropFiles(event: DragEvent<HTMLFieldSetElement>, onDropFiles: (files: FileList) => void) {
+  event.preventDefault()
+  if (event.dataTransfer.files.length > 0) onDropFiles(event.dataTransfer.files)
+}
+
 // The card and the context bar pinned under it: everything below the pending-turns list.
 export function ComposerCard({
   attachments,
@@ -78,19 +87,17 @@ export function ComposerCard({
   sessionId,
   setup,
 }: ComposerCardProps) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="relative">
       {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
           radius instead of boxing the bare text area (#2273). */}
       <fieldset
-        aria-label="Message composer"
+        aria-label={t('composer.cardLabel')}
         data-component="ComposerCard"
         className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
-        onDrop={(event: DragEvent<HTMLFieldSetElement>) => {
-          event.preventDefault()
-          if (event.dataTransfer.files.length > 0) onDropFiles(event.dataTransfer.files)
-        }}
+        onDrop={(event) => dropFiles(event, onDropFiles)}
       >
         <ComposerEditorArea
           attachments={attachments}

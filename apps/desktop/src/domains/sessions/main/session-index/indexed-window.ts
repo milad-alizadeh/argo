@@ -3,12 +3,16 @@
 // paths, and parses only the files whose identity changed, together with the rest of each chain
 // they belong to. Everything else is answered from the stored projections, so a warm read opens
 // no unchanged transcript file.
-import type { ChainHistory, SessionChain } from '../../contract/chains'
-import type { SessionRosterRow } from '../../contract/models'
-import type { TranscriptFile } from '../../contract/transcript'
-import type { SessionIndex, TranscriptFileIdentity, TranscriptPath } from './contract'
-import { reindexCandidates } from './reindex-pass'
-import { chainsInWindow } from './window-pass'
+import type { ChainHistory, SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import type {
+  SessionIndex,
+  TranscriptFileIdentity,
+  TranscriptPath,
+} from '@/domains/sessions/main/session-index/contract'
+import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
+import { chainsInWindow } from '@/domains/sessions/main/session-index/window-pass'
 
 export type ReadTranscripts = (
   paths: readonly TranscriptPath[],

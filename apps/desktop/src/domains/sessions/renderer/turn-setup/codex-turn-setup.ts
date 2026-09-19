@@ -1,7 +1,14 @@
 import { Hand, ShieldAlert, ShieldCheck } from 'lucide-react'
 
-import { CODEX_EFFORTS, CODEX_MODELS, codexEfforts } from '../../contract/codex-contract'
-import type { ModeChoice, TurnSetupChoices } from './turn-setup'
+import {
+  CODEX_EFFORTS,
+  CODEX_MODELS,
+  codexEfforts,
+} from '@/domains/sessions/contract/codex-contract'
+import type {
+  ModeChoice,
+  TurnSetupChoices,
+} from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 const effortLabels: Record<(typeof CODEX_EFFORTS)[number], string> = {
   low: 'Low',

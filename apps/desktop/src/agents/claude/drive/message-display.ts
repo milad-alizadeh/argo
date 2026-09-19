@@ -1,5 +1,5 @@
 import net from 'node:net'
-import { type CompanionPart, createSocketFolder } from './companion-plugin'
+import { type CompanionPart, createSocketFolder } from '@/agents/claude/drive/companion-plugin'
 
 // Claude Code holds each batch on screen until this returns, so it only hands the input over.
 // With no Argo listening `nc` fails at once, `-w 1` bounds a listener that never reads, and it

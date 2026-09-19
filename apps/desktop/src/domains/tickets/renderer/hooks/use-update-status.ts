@@ -3,7 +3,11 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { TicketUpdated } from '@/domains/tickets/contract/contract'
 import { closureOf, type TicketStatus } from '@/domains/tickets/contract/ticket'
-import { patchTicket, type TicketChange, useTicketFieldMutation } from './use-ticket-field-mutation'
+import {
+  patchTicket,
+  type TicketChange,
+  useTicketFieldMutation,
+} from '@/domains/tickets/renderer/hooks/use-ticket-field-mutation'
 
 export type StatusChange = TicketChange & { status: TicketStatus }
 

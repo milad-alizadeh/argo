@@ -1,6 +1,6 @@
 import { RotateCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../../../platform/renderer/components/ui/button'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -8,7 +8,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
+} from '@/platform/renderer/components/ui/empty'
 
 // Past a stall bound (feed-stall.ts), the reader sees this instead of an indefinite spinner.
 // Retry re-runs whatever produced the stall rather than reloading the app (#2102).

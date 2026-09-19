@@ -1,12 +1,12 @@
-import { isRecord } from '@/shared/validation'
+import { readableCommandOutput } from '@/agents/claude/sessions/command-output'
+import { identifierTag, readTaskDelivery } from '@/agents/claude/sessions/task-notification'
+import { taggedField, taggedText } from '@/agents/envelope-tags'
 import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField, taggedText } from '../../envelope-tags'
-import { readableCommandOutput } from './command-output'
-import { identifierTag, readTaskDelivery } from './task-notification'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content

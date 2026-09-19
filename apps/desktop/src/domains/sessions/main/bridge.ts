@@ -1,6 +1,4 @@
 import { type BrowserWindow, dialog } from 'electron'
-import { platformText } from '../../../platform/main/i18n'
-import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -27,9 +25,13 @@ import {
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionError,
-} from '../contract/contract'
-import { SESSION_OPERATIONS } from '../contract/operations'
-import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
+} from '@/domains/sessions/contract/contract'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import {
+  type AttachmentsStore,
+  chooseAttachments,
+  statAttachments,
+} from '@/domains/sessions/main/attachments'
 import {
   compactSession,
   decideSessionPermission,
@@ -40,8 +42,10 @@ import {
   readSessionPermission,
   sendSession,
   startSession,
-} from './drive'
-import type { SessionDriveAdapters } from './session-drive-adapter'
+} from '@/domains/sessions/main/drive'
+import type { SessionDriveAdapters } from '@/domains/sessions/main/session-drive-adapter'
+import { platformText } from '@/platform/main/i18n'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>

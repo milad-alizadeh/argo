@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 
-import type { Input } from './input-items'
-import type { CodexThreadStatus } from './managed-status'
+import type { Input } from '@/agents/codex/drive/input-items'
+import type { CodexThreadStatus } from '@/agents/codex/drive/managed-status'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-cli
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded

@@ -1,10 +1,10 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../types'
-import type { Reveal } from './reveal'
-import { feedContentHeight } from './use-prompt-at-top'
-import type { Settled } from './use-settled-feed'
+import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
+import { feedContentHeight } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
+import type { Settled } from '@/domains/sessions/renderer/feed/use-settled-feed'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 export type FeedRowComponent = (props: {
   row: SessionFeedRow

@@ -5,12 +5,15 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, expect } from 'vitest'
-import { createInMemorySessionTicketLinkStore } from '../../tickets/main/session-links'
-import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
-import { createSessionReader } from './reader'
-import { openSessionIndex } from './session-index/open-index'
-import type { IndexedAdapter } from './session-index/roster-fixtures'
-import type { SessionSource } from './session-source'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '@/domains/sessions/main/archive-store'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { openSessionIndex } from '@/domains/sessions/main/session-index/open-index'
+import type { IndexedAdapter } from '@/domains/sessions/main/session-index/roster-fixtures'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 
 // Counts every call to the underlying adapter's own scan, the one `archive-window.ts` falls back
 // to growing: an indexed read that never calls it proves the index answered alone.

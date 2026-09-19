@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readDelegations } from '../contract/signals'
-import type { TranscriptRecord } from '../contract/transcript'
+import { readDelegations } from '@/domains/sessions/contract/signals'
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>
 

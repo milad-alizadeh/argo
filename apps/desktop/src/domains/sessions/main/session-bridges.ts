@@ -3,33 +3,43 @@
 // call per domain (ADR-0021).
 import path from 'node:path'
 import { type BrowserWindow, powerMonitor } from 'electron'
-import { installCompactionHook } from '../../../agents/claude/compaction/compaction-hook'
-import { createClaudeDriveAdapter } from '../../../agents/claude/drive/session-drive-adapter'
-import { createSystemClaudeSessionDriver } from '../../../agents/claude/drive/system-claude-session-driver'
+import { installCompactionHook } from '@/agents/claude/compaction/compaction-hook'
+import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
+import { createSystemClaudeSessionDriver } from '@/agents/claude/drive/system-claude-session-driver'
 import {
   claudeCompactionStartsRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-} from '../../../agents/claude/sessions/roots'
-import { createCodexDriveAdapter } from '../../../agents/codex/drive/session-drive-adapter'
-import { createSystemCodexSessionDriver } from '../../../agents/codex/drive/system-codex-session-driver'
-import { codexTranscriptsRoot } from '../../../agents/codex/sessions/roots'
-import { registerWatching } from '../../../platform/main/watch/bridge'
-import { watchTrees } from '../../../platform/main/watch/watch-paths'
+} from '@/agents/claude/sessions/roots'
+import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
+import { createSystemCodexSessionDriver } from '@/agents/codex/drive/system-codex-session-driver'
+import { codexTranscriptsRoot } from '@/agents/codex/sessions/roots'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '@/domains/sessions/main/archive-store'
+import { attachSessionBridge } from '@/domains/sessions/main/bridge'
+import {
+  SESSION_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CODEX_EXECUTABLE_ENV,
+} from '@/domains/sessions/main/proof-protocol'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import {
+  reconcileSessions,
+  startBackfill,
+  withReconcile,
+} from '@/domains/sessions/main/session-background-indexing'
+import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-index'
+import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
+import { sessionSources } from '@/domains/sessions/main/session-sources'
+import { createSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { registerWatching } from '@/platform/main/watch/bridge'
+import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
   watchPeriodically,
   watchSystemResume,
   watchWindowFocus,
-} from '../../../platform/main/watch/watch-signals'
-import { createSessionTicketLinkStore } from '../../tickets/main/session-links'
-import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
-import { attachSessionBridge } from './bridge'
-import { SESSION_CLAUDE_EXECUTABLE_ENV, SESSION_CODEX_EXECUTABLE_ENV } from './proof-protocol'
-import { createSessionReader } from './reader'
-import { reconcileSessions, startBackfill, withReconcile } from './session-background-indexing'
-import { sessionIndexPath } from './session-index/open-index'
-import { createWorkerSessionIndex } from './session-index/worker-index'
-import { sessionSources } from './session-sources'
+} from '@/platform/main/watch/watch-signals'
 
 export function createSessionDrivers(userData: string, home: string, proofEnabled: boolean) {
   const claude = createSystemClaudeSessionDriver({

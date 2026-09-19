@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FeedMarkdown } from '../../feed/content/feed-markdown'
-import { formatSkillLabel } from '../../prompt/prompt-segments'
-import type { SessionSkillEvidence } from '../../types'
+import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
+import { formatSkillLabel } from '@/domains/sessions/renderer/prompt/prompt-segments'
+import type { SessionSkillEvidence } from '@/domains/sessions/renderer/types'
 
 // A skill file opens with YAML frontmatter for the CLI; the reader wants the instructions below.
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/

@@ -2,15 +2,20 @@ import { Archive } from 'lucide-react'
 import { type MouseEvent, type ReactNode, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  type RosterMenuHandlers,
+  type RosterRow,
+  renamedSession,
+  sessionName,
+} from '@/domains/sessions/renderer/components/roster/roster-rows'
+import type { Session } from '@/domains/sessions/renderer/types'
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuGroup,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from '../../../../../platform/renderer/components/ui/context-menu'
-import type { Session } from '../../types'
-import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
+} from '@/platform/renderer/components/ui/context-menu'
 
 type RosterMenuTarget = { session: Session; archived: boolean }
 

@@ -12,7 +12,7 @@ import {
   ticketPriorityRequestSchema,
   ticketUpdatedSchema,
   ticketUpdateRequestSchema,
-} from './contract'
+} from '@/domains/tickets/contract/contract'
 
 // The Ticket IPC contract has seven named operations, each on its own channel. The table is
 // consumed by the client, the preload bridge and the main-process registration, so an operation

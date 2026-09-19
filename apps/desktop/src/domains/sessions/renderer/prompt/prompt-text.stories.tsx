@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { PromptText } from './prompt-text'
+import { PromptText } from '@/domains/sessions/renderer/prompt/prompt-text'
 
 const meta: Meta<typeof PromptText> = {
   title: 'Sessions/Prompt/PromptText',

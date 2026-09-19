@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '../contract/chains'
-import { checkedDataImageUrl } from '../contract/feed-images'
-import { projectFeed } from './feed-incremental'
-import { readCall } from './tool-feed-test-fixtures'
-import { transcriptMessage as message } from './transcript-test-fixtures'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import { checkedDataImageUrl } from '@/domains/sessions/contract/feed-images'
+import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { readCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
+import { transcriptMessage as message } from '@/domains/sessions/main/transcript-test-fixtures'
 
 test('projects tool result images into the historical Feed', () => {
   const image = checkedDataImageUrl('data:image/png;base64,AAAA')

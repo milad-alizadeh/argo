@@ -1,4 +1,4 @@
-import { TAG } from '../compaction/compaction-hook'
+import { TAG } from '@/agents/claude/compaction/compaction-hook'
 
 const COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
 // The CLI's own report of a `/compact`, which the Feed's compaction divider already makes.
