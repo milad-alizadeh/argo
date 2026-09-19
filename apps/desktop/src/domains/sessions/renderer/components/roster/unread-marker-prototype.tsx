@@ -1,0 +1,38 @@
+import { useContext } from 'react'
+import { useTranslation } from 'react-i18next'
+import { UNSAFE_LocationContext } from 'react-router'
+
+export type UnreadMarkerPrototypeVariant = 'A'
+
+export function unreadMarkerPrototypeVariant(value: string | null) {
+  if (window.argo !== undefined && window.argo.development === null) return null
+  return value === 'A' ? value : null
+}
+
+export function useUnreadMarkerPrototypeVariant() {
+  const locationContext = useContext(UNSAFE_LocationContext)
+  const searchParams = new URLSearchParams(locationContext?.location.search)
+  return unreadMarkerPrototypeVariant(searchParams.get('variant'))
+}
+
+export function UnreadMarkerPrototypeSwitcher() {
+  const { t } = useTranslation('sessions')
+  const variant = useUnreadMarkerPrototypeVariant()
+  if (variant === null) return null
+  return (
+    <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-foreground/15 bg-foreground px-4 py-2 text-center text-background shadow-lg type-meta">
+      {t('loaderPrototype.squareTrack')}
+      <span className="block opacity-70">{t('loaderPrototype.legend')}</span>
+    </div>
+  )
+}
+
+export function unreadMarkerPrototypeDot(options: {
+  blocked: boolean
+  failed: boolean
+  unread: boolean
+}) {
+  if (options.blocked) return 'bg-warn'
+  if (options.failed) return 'bg-danger'
+  return options.unread ? 'bg-plan shadow-unread-glow' : 'bg-idle'
+}

@@ -1,8 +1,9 @@
 // The full-history title/id search (#2375), split out of `store.ts` to keep it under the file
 // line ceiling, the same way `store-backfill.ts` already is.
 import type { DatabaseSync } from 'node:sqlite'
-import { type SessionRosterRow, sessionRosterRowSchema } from '../../contract/models'
+import type { SessionRosterRow } from '../../contract/models'
 import { matchesSearchQuery } from '../search-match'
+import { storedRosterRow } from './stored-row'
 
 const EXCERPT_RADIUS = 80
 
@@ -41,10 +42,10 @@ export function searchChainsOf(
     contentMatches.map((match) => [match.chain_id, excerptOf(match.text, query)]),
   )
   return titleOrId.flatMap((record) => {
-    const parsed = sessionRosterRowSchema.safeParse(JSON.parse(record.row_json))
-    if (!parsed.success) return []
+    const row = storedRosterRow(record.row_json)
+    if (row === null) return []
     const excerpt = excerpts.get(record.chain_id) ?? null
-    if (!matchesSearchQuery(parsed.data, query) && excerpt === null) return []
-    return excerpt === null ? [parsed.data] : [{ ...parsed.data, searchExcerpt: excerpt }]
+    if (!matchesSearchQuery(row, query) && excerpt === null) return []
+    return excerpt === null ? [row] : [{ ...row, searchExcerpt: excerpt }]
   })
 }

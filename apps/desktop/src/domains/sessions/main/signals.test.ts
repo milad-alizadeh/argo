@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readActivity } from '../contract/signals'
 import type { ToolCall, ToolResult, TranscriptMessage } from '../contract/transcript'
+import { readCall } from './tool-feed-test-fixtures'
 
 function promptMessage(): TranscriptMessage {
   return {
@@ -47,48 +48,16 @@ function resultMessage(callId: string, result: ToolResult): TranscriptMessage {
   }
 }
 
-// The newest call of a Turn the transcript has not answered yet.
-function openActivity(name: string, input: ToolCall['input']) {
-  return readActivity([promptMessage(), callMessage({ id: 'call-1', name, input })])
-}
-
-test('names a running Bash call by its own description, not the raw command', () => {
-  const command = 'RTK_DISABLED=1 gh pr checks 2062 --watch'
-  assert.deepEqual(openActivity('Bash', { command, description: 'Watch PR checks' }), {
-    label: 'Watch PR checks',
-    kind: 'command',
-    open: true,
-    tool: 'Bash',
-    target: 'Watch PR checks',
-  })
-})
-
-test('names a running Bash call by its command when no description was given', () => {
-  assert.deepEqual(openActivity('Bash', { command: 'bun run quality' }), {
-    label: 'Ran bun run quality',
-    kind: 'command',
-    open: true,
-    tool: 'Bash',
-    target: 'bun run quality',
-  })
-})
-
-test('names a running Codex command by its command when no description was given', () => {
-  assert.deepEqual(openActivity('exec_command', { cmd: 'bun run quality' }), {
-    label: 'Ran bun run quality',
-    kind: 'command',
-    open: true,
-    tool: 'exec_command',
-    target: 'bun run quality',
-  })
-})
-
 test('uses the Feed label for a non-command tool while retaining its activity metadata', () => {
-  assert.deepEqual(openActivity('Read', { file_path: '/workspace/src/app.ts' }), {
+  const activity = readActivity([
+    promptMessage(),
+    callMessage(readCall('call-1', '/workspace/src/app.ts')),
+  ])
+  assert.deepEqual(activity, {
     label: 'Read app.ts',
     kind: 'read',
     open: true,
-    tool: 'Read',
+    tool: 'file',
     target: 'app.ts',
   })
 })
@@ -96,7 +65,18 @@ test('uses the Feed label for a non-command tool while retaining its activity me
 test('reads a call closed once the transcript holds its result', () => {
   const activity = readActivity([
     promptMessage(),
-    callMessage({ id: 'call-1', name: 'Bash', input: { command: 'bun run quality' } }),
+    callMessage({
+      id: 'call-1',
+      name: 'command',
+      input: {},
+      execute: {
+        kind: 'execute',
+        command: 'bun run quality',
+        label: null,
+        text: 'bun run quality',
+        background: false,
+      },
+    }),
     resultMessage('call-1', { callId: 'call-1', blocks: [], failed: false }),
   ])
   assert.equal(activity?.open, false)

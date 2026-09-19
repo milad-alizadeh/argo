@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import type { SessionChain } from '../contract/chains'
 import { checkedDataImageUrl } from '../contract/feed-images'
 import { projectFeed } from './feed-incremental'
+import { readCall } from './tool-feed-test-fixtures'
 import { transcriptMessage as message } from './transcript-test-fixtures'
 
 test('projects tool result images into the historical Feed', () => {
@@ -13,7 +14,7 @@ test('projects tool result images into the historical Feed', () => {
     message({
       uuid: 'call-record',
       blocks: [{ shape: 'tool', callId: 'call-1' }],
-      toolCalls: [{ id: 'call-1', name: 'Read', input: {} }],
+      toolCalls: [readCall('call-1', 'a.png')],
     }),
     message({
       uuid: 'result-record',

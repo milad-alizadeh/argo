@@ -10,6 +10,7 @@ import type {
 import { nextCursorFor, windowSizeFor } from './discover-transcript-sessions'
 import { type ResolvedIndexedIds, resolveIndexedIds } from './resolve-indexed-ids'
 import type { SessionIndex } from './session-index/contract'
+import { isSessionIndexFallback } from './session-index/recovery'
 import { holdsMessage } from './session-index/window-pass'
 import type { createTranscriptSummariser, TranscriptDiscoverySource } from './transcript-window'
 
@@ -56,14 +57,18 @@ export async function discoverSessionsWith(
   const windowSize = windowSizeFor(options?.cursor)
   const index = options?.index
   if (index !== undefined) {
-    return discoverIndexedWindow({
-      root,
-      windowSize,
-      index,
-      cli: source.cli,
-      indexedWindowFor,
-      presented,
-    })
+    try {
+      return await discoverIndexedWindow({
+        root,
+        windowSize,
+        index,
+        cli: source.cli,
+        indexedWindowFor,
+        presented,
+      })
+    } catch (error) {
+      if (!isSessionIndexFallback(error)) throw error
+    }
   }
   const { found, files, unreadable } = await summarise(root, windowSize)
   return {
@@ -73,6 +78,6 @@ export async function discoverSessionsWith(
     filesUnreadable: unreadable,
     filesParsed: files.length,
     nextCursor: nextCursorFor(found.length, windowSize),
-    historyComplete: true,
+    historyComplete: index === undefined,
   }
 }

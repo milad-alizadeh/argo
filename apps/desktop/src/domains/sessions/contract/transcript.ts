@@ -1,5 +1,16 @@
 import type { FeedImageUrl } from './feed-images'
 import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
+import type { ToolCall } from './tool-call'
+
+export type {
+  ExecuteFacts,
+  FetchFacts,
+  ReadFacts,
+  SearchFacts,
+  ToolCall,
+  ToolCallStatus,
+} from './tool-call'
+export { TOOL_CALL_STATUSES } from './tool-call'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }
@@ -14,7 +25,6 @@ export type ContentBlock =
   | { shape: 'file'; path: string }
   | { shape: 'source'; label: string; source: string }
 
-export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
 export type RichResultBlock =
   | { shape: 'text'; text: string }
   | { shape: 'image'; url: FeedImageUrl }
@@ -69,7 +79,9 @@ export type TranscriptMessage = {
   planChanges?: PlanChange[]
 }
 
-export const BACKGROUND_STATES = ['completed', 'failed', 'killed', 'stopped'] as const
+// How a background command ends. An adapter folds its harness's own words for a stop into
+// `interrupted`, so no notification word crosses the contract.
+export const BACKGROUND_STATES = ['completed', 'failed', 'interrupted'] as const
 export type BackgroundState = (typeof BACKGROUND_STATES)[number]
 
 export const TRANSCRIPT_EVENT_KINDS = ['status', 'transcript', 'context', 'command'] as const

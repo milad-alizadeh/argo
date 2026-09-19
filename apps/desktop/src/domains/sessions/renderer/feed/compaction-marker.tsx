@@ -1,7 +1,7 @@
-import { LoaderCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Loader } from '../../../../platform/renderer/components/loader'
 import { Progress } from '../../../../platform/renderer/components/ui/progress'
 import { formatElapsed } from './elapsed'
 
@@ -27,7 +27,7 @@ export function CompactionMarker({
   return (
     <article className="grid gap-2 type-body" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+        <Loader aria-hidden={true} />
         <span>{t('marks.compacting')}</span>
         <span aria-hidden="true" className="text-muted-foreground tabular-nums">
           ({elapsedSince(startedAt, now)}

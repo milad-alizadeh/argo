@@ -1,44 +1,10 @@
 // The pure timer-loop behaviour behind background backfill (#2373): it keeps ticking until
 // complete, pauses instead of ticking while a Feed read is in flight, and stops cleanly.
 import { describe, expect, test } from 'vitest'
-import { createBackfillScheduler, type SchedulerClock } from './backfill-scheduler'
+import { createBackfillScheduler } from './backfill-scheduler'
+import { fakeClock } from './backfill-scheduler-test-clock'
 
-function fakeClock() {
-  const pending: { at: number; run: () => void }[] = []
-  let now = 0
-  const clock: SchedulerClock = {
-    setTimeout: (callback, ms) => {
-      const entry = { at: now + ms, run: callback }
-      pending.push(entry)
-      return entry
-    },
-    clearTimeout: (handle) => {
-      const index = pending.indexOf(handle as { at: number; run: () => void })
-      if (index !== -1) pending.splice(index, 1)
-    },
-  }
-  return {
-    clock,
-    // Runs every timer due by `ms` from now, including ones a run schedules along the way.
-    advance: async (ms: number) => {
-      now += ms
-      for (;;) {
-        const due = pending.filter((entry) => entry.at <= now)
-        if (due.length === 0) return
-        for (const entry of due) {
-          pending.splice(pending.indexOf(entry), 1)
-          entry.run()
-        }
-        // Let any promise the run's callback started settle before checking for more due timers.
-        await Promise.resolve()
-        await Promise.resolve()
-      }
-    },
-    pendingCount: () => pending.length,
-  }
-}
-
-describe('createBackfillScheduler ticking', () => {
+function testIncompleteBatch() {
   test('ticks immediately on start, and again once the batch reports incomplete', async () => {
     const { clock, advance } = fakeClock()
     let calls = 0
@@ -59,7 +25,9 @@ describe('createBackfillScheduler ticking', () => {
     await advance(100)
     expect(calls).toBe(2)
   })
+}
 
+function testCompletedBatch() {
   test('stops scheduling once a tick reports complete', async () => {
     const { clock, advance, pendingCount } = fakeClock()
     const scheduler = createBackfillScheduler({
@@ -74,6 +42,58 @@ describe('createBackfillScheduler ticking', () => {
 
     expect(pendingCount()).toBe(0)
   })
+}
+
+function testCompletedRecovery() {
+  test('rechecks a completed index when recovery can replace its worker', async () => {
+    const { clock, advance } = fakeClock()
+    let calls = 0
+    const scheduler = createBackfillScheduler({
+      tick: async () => {
+        calls += 1
+        return { complete: true }
+      },
+      isPaused: () => false,
+      completedRetryMs: 100,
+      clock,
+    })
+
+    scheduler.start()
+    await advance(0)
+    await advance(100)
+
+    expect(calls).toBe(2)
+  })
+}
+
+function testFailedTick() {
+  test('retries after an index recovery tick fails', async () => {
+    const { clock, advance } = fakeClock()
+    let calls = 0
+    const scheduler = createBackfillScheduler({
+      tick: async () => {
+        calls += 1
+        if (calls === 1) throw new Error('worker stopped')
+        return { complete: true }
+      },
+      isPaused: () => false,
+      intervalMs: 100,
+      clock,
+    })
+
+    scheduler.start()
+    await advance(0)
+    await advance(100)
+
+    expect(calls).toBe(2)
+  })
+}
+
+describe('createBackfillScheduler ticking', () => {
+  testIncompleteBatch()
+  testCompletedBatch()
+  testCompletedRecovery()
+  testFailedTick()
 })
 
 describe('createBackfillScheduler pause and stop', () => {

@@ -4,6 +4,7 @@ import type { SessionFeedRow } from '../contract/feed-rows'
 import { type ToolResult, toolRows } from '../contract/tool-feed'
 import { foldSettledToolRuns, groupToolRuns } from '../contract/tool-groups'
 import type { ToolCall } from '../contract/transcript'
+import { searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
@@ -61,7 +62,7 @@ test('a skill never folds into a neighbouring count', () => {
 })
 
 test('a web search counts as a command in the group it joins', () => {
-  const search: ToolCall = { id: 'w', name: 'web__run', input: { query: 'argo cockpit' } }
+  const search = searchCall('w', 'argo cockpit', 'web')
   const grouped = groupToolRuns(settledRows([bash('1', 'bun test'), search]))
   assert.equal(grouped.length, 1)
   assert.equal(grouped[0]?.shape === 'tool-group' ? grouped[0].label : null, 'Ran 2 commands')

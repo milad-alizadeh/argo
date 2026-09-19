@@ -76,9 +76,8 @@ export function SessionMetadata({ session }: { session: Session }) {
         </span>
       ) : null}
       {session.pullRequest !== null ? (
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex" data-slot="session-pull-request">
           <GitPullRequestArrow aria-hidden="true" />
-          <span>#{session.pullRequest.number}</span>
         </span>
       ) : null}
       {session.delegations.length > 0 ? (

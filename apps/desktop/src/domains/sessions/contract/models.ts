@@ -109,9 +109,9 @@ export const sessionTicketSchema = z.strictObject({
 export type SessionTicket = z.infer<typeof sessionTicketSchema>
 
 // How a Shell command stands. A foreground command is `running` until its result lands, and is
-// then not read at all. A background one keeps its final state, which the CLI's own notification
-// words, because that result is what replaces the running row the reader was watching (#1582).
-export const SHELL_STATES = ['running', 'completed', 'failed', 'killed', 'stopped'] as const
+// then not read at all. A background one keeps its final state, because that result is what
+// replaces the running row the reader was watching (#1582).
+export const SHELL_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
 export const shellStateSchema = z.enum(SHELL_STATES)
 export type ShellState = z.infer<typeof shellStateSchema>
 

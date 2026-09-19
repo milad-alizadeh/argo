@@ -32,10 +32,10 @@ export function fileChange(call: ToolCall) {
   return change === null ? null : { patch: change.diff, lineCounts: change.lineCounts }
 }
 
-export function searchLabel(call: ToolCall) {
-  const url = text(call.input.url)
-  if (url !== null) return `Fetched ${url}`
-  return `Searched ${text(call.input.query) ?? 'the web'}`
+export function searchLabel({ search, fetch }: ToolCall) {
+  if (fetch !== undefined) return `Fetched ${fetch.url ?? 'a page'}`
+  if (search === undefined) return 'Searched'
+  return `Searched ${search.query ?? (search.scope === 'web' ? 'the web' : 'files')}`
 }
 
 // A web call's outcome is the first line of its output, which the Codex app shows beside the

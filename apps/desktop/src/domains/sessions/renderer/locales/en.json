@@ -142,8 +142,18 @@
   },
   "filterSessions": "Filter Sessions",
   "rosterStatusActive": "Active",
+  "rosterStatusUnread": "Unread",
   "rosterStatusArchived": "Archived",
   "rosterStatusAll": "All",
+  "loaderPrototype": {
+    "sessions": "Sessions",
+    "label": "{{name}} loader",
+    "pixels": "{{pixels}}px",
+    "title": "Argo Loader",
+    "description": "The moving square is now the shared loading mark. It stays neutral, while blue means unread and yellow means that a Session needs you.",
+    "squareTrack": "Square track",
+    "legend": "blue is unread · motion is running"
+  },
   "archivedEmpty": "No archived Sessions",
   "archivedStillIndexing": "Still indexing older Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
@@ -219,8 +229,7 @@
     "done": "Done",
     "completed": "Completed",
     "failed": "Failed",
-    "killed": "Killed",
-    "stopped": "Stopped"
+    "interrupted": "Interrupted"
   },
   "skill": {
     "open": "Open the {{name}} skill",

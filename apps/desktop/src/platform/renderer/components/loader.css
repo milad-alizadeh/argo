@@ -1,0 +1,74 @@
+.loader {
+  --loader-size-meta: 12px;
+  --loader-size: var(--size-icon-control);
+  --loader-cell-size: 45.4545%;
+  --loader-square: linear-gradient(var(--foreground), var(--foreground));
+
+  display: inline-block;
+  flex: none;
+  width: var(--loader-size);
+  aspect-ratio: 1;
+  background: var(--loader-square), var(--loader-square), var(--loader-square);
+  background-repeat: no-repeat;
+  background-size: var(--loader-cell-size) var(--loader-cell-size);
+  animation: loader-corners 1.5s infinite;
+}
+
+.loader[data-size="meta"] {
+  --loader-size: var(--loader-size-meta);
+}
+
+.loader[data-size="standard"] {
+  --loader-size: 28px;
+}
+
+.loader[data-size="prominent"] {
+  --loader-size: 40px;
+}
+
+@keyframes loader-corners {
+  0% {
+    background-position:
+      0 0,
+      0 100%,
+      100% 100%;
+  }
+
+  25% {
+    background-position:
+      100% 0,
+      0 100%,
+      100% 100%;
+  }
+
+  50% {
+    background-position:
+      100% 0,
+      0 0,
+      100% 100%;
+  }
+
+  75% {
+    background-position:
+      100% 0,
+      0 0,
+      0 100%;
+  }
+
+  100% {
+    background-position:
+      100% 100%,
+      0 0,
+      0 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    background-position:
+      100% 100%,
+      0 0,
+      0 100%;
+    animation: none;
+  }
+}

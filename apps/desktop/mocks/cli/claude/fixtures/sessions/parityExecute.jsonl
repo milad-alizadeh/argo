@@ -1,0 +1,7 @@
+{"type":"last-prompt","leafUuid":"par-r-2"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"par-p","message":{"role":"user","content":"Run the checks."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"par-a-1","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"par-c1","name":"Bash","input":{"command":"bun test"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"par-r-1","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"par-c1","content":"1 pass 0 fail","is_error":false}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:03.000Z","uuid":"par-a-2","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"par-c2","name":"Bash","input":{"command":"bun run lint"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:04.000Z","uuid":"par-r-2","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"par-c2","content":"1 error","is_error":true}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:05.000Z","uuid":"par-a-3","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"par-c3","name":"Bash","input":{"command":"bun run build"}}]}}

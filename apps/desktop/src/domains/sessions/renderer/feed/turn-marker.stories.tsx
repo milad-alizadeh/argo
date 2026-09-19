@@ -43,7 +43,7 @@ export const StartingSession: Story = { args: { phase: 'starting' } }
 
 export const ResumingSession: Story = { args: { phase: 'resuming' } }
 
-// The comet shown while a Session's Feed loads, after its reveal delay.
+// The mark shown while a Session's Feed loads, after its reveal delay.
 export const SessionLoading: Story = {
   render: () => (
     <div className="relative h-80">

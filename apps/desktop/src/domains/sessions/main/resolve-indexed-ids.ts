@@ -45,13 +45,19 @@ export async function resolveIndexedIds(
     if (history.knownIds.has(id)) chainIds.add(rootOf(id, history.parents))
     else unresolvedIds.push(id)
   }
+  let indexedChainIds = chainIds
   if (chainIds.size > 0) {
     const known = await index.filesOfChains(cli, [...chainIds])
+    indexedChainIds = new Set(known.map((file) => file.chainId))
+    for (const id of ids) {
+      const chainId = rootOf(id, history.parents)
+      if (history.knownIds.has(id) && !indexedChainIds.has(chainId)) unresolvedIds.push(id)
+    }
     const identities = (await Promise.all(known.map(freshIdentityOf))).filter(
       (identity): identity is TranscriptFileIdentity => identity !== null,
     )
     await reindexCandidates(bound.pass, identities, identities)
   }
-  const rows = chainIds.size === 0 ? [] : await index.rowsOfChains(cli, [...chainIds])
+  const rows = indexedChainIds.size === 0 ? [] : await index.rowsOfChains(cli, [...indexedChainIds])
   return { rows, unresolvedIds }
 }
