@@ -3,10 +3,10 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
 // Argo owns that flag for every CLI at once (`archive-store.ts`, #2315).
-import type { SessionDelegationUsage } from '../contract/background-work-contract'
-import type { SessionChain } from '../contract/chains'
-import type { SessionRenameReply, SessionRenameRequest } from '../contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '../contract/models'
+import type { SessionSubagentUsage } from '@/domains/sessions/contract/background-work-contract'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 import type { ResolvedIndexedIds } from './resolve-indexed-ids'
 
@@ -40,9 +40,9 @@ export type SessionSource = {
   readShellOutput?: (sessionId: string, shellId: string) => Promise<string | null>
   // One Subagent's own transcript, read as a chain so the Feed projects it the same way it
   // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
-  readDelegationFiles?: (sessionId: string, delegationId: string) => Promise<SessionChain | null>
+  readSubagentFiles?: (sessionId: string, subagentId: string) => Promise<SessionChain | null>
   // What each of this Session's Subagents used, keyed by the call that spawned it.
-  readDelegationUsage?: (sessionId: string) => Promise<SessionDelegationUsage[]>
+  readSubagentUsage?: (sessionId: string) => Promise<SessionSubagentUsage[]>
   // Another live Argo window on this machine holds the Session's channel right now (ADR-0040).
   // Joined over any lock discovery already read off the CLI's own live record; absent where the
   // CLI keeps no ownership ledger.

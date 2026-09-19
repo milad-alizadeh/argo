@@ -1,8 +1,15 @@
 // The SQLite Session index, driven directly: what it answers for what was written to it, never
 // which statement ran. Recovering a damaged or outdated index is `store-recovery.vitest.ts`.
 import { afterEach, expect, test } from 'vitest'
-import { NO_CHAIN } from './contract'
-import { chainOf, fileFor, passOf, rowFor, storeHarness, writeChain } from './store-fixtures'
+import { NO_CHAIN } from '@/domains/sessions/main/session-index/contract'
+import {
+  chainOf,
+  fileFor,
+  passOf,
+  rowFor,
+  storeHarness,
+  writeChain,
+} from '@/domains/sessions/main/session-index/store-fixtures'
 
 const stores = storeHarness()
 afterEach(stores.cleanUp)

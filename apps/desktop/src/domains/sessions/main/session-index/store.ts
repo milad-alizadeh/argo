@@ -1,17 +1,23 @@
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
-import type { SessionRosterRow } from '../../contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import {
   type BackfillProgress,
   type IndexedTranscriptFile,
   NO_CHAIN,
   type SessionIndexWrite,
-} from './contract'
-import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
-import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
-import { searchChainsOf } from './store-search'
-import { writePass } from './store-write'
-import { storedRosterRow } from './stored-row'
+} from '@/domains/sessions/main/session-index/contract'
+import {
+  SESSION_INDEX_SCHEMA,
+  SESSION_INDEX_VERSION,
+} from '@/domains/sessions/main/session-index/schema'
+import {
+  backfillProgressOf,
+  writeBackfillProgress,
+} from '@/domains/sessions/main/session-index/store-backfill'
+import { searchChainsOf } from '@/domains/sessions/main/session-index/store-search'
+import { writePass } from '@/domains/sessions/main/session-index/store-write'
+import { storedRosterRow } from '@/domains/sessions/main/session-index/stored-row'
 
 export type SessionIndexStore = {
   filesAt: (cli: string, paths: readonly string[]) => IndexedTranscriptFile[]

@@ -1,11 +1,9 @@
-import { createDomainClient } from '../../../shared/ipc/client'
-import type { SessionAttachmentInput } from '../contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveSetReply,
   type SessionChooseAttachmentsReply,
-  type SessionDelegationUsageReply,
   type SessionFeedReply,
   type SessionFileReply,
   type SessionListReply,
@@ -17,11 +15,13 @@ import {
   type SessionSkillReply,
   type SessionStartReply,
   type SessionStatAttachmentsReply,
+  type SessionSubagentUsageReply,
   sessionError,
-} from '../contract/contract'
-import { SESSION_OPERATIONS } from '../contract/operations'
-import type { QuestionAnswer } from '../contract/question'
-import type { RosterStatus } from '../contract/search-contract'
+} from '@/domains/sessions/contract/contract'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { RosterStatus } from '@/domains/sessions/contract/search-contract'
+import { createDomainClient } from '@/shared/ipc/client'
 
 export type SessionClient = {
   startSession(request: {
@@ -71,14 +71,14 @@ export type SessionClient = {
   }): Promise<SessionSearchReply>
   readSessionFeed(request: {
     sessionId: string
-    delegationId: string | null
+    subagentId: string | null
     revision: string | null
   }): Promise<SessionFeedReply>
   readWorkspaceFile(request: { sessionId: string; path: string }): Promise<SessionFileReply>
   readSkillFile(request: { path: string }): Promise<SessionSkillReply>
   cancelSessionFeed(request: { sessionId: string }): Promise<SessionAcceptedReply>
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
-  readDelegationUsage(request: { sessionId: string }): Promise<SessionDelegationUsageReply>
+  readSubagentUsage(request: { sessionId: string }): Promise<SessionSubagentUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
   connectSessionTicket(request: {
     sessionId: string
@@ -112,7 +112,7 @@ export function createSessionClient(
     readWorkspaceFile: (request) => client.file(request),
     readSkillFile: (request) => client.skill(request),
     readShellOutput: (request) => client.shellOutput(request),
-    readDelegationUsage: (request) => client.delegationUsage(request),
+    readSubagentUsage: (request) => client.subagentUsage(request),
     renameSession: (request) => client.rename(request),
     connectSessionTicket: (request) => client.connectTicket(request),
     disconnectSessionTicket: (request) => client.disconnectTicket(request),

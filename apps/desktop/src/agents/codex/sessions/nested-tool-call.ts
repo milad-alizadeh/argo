@@ -1,4 +1,4 @@
-import { nextQuotedState, openedQuote, type Quote } from './javascript-string'
+import { nextQuotedState, openedQuote, type Quote } from '@/agents/codex/sessions/javascript-string'
 
 // Any `tools.<name>(` the script reaches as code: assigned, awaited inline, or inside a callback.
 const TOOL_CALL = /tools\.([A-Za-z][A-Za-z0-9_]*)\s*\(/y

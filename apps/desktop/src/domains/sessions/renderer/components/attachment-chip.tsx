@@ -1,15 +1,15 @@
 import { File } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { attachmentKindOf } from '@/domains/sessions/contract/attachments-contract'
+import { fileImageUrl } from '@/domains/sessions/contract/feed-images'
 import {
   Attachment,
   AttachmentContent,
   AttachmentDescription,
   AttachmentMedia,
   AttachmentTitle,
-} from '../../../../platform/renderer/components/ui/attachment'
-import { attachmentKindOf } from '../../contract/attachments-contract'
-import { fileImageUrl } from '../../contract/feed-images'
+} from '@/platform/renderer/components/ui/attachment'
 
 // `path` is the file's absolute path on disk.
 export function parseFilename(path: string): {

@@ -1,15 +1,15 @@
 import { Plus, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
-import { Button } from '../../../../platform/renderer/components/ui/button'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { useTicketSearch } from '@/domains/tickets/renderer/state/use-ticket-search'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from '../../../../platform/renderer/components/ui/input-group'
-import { sourcePresentation } from '../lib/sources'
-import { useTicketSearch } from '../state/use-ticket-search'
+} from '@/platform/renderer/components/ui/input-group'
 
 // The provider answers the search, so the field only holds the words; the backlog reads the settled query.
 function TicketSearchField() {

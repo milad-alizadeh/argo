@@ -2,14 +2,17 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
-import { mergeAppendedFeed } from '../../contract/feed-contract'
+import { mergeAppendedFeed } from '@/domains/sessions/contract/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
-import type { SessionFeed, SessionId } from '../types'
+} from '@/domains/sessions/renderer/session-contract-error'
+import {
+  SESSION_REFRESH_MS,
+  sessionFeedQueryKey,
+} from '@/domains/sessions/renderer/session-queries'
+import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
 
 export async function retrySessionFeed(
   queryClient: QueryClient,
@@ -23,13 +26,13 @@ export async function retrySessionFeed(
 export function sessionFeedQuery(
   queryClient: QueryClient,
   sessionId: SessionId | null,
-  delegationId: string | null,
+  subagentId: string | null,
 ): UseQueryOptions<SessionFeed | null, SessionContractError> {
   return {
     queryKey:
       sessionId === null
-        ? ['sessions', 'feed', null, delegationId]
-        : sessionFeedQueryKey(sessionId, delegationId),
+        ? ['sessions', 'feed', null, subagentId]
+        : sessionFeedQueryKey(sessionId, subagentId),
     enabled: sessionId !== null,
     // A Feed belongs only to the active reader. Once its observer leaves on a Session switch,
     // React Query immediately drops the transcript and aborts its in-flight reader work. This
@@ -46,7 +49,7 @@ export function sessionFeedQuery(
     retry: false,
     queryFn: async ({ signal }) => {
       if (sessionId === null) return null
-      const key = sessionFeedQueryKey(sessionId, delegationId)
+      const key = sessionFeedQueryKey(sessionId, subagentId)
       const cached = queryClient.getQueryData<SessionFeed>(key)
       // The abort TanStack Query fires on a query-key change (switching Sessions) or unmount
       // only stops the renderer from waiting on this promise; it does not reach the main
@@ -57,7 +60,7 @@ export function sessionFeedQuery(
       const reply = await window.argo
         .readSessionFeed({
           sessionId,
-          delegationId,
+          subagentId,
           revision: cached?.revision ?? null,
         })
         .finally(() => signal.removeEventListener('abort', onAbort))

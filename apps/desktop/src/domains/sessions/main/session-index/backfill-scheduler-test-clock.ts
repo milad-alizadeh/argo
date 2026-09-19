@@ -1,4 +1,4 @@
-import type { SchedulerClock } from './backfill-scheduler'
+import type { SchedulerClock } from '@/domains/sessions/main/session-index/backfill-scheduler'
 
 export function fakeClock() {
   const pending: { at: number; run: () => void }[] = []

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isExternalLink, loadableImageSource } from './urls'
+import { isExternalLink, loadableImageSource } from '@/platform/shared/urls'
 
 test('an image loads from the web, a data image or a local file', () => {
   for (const [source, loaded] of [

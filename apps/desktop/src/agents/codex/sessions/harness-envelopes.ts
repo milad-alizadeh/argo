@@ -1,10 +1,9 @@
-import { isIdentifier } from '@/shared/validation'
+import { taggedField } from '@/agents/envelope-tags'
 import type {
   ContentBlock,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField } from '../../envelope-tags'
+} from '@/domains/sessions/contract/transcript'
 import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
 import { withoutChannelTag } from './realtime-replies'
 
@@ -50,21 +49,12 @@ function assistantRecord(message: TranscriptMessage): TranscriptRecord {
 }
 
 // Codex realtime voice hands the thread what the person said as `<input>`, with the spoken
-// conversation so far beside it for the model: the same envelope the Claude adapter reads.
-function realtimeDelegation(uuid: string, body: string): TranscriptRecord {
-  const action = taggedField(body, 'input')
-  if (action === null) return { kind: 'trace', uuid }
-  const id = taggedField(body, 'id')
-  return {
-    kind: 'delegation',
-    uuid,
-    actor: 'agent',
-    action,
-    status: taggedField(body, 'status'),
-    progress: taggedField(body, 'progress'),
-    groupId: id !== null && isIdentifier(id) ? id : null,
-    callId: null,
-  }
+// conversation so far beside it for the model: the same envelope the Claude adapter reads. It is a
+// request from the person, drawn like a prompt, and no Subagent event.
+function voiceRequest(uuid: string, body: string): TranscriptRecord {
+  const text = taggedField(body, 'input')
+  if (text === null) return { kind: 'trace', uuid }
+  return { kind: 'event', uuid, event: 'command', text }
 }
 
 // Codex strips a model-context prefix before this heading (`USER_MESSAGE_BEGIN`, codex-rs
@@ -88,8 +78,8 @@ function userRecord(message: TranscriptMessage): TranscriptRecord {
   const text = message.blocks.length === 1 && only?.shape === 'prose' ? only.text : ''
   if (wholeEnvelope(text, 'heartbeat') !== null)
     return { kind: 'trace', uuid: message.uuid, boundary: true }
-  const delegation = wholeEnvelope(text, 'realtime_delegation')
-  if (delegation !== null) return realtimeDelegation(message.uuid, delegation)
+  const voice = wholeEnvelope(text, 'realtime_delegation')
+  if (voice !== null) return voiceRequest(message.uuid, voice)
   const hasImage = message.blocks.some((block) => block.shape === 'image')
   const blocks = message.blocks.flatMap((block) =>
     block.shape === 'prose' ? requestBlocks(block.text, hasImage) : [block],

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import { ADA, HIDDEN, TEAM } from '../../../providers/linear/harness'
-import { connect, harness, LIST, OCTOCAT } from '../../accounts/main/harness'
+import { connect, harness, LIST, OCTOCAT } from '@/domains/accounts/main/harness'
+import { ADA, HIDDEN, TEAM } from '@/providers/linear/harness'
 
 const ACCOUNT = 'linear:user-ada'
 const BIND = { accountId: ACCOUNT, scope: TEAM.id }

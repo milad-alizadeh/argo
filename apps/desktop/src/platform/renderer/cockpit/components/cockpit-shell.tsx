@@ -3,10 +3,14 @@ import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { Button } from '../../components/ui/button'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
-import { readCssSize } from '../../lib/read-css-size'
-import { CockpitNavigationRail } from './cockpit-navigation-rail'
+import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
+import { Button } from '@/platform/renderer/components/ui/button'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/platform/renderer/components/ui/resizable'
+import { readCssSize } from '@/platform/renderer/lib/read-css-size'
 
 type CockpitShellProps = {
   rail?: ReactNode

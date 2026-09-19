@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
+import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
+import { beginManualSetup } from '@/domains/projects/main/setup/manual-setup'
+import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 import { setupStoreFixture } from '../../../../../test-fixtures/projects/setup/setup-store.fixture'
 import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import {
@@ -11,9 +14,6 @@ import {
   setupDocumentFixture,
 } from '../../../../../test-fixtures/projects/setup-document.fixture'
 import { parseSetupDocument } from '../../contract/setup-document'
-import type { SetupCheckpoint } from '../sqlite-store'
-import { saveManualProjectConfiguration } from './manual-configuration'
-import { beginManualSetup } from './manual-setup'
 import { SetupDocumentLoadError } from './setup-bundle'
 
 const run = promisify(execFile)
@@ -112,7 +112,7 @@ test('writes manual configuration in the setup worktree, not the current checkou
     },
   })
 
-  assert.equal(checkpoint.phase, 'editing')
+  assert.equal(checkpoint.phase, 'ready')
   assert.equal(
     await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.json'), 'utf8'),
     source,

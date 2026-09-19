@@ -1,7 +1,26 @@
-import type { FeedImageUrl } from './feed-images'
-import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
-import type { ToolCall } from './tool-call'
+import type { BackgroundTaskRecord } from '@/domains/sessions/contract/background-task-record'
+import type { SessionEntry } from '@/domains/sessions/contract/models'
+import type { SubagentCall, SubagentEvent } from '@/domains/sessions/contract/subagent-event'
+import type { ToolCall } from '@/domains/sessions/contract/tool-call'
+import type {
+  ContentBlock,
+  ToolResult,
+  TranscriptEventKind,
+} from '@/domains/sessions/contract/transcript-content'
+import type { PlanChange } from '@/domains/sessions/contract/transcript-plan'
+import type { TranscriptUsage } from '@/domains/sessions/contract/transcript-usage'
 
+export type {
+  BackgroundState,
+  BackgroundTaskRecord,
+} from '@/domains/sessions/contract/background-task-record'
+export { BACKGROUND_STATES } from '@/domains/sessions/contract/background-task-record'
+export {
+  SUBAGENT_EVENTS,
+  type SubagentEvent,
+  type SubagentEventName,
+  type SubagentFacts,
+} from '@/domains/sessions/contract/subagent-event'
 export type {
   AskFacts,
   EditedFile,
@@ -14,52 +33,20 @@ export type {
   SkillFacts,
   ToolCall,
   ToolCallStatus,
-} from './tool-call'
-export { TOOL_CALL_STATUSES } from './tool-call'
-
-export type ContentBlock =
-  | { shape: 'prose'; text: string }
-  | { shape: 'thought'; text: string }
-  | { shape: 'marker'; marker: FeedMarker }
-  // `raw` is the protocol update's own untranslated text, shown behind a closed disclosure for
-  // diagnostics; absent for a harness event, which has none worth keeping.
-  | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }
-  | { shape: 'tool'; callId: string }
-  | { shape: 'image'; url: FeedImageUrl }
-  // A file the person attached to a prompt, by its absolute path.
-  | { shape: 'file'; path: string }
-  | { shape: 'source'; label: string; source: string }
-
-export type RichResultBlock =
-  | { shape: 'text'; text: string }
-  | { shape: 'image'; url: FeedImageUrl }
-export type ToolResult = {
-  callId: string
-  blocks: RichResultBlock[]
-  failed: boolean
-  background?: { taskId: string; outputPath: string | null }
-}
-
-export function resultText(blocks: readonly RichResultBlock[]): string | null {
-  const text = blocks.flatMap((block) => (block.shape === 'text' ? [block.text] : []))
-  return text.length === 0 ? null : text.join('\n')
-}
-export type TranscriptUsage = {
-  inputTokens: number
-  outputTokens: number
-  cacheReadTokens: number
-  cacheCreationTokens: number
-}
-
-// One change a record makes to its Session's Plan (CONTEXT.md L3 · Plan), as its adapter read it.
-export type PlanChange =
-  | { kind: 'replace'; entries: { content: string; status: PlanEntryStatus }[] }
-  | { kind: 'unreadable' }
-  // A step exists only once the result of the call that added it names the step's key.
-  | { kind: 'add'; callId: string; content: string }
-  | { kind: 'added'; callId: string; key: string }
-  | { kind: 'update'; key: string; content: string | null; status: PlanEntryStatus | null }
-  | { kind: 'remove'; key: string }
+} from '@/domains/sessions/contract/tool-call'
+export { TOOL_CALL_STATUSES } from '@/domains/sessions/contract/tool-call'
+export type {
+  ContentBlock,
+  RichResultBlock,
+  ToolResult,
+  TranscriptEventKind,
+} from '@/domains/sessions/contract/transcript-content'
+export {
+  resultText,
+  TRANSCRIPT_EVENT_KINDS,
+} from '@/domains/sessions/contract/transcript-content'
+export type { PlanChange } from '@/domains/sessions/contract/transcript-plan'
+export type { TranscriptUsage } from '@/domains/sessions/contract/transcript-usage'
 
 export type TranscriptMessage = {
   kind: 'message'
@@ -84,32 +71,11 @@ export type TranscriptMessage = {
   planChanges?: PlanChange[]
 }
 
-// How a background command ends. An adapter folds its harness's own words for a stop into
-// `interrupted`, so no notification word crosses the contract.
-export const BACKGROUND_STATES = ['completed', 'failed', 'interrupted'] as const
-export type BackgroundState = (typeof BACKGROUND_STATES)[number]
-
-export const TRANSCRIPT_EVENT_KINDS = ['status', 'transcript', 'context', 'command'] as const
-export type TranscriptEventKind = (typeof TRANSCRIPT_EVENT_KINDS)[number]
-
 export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'event'; uuid: string; event: TranscriptEventKind; text: string | null }
-  | {
-      kind: 'delegation'
-      uuid: string
-      timestamp?: string | null
-      actor: 'agent' | 'shell'
-      action: string | null
-      status: string | null
-      progress: string | null
-      groupId: string | null
-      // The Shell call a background task's notification names, so its block can open that command.
-      callId: string | null
-      // A notice delivered while the Session was idle is a user record, so it carries the ending.
-      ending?: BackgroundTaskRecord
-    }
+  | SubagentEvent
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // The Skill tool's result is a placeholder ("Launching skill: X"); the CLI delivers the skill's
@@ -122,8 +88,11 @@ export type TranscriptRecord =
       uuid: string
       boundary?: boolean
       subagent?: boolean
+      // A collaboration call the Subagent events read a fact from: the model a spawn chose, or the
+      // target a stop names (`codex/sessions/subagent-calls.ts`).
+      subagentCall?: SubagentCall
       // Codex records a spawned thread's parent and path in its session metadata. The adapter
-      // uses them to open that thread from the parent Session's delegation card.
+      // uses them to open that thread from the parent Session's Subagent row.
       parentSessionId?: string | null
       agentPath?: string | null
       agentNickname?: string | null
@@ -152,22 +121,10 @@ export type TranscriptRecord =
       state: 'completed' | 'aborted'
       timestamp: string | null
     }
-  // The harness re-delivers the compaction summary as a separate, later user turn than the
-  // `compact_boundary` it belongs to; `readTranscriptFile` folds it into that record and this
-  // kind never reaches a row on its own (#2206).
+  // `readTranscriptFile` folds the later compaction summary into its boundary (#2206).
   | { kind: 'compaction-summary'; uuid: string; text: string }
   | BackgroundTaskRecord
   | { kind: 'unreadable'; line: string }
-
-export type BackgroundTaskRecord = {
-  kind: 'background-task'
-  taskId: string
-  callId: string
-  outputPath: string | null
-  state: BackgroundState
-  summary: string | null
-  timestamp: string | null
-}
 
 export type TranscriptFile = {
   path: string
@@ -182,4 +139,8 @@ export type TranscriptFile = {
 
 export type TranscriptParser = (line: string) => TranscriptRecord | null
 
-export { readTranscriptFile, transcriptFileFrom, withoutBlocks } from './transcript-file'
+export {
+  readTranscriptFile,
+  transcriptFileFrom,
+  withoutBlocks,
+} from '@/domains/sessions/contract/transcript-file'

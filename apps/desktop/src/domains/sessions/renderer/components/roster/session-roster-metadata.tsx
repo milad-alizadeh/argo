@@ -1,8 +1,9 @@
 import { Bot, GitPullRequestArrow, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { ticketKeyInPlace } from '../../../../tickets/contract/branch-ticket'
-import type { Session } from '../../types'
-import { sessionTiming } from './session-timing'
+import { useTranslation } from 'react-i18next'
+import { sessionTiming } from '@/domains/sessions/renderer/components/roster/session-timing'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
 
 function planStepTone(session: Session, step: number) {
   if (session.plan?.state !== 'available') return 'bg-border'
@@ -15,11 +16,12 @@ function planStepTone(session: Session, step: number) {
 }
 
 function SessionPlanBar({ session }: { session: Session }) {
+  const { t } = useTranslation('sessions')
   if (session.plan?.state !== 'available') return null
   const completed = session.plan.entries.filter((entry) => entry.status === 'completed').length
   return (
     <span
-      aria-label={`${completed} of ${session.plan.entries.length} steps completed`}
+      aria-label={t('roster.planProgress', { completed, total: session.plan.entries.length })}
       className="flex h-(--size-plan-bar) w-16 shrink-0 gap-px"
       role="img"
     >
@@ -48,6 +50,7 @@ function SessionTiming({ timing }: { timing: SessionTimingValue }) {
 }
 
 export function SessionMetadata({ session }: { session: Session }) {
+  const { t } = useTranslation('sessions')
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000)
@@ -59,7 +62,7 @@ export function SessionMetadata({ session }: { session: Session }) {
   const hasMetadata =
     session.plan?.state === 'available' ||
     session.plan?.state === 'malformed' ||
-    session.delegations.length > 0 ||
+    session.subagents.length > 0 ||
     session.pullRequest !== null ||
     ticketKey !== null ||
     timing !== null
@@ -68,7 +71,7 @@ export function SessionMetadata({ session }: { session: Session }) {
     <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
       {timing === null ? null : <SessionTiming timing={timing} />}
       <SessionPlanBar session={session} />
-      {session.plan?.state === 'malformed' ? <span>Plan unreadable</span> : null}
+      {session.plan?.state === 'malformed' ? <span>{t('roster.planUnreadable')}</span> : null}
       {ticketKey !== null ? (
         <span className="inline-flex items-center gap-1">
           <Ticket aria-hidden="true" />
@@ -80,10 +83,10 @@ export function SessionMetadata({ session }: { session: Session }) {
           <GitPullRequestArrow aria-hidden="true" />
         </span>
       ) : null}
-      {session.delegations.length > 0 ? (
+      {session.subagents.length > 0 ? (
         <span className="inline-flex items-center gap-1">
           <Bot aria-hidden="true" />
-          <span>{session.delegations.length}</span>
+          <span>{session.subagents.length}</span>
         </span>
       ) : null}
     </span>

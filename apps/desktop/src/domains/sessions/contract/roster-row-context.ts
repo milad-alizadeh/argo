@@ -1,6 +1,6 @@
-import type { SessionChain } from './chains'
-import type { BackgroundTask } from './signals'
-import type { TranscriptMessage } from './transcript'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type { BackgroundTask } from '@/domains/sessions/contract/signals'
+import type { TranscriptMessage } from '@/domains/sessions/contract/transcript'
 
 export type RosterRowContext = {
   chain: SessionChain
@@ -15,7 +15,7 @@ export type RosterRowContext = {
   turnStartedAt: string | null
   activity: unknown
   plan: unknown
-  delegations: unknown
+  subagents: unknown
   shell: unknown
   pullRequest: unknown
   usage: { contextTokens: unknown; spentTokens: unknown }

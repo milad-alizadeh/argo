@@ -1,21 +1,21 @@
 import { ChevronDown, ShieldQuestion } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../../../../../platform/renderer/components/ui/button'
+import type { Permission } from '@/domains/sessions/contract/contract'
 import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from '../../../../../../platform/renderer/components/ui/button-group'
+  focusAfterLeaving,
+  useExitPresence,
+} from '@/domains/sessions/renderer/components/composer/tray/use-exit-presence'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { PermissionAnswer } from '@/domains/sessions/renderer/hooks/use-session-permission'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../../../../../../platform/renderer/components/ui/dropdown-menu'
-import type { Permission } from '../../../../contract/contract'
-import type { SessionCli } from '../../../harness/harnesses'
-import type { PermissionAnswer } from '../../../hooks/use-session-permission'
-import { focusAfterLeaving, useExitPresence } from './use-exit-presence'
+} from '@/platform/renderer/components/ui/dropdown-menu'
 
 // What each CLI's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
 const STANDING_ALLOW = {

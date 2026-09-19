@@ -4,24 +4,27 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { createInMemorySessionTicketLinkStore } from '../../../tickets/main/session-links'
-import { requestArchiveList } from '../archive-list-request'
-import { createSessionArchiveStore, sessionArchivePath } from '../archive-store'
-import { createSessionReader } from '../reader'
-import { feedRequest, listing } from '../reader-test-helpers'
-import { openSessionIndex } from './open-index'
+import { requestArchiveList } from '@/domains/sessions/main/archive-list-request'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '@/domains/sessions/main/archive-store'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { feedRequest, listing } from '@/domains/sessions/main/reader-test-helpers'
+import { openSessionIndex } from '@/domains/sessions/main/session-index/open-index'
 import {
   type IndexedAdapter,
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from './roster-fixtures'
-import { rosterHarness } from './roster-harness'
+} from '@/domains/sessions/main/session-index/roster-fixtures'
+import { rosterHarness } from '@/domains/sessions/main/session-index/roster-harness'
 import {
   createWorkerSessionIndex,
   type SessionIndexWorkerPort,
   SessionIndexWorkerStoppedError,
-} from './worker-index'
+} from '@/domains/sessions/main/session-index/worker-index'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

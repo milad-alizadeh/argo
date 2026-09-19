@@ -1,8 +1,11 @@
 // The warm active-Roster page over a large transcript tree (#2372). Separate from the behaviour
 // proofs because it writes 4,000 fixtures per adapter and takes seconds rather than milliseconds.
 import { afterEach, describe, expect, test } from 'vitest'
-import { indexedAdapters, manyTranscripts } from './roster-fixtures'
-import { rosterHarness } from './roster-harness'
+import {
+  indexedAdapters,
+  manyTranscripts,
+} from '@/domains/sessions/main/session-index/roster-fixtures'
+import { rosterHarness } from '@/domains/sessions/main/session-index/roster-harness'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

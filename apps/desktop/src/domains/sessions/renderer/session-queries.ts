@@ -1,14 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query'
-import type { RosterStatus } from '../contract/contract'
-import type { SessionId } from './types'
+import type { RosterStatus } from '@/domains/sessions/contract/contract'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 export const SESSION_REFRESH_MS = 500
 export const sessionRosterQueryKey = ['sessions', 'roster'] as const
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
-export const sessionFeedQueryKey = (sessionId: SessionId, delegationId: string | null = null) =>
-  ['sessions', 'feed', sessionId, delegationId] as const
-export const sessionDelegationUsageQueryKey = (sessionId: SessionId) =>
+export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
+  ['sessions', 'feed', sessionId, subagentId] as const
+export const sessionSubagentUsageQueryKey = (sessionId: SessionId) =>
   ['sessions', 'delegation-usage', sessionId] as const
 // Keyed on whether the command is still running too: the last poll of a running command can land
 // before its final line is written, so the move to finished has to read once more (#1582).

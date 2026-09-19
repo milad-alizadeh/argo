@@ -3,10 +3,10 @@
 import assert from 'node:assert/strict'
 import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
-import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import { sessionListReplySchema } from '../contract/contract'
-import { createSessionReader } from './reader'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { sessionListReplySchema } from '@/domains/sessions/contract/contract'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   appendCodexTranscript,
   fed,
@@ -16,7 +16,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
   writeCodexTranscript,
-} from './reader-test-helpers'
+} from '@/domains/sessions/main/reader-test-helpers'
 
 test('answers with the first error when every CLI folder is missing', async (context) => {
   const root = await tempRoot(context)

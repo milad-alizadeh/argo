@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { createProjectClient } from '@/domains/projects/preload/client'
 import { setupDocumentFixture } from '../../../../test-fixtures/projects/setup-document.fixture'
-import { createProjectClient } from './client'
 
 const opened = {
   version: 1,

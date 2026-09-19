@@ -4,16 +4,16 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
-import { createSessionReader } from './reader'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
   writeCodexTranscript,
-} from './reader-test-helpers'
+} from '@/domains/sessions/main/reader-test-helpers'
 
 // A Project's own reply only ever names its own Sessions, whatever the other Project's history
 // holds (#2239): scope is applied inside each adapter's own discovery, before the reader ever

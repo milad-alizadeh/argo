@@ -7,9 +7,9 @@ import type {
   ConnectionSummary,
   Ticket,
 } from '@/domains/tickets/contract/contract'
-import type { TicketsView } from '../hooks/use-tickets-view'
-import type { Backlog } from '../lib/backlog'
-import { STATUSES } from './status-fixtures'
+import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
+import type { TicketsView } from '@/domains/tickets/renderer/hooks/use-tickets-view'
+import type { Backlog } from '@/domains/tickets/renderer/lib/backlog'
 
 const link = (key: string, title: string, state: 'open' | 'closed' = 'open') => ({
   key,

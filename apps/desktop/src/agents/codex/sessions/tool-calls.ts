@@ -4,8 +4,8 @@
 // onto the shared ToolCall/ToolResult shapes (CONTEXT.md L3 · Tool Call) the Claude adapter
 // already produces, so `toolPresentation()` and `tool-groups.ts` draw them with no change.
 
+import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isRecord } from '@/shared/validation'
-import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { withCommandFacts } from './command-facts'
 import { withEditFacts } from './edit-facts'
 import { withLookupFacts } from './lookup-facts'
@@ -13,6 +13,7 @@ import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
 import { withOtherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
+import { readSubagentCall } from './subagent-calls'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather
@@ -135,7 +136,12 @@ export function readToolRecord(
     const calls = readToolCalls(payload)
     if (calls.length === 0 || typeof payload.id !== 'string') return null
     if (calls.every((call) => COLLABORATION_CALLS.has(call.name)))
-      return { kind: 'trace', uuid: payload.id, boundary: true }
+      return {
+        kind: 'trace',
+        uuid: payload.id,
+        boundary: true,
+        ...readSubagentCall(record, calls),
+      }
     const visible = calls
       .filter((call) => !COLLABORATION_CALLS.has(call.name))
       .map(withCommandFacts)

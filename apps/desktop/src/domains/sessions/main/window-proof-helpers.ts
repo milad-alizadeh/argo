@@ -2,8 +2,11 @@
 // is unread on first discovery, but reachable once the window grows or the id is asked for
 // directly. Each adapter still owns its own fixture; only this assertion shape is common.
 import assert from 'node:assert/strict'
-import { sessionFeedReplySchema, sessionListReplySchema } from '../contract/contract'
-import type { SessionReader } from './bridge'
+import {
+  sessionFeedReplySchema,
+  sessionListReplySchema,
+} from '@/domains/sessions/contract/contract'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
 
 const listing = {
   version: 1 as const,
@@ -34,7 +37,7 @@ export async function assertWindowGrowsToFarSession(reader: SessionReader, farId
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId: farId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     }),
   )

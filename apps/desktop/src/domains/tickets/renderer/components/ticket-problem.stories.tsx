@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/domains/tickets/contract/contract'
-import { connectionProblem, failureProblem } from '../lib/problems'
-import { connection } from './ticket-fixtures'
-import { TicketProblem } from './ticket-problem'
+import { connection } from '@/domains/tickets/renderer/components/ticket-fixtures'
+import { TicketProblem } from '@/domains/tickets/renderer/components/ticket-problem'
+import { connectionProblem, failureProblem } from '@/domains/tickets/renderer/lib/problems'
 
 const recovery = { onRetry: fn(), onReconnect: fn(), onDisconnectSource: fn(), provider: null }
 

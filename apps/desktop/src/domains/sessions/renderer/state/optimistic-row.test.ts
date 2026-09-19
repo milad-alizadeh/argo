@@ -1,12 +1,12 @@
 import { beforeEach, expect, test } from 'bun:test'
 
-import type { SessionRosterRow } from '../../contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import {
   mergeOptimisticRow,
   newSessionTarget,
   optimisticSessionRow,
   useSessionCreationStore,
-} from './use-session-creation-store'
+} from '@/domains/sessions/renderer/state/use-session-creation-store'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
@@ -92,6 +92,6 @@ test('the Roster row for a pending Session is a fresh, untouched Session on the 
   expect(row.cwd).toBe('/argo')
   expect(row.status).toBe('starting')
   expect(row.title).toBeNull()
-  expect(row.delegations).toEqual([])
+  expect(row.subagents).toEqual([])
   expect(row.shell).toEqual([])
 })

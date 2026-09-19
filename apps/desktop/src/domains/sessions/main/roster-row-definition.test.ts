@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionRosterRowSchema } from '../contract/models'
-import { rosterRowFields } from '../contract/roster-row-definition'
+import { sessionRosterRowSchema } from '@/domains/sessions/contract/models'
+import { rosterRowFields } from '@/domains/sessions/contract/roster-row-definition'
 
 test('declares every Roster row field exactly once', () => {
   const names = rosterRowFields.map(({ name }) => name)

@@ -1,27 +1,38 @@
 import {
-  createInMemorySessionTicketLinkStore,
-  type SessionTicketLinkStore,
-} from '../../tickets/main/session-links'
-import {
   driveSessionError,
   isDriveCli,
   type SessionRenameRequest,
   sessionError,
-} from '../contract/contract'
-import { archiveListRead, archiveSetWrite } from './archive-reads'
-import { createInMemorySessionArchiveStore, type SessionArchiveStore } from './archive-store'
-import type { SessionReader } from './bridge'
-import type { HeldFeed } from './feed-cache'
-import type { FeedProjectionState } from './feed-incremental'
-import type { OwnerFor, ReadContext } from './read-declaration'
-import { listReply } from './read-roster'
-import { createFeedReader } from './read-session-feed'
-import { delegationUsageRead, shellOutputRead, skillFileRead, workspaceFileRead } from './reads'
-import { searchRead } from './search-reads'
-import type { SessionSource } from './session-source'
-import { connectTicketReply, disconnectTicketReply } from './ticket-link-reader'
+} from '@/domains/sessions/contract/contract'
+import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive-reads'
+import {
+  createInMemorySessionArchiveStore,
+  type SessionArchiveStore,
+} from '@/domains/sessions/main/archive-store'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import type { HeldFeed } from '@/domains/sessions/main/feed-cache'
+import type { FeedProjectionState } from '@/domains/sessions/main/feed-incremental'
+import type { OwnerFor, ReadContext } from '@/domains/sessions/main/read-declaration'
+import { listReply } from '@/domains/sessions/main/read-roster'
+import { createFeedReader } from '@/domains/sessions/main/read-session-feed'
+import {
+  delegationUsageRead,
+  shellOutputRead,
+  skillFileRead,
+  workspaceFileRead,
+} from '@/domains/sessions/main/reads'
+import { searchRead } from '@/domains/sessions/main/search-reads'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import {
+  connectTicketReply,
+  disconnectTicketReply,
+} from '@/domains/sessions/main/ticket-link-reader'
+import {
+  createInMemorySessionTicketLinkStore,
+  type SessionTicketLinkStore,
+} from '@/domains/tickets/main/session-links'
 
-export type { FeedOverlay, SessionSource } from './session-source'
+export type { FeedOverlay, SessionSource } from '@/domains/sessions/main/session-source'
 
 function createOwnerResolver(sources: SessionSource[]) {
   const owners = new Map<string, SessionSource>()
@@ -98,7 +109,7 @@ export function createSessionReader(
     cancelSessionFeed: feedReader.cancelSessionFeed,
     isFeedReadActive: feedReader.isFeedReadActive,
     readShellOutput: (request) => shellOutputRead(reads, request),
-    readDelegationUsage: (request) => delegationUsageRead(reads, request),
+    readSubagentUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),
   }
 }

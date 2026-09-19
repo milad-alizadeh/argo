@@ -1,15 +1,15 @@
-import { isRecord } from '@/shared/validation'
-import { dataImageUrl, imageBlocks } from '../../../domains/sessions/contract/feed-images'
+import { askFacts } from '@/agents/claude/sessions/ask-facts'
+import { bashFacts } from '@/agents/claude/sessions/bash-facts'
+import { editFacts } from '@/agents/claude/sessions/edit-facts'
+import { lookupFacts } from '@/agents/claude/sessions/lookup-facts'
+import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/feed-images'
 import type {
   ContentBlock,
   RichResultBlock,
   ToolCall,
   ToolResult,
-} from '../../../domains/sessions/contract/transcript'
-import { askFacts } from './ask-facts'
-import { bashFacts } from './bash-facts'
-import { editFacts } from './edit-facts'
-import { lookupFacts } from './lookup-facts'
+} from '@/domains/sessions/contract/transcript'
+import { isRecord } from '@/shared/validation'
 import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".

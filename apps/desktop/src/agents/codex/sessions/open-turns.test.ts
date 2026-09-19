@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import {
   OPEN_TURN_COMPLETE,
   openTurnRolloutRoot as rolloutRoot,
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
-} from './rollout-test-helpers'
+} from '@/agents/codex/sessions/rollout-test-helpers'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
 

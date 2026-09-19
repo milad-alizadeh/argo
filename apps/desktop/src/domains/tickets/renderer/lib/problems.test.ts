@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import { connection } from '../components/ticket-fixtures'
-import { connectionProblem } from './problems'
+import { connection } from '@/domains/tickets/renderer/components/ticket-fixtures'
+import { connectionProblem } from '@/domains/tickets/renderer/lib/problems'
 
 const recovery = { onReconnect: () => {}, onDisconnectSource: () => {} }
 

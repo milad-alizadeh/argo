@@ -1,8 +1,8 @@
 // Whether an Argo window currently holds a Session channel. Per machine, never committed, and not
 // a roster: no titles, no order and no content, only the window that holds each Session id.
 import { z } from 'zod'
-import { readDocumentSync, writeDocumentSync } from '../../../platform/main/storage/portable-file'
-import { isRecord } from '../../../shared/validation'
+import { readDocumentSync, writeDocumentSync } from '@/platform/main/storage/portable-file'
+import { isRecord } from '@/shared/validation'
 
 const windowSchema = z.strictObject({
   pid: z.number().int().positive(),

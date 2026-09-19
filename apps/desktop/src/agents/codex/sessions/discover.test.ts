@@ -4,12 +4,12 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { test } from 'node:test'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '../../../domains/sessions/contract/contract'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { codexSessionSource } from './read-sessions'
+} from '@/domains/sessions/contract/contract'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 const listing = {
   version: 1 as const,
@@ -125,7 +125,7 @@ test('excludes a subagent thread from the roster even though it holds assistant 
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     }),
   )

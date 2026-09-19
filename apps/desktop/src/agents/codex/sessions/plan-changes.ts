@@ -2,16 +2,20 @@
 // JSON arguments are `{ explanation?, plan: [{ step, status }] }`. The `Plan` item a turn completes
 // is plan mode's written proposal, not this list, so it is not read here.
 
-import { isRecord } from '@/shared/validation'
-import type { PlanChange, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
-import { readPlanSnapshot } from '../../../domains/sessions/main/plan'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,
   nextQuotedState,
   openedQuote,
   type Quote,
-} from './javascript-string'
-import { arrayAssignedTo, codeMatch, nestedToolCall } from './nested-tool-call'
+} from '@/agents/codex/sessions/javascript-string'
+import {
+  arrayAssignedTo,
+  codeMatch,
+  nestedToolCall,
+} from '@/agents/codex/sessions/nested-tool-call'
+import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import { readPlanSnapshot } from '@/domains/sessions/main/plan'
+import { isRecord } from '@/shared/validation'
 
 const PLAN_FUNCTION = 'update_plan'
 

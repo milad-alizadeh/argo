@@ -33,6 +33,9 @@
   },
   "question": {
     "needed": "Your input is needed",
+    "writeAnother": "Write another answer",
+    "writeAnotherPlaceholder": "Or write another answer…",
+    "send": "Send answer",
     "locked": {
       "title": "This session is open in another app",
       "description": "Close it there to answer from Argo."
@@ -50,6 +53,7 @@
   "jumpToLatest": "Jump to latest",
   "composer": {
     "label": "Session input",
+    "cardLabel": "Message composer",
     "message": "Message",
     "placeholder": "Direct the next move…",
     "plan": "Step {{current}}/{{total}}",
@@ -88,6 +92,7 @@
     "attach": "Attach a file",
     "dictate": "Dictate",
     "send": "Send",
+    "sendMessage": "Send message",
     "interrupt": "Interrupt",
     "usage": "Usage",
     "compact": "Compact the conversation",
@@ -98,17 +103,57 @@
     "pendingTurns": "Pending Turns",
     "context": "Context",
     "contextWindow": {
+      "title": "Context window",
       "details": "Context details",
+      "explanation": "The working memory for the next response: instructions, tools, files, and conversation. As it fills, new information competes with older details.",
       "autoCompact": "Auto-compact",
+      "threshold": "Threshold",
+      "thresholdLabel": "Auto-compact threshold",
+      "thresholdTokens": "Auto-compact threshold tokens",
       "tokens": "tokens",
       "tokenCount": "{{count}}k",
+      "capacity": "/ {{count}}k tokens",
       "used": "{{percentage}}% used · {{zone}}",
       "workingTarget": "Working target · {{count}} tokens",
       "current": "Current · {{count}}k tokens",
       "unreported": "This session did not report its context window.",
       "description": "At this level, older context can compete with the current task. Compact before starting another substantial phase.",
       "smartZone": "Smart Zone",
-      "dumbZone": "Dumb Zone"
+      "smartZoneRange": "Smart Zone · 0–20%",
+      "smartZoneDescription": "Focused context. Instructions and recent decisions remain easy to weigh.",
+      "dumbZone": "Dumb Zone",
+      "dumbZoneRange": "Dumb Zone · 40%+",
+      "dumbZoneDescription": "History still fits, but noise and stale decisions weaken attention.",
+      "loadedContext": "Loaded context"
+    },
+    "setup": {
+      "effort": "Effort",
+      "effortDescription": "More effort trades speed for deeper reasoning.",
+      "choosePermissionMode": "Choose permission mode: {{mode}}",
+      "permissions": "{{harness}} permissions",
+      "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
+      "model": "Model"
+    },
+    "references": {
+      "label": "References",
+      "unavailable": "Not available for {{cli}}",
+      "badgeUnavailable": " — not available for {{cli}}"
+    },
+    "taskPlan": {
+      "triggerEmpty": "Plan empty",
+      "label": "Task plan",
+      "emptyTitle": "Plan is empty",
+      "emptyDescription": "The agent has not added any steps.",
+      "open": "Open task plan"
+    },
+    "queued": {
+      "steer": "Steer",
+      "reorder": "Queued turn. Drag it to reorder."
+    },
+    "allowance": {
+      "label": "Usage",
+      "title": "{{harness}} plan usage",
+      "description": "Account allowance, separate from context health"
     },
     "permission": "Allow this command?",
     "question": "Question from the agent",
@@ -124,6 +169,57 @@
     }
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "rename": {
+    "title": "Rename Session",
+    "name": "Name",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "enterName": "Enter a name for this Session.",
+    "failure": "Argo could not rename this Session."
+  },
+  "ticketLink": {
+    "title": "Link Ticket",
+    "renameTitle": "Rename Session?",
+    "search": "Search Tickets",
+    "searchPlaceholder": "Search Tickets…",
+    "cancel": "Cancel",
+    "renameDescription": "This Session has a name a person typed by hand. Replace it with “{{title}}”?",
+    "keepName": "Keep name",
+    "rename": "Rename"
+  },
+  "roster": {
+    "planProgress": "{{completed}} of {{total}} steps completed",
+    "planUnreadable": "Plan unreadable"
+  },
+  "inspector": {
+    "diagramLabel": "Diagram inspector",
+    "evidenceUnavailable": "Recorded evidence is unavailable.",
+    "commandAndFileLabel": "Command and file inspector"
+  },
+  "codeLanguage": { "typescript": "TS", "go": "GO" },
+  "diagram": {
+    "title": "Diagram",
+    "failedTitle": "Diagram · Could not render",
+    "incomplete": "The diagram source is incomplete",
+    "sourceAvailable": "The original source remains available above.",
+    "expand": "Expand diagram in inspector"
+  },
+  "handoff": {
+    "label": "Session handoff",
+    "title": "Handoff",
+    "inProgress": "Handing off to a new session…",
+    "complete": "Handed off to a new session.",
+    "open": "Open Session",
+    "to": "Handed off to",
+    "from": "Handed off from"
+  },
+  "standing": {
+    "failure": "Unable to load Session",
+    "unselectedTitle": "No Session selected",
+    "unselectedDescription": "Choose a Session from the Roster to read its history."
+  },
+  "harness": { "label": "Harness" },
   "promptSender": "You",
   "promptImage": "Attached image {{number}}",
   "promptImageOpen": "Open attached image {{number}}",
@@ -156,6 +252,7 @@
   },
   "archivedEmpty": "No archived Sessions",
   "archivedStillIndexing": "Still indexing older Sessions",
+  "readingSessions": "Reading Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",
@@ -289,6 +386,6 @@
     "subagent": "Subagent {{index}}",
     "finished": "{{count}} finished",
     "unresolved_one": "One delegation, unresolved",
-    "unresolved_other": "{{count}} delegations, unresolved"
+    "unresolved_other": "{{count}} subagents, unresolved"
   }
 }

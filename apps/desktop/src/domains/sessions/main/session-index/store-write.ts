@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite'
-import type { SessionIndexWrite } from './contract'
+import type { SessionIndexWrite } from '@/domains/sessions/main/session-index/contract'
 
 export function writePass(database: DatabaseSync, cli: string, pass: SessionIndexWrite) {
   const insertFile = database.prepare(

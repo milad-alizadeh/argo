@@ -1,6 +1,13 @@
 import { expect, test } from 'bun:test'
-import { connectTicket, disconnectTicket } from './use-session-ticket-link'
-import { mockArgo, session, TICKET } from './use-session-ticket-link-fixtures'
+import {
+  connectTicket,
+  disconnectTicket,
+} from '@/domains/sessions/renderer/hooks/use-session-ticket-link'
+import {
+  mockArgo,
+  session,
+  TICKET,
+} from '@/domains/sessions/renderer/hooks/use-session-ticket-link-fixtures'
 
 test('connecting a Ticket renames a first-prompt Session without asking', async () => {
   const argo = mockArgo()

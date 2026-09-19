@@ -3,13 +3,13 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
+import { openAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import { openAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
-import type { ConnectSourceFormProps } from '../components/connect-source-form'
-import type { SourceDiscovery } from '../components/source-field'
-import { useConnectSource, useSources } from './use-tickets'
+import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/components/connect-source-form'
+import type { SourceDiscovery } from '@/domains/tickets/renderer/components/source-field'
+import { useConnectSource, useSources } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { useContractText } from '@/platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export type ConnectForm = Omit<ConnectSourceFormProps, 'projectName' | 'accounts'>
 

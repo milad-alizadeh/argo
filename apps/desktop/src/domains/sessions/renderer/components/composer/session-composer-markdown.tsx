@@ -16,8 +16,8 @@ import {
   PASTE_COMMAND,
 } from 'lexical'
 import { useEffect } from 'react'
-import { SKILL_MENTION_TRANSFORMER } from './references/skill-mention-markdown'
-import { SkillMentionNode } from './references/skill-mention-node'
+import { SKILL_MENTION_TRANSFORMER } from '@/domains/sessions/renderer/components/composer/references/skill-mention-markdown'
+import { SkillMentionNode } from '@/domains/sessions/renderer/components/composer/references/skill-mention-node'
 
 const MARKDOWN_PATTERN = /(^|\n)(#{1,6} |[-*+] |\d+\. |> |```)|\*\*.+\*\*|\[.+\]\(.+\)/
 

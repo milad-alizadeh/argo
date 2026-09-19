@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react'
-import type { LiveActivity } from '../../contract/feed-rows'
-import type { SessionFeedRow } from '../types'
-import { toolPresentation } from './feed-tools'
+import type { LiveActivity } from '@/domains/sessions/contract/feed-rows'
+import { toolPresentation } from '@/domains/sessions/renderer/feed/feed-tools'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
 type ToolKind = ToolGroup['calls'][number]['kind']

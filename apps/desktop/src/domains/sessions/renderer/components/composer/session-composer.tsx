@@ -1,12 +1,12 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan } from '../../../contract/models'
-import type { HarnessControl } from '../../harness/harnesses'
-import { useComposer } from './composer'
-import { ComposerForm } from './composer-form'
-import { activeReference } from './references/composer-reference-menu'
+import type { SessionPlan } from '@/domains/sessions/contract/models'
+import { useComposer } from '@/domains/sessions/renderer/components/composer/composer'
+import { ComposerForm } from '@/domains/sessions/renderer/components/composer/composer-form'
+import { activeReference } from '@/domains/sessions/renderer/components/composer/references/composer-reference-menu'
+import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import './composer-content.css'
-import type { TurnSetupControlProps } from './run-setup-menu'
-import type { Send } from './use-send'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import type { Send } from '@/domains/sessions/renderer/components/composer/use-send'
 
 export type SessionComposerProps = {
   contextTokens?: number | null

@@ -1,8 +1,6 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
 import {
   sessionActivitySchema,
-  sessionDelegationSchema,
   sessionEntrySchema,
   sessionPlanSchema,
   sessionPostureSchema,
@@ -10,12 +8,14 @@ import {
   sessionSetupSchema,
   sessionShellCommandSchema,
   sessionStatusSchema,
+  sessionSubagentSchema,
   sessionTicketSchema,
   sessionTitleSchema,
-} from './models'
-import { rosterRowField as field } from './roster-row-field'
+} from '@/domains/sessions/contract/models'
+import { rosterRowField as field } from '@/domains/sessions/contract/roster-row-field'
+import { identifierSchema } from '@/shared/validation'
 
-export type { RosterRowField } from './roster-row-field'
+export type { RosterRowField } from '@/domains/sessions/contract/roster-row-field'
 
 const optionalCount = () => z.number().int().nonnegative().nullable().optional()
 const optionalDate = () => z.string().datetime().nullable().optional()
@@ -90,9 +90,9 @@ export const rosterRowFields = [
     'held-when-present',
   ]),
   field([
-    'delegations',
-    () => z.array(sessionDelegationSchema),
-    ({ delegations }) => delegations,
+    'subagents',
+    () => z.array(sessionSubagentSchema),
+    ({ subagents }) => subagents,
     'empty',
     'observed',
   ]),

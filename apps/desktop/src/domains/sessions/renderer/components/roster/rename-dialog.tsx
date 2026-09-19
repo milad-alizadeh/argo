@@ -1,5 +1,5 @@
-import type { Session, SessionsListed } from '../../types'
-import { SessionRenameDialog } from './session-rename-dialog'
+import { SessionRenameDialog } from '@/domains/sessions/renderer/components/roster/session-rename-dialog'
+import type { Session, SessionsListed } from '@/domains/sessions/renderer/types'
 
 export function RenameDialog({
   onRename,

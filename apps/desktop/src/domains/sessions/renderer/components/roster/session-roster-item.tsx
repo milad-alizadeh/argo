@@ -1,27 +1,31 @@
 import { Archive } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader } from '../../../../../platform/renderer/components/loader'
-import { useLiveActivityText } from '../../feed/live-activity-text'
-import { HarnessLogo } from '../../harness/harness-logo'
-import { SESSION_CLIS, type SessionCli, sessionCliOf } from '../../harness/harnesses'
-import { PromptText } from '../../prompt/prompt-text'
-import type { SelectionModifier } from '../../state/roster-selection'
-import type { Session } from '../../types'
-import { SessionReferenceText } from '../composer/references/session-reference'
-import { sessionName } from './roster-rows'
-import { SessionMetadata } from './session-roster-metadata'
+import { SessionReferenceText } from '@/domains/sessions/renderer/components/composer/references/session-reference'
+import { sessionName } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { SessionMetadata } from '@/domains/sessions/renderer/components/roster/session-roster-metadata'
+import { useLiveActivityText } from '@/domains/sessions/renderer/feed/live-activity-text'
+import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
+import {
+  SESSION_CLIS,
+  type SessionCli,
+  sessionCliOf,
+} from '@/domains/sessions/renderer/harness/harnesses'
+import { PromptText } from '@/domains/sessions/renderer/prompt/prompt-text'
+import type { SelectionModifier } from '@/domains/sessions/renderer/state/roster-selection'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { Loader } from '@/platform/renderer/components/loader'
 import './session-roster-item.css'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
   STATUS_LABELS,
   STATUS_MARKS,
-} from './session-roster-status'
+} from '@/domains/sessions/renderer/components/roster/session-roster-status'
 import {
   unreadMarkerPrototypeDot,
   useUnreadMarkerPrototypeVariant,
-} from './unread-marker-prototype'
+} from '@/domains/sessions/renderer/components/roster/unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean

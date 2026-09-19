@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../../../../../agents/codex/compaction/compaction'
-import { ContextPopover } from './context-popover'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/agents/codex/compaction/compaction'
+import { ContextPopover } from '@/domains/sessions/renderer/components/context/context-popover'
 
 // A mock `~/.codex/config.toml`: `set` mutates it, so a later `get` (a remount, a second control)
 // reads back whatever the popover last wrote, the way the real file would.

@@ -1,11 +1,18 @@
 import { memo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '../../contract/question'
-import type { SessionEvidence, SessionFeedRow } from '../types'
-import { isFeedRowStreaming, renderFeedRow } from './feed-row-renderers'
-import { type Reveal, useRevealAnimation } from './reveal'
-import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
-import type { ToolGroupState } from './tool-group-state'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import {
+  isFeedRowStreaming,
+  renderFeedRow,
+} from '@/domains/sessions/renderer/feed/feed-row-renderers'
+import { type Reveal, useRevealAnimation } from '@/domains/sessions/renderer/feed/reveal'
+import {
+  type RevealCache,
+  type RevealResume,
+  useStreamingText,
+} from '@/domains/sessions/renderer/feed/streaming-text'
+import type { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
+import type { SessionEvidence, SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 export type FeedRowProps = {
   row: SessionFeedRow

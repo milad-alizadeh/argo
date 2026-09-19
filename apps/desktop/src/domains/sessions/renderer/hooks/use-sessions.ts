@@ -1,20 +1,26 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
 import {
-  useWatchedQueries,
-  useWatchedTopic,
-} from '../../../../platform/renderer/core/hooks/use-watched-topic'
-import type { SessionContractError } from '../session-contract-error'
-import { invalidateSessionRoster } from '../session-queries'
-import { useRosterWindowCursor, useRosterWindowStore } from '../state/use-roster-window-store'
+  retrySessionFeed,
+  sessionFeedQuery,
+} from '@/domains/sessions/renderer/hooks/session-feed-query'
+import { sessionRosterQuery } from '@/domains/sessions/renderer/hooks/session-roster-query'
+import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
+import {
+  useRosterWindowCursor,
+  useRosterWindowStore,
+} from '@/domains/sessions/renderer/state/use-roster-window-store'
 import {
   mergeOptimisticRow,
   readableSessionId,
   useSessionCreationStore,
-} from '../state/use-session-creation-store'
-import type { SessionFeed, SessionId } from '../types'
-import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
-import { sessionRosterQuery } from './session-roster-query'
+} from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
+import {
+  useWatchedQueries,
+  useWatchedTopic,
+} from '@/platform/renderer/core/hooks/use-watched-topic'
 
 // A refresh must refresh only the window this reader has already loaded, never regrow it (#2239),
 // and every consumer of the roster must agree on which window that is: the cursor therefore lives in

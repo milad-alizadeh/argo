@@ -6,10 +6,11 @@ import { test } from 'node:test'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '../../../domains/sessions/contract/contract'
-import type { SessionReader } from '../../../domains/sessions/main/bridge'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
+} from '@/domains/sessions/contract/contract'
+import type { SessionReader } from '@/domains/sessions/main/bridge'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { feedRequest } from '@/domains/sessions/main/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {
@@ -84,16 +85,7 @@ test('joins a timestamped rollout to its managed Session and reads its Feed unde
     roster.sessions.map(({ id, posture, status }) => ({ id, posture, status })),
     [{ id: sessionId, posture: 'managed', status: 'running' }],
   )
-  const feed = sessionFeedReplySchema.parse(
-    await reader.readSessionFeed({
-      version: 1,
-      type: 'session.feed',
-      requestId: 'feed-1',
-      sessionId,
-      delegationId: null,
-      revision: null,
-    }),
-  )
+  const feed = sessionFeedReplySchema.parse(await reader.readSessionFeed(feedRequest(sessionId)))
   assert.equal(feed.type, 'session.feed.read')
   if (feed.type !== 'session.feed.read') return
   assert.equal(feed.chainId, sessionId)
@@ -115,15 +107,6 @@ test('a Codex Session Argo held before restart reads external and keeps its reco
     roster.sessions.map(({ id, posture }) => ({ id, posture })),
     [{ id: sessionId, posture: 'external' }],
   )
-  const feed = sessionFeedReplySchema.parse(
-    await reader.readSessionFeed({
-      version: 1,
-      type: 'session.feed',
-      requestId: 'feed-1',
-      sessionId,
-      delegationId: null,
-      revision: null,
-    }),
-  )
+  const feed = sessionFeedReplySchema.parse(await reader.readSessionFeed(feedRequest(sessionId)))
   assert.equal(feed.type, 'session.feed.read')
 })

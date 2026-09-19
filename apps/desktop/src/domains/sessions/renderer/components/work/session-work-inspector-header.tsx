@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import {
-  delegationState,
   readableDelegationName,
   type SessionWork,
   spentTokens,
+  subagentWorkState,
   workDuration,
-} from './session-work'
+} from '@/domains/sessions/renderer/components/work/session-work'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
 export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {
@@ -16,7 +16,7 @@ export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; n
     return (
       <InspectorHeader
         facts={[
-          t(`workState.${delegationState(delegation)}`),
+          t(`workState.${subagentWorkState(delegation)}`),
           workDuration(delegation.startedAt, delegation.endedAt, currentTime),
           spentTokens(usage.tokens, t),
         ]}

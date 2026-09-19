@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionListReplySchema } from '../../../domains/sessions/contract/contract.ts'
-import { readDelegation } from '../../../domains/sessions/main/delegation.ts'
+import { sessionListReplySchema } from '@/domains/sessions/contract/contract.ts'
+import { readSubagentReading } from '@/domains/sessions/main/subagents.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
@@ -32,15 +32,15 @@ test('names the newest call of the open Turn with its canonical label and metada
   })
 })
 
-// A spawned Subagent is a delegation, never a Tool Call, so it reads as no activity of its own.
-test('reads an open Subagent as a running delegation, not as an open call', async () => {
+// A spawned Subagent draws Subagent events, never a Tool Call, so it reads as no activity of its own.
+test('reads an open Subagent as a running Subagent, not as an open call', async () => {
   const row = await rowOf(['subagentTail'])
   assert.equal(row.activity, null)
-  assert.deepEqual(row.delegations, [
+  assert.deepEqual(row.subagents, [
     {
       id: 'call-task-1',
       label: null,
-      landed: false,
+      state: 'running',
       startedAt: '2026-08-14T11:00:20.000Z',
       endedAt: null,
     },
@@ -48,46 +48,46 @@ test('reads an open Subagent as a running delegation, not as an open call', asyn
 })
 
 test('reads every delegation with its own label, and which of them came back', async () => {
-  assert.deepEqual((await rowOf(['plannedWork'])).delegations, [
+  assert.deepEqual((await rowOf(['plannedWork'])).subagents, [
     {
       id: 'call-read',
       label: 'Read the rail',
-      landed: true,
+      state: 'completed',
       startedAt: '2026-08-30T10:00:10.000Z',
       endedAt: '2026-08-30T10:01:00.000Z',
     },
     {
       id: 'call-dots',
       label: null,
-      landed: false,
+      state: 'running',
       startedAt: '2026-08-30T10:05:10.000Z',
       endedAt: null,
     },
   ])
-  assert.deepEqual((await rowOf(['askOffered'])).delegations, [
+  assert.deepEqual((await rowOf(['askOffered'])).subagents, [
     {
       id: 'call-verify',
       label: 'verify the fold',
-      landed: true,
+      state: 'completed',
       startedAt: '2026-08-01T09:00:43.000Z',
       endedAt: '2026-08-01T09:02:00.000Z',
     },
   ])
-  assert.deepEqual((await rowOf(['externalBasic'])).delegations, [])
+  assert.deepEqual((await rowOf(['externalBasic'])).subagents, [])
 })
 
-const open = { id: 'open', label: null, landed: false, startedAt: null, endedAt: null }
-const home = { id: 'home', label: 'verify', landed: true, startedAt: null, endedAt: null }
+const open = { id: 'open', label: null, state: 'running', startedAt: null, endedAt: null }
+const home = { id: 'home', label: 'verify', state: 'completed', startedAt: null, endedAt: null }
 
 test('counts an open delegation as running only while its Session is live', () => {
-  assert.deepEqual(readDelegation('asking', [open, home]), {
+  assert.deepEqual(readSubagentReading('asking', [open, home]), {
     known: true,
     running: [open],
     finished: 1,
     unresolved: 0,
   })
   // A settled Session has nothing running under it, so what never came back is unresolved.
-  assert.deepEqual(readDelegation('idle', [open, home]), {
+  assert.deepEqual(readSubagentReading('idle', [open, home]), {
     known: true,
     running: [],
     finished: 1,
@@ -105,7 +105,7 @@ test('reads the newest pull request the CLI linked, and none where it linked not
 })
 
 test('reads no delegation at all for a Session whose own state is unknown', () => {
-  assert.deepEqual(readDelegation('unknown', [open, home]), { known: false })
+  assert.deepEqual(readSubagentReading('unknown', [open, home]), { known: false })
 })
 
 test('refuses a row whose signals are missing or malformed at the boundary', async () => {
@@ -140,7 +140,7 @@ test('refuses a row whose signals are missing or malformed at the boundary', asy
     false,
   )
   assert.equal(
-    sessionListReplySchema.safeParse(reply([{ ...row, delegations: [{ id: 'x' }] }])).success,
+    sessionListReplySchema.safeParse(reply([{ ...row, subagents: [{ id: 'x' }] }])).success,
     false,
   )
   const { pullRequest: _pullRequest, ...unlinked } = row

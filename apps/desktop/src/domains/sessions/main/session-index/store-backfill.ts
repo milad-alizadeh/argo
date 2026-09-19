@@ -1,7 +1,7 @@
 // Reading and writing how far background backfill has walked (#2373), split out of `store.ts` to
 // keep it under the file line ceiling.
 import type { DatabaseSync } from 'node:sqlite'
-import type { BackfillProgress } from './contract'
+import type { BackfillProgress } from '@/domains/sessions/main/session-index/contract'
 
 type BackfillRecord = {
   boundary_written_at: number | null

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { section, withSection } from './story-links'
-import { parseImporters, type Story } from './storybook-build'
+import { section, withSection } from '@/storybook/story-links'
+import { parseImporters, type Story } from '@/storybook/storybook-build'
 
 const MODULES = 'src/domains/sessions/renderer'
 const story = (name: string, file: string, folder = 'components'): Story => ({
@@ -55,11 +55,10 @@ const END = '<!-- storybook-links:end -->'
 const linked = (changed: string[]) =>
   [...section(BUILD, changed, PREVIEW).matchAll(/\/story\/([\w-]+)\)/g)].map((match) => match[1])
 
-test('links every story that renders a changed component, and no other', () => {
+test('links every story that imports a changed file, and no other', () => {
   assert.deepEqual(linked([`${MODULES}/components/SessionFeed.tsx`]), [
     'sessions-sessionfeed--default',
     'sessions-sessionfeed--empty',
-    'sessions-sessionsscreenview--reading',
   ])
 })
 
@@ -73,12 +72,8 @@ test('a link opens its story on the preview and names the short commit', () => {
   assert.ok(content.includes('`0123456`'))
 })
 
-test('a component with no story of its own links the stories that render it', () => {
-  assert.deepEqual(linked([`${MODULES}/components/feed-document.tsx`]), [
-    'sessions-sessionfeed--default',
-    'sessions-sessionfeed--empty',
-    'sessions-sessionsscreenview--reading',
-  ])
+test('does not link a story that reaches a changed file only through another file', () => {
+  assert.deepEqual(linked([`${MODULES}/components/feed-document.tsx`]), [])
 })
 
 test('a changed story file links its own stories', () => {
@@ -87,10 +82,8 @@ test('a changed story file links its own stories', () => {
   ])
 })
 
-test('a file the Storybook preview loads lists every story, and says why', () => {
-  const changed = ['src/platform/renderer/styles/globals.css']
-  assert.equal(linked(changed).length, STORIES.length)
-  assert.ok(section(BUILD, changed, PREVIEW).includes('every story is listed'))
+test('a file that only the Storybook preview imports links no story', () => {
+  assert.deepEqual(linked(['src/platform/renderer/styles/globals.css']), [])
 })
 
 test('a file no story renders produces no section', () => {

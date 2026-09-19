@@ -1,8 +1,8 @@
 // The state an incremental Feed projection carries between polls (#2145): per-file cursors saying
 // how far each file's records have already been turned into rows, plus the Tool Call bookkeeping
 // that spans records. Split out of feed-incremental.ts, which owns turning open records into rows.
-import type { ToolResult } from '../contract/tool-feed'
-import type { TranscriptFile, TranscriptRecord } from '../contract/transcript'
+import type { ToolResult } from '@/domains/sessions/contract/tool-feed'
+import type { TranscriptFile, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 export type PositionedRecord = { record: TranscriptRecord; position: string; fileIndex: number }
 
@@ -77,10 +77,9 @@ export function advancedCursors(
 
 // A background command's end lands on the receipt its call already holds.
 function endBackgroundCall(record: TranscriptRecord, results: Map<string, ToolResult>) {
-  const ending = record.kind === 'delegation' ? record.ending : record
-  if (ending?.kind !== 'background-task') return
-  const receipt = results.get(ending.callId)
-  if (receipt !== undefined) results.set(ending.callId, { ...receipt, ended: ending.state })
+  if (record.kind !== 'background-task') return
+  const receipt = results.get(record.callId)
+  if (receipt !== undefined) results.set(record.callId, { ...receipt, ended: record.state })
 }
 
 export function updatedResults(records: PositionedRecord[], prior: Map<string, ToolResult>) {

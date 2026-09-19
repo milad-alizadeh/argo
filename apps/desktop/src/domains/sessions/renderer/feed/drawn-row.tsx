@@ -1,10 +1,10 @@
 import { useCallback, useRef } from 'react'
-import type { QuestionAnswer } from '../../contract/question'
-import type { SessionEvidence, SessionFeedRow } from '../types'
-import { FeedRow } from './feed-row'
-import type { Reveal } from './reveal'
-import type { RevealCache } from './streaming-text'
-import type { ToolGroupState } from './tool-group-state'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import { FeedRow } from '@/domains/sessions/renderer/feed/feed-row'
+import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
+import type { RevealCache } from '@/domains/sessions/renderer/feed/streaming-text'
+import type { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
+import type { SessionEvidence, SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 export type DrawnRowProps = {
   row: SessionFeedRow

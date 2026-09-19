@@ -1,9 +1,14 @@
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isIdentifier } from '@/shared/validation'
-import type { TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 
-const SUBAGENT_ACTIVITY_STATUS = { started: 'running', completed: 'completed' } as const
+// What a `SubAgentActivity` kind reports as a Subagent event; `completed` is the only one that ends it.
+const ACTIVITY_EVENTS = {
+  started: 'started',
+  interacted: 'messaged',
+  completed: 'responded',
+} as const
 
-function agentLabel(agentPath: string): string | null {
+export function agentLabel(agentPath: string): string | null {
   const name = agentPath.split('/').findLast(Boolean)
   const [first, ...rest] = name?.split(/[_-]+/).filter(Boolean) ?? []
   return first === undefined
@@ -19,17 +24,15 @@ export function subagentActivity(
     return null
   if (typeof item.agent_thread_id !== 'string' || !isIdentifier(item.agent_thread_id)) return null
   if (typeof item.agent_path !== 'string') return null
-  const status = SUBAGENT_ACTIVITY_STATUS[item.kind as keyof typeof SUBAGENT_ACTIVITY_STATUS]
-  if (status === undefined) return null
-  return {
-    kind: 'delegation',
+  if (typeof item.kind !== 'string' || !Object.hasOwn(ACTIVITY_EVENTS, item.kind)) return null
+  const event = ACTIVITY_EVENTS[item.kind as keyof typeof ACTIVITY_EVENTS]
+  const name = agentLabel(item.agent_path)
+  const base = {
+    kind: 'subagent' as const,
     uuid: item.id,
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
-    actor: 'agent',
-    action: agentLabel(item.agent_path),
-    status,
-    progress: null,
-    groupId: item.agent_thread_id,
-    callId: null,
+    subagentId: item.agent_thread_id,
+    ...(name === null ? {} : { name }),
   }
+  return event === 'responded' ? { ...base, event, state: 'completed' } : { ...base, event }
 }

@@ -1,24 +1,26 @@
 import { FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
+import { AccountsDialog } from '@/domains/accounts/renderer/components/accounts-dialog'
+import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import {
+  ConnectSourceFields,
+  ConnectSourceForm,
+} from '@/domains/tickets/renderer/components/connect-source-form'
+import { TicketDeck } from '@/domains/tickets/renderer/components/ticket-deck'
+import { TicketProblem } from '@/domains/tickets/renderer/components/ticket-problem'
+import {
+  type TicketsScreenProps,
+  type TicketsView,
+  useTicketsView,
+} from '@/domains/tickets/renderer/hooks/use-tickets-view'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import { Skeleton } from '../../../../platform/renderer/components/ui/skeleton'
-import { AccountsDialog } from '../../../accounts/renderer/components/accounts-dialog'
-import { useAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
-import { ConnectSourceFields, ConnectSourceForm } from '../components/connect-source-form'
-import { TicketDeck } from '../components/ticket-deck'
-import { TicketProblem } from '../components/ticket-problem'
-import {
-  type TicketsScreenProps,
-  type TicketsView,
-  useTicketsView,
-} from '../hooks/use-tickets-view'
+} from '@/platform/renderer/components/ui/empty'
+import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 
 // The skeleton takes the backlog's own geometry, so the rows do not jump when they arrive.
 function Loading({ label }: { label: string }) {

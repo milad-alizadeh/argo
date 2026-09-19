@@ -1,8 +1,8 @@
-import { SessionContractError } from '../../session-contract-error'
-import type { RosterStatus } from '../../state/use-roster-filter-store'
-import type { Session } from '../../types'
-import { rosterRows } from './roster-rows'
-import type { SearchRosterState } from './search-roster-rows'
+import { rosterRows } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import type { SearchRosterState } from '@/domains/sessions/renderer/components/roster/search-roster-rows'
+import { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import type { RosterStatus } from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 export const noArchive = {
   displayed: [] as Session[],

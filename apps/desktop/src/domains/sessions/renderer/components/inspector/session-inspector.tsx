@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import type { SessionDelegation, SessionShellCommand } from '../../../contract/models'
-import type { SessionEvidence, SessionFeed } from '../../types'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'
 import { SessionShellInspector } from './session-shell-inspector'
@@ -10,7 +10,7 @@ import { SessionShellInspector } from './session-shell-inspector'
 // it without an effect that fires a frame late (#1582).
 export type WorkSelection = {
   sessionId: string | null
-  delegationId: string | null
+  subagentId: string | null
   shellId: string | null
 }
 
@@ -29,7 +29,7 @@ export function SessionInspector({
   shellOutput,
 }: {
   activeEvidenceId: string | null
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   delegationFeed: SessionFeed | null
   evidence: SessionEvidence | null
   sessionId: string | null

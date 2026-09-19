@@ -1,22 +1,18 @@
 import { Check, ChevronDown } from 'lucide-react'
 import { Fragment, useId } from 'react'
-
-import { InputGroupButton } from '../../../../../platform/renderer/components/ui/input-group'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../../../../../platform/renderer/components/ui/popover'
-import { HarnessLogo } from '../../harness/harness-logo'
-import { HarnessTabs } from '../../harness/harness-tabs'
-import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
+import { useTranslation } from 'react-i18next'
+import { EffortSlider } from '@/domains/sessions/renderer/components/composer/effort-slider'
+import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
+import { HarnessTabs } from '@/domains/sessions/renderer/harness/harness-tabs'
+import { HARNESSES, type HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   choiceLabel,
   effortChoices,
   type TurnSetup,
   type TurnSetupChoices,
-} from '../../turn-setup/turn-setup'
-import { EffortSlider } from './effort-slider'
+} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 
 export type TurnSetupControlProps = {
   choices: TurnSetupChoices
@@ -79,10 +75,11 @@ function setupFacts(setup: TurnSetupControlProps | null) {
 
 // A harness that declares no choices runs at its own configured ones.
 function SetupBody({ harness, setup }: RunSetupMenuProps) {
+  const { t } = useTranslation('sessions')
   if (setup === null)
     return (
       <p className="p-3.5 type-meta text-muted-foreground">
-        {HARNESSES[harness.cli].label} runs at the Model and Effort in its own settings.
+        {t('composer.setup.ownSettings', { harness: HARNESSES[harness.cli].label })}
       </p>
     )
   return (
@@ -94,11 +91,14 @@ function SetupBody({ harness, setup }: RunSetupMenuProps) {
 }
 
 function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
+  const { t } = useTranslation('sessions')
   const name = useId()
   return (
     <div className="p-2.5">
-      <div className="px-1 pb-1.5 type-meta font-medium text-muted-foreground">Model</div>
-      <div className="space-y-0.5" role="radiogroup" aria-label="Model">
+      <div className="px-1 pb-1.5 type-meta font-medium text-muted-foreground">
+        {t('composer.setup.model')}
+      </div>
+      <div className="space-y-0.5" role="radiogroup" aria-label={t('composer.setup.model')}>
         {choices.models.map((model) => {
           const active = value.model === model.value
           return (

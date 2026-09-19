@@ -1,8 +1,8 @@
 import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { codexSessionSource, type ReaderOptions } from './read-sessions'
+import { codexSessionSource, type ReaderOptions } from '@/agents/codex/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 // A Session reader over one mock rollout copied into a temp Codex root, removed after the test.
 export async function readerOverRollout(

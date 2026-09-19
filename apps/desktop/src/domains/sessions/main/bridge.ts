@@ -1,14 +1,10 @@
 import { type BrowserWindow, dialog } from 'electron'
-import { platformText } from '../../../platform/main/i18n'
-import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
   type SessionArchiveListRequest,
   type SessionArchiveSetReply,
   type SessionArchiveSetRequest,
-  type SessionDelegationUsageReply,
-  type SessionDelegationUsageRequest,
   type SessionFeedCancelRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
@@ -24,12 +20,18 @@ import {
   type SessionShellOutputRequest,
   type SessionSkillReply,
   type SessionSkillRequest,
+  type SessionSubagentUsageReply,
+  type SessionSubagentUsageRequest,
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionError,
-} from '../contract/contract'
-import { SESSION_OPERATIONS } from '../contract/operations'
-import { type AttachmentsStore, chooseAttachments, statAttachments } from './attachments'
+} from '@/domains/sessions/contract/contract'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import {
+  type AttachmentsStore,
+  chooseAttachments,
+  statAttachments,
+} from '@/domains/sessions/main/attachments'
 import {
   compactSession,
   decideSessionPermission,
@@ -40,8 +42,10 @@ import {
   readSessionPermission,
   sendSession,
   startSession,
-} from './drive'
-import type { SessionDriveAdapters } from './session-drive-adapter'
+} from '@/domains/sessions/main/drive'
+import type { SessionDriveAdapters } from '@/domains/sessions/main/session-drive-adapter'
+import { platformText } from '@/platform/main/i18n'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
 export type SessionReader = {
   listSessions(request: SessionListRequest): Promise<SessionListReply>
@@ -53,7 +57,7 @@ export type SessionReader = {
   readSkillFile(request: SessionSkillRequest): Promise<SessionSkillReply>
   cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
-  readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
+  readSubagentUsage(request: SessionSubagentUsageRequest): Promise<SessionSubagentUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
@@ -109,7 +113,7 @@ export function attachSessionBridge(
       skill: (request, context) => context.reader.readSkillFile(request),
       cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       shellOutput: (request, context) => context.reader.readShellOutput(request),
-      delegationUsage: (request, context) => context.reader.readDelegationUsage(request),
+      subagentUsage: (request, context) => context.reader.readSubagentUsage(request),
       rename: (request, context) => context.reader.renameSession(request),
       connectTicket: (request, context) => context.reader.connectTicket(request),
       disconnectTicket: (request, context) => context.reader.disconnectTicket(request),

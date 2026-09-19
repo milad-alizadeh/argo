@@ -1,7 +1,7 @@
 // Electron's `safeStorage` as the grant store's cipher (#1763). On Linux with no keyring, Chromium
 // falls back to a hard-coded key, which is not secure storage, so that backend counts as absent.
 import { safeStorage } from 'electron'
-import type { Cipher } from './grants'
+import type { Cipher } from '@/domains/accounts/main/grants'
 
 export const safeStorageCipher: Cipher = {
   available: () =>

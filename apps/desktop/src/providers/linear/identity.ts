@@ -1,9 +1,10 @@
 // Who a Linear grant belongs to. A Linear user belongs to one workspace, so the user id alone keys
 // the Account, and the same person in two workspaces is two Accounts.
-import { isIdentifier, isRecord } from '../../shared/validation'
-import type { Identity } from '../grant'
-import type { LinearEndpoints } from './endpoints'
-import { failed, type LinearRead, query } from './http'
+
+import type { Identity } from '@/providers/grant'
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
+import { failed, type LinearRead, query } from '@/providers/linear/http'
+import { isIdentifier, isRecord } from '@/shared/validation'
 
 const VIEWER = 'query Viewer { viewer { id name email organization { name } } }'
 

@@ -1,22 +1,19 @@
-import type {
-  SessionRenameReply,
-  SessionRenameRequest,
-} from '../../../domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { askRow } from '../../../domains/sessions/contract/tool-feed'
-import { discoverRoster } from '../../../domains/sessions/main/discover-roster'
-import type { FeedOverlay, SessionSource } from '../../../domains/sessions/main/reader'
-import type { SessionIndex } from '../../../domains/sessions/main/session-index/contract'
-import type { LiveMessage } from '../drive/codex-session-driver'
-import type { PendingCodexQuestion } from '../drive/question-protocol'
+import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
+import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
+import { askRow } from '@/domains/sessions/contract/tool-feed'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 import {
   backfillTick,
   clearFullRecords,
   discoverSessions,
   historyComplete,
   nameThreads,
-  readDelegationFiles as readDelegationFilesForParent,
   readSessionFiles,
+  readSubagentFiles as readSubagentFilesForParent,
   reconcileAll,
   resolveIds,
   searchIndexed,
@@ -24,8 +21,8 @@ import {
 import { draftText } from './harness-envelopes'
 import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
 import { createOpenTurnReader, joinOpenTurns } from './open-turns'
-import { readDelegationTokens } from './subagent-tokens'
-import { readDelegationChain } from './subagents'
+import { readSubagentTokens } from './subagent-tokens'
+import { readSubagentChain } from './subagents'
 import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
@@ -132,23 +129,19 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     ...indexCapabilities(root, options?.index),
     discoverSessions: rosterDiscovery(root, options),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
-    readDelegationFiles: async (sessionId, delegationId) =>
-      (await readDelegationFilesForParent(root, sessionId, delegationId)) ??
-      readDelegationChain(root, delegationId),
-    readDelegationUsage: async (sessionId) => {
+    readSubagentFiles: async (sessionId, subagentId) =>
+      (await readSubagentFilesForParent(root, sessionId, subagentId)) ??
+      readSubagentChain(root, subagentId),
+    readSubagentUsage: async (sessionId) => {
       const chain = await readSessionFiles(root, sessionId)
-      const delegationIds = [
+      const subagentIds = [
         ...new Set(
           chain?.files
             .flatMap((file) => file.records)
-            .flatMap((record) =>
-              record.kind === 'delegation' && record.actor === 'agent' && record.groupId !== null
-                ? [record.groupId]
-                : [],
-            ) ?? [],
+            .flatMap((record) => (record.kind === 'subagent' ? [record.subagentId] : [])) ?? [],
         ),
       ]
-      return readDelegationTokens(root, delegationIds)
+      return readSubagentTokens(root, subagentIds)
     },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     managedSessions: options?.roster,

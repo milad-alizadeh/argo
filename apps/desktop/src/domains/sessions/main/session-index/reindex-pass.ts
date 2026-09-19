@@ -1,15 +1,15 @@
 // What one pass does with the files whose identity moved: parse them, pull in the rest of each
 // chain they belong to, and write the whole re-stitched result back to the index (#2372). Split
 // from `indexed-window.ts` so reading the window stays readable beside it.
-import type { TranscriptFile } from '../../contract/transcript'
+import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
 import {
   type IndexedTranscriptFile,
   NO_CHAIN,
   type SessionIndex,
   type TranscriptFileIdentity,
   type TranscriptPath,
-} from './contract'
-import type { IndexedWindowSource } from './indexed-window'
+} from '@/domains/sessions/main/session-index/contract'
+import type { IndexedWindowSource } from '@/domains/sessions/main/session-index/indexed-window'
 import {
   chainIdByPath,
   type FileIdentities,
@@ -19,7 +19,7 @@ import {
   indexedFiles,
   isUnchanged,
   pathOfIndexed,
-} from './window-pass'
+} from '@/domains/sessions/main/session-index/window-pass'
 
 export type Reindexed = {
   owners: Map<string, string>

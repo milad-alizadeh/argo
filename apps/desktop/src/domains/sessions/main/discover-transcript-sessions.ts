@@ -1,28 +1,36 @@
-import { createChainCache, createChainHistory, type SessionChain } from '../contract/chains'
-import type { SessionRosterRow } from '../contract/models'
-import { currentSessionId } from '../contract/models'
-import type { TranscriptFile } from '../contract/transcript'
-import { sessionIdOfFile } from '../contract/transcript-file'
-import { boundIndexedWindow, presentedRows } from './discover-indexed-window'
+import {
+  createChainCache,
+  createChainHistory,
+  type SessionChain,
+} from '@/domains/sessions/contract/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { currentSessionId } from '@/domains/sessions/contract/models'
+import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
+import { boundIndexedWindow, presentedRows } from '@/domains/sessions/main/discover-indexed-window'
 import {
   discoverSessionsWith,
   historyCompleteFor,
   resolveIdsAgainst,
   searchAgainst,
-} from './discover-transcript-window'
-import { createFullRecordTracker } from './full-record-tracker'
-import { projectRosterRow } from './roster'
-import { rosterMetadata } from './roster-metadata'
-import { createBackgroundIndexing } from './session-index/background-indexing'
-import type { BackfillProgress, SessionIndex, TranscriptPath } from './session-index/contract'
-import { createTitleLedger } from './title-ledger'
+} from '@/domains/sessions/main/discover-transcript-window'
+import { createFullRecordTracker } from '@/domains/sessions/main/full-record-tracker'
+import { projectRosterRow } from '@/domains/sessions/main/roster'
+import { rosterMetadata } from '@/domains/sessions/main/roster-metadata'
+import { createBackgroundIndexing } from '@/domains/sessions/main/session-index/background-indexing'
+import type {
+  BackfillProgress,
+  SessionIndex,
+  TranscriptPath,
+} from '@/domains/sessions/main/session-index/contract'
+import { createTitleLedger } from '@/domains/sessions/main/title-ledger'
 import {
   createFileReader,
   createTranscriptParser,
   createTranscriptSummariser,
   type TranscriptDiscoverySource,
   transcriptIdentities,
-} from './transcript-window'
+} from '@/domains/sessions/main/transcript-window'
 
 export type { TranscriptPath }
 

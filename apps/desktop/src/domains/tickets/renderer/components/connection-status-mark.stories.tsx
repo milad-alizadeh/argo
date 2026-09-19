@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { ConnectionStatusMark } from './connection-status-mark'
+import { ConnectionStatusMark } from '@/domains/tickets/renderer/components/connection-status-mark'
 
 const meta: Meta<typeof ConnectionStatusMark> = {
   title: 'Tickets/Connection Status Mark',

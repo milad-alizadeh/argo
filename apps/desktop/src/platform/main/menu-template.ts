@@ -1,5 +1,5 @@
-import { type MenuEntry, REGISTER_PROJECT_COMMAND, shortcut } from '../shared/commands'
-import { platformText } from './i18n'
+import { platformText } from '@/platform/main/i18n'
+import { type MenuEntry, REGISTER_PROJECT_COMMAND, shortcut } from '@/platform/shared/commands'
 
 export function menuTemplate(): MenuEntry[] {
   const open = shortcut(REGISTER_PROJECT_COMMAND)

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { STATUSES } from './status-fixtures'
-import { TicketDetail } from './ticket-detail'
-import { engine, prototype, wayfinder } from './ticket-fixtures'
+import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
+import { TicketDetail } from '@/domains/tickets/renderer/components/ticket-detail'
+import { engine, prototype, wayfinder } from '@/domains/tickets/renderer/components/ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 

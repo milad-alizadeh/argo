@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { fed, feedRequest, rowsOf } from '../../../domains/sessions/main/reader-test-helpers'
-import { claudeSessionSource } from '../sessions/read-sessions'
-import { fixtureRoot, fixtureRosterRow } from './session-fixtures'
+import { fixtureRoot, fixtureRosterRow } from '@/agents/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
 
 // A background command runs until something ends it; the CLI's `killed` and a stop call both read
 // as `interrupted`, and the stop call draws no row of its own (#2443).

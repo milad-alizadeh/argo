@@ -1,9 +1,9 @@
 // The two read operations every renderer holds for observed Sessions: the roster and one
 // Session's feed, split out of contract.ts to keep each file under the line ceiling.
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { sessionFeedRowSchema, sessionRosterRowSchema } from './models'
-import { sessionErrorSchema } from './session-error'
+import { sessionFeedRowSchema, sessionRosterRowSchema } from '@/domains/sessions/contract/models'
+import { sessionErrorSchema } from '@/domains/sessions/contract/session-error'
+import { identifierSchema } from '@/shared/validation'
 
 export const sessionListRequestSchema = z.strictObject({
   version: z.literal(1),
@@ -26,7 +26,7 @@ export const sessionFeedRequestSchema = z.strictObject({
   // The Subagent whose own Feed is wanted, named by the call that spawned it, or null for the
   // Session's own Feed (#1582). A Subagent records a transcript of its own beside the Session's,
   // and its rows are the Session's sidechain, so the two are separate documents.
-  delegationId: identifierSchema.nullable(),
+  subagentId: identifierSchema.nullable(),
   // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
   // a reloaded or evicted deck without rows to draw.
   revision: z.string().nullable(),

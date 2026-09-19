@@ -1,9 +1,9 @@
 // The full-history title/id search (#2375), split out of `store.ts` to keep it under the file
 // line ceiling, the same way `store-backfill.ts` already is.
 import type { DatabaseSync } from 'node:sqlite'
-import type { SessionRosterRow } from '../../contract/models'
-import { matchesSearchQuery } from '../search-match'
-import { storedRosterRow } from './stored-row'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { matchesSearchQuery } from '@/domains/sessions/main/search-match'
+import { storedRosterRow } from '@/domains/sessions/main/session-index/stored-row'
 
 const EXCERPT_RADIUS = 80
 

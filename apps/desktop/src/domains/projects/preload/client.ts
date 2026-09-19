@@ -1,7 +1,11 @@
-import { createDomainClient } from '../../../shared/ipc/client'
-import { type ProjectOpenReply, type ProjectSetupReply, projectError } from '../contract/contract'
-import type { ProjectListReply } from '../contract/messages'
-import { PROJECT_OPERATIONS } from '../contract/operations'
+import {
+  type ProjectOpenReply,
+  type ProjectSetupReply,
+  projectError,
+} from '@/domains/projects/contract/contract'
+import type { ProjectListReply } from '@/domains/projects/contract/messages'
+import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
+import { createDomainClient } from '@/shared/ipc/client'
 
 export type ProjectClient = {
   openProject(request: { projectId: string }): Promise<ProjectOpenReply>

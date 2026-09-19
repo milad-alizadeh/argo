@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionPosture, SessionStatus } from '../contract/models'
-import { rollupSessionStatus } from './session-status-rollup'
+import type { SessionPosture, SessionStatus } from '@/domains/sessions/contract/models'
+import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
 
 test('a non-managed posture always reads the floor, whatever the reading claims', () => {
   const postures: SessionPosture[] = ['external']

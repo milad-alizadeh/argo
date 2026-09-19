@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
+import { identifierSchema } from '@/shared/validation'
 
 export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku'] as const
 export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const

@@ -1,5 +1,5 @@
 import { watch } from 'node:fs'
-import type { WatchedSource } from './watch-source'
+import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 // How long a burst of filesystem events is allowed to settle before one change is announced.
 // A CLI writing a transcript emits an event per appended chunk, so without this the renderer would

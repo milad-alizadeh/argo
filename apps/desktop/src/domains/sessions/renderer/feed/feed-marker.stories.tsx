@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { FeedMarker } from './feed-marker'
+import { FeedMarker } from '@/domains/sessions/renderer/feed/feed-marker'
 
 const meta = {
   title: 'Sessions/Feed/Marker',

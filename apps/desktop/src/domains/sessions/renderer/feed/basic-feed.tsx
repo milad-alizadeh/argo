@@ -1,14 +1,15 @@
 import { useCallback, useState } from 'react'
-import { isOptimisticSessionId } from '../state/use-session-creation-store'
-import type { SessionError, SessionFeed, SessionId } from '../types'
-import type { FeedQuestionHandlers } from './feed-document'
-import type { FeedLiveFacts } from './feed-live-facts'
-import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
-import { keptDocument } from './kept-document'
-import { Standing } from './standing'
-import { useHeldPrompt } from './use-held-prompt'
-import { useKeptDocuments } from './use-kept-documents'
-import { awaitingAssistantReply } from './use-settled-feed'
+import { useTranslation } from 'react-i18next'
+import type { FeedQuestionHandlers } from '@/domains/sessions/renderer/feed/feed-document'
+import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '@/domains/sessions/renderer/feed/feed-stall'
+import { keptDocument } from '@/domains/sessions/renderer/feed/kept-document'
+import { Standing } from '@/domains/sessions/renderer/feed/standing'
+import { useHeldPrompt } from '@/domains/sessions/renderer/feed/use-held-prompt'
+import { useKeptDocuments } from '@/domains/sessions/renderer/feed/use-kept-documents'
+import { awaitingAssistantReply } from '@/domains/sessions/renderer/feed/use-settled-feed'
+import { isOptimisticSessionId } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { SessionError, SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
 
 import './feed.css'
 
@@ -51,6 +52,7 @@ export function BasicFeed({
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   selectedSessionId: SessionId | null
 } & FeedQuestionHandlers) {
+  const { t } = useTranslation('sessions')
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
   const liveFacts = useHeldPrompt(selectedSessionId, reportedLiveFacts)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
@@ -96,7 +98,7 @@ export function BasicFeed({
   }
 
   return (
-    <section aria-label="Session Feed" className="feed">
+    <section aria-label={t('feedLabel')} className="feed">
       {!stalled && documents.map(([id, document]) => keptDocument(id, document, shared))}
       {failure !== null || stalled || (current === null && !optimisticSession && !holdsPrompt) ? (
         <Standing

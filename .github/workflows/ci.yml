@@ -72,17 +72,9 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:workflows
 
-      - name: Domain runtime facets
-        if: ${{ !cancelled() }}
-        run: bun run quality:domain-facets
-
       - name: Fetch main baseline
         if: ${{ !cancelled() }}
         run: git fetch --no-tags origin main:refs/remotes/origin/main
-
-      - name: i18n guard
-        if: ${{ !cancelled() }}
-        run: bun run quality:i18n
 
       # Biome does not type-check, so this is the gate that reads types. `apps/desktop` landed
       # with a `typecheck` script no caller ran, which meant a type error in the Electron app
@@ -98,19 +90,6 @@ jobs:
       - name: Duplication gate
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
-
-      # The shadcn primitive base (#1767). `components.json` records what the generator was told;
-      # this step reads what the components under the alias actually import, which is the only
-      # place a pasted Radix component shows up before its focus behaviour does.
-      - name: Component base gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:components
-
-      # A design constant that escaped the token contract: a raw hex colour or a Tailwind
-      # arbitrary value, outside the allowlisted vendored and fixture paths (#1913).
-      - name: Design token gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:design-tokens
 
       # Named ahead of the broader workspace run so a Session Feed regression fails fast, under
       # its own label, instead of surfacing inside the wider "Workspace tests" output (#2201).

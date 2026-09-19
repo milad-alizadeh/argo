@@ -5,7 +5,7 @@
 // is registered before the dynamic imports below, since a static import would resolve the real
 // `electron` package first.
 import { mock } from 'bun:test'
-import { electronStandIn } from '../testing/electron-stand-in'
+import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 
 mock.module('electron', () => electronStandIn)
 
@@ -35,18 +35,18 @@ const [
   import('node:test'),
   import('node:assert/strict').then((module) => module.default),
   import('../../../../mocks/contract/mock-ipc-window'),
-  import('../../../providers/github/endpoints'),
-  import('../../../domains/accounts/main/access'),
-  import('../../../domains/accounts/main/bridge'),
-  import('../../../domains/accounts/contract/operations'),
-  import('../../../domains/tickets/main/bridge'),
-  import('../../../domains/tickets/contract/operations'),
-  import('../../../domains/projects/main/bridge'),
-  import('../../../domains/projects/contract/operations'),
-  import('../../../domains/sessions/main/bridge'),
-  import('../../../domains/sessions/contract/operations'),
-  import('../appearance'),
-  import('../../shared/appearance'),
+  import('@/providers/github/endpoints'),
+  import('@/domains/accounts/main/access'),
+  import('@/domains/accounts/main/bridge'),
+  import('@/domains/accounts/contract/operations'),
+  import('@/domains/tickets/main/bridge'),
+  import('@/domains/tickets/contract/operations'),
+  import('@/domains/projects/main/bridge'),
+  import('@/domains/projects/contract/operations'),
+  import('@/domains/sessions/main/bridge'),
+  import('@/domains/sessions/contract/operations'),
+  import('@/platform/main/appearance'),
+  import('@/platform/shared/appearance'),
 ])
 
 type SessionContext = Parameters<typeof attachSessionBridge>[1]

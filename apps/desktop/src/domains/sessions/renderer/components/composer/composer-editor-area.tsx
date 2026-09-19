@@ -1,12 +1,15 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
-import type { SessionPlan } from '../../../contract/models'
-import type { SessionCli } from '../../harness/harnesses'
-import type { ComposerAttachment, ComposerTicketContext } from '../../state/use-composer-store'
-import { ComposerAttachments } from './composer-attachments'
-import { ComposerEditor } from './session-composer-editor'
-import { SessionPlanPopover } from './session-plan-popover'
+import type { SessionPlan } from '@/domains/sessions/contract/models'
+import { ComposerAttachments } from '@/domains/sessions/renderer/components/composer/composer-attachments'
+import { ComposerEditor } from '@/domains/sessions/renderer/components/composer/session-composer-editor'
+import { SessionPlanPopover } from '@/domains/sessions/renderer/components/composer/session-plan-popover'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type {
+  ComposerAttachment,
+  ComposerTicketContext,
+} from '@/domains/sessions/renderer/state/use-composer-store'
 
 export function ComposerEditorArea({
   attachments,

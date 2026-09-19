@@ -1,14 +1,17 @@
 import { z } from 'zod'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { sessionAttachmentInputSchema } from '../../contract/attachments-contract'
-import type { TurnMarkerEntry } from '../feed/turn-marker-state'
-import { SESSION_CLIS, type SessionCli } from '../harness/harnesses'
-import type { TurnSetup } from '../turn-setup/turn-setup'
-import { composerActions } from './composer-store-actions'
-import { type ComposerTicketContext, ticketContextSchema } from './composer-ticket-context'
+import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/attachments-contract'
+import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import { SESSION_CLIS, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { composerActions } from '@/domains/sessions/renderer/state/composer-store-actions'
+import {
+  type ComposerTicketContext,
+  ticketContextSchema,
+} from '@/domains/sessions/renderer/state/composer-ticket-context'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
-export type { ComposerTicketContext } from './composer-ticket-context'
+export type { ComposerTicketContext } from '@/domains/sessions/renderer/state/composer-ticket-context'
 
 // A path the user attached. `error` means the file was unreadable the last time it was checked
 // (typically at Send), so it stays in the strip for the user to fix or remove rather than being
@@ -23,7 +26,7 @@ export type PendingTurn = {
   id: string
   text: string
   setup?: TurnSetup
-  attachments: import('../../contract/attachments-contract').SessionAttachmentInput[]
+  attachments: import('@/domains/sessions/contract/attachments-contract').SessionAttachmentInput[]
 }
 
 const attachmentSchema = z.object({

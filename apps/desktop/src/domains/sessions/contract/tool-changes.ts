@@ -1,6 +1,6 @@
 // What a web Tool Call fetched or searched, read off the facts its adapter filled.
-import type { ToolCall, ToolResult } from './transcript'
-import { resultText } from './transcript'
+import type { ToolCall, ToolResult } from '@/domains/sessions/contract/transcript'
+import { resultText } from '@/domains/sessions/contract/transcript'
 
 export function searchLabel({ search, fetch }: ToolCall) {
   if (fetch !== undefined) return `Fetched ${fetch.url ?? 'a page'}`

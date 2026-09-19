@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
-
-import { sessionRosterRow } from '../../session-fixtures'
-import { sessionTiming } from './session-timing'
+import { sessionTiming } from '@/domains/sessions/renderer/components/roster/session-timing'
+import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 
 const NOW = Date.parse('2026-09-14T12:00:00.000Z')
 

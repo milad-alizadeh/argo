@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { advanceVisibleText } from './streaming-text'
+import { advanceVisibleText } from '@/domains/sessions/renderer/feed/streaming-text'
 
 const start = { text: '', progress: 0 }
 

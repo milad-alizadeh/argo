@@ -1,8 +1,13 @@
-import type { QuestionAnswer } from '../../contract/question'
-import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
-import type { FeedDocumentContext } from './feed-document'
-import { FeedDocument } from './feed-document'
-import type { FeedLiveFacts } from './feed-live-facts'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { FeedDocumentContext } from '@/domains/sessions/renderer/feed/feed-document'
+import { FeedDocument } from '@/domains/sessions/renderer/feed/feed-document'
+import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import type {
+  SessionError,
+  SessionEvidence,
+  SessionFeed,
+  SessionId,
+} from '@/domains/sessions/renderer/types'
 
 // Only the selected document shows live facts (compaction, handoff, the optimistic row, the
 // Turn Marker, posture); a kept-but-inactive document renders its own settled transcript alone.

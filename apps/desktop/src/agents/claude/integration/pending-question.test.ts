@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudePendingQuestion } from '../sessions/pending-question'
-import { fixtureRoot } from './session-fixtures'
+import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
+import { claudePendingQuestion } from '@/agents/claude/sessions/pending-question'
 
 test('reads the tool call id of a question still waiting on a person', async (context) => {
   const root = await fixtureRoot(context, ['askPending'])

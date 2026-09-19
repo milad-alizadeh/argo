@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
-import { parseTranscriptLine } from './records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
+import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
 
 test('reads useful harness deliveries as typed reader events', () => {
   const envelopes = [
@@ -26,7 +26,7 @@ test('reads useful harness deliveries as typed reader events', () => {
   }
 })
 
-test('reads a realtime delegation input as Agent activity', () => {
+test('reads a voice request as a prompt-like command block', () => {
   const line = JSON.stringify({
     type: 'user',
     uuid: 'delegation-1',
@@ -38,17 +38,10 @@ test('reads a realtime delegation input as Agent activity', () => {
     },
   })
   const record = parseTranscriptLine(line)
-  assert.deepEqual(record, {
-    kind: 'delegation',
-    uuid: 'delegation-1',
-    timestamp: null,
-    actor: 'agent',
-    action: 'Reader text',
-    status: null,
-    progress: null,
-    groupId: null,
-    callId: null,
-  })
+  assert.equal(record?.kind, 'message')
+  assert.deepEqual(record?.kind === 'message' && record.blocks, [
+    { shape: 'event', event: 'command', text: 'Reader text' },
+  ])
 })
 
 test('opens a voice Session on what the person said, never on status activity', () => {
@@ -73,9 +66,9 @@ test('opens a voice Session on what the person said, never on status activity', 
       message: { role: 'user', content: '<status>not a title</status>' },
     }),
   )
-  assert.equal(command?.kind, 'delegation')
+  assert.equal(command?.kind, 'message')
   assert.equal(status?.kind, 'message')
-  if (command?.kind !== 'delegation' || status?.kind !== 'message') assert.fail('expected activity')
+  if (command?.kind !== 'message' || status?.kind !== 'message') assert.fail('expected activity')
   assert.equal(
     transcriptFileFrom('/tmp/session.jsonl', {
       fileName: 'session.jsonl',

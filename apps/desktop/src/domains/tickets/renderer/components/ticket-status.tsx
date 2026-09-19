@@ -3,7 +3,7 @@
 import { OctagonAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
-import { StatusGlyph } from './status-glyph'
+import { StatusGlyph } from '@/domains/tickets/renderer/components/status-glyph'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 

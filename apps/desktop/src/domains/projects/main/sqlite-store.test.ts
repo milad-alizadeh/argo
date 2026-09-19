@@ -4,8 +4,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
-import { createProjectStore } from './sqlite-store'
 
 function openStore(databasePath: string) {
   const database = new Database(databasePath)

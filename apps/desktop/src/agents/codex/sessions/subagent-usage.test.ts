@@ -3,11 +3,11 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { projectRosterRow } from '../../../domains/sessions/main/roster'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { projectRosterRow } from '@/domains/sessions/main/roster'
 
-function activity(kind: 'started' | 'completed', timestamp: string, delegationId: string) {
+function activity(kind: 'started' | 'completed', timestamp: string, subagentId: string) {
   return {
     type: 'event_msg',
     timestamp,
@@ -17,27 +17,27 @@ function activity(kind: 'started' | 'completed', timestamp: string, delegationId
         type: 'SubAgentActivity',
         id: `activity-${kind}`,
         kind,
-        agent_thread_id: delegationId,
+        agent_thread_id: subagentId,
         agent_path: '/root/review_feed',
       },
     },
   }
 }
 
-async function writeBackgroundAgent(root: string, sessionId: string, delegationId: string) {
+async function writeBackgroundAgent(root: string, sessionId: string, subagentId: string) {
   const day = path.join(root, '2026', '09', '16')
   await mkdir(day, { recursive: true })
   await writeFile(
     path.join(day, `rollout-2026-09-16T21-23-13-${sessionId}.jsonl`),
     [
-      activity('started', '2026-09-16T21:23:34.000Z', delegationId),
-      activity('completed', '2026-09-16T21:24:46.000Z', delegationId),
+      activity('started', '2026-09-16T21:23:34.000Z', subagentId),
+      activity('completed', '2026-09-16T21:24:46.000Z', subagentId),
     ]
       .map((record) => JSON.stringify(record))
       .join('\n'),
   )
   await writeFile(
-    path.join(day, `rollout-2026-09-16T21-23-34-${delegationId}.jsonl`),
+    path.join(day, `rollout-2026-09-16T21-23-34-${subagentId}.jsonl`),
     [
       { type: 'turn_context', payload: { model: 'gpt-5.6-terra' } },
       {
@@ -56,27 +56,27 @@ test('reads a Codex background agent duration and token usage', async (context) 
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-delegation-usage-'))
   context.after(() => rm(root, { recursive: true, force: true }))
   const sessionId = '01a0abe3-4484-7271-9336-9c4dc2be9f7b'
-  const delegationId = '01a0abe3-96a2-7272-8db3-d24dbf36d454'
-  await writeBackgroundAgent(root, sessionId, delegationId)
+  const subagentId = '01a0abe3-96a2-7272-8db3-d24dbf36d454'
+  await writeBackgroundAgent(root, sessionId, subagentId)
 
   const reader = createSessionReader([codexSessionSource(root)])
-  const usage = await reader.readDelegationUsage({
+  const usage = await reader.readSubagentUsage({
     version: 1,
-    type: 'session.delegation.usage',
+    type: 'session.subagent.usage',
     requestId: 'usage-1',
     sessionId,
   })
-  assert.deepEqual(usage.type === 'session.delegation.usage.read' ? usage.usage : null, [
-    { id: delegationId, tokens: 2200, model: 'gpt-5.6-terra' },
+  assert.deepEqual(usage.type === 'session.subagent.usage.read' ? usage.usage : null, [
+    { id: subagentId, tokens: 2200, model: 'gpt-5.6-terra' },
   ])
 
   const chain = await codexSessionSource(root).readSessionFiles(sessionId)
   assert.ok(chain !== null)
-  assert.deepEqual(projectRosterRow(chain, 'codex').delegations, [
+  assert.deepEqual(projectRosterRow(chain, 'codex').subagents, [
     {
-      id: delegationId,
+      id: subagentId,
       label: 'Review feed',
-      landed: true,
+      state: 'completed',
       startedAt: '2026-09-16T21:23:34.000Z',
       endedAt: '2026-09-16T21:24:46.000Z',
     },

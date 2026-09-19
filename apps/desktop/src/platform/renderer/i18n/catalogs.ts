@@ -3,14 +3,14 @@
 //
 // `platform` is the main process's own catalog, read here too: a shortcut named in the application
 // menu and again on screen is one word from one file.
-import accounts from '../../../domains/accounts/renderer/locales/en.json'
-import atlas from '../../../domains/atlas/renderer/locales/en.json'
-import projects from '../../../domains/projects/renderer/locales/en.json'
-import sessions from '../../../domains/sessions/renderer/locales/en.json'
-import tickets from '../../../domains/tickets/renderer/locales/en.json'
-import platform from '../../shared/i18n/locales/en.json'
-import cockpit from '../cockpit/locales/en.json'
-import shared from './locales/en.json'
+import accounts from '@/domains/accounts/renderer/locales/en.json'
+import atlas from '@/domains/atlas/renderer/locales/en.json'
+import projects from '@/domains/projects/renderer/locales/en.json'
+import sessions from '@/domains/sessions/renderer/locales/en.json'
+import tickets from '@/domains/tickets/renderer/locales/en.json'
+import cockpit from '@/platform/renderer/cockpit/locales/en.json'
+import shared from '@/platform/renderer/i18n/locales/en.json'
+import platform from '@/platform/shared/i18n/locales/en.json'
 
 export const CATALOGS = {
   accounts,

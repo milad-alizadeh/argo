@@ -3,22 +3,22 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
-import { createSessionReader } from '../../../domains/sessions/main/reader.ts'
-import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import {
   fixtureRoot,
   LATER_TURN,
   unscopedListing as listing,
   listSessions,
-} from './session-fixtures'
+} from '@/agents/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
+import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 
 const feed = {
   version: 1,
   type: 'session.feed',
   requestId: 'feed-1',
   sessionId: 'resumeParent',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

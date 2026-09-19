@@ -1,4 +1,4 @@
-import type { WatchOpener } from './watch-paths'
+import type { WatchOpener } from '@/platform/main/watch/watch-paths'
 
 // The one thing a real watch cannot be made to do. Deleting the watched root emits an ordinary
 // change event and leaves the handle working (probed on macOS 26), and an unmount needs a volume,

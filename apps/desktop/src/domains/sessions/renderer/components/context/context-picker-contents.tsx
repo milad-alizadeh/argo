@@ -1,8 +1,7 @@
 import { Ban, CheckCircle2, Circle, CircleDotDashed, Folder, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
-import type { ComposerTicketContext } from '../../state/use-composer-store'
-import { TicketProviderIcon } from '../composer/references/ticket-provider-icon'
+import { TicketProviderIcon } from '@/domains/sessions/renderer/components/composer/references/ticket-provider-icon'
+import type { ComposerTicketContext } from '@/domains/sessions/renderer/state/use-composer-store'
 
 export type TicketChoice = Omit<ComposerTicketContext, 'id'>
 

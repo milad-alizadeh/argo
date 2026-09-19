@@ -6,14 +6,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { createSessionReader } from '../reader'
-import { openSessionIndex } from './open-index'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { openSessionIndex } from '@/domains/sessions/main/session-index/open-index'
 import {
   type IndexedAdapter,
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from './roster-fixtures'
+} from '@/domains/sessions/main/session-index/roster-fixtures'
 
 const cleanUp: (() => Promise<void>)[] = []
 afterEach(async () => {
@@ -122,7 +122,7 @@ describe.each(indexedAdapters)('reconcile of $cli history through the Session in
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId: sessionIdAt(0),
-      delegationId: null,
+      subagentId: null,
       revision: null,
     })
     // The read's own `start` runs synchronously before its first await, so the flag is already up

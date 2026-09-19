@@ -1,5 +1,5 @@
-import type { EditedFile, ToolCall } from '../../../domains/sessions/contract/transcript'
-import { createdPatch, unifiedPatch } from '../../../domains/sessions/contract/unified-patch'
+import type { EditedFile, ToolCall } from '@/domains/sessions/contract/transcript'
+import { createdPatch, unifiedPatch } from '@/domains/sessions/contract/unified-patch'
 
 type Input = Record<string, unknown>
 type Edits = Pick<ToolCall, 'edit'>

@@ -1,10 +1,10 @@
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
-import type { SessionAttachmentInput } from '../../../contract/attachments-contract'
-import type { ComposerAttachment } from '../../state/use-composer-store'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
-import { resolveAttachments } from './use-composer-attachments'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import { resolveAttachments } from '@/domains/sessions/renderer/components/composer/use-composer-attachments'
+import type { ComposerAttachment } from '@/domains/sessions/renderer/state/use-composer-store'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 export type Send = (
   text: string,
