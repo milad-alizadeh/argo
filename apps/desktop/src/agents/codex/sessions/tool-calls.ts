@@ -10,6 +10,7 @@ import { withCommandFacts } from './command-facts'
 import { withLookupFacts } from './lookup-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
+import { withOtherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
@@ -138,6 +139,7 @@ export function readToolRecord(
       .filter((call) => !COLLABORATION_CALLS.has(call.name))
       .map(withCommandFacts)
       .map(withLookupFacts)
+      .map(withOtherFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

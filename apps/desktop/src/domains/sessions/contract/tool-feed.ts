@@ -47,10 +47,6 @@ function commandLabel({ label, command }: ExecuteFacts) {
 const TOOL_DETAILS = {
   Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
   Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
-  Skill: (call: ToolCall) => ({
-    kind: 'skill' as const,
-    label: typeof call.input.skill === 'string' ? skillTitle(call.input.skill) : 'Skill',
-  }),
   apply_patch: (call: ToolCall) => {
     const change = patchOf(call)
     return change === null
@@ -61,7 +57,7 @@ const TOOL_DETAILS = {
 
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
-function skillTitle(slug: string): string {
+export function skillTitle(slug: string): string {
   const words = slug.split('-').filter((word) => word.length > 0)
   const [first, ...rest] = words
   if (first === undefined) return slug
@@ -87,6 +83,9 @@ export function toolPresentation(call: ToolCall) {
     return { kind: 'command' as const, label: commandLabel(call.execute) }
   if (call.read !== undefined)
     return { kind: 'read' as const, label: `Read ${fileName(call.read.target)}` }
+  if (call.skill !== undefined)
+    return { kind: 'skill' as const, label: call.skill.title ?? 'Skill' }
+  if (call.other !== undefined) return { kind: 'tool' as const, label: call.other.label }
   if (call.search !== undefined || call.fetch !== undefined)
     return { kind: 'searched' as const, label: searchLabel(call) }
   return (
@@ -112,7 +111,7 @@ function unclassifiedText(input: ToolCall['input']): string | null {
 function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
   // A Skill call's own result is a fixed placeholder ("Launching skill: X"); its real content is
   // the skill body, carried through `text` (see `toolText`), not the evidence panel.
-  if (call.name === 'Skill') return null
+  if (call.skill !== undefined) return null
   const presentation = toolPresentation(call)
   const change = fileChange(call)
   if (change !== null) return { kind: 'diff', title: presentation.label, source: change.patch }
@@ -137,10 +136,12 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
   if (call.execute !== undefined) return call.execute.text
-  if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
+  if (call.skill !== undefined) return skillBodies.get(call.id) ?? null
   if (call.fetch !== undefined) return call.fetch.url
   if (call.search !== undefined) return call.search.query
   if (call.read !== undefined) return null
+  if (call.other !== undefined)
+    return call.other.source === null ? unclassifiedText(call.input) : null
   return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
 }
 

@@ -29,6 +29,17 @@ export type SearchFacts = { kind: 'search'; scope: 'files' | 'web'; query: strin
 // A web page read.
 export type FetchFacts = { kind: 'fetch'; url: string | null }
 
+// A skill the agent loaded: `title` is the reader-facing name. The body arrives as a later record.
+export type SkillFacts = { kind: 'skill'; title: string | null }
+
+// A tool no other kind holds. `label` is what the row says, the harness name when nothing better
+// is known. `source` says where the call went, for example an MCP server: a fact, never a kind.
+export type OtherFacts = {
+  kind: 'other'
+  label: string
+  source: { server: string; tool: string } | null
+}
+
 // The new shape lives beside the raw one: a call an adapter classified carries its kind's facts,
 // and every other kind still reads `name` and `input`.
 export type ToolCall = {
@@ -39,4 +50,6 @@ export type ToolCall = {
   read?: ReadFacts
   search?: SearchFacts
   fetch?: FetchFacts
+  skill?: SkillFacts
+  other?: OtherFacts
 }

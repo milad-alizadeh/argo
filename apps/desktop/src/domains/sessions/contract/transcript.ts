@@ -5,8 +5,10 @@ import type { ToolCall } from './tool-call'
 export type {
   ExecuteFacts,
   FetchFacts,
+  OtherFacts,
   ReadFacts,
   SearchFacts,
+  SkillFacts,
   ToolCall,
   ToolCallStatus,
 } from './tool-call'
