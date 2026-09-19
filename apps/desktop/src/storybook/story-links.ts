@@ -17,21 +17,15 @@ export type Preview = { url: string; sha: string }
 const START = '<!-- storybook-links:start -->'
 const END = '<!-- storybook-links:end -->'
 const SEPARATOR = '\n\n'
-const STORYBOOK_PREVIEW_FILE = /^\.storybook\/preview\.[jt]sx?$/
 
-// A CSS file pulled in by `@import` is inlined by the CSS pipeline and is not a module, so a
-// change to `tokens.css` reaches no story (#1954).
-function affected(importers: Importers, changed: string[]): Set<string> {
-  const reached = new Set(changed.filter((path) => importers.has(path)))
-  const queue = [...reached]
-  for (let path = queue.pop(); path !== undefined; path = queue.pop()) {
-    for (const importer of importers.get(path) ?? []) {
-      if (reached.has(importer)) continue
-      reached.add(importer)
-      queue.push(importer)
-    }
+// A CSS file pulled in by `@import` is inlined by the CSS pipeline and is not a module, so it
+// reaches no story (#1954).
+function isAffected(importers: Importers, changedFiles: Set<string>, story: Story): boolean {
+  if (changedFiles.has(story.importPath)) return true
+  for (const path of changedFiles) {
+    if (importers.get(path)?.includes(story.importPath)) return true
   }
-  return reached
+  return false
 }
 
 // `changed` is relative to the Storybook root, like every path in the build.
@@ -40,11 +34,10 @@ export function section(
   changed: string[],
   { url, sha }: Preview,
 ): string {
-  const reached = affected(importers, changed)
-  const everyStory = [...reached].some((path) => STORYBOOK_PREVIEW_FILE.test(path))
+  const changedFiles = new Set(changed)
   const grouped = new Map<string, Story[]>()
   for (const story of stories) {
-    if (!everyStory && !reached.has(story.importPath)) continue
+    if (!isAffected(importers, changedFiles, story)) continue
     grouped.set(story.title, [...(grouped.get(story.title) ?? []), story])
   }
   if (grouped.size === 0) return ''
@@ -57,11 +50,14 @@ export function section(
         .map((story) => `[${story.name}](${site}/?path=/story/${story.id})`)
       return `- ${title}: ${links.join(', ')}`
     })
-  const scope = everyStory
-    ? 'This pull request changed a file that `.storybook/preview` loads, so every story is listed.'
-    : 'These stories render a file that this pull request changed.'
   const opens = `They open on the [preview](${site}) of \`${sha.slice(0, 7)}\`.`
-  return ['## Storybook', '', `${scope} ${opens}`, '', ...lines].join('\n')
+  return [
+    '## Storybook',
+    '',
+    `These stories import a file that this pull request changed. ${opens}`,
+    '',
+    ...lines,
+  ].join('\n')
 }
 
 function markers(body: string): { start: number; end: number } | null {
