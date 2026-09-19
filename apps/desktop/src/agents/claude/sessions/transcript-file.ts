@@ -3,8 +3,8 @@ import {
   type TranscriptFile,
   withoutBlocks,
 } from '../../../domains/sessions/contract/transcript'
+import { normalizeClaudeRecords } from './normalize-records'
 import { parseTranscriptLine } from './records'
-import { readingSpawnedAgents } from './spawned-agents'
 
 export type { TranscriptFile }
 export { withoutBlocks }
@@ -14,5 +14,5 @@ export function readTranscriptFile(
   { fileName, lines }: { fileName: string; lines: Iterable<string> },
 ) {
   const file = read(path, { fileName, lines, parse: parseTranscriptLine })
-  return { ...file, records: readingSpawnedAgents(file.records) }
+  return { ...file, records: normalizeClaudeRecords(file.records) }
 }

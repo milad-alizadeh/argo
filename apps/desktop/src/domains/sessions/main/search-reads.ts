@@ -12,6 +12,7 @@ import { growWindow } from './archive-window'
 import { belongsToProject, projectRootsOf } from './project-scope'
 import { fromContext, type ReadContext } from './read-declaration'
 import { matchesSearchQuery } from './search-match'
+import { isSessionIndexFallback } from './session-index/recovery'
 import type { SessionSource } from './session-source'
 
 export const SEARCH_PAGE_LIMIT = 20
@@ -23,13 +24,18 @@ async function indexedSearch(
   query: string,
 ): Promise<{ rows: SessionRosterRow[]; historyComplete: boolean } | null> {
   if (sources.some((source) => source.searchIndexed === undefined)) return null
-  const [matched, completeness] = await Promise.all([
-    Promise.all(sources.map((source) => source.searchIndexed?.(query))),
-    Promise.all(sources.map((source) => source.historyComplete?.())),
-  ])
-  return {
-    rows: matched.flatMap((rows) => rows ?? []),
-    historyComplete: completeness.every(Boolean),
+  try {
+    const [matched, completeness] = await Promise.all([
+      Promise.all(sources.map((source) => source.searchIndexed?.(query))),
+      Promise.all(sources.map((source) => source.historyComplete?.())),
+    ])
+    return {
+      rows: matched.flatMap((rows) => rows ?? []),
+      historyComplete: completeness.every(Boolean),
+    }
+  } catch (error) {
+    if (isSessionIndexFallback(error)) return null
+    throw error
   }
 }
 

@@ -26,18 +26,24 @@ export async function beginManualSetup(
   try {
     const checkpoint = store.projects.readSetupCheckpoint(project.id)
     const worktreePath = checkpoint?.worktreePath ?? (await prepareSetupWorktree(project))
-    const source = await manualSource(worktreePath, document)
+    const stored = await readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(
+      () => null,
+    )
+    const file = {
+      source: stored ?? setupConfiguration(document, {}),
+      saved: stored !== null,
+    }
     store.projects.writeSetupCheckpoint({
       projectId: project.id,
       worktreePath,
       phase: 'editing',
-      configurationSource: source,
+      configurationSource: file.source,
       documentRevision: document.revision,
     })
     return editing({
       requestId: request.requestId,
       project: setupProject(project),
-      source,
+      ...file,
       document,
     })
   } catch {
@@ -66,7 +72,8 @@ export async function saveManualSetup(
     return editing({
       requestId: request.requestId,
       project: setupProject(project),
-      source: await manualSource(checkpoint.worktreePath, document),
+      source: request.source,
+      saved: true,
       document,
     })
   } catch {
@@ -112,16 +119,11 @@ export function cancelManualSetup(
   }
 }
 
-async function manualSource(worktreePath: string, document: SetupDocument): Promise<string> {
-  return readFile(path.join(worktreePath, '.argo', 'settings.json'), 'utf8').catch(() =>
-    setupConfiguration(document, {}),
-  )
-}
-
 function editing(reply: {
   requestId: string
   project: { id: string; name: string }
   source: string
+  saved: boolean
   document: SetupDocument
 }) {
   return {

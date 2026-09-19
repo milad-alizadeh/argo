@@ -21,7 +21,10 @@ export type BackfillSchedulerOptions = {
   isPaused: () => boolean
   intervalMs?: number
   pausedRetryMs?: number
+  // Keep checking a completed cache so a worker recreated after damage gets a fresh first pass.
+  completedRetryMs?: number
   clock?: SchedulerClock
+  onError?: (error: unknown) => void
 }
 
 // A loop that stops scheduling itself once backfill reports complete, and a later `start` (a
@@ -31,6 +34,7 @@ export function createBackfillScheduler(options: BackfillSchedulerOptions): Back
   const clock = options.clock ?? REAL_CLOCK
   const intervalMs = options.intervalMs ?? 2000
   const pausedRetryMs = options.pausedRetryMs ?? 250
+  const completedRetryMs = options.completedRetryMs
   let handle: unknown = null
   let stopped = true
 
@@ -45,8 +49,14 @@ export function createBackfillScheduler(options: BackfillSchedulerOptions): Back
       scheduleNext(pausedRetryMs)
       return
     }
-    const { complete } = await options.tick()
-    if (!complete) scheduleNext(intervalMs)
+    try {
+      const { complete } = await options.tick()
+      if (!complete) scheduleNext(intervalMs)
+      else if (completedRetryMs !== undefined) scheduleNext(completedRetryMs)
+    } catch (error) {
+      options.onError?.(error)
+      scheduleNext(intervalMs)
+    }
   }
 
   return {

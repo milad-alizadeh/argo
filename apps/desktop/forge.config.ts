@@ -37,6 +37,7 @@ const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/node_modules($|\/)/]
 // architecture in hand, so dropping the unused one would need this list to know something it
 // cannot see, and 72 KB is not worth a rule that guesses.
 const DROPPED_FROM_PACKAGE = [
+  /^\/node_modules\/\.cache($|\/)/,
   /^\/node_modules\/node-pty\/prebuilds\/(?!darwin-)/,
   /^\/node_modules\/node-pty\/(src|deps|third_party|scripts|bin|build)($|\/)/,
 ]
@@ -126,6 +127,11 @@ const config: ForgeConfig = {
       // the contract with `main` in package.json and the preload path in create-window.ts.
       build: [
         { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
+        {
+          entry: 'src/domains/sessions/main/session-index/session-index-worker.ts',
+          config: 'vite.main.config.ts',
+          target: 'main',
+        },
         { entry: 'src/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
       ],
       renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],

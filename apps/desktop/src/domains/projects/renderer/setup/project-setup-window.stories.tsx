@@ -170,6 +170,7 @@ export const NormalConfiguration: Story = {
         project: { id: projectId, name: 'example' },
         source: STORY_CONFIGURATION_SOURCE,
         document: STORY_SETUP_DOCUMENT,
+        saved: false,
       }),
       saveProjectSetup: async ({ projectId, source }) => ({
         version: 1,
@@ -178,6 +179,7 @@ export const NormalConfiguration: Story = {
         project: { id: projectId, name: 'example' },
         source,
         document: STORY_SETUP_DOCUMENT,
+        saved: true,
       }),
       validateProjectSetup: async ({ projectId }) => ({
         version: 1,

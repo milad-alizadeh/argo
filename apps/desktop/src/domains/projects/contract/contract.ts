@@ -61,6 +61,7 @@ export const projectSetupEditingSchema = z.strictObject({
   project: projectLabelSchema,
   source: z.string(),
   document: setupDocumentSchema,
+  saved: z.boolean(),
 })
 export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
 
@@ -104,7 +105,8 @@ export const PROJECT_ERRORS = {
   'already-registered': 'Another Project is already registered at that folder.',
   'git-unavailable': 'Argo cannot run git on this computer.',
   'storage-not-written': 'Argo could not save the Project registry.',
-  'invalid-configuration': 'The Project configuration is not valid.',
+  'invalid-configuration':
+    'The Project configuration is not valid. Every target needs a path and four commands: setup, run, build and test.',
   'setup-unavailable': 'Argo could not prepare Project setup.',
   'setup-network-unavailable': 'Argo could not download Project setup from GitHub.',
   'setup-document-invalid': 'GitHub returned an invalid Project setup document.',

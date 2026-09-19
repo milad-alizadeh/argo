@@ -46,6 +46,7 @@ export const storybookProjectBridge: ProjectClient = {
       project: { id: projectId, name: 'argo' },
       source: '',
       document: setupDocument,
+      saved: false,
     }),
   saveProjectSetup: ({ projectId, source }) =>
     Promise.resolve({
@@ -55,6 +56,7 @@ export const storybookProjectBridge: ProjectClient = {
       project: { id: projectId, name: 'argo' },
       source,
       document: setupDocument,
+      saved: true,
     }),
   validateProjectSetup: ({ projectId }) =>
     Promise.resolve({

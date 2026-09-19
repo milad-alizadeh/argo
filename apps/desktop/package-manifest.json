@@ -6,6 +6,7 @@
     ".vite/build/main.js",
     ".vite/build/preload.js",
     ".vite/build/pty-acceptance-[hash].js",
+    ".vite/build/session-index-worker.js",
     ".vite/renderer",
     ".vite/renderer/main_window",
     ".vite/renderer/main_window/assets",
