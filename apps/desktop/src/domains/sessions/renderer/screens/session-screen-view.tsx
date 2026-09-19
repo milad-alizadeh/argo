@@ -1,4 +1,4 @@
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
 import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
@@ -16,7 +16,7 @@ import {
 } from '@/domains/sessions/renderer/screens/use-session-screen-model'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
 
-// An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
+// An unanswered ask row, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
   const row = feed?.rows.find((row) => row.shape === 'ask' && row.answer === null)
   return row?.id ?? null
@@ -97,11 +97,8 @@ export function SessionScreenView() {
   const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
-  const answerQuestion = (
-    _sessionId: string,
-    questionId: string,
-    answers: ClaudeQuestionAnswer[],
-  ) => void question.decide(questionId, answers)
+  const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
+    void question.decide(questionId, answers)
   return (
     <BackgroundWork.Provider value={backgroundWorkLinks(model)}>
       <SessionShell

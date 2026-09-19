@@ -1,13 +1,14 @@
 import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { codexSessionSource, type ReaderOptions } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 
 // A Session reader over one mock rollout copied into a temp Codex root, removed after the test.
 export async function readerOverRollout(
   context: { after: (cleanup: () => Promise<void>) => void },
   mock: { fixture: string; session: string },
+  options?: ReaderOptions,
 ) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-rollout-'))
   context.after(() => rm(root, { recursive: true, force: true }))
@@ -17,5 +18,5 @@ export async function readerOverRollout(
     new URL(`../../../../mocks/cli/codex/fixtures/sessions/${mock.fixture}`, import.meta.url),
     path.join(day, `${mock.session}.jsonl`),
   )
-  return createSessionReader([codexSessionSource(root)])
+  return createSessionReader([codexSessionSource(root, options)])
 }

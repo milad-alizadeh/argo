@@ -7,7 +7,7 @@ import {
   type ManagedSessionOptions,
   managedRoster,
 } from '@/agents/codex/drive/managed-session'
-import { codexAnswersFor } from '@/agents/codex/drive/question-protocol'
+import { codexAnswersFor, settleQuestion } from '@/agents/codex/drive/question-protocol'
 import { readRename } from '@/agents/codex/drive/rename-protocol'
 import { createResumingChannel } from '@/agents/codex/drive/resuming-channel'
 import { beginSession, startTurn } from '@/agents/codex/drive/turn-lifecycle'
@@ -110,7 +110,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       const pending = session.pendingQuestion
       if (pending.itemId !== questionId) return false
       session.channel.respond(pending.requestId, codexAnswersFor(pending, answers))
-      session.pendingQuestion = null
+      settleQuestion(session)
       return true
     },
     close: closeManagedSessions(sessions, driver.ownership),

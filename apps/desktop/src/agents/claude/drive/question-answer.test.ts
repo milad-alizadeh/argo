@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { deliverAnswer } from '@/agents/claude/drive/question-answer'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 
 const DOWN = '[B'
 const noWait = async () => {}
@@ -14,7 +14,7 @@ function target() {
 // Confirmed against the real CLI: Down to the row (the picker opens on row 1), then Enter.
 test('answers a single-select question with Down to the row and Enter', async () => {
   const { target: session, writes } = target()
-  const answer: ClaudeQuestionAnswer = { kind: 'options', indices: [3] }
+  const answer: QuestionAnswer = { kind: 'options', indices: [3] }
 
   await deliverAnswer(session, [answer], noWait)
 
@@ -33,7 +33,7 @@ test('answers row one with no Down presses at all', async () => {
 // row is visited in ascending order off one shared cursor, Space toggles it, one final Enter submits.
 test('answers a multi-select question by visiting each row and toggling it with Space', async () => {
   const { target: session, writes } = target()
-  const answer: ClaudeQuestionAnswer = { kind: 'options', indices: [1, 3] }
+  const answer: QuestionAnswer = { kind: 'options', indices: [1, 3] }
 
   await deliverAnswer(session, [answer], noWait)
 
@@ -43,7 +43,7 @@ test('answers a multi-select question by visiting each row and toggling it with 
 // The free-text row sits one past the last offered option; selecting it, Enter, typing, Enter.
 test('answers a free-text question by selecting its row, typing, then submitting', async () => {
   const { target: session, writes } = target()
-  const answer: ClaudeQuestionAnswer = { kind: 'text', index: 4, text: 'Something else' }
+  const answer: QuestionAnswer = { kind: 'text', index: 4, text: 'Something else' }
 
   await deliverAnswer(session, [answer], noWait)
 

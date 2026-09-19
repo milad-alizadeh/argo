@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/tool-groups'
 import { useDrawnRow } from '@/domains/sessions/renderer/feed/drawn-row'
 import { feedContent } from '@/domains/sessions/renderer/feed/feed-content'
@@ -24,7 +24,7 @@ import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
 // Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
 export type FeedQuestionHandlers = {
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
   stallTimeoutMs?: number

@@ -1,3 +1,4 @@
+import { askFacts } from '@/agents/claude/sessions/ask-facts'
 import { bashFacts } from '@/agents/claude/sessions/bash-facts'
 import { editFacts } from '@/agents/claude/sessions/edit-facts'
 import { lookupFacts } from '@/agents/claude/sessions/lookup-facts'
@@ -67,6 +68,7 @@ function readToolCall(id: string, name: string, input: Record<string, unknown>):
     name,
     input,
     ...(execute === undefined ? {} : { execute }),
+    ...askFacts(name, input),
     ...lookupFacts(name, input),
     ...skillOrOtherFacts(name, input),
     ...editFacts(name, input),
