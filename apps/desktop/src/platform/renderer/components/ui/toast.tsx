@@ -5,12 +5,12 @@ import { cn } from 'cn'
 import {
   CircleCheckIcon,
   InfoIcon,
-  Loader2Icon,
   OctagonXIcon,
   TriangleAlertIcon,
   XIcon,
 } from 'lucide-react'
 import type * as React from 'react'
+import { Loader } from '../loader'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 const toast = ToastPrimitive.createToastManager()
@@ -153,7 +153,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
   }
 
   if (type === 'loading') {
-    icon = <Loader2Icon className="animate-spin" aria-hidden="true" />
+    icon = <Loader aria-hidden={true} />
   }
 
   if (!icon) {

@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
+import { Loader } from '../../../../platform/renderer/components/loader'
 import { Alert, AlertDescription } from '../../../../platform/renderer/components/ui/alert'
 import { Button } from '../../../../platform/renderer/components/ui/button'
 import {
@@ -13,7 +14,6 @@ import {
   ItemMedia,
   ItemTitle,
 } from '../../../../platform/renderer/components/ui/item'
-import { Spinner } from '../../../../platform/renderer/components/ui/spinner'
 import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
@@ -37,7 +37,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
     return (
       <Item role="status" variant="outline">
         <ItemMedia className={mediaTile} variant="icon">
-          <Spinner aria-hidden="true" />
+          <Loader aria-hidden={true} />
         </ItemMedia>
         <ItemContent>
           <ItemDescription className="type-meta">{t('settings.loading')}</ItemDescription>
