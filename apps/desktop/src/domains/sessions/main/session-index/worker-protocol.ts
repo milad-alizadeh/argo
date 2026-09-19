@@ -8,7 +8,8 @@ const indexedFileSchema = z.strictObject({
   sessionId: z.string().min(1),
   writtenAt: z.number(),
   size: z.number().int().nonnegative(),
-  chainId: z.string().min(1),
+  // A file that holds no message belongs to no chain, and says so with an empty id.
+  chainId: z.string(),
 })
 const indexedChainSchema = z.strictObject({
   chainId: z.string().min(1),

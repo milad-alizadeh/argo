@@ -5,12 +5,12 @@ import type { SessionChain } from '../../contract/chains'
 import type { SessionRosterRow } from '../../contract/models'
 import type { TranscriptFile } from '../../contract/transcript'
 import { projectFeed } from '../feed-incremental'
-import type { IndexedSessionChain, IndexedTranscriptFile, TranscriptFileIdentity } from './contract'
-
-// A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript
-// file). Its identity is still recorded, so the pass stops re-reading it until the CLI writes
-// that first Message and its size changes.
-export const NO_CHAIN = ''
+import {
+  type IndexedSessionChain,
+  type IndexedTranscriptFile,
+  NO_CHAIN,
+  type TranscriptFileIdentity,
+} from './contract'
 
 export type FileIdentities = ReadonlyMap<string, { writtenAt: number; size: number }>
 

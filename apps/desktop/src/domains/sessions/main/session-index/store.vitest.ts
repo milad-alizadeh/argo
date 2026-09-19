@@ -1,6 +1,7 @@
 // The SQLite Session index, driven directly: what it answers for what was written to it, never
 // which statement ran. Recovering a damaged or outdated index is `store-recovery.vitest.ts`.
 import { afterEach, expect, test } from 'vitest'
+import { NO_CHAIN } from './contract'
 import { chainOf, fileFor, passOf, rowFor, storeHarness, writeChain } from './store-fixtures'
 
 const stores = storeHarness()
@@ -31,6 +32,15 @@ test('reports the identity it holds for a path, so a caller can tell a changed f
 
   expect(store.filesAt('claude', ['/transcripts/one.jsonl', '/transcripts/absent.jsonl'])).toEqual([
     { path: '/transcripts/one.jsonl', sessionId: 'one', writtenAt: 10, size: 20, chainId: 'one' },
+  ])
+})
+
+test('reports a file that holds no message, so the pass does not read it again', async () => {
+  const { store } = await stores.open()
+  store.write('claude', passOf({ files: [fileFor('empty', NO_CHAIN)] }))
+
+  expect(store.filesAt('claude', ['/transcripts/empty.jsonl'])).toEqual([
+    { path: '/transcripts/empty.jsonl', sessionId: 'empty', writtenAt: 10, size: 20, chainId: '' },
   ])
 })
 

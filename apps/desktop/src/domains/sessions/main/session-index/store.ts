@@ -1,7 +1,12 @@
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import type { SessionRosterRow } from '../../contract/models'
-import type { BackfillProgress, IndexedTranscriptFile, SessionIndexWrite } from './contract'
+import {
+  type BackfillProgress,
+  type IndexedTranscriptFile,
+  NO_CHAIN,
+  type SessionIndexWrite,
+} from './contract'
 import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
 import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
 import { searchChainsOf } from './store-search'
@@ -80,7 +85,8 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
       )
       .all(cli, ...values) as FileRecord[]
     return rows.flatMap((record) => {
-      return storedRosterRow(record.row_json) === null ? [] : [indexedFile(record)]
+      const unowned = record.chain_id === NO_CHAIN
+      return unowned || storedRosterRow(record.row_json) !== null ? [indexedFile(record)] : []
     })
   }
   return {

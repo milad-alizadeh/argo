@@ -2,11 +2,12 @@
 // chain they belong to, and write the whole re-stitched result back to the index (#2372). Split
 // from `indexed-window.ts` so reading the window stays readable beside it.
 import type { TranscriptFile } from '../../contract/transcript'
-import type {
-  IndexedTranscriptFile,
-  SessionIndex,
-  TranscriptFileIdentity,
-  TranscriptPath,
+import {
+  type IndexedTranscriptFile,
+  NO_CHAIN,
+  type SessionIndex,
+  type TranscriptFileIdentity,
+  type TranscriptPath,
 } from './contract'
 import type { IndexedWindowSource } from './indexed-window'
 import {
@@ -17,7 +18,6 @@ import {
   indexedChains,
   indexedFiles,
   isUnchanged,
-  NO_CHAIN,
   pathOfIndexed,
 } from './window-pass'
 
