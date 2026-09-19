@@ -1,20 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
+import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
-import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
-import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
-import { Roster, type RosterActions } from '@/domains/sessions/renderer/components/roster/roster'
-import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
-import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
+import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'
 import {
   sessionRosterRow,
   sessionShellCommand,
   sessionSubagent,
 } from '@/domains/sessions/renderer/session-fixtures'
 import type { Session, SessionFeed, SessionsListed } from '@/domains/sessions/renderer/types'
+import { SessionWorkButtons } from '@/domains/sessions/renderer/work/session-work-buttons'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
@@ -275,6 +276,7 @@ function ReviewScreen({
 
   return (
     <CockpitShell
+      header={<ProjectSwitcher />}
       sidebar={
         <ReviewSidebar onSelect={setSelectedSessionId} selectedSessionId={selectedSessionId} />
       }
@@ -323,6 +325,7 @@ function NewSessionScreen() {
   withListedSessions([])
   return (
     <CockpitShell
+      header={<ProjectSwitcher />}
       sidebar={
         <Roster
           actions={{

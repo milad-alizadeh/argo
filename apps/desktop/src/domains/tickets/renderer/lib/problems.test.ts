@@ -1,6 +1,15 @@
 import { expect, test } from 'bun:test'
+import accounts from '@/domains/accounts/renderer/locales/en.json'
 import { connection } from '@/domains/tickets/renderer/components/ticket-fixtures'
 import { connectionProblem } from '@/domains/tickets/renderer/lib/problems'
+import tickets from '@/domains/tickets/renderer/locales/en.json'
+import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
+
+await initializeRendererI18n({
+  catalogs: { accounts, tickets },
+  defaultNamespace: 'tickets',
+  language: 'en',
+})
 
 const recovery = { onReconnect: () => {}, onDisconnectSource: () => {} }
 

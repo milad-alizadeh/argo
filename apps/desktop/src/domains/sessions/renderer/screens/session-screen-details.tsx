@@ -2,9 +2,9 @@ import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/components/composer/composer-form'
-import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
-import { PermissionPrompt } from '@/domains/sessions/renderer/components/composer/tray/permission-prompt'
+import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-form'
+import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
+import { PermissionPrompt } from '@/domains/sessions/renderer/composer/tray/permission-prompt'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
 import {
@@ -23,12 +23,12 @@ const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere']
 type SessionScreenDetailsProps = {
   composer: Pick<
     ReturnType<
-      typeof import('@/domains/sessions/renderer/hooks/use-session-composer').useSessionComposer
+      typeof import('@/domains/sessions/renderer/composer/use-session-composer').useSessionComposer
     >,
     'failure' | 'props' | 'retry'
   >
   permission: ReturnType<
-    typeof import('@/domains/sessions/renderer/hooks/use-session-permission').useSessionPermission
+    typeof import('@/domains/sessions/renderer/composer/use-session-permission').useSessionPermission
   >
   questionPending: boolean
   session: SessionRosterRow | null

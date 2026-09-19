@@ -5,8 +5,8 @@ import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-co
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
 import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/feed-jump-to-latest'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import type { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
 import type { SessionEvidence } from '@/domains/sessions/renderer/types'
+import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
