@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"nb-r-1"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"nb-p","message":{"role":"user","content":"Fix the notebook."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"nb-a-1","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"nb-c1","name":"NotebookEdit","input":{"notebook_path":"/Users/x/argo/analysis.ipynb","cell_id":"c1","new_source":"print(1)","edit_mode":"replace"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"nb-r-1","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"nb-c1","content":"ok","is_error":false}]}}

@@ -7,6 +7,7 @@ import type {
   ToolResult,
 } from '../../../domains/sessions/contract/transcript'
 import { bashFacts } from './bash-facts'
+import { editFacts } from './edit-facts'
 import { lookupFacts } from './lookup-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
@@ -63,6 +64,7 @@ function readToolCall(id: string, name: string, input: Record<string, unknown>):
     input,
     ...(execute === undefined ? {} : { execute }),
     ...lookupFacts(name, input),
+    ...editFacts(name, input),
   }
 }
 

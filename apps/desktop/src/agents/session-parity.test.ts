@@ -98,3 +98,26 @@ test('a file read, a web search and a web fetch read the same for Claude and for
   assert.deepEqual(toolCallsOf(codex.feed), expected)
   assert.equal(claude.roster.status, codex.roster.status)
 })
+
+// What each harness lacks for an edit, by name: Claude has no tool that deletes a file, so a
+// deletion is a Codex row only (see `codexDelete`), and Codex writes no per-file result, so a
+// multi-file patch shares one status across its rows.
+test('a written file and two edits read the same for Claude and for Codex', async (context) => {
+  const claude = await read('claude', context, 'parityEdit')
+  const codex = await read('codex', context, 'parityEdit')
+
+  const expected = [
+    { kind: 'created', status: 'succeeded', label: 'Created notes.md', text: null },
+    { kind: 'edited', status: 'succeeded', label: 'Edited app.ts', text: null },
+    { kind: 'edited', status: 'succeeded', label: 'Edited util.ts', text: null },
+  ]
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
+  assert.equal(claude.roster.status, codex.roster.status)
+  // The Roster names the newest file either way; `tool` is the harness's own name and differs.
+  const activity = (row: typeof claude.roster) => {
+    const { kind, label, target } = row.activity ?? { kind: null, label: null, target: null }
+    return { kind, label, target }
+  }
+  assert.deepEqual(activity(claude.roster), activity(codex.roster))
+})

@@ -1,5 +1,4 @@
-import { PATCH_FILE_HEADER } from '../contract/apply-patch'
-import type { ContentBlock, TranscriptRecord } from '../contract/transcript'
+import type { ContentBlock, EditFacts, TranscriptRecord } from '../contract/transcript'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {
@@ -10,15 +9,6 @@ function openingLine(blocks: ContentBlock[]): ContentBlock[] {
     if (line !== undefined) return [{ ...block, text: line }]
   }
   return []
-}
-
-// The file headers name what an apply_patch changed; its hunks are Feed content.
-function patchHeaders(patch: unknown): unknown {
-  if (typeof patch !== 'string') return patch
-  return patch
-    .split('\n')
-    .filter((line) => PATCH_FILE_HEADER.test(line))
-    .join('\n')
 }
 
 function rosterToolInput(input: Record<string, unknown>): Record<string, unknown> {
@@ -35,10 +25,14 @@ function rosterToolInput(input: Record<string, unknown>): Record<string, unknown
     'run_in_background',
     'url',
   ]
-  return Object.fromEntries([
-    ...fields.flatMap((field) => (field in input ? [[field, input[field]]] : [])),
-    ...('patch' in input ? [['patch', patchHeaders(input.patch)]] : []),
-  ])
+  return Object.fromEntries(
+    fields.flatMap((field) => (field in input ? [[field, input[field]]] : [])),
+  )
+}
+
+// The Roster names the files an edit touched; the diffs are Feed content.
+function withoutDiffs(edit: EditFacts): EditFacts {
+  return { ...edit, files: edit.files.map((file) => ({ ...file, diff: '' })) }
 }
 
 // The newest headline thought is the Roster's activity while it stands, so its one line survives.
@@ -55,7 +49,11 @@ export function rosterMetadata(record: TranscriptRecord): TranscriptRecord {
   return {
     ...record,
     blocks: record.role === 'user' ? openingLine(record.blocks) : headlineThought(record.blocks),
-    toolCalls: record.toolCalls.map((call) => ({ ...call, input: rosterToolInput(call.input) })),
+    toolCalls: record.toolCalls.map((call) => ({
+      ...call,
+      input: rosterToolInput(call.input),
+      ...(call.edit === undefined ? {} : { edit: withoutDiffs(call.edit) }),
+    })),
     toolResults: record.toolResults
       ?.filter((result) => result.background !== undefined)
       .map((result) => ({ ...result, blocks: [] })),

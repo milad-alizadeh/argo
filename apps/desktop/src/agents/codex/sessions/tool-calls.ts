@@ -7,6 +7,7 @@
 import { isRecord } from '@/shared/validation'
 import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { withCommandFacts } from './command-facts'
+import { withEditFacts } from './edit-facts'
 import { withLookupFacts } from './lookup-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
@@ -138,6 +139,7 @@ export function readToolRecord(
       .filter((call) => !COLLABORATION_CALLS.has(call.name))
       .map(withCommandFacts)
       .map(withLookupFacts)
+      .map(withEditFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

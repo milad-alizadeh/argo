@@ -3,6 +3,8 @@ import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
 import type { ToolCall } from './tool-call'
 
 export type {
+  EditedFile,
+  EditFacts,
   ExecuteFacts,
   FetchFacts,
   ReadFacts,

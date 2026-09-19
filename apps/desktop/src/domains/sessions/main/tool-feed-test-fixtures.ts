@@ -41,6 +41,26 @@ export function fetchCall(id: string, url: string | null): ToolCall {
   return { id, name: 'page', input: {}, fetch: { kind: 'fetch', url } }
 }
 
+// A file change the way an adapter hands it over.
+export function editCall(
+  id: string,
+  file: string,
+  change: 'create' | 'update' | 'delete' = 'update',
+) {
+  const edited = {
+    change,
+    file,
+    diff: '@@ -1,1 +1,1 @@\n-a\n+b',
+    lineCounts: { added: 1, removed: 1 },
+  }
+  return {
+    id,
+    name: 'files',
+    input: {},
+    edit: { kind: 'edit', files: [edited] },
+  } satisfies ToolCall
+}
+
 export function onlyToolRow(calls: ToolCall[], results = new Map<string, ToolResult>()): ToolRow {
   const [row] = toolRows(calls, { results, skillBodies: new Map() })
   if (row === undefined || row.shape !== 'tool') throw new Error('expected a tool row')

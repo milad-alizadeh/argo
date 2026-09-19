@@ -68,22 +68,31 @@ test('keeps the newest headline thought of an assistant message and drops its pr
   assert.deepEqual(metadata.blocks, [{ shape: 'thought', text: 'Planning directory moves' }])
 })
 
-test('keeps the file headers of an apply_patch so the Roster can name the file', () => {
+test('keeps the files an edit touched and drops its diff', () => {
   const metadata = messageMetadata(
     message({
       toolCalls: [
         {
-          id: 'patch-1',
-          name: 'apply_patch',
-          input: {
-            patch: `*** Begin Patch\n*** Update File: src/app.ts\n@@\n-${'x'.repeat(10_000)}\n+y\n*** End Patch`,
+          id: 'edit-1',
+          name: 'files',
+          input: {},
+          edit: {
+            kind: 'edit',
+            files: [
+              {
+                change: 'update',
+                file: 'src/app.ts',
+                diff: `@@ -1,1 +1,1 @@\n-${'x'.repeat(10_000)}\n+y`,
+                lineCounts: { added: 1, removed: 1 },
+              },
+            ],
           },
         },
       ],
     }),
   )
-  assert.deepEqual(metadata.toolCalls, [
-    { id: 'patch-1', name: 'apply_patch', input: { patch: '*** Update File: src/app.ts' } },
+  assert.deepEqual(metadata.toolCalls[0]?.edit?.files, [
+    { change: 'update', file: 'src/app.ts', diff: '', lineCounts: { added: 1, removed: 1 } },
   ])
 })
 

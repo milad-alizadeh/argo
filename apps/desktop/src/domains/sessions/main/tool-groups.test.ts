@@ -5,14 +5,10 @@ import { type SessionFeedRow, sessionFeedRowSchema } from '../contract/feed-rows
 import { toolRows } from '../contract/tool-feed'
 import { groupToolRuns, TOOL_KIND_PRESENTATION } from '../contract/tool-groups'
 import type { ToolCall } from '../contract/transcript'
-import { fetchCall, searchCall } from './tool-feed-test-fixtures'
+import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
-}
-
-function edit(id: string, path: string): ToolCall {
-  return { id, name: 'Edit', input: { file_path: path, old_string: 'a', new_string: 'b' } }
 }
 
 function unclassified(id: string): ToolCall {
@@ -73,13 +69,13 @@ test('several consecutive Codex exec calls read as commands, the same as Bash', 
 })
 
 test('several consecutive file edits state the count', () => {
-  const found = group(rowsFor([edit('e1', 'a.ts'), edit('e2', 'b.ts')]))
+  const found = group(rowsFor([editCall('e1', 'a.ts'), editCall('e2', 'b.ts')]))
   assert.equal(found.label, 'Edited 2 files')
 })
 
 test('a mixed run states both counts in one summary', () => {
   const found = group(
-    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), edit('e1', 'a.ts')]),
+    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), editCall('e1', 'a.ts')]),
   )
   assert.equal(found.label, 'Ran 2 commands, edited a file')
 })
