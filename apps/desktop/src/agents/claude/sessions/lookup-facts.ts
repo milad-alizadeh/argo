@@ -8,10 +8,14 @@ type LookupFacts = Pick<ToolCall, 'read' | 'search' | 'fetch'>
 
 // Claude's file, search and web tools as the domain's `read`, `search` and `fetch` Tool Calls
 // (CONTEXT.md L3 · Tool Call), keyed by tool name.
+const fileSearch = (input: Record<string, unknown>): LookupFacts => ({
+  search: { kind: 'search', scope: 'files', query: text(input.pattern) },
+})
+
 const LOOKUPS: Record<string, (input: Record<string, unknown>) => LookupFacts> = {
   Read: (input) => ({ read: { kind: 'read', target: text(input.file_path) } }),
-  Glob: (input) => ({ search: { kind: 'search', scope: 'files', query: text(input.pattern) } }),
-  Grep: (input) => ({ search: { kind: 'search', scope: 'files', query: text(input.pattern) } }),
+  Glob: fileSearch,
+  Grep: fileSearch,
   WebSearch: (input) => ({ search: { kind: 'search', scope: 'web', query: text(input.query) } }),
   WebFetch: (input) => ({ fetch: { kind: 'fetch', url: text(input.url) } }),
 }

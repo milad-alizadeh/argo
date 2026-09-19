@@ -70,7 +70,7 @@ function skillTitle(slug: string): string {
 
 // A row names the file, never the path that reached it: every surface drawing this label is narrow
 // and the absolute path is both too long to read and the same prefix on every line (#2273).
-function fileName(path: unknown) {
+export function fileName(path: unknown) {
   if (typeof path !== 'string') return 'file'
   return path.split('/').findLast((segment) => segment.length > 0) ?? path
 }

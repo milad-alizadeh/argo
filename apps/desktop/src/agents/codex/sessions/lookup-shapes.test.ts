@@ -17,8 +17,5 @@ test('reads a viewed image as a file read whose result is the embedded image', a
   )
   assert.equal(read.length, 1)
   assert.equal(read[0]?.label, 'Read shot.png')
-  assert.ok(
-    images.length > 0 || JSON.stringify(rows).includes('data:image/png;base64,iVBORw0KGgo='),
-    'the embedded bytes reach the Feed',
-  )
+  assert.equal(images.length, 1)
 })

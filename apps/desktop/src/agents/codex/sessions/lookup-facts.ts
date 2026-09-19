@@ -27,20 +27,23 @@ const WEB_SEARCH_ACTIONS: Record<string, (input: Input) => LookupFacts> = {
 // Every Codex tool that reads, searches or fetches, keyed by its tool name. `web__run` is a
 // fetch when it names a page and a search when it names a query.
 const LOOKUPS: Record<string, (input: Input) => LookupFacts> = {
-  web__run: (input) =>
-    text(input.url) === null
-      ? webSearch(searchQuery(input))
-      : { fetch: { kind: 'fetch', url: text(input.url) } },
+  web__run: (input) => {
+    const url = text(input.url)
+    return url === null ? webSearch(searchQuery(input)) : { fetch: { kind: 'fetch', url } }
+  },
   'web.search': (input) => webSearch(searchQuery(input)),
   web_search_call: (input) => {
     const action = typeof input.type === 'string' ? input.type : ''
-    const read = Object.hasOwn(WEB_SEARCH_ACTIONS, action) ? WEB_SEARCH_ACTIONS[action] : undefined
-    return read === undefined ? {} : read(input)
+    return pick(WEB_SEARCH_ACTIONS, action)?.(input) ?? {}
   },
   view_image: (input) => ({ read: { kind: 'read', target: text(input.path) } }),
 }
 
+function pick<Value>(table: Record<string, Value>, key: string): Value | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined
+}
+
 export function withLookupFacts(call: ToolCall): ToolCall {
-  const read = Object.hasOwn(LOOKUPS, call.name) ? LOOKUPS[call.name] : undefined
-  return read === undefined ? call : { ...call, ...read(call.input) }
+  const facts = pick(LOOKUPS, call.name)?.(call.input)
+  return facts === undefined ? call : { ...call, ...facts }
 }

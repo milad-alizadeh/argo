@@ -4,7 +4,7 @@
 // rather than guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
 import type { SessionActivity, SessionDelegation, SessionShellCommand } from './models'
-import { toolPresentation } from './tool-feed'
+import { fileName, toolPresentation } from './tool-feed'
 import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
@@ -127,14 +127,9 @@ function readTarget(input: Record<string, unknown>): string | null {
   return null
 }
 
-function lastSegment(path: string): string {
-  return path.split('/').findLast((segment) => segment.length > 0) ?? path
-}
-
 // What a classified call was about, read from the adapter's facts before any raw input field.
 function callTarget(call: ToolCall): string | null {
-  if (call.read !== undefined)
-    return call.read.target === null ? null : lastSegment(call.read.target)
+  if (call.read !== undefined) return call.read.target === null ? null : fileName(call.read.target)
   if (call.search !== undefined) return call.search.query
   if (call.fetch !== undefined) return call.fetch.url
   return readTarget(call.input)
