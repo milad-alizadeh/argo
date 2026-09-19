@@ -1,7 +1,7 @@
-import type { SessionRenameRequest } from '../../../domains/sessions/contract/contract'
-import { driveSessionError, sessionError } from '../../../domains/sessions/contract/contract'
-import type { ClaudeSessionDriver } from './claude-session-driver'
-import { ClaudeSessionDriverError } from './driver-error'
+import type { ClaudeSessionDriver } from '@/agents/claude/drive/claude-session-driver'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
+import type { SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import { driveSessionError, sessionError } from '@/domains/sessions/contract/contract'
 
 export async function renameClaudeSession(
   request: SessionRenameRequest,

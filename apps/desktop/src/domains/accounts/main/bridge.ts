@@ -1,12 +1,12 @@
 // The Account channel's main-process end. Every provider call and every credential stays behind it:
 // the renderer names an action and receives secret-free records (#1763).
 import type { BrowserWindow } from 'electron'
-import { registerDomainHandlers } from '../../../platform/main/ipc/register-domain-handlers'
-import { accountError } from '../contract/contract'
-import { ACCOUNT_OPERATIONS } from '../contract/operations'
-import type { AccountAccess } from './access'
-import { disconnect, dismissNotice, listed } from './listing'
-import { createSignIn } from './sign-in'
+import { accountError } from '@/domains/accounts/contract/contract'
+import { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
+import type { AccountAccess } from '@/domains/accounts/main/access'
+import { disconnect, dismissNotice, listed } from '@/domains/accounts/main/listing'
+import { createSignIn } from '@/domains/accounts/main/sign-in'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
 export type AccountContext = { access: AccountAccess; signIn: ReturnType<typeof createSignIn> }
 

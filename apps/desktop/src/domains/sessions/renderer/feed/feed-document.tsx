@@ -1,17 +1,25 @@
 import { useRef } from 'react'
-import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
-import { foldSettledToolRuns, withHeadline } from '../../contract/tool-groups'
-import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
-import { sessionPostureLocksAnswer } from '../types'
-import { useDrawnRow } from './drawn-row'
-import { feedContent } from './feed-content'
-import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
-import { isFeedRowStreaming } from './feed-row-renderers'
-import { liveFeedTail } from './feed-tail'
-import { useReveals } from './reveal'
-import type { RevealCache } from './streaming-text'
-import { ToolGroupState } from './tool-group-state'
-import { useSettledFeed } from './use-settled-feed'
+import { useTranslation } from 'react-i18next'
+import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/tool-groups'
+import { useDrawnRow } from '@/domains/sessions/renderer/feed/drawn-row'
+import { feedContent } from '@/domains/sessions/renderer/feed/feed-content'
+import {
+  type FeedLiveFacts,
+  INACTIVE_FEED_LIVE_FACTS,
+} from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { isFeedRowStreaming } from '@/domains/sessions/renderer/feed/feed-row-renderers'
+import { liveFeedTail } from '@/domains/sessions/renderer/feed/feed-tail'
+import { useReveals } from '@/domains/sessions/renderer/feed/reveal'
+import type { RevealCache } from '@/domains/sessions/renderer/feed/streaming-text'
+import { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
+import { useSettledFeed } from '@/domains/sessions/renderer/feed/use-settled-feed'
+import type {
+  SessionEvidence,
+  SessionFeed,
+  SessionFeedRow,
+} from '@/domains/sessions/renderer/types'
+import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
 
 // Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
 export type FeedQuestionHandlers = {
@@ -81,6 +89,7 @@ function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
 export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps) {
+  const { t } = useTranslation('sessions')
   const onJumpToLatestChange = actions.onJumpToLatestChange ?? ignoreJumpToLatestChange
   const onOpenSession = actions.onOpenSession
   const live = liveReading(reading, liveFacts)
@@ -125,6 +134,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     revealsFor,
     streamingRowId,
     tail,
+    emptyText: [t('empty.blank.title'), t('empty.blank.description')],
   })
   return (
     <div

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { SessionId } from '../types'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 // How much Session history the reader has asked for, held per project scope and shared by every
 // consumer of the roster.

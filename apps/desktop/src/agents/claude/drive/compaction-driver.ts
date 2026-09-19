@@ -1,5 +1,5 @@
-import type { DriverOptions, ManagedSession } from './drive-channel'
-import { ClaudeSessionDriverError } from './driver-error'
+import type { DriverOptions, ManagedSession } from '@/agents/claude/drive/drive-channel'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
 
 const COMPACT = '/compact'
 type Sessions = Map<string, ManagedSession>

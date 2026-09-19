@@ -1,11 +1,11 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionAttachmentInput } from '../../contract/attachments-contract'
-import { invalidateSessionRoster } from '../session-queries'
-import type { TurnSetup } from '../turn-setup/turn-setup'
-import type { useTurnSetup } from '../turn-setup/use-turn-setup'
-import type { Failure } from './use-session-composer-actions'
-import { sendMessage } from './use-session-composer-actions'
-import type { useSessionMutations } from './use-session-mutations'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { Failure } from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import { sendMessage } from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import type { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 
 export function sendToSelected(request: {
   queryClient: ReturnType<typeof useQueryClient>

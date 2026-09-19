@@ -1,14 +1,14 @@
 import { useMutation } from '@tanstack/react-query'
 
-import type { SessionAttachmentInput } from '../../contract/attachments-contract'
-import type { SessionAcceptedReply, SessionStarted } from '../../contract/contract'
-import type { SessionCli } from '../harness/harnesses'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/contract'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import type { TurnSetup } from '../turn-setup/turn-setup'
+} from '@/domains/sessions/renderer/session-contract-error'
+import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 type Turn = { prompt: string; setup: TurnSetup | null; attachments: SessionAttachmentInput[] }
 

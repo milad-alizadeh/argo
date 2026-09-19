@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { CockpitNavigationRail } from './cockpit-navigation-rail'
-import { CockpitShell } from './cockpit-shell'
+import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
 const meta: Meta<typeof CockpitShell> = {
   title: 'Cockpit/Shell',

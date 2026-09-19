@@ -1,18 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
-
-import {
-  createOwnershipLedger,
-  isProcessAlive,
-} from '../../../domains/sessions/main/ownership-ledger'
-import { findExecutableOnLoginShellPath } from '../../executable-path'
-import { claudePendingQuestion } from '../sessions/pending-question'
-import { claudeResumeTarget } from '../sessions/resume-target'
-import { createClaudeSessionDriver } from './claude-session-driver'
-import { createHandoffLedger } from './handoff-ledger'
-import { createMessageDisplay } from './message-display'
-import { createClaudePermissionGate } from './permission-gate'
+import { createClaudeSessionDriver } from '@/agents/claude/drive/claude-session-driver'
+import { createHandoffLedger } from '@/agents/claude/drive/handoff-ledger'
+import { createMessageDisplay } from '@/agents/claude/drive/message-display'
+import { createClaudePermissionGate } from '@/agents/claude/drive/permission-gate'
+import { claudePendingQuestion } from '@/agents/claude/sessions/pending-question'
+import { claudeResumeTarget } from '@/agents/claude/sessions/resume-target'
+import { findExecutableOnLoginShellPath } from '@/agents/executable-path'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/ownership-ledger'
 
 function readHandoffBrief(briefPath: string): string | null {
   try {

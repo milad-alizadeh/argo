@@ -7,11 +7,11 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter.ts'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions.ts'
+import { decideSessionQuestion, startSession } from '@/domains/sessions/main/drive.ts'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
-import { decideSessionQuestion, startSession } from '../../../domains/sessions/main/drive.ts'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
-import { codexSessionSource } from '../sessions/read-sessions.ts'
 
 async function until<Value>(read: () => Value | null, attempts = 50): Promise<Value> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {

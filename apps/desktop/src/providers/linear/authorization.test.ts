@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { test } from 'node:test'
-import { beginAuthorization } from './authorization'
-import { ADA, browse, linear } from './harness'
-import { readViewer } from './identity'
-import { refreshGrant } from './tokens'
+import { beginAuthorization } from '@/providers/linear/authorization'
+import { ADA, browse, linear } from '@/providers/linear/harness'
+import { readViewer } from '@/providers/linear/identity'
+import { refreshGrant } from '@/providers/linear/tokens'
 
 test('a consented sign-in yields a renewable grant for the Linear user it belongs to', async (context) => {
   const [mock, endpoints] = await linear(context)

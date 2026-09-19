@@ -2,22 +2,22 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
-import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
-import { createAccountAccess } from './domains/accounts/main/access'
-import { attachAccountBridge } from './domains/accounts/main/bridge'
-import { safeStorageCipher } from './domains/accounts/main/safe-storage'
-import { attachProjectBridge } from './domains/projects/main/bridge'
-import type { SetupDocumentSource } from './domains/projects/main/setup/setup-bundle'
-import type { ProjectStore } from './domains/projects/main/sqlite-store'
+import { attachCodexCompactionBridge } from '@/agents/codex/compaction/bridge'
+import { createAccountAccess } from '@/domains/accounts/main/access'
+import { attachAccountBridge } from '@/domains/accounts/main/bridge'
+import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
+import { attachProjectBridge } from '@/domains/projects/main/bridge'
+import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
+import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   attachSessions,
   createSessionDrivers,
   watchClaudeCompactions,
-} from './domains/sessions/main/session-bridges'
-import { attachTicketBridge } from './domains/tickets/main/bridge'
-import { attachAppearanceBridge } from './platform/main/appearance'
-import { attachWindowNavigation } from './platform/main/security/window-navigation'
-import { providerEndpoints } from './providers/endpoints'
+} from '@/domains/sessions/main/session-bridges'
+import { attachTicketBridge } from '@/domains/tickets/main/bridge'
+import { attachAppearanceBridge } from '@/platform/main/appearance'
+import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
+import { providerEndpoints } from '@/providers/endpoints'
 
 export function attachBridges(
   window: BrowserWindow,

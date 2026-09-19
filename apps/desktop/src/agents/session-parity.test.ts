@@ -3,7 +3,7 @@
 // Roster row. A case names every fact one harness lacks, so a lost row cannot pass as a difference.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { toolCallsOf } from '../domains/sessions/main/tool-calls-of'
+import { toolCallsOf } from '@/domains/sessions/main/tool-calls-of'
 import { read } from './session-parity-harnesses'
 
 // What each harness lacks for a command, by name: Claude has no exit code in a result and Codex

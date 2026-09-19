@@ -1,7 +1,7 @@
 import type { Meta } from '@storybook/react'
 import { expect, userEvent, within } from 'storybook/test'
-import { FeedToolGroup, FeedToolLine } from './feed-tools'
-import { ToolGroupState } from './tool-group-state'
+import { FeedToolGroup, FeedToolLine } from '@/domains/sessions/renderer/feed/feed-tools'
+import { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
 
 const command = {
   shape: 'tool' as const,

@@ -1,17 +1,17 @@
 import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { RosterFilterMenu } from '@/domains/sessions/renderer/components/roster/roster-filter-menu'
+import { ROSTER_ROW_HEIGHT } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
+import type { RosterStatus } from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from '../../../../../platform/renderer/components/ui/input-group'
-import { Skeleton } from '../../../../../platform/renderer/components/ui/skeleton'
-import { sessionFailureState } from '../../session-failure-state'
-import type { RosterStatus } from '../../state/use-roster-filter-store'
-import type { SessionError, SessionRoster } from '../../types'
-import { RosterFilterMenu } from './roster-filter-menu'
-import { ROSTER_ROW_HEIGHT } from './roster-rows'
+} from '@/platform/renderer/components/ui/input-group'
+import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 
 export function rosterState(
   roster: SessionRoster | null,
@@ -46,8 +46,9 @@ export function RosterLoadingMoreRow() {
 }
 
 export function RosterLoading() {
+  const { t } = useTranslation('sessions')
   return (
-    <div aria-label="Reading Sessions" className="space-y-4 px-5 py-4" role="status">
+    <div aria-label={t('readingSessions')} className="space-y-4 px-5 py-4" role="status">
       {[0, 1, 2].map((index) => (
         <div key={index}>
           <Skeleton className="h-4 w-3/4" />

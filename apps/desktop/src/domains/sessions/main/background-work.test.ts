@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionShellCommand, SessionSubagent } from '../contract/models'
-import { rosterRow } from '../contract/roster-row-test-fixture'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import { rosterRow } from '@/domains/sessions/contract/roster-row-test-fixture'
 import { hasRunningBackgroundWork } from './background-work'
 
 const agent: SessionSubagent = {

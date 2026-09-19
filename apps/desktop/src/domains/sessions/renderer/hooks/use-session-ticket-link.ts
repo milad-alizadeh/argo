@@ -4,8 +4,8 @@
 
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
-import { invalidateSessionRoster } from '../session-queries'
-import type { Session } from '../types'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 export type ConnectTicketInput = {
   projectId: string

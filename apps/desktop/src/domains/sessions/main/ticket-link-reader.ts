@@ -1,12 +1,13 @@
 // Reply-building for the two Session → Ticket drive operations, pulled out of reader.ts to keep
 // that file under the line cap. The link write and the reply are the whole of it: a rename, if
 // any, is the renderer's own separate call through `session.rename` (issue #2134).
-import type { SessionTicketLinkStore } from '../../tickets/main/session-links'
+
 import {
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionAcceptedSchema,
-} from '../contract/contract'
+} from '@/domains/sessions/contract/contract'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 
 function accepted(request: { requestId: string; sessionId: string }) {
   return sessionAcceptedSchema.parse({

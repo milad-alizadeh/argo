@@ -7,13 +7,13 @@ import {
   type SessionFeedReply,
   type SessionFeedRequest,
   sessionError,
-} from '../contract/contract'
-import { disposeFeed, type HeldFeed } from './feed-cache'
-import type { FeedProjectionState } from './feed-incremental'
-import { createFeedReads, isAbortError } from './feed-reads'
-import { type OwnerFor, readFailure } from './read-declaration'
-import { readFeedWithOverlay, readOwnedFeed } from './read-owned-feed'
-import type { SessionSource } from './session-source'
+} from '@/domains/sessions/contract/contract'
+import { disposeFeed, type HeldFeed } from '@/domains/sessions/main/feed-cache'
+import type { FeedProjectionState } from '@/domains/sessions/main/feed-incremental'
+import { createFeedReads, isAbortError } from '@/domains/sessions/main/feed-reads'
+import { type OwnerFor, readFailure } from '@/domains/sessions/main/read-declaration'
+import { readFeedWithOverlay, readOwnedFeed } from '@/domains/sessions/main/read-owned-feed'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
 
 type Ownership = {
   ownerFor: OwnerFor

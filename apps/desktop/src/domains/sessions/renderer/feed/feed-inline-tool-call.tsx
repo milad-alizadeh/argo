@@ -1,22 +1,32 @@
 import { useTranslation } from 'react-i18next'
+import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
+import {
+  codeLanguageLabel,
+  detectCodeLanguage,
+} from '@/domains/sessions/renderer/feed/content/code-language'
+import { CodeLanguageIcon } from '@/domains/sessions/renderer/feed/content/code-language-icon'
+import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import { RunningText, StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
+import {
+  type ToolCall,
+  type ToolRow,
+  toolPresentation,
+} from '@/domains/sessions/renderer/feed/feed-tools'
+import { withoutRepeatedTitle } from '@/domains/sessions/renderer/feed/skill-title'
+import {
+  type ToolGroupState,
+  useToolGroupOpen,
+} from '@/domains/sessions/renderer/feed/tool-group-state'
 import {
   CodeBlock,
   CodeBlockActions,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '../../../../platform/renderer/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '../../../../platform/renderer/components/ai-elements/code-block-copy-button'
-import { CollapsibleText } from '../../../../platform/renderer/components/collapsible-text'
-import { displayedToolLabel } from '../../contract/tool-feed'
-import { codeLanguageLabel, detectCodeLanguage } from './content/code-language'
-import { CodeLanguageIcon } from './content/code-language-icon'
-import { FeedMarkdown } from './content/feed-markdown'
-import { FEED_CARD_RADIUS_CLASS } from './content/feed-surface'
-import { RunningText, StatusIcon } from './feed-tool-status'
-import { type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
-import { withoutRepeatedTitle } from './skill-title'
-import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
+} from '@/platform/renderer/components/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/platform/renderer/components/ai-elements/code-block-copy-button'
+import { CollapsibleText } from '@/platform/renderer/components/collapsible-text'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own

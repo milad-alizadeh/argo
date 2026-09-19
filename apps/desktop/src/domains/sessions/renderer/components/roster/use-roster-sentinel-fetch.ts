@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { RosterRow } from './roster-rows'
+import type { RosterRow } from '@/domains/sessions/renderer/components/roster/roster-rows'
 
 // A sentinel row scrolling into view is the trigger to fetch its page's continuation; the roster and
 // the Archive each hold their own sentinel and fetch callback.

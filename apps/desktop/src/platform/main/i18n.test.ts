@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { SHORTCUTS } from '../shared/commands'
-import en from '../shared/i18n/locales/en.json'
-import { platformText, setPlatformLanguage } from './i18n'
+import { platformText, setPlatformLanguage } from '@/platform/main/i18n'
+import { SHORTCUTS } from '@/platform/shared/commands'
+import en from '@/platform/shared/i18n/locales/en.json'
 
 function leafKeys(catalog: object, prefix: string): string[] {
   return Object.entries(catalog).flatMap(([segment, value]) =>

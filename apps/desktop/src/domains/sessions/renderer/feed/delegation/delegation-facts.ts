@@ -4,8 +4,8 @@ import {
   durationText,
   readableDelegationName,
   spentTokens,
-} from '../../components/work/session-work'
-import { joined } from '../../components/work/session-work-entries'
+} from '@/domains/sessions/renderer/components/work/session-work'
+import { joined } from '@/domains/sessions/renderer/components/work/session-work-entries'
 
 export type DelegationPhase = 'running' | 'succeeded' | 'failed'
 

@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionPlan, SessionRosterRow, SessionStatus, SessionTitle } from '../contract/models'
-import { reconcileRosterRow, rosterRowFields } from '../contract/roster-row-definition'
-import { managedRow, mergeManagedRoster } from './managed-row'
+import type {
+  SessionPlan,
+  SessionRosterRow,
+  SessionStatus,
+  SessionTitle,
+} from '@/domains/sessions/contract/models'
+import {
+  reconcileRosterRow,
+  rosterRowFields,
+} from '@/domains/sessions/contract/roster-row-definition'
+import { managedRow, mergeManagedRoster } from '@/domains/sessions/main/managed-row'
 
 const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'

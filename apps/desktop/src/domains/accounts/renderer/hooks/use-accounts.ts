@@ -1,11 +1,7 @@
 // The connected Accounts, read once and replaced by whatever listing an Account action answers with.
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AccountListed, AccountListReply } from '@/domains/accounts/contract/contract'
-import {
-  type ContractFailure,
-  QUERY_KEYS,
-  settle,
-} from '../../../../platform/renderer/lib/query-client'
+import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
 
 export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 

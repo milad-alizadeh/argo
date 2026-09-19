@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { CodexSessionDriverError } from '../drive/codex-session-error.ts'
-import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
+import { CodexSessionDriverError } from '@/agents/codex/drive/codex-session-error.ts'
+import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter.ts'
 
 const sessionId = 'thread-1'
 

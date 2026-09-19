@@ -1,6 +1,10 @@
 // Session roster rows the Sessions stories draw.
-import type { SessionRosterRow, SessionShellCommand, SessionSubagent } from '../contract/models'
-import { rosterRow } from '../contract/roster-row-test-fixture'
+import type {
+  SessionRosterRow,
+  SessionShellCommand,
+  SessionSubagent,
+} from '@/domains/sessions/contract/models'
+import { rosterRow } from '@/domains/sessions/contract/roster-row-test-fixture'
 
 export function sessionShellCommand(
   overrides: Partial<SessionShellCommand> & Pick<SessionShellCommand, 'id'>,

@@ -3,13 +3,13 @@
 // all sit behind the declaration, in `read-declaration.ts`. The two archive
 // operations are declared in `archive-reads.ts`, because the flag they read is Argo's own.
 import { readFile } from 'node:fs/promises'
-import type { SessionChain } from '../contract/chains'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type {
   SessionFileRequest,
   SessionShellOutputRequest,
   SessionSkillRequest,
   SessionSubagentUsageRequest,
-} from '../contract/contract'
+} from '@/domains/sessions/contract/contract'
 import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
 import { skillFileContent } from './read-skill-file'
 import type { SessionSource } from './session-source'

@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-
-import { HARNESSES, type SessionCli } from '../../harness/harnesses'
-import { CLAUDE_TURN_SETUP } from '../../turn-setup/claude-turn-setup'
-import { RunSetupMenu } from './run-setup-menu'
+import { RunSetupMenu } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
+import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {

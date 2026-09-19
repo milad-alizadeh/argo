@@ -1,4 +1,4 @@
-import { SESSION_ARCHIVE_SEARCH_OPERATIONS } from './archive-search-operations'
+import { SESSION_ARCHIVE_SEARCH_OPERATIONS } from '@/domains/sessions/contract/archive-search-operations'
 import {
   sessionAcceptedReplySchema,
   sessionChooseAttachmentsReplySchema,
@@ -25,8 +25,8 @@ import {
   sessionSubagentUsageRequestSchema,
   sessionTicketConnectRequestSchema,
   sessionTicketDisconnectRequestSchema,
-} from './contract'
-import { SESSION_READ_OPERATIONS } from './read-operations'
+} from '@/domains/sessions/contract/contract'
+import { SESSION_READ_OPERATIONS } from '@/domains/sessions/contract/read-operations'
 
 // One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
 // sessionId, routed by the Session's owner.

@@ -1,23 +1,30 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit } from '../../../projects/renderer/hooks/use-projects'
-import type { SessionErrorCode } from '../../contract/contract'
-import type { SessionRosterRow } from '../../contract/models'
-import type { SessionComposerProps } from '../components/composer/session-composer'
-import type { TurnMarkerView } from '../feed/turn-marker-state'
-import { HARNESSES, type SessionCli } from '../harness/harnesses'
-import { useComposerStore } from '../state/use-composer-store'
-import { useSessionCreationStore } from '../state/use-session-creation-store'
-import { useTurnSetup } from '../turn-setup/use-turn-setup'
-import type { SessionFeedRow } from '../types'
-import { composerIdentityKey, composerIdentityOf, findSessionRow } from './composer-identity'
-import { composerSend } from './composer-send'
-import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
-import type { Failure } from './use-session-composer-actions'
-import { useSessionMutations } from './use-session-mutations'
-import type { useSessions } from './use-sessions'
-import { useTurnMarker } from './use-turn-marker'
+import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
+import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionComposerProps } from '@/domains/sessions/renderer/components/composer/session-composer'
+import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import {
+  composerIdentityKey,
+  composerIdentityOf,
+  findSessionRow,
+} from '@/domains/sessions/renderer/hooks/composer-identity'
+import { composerSend } from '@/domains/sessions/renderer/hooks/composer-send'
+import {
+  managedSessionIsRunning,
+  useComposerActions,
+} from '@/domains/sessions/renderer/hooks/use-composer-actions'
+import type { Failure } from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import type { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
+import { useTurnMarker } from '@/domains/sessions/renderer/hooks/use-turn-marker'
+import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
+import { useSessionCreationStore } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 const NO_ROWS: SessionRosterRow[] = []
 

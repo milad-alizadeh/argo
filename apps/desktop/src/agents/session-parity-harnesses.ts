@@ -3,10 +3,10 @@ import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '../domains/sessions/main/reader'
-import { fed, feedRequest, listed, rowsOf } from '../domains/sessions/main/reader-test-helpers'
-import { claudeSessionSource } from './claude/sessions/read-sessions'
-import { readerOverRollout } from './codex/sessions/rollout-reader-test-helper'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { readerOverRollout } from '@/agents/codex/sessions/rollout-reader-test-helper'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
 
 const SESSIONS = fileURLToPath(new URL('../../mocks/cli', import.meta.url))
 export type Context = { after: (cleanup: () => Promise<void>) => void }

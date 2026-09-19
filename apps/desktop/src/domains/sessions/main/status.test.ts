@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readExternalStatus } from './status'
-import { transcriptMessage } from './transcript-test-fixtures'
+import { readExternalStatus } from '@/domains/sessions/main/status'
+import { transcriptMessage } from '@/domains/sessions/main/transcript-test-fixtures'
 
 test('a terminal Turn clears an unanswered question', () => {
   const question = transcriptMessage({

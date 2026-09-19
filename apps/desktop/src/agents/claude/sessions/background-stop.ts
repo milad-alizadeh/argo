@@ -1,7 +1,8 @@
 // A stop call ends the background command it names as `interrupted` and draws no row. The call
 // names the task, and the receipt that started the command names the call, so the join is here.
-import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
-import { withoutCalls } from './spawned-agents'
+
+import { withoutCalls } from '@/agents/claude/sessions/spawned-agents'
+import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 const STOP_TOOLS = ['TaskStop', 'KillShell']
 

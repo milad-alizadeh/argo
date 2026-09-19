@@ -1,19 +1,19 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSelectedProject } from '@/domains/projects/renderer/hooks/use-selected-project'
-import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
 import {
   SignInNotice,
   type SignInNoticeProps,
-} from '../../../accounts/renderer/components/sign-in-notice'
-import { useAccounts, useDismissNotice } from '../../../accounts/renderer/hooks/use-accounts'
-import { providerPresentation } from '../../../accounts/renderer/lib/providers'
-import { openAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
-import { useConnection, useTicketList } from '../hooks/use-tickets'
-import { uniqueTickets } from '../lib/backlog'
-import { ConnectionStatusMark } from './connection-status-mark'
-import { TicketsSidebarHeader } from './tickets-sidebar-header'
+} from '@/domains/accounts/renderer/components/sign-in-notice'
+import { useAccounts, useDismissNotice } from '@/domains/accounts/renderer/hooks/use-accounts'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { openAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import { useSelectedProject } from '@/domains/projects/renderer/hooks/use-selected-project'
+import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
+import { ConnectionStatusMark } from '@/domains/tickets/renderer/components/connection-status-mark'
+import { TicketsSidebarHeader } from '@/domains/tickets/renderer/components/tickets-sidebar-header'
+import { useConnection, useTicketList } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { uniqueTickets } from '@/domains/tickets/renderer/lib/backlog'
+import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 
 export type TicketsSidebarContentProps = {
   connection: ConnectionSummary | null

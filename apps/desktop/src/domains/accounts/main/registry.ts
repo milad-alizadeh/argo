@@ -2,12 +2,13 @@
 // the provider's own stable id and never the login, which renames (ADR-0018).
 
 import {
-  otherFields,
-  readDocument,
-  writeDocument,
-} from '../../../platform/main/storage/portable-file'
-import { isIdentifier, isRecord } from '../../../shared/validation'
-import { type AccountState, displayName, PROVIDERS, type Provider } from '../contract/contract'
+  type AccountState,
+  displayName,
+  PROVIDERS,
+  type Provider,
+} from '@/domains/accounts/contract/contract'
+import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
+import { isIdentifier, isRecord } from '@/shared/validation'
 
 // What is written down about an Account. An unreadable grant is found on reading, never stored.
 type StoredState = Exclude<AccountState, 'unreadable'>

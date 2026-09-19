@@ -6,13 +6,16 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import { createInMemorySessionTicketLinkStore } from '../../tickets/main/session-links'
-import { sessionArchiveSetReplySchema } from '../contract/contract'
-import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
-import { createSessionReader } from './reader'
-import { indexedAdapters, sessionIdAt } from './session-index/roster-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/contract'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '@/domains/sessions/main/archive-store'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { indexedAdapters, sessionIdAt } from '@/domains/sessions/main/session-index/roster-fixtures'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 
 function adapter(cli: string) {
   const found = indexedAdapters.find((candidate) => candidate.cli === cli)

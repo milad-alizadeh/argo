@@ -1,13 +1,9 @@
 import { TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '../../../../../platform/renderer/components/ui/alert'
-import { sessionFailureState } from '../../session-failure-state'
-import type { RosterRow } from './roster-rows'
-import { RosterStatusRow } from './sessions-sidebar-chrome'
+import type { RosterRow } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { RosterStatusRow } from '@/domains/sessions/renderer/components/roster/sessions-sidebar-chrome'
+import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 
 // The rows an Archived section's own load state contributes to the merged list, once it is read
 // (#2194 follow-up): a session row never carries these, so they live beside it rather than in

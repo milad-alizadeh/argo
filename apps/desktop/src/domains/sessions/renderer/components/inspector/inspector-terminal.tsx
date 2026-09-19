@@ -2,7 +2,7 @@ import {
   Terminal,
   TerminalContent,
   TerminalCopyButton,
-} from '../../../../../platform/renderer/components/ai-elements/terminal'
+} from '@/platform/renderer/components/ai-elements/terminal'
 
 // Command output filling the inspector edge to edge; the pane's own header already names it.
 export function InspectorTerminal({

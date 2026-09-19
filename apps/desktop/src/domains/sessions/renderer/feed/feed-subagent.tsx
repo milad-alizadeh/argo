@@ -1,9 +1,12 @@
 import { useContext } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../types'
+import type {
+  AgentThread,
+  DelegationPhase,
+} from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import { ThreadCard } from '@/domains/sessions/renderer/feed/delegation/delegation-thread'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { BackgroundWork } from './background-work'
-import type { AgentThread, DelegationPhase } from './delegation/delegation-facts'
-import { ThreadCard } from './delegation/delegation-thread'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 

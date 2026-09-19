@@ -1,0 +1,8 @@
+engine biome(1.0)
+language json
+
+JsonMember() as $member where {
+  $member <: r"(?s)^\"style\".*",
+  $member <: not r"(?s).*base-nova.*",
+  register_diagnostic(span=$member, message="components.json style must stay base-nova so shadcn generates Base UI primitives.")
+}

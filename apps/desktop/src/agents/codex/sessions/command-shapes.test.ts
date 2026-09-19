@@ -1,12 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import {
-  fed,
-  feedRequest,
-  listed,
-  rowsOf,
-} from '../../../domains/sessions/main/reader-test-helpers'
-import { readerOverRollout } from './rollout-reader-test-helper'
+import { readerOverRollout } from '@/agents/codex/sessions/rollout-reader-test-helper'
+import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
 
 const SESSION = 'codexLegacyShell'
 

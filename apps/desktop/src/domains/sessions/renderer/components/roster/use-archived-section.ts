@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useArchivedSessions } from '../../hooks/use-archived-sessions'
+import { useArchivedSessions } from '@/domains/sessions/renderer/hooks/use-archived-sessions'
 import {
   showsArchived,
   useRosterFilterStore,
   useRosterStatus,
-} from '../../state/use-roster-filter-store'
-import type { SessionId } from '../../types'
+} from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import type { SessionId } from '@/domains/sessions/renderer/types'
 
 // Ids the archive query has already surfaced, so a click on a row already on screen never counts
 // as a restore: a restore changes the query's cache key (below), and treating every already-loaded

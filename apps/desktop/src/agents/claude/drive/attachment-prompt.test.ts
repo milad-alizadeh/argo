@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { embedAttachments, mentionableAttachments } from './attachment-prompt'
+import { embedAttachments, mentionableAttachments } from '@/agents/claude/drive/attachment-prompt'
 
 test('mentions a file whose path has a space and a quote through a link Claude Code can read', async () => {
   const root = await mkdtemp(join(tmpdir(), 'argo-mention-'))

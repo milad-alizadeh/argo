@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 
-import { useComposerStore } from './use-composer-store'
+import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
 
 beforeEach(() => {
   useComposerStore.setState(useComposerStore.getInitialState())

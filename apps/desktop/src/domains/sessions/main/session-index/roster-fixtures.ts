@@ -2,10 +2,10 @@
 // runs over both adapters rather than over shared code with a stub CLI beneath it (#2372).
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionSource } from '../../../../agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '../../../../agents/codex/sessions/read-sessions'
-import type { SessionSource } from '../reader'
-import type { SessionIndex } from './contract'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import type { SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 
 // `resumeOf` is the Session this transcript continues, written the way each CLI writes a resume:
 // Claude names the predecessor's uuid, Codex carries the origin thread id on every message.

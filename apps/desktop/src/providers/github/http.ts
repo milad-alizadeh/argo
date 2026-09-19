@@ -1,7 +1,7 @@
 // Every request to GitHub, and the one place a status code becomes a failure the cockpit can name.
 // GitHub throttles with the same 403 it refuses a token with, so the headers are read here, where
 // they still exist.
-import { formBody, readJson, send } from '../request'
+import { formBody, readJson, send } from '@/providers/request'
 
 export type GitHubFailure =
   | 'unauthorized'

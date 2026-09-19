@@ -3,10 +3,10 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
 // Argo owns that flag for every CLI at once (`archive-store.ts`, #2315).
-import type { SessionSubagentUsage } from '../contract/background-work-contract'
-import type { SessionChain } from '../contract/chains'
-import type { SessionRenameReply, SessionRenameRequest } from '../contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '../contract/models'
+import type { SessionSubagentUsage } from '@/domains/sessions/contract/background-work-contract'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 import type { ResolvedIndexedIds } from './resolve-indexed-ids'
 

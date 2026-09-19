@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react'
-
+import { useTranslation } from 'react-i18next'
+import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '../../../../platform/renderer/components/ui/tabs'
-import { HarnessLogo } from './harness-logo'
-import { HARNESSES, SESSION_CLIS, type SessionCli } from './harnesses'
+  HARNESSES,
+  SESSION_CLIS,
+  type SessionCli,
+} from '@/domains/sessions/renderer/harness/harnesses'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/renderer/components/ui/tabs'
 
 export function HarnessTabs({
   cli,
@@ -18,6 +17,7 @@ export function HarnessTabs({
   onChange?: (cli: SessionCli) => void
   children: ReactNode
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <Tabs
       value={cli}
@@ -29,7 +29,7 @@ export function HarnessTabs({
     >
       <div className="border-b p-2">
         <TabsList
-          aria-label="Harness"
+          aria-label={t('harness.label')}
           className="grid w-full grid-cols-2 gap-1 p-1 group-data-horizontal/tabs:h-auto"
         >
           {SESSION_CLIS.map((option) => (

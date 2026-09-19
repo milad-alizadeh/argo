@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
+import { identifierSchema } from '@/shared/validation'
 import { feedImageUrlSchema } from './feed-images'
 import { questionSchema } from './question'
 import {

@@ -1,17 +1,17 @@
 import { ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../../../../platform/renderer/components/ui/collapsible'
+} from '@/platform/renderer/components/ui/collapsible'
 import {
   Marker,
   MarkerContent,
   MarkerIcon,
   markerVariants,
-} from '../../../../platform/renderer/components/ui/marker'
-import type { SessionFeedRow } from '../types'
+} from '@/platform/renderer/components/ui/marker'
 
 type MarkerRow = Extract<SessionFeedRow, { shape: 'marker' }>
 

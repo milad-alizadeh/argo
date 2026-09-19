@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
-import { Badge } from '../../../../platform/renderer/components/ui/badge'
-import { sourcePresentation } from '../lib/sources'
-import { PriorityMenu } from './priority-menu'
-import { StatusMenu } from './status-menu'
-import { TicketLabel } from './ticket-label'
+import { PriorityMenu } from '@/domains/tickets/renderer/components/priority-menu'
+import { StatusMenu } from '@/domains/tickets/renderer/components/status-menu'
+import { TicketLabel } from '@/domains/tickets/renderer/components/ticket-label'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (

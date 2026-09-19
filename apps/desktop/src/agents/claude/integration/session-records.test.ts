@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from '../sessions/records.ts'
-import { withoutBlocks } from '../sessions/transcript-file.ts'
-import { fixtureFile } from './session-fixtures'
+import { fixtureFile } from '@/agents/claude/integration/session-fixtures'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records.ts'
+import { withoutBlocks } from '@/agents/claude/sessions/transcript-file.ts'
 
 test('names the Session from the file name, not from a record inside it', async () => {
   const file = await fixtureFile('unparseableBody')

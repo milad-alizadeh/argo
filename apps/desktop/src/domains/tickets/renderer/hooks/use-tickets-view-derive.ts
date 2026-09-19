@@ -3,25 +3,25 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
+import type { AccountListing } from '@/domains/accounts/renderer/hooks/use-accounts'
+import { openAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import type {
   ConnectionSummary,
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import type { AccountListing } from '../../../accounts/renderer/hooks/use-accounts'
-import { openAccountsDialog } from '../../../accounts/renderer/state/use-accounts-dialog'
-import type { ConnectSourceFormProps } from '../components/connect-source-form'
-import type { TicketDeckProps } from '../components/ticket-deck'
+import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/components/connect-source-form'
+import type { TicketDeckProps } from '@/domains/tickets/renderer/components/ticket-deck'
+import { listedBacklog, type TicketListing } from '@/domains/tickets/renderer/hooks/listed-backlog'
+import type { ConnectForm } from '@/domains/tickets/renderer/hooks/use-connect-form'
 import {
   connectionProblem,
   failureProblem,
   isConnectionProblem,
   type TicketProblemProps,
-} from '../lib/problems'
-import { listedBacklog, type TicketListing } from './listed-backlog'
-import type { ConnectForm } from './use-connect-form'
+} from '@/domains/tickets/renderer/lib/problems'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =

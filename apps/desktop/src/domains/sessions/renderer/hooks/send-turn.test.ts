@@ -1,6 +1,19 @@
 import { beforeEach, expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 import {
+  type DraftSendDeps,
+  sendToDraftIdentity,
+} from '@/domains/sessions/renderer/hooks/send-draft-turn'
+import { sendToNewSession, sendToSelected } from '@/domains/sessions/renderer/hooks/send-turn'
+import {
+  beginEntry,
+  clearEntry,
+  rekeyEntry,
+  type TurnMarkerApi,
+  type TurnMarkerEntries,
+} from '@/domains/sessions/renderer/hooks/use-turn-marker'
+import { useSessionCreationStore } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import {
   COCKPIT,
   mockMutation,
   mockStart,
@@ -8,16 +21,6 @@ import {
   PROJECT,
   SETUP,
 } from '../../../../../mocks/sessions/mock-send-turn'
-import { useSessionCreationStore } from '../state/use-session-creation-store'
-import { type DraftSendDeps, sendToDraftIdentity } from './send-draft-turn'
-import { sendToNewSession, sendToSelected } from './send-turn'
-import {
-  beginEntry,
-  clearEntry,
-  rekeyEntry,
-  type TurnMarkerApi,
-  type TurnMarkerEntries,
-} from './use-turn-marker'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

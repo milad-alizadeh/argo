@@ -5,7 +5,7 @@ import {
   optimisticSessionRow,
   readableSessionId,
   useSessionCreationStore,
-} from './use-session-creation-store'
+} from '@/domains/sessions/renderer/state/use-session-creation-store'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

@@ -4,12 +4,12 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionSubagent } from '../../../contract/models'
-import { FeedDocument } from '../../feed/feed-document'
-import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
-import type { SessionEvidence, SessionFeed } from '../../types'
+import type { SessionSubagent } from '@/domains/sessions/contract/models'
+import { FeedDocument } from '@/domains/sessions/renderer/feed/feed-document'
+import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 
-import '../../feed/feed.css'
+import '@/domains/sessions/renderer/feed/feed.css'
 
 function useVisibleInspector() {
   const inspector = useRef<HTMLElement>(null)

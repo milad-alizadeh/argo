@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
-import { useRosterFilterStore } from '../../state/use-roster-filter-store'
-import { useRosterWindowStore } from '../../state/use-roster-window-store'
-import type { SessionError, SessionId, SessionsListed } from '../../types'
+import { sessionRosterRow, sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
+import { useRosterFilterStore } from '@/domains/sessions/renderer/state/use-roster-filter-store'
+import { useRosterWindowStore } from '@/domains/sessions/renderer/state/use-roster-window-store'
+import type { SessionError, SessionId, SessionsListed } from '@/domains/sessions/renderer/types'
 import { Roster, type RosterActions } from './roster'
 
 const session = sessionRosterRow({

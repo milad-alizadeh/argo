@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promise
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { validateProjectConfiguration } from './setup-validation'
+import { validateProjectConfiguration } from '@/domains/projects/main/setup/setup-validation'
 
 async function fixture(context: { after: (callback: () => Promise<void>) => void }) {
   const project = await mkdtemp(path.join(os.tmpdir(), 'argo-setup-validation-'))
@@ -68,4 +68,11 @@ test('validates an unsaved configuration without replacing the configuration fil
   assert.equal(await validateProjectConfiguration(project, draftSource), true)
   assert.equal(await readFile(path.join(project, '.argo', 'settings.json'), 'utf8'), savedSource)
   await access(path.join(project, 'test-ran'))
+})
+
+test('passes a run command that is still running after the grace period', async (context) => {
+  const project = await fixture(context)
+  const draftSource = source({ setup: 'true', run: 'sleep 60', build: 'true', test: 'true' })
+
+  assert.equal(await validateProjectConfiguration(project, draftSource), true)
 })

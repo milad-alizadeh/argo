@@ -3,10 +3,13 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { attachCodexCompactionBridge } from '@/agents/codex/compaction/bridge'
+import {
+  CODEX_COMPACTION_OPERATIONS,
+  DEFAULT_AUTO_COMPACT_LIMIT,
+} from '@/agents/codex/compaction/compaction'
+import { codexConfigPath } from '@/agents/codex/compaction/config-file'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
-import { attachCodexCompactionBridge } from './bridge'
-import { CODEX_COMPACTION_OPERATIONS, DEFAULT_AUTO_COMPACT_LIMIT } from './compaction'
-import { codexConfigPath } from './config-file'
 
 async function withHome(context: import('node:test').TestContext): Promise<string> {
   const home = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-compaction-bridge-'))

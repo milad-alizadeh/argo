@@ -1,4 +1,4 @@
-import type { SessionCli } from './harnesses'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
 
 // The prototype's harness marks (602bcce2), filled with the text color so both appearances read them.
 const MARKS: Record<SessionCli, string> = {

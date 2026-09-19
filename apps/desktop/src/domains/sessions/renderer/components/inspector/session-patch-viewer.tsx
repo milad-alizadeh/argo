@@ -1,8 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { CodeBlock } from '../../../../../platform/renderer/components/ai-elements/code-block'
-import type { PatchFile } from '../../../contract/patch-files'
-import { detectCodeLanguageFromPath } from '../../feed/content/code-language'
-import { diffLineDecoration, diffLines } from './session-diff-lines'
+import type { PatchFile } from '@/domains/sessions/contract/patch-files'
+import {
+  diffLineDecoration,
+  diffLines,
+} from '@/domains/sessions/renderer/components/inspector/session-diff-lines'
+import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
+import { CodeBlock } from '@/platform/renderer/components/ai-elements/code-block'
 
 function fileName(path: string) {
   return path.split('/').findLast((segment) => segment.length > 0) ?? path

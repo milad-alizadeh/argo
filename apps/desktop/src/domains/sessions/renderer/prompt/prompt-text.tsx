@@ -3,9 +3,13 @@
 import { WandSparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge } from '../../../../platform/renderer/components/ui/badge'
-import { LINK_CLASS } from '../feed/content/link-class'
-import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-segments'
+import { LINK_CLASS } from '@/domains/sessions/renderer/feed/content/link-class'
+import {
+  formatSkillLabel,
+  type PromptSegment,
+  parsePromptText,
+} from '@/domains/sessions/renderer/prompt/prompt-segments'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name
 // reads at the same size as the words beside it. Its baseline is the name's, not the icon's

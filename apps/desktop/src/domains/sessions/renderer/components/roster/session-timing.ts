@@ -1,4 +1,4 @@
-import type { Session } from '../../types'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 type TimingSource = 'turnStartedAt' | 'updatedAt'
 

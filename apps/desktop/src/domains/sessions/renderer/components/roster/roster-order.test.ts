@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import type { SessionsListed } from '../../types'
-import { rememberedRosterOrder } from './roster-order'
+import { rememberedRosterOrder } from '@/domains/sessions/renderer/components/roster/roster-order'
+import type { SessionsListed } from '@/domains/sessions/renderer/types'
 
 type Sessions = SessionsListed['sessions']
 

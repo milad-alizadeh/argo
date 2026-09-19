@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '../contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import { readSubagentReading } from './subagents'
 
 export function hasRunningBackgroundWork(session: SessionRosterRow): boolean {

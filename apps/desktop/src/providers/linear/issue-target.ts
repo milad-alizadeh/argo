@@ -1,7 +1,8 @@
 // The issue and team a write's `TARGET` query answers, resolved once and checked against the
 // Connection's team before anything is written. Shared by every write that owns this check.
-import { isRecord } from '../../shared/validation'
-import type { LinearFailure, LinearRead } from './http'
+
+import type { LinearFailure, LinearRead } from '@/providers/linear/http'
+import { isRecord } from '@/shared/validation'
 
 type TargetIssue = { issue?: unknown }
 type Resolved =

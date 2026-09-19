@@ -2,16 +2,24 @@ import { ExternalLink, GitFork } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { Provider } from '@/domains/accounts/contract/contract'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
 import type { Ticket } from '@/domains/tickets/contract/contract'
-import { providerPresentation } from '../../../accounts/renderer/lib/providers'
-import { FeedMarkdown } from '../../../sessions/renderer/feed/content/feed-markdown'
-import type { LinkedSession } from '../hooks/use-linked-sessions'
-import { closedChildren } from '../lib/backlog'
-import { TicketDetailEmpty } from './ticket-detail-empty'
-import { LinkedSessions } from './ticket-detail-linked-sessions'
-import { Dependencies, Links, type Navigation, stateIcon } from './ticket-detail-links'
-import { type Editing, Properties } from './ticket-detail-properties'
-import { TicketDetailSection } from './ticket-detail-section'
+import { TicketDetailEmpty } from '@/domains/tickets/renderer/components/ticket-detail-empty'
+import { LinkedSessions } from '@/domains/tickets/renderer/components/ticket-detail-linked-sessions'
+import {
+  Dependencies,
+  Links,
+  type Navigation,
+  stateIcon,
+} from '@/domains/tickets/renderer/components/ticket-detail-links'
+import {
+  type Editing,
+  Properties,
+} from '@/domains/tickets/renderer/components/ticket-detail-properties'
+import { TicketDetailSection } from '@/domains/tickets/renderer/components/ticket-detail-section'
+import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
+import { closedChildren } from '@/domains/tickets/renderer/lib/backlog'
 
 const keyText = 'font-mono type-meta'
 

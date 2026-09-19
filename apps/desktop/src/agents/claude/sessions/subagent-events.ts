@@ -1,5 +1,5 @@
 // The lifecycle events a Claude Subagent call reads as, and the facts each carries.
-import type { SubagentEvent, ToolCall } from '../../../domains/sessions/contract/transcript'
+import type { SubagentEvent, ToolCall } from '@/domains/sessions/contract/transcript'
 
 export function text(input: Record<string, unknown>, key: string): string | undefined {
   const value = input[key]

@@ -1,20 +1,24 @@
-import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
-import type { ClaudePermission } from '../../../domains/sessions/contract/contract'
-import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
-import { rollupSessionStatus } from '../../../domains/sessions/main/session-status-rollup'
 import {
   beginCompaction,
   clearCompaction,
   compactSession,
   completeCompaction,
-} from './compaction-driver'
-import type { ClaudeTurnRequest } from './deliver-turn'
-import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
-import { ClaudeSessionDriverError } from './driver-error'
-import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
-import type { LiveMessage } from './live-messages'
-import { claudeManagedStatus } from './managed-status'
+} from '@/agents/claude/drive/compaction-driver'
+import type { ClaudeTurnRequest } from '@/agents/claude/drive/deliver-turn'
+import {
+  channelActions,
+  type DriverOptions,
+  type ManagedSession,
+} from '@/agents/claude/drive/drive-channel'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
+import { clearHandoff, completeHandoffs, startHandoff } from '@/agents/claude/drive/handoff-driver'
+import type { LiveMessage } from '@/agents/claude/drive/live-messages'
+import { claudeManagedStatus } from '@/agents/claude/drive/managed-status'
+import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { ClaudePermission } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string

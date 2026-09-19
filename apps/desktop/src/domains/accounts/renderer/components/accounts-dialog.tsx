@@ -3,22 +3,30 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/domains/accounts/contract/contract'
-import { Alert, AlertDescription } from '../../../../platform/renderer/components/ui/alert'
+import { AccountRow } from '@/domains/accounts/renderer/components/account-row'
+import {
+  type SignedIn,
+  SignInPanel,
+  type SignInPanelProps,
+} from '@/domains/accounts/renderer/components/sign-in-panel'
+import {
+  type AccountListing,
+  useAccounts,
+  useDisconnect,
+} from '@/domains/accounts/renderer/hooks/use-accounts'
+import { useSignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
+import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '../../../../platform/renderer/components/ui/dialog'
-import { useContractText } from '../../../../platform/renderer/i18n/contract-text'
-import { firstControl, useFocusRescue } from '../../../../platform/renderer/lib/focus-rescue'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import { type AccountListing, useAccounts, useDisconnect } from '../hooks/use-accounts'
-import { useSignIn } from '../hooks/use-sign-in'
-import { useAccountsDialog } from '../state/use-accounts-dialog'
-import { AccountRow } from './account-row'
-import { type SignedIn, SignInPanel, type SignInPanelProps } from './sign-in-panel'
+} from '@/platform/renderer/components/ui/dialog'
+import { useContractText } from '@/platform/renderer/i18n/contract-text'
+import { firstControl, useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export type AccountsPanelProps = {
   listing: AccountListing | null

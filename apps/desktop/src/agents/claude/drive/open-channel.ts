@@ -1,10 +1,10 @@
-import { compactionProgress, launchArguments } from './claude-setup'
-import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
-import type { ClaudeTurnRequest } from './deliver-turn'
-import type { DriverOptions, ManagedSession } from './drive-channel'
-import { ClaudeSessionDriverError } from './driver-error'
-import { firstFrame } from './first-frame'
-import { createLiveMessages } from './live-messages'
+import { compactionProgress, launchArguments } from '@/agents/claude/drive/claude-setup'
+import { type CompanionPart, openCompanionPlugin } from '@/agents/claude/drive/companion-plugin'
+import type { ClaudeTurnRequest } from '@/agents/claude/drive/deliver-turn'
+import type { DriverOptions, ManagedSession } from '@/agents/claude/drive/drive-channel'
+import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
+import { firstFrame } from '@/agents/claude/drive/first-frame'
+import { createLiveMessages } from '@/agents/claude/drive/live-messages'
 
 export type ClaudeProcess = {
   write: (text: string) => void

@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
-
-import type { SessionFeedRow } from '../types'
-import { FEED_STALL_TIMEOUT_MS, useStallTimer } from './feed-stall'
+import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '@/domains/sessions/renderer/feed/feed-stall'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 export type Settled = {
   reading: {
     sessionId: string

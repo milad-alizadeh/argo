@@ -7,9 +7,12 @@ import {
   type TranscriptParser,
   type TranscriptRecord,
   transcriptFileFrom,
-} from '../contract/transcript'
-import type { TranscriptFileIdentity, TranscriptPath } from './session-index/contract'
-import { createTranscriptRecordReader } from './transcript-lines'
+} from '@/domains/sessions/contract/transcript'
+import type {
+  TranscriptFileIdentity,
+  TranscriptPath,
+} from '@/domains/sessions/main/session-index/contract'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
 
 export type TranscriptDiscoverySource = {
   cli: string

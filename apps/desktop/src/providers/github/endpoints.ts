@@ -1,4 +1,4 @@
-import { isLoopbackOrigin } from '../../shared/validation'
+import { isLoopbackOrigin } from '@/shared/validation'
 
 // The registered OAuth App the desktop authorizes as. The client id is public by construction:
 // a distributed binary cannot hold a secret, which is why GitHub's grant is the device flow

@@ -1,4 +1,4 @@
-import { Progress } from '../../../../../platform/renderer/components/ui/progress'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 
 const COMPOSITION = [
   { label: 'Conversation', percentage: 71, value: '86k' },
@@ -9,9 +9,12 @@ const COMPOSITION = [
 ]
 
 export function ClaudeContextComposition() {
+  const { t } = useTranslation('sessions')
   return (
     <details className="group type-body">
-      <summary className="cursor-pointer font-medium">Loaded context</summary>
+      <summary className="cursor-pointer font-medium">
+        {t('composer.contextWindow.loadedContext')}
+      </summary>
       <div className="mt-2 grid gap-2">
         {COMPOSITION.map((item) => (
           <div
@@ -27,3 +30,5 @@ export function ClaudeContextComposition() {
     </details>
   )
 }
+
+import { useTranslation } from 'react-i18next'

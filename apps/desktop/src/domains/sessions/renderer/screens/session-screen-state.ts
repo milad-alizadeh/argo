@@ -1,6 +1,6 @@
-import type { HarnessControl, SessionCli } from '../harness/harnesses'
-import { isOptimisticSessionId } from '../state/use-session-creation-store'
-import type { Session } from '../types'
+import type { HarnessControl, SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { isOptimisticSessionId } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 // Roster's open `cli` string narrows to the closed `SessionCli` union at this adapter boundary (ADR-0021).
 function sessionCliOf(session: Pick<Session, 'cli'> | null): SessionCli {

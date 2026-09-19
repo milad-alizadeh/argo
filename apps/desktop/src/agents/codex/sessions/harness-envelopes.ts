@@ -1,9 +1,9 @@
+import { taggedField } from '@/agents/envelope-tags'
 import type {
   ContentBlock,
   TranscriptMessage,
   TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField } from '../../envelope-tags'
+} from '@/domains/sessions/contract/transcript'
 import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
 import { withoutChannelTag } from './realtime-replies'
 

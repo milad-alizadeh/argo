@@ -2,9 +2,9 @@
 // Account when it is made, the one moment a wrong Account and a missing repository or team can be
 // told apart (ADR-0018). Every read goes through the Account's token, renewed where it lapses.
 
-import type { AccountState } from '../../accounts/contract/contract'
-import { type AccountAccess, accountState, projectNames } from '../../accounts/main/access'
-import { readAccounts } from '../../accounts/main/registry'
+import type { AccountState } from '@/domains/accounts/contract/contract'
+import { type AccountAccess, accountState, projectNames } from '@/domains/accounts/main/access'
+import { readAccounts } from '@/domains/accounts/main/registry'
 import {
   type ConnectionState,
   type ConnectionSummary,
@@ -14,9 +14,13 @@ import {
   type TicketListReply,
   type TicketUpdateReply,
   ticketError,
-} from '../contract/contract'
-import { readConnections, type TicketConnection, writeConnections } from './connections'
-import { type Call, readAs } from './read-as'
+} from '@/domains/tickets/contract/contract'
+import {
+  readConnections,
+  type TicketConnection,
+  writeConnections,
+} from '@/domains/tickets/main/connections'
+import { type Call, readAs } from '@/domains/tickets/main/read-as'
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 

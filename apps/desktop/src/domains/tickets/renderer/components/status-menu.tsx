@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketStatus } from '@/domains/tickets/contract/contract'
-import { Button } from '../../../../platform/renderer/components/ui/button'
+import { StatusIcon, StatusMark } from '@/domains/tickets/renderer/components/ticket-status'
+import type { SourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '../../../../platform/renderer/components/ui/dropdown-menu'
-import type { SourcePresentation } from '../lib/sources'
-import { StatusIcon, StatusMark } from './ticket-status'
+} from '@/platform/renderer/components/ui/dropdown-menu'
 
 export type StatusMenuProps = {
   status: TicketStatus

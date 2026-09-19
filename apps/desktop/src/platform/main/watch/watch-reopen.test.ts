@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { failableOpener } from './failable-opener'
-import { REOPEN_DELAYS_MS, SETTLE_MS, watchTrees } from './watch-paths'
+import { failableOpener } from '@/platform/main/watch/failable-opener'
+import { REOPEN_DELAYS_MS, SETTLE_MS, watchTrees } from '@/platform/main/watch/watch-paths'
 
 // Twice the settle window, so a change that has been announced has certainly arrived.
 const QUIET_MS = SETTLE_MS * 2

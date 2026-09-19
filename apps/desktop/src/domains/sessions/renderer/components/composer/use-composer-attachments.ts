@@ -3,12 +3,12 @@ import { useCallback } from 'react'
 import {
   attachmentKindOf,
   type SessionAttachmentInput,
-} from '../../../contract/attachments-contract'
+} from '@/domains/sessions/contract/attachments-contract'
 import {
   type ComposerAttachment,
   type ComposerTicketContext,
   useComposerStore,
-} from '../../state/use-composer-store'
+} from '@/domains/sessions/renderer/state/use-composer-store'
 
 // A stable reference for "no attachments yet": the selector below must return the same array on
 // every call with no entry, or zustand's useSyncExternalStore snapshot never settles (#1845).

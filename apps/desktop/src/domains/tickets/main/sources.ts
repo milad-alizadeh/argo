@@ -1,18 +1,19 @@
 // What each provider does for the Ticket core: check a scope, offer the scopes an Account can see,
 // read one page of open Tickets and move a Ticket to another status. A new provider is one module
 // under `src/providers/` and one line here; nothing in the service branches on which provider it is.
-import type { ProviderEndpoints } from '../../../providers/endpoints'
-import { githubTickets } from '../../../providers/github/ticket-source'
-import { linearTickets } from '../../../providers/linear/ticket-source'
-import type { Provider } from '../../accounts/contract/contract'
+
+import type { Provider } from '@/domains/accounts/contract/contract'
 import type {
   Ticket,
   TicketErrorCode,
   TicketPriority,
   TicketScope,
   TicketStatus,
-} from '../contract/contract'
-import type { PriorityChange, StatusChange } from '../contract/ticket'
+} from '@/domains/tickets/contract/contract'
+import type { PriorityChange, StatusChange } from '@/domains/tickets/contract/ticket'
+import type { ProviderEndpoints } from '@/providers/endpoints'
+import { githubTickets } from '@/providers/github/ticket-source'
+import { linearTickets } from '@/providers/linear/ticket-source'
 
 // `refused` is the provider refusing the token itself: the one failure an Account renewal can fix.
 export type SourceFailure = TicketErrorCode | 'refused'

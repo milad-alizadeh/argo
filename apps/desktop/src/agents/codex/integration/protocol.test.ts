@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { readInterrupt } from '../drive/interrupt-protocol.ts'
+import { readInterrupt } from '@/agents/codex/drive/interrupt-protocol.ts'
 import {
   readCompletedTurn,
   readMessage,
   readStartedTurn,
   readThreadId,
   readThreadStatus,
-} from '../drive/protocol.ts'
+} from '@/agents/codex/drive/protocol.ts'
 
 test('parses a JSON-RPC result response', () => {
   const message = readMessage('{"id":1,"result":{"thread":{"id":"thread-1"}}}')

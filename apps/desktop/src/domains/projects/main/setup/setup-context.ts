@@ -1,6 +1,6 @@
+import type { ProjectStore as ProjectRegistryStore } from '@/domains/projects/main/sqlite-store'
 import { type ProjectError, projectError } from '../../contract/contract'
 import type { SetupDocument } from '../../contract/setup-document'
-import type { ProjectStore as ProjectRegistryStore } from '../sqlite-store'
 import { SetupDocumentLoadError } from './setup-bundle'
 
 const SETUP_DOCUMENT_ERROR_CODES = {
