@@ -149,7 +149,7 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         id: 'storybook',
         kind: 'tool',
         label: 'Storybook',
-        reason: 'Review components and screen states in isolation.',
+        reason: 'Build and test UI components in isolation for faster review.',
       },
       {
         accepted: true,
@@ -158,7 +158,7 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         id: 'playwright',
         kind: 'tool',
         label: 'Playwright journeys',
-        reason: 'Exercise the important desktop paths.',
+        reason: 'Run reliable end-to-end tests across critical user journeys.',
       },
     ],
     packageManager: 'Bun',
@@ -180,7 +180,7 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         id: 'markdown-checks',
         kind: 'tool',
         label: 'Markdown checks',
-        reason: 'Keep instructions readable across harnesses.',
+        reason: 'Lint Markdown quickly and consistently to keep instructions readable.',
       },
       {
         accepted: false,
@@ -189,7 +189,7 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         id: 'typedoc',
         kind: 'dependency',
         label: 'TypeDoc',
-        reason: 'Optional because this Target is instruction-first.',
+        reason: 'Turn TypeScript comments into searchable HTML documentation.',
       },
     ],
     packageManager: 'Bun',
@@ -206,7 +206,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'argo-skill-bundle',
     kind: 'action',
     label: 'Argo setup toolkit',
-    reason: 'Argo setup always installs or updates its toolkit before infrastructure choices.',
+    reason: 'Keep setup tools current without replacing Project-owned automation.',
   },
   {
     accepted: true,
@@ -215,8 +215,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'owned-skills',
     kind: 'action',
     label: 'Protect Project-owned automation',
-    reason:
-      'This Project commits automation files, so they must win over vendored name collisions.',
+    reason: 'Prevent bundled tools from hiding Project-owned automation.',
   },
   {
     accepted: true,
@@ -224,7 +223,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'rtk-filters',
     kind: 'action',
     label: 'RTK filters',
-    reason: 'A bun.lock is present and Argo has a trusted filter recipe for this toolchain.',
+    reason: 'Reduce noisy command output, so agents focus on useful results.',
   },
   {
     accepted: true,
@@ -233,7 +232,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'quality-gates',
     kind: 'action',
     label: 'Quality gates as errors',
-    reason: 'Argo recommends enforced quality gates for every Project.',
+    reason: 'Catch lint, type, test, and structure problems before review.',
   },
   {
     accepted: true,
@@ -241,7 +240,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'codex-todos',
     kind: 'action',
     label: 'Codex native todo lists',
-    reason: 'Codex is installed and visible task progress is useful for long setup work.',
+    reason: 'Show live task progress while an agent works through longer changes.',
   },
   {
     accepted: true,
@@ -250,7 +249,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'agent-instructions',
     kind: 'action',
     label: 'Agent instruction templates',
-    reason: 'Task tracking is always recommended and this harness supports model selection.',
+    reason: 'Give every agent the same task, model, and writing rules.',
   },
   {
     accepted: true,
@@ -259,7 +258,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'guardrail-hooks',
     kind: 'action',
     label: 'Guardrail hooks',
-    reason: 'This Project uses named worktrees and reserves publishing for the ship workflow.',
+    reason: 'Apply the same safety rules across Claude Code and Codex.',
   },
   {
     accepted: true,
@@ -268,7 +267,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'matt-pocock',
     kind: 'action',
     label: 'Matt Pocock engineering skills',
-    reason: 'The engineering skills need Project-specific tracker, label, and documentation rules.',
+    reason: 'Add practical engineering workflows for planning, testing, debugging, and review.',
     waitsForUser: true,
   },
   {
@@ -278,7 +277,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'writing-skills',
     kind: 'dependency',
     label: 'Writing support skills',
-    reason: 'Argo requires both writing passes and reports either one it cannot run.',
+    reason: 'Keep agent instructions clear for people and precise for agents.',
   },
   {
     accepted: true,
@@ -286,7 +285,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'interface-review',
     kind: 'action',
     label: 'Interface review workflow',
-    reason: 'A desktop UI Target and interface-review are both present.',
+    reason: 'Review usability, accessibility, responsiveness, and visual quality before shipping.',
   },
   {
     accepted: false,
@@ -294,7 +293,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'visual-direction',
     kind: 'action',
     label: 'Visual direction',
-    reason: 'The Project has UI, but this optional design conversation needs explicit approval.',
+    reason: 'Define a clear visual direction before the interface grows.',
   },
   {
     accepted: true,
@@ -303,8 +302,7 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'agent-doc-audit',
     kind: 'action',
     label: 'Audit agent docs',
-    reason:
-      'The infra wizard always recommends this last so it measures the final instruction set.',
+    reason: 'Find missing, stale, or conflicting agent instructions after setup.',
   },
 ]
 

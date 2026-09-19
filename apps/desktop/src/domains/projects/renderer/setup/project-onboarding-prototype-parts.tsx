@@ -871,7 +871,7 @@ const RECOMMENDATION_LINKS: Record<string, string> = {
   'codex-todos': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
   'guardrail-hooks': 'https://github.com/milad-alizadeh/argo',
   'interface-review': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'markdown-checks': 'https://github.com/DavidAnson/markdownlint',
+  'markdown-checks': 'https://github.com/DavidAnson/markdownlint-cli2',
   'matt-pocock': 'https://github.com/mattpocock/skills',
   'owned-skills': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
   playwright: 'https://playwright.dev/',
@@ -935,7 +935,7 @@ function SuggestionFact({ recommendation }: { recommendation: PrototypeRecommend
           <RecommendationLink recommendation={recommendation} />
         </strong>
       </div>
-      <p>{recommendation.effect}</p>
+      <p>{recommendation.reason}</p>
       <RecommendationDependencies recommendation={recommendation} />
     </div>
   )
@@ -982,7 +982,7 @@ function ProjectSetupStage({ controller }: { controller: PrototypeController }) 
   return (
     <>
       <BackAction controller={controller} />
-      <StageHeading description="These Project-wide actions come from the inspected Project and Argo’s setup recommendations. Keep or defer each action.">
+      <StageHeading description="Choose the Project-wide setup that Argo will apply.">
         4 · Customize Project setup
       </StageHeading>
       <div className="mt-7 space-y-5">
@@ -1120,7 +1120,7 @@ function RecommendationEditor({
             }
             detail={
               <>
-                <span>{recommendation.effect}</span>
+                <span>{recommendation.reason}</span>
                 <RecommendationDependencies recommendation={recommendation} />
               </>
             }
