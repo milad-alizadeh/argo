@@ -41,17 +41,12 @@ test('refuses privileged imports from contracts and renderer code', () => {
   const files = [
     projectFile('contract', 'messages', "import fs from 'node:fs'"),
     projectFile('contract', 'view', "import React from 'react'"),
-    projectFile('contract', 'stored', "import '@/core/storage/portable-file'"),
     projectFile('contract', 'provider', "import '@/providers/github/client'"),
     projectFile('contract', 'screen', "import '@/renderer/app'"),
     projectFile('renderer', 'queries', "import { ipcRenderer } from 'electron'"),
-    projectFile('renderer', 'stored', "import '@/core/storage/portable-file'"),
     projectFile('renderer', 'provider', "import '@/providers/github/client'"),
     projectFile('renderer', 'main-state', "import '@/main'"),
     projectFile('renderer', 'preload-client', "import '@/preload'"),
-    projectFile('renderer', 'legacy-main', "import '@/core/accounts/bridge'"),
-    projectFile('renderer', 'legacy-preload', "import '@/core/accounts/client'"),
-    projectFile('renderer', 'legacy-domain', "import '@/core/contract/domain'"),
   ]
 
   assert.deepEqual(
@@ -59,27 +54,27 @@ test('refuses privileged imports from contracts and renderer code', () => {
     [
       'node:fs',
       'react',
-      '@/core/storage/portable-file',
       '@/providers/github/client',
       '@/renderer/app',
       'electron',
-      '@/core/storage/portable-file',
       '@/providers/github/client',
       '@/main',
       '@/preload',
-      '@/core/accounts/bridge',
-      '@/core/accounts/client',
-      '@/core/contract/domain',
     ],
   )
 })
 
-test('allows a renderer facet to import a legacy domain contract', () => {
+test('refuses an import from a legacy source root', () => {
   const files = [
-    projectFile('renderer', 'accounts', "import type { Account } from '@/core/accounts/contract'"),
+    projectFile('main', 'store', "import '@/core/storage/portable-file'"),
+    projectFile('renderer', 'view', "import '@/development/account-store'"),
+    projectFile('preload', 'client', "import '../../../storybook/story-links'"),
   ]
 
-  assert.deepEqual(domainFacetViolations(files), [])
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ kind }) => kind),
+    ['legacy-root', 'legacy-root', 'legacy-root'],
+  )
 })
 
 test('refuses a domain facet importing an application composition root', () => {

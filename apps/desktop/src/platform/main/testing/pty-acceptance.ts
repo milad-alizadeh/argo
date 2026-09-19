@@ -4,7 +4,7 @@
 // It writes a line rather than setting an exit code alone, because "which case failed" is the
 // thing a person needs and an exit code cannot carry it. The exit code is still the gate.
 import { app } from 'electron'
-import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import { BEHAVIOUR_CASES } from './pty-cases'
 import { descriptorsStayFlat } from './pty-endurance'
 

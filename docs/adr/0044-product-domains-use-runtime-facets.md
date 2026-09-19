@@ -45,8 +45,9 @@ facet cannot import an application composition root.
 `scripts/check-domain-facets.mjs` enforces this matrix. The quality gate and CI run
 the checker. Tests stay beside the facet that owns the behavior.
 
-Projects are the first complete domain in this layout. Domains that have not moved can keep the
-legacy layout until their own migration ticket changes them.
+Every domain lives in this layout. `src/` holds only `domains`, `platform`, `shared`, `agents`,
+`providers`, the `renderer` composition root, and the entry points. The checker refuses an import
+from any other top-level root.
 
 ## Consequences
 
