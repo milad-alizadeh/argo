@@ -5,16 +5,13 @@
 // and the delegation the Roster row already draws (CONTEXT.md L3 · Subagent).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { normalizeClaudeRecords } from '@/agents/claude/sessions/normalize-records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
+import type { SessionDelegationUsage } from '@/domains/sessions/contract/background-work-contract'
+import type { SessionChain } from '@/domains/sessions/contract/chains'
+import { type TranscriptFile, transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
 import { isRecord } from '@/shared/validation'
-import type { SessionDelegationUsage } from '../../../domains/sessions/contract/background-work-contract'
-import type { SessionChain } from '../../../domains/sessions/contract/chains'
-import {
-  type TranscriptFile,
-  transcriptFileFrom,
-} from '../../../domains/sessions/contract/transcript'
-import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
-import { normalizeClaudeRecords } from './normalize-records'
-import { parseTranscriptLine } from './records'
 
 const META = '.meta.json'
 const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)

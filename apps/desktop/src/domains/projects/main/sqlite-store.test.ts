@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createProjectStore } from './sqlite-store'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 
 function openStore(databasePath: string) {
   const database = new Database(databasePath)

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readTranscriptFile } from '../../../domains/sessions/contract/transcript'
-import { parseTranscriptLine } from './records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
+import { readTranscriptFile } from '@/domains/sessions/contract/transcript'
 
 test('reads a sent command as its visible source text', () => {
   const line = JSON.stringify({

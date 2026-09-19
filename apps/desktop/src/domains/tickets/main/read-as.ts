@@ -1,12 +1,21 @@
 // A Ticket source read as an Account: the token found, renewed where it lapsed, and every way
 // that fails named as the Ticket error the Connection shows.
 
-import type { Provider } from '../../accounts/contract/contract'
-import type { AccountAccess } from '../../accounts/main/access'
-import { providerOf } from '../../accounts/main/registry'
-import { asAccount, type TokenFailure } from '../../accounts/main/tokens'
-import { type TicketError, type TicketErrorCode, ticketError } from '../contract/contract'
-import { type Reader, type SourceRead, TICKET_SOURCES, type TicketSource } from './sources'
+import type { Provider } from '@/domains/accounts/contract/contract'
+import type { AccountAccess } from '@/domains/accounts/main/access'
+import { providerOf } from '@/domains/accounts/main/registry'
+import { asAccount, type TokenFailure } from '@/domains/accounts/main/tokens'
+import {
+  type TicketError,
+  type TicketErrorCode,
+  ticketError,
+} from '@/domains/tickets/contract/contract'
+import {
+  type Reader,
+  type SourceRead,
+  TICKET_SOURCES,
+  type TicketSource,
+} from '@/domains/tickets/main/sources'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',

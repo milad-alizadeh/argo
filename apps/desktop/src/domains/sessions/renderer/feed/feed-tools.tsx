@@ -1,16 +1,22 @@
 import { FilePenLine, Globe, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TaskItem } from '../../../../platform/renderer/components/ai-elements/task'
-import { CollapsibleText } from '../../../../platform/renderer/components/collapsible-text'
-import { displayedToolLabel } from '../../contract/tool-feed'
-import { standsAlone, TOOL_KIND_PRESENTATION } from '../../contract/tool-groups'
-import type { SessionFeedRow } from '../types'
-import { groupIcon, liveActivity } from './feed-group-title'
-import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
-import { RunningText, StatusIcon } from './feed-tool-status'
-import { LiveActivityText } from './live-activity-text'
-import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
+import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
+import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/contract/tool-groups'
+import { groupIcon, liveActivity } from '@/domains/sessions/renderer/feed/feed-group-title'
+import {
+  FeedInlineToolCall,
+  FeedInlineToolCallItem,
+} from '@/domains/sessions/renderer/feed/feed-inline-tool-call'
+import { RunningText, StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
+import { LiveActivityText } from '@/domains/sessions/renderer/feed/live-activity-text'
+import {
+  type ToolGroupState,
+  useToolGroupOpen,
+} from '@/domains/sessions/renderer/feed/tool-group-state'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { TaskItem } from '@/platform/renderer/components/ai-elements/task'
+import { CollapsibleText } from '@/platform/renderer/components/collapsible-text'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]

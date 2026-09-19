@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { formatSkillLabel, parsePromptText } from './prompt-segments'
+import {
+  formatSkillLabel,
+  parsePromptText,
+} from '@/domains/sessions/renderer/prompt/prompt-segments'
 
 describe('splitting a prompt into skill, link, and text segments', () => {
   test('reads a skill mention as its own segment', () => {

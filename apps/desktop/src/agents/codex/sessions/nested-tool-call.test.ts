@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { nestedToolCall, nestedToolCalls } from './nested-tool-call'
+import { nestedToolCall, nestedToolCalls } from '@/agents/codex/sessions/nested-tool-call'
 
 test('reads the one tool call in a Codex execution wrapper for any result variable', () => {
   for (const variable of ['result', 'r', '$result']) {

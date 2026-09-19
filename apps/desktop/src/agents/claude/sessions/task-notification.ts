@@ -1,10 +1,7 @@
+import { readTaskEnding } from '@/agents/claude/sessions/background-task'
+import { taggedField } from '@/agents/envelope-tags'
+import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isIdentifier } from '@/shared/validation'
-import type {
-  TranscriptMessage,
-  TranscriptRecord,
-} from '../../../domains/sessions/contract/transcript'
-import { taggedField } from '../../envelope-tags'
-import { readTaskEnding } from './background-task'
 
 type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>
 

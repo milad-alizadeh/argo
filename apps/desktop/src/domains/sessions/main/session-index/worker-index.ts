@@ -1,9 +1,9 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
-import type { SessionIndex } from './contract'
-import { SessionIndexFallbackError } from './recovery'
-import { sessionIndexWorkerResponseSchema } from './worker-protocol'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import { SessionIndexFallbackError } from '@/domains/sessions/main/session-index/recovery'
+import { sessionIndexWorkerResponseSchema } from '@/domains/sessions/main/session-index/worker-protocol'
 
 type SessionIndexOperation = Exclude<keyof SessionIndex, 'close'>
 

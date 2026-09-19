@@ -9,7 +9,7 @@ import {
   parseStories,
   type Story,
   type StorybookBuild,
-} from './storybook-build'
+} from '@/storybook/storybook-build'
 
 export type Preview = { url: string; sha: string }
 

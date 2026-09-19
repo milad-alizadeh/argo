@@ -1,0 +1,7 @@
+engine biome(1.0)
+language css
+
+CssDeclarationWithSemicolon() as $declaration where {
+  $declaration <: r"(?s).*#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?.*",
+  register_diagnostic(span=$declaration, message="Use a named design token instead of a raw hex colour.")
+}

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
+import { ADA, HIDDEN, linear, signIn, TEAM } from '@/providers/linear/harness'
+import { readTicketPage } from '@/providers/linear/issues'
+import { checkTeam, listTeams } from '@/providers/linear/teams'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
-import { ADA, HIDDEN, linear, signIn, TEAM } from './harness'
-import { readTicketPage } from './issues'
-import { checkTeam, listTeams } from './teams'
 
 const BACKLOG = { scope: TEAM.id, query: '', cursor: null }
 

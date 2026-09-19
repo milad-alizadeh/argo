@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { compactTokens, workDuration } from './session-work.ts'
+import {
+  compactTokens,
+  workDuration,
+} from '@/domains/sessions/renderer/components/work/session-work.ts'
 
 const STARTED = '2026-09-02T08:00:00.000Z'
 

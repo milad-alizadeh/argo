@@ -1,10 +1,10 @@
+import { normalizeClaudeRecords } from '@/agents/claude/sessions/normalize-records'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 import {
   readTranscriptFile as read,
   type TranscriptFile,
   withoutBlocks,
-} from '../../../domains/sessions/contract/transcript'
-import { normalizeClaudeRecords } from './normalize-records'
-import { parseTranscriptLine } from './records'
+} from '@/domains/sessions/contract/transcript'
 
 export type { TranscriptFile }
 export { withoutBlocks }

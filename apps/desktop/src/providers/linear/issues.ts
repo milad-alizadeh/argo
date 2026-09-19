@@ -1,7 +1,7 @@
 // The Ticket port filled by Linear issues: one team's open Tickets with their children and blockers
 // (CONTEXT.md L1 · Ticket). Linear owns every field; nothing here is kept after the read.
 
-import { TICKET_PAGE_SIZE } from '../../domains/tickets/contract/contract'
+import { TICKET_PAGE_SIZE } from '@/domains/tickets/contract/contract'
 import {
   closureOf,
   labelColor,
@@ -12,11 +12,11 @@ import {
   type TicketPriority,
   type TicketState,
   type TicketStatus,
-} from '../../domains/tickets/contract/ticket'
-import { isRecord } from '../../shared/validation'
-import type { LinearEndpoints } from './endpoints'
-import { failed, type LinearRead, query } from './http'
-import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from './statuses'
+} from '@/domains/tickets/contract/ticket'
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
+import { failed, type LinearRead, query } from '@/providers/linear/http'
+import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from '@/providers/linear/statuses'
+import { isRecord } from '@/shared/validation'
 
 // Linear serves children and relations as connections of their own; a Ticket with more than this
 // many draws the first ones.

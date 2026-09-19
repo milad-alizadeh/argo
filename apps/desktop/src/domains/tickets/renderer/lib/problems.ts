@@ -13,11 +13,11 @@ import {
   Unplug,
 } from 'lucide-react'
 import type { Provider } from '@/domains/accounts/contract/contract'
+import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
 import type { ConnectionSummary, TicketErrorCode } from '@/domains/tickets/contract/contract'
-import { i18n } from '../../../../platform/renderer/i18n/config'
-import { contractText } from '../../../../platform/renderer/i18n/contract-text'
-import type { ContractFailure } from '../../../../platform/renderer/lib/query-client'
-import { providerPresentation } from '../../../accounts/renderer/lib/providers'
+import { i18n } from '@/platform/renderer/i18n/config'
+import { contractText } from '@/platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 

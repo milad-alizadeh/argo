@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { WireMessage } from './protocol'
-import { codexAnswersFor, readRequestUserInput } from './question-protocol'
+import type { WireMessage } from '@/agents/codex/drive/protocol'
+import { codexAnswersFor, readRequestUserInput } from '@/agents/codex/drive/question-protocol'
 
 function requestUserInput(): WireMessage {
   return {

@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { QuestionAnswer } from '../../contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import { invalidateSessionRoster } from '../session-queries'
+} from '@/domains/sessions/renderer/session-contract-error'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
 
 // A pending question already reaches the renderer through the Feed's own `ask` row (tool-feed.ts),
 // so this hook only decides — there is nothing to poll (unlike `useSessionPermission`).

@@ -1,12 +1,12 @@
 // A Linear team's issues keep a priority, independent of their workflow state. Linear owns the
 // levels; the cockpit reads them with every page and keeps none.
 
-import type { PriorityChange, TicketPriority } from '../../domains/tickets/contract/ticket'
-import { isRecord } from '../../shared/validation'
-import type { LinearEndpoints } from './endpoints'
-import { failed, type LinearRead, query } from './http'
-import { resolvedTarget } from './issue-target'
-import { priorityOf } from './issues'
+import type { PriorityChange, TicketPriority } from '@/domains/tickets/contract/ticket'
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
+import { failed, type LinearRead, query } from '@/providers/linear/http'
+import { resolvedTarget } from '@/providers/linear/issue-target'
+import { priorityOf } from '@/providers/linear/issues'
+import { isRecord } from '@/shared/validation'
 
 // `issue(id:)` takes the key a person reads, `ENG-12`, as well as Linear's own id.
 const TARGET = `query PriorityTarget($key: String!) {

@@ -1,5 +1,9 @@
 // Session roster rows the Sessions stories draw.
-import type { SessionDelegation, SessionRosterRow, SessionShellCommand } from '../contract/models'
+import type {
+  SessionDelegation,
+  SessionRosterRow,
+  SessionShellCommand,
+} from '@/domains/sessions/contract/models'
 
 export function sessionShellCommand(
   overrides: Partial<SessionShellCommand> & Pick<SessionShellCommand, 'id'>,

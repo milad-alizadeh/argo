@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { sessionListReplySchema } from '../../../domains/sessions/contract/contract'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { sessionListReplySchema } from '@/domains/sessions/contract/contract'
+import { createSessionReader } from '@/domains/sessions/main/reader'
 
 const listing = {
   version: 1 as const,

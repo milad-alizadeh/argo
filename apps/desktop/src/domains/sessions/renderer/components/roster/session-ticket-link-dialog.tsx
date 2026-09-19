@@ -3,18 +3,19 @@
 // connect hook resolves. A custom title asks before it is replaced; a summarised or first-prompt
 // one is replaced without asking, since it cost the reader nothing to make.
 import { useState } from 'react'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { useTranslation } from 'react-i18next'
+import type { ConnectTicketInput } from '@/domains/sessions/renderer/hooks/use-session-ticket-link'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { useConnection, useTicketList } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../../platform/renderer/components/ui/dialog'
-import { Input } from '../../../../../platform/renderer/components/ui/input'
-import { useConnection, useTicketList } from '../../../../tickets/renderer/hooks/use-tickets'
-import type { ConnectTicketInput } from '../../hooks/use-session-ticket-link'
-import type { Session } from '../../types'
+} from '@/platform/renderer/components/ui/dialog'
+import { Input } from '@/platform/renderer/components/ui/input'
 
 type PendingRename = { session: Session; ticket: ConnectTicketInput }
 
@@ -33,6 +34,7 @@ function TicketPicker({
   error: string | null
   onCancel: () => void
 }) {
+  const { t } = useTranslation('sessions')
   const connection = useConnection(projectId)
   const list = useTicketList(projectId, connection.data ?? null, query)
   const tickets = list.data?.pages.flatMap((page) => page.tickets) ?? []
@@ -40,10 +42,10 @@ function TicketPicker({
   return (
     <div className="grid gap-2">
       <Input
-        aria-label="Search Tickets"
+        aria-label={t('ticketLink.search')}
         autoFocus
         onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="Search Tickets…"
+        placeholder={t('ticketLink.searchPlaceholder')}
         value={query}
       />
       <ul className="grid max-h-72 gap-1 overflow-y-auto">
@@ -74,7 +76,7 @@ function TicketPicker({
       )}
       <DialogFooter>
         <Button onClick={onCancel} type="button" variant="outline">
-          Cancel
+          {t('ticketLink.cancel')}
         </Button>
       </DialogFooter>
     </div>
@@ -88,17 +90,18 @@ function RenameConfirm({
   title: string
   onDecide: (rename: boolean) => void
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="grid gap-2">
       <p className="type-body text-muted-foreground">
-        This Session has a name a person typed by hand. Replace it with “{title}”?
+        {t('ticketLink.renameDescription', { title })}
       </p>
       <DialogFooter>
         <Button onClick={() => onDecide(false)} type="button" variant="outline">
-          Keep name
+          {t('ticketLink.keepName')}
         </Button>
         <Button onClick={() => onDecide(true)} type="button">
-          Rename
+          {t('ticketLink.rename')}
         </Button>
       </DialogFooter>
     </div>
@@ -120,6 +123,7 @@ export function SessionTicketLinkDialog({
   projectId: string | null
   session: Session | null
 }) {
+  const { t } = useTranslation('sessions')
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<PendingRename | null>(null)
@@ -166,7 +170,9 @@ export function SessionTicketLinkDialog({
     >
       <DialogContent showCloseButton>
         <DialogHeader>
-          <DialogTitle>{confirming === null ? 'Link Ticket' : 'Rename Session?'}</DialogTitle>
+          <DialogTitle>
+            {confirming === null ? t('ticketLink.title') : t('ticketLink.renameTitle')}
+          </DialogTitle>
         </DialogHeader>
         {confirming === null ? (
           <TicketPicker

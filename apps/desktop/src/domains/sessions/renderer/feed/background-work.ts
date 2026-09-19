@@ -1,7 +1,11 @@
 import { createContext } from 'react'
-import { SHELL_STATES, type ShellState } from '../../contract/models'
-import { delegationState, type SessionWork, type WorkState } from '../components/work/session-work'
-import type { SessionFeedRow } from '../types'
+import { SHELL_STATES, type ShellState } from '@/domains/sessions/contract/models'
+import {
+  delegationState,
+  type SessionWork,
+  type WorkState,
+} from '@/domains/sessions/renderer/components/work/session-work'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 export type BackgroundWorkLinks = {
   // By the call a notification names, or else by the name an agent was given when it was sent.

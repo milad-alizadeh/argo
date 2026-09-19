@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { managedRow } from '../../../domains/sessions/main/managed-row'
 import {
   CREATED_THREAD,
   codexHome,
@@ -8,7 +7,8 @@ import {
   rosterTitles,
   THREADS_SCHEMA,
   writeStateStore,
-} from './thread-title-fixtures'
+} from '@/agents/codex/sessions/thread-title-fixtures'
+import { managedRow } from '@/domains/sessions/main/managed-row'
 
 const CODEX_NAME = 'Implement Geist desktop typography contract'
 

@@ -7,7 +7,7 @@ import {
   portablePath,
   readDocument,
   writeDocument,
-} from '../../../platform/main/storage/portable-file'
+} from '@/platform/main/storage/portable-file'
 
 // The one place the document is named, so the app, the fixtures and the tests all read the file
 // the app writes.

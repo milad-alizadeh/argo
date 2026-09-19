@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { FeedMermaid } from './feed-mermaid'
+import { FeedMermaid } from '@/domains/sessions/renderer/feed/content/feed-mermaid'
 
 const FLOWCHART = 'flowchart LR\n  Backlog --> Ticket --> Session'
 

@@ -1,9 +1,10 @@
 import { Expand } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { useDarkAppearance } from '../../../../../platform/renderer/appearance/hooks/use-appearance'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
-import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
-import { mermaidThemeVariables } from './mermaid-theme'
+import { useTranslation } from 'react-i18next'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import { mermaidThemeVariables } from '@/domains/sessions/renderer/feed/content/mermaid-theme'
+import { useDarkAppearance } from '@/platform/renderer/appearance/hooks/use-appearance'
+import { Button } from '@/platform/renderer/components/ui/button'
 
 type Drawing = 'pending' | 'drawn' | 'failed'
 
@@ -27,6 +28,7 @@ async function drawDiagram(id: string, source: string, dark: boolean) {
 // The approved honest state for a fence Mermaid could not draw: the source stays readable and the
 // reader is told plainly that it, not Argo, is incomplete.
 function DiagramFailure({ source }: { source: string }) {
+  const { t } = useTranslation('sessions')
   return (
     <div className="relative">
       <pre className="max-h-64 overflow-x-hidden overflow-y-auto p-4 pb-20 font-mono type-code whitespace-pre-wrap wrap-anywhere">
@@ -36,8 +38,8 @@ function DiagramFailure({ source }: { source: string }) {
         role="alert"
         className="absolute inset-x-3 bottom-3 rounded-lg border border-destructive/30 bg-card px-3 py-2 text-destructive"
       >
-        <p className="type-meta font-medium">The diagram source is incomplete</p>
-        <p className="type-meta">The original source remains available above.</p>
+        <p className="type-meta font-medium">{t('diagram.incomplete')}</p>
+        <p className="type-meta">{t('diagram.sourceAvailable')}</p>
       </div>
     </div>
   )
@@ -54,6 +56,7 @@ export function FeedMermaid({
   active?: boolean
   onOpen?: () => void
 }) {
+  const { t } = useTranslation('sessions')
   const frame = useRef<HTMLDivElement>(null)
   // `useId` answers `_r_1_`-shaped ids, and Mermaid uses the id as a CSS selector.
   const diagramId = `mermaid-${useId().replace(/[^\w-]/g, '')}`
@@ -81,15 +84,10 @@ export function FeedMermaid({
     >
       <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 type-control">
         <span className="font-medium">
-          {drawing === 'failed' ? 'Diagram · Could not render' : 'Diagram'}
+          {drawing === 'failed' ? t('diagram.failedTitle') : t('diagram.title')}
         </span>
         {drawing === 'drawn' && onOpen ? (
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label="Expand diagram in inspector"
-            onClick={onOpen}
-          >
+          <Button size="icon-xs" variant="ghost" aria-label={t('diagram.expand')} onClick={onOpen}>
             <Expand className="!size-(--size-icon-control)" />
           </Button>
         ) : null}

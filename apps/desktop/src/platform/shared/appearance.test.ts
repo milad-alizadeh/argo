@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createAppearanceClient } from '../preload/appearance'
+import { createAppearanceClient } from '@/platform/preload/appearance'
 import {
   APPEARANCE_OPERATIONS,
   APPEARANCES,
   DEFAULT_APPEARANCE,
   isAppearanceState,
   windowBackground,
-} from './appearance'
+} from '@/platform/shared/appearance'
 
 const state = (requestId: string, appearance = 'system', dark = true) => ({
   version: 1,

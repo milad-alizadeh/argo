@@ -1,14 +1,17 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit } from '../../../projects/renderer/hooks/use-projects'
-import { promptOf } from '../feed/turn-marker-state'
-import type { SessionCli } from '../harness/harnesses'
-import type { useTurnSetup } from '../turn-setup/use-turn-setup'
-import { type ComposerIdentity, composerIdentityKey } from './composer-identity'
-import { sendToNewSession, type TurnInput } from './send-turn'
-import type { Failure } from './use-session-composer-actions'
-import type { useSessionMutations } from './use-session-mutations'
-import type { TurnMarkerApi } from './use-turn-marker'
+import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
+import { promptOf } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import {
+  type ComposerIdentity,
+  composerIdentityKey,
+} from '@/domains/sessions/renderer/hooks/composer-identity'
+import { sendToNewSession, type TurnInput } from '@/domains/sessions/renderer/hooks/send-turn'
+import type { Failure } from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import type { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import type { TurnMarkerApi } from '@/domains/sessions/renderer/hooks/use-turn-marker'
+import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 
 export type DraftSendDeps = {
   cli: SessionCli

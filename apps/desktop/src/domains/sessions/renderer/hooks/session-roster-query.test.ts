@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { sessionRosterQuery } from './session-roster-query'
+import { sessionRosterQuery } from '@/domains/sessions/renderer/hooks/session-roster-query'
 
 const originalWindow = globalThis.window
 

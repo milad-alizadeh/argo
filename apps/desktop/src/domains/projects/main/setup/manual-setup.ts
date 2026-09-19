@@ -6,16 +6,16 @@ import {
   type ProjectSetupEditing,
   type ProjectSetupValidated,
   projectError,
-} from '../../contract/contract'
-import { toSummary } from '../presentation'
+} from '@/domains/projects/contract/contract'
+import { toSummary } from '@/domains/projects/main/presentation'
+import { saveManualProjectConfiguration } from '@/domains/projects/main/setup/manual-configuration'
+import { validateProjectConfiguration } from '@/domains/projects/main/setup/setup-validation'
+import { prepareSetupWorktree } from '@/domains/projects/main/setup/setup-worktree'
 import type {
   ProjectStore as ProjectRegistryStore,
   SetupCheckpoint,
   SetupPhase,
-} from '../sqlite-store'
-import { saveManualProjectConfiguration } from './manual-configuration'
-import { validateProjectConfiguration } from './setup-validation'
-import { prepareSetupWorktree } from './setup-worktree'
+} from '@/domains/projects/main/sqlite-store'
 
 export const MANUAL_CONFIGURATION_TEMPLATE = `${JSON.stringify(
   {

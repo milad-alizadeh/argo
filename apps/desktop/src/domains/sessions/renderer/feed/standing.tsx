@@ -1,20 +1,17 @@
 import { MessagesSquare, TriangleAlert } from 'lucide-react'
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '../../../../platform/renderer/components/ui/alert'
+import { useTranslation } from 'react-i18next'
+import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
+import { StalledFeed } from '@/domains/sessions/renderer/feed/stalled-feed'
+import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
+import type { SessionError } from '@/domains/sessions/renderer/types'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import { sessionFailureState } from '../session-failure-state'
-import type { SessionError } from '../types'
-import { FeedLoading } from './feed-loading'
-import { StalledFeed } from './stalled-feed'
+} from '@/platform/renderer/components/ui/empty'
 
 export function Standing({
   failure,
@@ -29,6 +26,7 @@ export function Standing({
   posture: 'managed' | 'external' | null
   onRetry: () => void
 }) {
+  const { t } = useTranslation('sessions')
   if (failure !== null)
     return (
       <section
@@ -37,7 +35,7 @@ export function Standing({
       >
         <Alert className="max-w-sm" variant="destructive">
           <TriangleAlert aria-hidden="true" />
-          <AlertTitle>Unable to load Session</AlertTitle>
+          <AlertTitle>{t('standing.failure')}</AlertTitle>
           <AlertDescription>{failure.message}</AlertDescription>
         </Alert>
       </section>
@@ -49,8 +47,8 @@ export function Standing({
           <EmptyMedia variant="icon">
             <MessagesSquare aria-hidden="true" />
           </EmptyMedia>
-          <EmptyTitle>No Session selected</EmptyTitle>
-          <EmptyDescription>Choose a Session from the Roster to read its history.</EmptyDescription>
+          <EmptyTitle>{t('standing.unselectedTitle')}</EmptyTitle>
+          <EmptyDescription>{t('standing.unselectedDescription')}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     )

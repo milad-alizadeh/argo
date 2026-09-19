@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readDelegations } from '../../../domains/sessions/contract/signals'
-import { transcriptFileFrom } from '../../../domains/sessions/contract/transcript'
-import { projectFeed } from '../../../domains/sessions/main/feed-incremental'
-import { parseTranscriptLine } from './records'
-import { readingSpawnedAgents } from './spawned-agents'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
+import { readingSpawnedAgents } from '@/agents/claude/sessions/spawned-agents'
+import { readDelegations } from '@/domains/sessions/contract/signals'
+import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import { projectFeed } from '@/domains/sessions/main/feed-incremental'
 
 const SPAWN = {
   type: 'assistant',

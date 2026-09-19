@@ -1,14 +1,23 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionRosterRow } from '../../contract/models'
-import type { SessionCli } from '../harness/harnesses'
-import { type ComposerIdentity, findSessionRow } from './composer-identity'
-import { useComposerMarker } from './use-composer-marker'
-import { useHandoff, useHandoffCompletion } from './use-handoff-actions'
-import type { Failure } from './use-session-composer-actions'
-import { useCompactWithInvalidate, useInterrupt } from './use-session-composer-actions'
-import type { useSessionMutations } from './use-session-mutations'
-import type { useSessions } from './use-sessions'
-import type { useTurnMarker } from './use-turn-marker'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import {
+  type ComposerIdentity,
+  findSessionRow,
+} from '@/domains/sessions/renderer/hooks/composer-identity'
+import { useComposerMarker } from '@/domains/sessions/renderer/hooks/use-composer-marker'
+import {
+  useHandoff,
+  useHandoffCompletion,
+} from '@/domains/sessions/renderer/hooks/use-handoff-actions'
+import type { Failure } from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import {
+  useCompactWithInvalidate,
+  useInterrupt,
+} from '@/domains/sessions/renderer/hooks/use-session-composer-actions'
+import type { useSessionMutations } from '@/domains/sessions/renderer/hooks/use-session-mutations'
+import type { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
+import type { useTurnMarker } from '@/domains/sessions/renderer/hooks/use-turn-marker'
 
 export function managedSessionIsRunning(
   roster: ReturnType<typeof useSessions>['roster'],

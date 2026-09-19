@@ -2,8 +2,8 @@
 // this: the index served the stranded half its own row and the origin a second one, so one Session
 // read as two and the order moved under the reader.
 import { afterEach, describe, expect, test } from 'vitest'
-import { indexedAdapters, sessionIdAt } from './roster-fixtures'
-import { rosterHarness } from './roster-harness'
+import { indexedAdapters, sessionIdAt } from '@/domains/sessions/main/session-index/roster-fixtures'
+import { rosterHarness } from '@/domains/sessions/main/session-index/roster-harness'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

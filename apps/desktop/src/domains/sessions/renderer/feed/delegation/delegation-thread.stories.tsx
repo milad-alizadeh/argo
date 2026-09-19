@@ -4,8 +4,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { expect, fn, waitFor, within } from 'storybook/test'
 
-import type { AgentThread } from './delegation-facts'
-import { DelegationThread } from './delegation-thread'
+import type { AgentThread } from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import { DelegationThread } from '@/domains/sessions/renderer/feed/delegation/delegation-thread'
 
 const STARTED_AT = new Date(Date.now() - 42_000).toISOString()
 

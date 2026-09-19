@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { useTranslation } from 'react-i18next'
+import type { Session } from '@/domains/sessions/renderer/types'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../../platform/renderer/components/ui/dialog'
-import { Input } from '../../../../../platform/renderer/components/ui/input'
-import { Label } from '../../../../../platform/renderer/components/ui/label'
-import type { Session } from '../../types'
+} from '@/platform/renderer/components/ui/dialog'
+import { Input } from '@/platform/renderer/components/ui/input'
+import { Label } from '@/platform/renderer/components/ui/label'
 
 export function normalizeSessionName(value: string): string {
   return [...value]
@@ -33,6 +34,7 @@ export function SessionRenameDialog({
   onRename: (session: Session, name: string) => Promise<void>
   session: Session | null
 }) {
+  const { t } = useTranslation('sessions')
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -52,7 +54,7 @@ export function SessionRenameDialog({
     if (session === null || saving) return
     const normalized = normalizeSessionName(name)
     if (normalized.length === 0) {
-      setError('Enter a name for this Session.')
+      setError(t('rename.enterName'))
       return
     }
     setSaving(true)
@@ -61,7 +63,7 @@ export function SessionRenameDialog({
       await onRename(session, normalized)
       onOpenChange(false)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Argo could not rename this Session.')
+      setError(reason instanceof Error ? reason.message : t('rename.failure'))
     } finally {
       setSaving(false)
     }
@@ -76,7 +78,7 @@ export function SessionRenameDialog({
     >
       <DialogContent showCloseButton={!saving}>
         <DialogHeader>
-          <DialogTitle>Rename Session</DialogTitle>
+          <DialogTitle>{t('rename.title')}</DialogTitle>
         </DialogHeader>
         <form
           className="grid gap-2"
@@ -85,7 +87,7 @@ export function SessionRenameDialog({
             void save()
           }}
         >
-          <Label htmlFor="session-name">Name</Label>
+          <Label htmlFor="session-name">{t('rename.name')}</Label>
           <Input
             aria-describedby={error === null ? undefined : 'session-name-error'}
             aria-invalid={error !== null}
@@ -102,10 +104,10 @@ export function SessionRenameDialog({
           )}
           <DialogFooter>
             <Button disabled={saving} onClick={close} type="button" variant="outline">
-              Cancel
+              {t('rename.cancel')}
             </Button>
             <Button disabled={saving} type="submit">
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('rename.saving') : t('rename.save')}
             </Button>
           </DialogFooter>
         </form>

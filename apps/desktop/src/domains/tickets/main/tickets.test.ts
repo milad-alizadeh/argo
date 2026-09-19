@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import { connect, harness, LIST, OCTOCAT, PROJECT_ID } from '../../accounts/main/harness'
+import { connect, harness, LIST, OCTOCAT, PROJECT_ID } from '@/domains/accounts/main/harness'
 
 const ACCOUNT = 'github:583231'
 

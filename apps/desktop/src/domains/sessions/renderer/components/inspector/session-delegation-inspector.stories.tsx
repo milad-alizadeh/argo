@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
-
-import { sessionDelegation } from '../../session-fixtures'
-import type { SessionFeed } from '../../types'
-import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
-import { SessionDelegationInspector } from './session-delegation-inspector'
+import { SessionDelegationInspector } from '@/domains/sessions/renderer/components/inspector/session-delegation-inspector'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
+import { sessionDelegation } from '@/domains/sessions/renderer/session-fixtures'
+import type { SessionFeed } from '@/domains/sessions/renderer/types'
 
 // A fixed clock, so every duration these stories draw is the same on every run.
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')

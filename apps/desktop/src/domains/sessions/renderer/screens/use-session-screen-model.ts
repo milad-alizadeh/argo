@@ -3,19 +3,23 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { useProjects } from '../../../projects/renderer/hooks/use-projects'
-import type { WorkSelection } from '../components/inspector/session-inspector'
-import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { useSessionComposer } from '../hooks/use-session-composer'
-import { useSessionPermission } from '../hooks/use-session-permission'
-import { useSessionQuestion } from '../hooks/use-session-question'
-import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../hooks/use-session-work'
-import { useSessions } from '../hooks/use-sessions'
-import { useComposerStore } from '../state/use-composer-store'
-import { readableSessionId } from '../state/use-session-creation-store'
-import type { SessionEvidence } from '../types'
-import { sessionHarness } from './session-screen-state'
-import { useSelectedSession } from './use-selected-session'
+import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import type { WorkSelection } from '@/domains/sessions/renderer/components/inspector/session-inspector'
+import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
+import { useSessionComposer } from '@/domains/sessions/renderer/hooks/use-session-composer'
+import { useSessionPermission } from '@/domains/sessions/renderer/hooks/use-session-permission'
+import { useSessionQuestion } from '@/domains/sessions/renderer/hooks/use-session-question'
+import {
+  useDelegationFeed,
+  useDelegationUsage,
+  useShellOutput,
+} from '@/domains/sessions/renderer/hooks/use-session-work'
+import { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
+import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
+import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
+import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
+import { readableSessionId } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import type { SessionEvidence } from '@/domains/sessions/renderer/types'
 
 const NOTHING_PICKED: WorkSelection = { sessionId: null, delegationId: null, shellId: null }
 

@@ -1,8 +1,12 @@
 // The Session's current Plan (CONTEXT.md L3 · Plan), replayed from the changes each adapter read
 // off its CLI's records. Shared code knows the changes, never the tools that wrote them.
 
-import { PLAN_ENTRY_STATUSES, type SessionPlan, type SessionPlanEntry } from '../contract/models'
-import type { PlanChange, TranscriptRecord } from '../contract/transcript'
+import {
+  PLAN_ENTRY_STATUSES,
+  type SessionPlan,
+  type SessionPlanEntry,
+} from '@/domains/sessions/contract/models'
+import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
 type PlanStep = Omit<SessionPlanEntry, 'position'>
 

@@ -2,14 +2,14 @@
 // pieces of Session state that are Argo's own rather than any CLI's — the Ticket link and the
 // archive flag (#2315).
 
-import type { SessionTicketLinkStore } from '../../tickets/main/session-links'
-import { type SessionListRequest, sessionError } from '../contract/contract'
-import { isArchivedSession, type SessionArchiveStore } from './archive-store'
-import type { Discovered } from './merge-discovery'
-import { combineDiscoveries } from './merge-discovery'
-import { readFailure } from './read-declaration'
-import { decodeRosterCursor } from './roster-cursor'
-import type { SessionSource } from './session-source'
+import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/contract'
+import { isArchivedSession, type SessionArchiveStore } from '@/domains/sessions/main/archive-store'
+import type { Discovered } from '@/domains/sessions/main/merge-discovery'
+import { combineDiscoveries } from '@/domains/sessions/main/merge-discovery'
+import { readFailure } from '@/domains/sessions/main/read-declaration'
+import { decodeRosterCursor } from '@/domains/sessions/main/roster-cursor'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a

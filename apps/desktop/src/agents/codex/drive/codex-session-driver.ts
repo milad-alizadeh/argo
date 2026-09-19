@@ -1,62 +1,26 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { CodexSessionDriver } from '@/agents/codex/drive/codex-session-driver-types'
+import { CodexSessionDriverError } from '@/agents/codex/drive/codex-session-error'
+import { compactCodexSession } from '@/agents/codex/drive/compact-session'
+import { readInterrupt } from '@/agents/codex/drive/interrupt-protocol'
 import {
-  CODEX_OPENING_SETUP,
-  type CodexTurnSetup,
-} from '@/domains/sessions/contract/codex-contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import type { CodexProcess } from './codex-channel'
-import { CodexSessionDriverError } from './codex-session-error'
-import { compactCodexSession } from './compact-session'
-import { readInterrupt } from './interrupt-protocol'
-import type { LiveMessage, LiveMessages } from './live-messages'
-import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
-import { codexAnswersFor, type PendingCodexQuestion } from './question-protocol'
-import { readRename } from './rename-protocol'
-import { createResumingChannel } from './resuming-channel'
-import { beginSession, startTurn } from './turn-lifecycle'
+  type ManagedSession,
+  type ManagedSessionOptions,
+  managedRoster,
+} from '@/agents/codex/drive/managed-session'
+import { codexAnswersFor } from '@/agents/codex/drive/question-protocol'
+import { readRename } from '@/agents/codex/drive/rename-protocol'
+import { createResumingChannel } from '@/agents/codex/drive/resuming-channel'
+import { beginSession, startTurn } from '@/agents/codex/drive/turn-lifecycle'
+import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-contract'
 
-export type { CodexProcess, LiveMessage, LiveMessages }
-export { CodexSessionDriverError }
-
-export type CodexSessionDriver = {
-  start: (request: {
-    cwd: string
-    prompt: string
-    setup?: CodexTurnSetup
-    attachments: SessionAttachmentInput[]
-  }) => Promise<string>
-  send: (request: {
-    sessionId: string
-    text: string
-    setup: CodexTurnSetup | undefined
-    attachments: SessionAttachmentInput[]
-  }) => Promise<void>
-  interrupt: (sessionId: string) => Promise<void>
-  compact: (sessionId: string) => Promise<void>
-  rename: (sessionId: string, name: string) => Promise<string>
-  roster: () => SessionRosterRow[]
-  onRosterChanged: (listener: () => void) => () => void
-  liveMessages: (sessionId: string) => LiveMessage[]
-  isLockedElsewhere: (sessionId: string) => boolean
-  pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
-  decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
-  close: () => void
-}
-
-export type CodexSessionDrive = Pick<
+export type {
+  CodexProcess,
+  CodexSessionDrive,
   CodexSessionDriver,
-  | 'start'
-  | 'send'
-  | 'interrupt'
-  | 'compact'
-  | 'rename'
-  | 'roster'
-  | 'liveMessages'
-  | 'pendingQuestion'
-  | 'decideQuestion'
-  | 'close'
->
+  LiveMessage,
+  LiveMessages,
+} from '@/agents/codex/drive/codex-session-driver-types'
+export { CodexSessionDriverError }
 
 function rosterChanges() {
   const listeners = new Set<() => void>()
@@ -106,11 +70,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
   const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
 
   return {
-    start: startManagedSession({
-      driver,
-      sessions,
-      renameWaiters,
-    }),
+    start: startManagedSession({ driver, sessions, renameWaiters }),
     async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
       await startTurn({

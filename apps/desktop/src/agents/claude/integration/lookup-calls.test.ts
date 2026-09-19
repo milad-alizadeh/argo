@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { fed, feedRequest, rowsOf } from '../../../domains/sessions/main/reader-test-helpers'
-import { toolCallsOf } from '../../../domains/sessions/main/tool-calls-of'
-import { claudeSessionSource } from '../sessions/read-sessions'
-import { fixtureRoot } from './session-fixtures'
+import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { toolCallsOf } from '@/domains/sessions/main/tool-calls-of'
 
 test('shows the pattern of a file search for Glob and Grep', async (context) => {
   const root = await fixtureRoot(context, ['fileSearch'])

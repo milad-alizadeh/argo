@@ -1,8 +1,8 @@
 // The pure timer-loop behaviour behind background backfill (#2373): it keeps ticking until
 // complete, pauses instead of ticking while a Feed read is in flight, and stops cleanly.
 import { describe, expect, test } from 'vitest'
-import { createBackfillScheduler } from './backfill-scheduler'
-import { fakeClock } from './backfill-scheduler-test-clock'
+import { createBackfillScheduler } from '@/domains/sessions/main/session-index/backfill-scheduler'
+import { fakeClock } from '@/domains/sessions/main/session-index/backfill-scheduler-test-clock'
 
 function testIncompleteBatch() {
   test('ticks immediately on start, and again once the batch reports incomplete', async () => {

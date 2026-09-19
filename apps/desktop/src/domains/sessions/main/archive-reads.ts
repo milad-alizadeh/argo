@@ -7,14 +7,17 @@
 // not backfilled yet, does a reading fall back to growing the window (`archive-window.ts`) until
 // it has what it needs.
 import { z } from 'zod'
-import type { SessionArchiveListRequest, SessionArchiveSetRequest } from '../contract/contract'
-import { newestFirst, type SessionRosterRow } from '../contract/models'
-import { indexedResolution } from './archive-index-resolution'
-import { isArchivedSession } from './archive-store'
-import { growWindow } from './archive-window'
-import { fromContext, type ReadContext } from './read-declaration'
-import { rosterCursorMapSchema } from './roster-cursor'
-import type { SessionSource } from './session-source'
+import type {
+  SessionArchiveListRequest,
+  SessionArchiveSetRequest,
+} from '@/domains/sessions/contract/contract'
+import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/models'
+import { indexedResolution } from '@/domains/sessions/main/archive-index-resolution'
+import { isArchivedSession } from '@/domains/sessions/main/archive-store'
+import { growWindow } from '@/domains/sessions/main/archive-window'
+import { fromContext, type ReadContext } from '@/domains/sessions/main/read-declaration'
+import { rosterCursorMapSchema } from '@/domains/sessions/main/roster-cursor'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
 
 // A page's worth of Archived Sessions, read on demand rather than on every poll (#1593).
 export const ARCHIVE_PAGE_LIMIT = 20

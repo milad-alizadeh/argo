@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { saveProjectConfiguration } from '../project-configuration'
-import type { ProjectStore, SetupCheckpoint } from '../sqlite-store'
-import { prepareSetupWorktree } from './setup-worktree'
+import { saveProjectConfiguration } from '@/domains/projects/main/project-configuration'
+import { prepareSetupWorktree } from '@/domains/projects/main/setup/setup-worktree'
+import type { ProjectStore, SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 
 type SetupProject = { id: string; path: string }
 type CheckpointStore = Pick<ProjectStore, 'readSetupCheckpoint' | 'writeSetupCheckpoint'>

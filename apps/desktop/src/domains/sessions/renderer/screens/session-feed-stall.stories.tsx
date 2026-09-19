@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-
-import { CockpitShell } from '../../../../platform/renderer/cockpit/components/cockpit-shell'
-import { SessionsSidebar } from '../components/roster/sessions-sidebar'
-import { sessionRosterRow } from '../session-fixtures'
-import { SessionScreenView } from './session-screen-view'
+import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
+import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
+import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
 // #2111: the Feed read that never answers. The main process reads an `external` Session's
 // transcript in a loop that only ends when two consecutive reads see the file unchanged

@@ -1,7 +1,7 @@
 import { MessageSquare } from 'lucide-react'
-import type { LinkedSession } from '../hooks/use-linked-sessions'
-import { linkRow, stateIcon } from './ticket-detail-links'
-import { TicketDetailSection } from './ticket-detail-section'
+import { linkRow, stateIcon } from '@/domains/tickets/renderer/components/ticket-detail-links'
+import { TicketDetailSection } from '@/domains/tickets/renderer/components/ticket-detail-section'
+import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 
 export function LinkedSessions({
   sessions,

@@ -3,7 +3,10 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
+import {
+  createSessionArchiveStore,
+  sessionArchivePath,
+} from '@/domains/sessions/main/archive-store'
 
 async function storePath(context: { after: (work: () => Promise<unknown>) => void }) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-store-'))

@@ -6,7 +6,7 @@ import type {
   SessionListRequest,
   SessionSearched,
   SessionsListed,
-} from '../contract/contract'
+} from '@/domains/sessions/contract/contract'
 
 export type {
   SessionArchiveListed,

@@ -6,21 +6,21 @@ import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
+import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/components/composer/development-identity-bar'
+import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
+import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
+import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
+import { TicketsSidebar } from '@/domains/tickets/renderer/components/tickets-sidebar'
+import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
+import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
+import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import {
   DESTINATION_PATHS,
   DESTINATIONS,
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '@/platform/shared/commands'
-import { DevelopmentIdentityBar } from '../../../../domains/sessions/renderer/components/composer/development-identity-bar'
-import { SessionsSidebar } from '../../../../domains/sessions/renderer/components/roster/sessions-sidebar'
-import { SessionsPage } from '../../../../domains/sessions/renderer/pages/sessions-page'
-import { SessionScreenView } from '../../../../domains/sessions/renderer/screens/session-screen-view'
-import { TicketsSidebar } from '../../../../domains/tickets/renderer/components/tickets-sidebar'
-import { TicketsPage } from '../../../../domains/tickets/renderer/pages/tickets-page'
-import { TicketsScreenView } from '../../../../domains/tickets/renderer/screens/tickets-screen-view'
-import { CockpitShell } from '../components/cockpit-shell'
-import { useCommands } from '../hooks/use-commands'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode

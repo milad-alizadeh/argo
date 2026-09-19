@@ -4,10 +4,10 @@
 // not here at all — the IPC operation table does both before a body runs (ADR-0039) — so a body
 // takes its parsed request type and `reads.ts` declares nothing but resolution and body.
 
-import { isRecord } from '../../../shared/validation'
-import { sessionError } from '../contract/contract'
-import type { SessionArchiveStore } from './archive-store'
-import type { SessionSource } from './session-source'
+import { sessionError } from '@/domains/sessions/contract/contract'
+import type { SessionArchiveStore } from '@/domains/sessions/main/archive-store'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
+import { isRecord } from '@/shared/validation'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
 

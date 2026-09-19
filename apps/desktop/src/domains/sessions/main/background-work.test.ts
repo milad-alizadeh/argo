@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionDelegation, SessionRosterRow, SessionShellCommand } from '../contract/models'
-import { hasRunningBackgroundWork } from './background-work'
+import type {
+  SessionDelegation,
+  SessionRosterRow,
+  SessionShellCommand,
+} from '@/domains/sessions/contract/models'
+import { hasRunningBackgroundWork } from '@/domains/sessions/main/background-work'
 
 const agent: SessionDelegation = {
   id: 'agent',

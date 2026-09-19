@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-
-import { sessionDelegation, sessionShellCommand } from '../../session-fixtures'
-import { SessionWorkButtons } from './session-work-buttons'
+import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
+import {
+  sessionDelegation,
+  sessionShellCommand,
+} from '@/domains/sessions/renderer/session-fixtures'
 
 // A fixed clock, so every duration these stories draw is the same on every run.
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')

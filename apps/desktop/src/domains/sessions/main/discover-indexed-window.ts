@@ -4,12 +4,12 @@
 // machine's whole history. Split out of discover-transcript-sessions.ts to keep it under the file
 // line ceiling.
 
-import type { SessionRosterRow } from '../contract/models'
-import type { TranscriptDiscovery } from './discover-transcript-sessions'
-import { nextCursorFor } from './discover-transcript-sessions'
-import type { SessionIndex } from './session-index/contract'
-import { createIndexedWindow } from './session-index/indexed-window'
-import type { createTitleLedger } from './title-ledger'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { TranscriptDiscovery } from '@/domains/sessions/main/discover-transcript-sessions'
+import { nextCursorFor } from '@/domains/sessions/main/discover-transcript-sessions'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import { createIndexedWindow } from '@/domains/sessions/main/session-index/indexed-window'
+import type { createTitleLedger } from '@/domains/sessions/main/title-ledger'
 
 // One indexed reader per index handed in, kept because it holds the hydration the first pass
 // paid for. A different index rebinds it rather than reusing another database's history.

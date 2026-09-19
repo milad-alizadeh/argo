@@ -1,5 +1,5 @@
 import type { BrowserWindow, PowerMonitor } from 'electron'
-import type { WatchedSource } from './watch-source'
+import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 // The two moments the app may have been blind without any watch saying so. Each announces once, so
 // neither settles: the tree watch owns the settle window because only a write arrives in a burst.

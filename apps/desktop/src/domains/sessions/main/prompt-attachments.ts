@@ -1,5 +1,5 @@
-import type { SessionFeedRow } from '../contract/models'
-import type { TranscriptMessage } from '../contract/transcript'
+import type { SessionFeedRow } from '@/domains/sessions/contract/models'
+import type { TranscriptMessage } from '@/domains/sessions/contract/transcript'
 
 // A prompt's images and files are drawn in its bubble. A prompt of attachments alone still gets
 // one, under the first attachment's own id.

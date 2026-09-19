@@ -1,8 +1,11 @@
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
-import { feedImageUrlSchema } from './feed-images'
-import { questionSchema } from './question'
-import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from './transcript'
+import { feedImageUrlSchema } from '@/domains/sessions/contract/feed-images'
+import { questionSchema } from '@/domains/sessions/contract/question'
+import {
+  TRANSCRIPT_EVENT_KINDS,
+  type TranscriptEventKind,
+} from '@/domains/sessions/contract/transcript'
+import { identifierSchema } from '@/shared/validation'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)

@@ -2,7 +2,11 @@
 // live overlay applied when the source supplies one (#2025).
 import { createHash } from 'node:crypto'
 
-import { type SessionFeedReply, type SessionFeedRequest, sessionError } from '../contract/contract'
+import {
+  type SessionFeedReply,
+  type SessionFeedRequest,
+  sessionError,
+} from '@/domains/sessions/contract/contract'
 import {
   appendedReply,
   feedReply,
@@ -10,9 +14,9 @@ import {
   keepFeed,
   stableChain,
   unchangedReply,
-} from './feed-cache'
-import { type FeedProjectionState, projectFeed } from './feed-incremental'
-import type { SessionSource } from './session-source'
+} from '@/domains/sessions/main/feed-cache'
+import { type FeedProjectionState, projectFeed } from '@/domains/sessions/main/feed-incremental'
+import type { SessionSource } from '@/domains/sessions/main/session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
 // Feeds are separate documents read from separate files, so they cannot share one entry, and

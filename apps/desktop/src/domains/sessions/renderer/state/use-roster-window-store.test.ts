@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 
-import { useRosterWindowStore } from './use-roster-window-store'
+import { useRosterWindowStore } from '@/domains/sessions/renderer/state/use-roster-window-store'
 
 beforeEach(() => {
   useRosterWindowStore.setState(useRosterWindowStore.getInitialState())

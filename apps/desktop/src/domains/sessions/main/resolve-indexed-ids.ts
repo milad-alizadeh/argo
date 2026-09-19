@@ -11,16 +11,16 @@
 // is about to answer for and reindexes any whose identity moved, rather than serving whatever
 // reconcile last wrote.
 import { stat } from 'node:fs/promises'
-import { rootOf } from '../contract/chains'
-import type { SessionRosterRow } from '../contract/models'
+import { rootOf } from '@/domains/sessions/contract/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import type {
   IndexedTranscriptFile,
   SessionIndex,
   TranscriptFileIdentity,
-} from './session-index/contract'
-import type { createIndexedWindow } from './session-index/indexed-window'
-import { reindexCandidates } from './session-index/reindex-pass'
-import { pathOfIndexed } from './session-index/window-pass'
+} from '@/domains/sessions/main/session-index/contract'
+import type { createIndexedWindow } from '@/domains/sessions/main/session-index/indexed-window'
+import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
+import { pathOfIndexed } from '@/domains/sessions/main/session-index/window-pass'
 
 export type ResolvedIndexedIds = { rows: SessionRosterRow[]; unresolvedIds: string[] }
 

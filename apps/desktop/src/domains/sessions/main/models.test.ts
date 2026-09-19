@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionFeedRowSchema, sessionRosterRowSchema } from '../contract/models'
+import { sessionFeedRowSchema, sessionRosterRowSchema } from '@/domains/sessions/contract/models'
 
 const roster = {
   id: 'session-one',

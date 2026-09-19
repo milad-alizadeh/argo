@@ -1,10 +1,17 @@
 import { opendir } from 'node:fs/promises'
+import {
+  type ProjectOpenReply,
+  type ProjectOpenRequest,
+  projectError,
+} from '@/domains/projects/contract/contract'
+import { toSummary } from '@/domains/projects/main/presentation'
+import {
+  readProjectConfiguration,
+  readProjectConfigurationSource,
+} from '@/domains/projects/main/project-configuration'
+import type { ProjectStore } from '@/domains/projects/main/register-project'
+import { isProjectStoreInvalid } from '@/domains/projects/main/sqlite-store'
 import { isRecord } from '@/shared/validation'
-import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from '../contract/contract'
-import { toSummary } from './presentation'
-import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
-import type { ProjectStore } from './register-project'
-import { isProjectStoreInvalid } from './sqlite-store'
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {

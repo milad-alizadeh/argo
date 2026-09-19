@@ -1,18 +1,22 @@
 import { Inbox } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { AnchoredFeed } from '@/domains/sessions/renderer/feed/anchored-feed'
+import type { DrawnRowProps } from '@/domains/sessions/renderer/feed/drawn-row'
+import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
+import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
+import { StalledFeed } from '@/domains/sessions/renderer/feed/stalled-feed'
+import {
+  awaitingAssistantReply,
+  type Settled,
+  type useSettledFeed,
+} from '@/domains/sessions/renderer/feed/use-settled-feed'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '../../../../platform/renderer/components/ui/empty'
-import { AnchoredFeed } from './anchored-feed'
-import type { DrawnRowProps } from './drawn-row'
-import { FeedLoading } from './feed-loading'
-import type { Reveal } from './reveal'
-import { StalledFeed } from './stalled-feed'
-import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use-settled-feed'
+} from '@/platform/renderer/components/ui/empty'
 
 export function feedContent({
   active,
@@ -26,6 +30,7 @@ export function feedContent({
   revealsFor,
   streamingRowId,
   tail,
+  emptyText,
 }: {
   active: boolean
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -38,6 +43,7 @@ export function feedContent({
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
   tail: ReactNode
+  emptyText: readonly [title: string, description: string]
 }) {
   const noRows = settled === null || settled.rows.length === 0
   const awaitingReply = isRunning && (noRows || awaitingAssistantReply(settled.rows))
@@ -59,8 +65,8 @@ export function feedContent({
           <EmptyMedia variant="icon">
             <Inbox aria-hidden="true" />
           </EmptyMedia>
-          <EmptyTitle>No messages</EmptyTitle>
-          <EmptyDescription>This Session has no messages to show.</EmptyDescription>
+          <EmptyTitle>{emptyText[0]}</EmptyTitle>
+          <EmptyDescription>{emptyText[1]}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     )

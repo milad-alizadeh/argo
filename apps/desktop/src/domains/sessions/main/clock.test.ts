@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { compactAge, turnDuration } from './clock'
+import { compactAge, turnDuration } from '@/domains/sessions/main/clock'
 
 const SECOND = 1000
 const MINUTE = 60 * SECOND

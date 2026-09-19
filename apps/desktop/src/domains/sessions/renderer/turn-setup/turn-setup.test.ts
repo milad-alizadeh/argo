@@ -5,15 +5,15 @@ import {
   CLAUDE_MODELS,
   CLAUDE_MODES,
   claudeTurnSetupSchema,
-} from '../../contract/contract'
-import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
+} from '@/domains/sessions/contract/contract'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 import {
   refusalOf,
   resolvedTurnSetup,
   setupFromReading,
   supportedSetup,
   turnSettled,
-} from './turn-setup'
+} from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 

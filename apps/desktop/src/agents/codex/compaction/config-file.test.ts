@@ -3,8 +3,12 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from './compaction'
-import { codexConfigPath, readAutoCompactLimit, writeAutoCompactLimit } from './config-file'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/agents/codex/compaction/compaction'
+import {
+  codexConfigPath,
+  readAutoCompactLimit,
+  writeAutoCompactLimit,
+} from '@/agents/codex/compaction/config-file'
 
 async function withHome(context: import('node:test').TestContext): Promise<string> {
   const home = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-compaction-'))

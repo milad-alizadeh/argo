@@ -1,10 +1,10 @@
 import { Save, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import { ConfigurationEditor, isJson } from '@/domains/projects/renderer/setup/project-setup-editor'
+import { ProjectSetupSteps } from '@/domains/projects/renderer/setup/project-setup-steps'
+import type { ProjectSetupViewProps } from '@/domains/projects/renderer/setup/project-setup-window'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { ConfigurationEditor, isJson } from './project-setup-editor'
-import { ProjectSetupSteps } from './project-setup-steps'
-import type { ProjectSetupViewProps } from './project-setup-window'
 
 export function ConfigurationPanel({
   project,

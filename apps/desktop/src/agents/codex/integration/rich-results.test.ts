@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { assertRichResult } from '../../../domains/sessions/main/rich-result-test-assertion'
-import { parseCodexTranscriptLine } from '../sessions/records'
+import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
+import { assertRichResult } from '@/domains/sessions/main/rich-result-test-assertion'
 
 test('keeps Codex tool result text and images in source order', () => {
   const record = parseCodexTranscriptLine(

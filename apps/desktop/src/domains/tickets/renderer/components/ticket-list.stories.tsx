@@ -1,8 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { expect, userEvent, within } from 'storybook/test'
-import { STATUSES } from './status-fixtures'
-import { backlog, engine, standalone, wayfinder } from './ticket-fixtures'
-import { TicketList } from './ticket-list'
+import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
+import {
+  backlog,
+  engine,
+  standalone,
+  wayfinder,
+} from '@/domains/tickets/renderer/components/ticket-fixtures'
+import { TicketList } from '@/domains/tickets/renderer/components/ticket-list'
 
 const longTicket = {
   ...wayfinder,

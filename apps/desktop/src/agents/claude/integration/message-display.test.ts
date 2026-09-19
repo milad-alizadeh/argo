@@ -5,9 +5,9 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
-import type { CompanionPart } from '../drive/companion-plugin'
-import { createMessageDisplay } from '../drive/message-display'
-import { hookSocketPath } from './hook-socket'
+import type { CompanionPart } from '@/agents/claude/drive/companion-plugin'
+import { createMessageDisplay } from '@/agents/claude/drive/message-display'
+import { hookSocketPath } from '@/agents/claude/integration/hook-socket'
 
 const BATCH = {
   session_id: 'claude-session',

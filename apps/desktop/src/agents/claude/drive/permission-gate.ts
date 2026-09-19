@@ -1,8 +1,8 @@
 import net from 'node:net'
 import { z } from 'zod'
-import type { ClaudePermission } from '../../../domains/sessions/contract/contract'
-import { type CompanionPart, createSocketFolder } from './companion-plugin'
-import { similarityKey } from './permission-similarity'
+import { type CompanionPart, createSocketFolder } from '@/agents/claude/drive/companion-plugin'
+import { similarityKey } from '@/agents/claude/drive/permission-similarity'
+import type { ClaudePermission } from '@/domains/sessions/contract/contract'
 
 // `allowSimilar` answers this request and every later one like it until the Session's part closes.
 export type ClaudePermissionDecision = 'allow' | 'deny' | 'allowSimilar'

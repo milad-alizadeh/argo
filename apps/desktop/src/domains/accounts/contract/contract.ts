@@ -9,7 +9,7 @@ import {
   guard,
   identifier,
   message,
-} from '../../../shared/messages'
+} from '@/shared/messages'
 
 export const PROVIDERS = ['github', 'linear'] as const
 export const provider = z.enum(PROVIDERS)

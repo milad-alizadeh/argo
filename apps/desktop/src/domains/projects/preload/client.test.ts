@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createProjectClient } from './client'
+import { createProjectClient } from '@/domains/projects/preload/client'
 
 const opened = {
   version: 1,

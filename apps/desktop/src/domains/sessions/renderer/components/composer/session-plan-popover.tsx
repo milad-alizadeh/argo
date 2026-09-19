@@ -1,14 +1,15 @@
 import { Check } from 'lucide-react'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { useTranslation } from 'react-i18next'
+import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/models'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '../../../../../platform/renderer/components/ui/popover'
-import { Progress } from '../../../../../platform/renderer/components/ui/progress'
-import type { PlanEntryStatus, SessionPlan } from '../../../contract/models'
+} from '@/platform/renderer/components/ui/popover'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',
@@ -42,27 +43,24 @@ function planProgress(plan: Extract<SessionPlan, { state: 'available' }>) {
 }
 
 function PlanTriggerLabel({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
-  if (plan.entries.length === 0) return <>Plan empty</>
-  return (
-    <>
-      <span className="hidden @[36rem]:inline">Step&nbsp;</span>
-      {currentStep(plan)}/{plan.entries.length}
-    </>
-  )
+  const { t } = useTranslation('sessions')
+  if (plan.entries.length === 0) return <>{t('composer.taskPlan.triggerEmpty')}</>
+  return <>{t('composer.plan', { current: currentStep(plan), total: plan.entries.length })}</>
 }
 
 function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
+  const { t } = useTranslation('sessions')
   const progressed = plan.entries.filter((entry) => entry.status !== 'pending').length
   const percentage = (progressed / plan.entries.length) * 100
   return (
     <>
       <PopoverHeader>
         <PopoverTitle>
-          Step {currentStep(plan)}/{plan.entries.length}
+          {t('composer.plan', { current: currentStep(plan), total: plan.entries.length })}
         </PopoverTitle>
       </PopoverHeader>
       <Progress value={percentage} className="h-1.5" />
-      <ol aria-label="Task plan" className="grid gap-1">
+      <ol aria-label={t('composer.taskPlan.label')} className="grid gap-1">
         {plan.entries.map((entry, index) => (
           <li
             key={entry.position}
@@ -87,11 +85,12 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
 }
 
 function PlanContent({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
+  const { t } = useTranslation('sessions')
   if (plan.entries.length === 0) {
     return (
       <PopoverHeader>
-        <PopoverTitle>Plan is empty</PopoverTitle>
-        <p className="text-meta text-muted-foreground">The agent has not added any steps.</p>
+        <PopoverTitle>{t('composer.taskPlan.emptyTitle')}</PopoverTitle>
+        <p className="text-meta text-muted-foreground">{t('composer.taskPlan.emptyDescription')}</p>
       </PopoverHeader>
     )
   }
@@ -99,6 +98,7 @@ function PlanContent({ plan }: { plan: Extract<SessionPlan, { state: 'available'
 }
 
 export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
+  const { t } = useTranslation('sessions')
   if (plan?.state !== 'available') return null
   const progress = planProgress(plan)
   return (
@@ -110,7 +110,7 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
             variant="outline"
             size="sm"
             className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-control"
-            aria-label="Open task plan"
+            aria-label={t('composer.taskPlan.open')}
           />
         }
       >

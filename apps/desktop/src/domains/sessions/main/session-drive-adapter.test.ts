@@ -3,14 +3,14 @@
 // decision vocabulary defines type-checks through each adapter's decidePermission.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeDriveAdapter } from '../../../agents/claude/drive/session-drive-adapter'
-import { createCodexDriveAdapter } from '../../../agents/codex/drive/session-drive-adapter'
+import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
+import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
 import {
   PERMISSION_DECISIONS,
   PERMISSION_DECISIONS_BY_CLI,
   permissionSchema,
-} from '../contract/permission'
-import type { SessionDriveAdapter } from './session-drive-adapter'
+} from '@/domains/sessions/contract/permission'
+import type { SessionDriveAdapter } from '@/domains/sessions/main/session-drive-adapter'
 
 function mockClaudeAdapter(): SessionDriveAdapter {
   return createClaudeDriveAdapter({

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { promptRows } from './prompt-fixture'
-import { parseTranscriptLine } from './records'
+import { promptRows } from '@/agents/claude/sessions/prompt-fixture'
+import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 
 const PIXEL = 'iVBORw0KGgo='
 

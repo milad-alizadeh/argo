@@ -1,7 +1,8 @@
 import { FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { HARNESSES, type SessionCli } from '../../../harness/harnesses'
-import { InlineContext } from './inline-context'
+import { useTranslation } from 'react-i18next'
+import { InlineContext } from '@/domains/sessions/renderer/components/composer/references/inline-context'
+import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
 
@@ -97,12 +98,17 @@ export function SessionReferenceBadge({
   cli?: SessionCli | null
   source: string
 }) {
+  const { t } = useTranslation('sessions')
   const reference = referenceBySource(source)
   const unsupported = reference !== undefined && !referenceSupportsCli(reference, cli)
   return (
     <span className={unsupported ? 'mx-0.5 opacity-60' : 'mx-0.5'}>
       <InlineContext icon={renderReferenceIcon(unsupported, reference)} text={source} />
-      {unsupported ? <span className="sr-only"> — not available for {cliLabel(cli)}</span> : null}
+      {unsupported ? (
+        <span className="sr-only">
+          {t('composer.references.badgeUnavailable', { cli: cliLabel(cli) })}
+        </span>
+      ) : null}
     </span>
   )
 }

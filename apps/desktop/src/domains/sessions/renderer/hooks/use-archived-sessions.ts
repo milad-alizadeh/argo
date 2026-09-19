@@ -1,12 +1,12 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useWatchedQueries } from '../../../../platform/renderer/core/hooks/use-watched-topic'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '../session-contract-error'
-import { sessionArchiveQueryKey } from '../session-queries'
-import type { SessionArchiveListed, SessionId } from '../types'
+} from '@/domains/sessions/renderer/session-contract-error'
+import { sessionArchiveQueryKey } from '@/domains/sessions/renderer/session-queries'
+import type { SessionArchiveListed, SessionId } from '@/domains/sessions/renderer/types'
+import { useWatchedQueries } from '@/platform/renderer/core/hooks/use-watched-topic'
 
 type ArchivePage = Pick<
   SessionArchiveListed,

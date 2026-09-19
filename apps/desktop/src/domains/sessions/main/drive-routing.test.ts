@@ -3,15 +3,15 @@
 // has written a transcript, so only the managed report each driver holds can answer `ownerCliFor`.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeDriveAdapter } from '../../../agents/claude/drive/session-drive-adapter'
-import { claudeSessionSource } from '../../../agents/claude/sessions/read-sessions'
-import { createCodexDriveAdapter } from '../../../agents/codex/drive/session-drive-adapter'
-import { codexSessionSource } from '../../../agents/codex/sessions/read-sessions'
-import { compactSession, sendSession } from './drive'
-import { managedRow } from './managed-row'
-import { createSessionReader } from './reader'
-import { tempRoot } from './reader-test-helpers'
-import type { SessionDriveAdapters } from './session-drive-adapter'
+import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
+import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
+import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { compactSession, sendSession } from '@/domains/sessions/main/drive'
+import { managedRow } from '@/domains/sessions/main/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import type { SessionDriveAdapters } from '@/domains/sessions/main/session-drive-adapter'
 
 const setup = { model: null, effort: null, mode: null } as const
 

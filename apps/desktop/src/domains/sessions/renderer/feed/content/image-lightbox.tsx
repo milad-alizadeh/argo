@@ -1,16 +1,16 @@
 import { Download, X } from 'lucide-react'
 import type { ReactEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../../../../platform/renderer/components/ui/button'
+import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+import { useImageLightboxTransition } from '@/domains/sessions/renderer/feed/content/image-lightbox-transition'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '../../../../../platform/renderer/components/ui/dialog'
-import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
-import { useImageLightboxTransition } from './image-lightbox-transition'
+} from '@/platform/renderer/components/ui/dialog'
 
 export type ImageSize = { width: number; height: number }
 

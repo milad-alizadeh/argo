@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '../../../domains/sessions/main/reader'
-import { projectRosterRow } from '../../../domains/sessions/main/roster'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/reader'
+import { projectRosterRow } from '@/domains/sessions/main/roster'
 
 function activity(kind: 'started' | 'completed', timestamp: string, delegationId: string) {
   return {

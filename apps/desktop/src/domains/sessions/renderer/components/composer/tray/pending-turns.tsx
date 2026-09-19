@@ -1,9 +1,12 @@
 import { GripVertical, Route } from 'lucide-react'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PendingTurnActions } from './pending-turn-actions'
-import { attachmentExitDelay, focusMessageField } from './use-exit-presence'
-import type { PendingTurn } from './use-pending-turns'
+import { PendingTurnActions } from '@/domains/sessions/renderer/components/composer/tray/pending-turn-actions'
+import {
+  attachmentExitDelay,
+  focusMessageField,
+} from '@/domains/sessions/renderer/components/composer/tray/use-exit-presence'
+import type { PendingTurn } from '@/domains/sessions/renderer/components/composer/tray/use-pending-turns'
 
 function queuedMessageClassName(
   id: string,
@@ -108,7 +111,7 @@ export function PendingTurns({
             <GripVertical aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
             <Route aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate type-body">{turn.text}</span>
-            <span className="sr-only">Queued turn. Drag it to reorder.</span>
+            <span className="sr-only">{t('composer.queued.reorder')}</span>
             <PendingTurnActions onEdit={onEdit} onRemove={removeTurn} turn={turn} />
           </li>
         ))}

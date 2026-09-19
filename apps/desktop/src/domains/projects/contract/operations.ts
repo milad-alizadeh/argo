@@ -10,7 +10,7 @@ import {
   projectSetupSaveRequestSchema,
   projectSetupValidatedSchema,
   projectSetupValidateRequestSchema,
-} from './contract'
+} from '@/domains/projects/contract/contract'
 import {
   projectCancelledSchema,
   projectListedSchema,
@@ -18,7 +18,7 @@ import {
   projectRegisterRequestSchema,
   projectRelocateRequestSchema,
   projectSelectRequestSchema,
-} from './messages'
+} from '@/domains/projects/contract/messages'
 
 const projectListReplySchema = projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema)
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { EmptyProjectWindow } from './empty-project-window'
+import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 
 const meta: Meta<typeof EmptyProjectWindow> = {
   title: 'Projects/Empty Project Window',

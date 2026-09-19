@@ -17,11 +17,7 @@ import type {
   TicketListed,
   TicketScope,
 } from '@/domains/tickets/contract/contract'
-import {
-  type ContractFailure,
-  QUERY_KEYS,
-  settle,
-} from '../../../../platform/renderer/lib/query-client'
+import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
 
 const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.

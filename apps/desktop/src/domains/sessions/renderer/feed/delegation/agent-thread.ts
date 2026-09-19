@@ -1,6 +1,12 @@
-import type { SessionFeedRow } from '../../types'
-import { type BackgroundWorkLinks, backgroundWorkBlock } from '../background-work'
-import { type AgentThread, phaseOfState } from './delegation-facts'
+import {
+  type BackgroundWorkLinks,
+  backgroundWorkBlock,
+} from '@/domains/sessions/renderer/feed/background-work'
+import {
+  type AgentThread,
+  phaseOfState,
+} from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type DelegationRow = Extract<SessionFeedRow, { shape: 'delegation' }>
 

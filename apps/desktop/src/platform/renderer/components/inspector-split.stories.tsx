@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { InspectorSplit } from './inspector-split'
+import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
 
 // Reuses the Ticket inspector's tokens; the split itself does not own a size family.
 const SIZES = {
