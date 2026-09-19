@@ -252,6 +252,7 @@
   },
   "archivedEmpty": "No archived Sessions",
   "archivedStillIndexing": "Still indexing older Sessions",
+  "readingSessions": "Reading Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",

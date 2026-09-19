@@ -48,7 +48,7 @@ export function RosterLoadingMoreRow() {
 export function RosterLoading() {
   const { t } = useTranslation('sessions')
   return (
-    <div aria-label={t('reading')} className="space-y-4 px-5 py-4" role="status">
+    <div aria-label={t('readingSessions')} className="space-y-4 px-5 py-4" role="status">
       {[0, 1, 2].map((index) => (
         <div key={index}>
           <Skeleton className="h-4 w-3/4" />
