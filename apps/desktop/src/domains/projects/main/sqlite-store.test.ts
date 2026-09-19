@@ -58,6 +58,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     phase: 'editing',
     configurationSource: '{"version":1}\n',
     documentRevision: SETUP_DOCUMENT_REVISION,
+    sessionId: null,
   })
   first.close()
 
@@ -68,6 +69,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     phase: 'editing',
     configurationSource: '{"version":1}\n',
     documentRevision: SETUP_DOCUMENT_REVISION,
+    sessionId: null,
   })
   reopened.close()
 })

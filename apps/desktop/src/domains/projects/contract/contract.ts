@@ -62,6 +62,7 @@ export const projectSetupEditingSchema = z.strictObject({
   source: z.string(),
   document: setupDocumentSchema,
   saved: z.boolean(),
+  sessionId: identifierSchema.nullable().optional(),
 })
 export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
 
@@ -110,6 +111,7 @@ export const PROJECT_ERRORS = {
   'setup-unavailable': 'Argo could not prepare Project setup.',
   'setup-network-unavailable': 'Argo could not download Project setup from GitHub.',
   'setup-document-invalid': 'GitHub returned an invalid Project setup document.',
+  'setup-agent-unavailable': 'No supported Setup agent is available on this computer.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS

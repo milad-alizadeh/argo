@@ -15,6 +15,7 @@ import {
   saveManualSetup,
   validateManualSetup,
 } from './setup/manual-setup'
+import type { SetupAdapter } from './setup/setup-adapter'
 import { loadSetupDocument, type SetupDocumentSource, setupDocumentURL } from './setup/setup-bundle'
 import type { ProjectStore as ProjectRegistryStore } from './sqlite-store'
 
@@ -36,6 +37,7 @@ export function attachProjectBridge(
     projects: ProjectRegistryStore
     rendererURL: string
     setupDocumentSource?: SetupDocumentSource
+    setupAdapters?: readonly SetupAdapter[]
   },
 ): void {
   const setupDocument = () =>
@@ -48,6 +50,7 @@ export function attachProjectBridge(
     chooseFolder: () => chooseFolder(window),
     exclusive: createWriteQueue(),
     loadSetupDocument: setupDocument,
+    setupAdapters: storage.setupAdapters,
   }
   registerDomainHandlers({
     window,

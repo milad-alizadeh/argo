@@ -1,6 +1,7 @@
 import { type ProjectError, projectError } from '../../contract/contract'
 import type { SetupDocument } from '../../contract/setup-document'
 import type { ProjectStore as ProjectRegistryStore } from '../sqlite-store'
+import type { SetupAdapter } from './setup-adapter'
 import { SetupDocumentLoadError } from './setup-bundle'
 
 const SETUP_DOCUMENT_ERROR_CODES = {
@@ -14,6 +15,7 @@ export type SetupStore = {
     'read' | 'readSetupCheckpoint' | 'updateProjectPath' | 'writeSetupCheckpoint'
   >
   loadSetupDocument: () => Promise<SetupDocument>
+  setupAdapters?: readonly SetupAdapter[]
 }
 
 export function projectFor(projectId: string, store: Pick<ProjectRegistryStore, 'read'>) {

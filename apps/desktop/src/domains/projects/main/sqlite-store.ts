@@ -23,7 +23,7 @@ export type ProjectRegistry = {
 type Statement = {
   all: (...values: string[]) => unknown[]
   get: (...values: string[]) => unknown
-  run: (...values: string[]) => unknown
+  run: (...values: (string | null)[]) => unknown
 }
 
 export type ProjectDatabase = {
@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS project_setup_checkpoint (
   worktree_path TEXT NOT NULL,
   phase TEXT NOT NULL CHECK (phase IN ('editing', 'validating', 'ready', 'failed', 'cancelled')),
   configuration_source TEXT NOT NULL,
-  document_revision TEXT NOT NULL
+  document_revision TEXT NOT NULL,
+  session_id TEXT
 ) STRICT;
 `
 
@@ -91,6 +92,28 @@ function selectedId(database: ProjectDatabase): string | null {
   return selectedRowSchema.parse(result).project_id
 }
 
+function checkpointWriter(database: ProjectDatabase) {
+  const write = database.prepare(
+    'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision, session_id) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision, session_id = excluded.session_id',
+  )
+  return ({
+    projectId,
+    worktreePath,
+    phase,
+    configurationSource,
+    documentRevision,
+    sessionId,
+  }: SetupCheckpoint) =>
+    write.run(
+      projectId,
+      worktreePath,
+      phase,
+      configurationSource,
+      documentRevision,
+      sessionId ?? null,
+    )
+}
+
 export function createProjectStore(database: ProjectDatabase): ProjectStore {
   database.exec(PROJECT_SCHEMA)
   migrateSetupCheckpoints(database)
@@ -100,9 +123,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
   const select = database.prepare(
     'INSERT INTO project_selection (singleton, project_id) VALUES (1, ?) ON CONFLICT(singleton) DO UPDATE SET project_id = excluded.project_id',
   )
-  const writeCheckpoint = database.prepare(
-    'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision',
-  )
+  const writeCheckpoint = checkpointWriter(database)
   const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
 
   return {
@@ -145,15 +166,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
 
     readSetupCheckpoint: (projectId) => readSetupCheckpoint(database, projectId),
 
-    writeSetupCheckpoint: ({
-      projectId,
-      worktreePath,
-      phase,
-      configurationSource,
-      documentRevision,
-    }) => {
-      writeCheckpoint.run(projectId, worktreePath, phase, configurationSource, documentRevision)
-    },
+    writeSetupCheckpoint: writeCheckpoint,
 
     close: () => database.close(),
   }

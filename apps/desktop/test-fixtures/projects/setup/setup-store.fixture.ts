@@ -1,4 +1,5 @@
 import type { SetupDocument } from '../../../src/domains/projects/contract/setup-document'
+import type { SetupAdapter } from '../../../src/domains/projects/main/setup/setup-adapter'
 import type { SetupCheckpoint } from '../../../src/domains/projects/main/sqlite-store'
 
 export function setupStoreFixture(
@@ -22,6 +23,7 @@ export function setupStoreFixture(
         },
       },
       loadSetupDocument: async () => document,
+      setupAdapters: [] as SetupAdapter[],
     },
   }
 }

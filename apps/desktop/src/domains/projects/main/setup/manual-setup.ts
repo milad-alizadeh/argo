@@ -10,9 +10,10 @@ import {
 import { setupConfiguration } from '../../contract/setup-configuration'
 import type { SetupDocument } from '../../contract/setup-document'
 import { toSummary } from '../presentation'
-import type { SetupCheckpoint } from '../sqlite-store'
 import { saveManualProjectConfiguration } from './manual-configuration'
-import { projectFor, type SetupStore, setupContext } from './setup-context'
+import { manualSetupContext } from './manual-setup-context'
+import { type SetupStore, setupContext } from './setup-context'
+import { setupSession } from './setup-session'
 import { validateProjectConfiguration } from './setup-validation'
 import { prepareSetupWorktree } from './setup-worktree'
 
@@ -33,18 +34,23 @@ export async function beginManualSetup(
       source: stored ?? setupConfiguration(document, {}),
       saved: stored !== null,
     }
+    const session = await setupSession({ store, checkpoint, worktreePath, document })
+    if (!session && (store.setupAdapters?.length ?? 0) > 0)
+      return projectError('setup-agent-unavailable', request.requestId)
     store.projects.writeSetupCheckpoint({
       projectId: project.id,
       worktreePath,
       phase: 'editing',
       configurationSource: file.source,
       documentRevision: document.revision,
+      sessionId: session?.sessionId ?? null,
     })
     return editing({
       requestId: request.requestId,
       project: setupProject(project),
       ...file,
       document,
+      sessionId: session?.sessionId ?? null,
     })
   } catch {
     return projectError('setup-unavailable', request.requestId)
@@ -125,6 +131,7 @@ function editing(reply: {
   source: string
   saved: boolean
   document: SetupDocument
+  sessionId?: string | null
 }) {
   return {
     version: 1 as const,
@@ -136,18 +143,4 @@ function editing(reply: {
 function setupProject(project: Parameters<typeof toSummary>[0]) {
   const { id, name } = toSummary(project)
   return { id, name }
-}
-
-function manualSetupContext(
-  request: { projectId: string; requestId: string },
-  store: SetupStore,
-):
-  | { project: NonNullable<ReturnType<typeof projectFor>>; checkpoint: SetupCheckpoint }
-  | ProjectError {
-  const project = projectFor(request.projectId, store.projects)
-  if (!project) return projectError('missing-project', request.requestId)
-  const checkpoint = store.projects.readSetupCheckpoint(project.id)
-  return checkpoint
-    ? { project, checkpoint }
-    : projectError('invalid-configuration', request.requestId)
 }

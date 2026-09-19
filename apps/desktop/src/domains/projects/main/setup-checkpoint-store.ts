@@ -12,6 +12,7 @@ export type SetupCheckpoint = {
   phase: SetupPhase
   configurationSource: string
   documentRevision: string
+  sessionId?: string | null
 }
 
 const checkpointRowSchema = z.strictObject({
@@ -20,6 +21,7 @@ const checkpointRowSchema = z.strictObject({
   phase: setupPhaseSchema,
   configuration_source: z.string(),
   document_revision: z.string(),
+  session_id: identifierSchema.nullable(),
 })
 
 export function readSetupCheckpoint(
@@ -28,7 +30,7 @@ export function readSetupCheckpoint(
 ): SetupCheckpoint | null {
   const row = database
     .prepare(
-      'SELECT project_id, worktree_path, phase, configuration_source, document_revision FROM project_setup_checkpoint WHERE project_id = ?',
+      'SELECT project_id, worktree_path, phase, configuration_source, document_revision, session_id FROM project_setup_checkpoint WHERE project_id = ?',
     )
     .get(projectId)
   if (row === undefined || row === null) return null
@@ -39,6 +41,7 @@ export function readSetupCheckpoint(
     phase: parsed.phase,
     configurationSource: parsed.configuration_source,
     documentRevision: parsed.document_revision,
+    sessionId: parsed.session_id,
   }
 }
 
@@ -51,5 +54,10 @@ export function migrateSetupCheckpoints(database: ProjectDatabase) {
     } catch {
       // A new database creates each column in the table definition.
     }
+  }
+  try {
+    database.exec('ALTER TABLE project_setup_checkpoint ADD COLUMN session_id TEXT')
+  } catch {
+    // A new database creates the column in the table definition.
   }
 }

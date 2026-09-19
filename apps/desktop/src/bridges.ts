@@ -2,7 +2,9 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
+import { createClaudeSetupAdapter } from './agents/claude/setup/setup-adapter'
 import { attachCodexCompactionBridge } from './agents/codex/compaction/bridge'
+import { findExecutableOnLoginShellPath } from './agents/executable-path'
 import { createAccountAccess } from './domains/accounts/main/access'
 import { attachAccountBridge } from './domains/accounts/main/bridge'
 import { safeStorageCipher } from './domains/accounts/main/safe-storage'
@@ -44,6 +46,12 @@ export function attachBridges(
     projects,
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
+    setupAdapters: [
+      createClaudeSetupAdapter(
+        drivers.claude,
+        () => findExecutableOnLoginShellPath('claude') !== null,
+      ),
+    ],
   })
   attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
