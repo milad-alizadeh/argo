@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "revision": "2026-09-18.1",
+  "revision": "2026-09-19.1",
   "requiredCapabilities": [
     "fields",
     "recommendations",
     "plan",
+    "plan-sections",
     "descriptions",
     "locales",
     "progress",
@@ -13,41 +14,51 @@
   "locales": {
     "en": {
       "title": "Recommended Project setup",
-      "description": "Review the plan, customize the commands, and inspect the configuration before you save it.",
+      "description": "Review the plan and adjust the setup before Argo applies it.",
       "fields": {
         "target-path": {
-          "label": "Working path",
-          "description": "The path is relative to the Project root."
+          "label": "Project target",
+          "description": "Argo runs Project commands from this folder."
+        },
+        "package-manager": {
+          "label": "Package manager",
+          "description": "Argo uses it for generated commands and setup.",
+          "choices": {
+            "bun": "Bun",
+            "pnpm": "pnpm",
+            "npm": "npm"
+          }
+        },
+        "component-explorer": {
+          "label": "Use Storybook",
+          "description": "Keep Storybook as the place to review components and states."
+        },
+        "browser-tests": {
+          "label": "Add Playwright journeys",
+          "description": "Add browser journeys for the most important user flows."
         },
         "setup-command": {
-          "label": "Setup command",
-          "description": "Argo runs this command before it starts work."
+          "label": "Setup command"
         },
         "run-command": {
-          "label": "Run command",
-          "description": "Argo runs this command to start the Project."
-        },
-        "build-command": {
-          "label": "Build command",
-          "description": "Argo runs this command to build the Project."
+          "label": "Run command"
         },
         "test-command": {
-          "label": "Test command",
-          "description": "Argo runs this command to test the Project."
+          "label": "Test command"
         }
       },
       "plan": {
-        "review-commands": {
-          "label": "Review the Project commands",
-          "description": "Customize any command that Argo must run for this Project."
+        "project": {
+          "label": "Project",
+          "description": "Choose where Argo runs and which package manager it uses."
         },
-        "inspect-settings": {
-          "label": "Inspect .argo/settings.json",
-          "description": "The configuration editor shows the exact file before Argo saves it."
+        "tools": {
+          "label": "Tools",
+          "description": "Choose the development tools Argo prepares."
         },
-        "validate-settings": {
-          "label": "Test the configuration",
-          "description": "Argo runs the configured commands before the Project becomes ready."
+        "commands": {
+          "label": "Commands",
+          "description": "Review the commands Argo runs for this Project."
         }
       }
     }
@@ -57,56 +68,78 @@
       "id": "target-path",
       "type": "text",
       "required": true,
-      "recommendation": ".",
-      "configurationPath": ["targets", "app", "path"]
+      "recommendation": "apps/desktop",
+      "configurationPath": ["targets", "desktop", "path"]
+    },
+    {
+      "id": "package-manager",
+      "type": "choice",
+      "choices": [{ "value": "bun" }, { "value": "pnpm" }, { "value": "npm" }],
+      "recommendation": "bun",
+      "configurationPath": ["targets", "desktop", "packageManager"]
+    },
+    {
+      "id": "component-explorer",
+      "type": "boolean",
+      "recommendation": true,
+      "configurationPath": ["targets", "desktop", "componentExplorer"]
+    },
+    {
+      "id": "browser-tests",
+      "type": "boolean",
+      "recommendation": false,
+      "configurationPath": ["targets", "desktop", "browserTests"]
     },
     {
       "id": "setup-command",
       "type": "text",
-      "value": "",
-      "configurationPath": ["targets", "app", "setup"]
+      "recommendation": "bun install",
+      "configurationPath": ["targets", "desktop", "setup"]
     },
     {
       "id": "run-command",
       "type": "text",
-      "value": "",
-      "configurationPath": ["targets", "app", "run"]
-    },
-    {
-      "id": "build-command",
-      "type": "text",
-      "value": "",
-      "configurationPath": ["targets", "app", "build"]
+      "recommendation": "bun run dev",
+      "configurationPath": ["targets", "desktop", "run"]
     },
     {
       "id": "test-command",
       "type": "text",
-      "value": "",
-      "configurationPath": ["targets", "app", "test"]
+      "recommendation": "bun run test",
+      "configurationPath": ["targets", "desktop", "test"]
     }
   ],
   "configuration": {
     "version": 1,
     "targets": {
-      "app": {
+      "desktop": {
         "default": true,
-        "path": ".",
-        "setup": "",
-        "run": "",
-        "build": "",
-        "test": ""
+        "path": "apps/desktop",
+        "packageManager": "bun",
+        "componentExplorer": true,
+        "browserTests": false,
+        "setup": "bun install",
+        "run": "bun run dev",
+        "build": "bun run build",
+        "test": "bun run test"
       }
     }
   },
   "plan": [
     {
-      "id": "review-commands"
+      "id": "project",
+      "icon": "folder",
+      "fieldIds": ["target-path", "package-manager"]
     },
     {
-      "id": "inspect-settings"
+      "id": "tools",
+      "icon": "wrench",
+      "fieldIds": ["component-explorer", "browser-tests"]
     },
     {
-      "id": "validate-settings"
+      "id": "commands",
+      "icon": "terminal",
+      "fieldIds": ["setup-command", "run-command", "test-command"]
     }
   ],
   "progress": {

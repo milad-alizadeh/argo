@@ -20,7 +20,7 @@
   "setup": {
     "label": "Set up {{name}}",
     "title": "Set up {{name}} before starting Sessions",
-    "description": "Argo needs a shared Project configuration before it can start a managed Session.",
+    "description": "Choose the recommended plan, customize it, or configure the Project manually.",
     "configurationLabel": "Project configuration",
     "save": "Save config",
     "saving": "Saving config…",
@@ -37,11 +37,36 @@
     "setupNetworkUnavailable": "Argo could not download Project setup from GitHub.",
     "sharedFile": ".argo/settings.json",
     "document": {
+      "apply": "Apply setup",
+      "applying": "Applying setup…",
+      "back": "Back",
+      "continue": "Continue",
       "customize": "Customize plan",
+      "customizeTitle": "Adjust the recommended setup",
       "customization": "Plan customization",
+      "import": "Import config",
+      "importDescription": "Paste an existing Project configuration instead of using the recommended plan.",
+      "importTitle": "Import .argo/settings.json",
+      "included": "{{label}}",
+      "notIncluded": "No {{label}}",
+      "notSet": "Not set",
       "plan": "Recommended plan",
+      "preparing": "Preparing setup",
+      "preparingDescription": "Retrieving the setup skill and generating a plan…",
+      "preparingTitle": "Preparing this Project for agents",
       "progress_one": "{{current}} of {{total}} setup step complete",
-      "progress_other": "{{current}} of {{total}} setup steps complete"
+      "progress_other": "{{current}} of {{total}} setup steps complete",
+      "readyDescription": "Argo inspected the repository and prepared the smallest useful setup. No files change until you apply it.",
+      "readyTitle": "Ready this Project for agents",
+      "recommended": "Recommended plan",
+      "retry": "Try again",
+      "summaryDescription": "Review what Argo will apply, customize it, or import an existing configuration.",
+      "summaryTitle": "Setup summary",
+      "testConfiguration": "Test configuration",
+      "testSetup": "Test setup",
+      "unavailable": "Setup unavailable",
+      "unavailableDescription": "Argo could not prepare this Project setup.",
+      "unavailableTitle": "Project setup could not start"
     }
   }
 }

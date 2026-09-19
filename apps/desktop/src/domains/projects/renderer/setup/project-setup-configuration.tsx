@@ -1,82 +1,59 @@
-import { Save, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { setupConfiguration } from '@/domains/projects/contract/setup-configuration'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { ConfigurationEditor, isJson } from './project-setup-editor'
-import { ProjectSetupSteps } from './project-setup-steps'
 import type { ProjectSetupViewProps } from './project-setup-window'
 import { SetupDocumentForm } from './setup-document-form'
+import './project-setup.css'
 
-export function ConfigurationPanel({
-  project,
-  ...props
-}: { project: ProjectSummary } & ProjectSetupViewProps) {
+export function ConfigurationPanel(props: ProjectSetupViewProps) {
   const { i18n, t } = useTranslation('projects')
-  const document = props.document
   return (
-    <form
-      className="grid rounded-xl border bg-card shadow-surface [--setup-project-rail:13rem] lg:grid-cols-[var(--setup-project-rail)_minmax(0,1fr)]"
-      onSubmit={(event) => {
-        event.preventDefault()
-        void props.save()
-      }}
-    >
-      <aside className="border-b bg-muted/25 p-4 lg:border-r lg:border-b-0">
-        <p className="px-2 pb-3 type-heading font-medium text-foreground">{project.name}</p>
-        <p className="px-2 type-meta text-muted-foreground">{t('setup.sharedFile')}</p>
-        <ProjectSetupSteps projectName={project.name} />
-      </aside>
-      <div className="flex flex-col">
-        {document ? (
-          <div className="border-b p-4">
-            <SetupDocumentForm
-              configurationSource={props.source}
-              document={document}
-              language={i18n.language}
-              onAnswersChange={(answers) =>
-                props.updateSource(setupConfiguration(document, answers, props.source))
-              }
-            />
-          </div>
-        ) : null}
-        <ConfigurationHeader saved={props.saved} saving={props.saving} />
-        <ConfigurationEditor {...props} />
-        <ConfigurationActions cancel={props.cancel} saving={props.saving} source={props.source} />
-      </div>
-    </form>
-  )
-}
-
-function ConfigurationHeader({ saved, saving }: Pick<ProjectSetupViewProps, 'saved' | 'saving'>) {
-  const { t } = useTranslation('projects')
-  let status = t('setup.unsaved')
-  if (saved) status = t('setup.saved')
-  if (saving === 'save') status = t('setup.saving')
-  return (
-    <div className="px-4 py-3">
-      <h2 className="type-heading font-medium text-foreground">{t('setup.configurationLabel')}</h2>
-      <p className="mt-0.5 type-meta text-muted-foreground">{status}</p>
+    <div className="min-h-0 overflow-hidden rounded-xl border bg-card shadow-surface">
+      {props.loading ? <SetupLoading /> : null}
+      {!props.loading && props.document ? (
+        <SetupDocumentForm
+          applyConfiguration={props.applyConfiguration}
+          configurationSource={props.source}
+          document={props.document}
+          language={i18n.language}
+          onConfigurationChange={props.updateSource}
+          saving={props.saving}
+          testConfiguration={props.testConfiguration}
+        />
+      ) : null}
+      {!props.loading && !props.document ? (
+        <div className="mx-auto max-w-4xl px-8 py-10">
+          <Badge variant="secondary">{t('setup.document.unavailable')}</Badge>
+          <h2 className="mt-4 type-title">{t('setup.document.unavailableTitle')}</h2>
+          <p className="mt-3 max-w-2xl type-body text-muted-foreground">
+            {props.message?.text ?? t('setup.document.unavailableDescription')}
+          </p>
+          <Button className="mt-8" onClick={props.retry} type="button">
+            {t('setup.document.retry')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }
 
-function ConfigurationActions({
-  cancel,
-  saving,
-  source,
-}: Pick<ProjectSetupViewProps, 'cancel' | 'saving' | 'source'>) {
+function SetupLoading() {
   const { t } = useTranslation('projects')
   return (
-    <footer className="mt-auto flex items-center justify-end gap-2 border-t bg-muted/15 px-4 py-3">
-      <Button disabled={saving !== null} onClick={cancel} type="button" variant="ghost">
-        <X aria-hidden="true" />
-        {saving === 'cancel' ? t('setup.cancelling') : t('setup.cancel')}
-      </Button>
-      <Button disabled={saving !== null || !isJson(source)} type="submit">
-        <Save aria-hidden="true" />
-        {saving === 'save' ? t('setup.saving') : t('setup.save')}
-      </Button>
-    </footer>
+    <div className="mx-auto max-w-4xl px-8 py-10">
+      <Badge variant="secondary">{t('setup.document.preparing')}</Badge>
+      <h2 className="mt-4 type-title">{t('setup.document.preparingTitle')}</h2>
+      <p className="project-setup-shimmer mt-3 max-w-2xl type-body" role="status">
+        {t('setup.document.preparingDescription')}
+      </p>
+      <div className="mt-10 space-y-3" aria-hidden="true">
+        {[0, 1, 2].map((row) => (
+          <div
+            className="h-16 animate-pulse rounded-xl border border-border/70 bg-muted/25"
+            key={row}
+          />
+        ))}
+      </div>
+    </div>
   )
 }

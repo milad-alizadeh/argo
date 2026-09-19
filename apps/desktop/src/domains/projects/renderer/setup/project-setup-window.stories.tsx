@@ -7,12 +7,13 @@ const STORY_CONFIGURATION_SOURCE = `${JSON.stringify(
   {
     version: 1,
     targets: {
-      app: {
+      desktop: {
         default: true,
-        path: '.',
+        path: 'apps/desktop',
         setup: 'bun install',
         run: 'bun run dev',
         build: 'bun run build',
+        test: 'bun run test',
       },
     },
   },
@@ -29,10 +30,41 @@ const STORY_SETUP_DOCUMENT = parseSetupDocument({
       title: 'Recommended Project setup',
       description: 'Review the plan from the Argo repository before you save it.',
       fields: {
-        'target-path': { label: 'Working path' },
+        'target-path': {
+          label: 'Project target',
+          description: 'Argo runs Project commands from this folder.',
+        },
+        'package-manager': {
+          label: 'Package manager',
+          description: 'Used for generated commands and setup.',
+          choices: { bun: 'Bun', pnpm: 'pnpm', npm: 'npm' },
+        },
+        'component-explorer': {
+          label: 'Use Storybook',
+          description: 'Keep Storybook as the place to review components and states.',
+        },
+        'browser-tests': {
+          label: 'Add Playwright journeys',
+          description: 'Add browser journeys for the most important user flows.',
+        },
+        'setup-command': { label: 'Setup command' },
+        'run-command': { label: 'Run command' },
         'test-command': { label: 'Test command' },
       },
-      plan: { 'write-settings': { label: 'Write .argo/settings.json' } },
+      plan: {
+        project: {
+          label: 'Project',
+          description: 'Choose where Argo runs and which package manager it uses.',
+        },
+        tools: {
+          label: 'Tools',
+          description: 'Choose the development tools Argo should prepare.',
+        },
+        commands: {
+          label: 'Commands',
+          description: 'Review the commands Argo will run for this Project.',
+        },
+      },
     },
   },
   fields: [
@@ -40,23 +72,63 @@ const STORY_SETUP_DOCUMENT = parseSetupDocument({
       id: 'target-path',
       type: 'text',
       required: true,
-      recommendation: '.',
-      configurationPath: ['targets', 'app', 'path'],
+      recommendation: 'apps/desktop',
+      configurationPath: ['targets', 'desktop', 'path'],
+    },
+    {
+      id: 'package-manager',
+      type: 'choice',
+      choices: [{ value: 'bun' }, { value: 'pnpm' }, { value: 'npm' }],
+      recommendation: 'bun',
+      configurationPath: ['targets', 'desktop', 'packageManager'],
+    },
+    {
+      id: 'component-explorer',
+      type: 'boolean',
+      recommendation: true,
+      configurationPath: ['targets', 'desktop', 'componentExplorer'],
+    },
+    {
+      id: 'browser-tests',
+      type: 'boolean',
+      recommendation: false,
+      configurationPath: ['targets', 'desktop', 'browserTests'],
+    },
+    {
+      id: 'setup-command',
+      type: 'text',
+      recommendation: 'bun install',
+      configurationPath: ['targets', 'desktop', 'setup'],
+    },
+    {
+      id: 'run-command',
+      type: 'text',
+      recommendation: 'bun run dev',
+      configurationPath: ['targets', 'desktop', 'run'],
     },
     {
       id: 'test-command',
       type: 'text',
-      recommendation: 'bun test',
-      configurationPath: ['targets', 'app', 'test'],
+      recommendation: 'bun run test',
+      configurationPath: ['targets', 'desktop', 'test'],
     },
   ],
   configuration: JSON.parse(STORY_CONFIGURATION_SOURCE),
-  plan: [{ id: 'write-settings' }],
+  plan: [
+    { id: 'project', icon: 'folder', fieldIds: ['target-path', 'package-manager'] },
+    { id: 'tools', icon: 'wrench', fieldIds: ['component-explorer', 'browser-tests'] },
+    {
+      id: 'commands',
+      icon: 'terminal',
+      fieldIds: ['setup-command', 'run-command', 'test-command'],
+    },
+  ],
 })
 
 const meta: Meta<typeof ProjectSetupWindow> = {
   title: 'Projects/Setup Window',
   component: ProjectSetupWindow,
+  decorators: [(Story) => <div className="h-screen">{Story()}</div>],
   parameters: { layout: 'fullscreen' },
 }
 
@@ -65,6 +137,7 @@ type Story = StoryObj<typeof ProjectSetupWindow>
 
 export const NormalConfiguration: Story = {
   args: { project: { id: 'project-1', name: 'example', path: '/workspace/example' } },
+  globals: { theme: 'light' },
   beforeEach: () => {
     const before = window.argo
     window.argo = {
@@ -103,43 +176,80 @@ export const NormalConfiguration: Story = {
       window.argo = before
     }
   },
+}
+
+export const DarkConfiguration: Story = {
+  ...NormalConfiguration,
+  globals: { theme: 'dark' },
+}
+
+export const CompleteSetupJourney: Story = {
+  ...NormalConfiguration,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await canvas.findByRole('heading', { name: 'Recommended Project setup' })
+    await canvas.findByRole('heading', { name: 'Ready this Project for agents' })
+    await expect(canvas.getByText('Recommended plan')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Customize plan' })).toBeVisible()
-    await expect(canvas.getByText('Unsaved changes')).toBeVisible()
-    const configuration = await canvas.findByLabelText('Project configuration')
-    await expect(configuration).toHaveTextContent('"test": "bun test"')
+    await expect(canvas.getByRole('button', { name: 'Import config' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeVisible()
+    await expect(canvas.queryByLabelText('Project configuration')).toBeNull()
+    await expect(canvas.queryByText('Save config')).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Customize plan' }))
-    const path = canvas.getByRole('textbox', { name: 'Working path' })
+    await expect(
+      canvas.getByRole('heading', { name: 'Adjust the recommended setup' }),
+    ).toBeVisible()
+    const path = canvas.getByRole('textbox', { name: 'Project target' })
     await userEvent.clear(path)
-    await userEvent.click(canvas.getByRole('button', { name: 'Save config' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply setup' }))
     await expect(path).toBeInvalid()
     await expect(
       within(document.body).queryByText('Config saved.', { selector: '[data-slot="toast-title"]' }),
     ).toBeNull()
     await userEvent.type(path, '.')
-    const cancel = canvas.getByRole('button', { name: 'Cancel setup' })
-    const save = canvas.getByRole('button', { name: 'Save config' })
-    save.scrollIntoView()
-    for (const button of [cancel, save]) {
-      const bounds = button.getBoundingClientRect()
-      const topElement = document.elementFromPoint(
-        bounds.left + bounds.width / 2,
-        bounds.top + bounds.height / 2,
-      )
-      await expect(button.contains(topElement)).toBe(true)
-    }
-    await userEvent.click(save)
-    await expect(
-      within(document.body).getByText('Config saved.', { selector: '[data-slot="toast-title"]' }),
-    ).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Test config' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Test setup' }))
     await expect(
       within(document.body).getByText('All Project commands passed validation.', {
         selector: '[data-slot="toast-title"]',
       }),
     ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
+    await expect(canvas.getByRole('heading', { name: 'Import .argo/settings.json' })).toBeVisible()
+    await expect(canvas.getByLabelText('Project configuration')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Test configuration' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
+    await expect(
+      within(document.body).getByText('Config saved.', { selector: '[data-slot="toast-title"]' }),
+    ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
+    await expect(
+      canvas.getByRole('heading', { name: 'Ready this Project for agents' }),
+    ).toBeVisible()
+  },
+}
+
+export const LoadingPlan: Story = {
+  args: NormalConfiguration.args,
+  render: ({ project }) => (
+    <ProjectSetupView
+      applyConfiguration={async () => undefined}
+      document={null}
+      loading
+      message={null}
+      project={project}
+      retry={() => undefined}
+      saving={null}
+      source=""
+      testConfiguration={async () => undefined}
+      updateSource={() => undefined}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByText('Retrieving the setup skill and generating a plan…'),
+    ).toBeVisible()
+    await expect(canvas.getByRole('status')).toHaveClass('project-setup-shimmer')
   },
 }
 
@@ -147,13 +257,13 @@ export const SavingConfiguration: Story = {
   args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
-      cancel={async () => undefined}
+      applyConfiguration={async () => undefined}
       document={STORY_SETUP_DOCUMENT}
+      loading={false}
       message={null}
       project={project}
-      save={async () => undefined}
-      saved={false}
-      saving="save"
+      retry={() => undefined}
+      saving="apply"
       source={STORY_CONFIGURATION_SOURCE}
       testConfiguration={async () => undefined}
       updateSource={() => undefined}
@@ -165,12 +275,12 @@ export const CommandTestFailure: Story = {
   args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
-      cancel={async () => undefined}
+      applyConfiguration={async () => undefined}
       document={STORY_SETUP_DOCUMENT}
+      loading={false}
       message={{ tone: 'error', text: 'A Project command failed validation.' }}
       project={project}
-      save={async () => undefined}
-      saved
+      retry={() => undefined}
       saving={null}
       source={STORY_CONFIGURATION_SOURCE}
       testConfiguration={async () => undefined}
@@ -184,7 +294,7 @@ export const CommandTestFailure: Story = {
         selector: '[data-slot="toast-title"]',
       }),
     ).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Save config' })).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled()
   },
 }
 
@@ -192,12 +302,12 @@ export const SyntaxConfigurationError: Story = {
   args: NormalConfiguration.args,
   render: ({ project }) => (
     <ProjectSetupView
-      cancel={async () => undefined}
+      applyConfiguration={async () => undefined}
       document={STORY_SETUP_DOCUMENT}
+      loading={false}
       message={{ tone: 'error', text: 'Fix JSON syntax before testing the config.' }}
       project={project}
-      save={async () => undefined}
-      saved={false}
+      retry={() => undefined}
       saving={null}
       source={'{"version": 1,'}
       testConfiguration={async () => undefined}
@@ -211,10 +321,11 @@ export const SyntaxConfigurationError: Story = {
         selector: '[data-slot="toast-title"]',
       }),
     ).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
     await expect(canvas.getByLabelText('Project configuration')).toHaveAttribute(
       'aria-invalid',
       'true',
     )
-    await expect(canvas.getByRole('button', { name: 'Save config' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Import config' })).toBeDisabled()
   },
 }

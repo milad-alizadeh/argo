@@ -76,10 +76,13 @@ type Story = StoryObj<typeof SetupDocumentForm>
 
 export const RecommendedPlan: Story = {
   args: {
+    applyConfiguration: fn(),
     configurationSource: JSON.stringify(document.configuration),
     document,
     language: 'en',
-    onAnswersChange: fn(),
+    onConfigurationChange: fn(),
+    saving: null,
+    testConfiguration: fn(),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -87,8 +90,12 @@ export const RecommendedPlan: Story = {
     await expect(canvas.queryByRole('textbox', { name: 'Working path' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Customize plan' }))
     await expect(canvas.getByRole('textbox', { name: 'Working path' })).toHaveValue('.')
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Test runner' }), 'vitest')
-    await expect(canvas.getByRole('combobox', { name: 'Test runner' })).toHaveValue('vitest')
+    const testRunner = canvas.getByRole('combobox', { name: 'Test runner' })
+    await userEvent.click(testRunner)
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole('option', { name: 'Vitest' }),
+    )
+    await expect(testRunner).toHaveTextContent('Vitest')
     await expect(canvas.getByRole('checkbox', { name: 'Add a Component explorer' })).toBeChecked()
   },
 }

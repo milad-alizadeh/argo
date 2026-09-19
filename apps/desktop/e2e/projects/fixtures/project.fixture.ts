@@ -2,7 +2,7 @@
 // carries the production fuse profile with one fuse flipped, so the run reads a shipped app whose
 // only difference from the download is the inspector it is driven through.
 import { execFile } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
@@ -106,6 +106,17 @@ export async function prepareManual(
     projectPath,
     setupDocument,
     userData,
+  }
+}
+
+export async function readManualSetupConfiguration(fixture: { databasePath: string }) {
+  const projects = createProjectStore(new DatabaseSync(fixture.databasePath))
+  try {
+    const checkpoint = projects.readSetupCheckpoint('project-setup')
+    if (!checkpoint) throw new Error('Manual setup checkpoint is unavailable.')
+    return await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.json'), 'utf8')
+  } finally {
+    projects.close()
   }
 }
 

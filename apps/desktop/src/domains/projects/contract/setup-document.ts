@@ -79,6 +79,8 @@ const setupLocaleSchema = z.object({
 
 const setupPlanItemSchema = z.object({
   id: identifierSchema,
+  icon: z.enum(['folder', 'wrench', 'terminal']).optional(),
+  fieldIds: z.array(identifierSchema).optional().default([]),
 })
 
 export const setupDocumentSchema = z

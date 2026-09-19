@@ -4,6 +4,7 @@ export const SETUP_RENDERER_CAPABILITIES = [
   'fields',
   'recommendations',
   'plan',
+  'plan-sections',
   'descriptions',
   'locales',
   'progress',
@@ -16,7 +17,42 @@ type ValidationContext = {
 
 export function validateSetupDocument(document: SetupDocument, context: ValidationContext) {
   validateEnglishText(document, context)
+  validatePlanSections(document, context)
   validateCapabilities(document, context)
+}
+
+function validatePlanSections(document: SetupDocument, context: ValidationContext) {
+  const fieldIds = new Set(document.fields.map(({ id }) => id))
+  const referenced = new Set<string>()
+  for (const [planIndex, item] of document.plan.entries()) {
+    for (const [fieldIndex, fieldId] of item.fieldIds.entries()) {
+      if (!fieldIds.has(fieldId)) {
+        context.addIssue({
+          code: 'custom',
+          message: `Setup section ${item.id} names unknown field ${fieldId}.`,
+          path: ['plan', planIndex, 'fieldIds', fieldIndex],
+        })
+      }
+      if (referenced.has(fieldId)) {
+        context.addIssue({
+          code: 'custom',
+          message: `Setup field ${fieldId} belongs to more than one section.`,
+          path: ['plan', planIndex, 'fieldIds', fieldIndex],
+        })
+      }
+      referenced.add(fieldId)
+    }
+  }
+  if (!document.requiredCapabilities.includes('plan-sections')) return
+  for (const fieldId of fieldIds) {
+    if (!referenced.has(fieldId)) {
+      context.addIssue({
+        code: 'custom',
+        message: `Setup field ${fieldId} does not belong to a section.`,
+        path: ['fields'],
+      })
+    }
+  }
 }
 
 function validateEnglishText(document: SetupDocument, context: ValidationContext) {

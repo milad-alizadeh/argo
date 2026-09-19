@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { saveProjectConfiguration } from '../project-configuration'
+import { readProjectConfigurationSource, saveProjectConfiguration } from '../project-configuration'
 import type { ProjectStore, SetupCheckpoint } from '../sqlite-store'
 import { prepareSetupWorktree } from './setup-worktree'
 
@@ -28,11 +28,13 @@ export async function saveManualProjectConfiguration(request: {
   }
   const phase: SetupCheckpoint['phase'] =
     previous?.phase === 'ready' && previous.configurationSource === source ? 'ready' : 'editing'
+  const configurationSource =
+    phase === 'ready' ? ((await readProjectConfigurationSource(worktreePath)) ?? source) : source
   const checkpoint = {
     projectId: project.id,
     worktreePath,
     phase,
-    configurationSource: source,
+    configurationSource,
     documentRevision,
   }
   store.writeSetupCheckpoint(checkpoint)

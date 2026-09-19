@@ -5,7 +5,7 @@ import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import type { SetupDocument } from '@/domains/projects/contract/setup-document'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { ConfigurationPanel } from './project-setup-configuration'
-import { type ManualSetupMessage, useManualProjectSetup } from './use-manual-project-setup'
+import { type ProjectSetupMessage, useProjectSetup } from './use-project-setup'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
   const { t } = useTranslation('projects')
@@ -20,17 +20,17 @@ export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
     }),
     [t],
   )
-  const setup = useManualProjectSetup(project.id, messages)
+  const setup = useProjectSetup(project.id, messages)
   return <ProjectSetupView project={project} {...setup} />
 }
 
 export type ProjectSetupViewProps = {
   document: SetupDocument | null
-  message: ManualSetupMessage | null
-  cancel: () => Promise<void>
-  saved: boolean
-  save: () => Promise<void>
-  saving: 'cancel' | 'save' | 'test' | null
+  message: ProjectSetupMessage | null
+  applyConfiguration: () => Promise<void>
+  loading: boolean
+  retry: () => void
+  saving: 'apply' | 'test' | null
   source: string
   testConfiguration: () => Promise<void>
   updateSource: (source: string) => void
@@ -40,9 +40,9 @@ export function ProjectSetupView({
   project,
   document,
   message,
-  cancel,
-  saved,
-  save,
+  applyConfiguration,
+  loading,
+  retry,
   saving,
   source,
   testConfiguration,
@@ -51,11 +51,11 @@ export function ProjectSetupView({
   const { t } = useTranslation('projects')
   const { add } = useToastManager()
   const setup = {
+    applyConfiguration,
     document,
+    loading,
     message,
-    cancel,
-    saved,
-    save,
+    retry,
     saving,
     source,
     testConfiguration,
@@ -95,7 +95,7 @@ function SetupWorkspace({
           <p className="mt-1 max-w-2xl type-body text-muted-foreground">{t('setup.description')}</p>
         </div>
       </header>
-      <ConfigurationPanel project={project} {...setup} />
+      <ConfigurationPanel {...setup} />
     </section>
   )
 }
