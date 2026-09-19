@@ -143,6 +143,11 @@ inside it, pushing to `main`, then adding the name to the lock.
   `cannot tell`. It reports and never edits.
 - [`interface-review`](skills/interface-review/SKILL.md) reviews accessibility, interaction,
   required states, and consistency with the project's tokens and components in the live UI.
+- [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) maps an
+  architecture question through independent evidence passes, verifies the decisive source paths,
+  and blocks the visual report until every required investigation is complete.
+- [`research`](skills/research/SKILL.md) records primary-source evidence where the task permits
+  and blocks the answer until the parent reads the note and checks the decisive claims.
 
 ### Provenance
 
@@ -150,3 +155,7 @@ inside it, pushing to `main`, then adding the name to the lock.
 were shaped by the tenet set at [prickles.org](https://prickles.org) (Lewis, A., 2026 —
 CC BY-NC 4.0). The tenets there are the map of what's worth enforcing; the prose here is
 Argo's own, in Argo's forbidden-list voice.
+
+`improve-codebase-architecture` and `research` began as skills from
+[`mattpocock/skills`](https://github.com/mattpocock/skills). Argo's variants retain Matt
+Pocock's MIT license and add harness-neutral evidence and completion barriers.

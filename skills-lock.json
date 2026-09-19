@@ -92,10 +92,10 @@
       "computedHash": "2139cfedf24791adbc839aaab6019cff158af1e28bfead020ec6e0ce01b3e74d"
     },
     "improve-codebase-architecture": {
-      "source": "mattpocock/skills",
+      "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
-      "computedHash": "2449db6ab1ded9581f69fcc56c1f64818112d05e271fd4c5da23c6523f9d3d9d"
+      "skillPath": "packages/argo-skills/skills/improve-codebase-architecture/SKILL.md",
+      "computedHash": "ae89c36c991866f5240787d4f3c1c3f19b71269256099a46df4b611cdde86a1f"
     },
     "interface-review": {
       "source": "milad-alizadeh/argo",
@@ -110,10 +110,10 @@
       "computedHash": "d3fc74689bd993e39c44bfae510d014eecffbeec2922764b065377fd1327c0f6"
     },
     "research": {
-      "source": "mattpocock/skills",
+      "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "skills/engineering/research/SKILL.md",
-      "computedHash": "c8c1cba327a6f824b554cd978079a3dadd7406d73174f8fb9bfef58824691970"
+      "skillPath": "packages/argo-skills/skills/research/SKILL.md",
+      "computedHash": "cd8ebd6588095d922f38204c81b46dfc877a3a82d2ca367a0baa6ec823f55c4e"
     },
     "resolving-merge-conflicts": {
       "source": "mattpocock/skills",

@@ -38,8 +38,9 @@
   stored third posture: the roster is still rebuilt from the transcripts every launch (ADR-0004,
   ADR-0008).
 
-  A Session **is the root Agent** (`parentId: null`). Key attributes: **`cli`**
-  (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of
+  A Session **is the root Agent** (`parentId: null`). Key attributes: **`harness`**
+  (`claude | codex | …`, the coding agent program that runs it, however Argo reaches it — a
+  terminal CLI or an app-server), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of
   every L1-triangle derivation and of external liveness matching).
 
 - **retired id** — an id a Session WAS published under and is not any more. The chain id above is

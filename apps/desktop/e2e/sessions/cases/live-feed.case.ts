@@ -23,9 +23,13 @@ async function activeRevision(page) {
 }
 
 async function fixedRow(page) {
+  const jumpToLatest = page.getByRole('button', { name: 'Jump to latest' })
+  await jumpToLatest.waitFor({ state: 'hidden', timeout: LIVE_TIMEOUT_MS })
   await page.evaluate((selector) => {
     document.querySelector(selector).scrollTop = 0
   }, ACTIVE_VIEWPORT)
+  // The visible control acknowledges that the asynchronous scroll event left tail-follow mode.
+  await jumpToLatest.waitFor({ timeout: LIVE_TIMEOUT_MS })
   return { ...(await viewportAnchor(page)), revision: await activeRevision(page) }
 }
 
