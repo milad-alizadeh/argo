@@ -4,26 +4,13 @@
 // rather than guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
 import type { SessionActivity, SessionDelegation, SessionShellCommand } from './models'
-import { toolPresentation } from './tool-feed'
+import { executableToolCall, toolPresentation, toolTarget } from './tool-feed'
 import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
 
-// The tool that runs a shell command (CONTEXT.md L3 · Tool Call). A call whose result has not
-// come back is a command still running, which is what the Shell list's Running group says.
-const SHELL_TOOL = 'Bash'
-
-// The one input field an activity names, in the order a call is likelier to carry it. A path is
-// cut to its last segment, because the row is narrow and the deck head already draws the place.
-const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
-const TEXT_FIELDS = ['pattern', 'description', 'command', 'cmd', 'url', 'query']
-
 function calls(messages: TranscriptMessage[]): ToolCall[] {
   return messages.flatMap((message) => message.toolCalls)
-}
-
-function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
 // When each call was written, and when the record answering it was. A call the transcript holds
@@ -66,10 +53,10 @@ function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {
   return new Map(notifications.map((notification) => [notification.callId, notification]))
 }
 
-// The shell commands the Shell list draws. A foreground `Bash` call the transcript holds no result for
-// is running; one that came back is what the Session did rather than what it is doing, so it is
-// not read at all (#1907). A background call is the exception: its result is only a receipt, so
-// it stays in the Shell list under the state its completion notification gives it (#1582).
+// The shell commands the Shell list draws. A foreground executable call the transcript holds no
+// result for is running; one that came back is what the Session did rather than what it is doing,
+// so it is not read at all (#1907). A background call is the exception: its result is only a
+// receipt, so it stays in the Shell list under the state its completion notification gives it.
 export function readShellCommands(
   messages: TranscriptMessage[],
   notifications: BackgroundTask[],
@@ -84,26 +71,26 @@ export function readShellCommands(
   )
   const times = callTimes(messages)
   const ended = endings(notifications)
-  return calls(messages)
-    .filter((call) => call.name === SHELL_TOOL)
-    .flatMap((call) => {
-      const receipt = receipts.get(call.id)
-      if (receipt === undefined && answered.has(call.id)) return []
-      const notification = ended.get(call.id)
-      return [
-        {
-          id: call.id,
-          command: text(call.input.command)?.trim().split('\n', 1).join('') ?? null,
-          label: text(call.input.description),
-          background: receipt !== undefined || call.input.run_in_background === true,
-          state: notification?.state ?? ('running' as const),
-          startedAt: times.started.get(call.id) ?? null,
-          endedAt: notification?.timestamp ?? null,
-          outputPath: notification?.outputPath ?? receipt?.outputPath ?? null,
-          result: notification?.summary ?? null,
-        },
-      ]
-    })
+  return calls(messages).flatMap((call) => {
+    const executable = executableToolCall(call)
+    if (executable === null) return []
+    const receipt = receipts.get(call.id)
+    if (receipt === undefined && answered.has(call.id)) return []
+    const notification = ended.get(call.id)
+    return [
+      {
+        id: call.id,
+        command: executable.command,
+        label: executable.label,
+        background: receipt !== undefined || executable.background,
+        state: notification?.state ?? ('running' as const),
+        startedAt: times.started.get(call.id) ?? null,
+        endedAt: notification?.timestamp ?? null,
+        outputPath: notification?.outputPath ?? receipt?.outputPath ?? null,
+        result: notification?.summary ?? null,
+      },
+    ]
+  })
 }
 
 // A prompt is a user record that answers no Tool Call. A tool result is written as a user
@@ -118,21 +105,9 @@ export function readTurnStartedAt(messages: TranscriptMessage[]): string | null 
   return messages[lastPromptIndex(messages)]?.timestamp ?? null
 }
 
-function readTarget(input: Record<string, unknown>): string | null {
-  for (const field of PATH_FIELDS) {
-    const path = text(input[field])
-    if (path !== null) return path.split('/').findLast((segment) => segment.length > 0) ?? path
-  }
-  for (const field of TEXT_FIELDS) {
-    const value = text(input[field])
-    if (value !== null) return value.trim().split('\n', 1).join('')
-  }
-  return null
-}
-
 function callActivity(call: ToolCall, open: boolean): SessionActivity {
   const { label, kind } = toolPresentation(call)
-  return { label, kind, open, tool: call.name, target: readTarget(call.input) }
+  return { label, kind, open, tool: call.name, target: toolTarget(call) }
 }
 
 function thoughtActivity(message: TranscriptMessage): SessionActivity | null {

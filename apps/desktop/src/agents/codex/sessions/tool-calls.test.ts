@@ -78,3 +78,21 @@ test('names the roster activity line after the newest tool call, the same way it
     target: 'bun run quality',
   })
 })
+
+test('shows a running Codex command in the Roster shell list', async (context) => {
+  const reply = await listed(await reader(context))
+  const session = reply?.sessions.find((entry) => entry.id === SESSION)
+  assert.deepEqual(session?.shell, [
+    {
+      id: 'call_4',
+      command: 'bun run build',
+      label: null,
+      background: false,
+      state: 'running',
+      startedAt: '2026-09-16T00:00:08.000Z',
+      endedAt: null,
+      outputPath: null,
+      result: null,
+    },
+  ])
+})

@@ -37,6 +37,13 @@ function commandLabel(call: ToolCall, commandKey: 'command' | 'cmd') {
   return `Ran ${command ?? 'command'}`
 }
 
+function commandText(call: ToolCall): string | null {
+  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
+  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
+  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
+  return null
+}
+
 const TOOL_DETAILS = {
   // The agent's own description is already a whole label; the raw command, first line, is the fallback.
   Bash: (call: ToolCall) => ({
@@ -102,6 +109,31 @@ export function toolPresentation(call: ToolCall) {
   )
 }
 
+const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
+const TEXT_FIELDS = ['pattern', 'description', 'command', 'cmd', 'url', 'query']
+
+export function toolTarget(call: ToolCall): string | null {
+  for (const field of PATH_FIELDS) {
+    const path = text(call.input[field])
+    if (path !== null) return path.split('/').findLast((segment) => segment.length > 0) ?? path
+  }
+  for (const field of TEXT_FIELDS) {
+    const value = text(call.input[field])
+    if (value !== null) return value.trim().split('\n', 1).join('')
+  }
+  return null
+}
+
+export function executableToolCall(call: ToolCall) {
+  if (toolPresentation(call).kind !== 'command') return null
+  const command = commandText(call)
+  return {
+    command: command === null ? null : command.trim().split('\n', 1).join(''),
+    label: text(call.input.label) ?? text(call.input.description),
+    background: call.input.run_in_background === true,
+  }
+}
+
 // A tool no row knows still shows what it was asked: its code, a lone string argument as itself,
 // else the input.
 function unclassifiedText(input: ToolCall['input']): string | null {
@@ -133,9 +165,8 @@ function toolStatus(result: ToolResult | undefined): ToolRow['status'] {
 }
 
 function toolText(call: ToolCall, skillBodies: Map<string, string>): string | null {
-  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
-  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
-  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
+  const command = commandText(call)
+  if (command !== null) return command
   if (call.name === 'exec' && typeof call.input.input === 'string') return call.input.input
   if (call.name === 'Skill') return skillBodies.get(call.id) ?? null
   if (call.name === 'web__run') return text(call.input.url) ?? text(call.input.query)
