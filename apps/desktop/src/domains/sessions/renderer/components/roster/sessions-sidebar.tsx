@@ -9,6 +9,7 @@ import type { Session } from '../../types'
 import { Roster, type RosterActions } from './roster'
 import { useOrderedSessions } from './roster-order'
 import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
+import { UnreadMarkerPrototypeSwitcher } from './unread-marker-prototype'
 import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
 // A stored id absent from the active Roster is not necessarily gone: the active list never
@@ -70,6 +71,7 @@ export function SessionsSidebar() {
         projectId={project?.id ?? null}
         session={linkTarget}
       />
+      <UnreadMarkerPrototypeSwitcher />
     </>
   )
 }

@@ -1,5 +1,6 @@
-import { Loader2, Plus, Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Loader } from '../../../../../platform/renderer/components/loader'
 import { Button } from '../../../../../platform/renderer/components/ui/button'
 import {
   InputGroup,
@@ -34,7 +35,7 @@ export function RosterStatusRow({ label }: { label: string }) {
       role="status"
       style={{ height: ROSTER_ROW_HEIGHT }}
     >
-      <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+      <Loader aria-hidden={true} className="text-muted-foreground" />
     </div>
   )
 }
