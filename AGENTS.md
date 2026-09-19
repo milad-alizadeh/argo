@@ -137,6 +137,11 @@ a cheaper one the task can hold. For example, Sol can dispatch Sol or a cheaper 
 cannot dispatch Astra. This keeps a cheap parent from turning an overestimated task into an
 expensive fan-out. Name the model and the reason when you report the dispatch.
 
+**The dispatch defines the subagent's authority.** A review, research, evaluation or exploration
+dispatch returns findings only. It leaves files and Git history unchanged unless the dispatch
+explicitly asks it to implement a change. The parent waits for every required result, reads it in
+full and verifies the decisive source before it reports completion.
+
 ## Cross-CLI guardrail hooks
 
 `hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hook behaviours, projected per-harness.

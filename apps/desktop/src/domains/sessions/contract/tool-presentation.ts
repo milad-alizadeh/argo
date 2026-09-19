@@ -26,9 +26,9 @@ function commandLabel(call: ToolCall, commandKey: 'command' | 'cmd') {
 }
 
 export function commandText(call: ToolCall): string | null {
-  if (call.name === 'Bash' && typeof call.input.command === 'string') return call.input.command
-  if (call.name === 'exec_command' && typeof call.input.cmd === 'string') return call.input.cmd
-  if (call.name === 'exec' && typeof call.input.cmd === 'string') return call.input.cmd
+  if (toolPresentation(call).kind !== 'command') return null
+  if (typeof call.input.command === 'string') return call.input.command
+  if (typeof call.input.cmd === 'string') return call.input.cmd
   return null
 }
 
