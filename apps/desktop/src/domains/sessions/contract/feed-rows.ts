@@ -25,6 +25,7 @@ export const toolCallKindSchema = z.enum([
   'read',
   'edited',
   'created',
+  'deleted',
   'tool',
   'skill',
   'searched',

@@ -5,15 +5,13 @@ import { type SessionFeedRow, sessionFeedRowSchema } from '../contract/feed-rows
 import { toolRows } from '../contract/tool-feed'
 import { groupToolRuns, TOOL_KIND_PRESENTATION } from '../contract/tool-groups'
 import type { ToolCall } from '../contract/transcript'
-import { fetchCall, searchCall } from './tool-feed-test-fixtures'
+import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
 }
 
-function edit(id: string, path: string): ToolCall {
-  return { id, name: 'Edit', input: { file_path: path, old_string: 'a', new_string: 'b' } }
-}
+const edit = (id: string, path: string) => editCall(id, path)
 
 function unclassified(id: string): ToolCall {
   return { id, name: 'SomeMcpTool', input: {} }

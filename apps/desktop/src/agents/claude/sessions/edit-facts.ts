@@ -1,0 +1,61 @@
+import type { EditedFile, ToolCall } from '../../../domains/sessions/contract/transcript'
+import { createdPatch, unifiedPatch } from '../../../domains/sessions/contract/unified-patch'
+
+type Input = Record<string, unknown>
+type EditFacts = Pick<ToolCall, 'edit'>
+
+const lineCount = (text: string) => text.split('\n').length
+
+function text(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+const one = (file: EditedFile): EditFacts => ({ edit: { kind: 'edit', files: [file] } })
+
+// Claude records an edit's old and new text, so its diff is known before the result lands.
+function edit(input: Input): EditFacts {
+  const oldText = text(input.old_string)
+  const newText = text(input.new_string)
+  return one({
+    change: 'update',
+    file: text(input.file_path),
+    diff: oldText === null || newText === null ? '' : unifiedPatch(oldText, newText),
+    lineCounts: {
+      added: newText === null ? 0 : lineCount(newText),
+      removed: oldText === null ? 0 : lineCount(oldText),
+    },
+  })
+}
+
+function write(input: Input): EditFacts {
+  const content = text(input.content)
+  return one({
+    change: 'create',
+    file: text(input.file_path),
+    diff: content === null ? '' : createdPatch(content),
+    lineCounts: { added: content === null ? 0 : lineCount(content), removed: 0 },
+  })
+}
+
+// A notebook cell change is an update of the notebook; deleting a cell adds no lines.
+function notebookEdit(input: Input): EditFacts {
+  const source = text(input.edit_mode) === 'delete' ? null : text(input.new_source)
+  return one({
+    change: 'update',
+    file: text(input.notebook_path),
+    diff: source === null ? '' : createdPatch(source),
+    lineCounts: { added: source === null ? 0 : lineCount(source), removed: 0 },
+  })
+}
+
+// Claude's file-changing tools as the domain's `edit` Tool Call (CONTEXT.md L3 · Tool Call).
+const EDITS: Record<string, (input: Input) => EditFacts> = {
+  Edit: edit,
+  Write: write,
+  NotebookEdit: notebookEdit,
+}
+
+export function editFacts(name: string, input: Input): EditFacts {
+  const read = Object.hasOwn(EDITS, name) ? EDITS[name] : undefined
+  return read === undefined ? {} : read(input)
+}
