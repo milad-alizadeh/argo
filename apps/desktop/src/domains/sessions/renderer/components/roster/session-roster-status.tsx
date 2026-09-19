@@ -9,8 +9,8 @@ export const STATUS_MARKS: Record<Session['status'], string> = {
   ended: 'bg-danger',
   idle: 'bg-idle',
   permission: 'bg-warn',
-  running: 'bg-active shadow-state-glow',
-  starting: 'bg-active shadow-state-glow',
+  running: 'bg-idle',
+  starting: 'bg-idle',
   stopped: 'bg-danger',
   unknown: 'bg-transparent shadow-state-outline',
 }

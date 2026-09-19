@@ -141,6 +141,7 @@
      Argo cannot place is an outline in the disabled ink: both are reached by name so neither
      restates a colour the block above already holds. */
   --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
+  --shadow-unread-glow: 0 0 5px var(--color-plan);
   --shadow-state-outline: inset 0 0 0 1px var(--color-off);
 }
 

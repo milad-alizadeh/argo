@@ -1,11 +1,7 @@
-/* A loading Feed's comet: a ring whose bright head chases a fading tail. It waits out the delay
-   first, so a Session switch that settles quickly never shows it. It fills the Feed out of flow,
-   so a marker or row arriving beside it never pushes it. */
+/* The Feed loader waits out the delay, so a Session switch that settles quickly shows none. It
+   fills the Feed out of flow, so a marker or row arriving beside it never pushes it. */
 .feed-loading {
   --feed-loading-delay: 450ms;
-  --feed-loading-size: 28px;
-  --feed-loading-ring: 3px;
-  --feed-loading-ink: color-mix(in oklab, var(--color-active) 70%, var(--foreground));
 
   position: absolute;
   inset: 0;
@@ -17,55 +13,8 @@
     var(--feed-loading-delay) forwards;
 }
 
-.feed-loading__comet {
-  position: relative;
-  width: var(--feed-loading-size);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  animation: feed-loading-spin 900ms linear infinite;
-}
-
-.feed-loading__comet::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: conic-gradient(transparent 10%, var(--feed-loading-ink));
-  mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--feed-loading-ring)),
-    black calc(100% - var(--feed-loading-ring))
-  );
-}
-
-.feed-loading__comet::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: var(--feed-loading-ring);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  translate: -50% 0;
-  background: var(--feed-loading-ink);
-  box-shadow: 0 0 calc(var(--feed-loading-ring) * 3) calc(var(--feed-loading-ring) / 2)
-    var(--feed-loading-ink);
-}
-
 @keyframes feed-loading-reveal {
   to {
     opacity: 1;
-  }
-}
-
-@keyframes feed-loading-spin {
-  to {
-    rotate: 1turn;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .feed-loading__comet {
-    animation: none;
   }
 }

@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next'
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loader } from '../../../../platform/renderer/components/loader'
 import {
   Empty,
   EmptyDescription,
@@ -9,7 +10,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../../platform/renderer/components/ui/empty'
-import { Spinner } from '../../../../platform/renderer/components/ui/spinner'
 import { useToastManager } from '../../../../platform/renderer/components/ui/toast'
 import { providerPresentation } from '../../../accounts/renderer/lib/providers'
 import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
@@ -78,9 +78,7 @@ function NextPage({ backlog }: { backlog: Backlog }) {
   if (!hasMore) return null
   return (
     <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
-      {loadingMore ? (
-        <Spinner aria-label={t('backlog.loadingMore')} className="text-faint" />
-      ) : null}
+      {loadingMore ? <Loader aria-label={t('backlog.loadingMore')} className="text-faint" /> : null}
     </li>
   )
 }
