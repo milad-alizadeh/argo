@@ -22,7 +22,8 @@ function threadOf(row: SubagentRow): AgentThread {
     id: row.id,
     name: row.name ?? row.subagentId,
     phase: phaseOf(row),
-    line: row.text ?? null,
+    // The messaged row never draws the text the Session sent; only `responded` keeps a reply line.
+    line: row.event === 'responded' ? (row.text ?? null) : null,
     durationMs: row.durationMs ?? null,
     tokens: row.tokens ?? null,
     model: row.model ?? null,

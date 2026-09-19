@@ -4,8 +4,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { expect, fn, waitFor, within } from 'storybook/test'
 
+import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
 import type { AgentThread } from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
 import { DelegationThread } from '@/domains/sessions/renderer/feed/delegation/delegation-thread'
+import { FeedSubagent } from '@/domains/sessions/renderer/feed/feed-subagent'
 
 const RUNNING: AgentThread = {
   id: 'semantic',
@@ -109,5 +111,74 @@ export const Scene: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getAllByRole('listitem')).toHaveLength(3)
+  },
+}
+
+type Row = Parameters<typeof FeedSubagent>[0]['row']
+
+const RESPONDED_ROW: Row = {
+  shape: 'subagent',
+  id: 'review:responded',
+  subagentId: 'call-review',
+  event: 'responded',
+  state: 'completed',
+  name: 'semantic_compound_verify',
+  text: 'Four labels renamed, none of them compound any more',
+  durationMs: 157_000,
+  tokens: 18_400,
+}
+
+// A Feed row as the Session draws it, with or without a Subagent transcript to open.
+function FeedRow({ row, openable = true }: { row: Row; openable?: boolean }) {
+  const links = {
+    find: () => (openable ? ({ kind: 'delegation' } as never) : null),
+    open: fn(),
+  }
+  return (
+    <Stage>
+      <BackgroundWork.Provider value={links as never}>
+        <FeedSubagent row={row} />
+      </BackgroundWork.Provider>
+    </Stage>
+  )
+}
+
+// The text the Session sent is never drawn, and the Subagent still reads as running.
+export const Messaged: Story = {
+  render: () => (
+    <FeedRow
+      row={{ ...RESPONDED_ROW, event: 'messaged', state: undefined, text: 'A long message' }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText('A long message')).toBeNull()
+    await readsTheName(canvasElement, 'Semantic compound verify')
+  },
+}
+
+export const Interrupted: Story = {
+  render: () => <FeedRow row={{ ...RESPONDED_ROW, state: 'interrupted', text: undefined }} />,
+  play: async ({ canvasElement }) => {
+    await readsTheName(canvasElement, 'Semantic compound verify')
+  },
+}
+
+// Codex gives no reply, duration or tokens: nothing stands in for them.
+export const MissingFact: Story = {
+  render: () => (
+    <FeedRow
+      row={{ ...RESPONDED_ROW, text: undefined, durationMs: undefined, tokens: undefined }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await readsTheName(canvasElement, 'Semantic compound verify')
+    await expect(within(canvasElement).queryByText(/·/)).toBeNull()
+  },
+}
+
+export const NotClickable: Story = {
+  render: () => <FeedRow openable={false} row={RESPONDED_ROW} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole('button')).toBeNull()
   },
 }
