@@ -27,7 +27,7 @@ test('keeps one CLI’s rows out of another CLI’s answers', async () => {
 
 test('reports the identity it holds for a path, so a caller can tell a changed file from an unchanged one', async () => {
   const { store } = await stores.open()
-  store.write('claude', passOf({ files: [fileFor('one')] }))
+  writeChain(store, rowFor('one', '2026-09-17T10:00:00.000Z'))
 
   expect(store.filesAt('claude', ['/transcripts/one.jsonl', '/transcripts/absent.jsonl'])).toEqual([
     { path: '/transcripts/one.jsonl', sessionId: 'one', writtenAt: 10, size: 20, chainId: 'one' },
@@ -64,7 +64,8 @@ test('replaces a chain’s files, so a re-stitch that moved a file leaves nothin
 
 test('forgets a file the pass found gone from disk', async () => {
   const { store } = await stores.open()
-  store.write('claude', passOf({ files: [fileFor('one'), fileFor('two')] }))
+  writeChain(store, rowFor('one', '2026-09-17T10:00:00.000Z'))
+  writeChain(store, rowFor('two', '2026-09-17T10:00:00.000Z'))
 
   store.write('claude', passOf({ removedPaths: ['/transcripts/two.jsonl'] }))
 
