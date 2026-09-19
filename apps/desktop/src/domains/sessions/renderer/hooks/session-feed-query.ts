@@ -26,13 +26,13 @@ export async function retrySessionFeed(
 export function sessionFeedQuery(
   queryClient: QueryClient,
   sessionId: SessionId | null,
-  delegationId: string | null,
+  subagentId: string | null,
 ): UseQueryOptions<SessionFeed | null, SessionContractError> {
   return {
     queryKey:
       sessionId === null
-        ? ['sessions', 'feed', null, delegationId]
-        : sessionFeedQueryKey(sessionId, delegationId),
+        ? ['sessions', 'feed', null, subagentId]
+        : sessionFeedQueryKey(sessionId, subagentId),
     enabled: sessionId !== null,
     // A Feed belongs only to the active reader. Once its observer leaves on a Session switch,
     // React Query immediately drops the transcript and aborts its in-flight reader work. This
@@ -49,7 +49,7 @@ export function sessionFeedQuery(
     retry: false,
     queryFn: async ({ signal }) => {
       if (sessionId === null) return null
-      const key = sessionFeedQueryKey(sessionId, delegationId)
+      const key = sessionFeedQueryKey(sessionId, subagentId)
       const cached = queryClient.getQueryData<SessionFeed>(key)
       // The abort TanStack Query fires on a query-key change (switching Sessions) or unmount
       // only stops the renderer from waiting on this promise; it does not reach the main
@@ -60,7 +60,7 @@ export function sessionFeedQuery(
       const reply = await window.argo
         .readSessionFeed({
           sessionId,
-          delegationId,
+          subagentId,
           revision: cached?.revision ?? null,
         })
         .finally(() => signal.removeEventListener('abort', onAbort))

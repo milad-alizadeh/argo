@@ -6,7 +6,7 @@ function notification(uuid: string, body: string) {
   return JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: body } })
 }
 
-test('reads a background command notification as the end of its call, never a delegation', () => {
+test('reads a background command notification as the end of its call, never a Subagent', () => {
   const line = notification(
     'task-1',
     '<task-notification>\n<task-id>a1</task-id>\n<tool-use-id>toolu_1</tool-use-id>\n<status>killed</status>\n<summary>Background command "Install dependencies" was stopped</summary>\n</task-notification>',
@@ -22,98 +22,77 @@ test('reads a background command notification as the end of its call, never a de
   })
 })
 
-for (const { claim, body, actor, action, progress } of [
-  {
-    claim: 'an agent, with the first line of its report',
-    body: '<summary>Agent "Consolidate stories" finished</summary>\n<result>**Task:** Merge the stories\nMore</result>',
-    actor: 'agent',
-    action: 'Consolidate stories',
-    progress: 'Task: Merge the stories',
-  },
-  {
-    claim: 'a workflow, leaving its JSON result for the model',
-    body: '<summary>Dynamic workflow "Map the gaps" completed</summary>\n<result>{"summaries":[]}</result>',
-    actor: 'agent',
-    action: 'Map the gaps',
-    progress: null,
-  },
-  {
-    claim: 'a monitor, with its event as the latest line',
-    body: '<summary>Monitor event: "Watch CI to a verdict"</summary>\n<event>DONE: all checks settled</event>',
-    actor: 'shell',
-    action: 'Watch CI to a verdict',
-    progress: 'DONE: all checks settled',
-  },
-] as const) {
-  test(`reads a task notification from ${claim}`, () => {
-    const record = parseTranscriptLine(
-      notification('task-3', `<task-notification><task-id>t3</task-id>${body}</task-notification>`),
-    )
-    assert.deepEqual(record, {
-      kind: 'delegation',
-      uuid: 'task-3',
-      timestamp: null,
-      actor,
-      action,
-      status: null,
-      progress,
-      groupId: 't3',
-      callId: null,
-    })
+const WRAPPED = (body: string) =>
+  `<task-notification><task-id>t3</task-id><tool-use-id>toolu_3</tool-use-id>${body}</task-notification>`
+
+test('reads an agent notification as the Subagent responding, with one line of its report', () => {
+  const record = parseTranscriptLine(
+    notification(
+      'task-3',
+      WRAPPED(
+        '<status>completed</status><summary>Agent "Consolidate stories" finished</summary>\n<result>**Task:** Merge the stories\nMore</result>',
+      ),
+    ),
+  )
+  assert.deepEqual(record, {
+    kind: 'subagent',
+    uuid: 'task-3',
+    timestamp: null,
+    subagentId: 'toolu_3',
+    event: 'responded',
+    state: 'completed',
+    name: 'Consolidate stories',
+    reply: '**Task:** Merge the stories\nMore',
+    text: 'Task: Merge the stories',
   })
-}
+})
+
+test('reads a workflow notification as a response and keeps its JSON result as the reply', () => {
+  const record = parseTranscriptLine(
+    notification(
+      'task-4',
+      WRAPPED(
+        '<status>completed</status><summary>Dynamic workflow "Map the gaps" completed</summary>\n<result>{"summaries":[]}</result>',
+      ),
+    ),
+  )
+  assert.equal(record?.kind, 'subagent')
+  assert.equal(record?.kind === 'subagent' && record.name, 'Map the gaps')
+  assert.equal(record?.kind === 'subagent' && record.text, undefined)
+})
+
+test('reads a monitor event as status, never as a Subagent', () => {
+  const record = parseTranscriptLine(
+    notification(
+      'task-5',
+      '<task-notification><task-id>t5</task-id><summary>Monitor event: "Watch CI to a verdict"</summary>\n<event>DONE: all checks settled</event></task-notification>',
+    ),
+  )
+  assert.deepEqual(record, {
+    kind: 'event',
+    uuid: 'task-5',
+    event: 'status',
+    text: 'Watch CI to a verdict: DONE: all checks settled',
+  })
+})
 
 test('keeps a background task status without inventing a summary', () => {
-  const line = JSON.stringify({
-    type: 'user',
-    uuid: 'task-2',
-    message: {
-      role: 'user',
-      content: '<task-notification><status>completed</status></task-notification>',
-    },
-  })
+  const line = notification(
+    'task-2',
+    '<task-notification><status>completed</status></task-notification>',
+  )
   assert.deepEqual(parseTranscriptLine(line), {
-    kind: 'delegation',
+    kind: 'event',
     uuid: 'task-2',
-    timestamp: null,
-    actor: 'shell',
-    action: null,
-    status: 'completed',
-    progress: null,
-    groupId: null,
-    callId: null,
+    event: 'status',
+    text: null,
   })
 })
 
-test('reads a realtime delegation into a safe Agent card model', () => {
+test('reads a voice request into a prompt-like command block with no lifecycle', () => {
   const line = JSON.stringify({
     type: 'user',
     uuid: 'delegation-1',
-    userType: 'external',
-    sourceToolAssistantUUID: 'tool-1',
-    message: {
-      role: 'user',
-      content:
-        '<realtime_delegation><id>review</id><input>Review the Feed card.</input><status>running</status><progress>Checking keyboard use</progress></realtime_delegation>',
-    },
-  })
-  assert.deepEqual(parseTranscriptLine(line), {
-    kind: 'delegation',
-    uuid: 'delegation-1',
-    timestamp: null,
-    actor: 'agent',
-    action: 'Review the Feed card.',
-    status: 'running',
-    progress: 'Checking keyboard use',
-    groupId: 'review',
-    callId: null,
-  })
-})
-
-test('drops an invalid delegation group id at the parser boundary', () => {
-  const line = JSON.stringify({
-    type: 'user',
-    uuid: 'delegation-invalid-group',
     userType: 'external',
     sourceToolAssistantUUID: 'tool-1',
     message: {
@@ -122,15 +101,9 @@ test('drops an invalid delegation group id at the parser boundary', () => {
         '<realtime_delegation><id>not a valid id</id><input>Review the Feed card.</input></realtime_delegation>',
     },
   })
-  assert.deepEqual(parseTranscriptLine(line), {
-    kind: 'delegation',
-    uuid: 'delegation-invalid-group',
-    timestamp: null,
-    actor: 'agent',
-    action: 'Review the Feed card.',
-    status: null,
-    progress: null,
-    groupId: null,
-    callId: null,
-  })
+  const record = parseTranscriptLine(line)
+  assert.equal(record?.kind, 'message')
+  assert.deepEqual(record?.kind === 'message' && record.blocks, [
+    { shape: 'event', event: 'command', text: 'Review the Feed card.' },
+  ])
 })

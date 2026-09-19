@@ -48,7 +48,7 @@ async function askRowFor(driver: ReturnType<typeof driverBackedByFixture>, sessi
     type: 'session.feed',
     requestId: 'feed-ask',
     sessionId,
-    delegationId: null,
+    subagentId: null,
     revision: null,
   })) as { type: string; rows?: Array<{ shape: string; id: string; unsupported: unknown }> }
   assert.equal(feedReply.type, 'session.feed.read')

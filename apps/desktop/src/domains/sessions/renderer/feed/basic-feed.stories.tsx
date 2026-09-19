@@ -117,32 +117,11 @@ const rowShapeFeed = {
     { shape: 'command-output', id: 'command-output-row', text: 'Command completed.' },
     { shape: 'event', id: 'event-row', event: 'status', text: 'Session is running.' },
     {
-      shape: 'delegation',
-      id: 'delegation-row',
-      actor: 'agent',
-      action: 'Review the Feed.',
-      status: 'running',
-      progress: 'Checking rows',
-      groupId: null,
-      callId: null,
-    },
-    {
-      shape: 'delegation-group',
-      id: 'delegation-group-row',
-      actor: 'agent',
-      groupId: 'delegation-group',
-      entries: [
-        {
-          shape: 'delegation',
-          id: 'delegation-group-entry',
-          actor: 'agent',
-          action: 'Run tests.',
-          status: 'completed',
-          progress: null,
-          groupId: 'delegation-group',
-          callId: 'call-tests',
-        },
-      ],
+      shape: 'subagent',
+      id: 'subagent-row',
+      subagentId: 'call-review',
+      event: 'started',
+      name: 'Review the Feed.',
     },
     { shape: 'marker', id: 'marker-row', marker: 'interrupted', summary: null },
     {
@@ -178,8 +157,7 @@ const ROW_SHAPE_ASSERTIONS = [
   ['assistant-prose-row', 'Every row shape has a renderer.'],
   ['command-output-row', 'Command completed.'],
   ['event-row', 'Status updated'],
-  ['delegation-row', 'Review the Feed.'],
-  ['delegation-group-row', 'Run tests.'],
+  ['subagent-row', 'Review the Feed.'],
   ['marker-row', 'Interrupted'],
   ['source-row', 'A source row.'],
   ['unreadable-row', 'Part of this transcript is damaged'],
@@ -355,67 +333,43 @@ export const TaskNotification: Story = {
 
 const delegationFeed = {
   ...feed,
-  chainId: 'delegations',
-  revision: 'delegations-one',
-  sessionId: 'delegations',
+  chainId: 'subagents',
+  revision: 'subagents-one',
+  sessionId: 'subagents',
   rows: [
     {
-      shape: 'delegation' as const,
-      id: 'agent-review',
-      actor: 'agent' as const,
-      action: 'Review the Feed card for keyboard access.',
-      status: 'completed',
-      progress: null,
-      groupId: 'review',
-      callId: null,
+      shape: 'subagent' as const,
+      id: 'agent-review:started',
+      subagentId: 'call-review',
+      event: 'started' as const,
+      name: 'Review the Feed card for keyboard access.',
     },
     {
-      shape: 'delegation-group' as const,
-      id: 'delegation:build',
-      actor: 'shell' as const,
-      groupId: 'build',
-      entries: [
-        {
-          shape: 'delegation' as const,
-          id: 'shell-build-start',
-          actor: 'shell' as const,
-          action: 'Build the app',
-          status: 'running',
-          progress: 'Started bun run build',
-          groupId: 'build',
-          callId: 'call-build',
-        },
-        {
-          shape: 'delegation' as const,
-          id: 'shell-build-end',
-          actor: 'shell' as const,
-          action: 'Build the app',
-          status: 'completed',
-          progress: null,
-          groupId: 'build',
-          callId: 'call-build',
-        },
-      ],
+      shape: 'subagent' as const,
+      id: 'agent-review:messaged',
+      subagentId: 'call-review',
+      event: 'messaged' as const,
+      name: 'Review the Feed card for keyboard access.',
+    },
+    {
+      shape: 'subagent' as const,
+      id: 'agent-review:responded',
+      subagentId: 'call-review',
+      event: 'responded' as const,
+      state: 'completed' as const,
+      name: 'Review the Feed card for keyboard access.',
+      text: 'Keyboard access holds.',
+      model: 'gpt-5.6-terra',
+      durationMs: 72000,
+      tokens: 4200,
     },
   ],
 } satisfies SessionFeed
 
-const BUILD_COMMAND = {
-  id: 'call-build',
-  command: 'bun run build',
-  label: null,
-  background: true,
-  state: 'completed' as const,
-  startedAt: '2026-09-02T08:00:00.000Z',
-  endedAt: '2026-09-02T08:01:12.000Z',
-  outputPath: null,
-  result: null,
-}
-
 const REVIEW_AGENT = {
   id: 'call-review',
   label: 'Review the Feed card for keyboard access.',
-  landed: true,
+  state: 'completed' as const,
   startedAt: '2026-09-02T08:00:00.000Z',
   endedAt: '2026-09-02T08:01:12.000Z',
 }
@@ -424,8 +378,7 @@ const REVIEW_AGENT = {
 function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
   const [opened, setOpened] = useState<string | null>(null)
   const links: BackgroundWorkLinks = {
-    find: ({ callId, name }) => {
-      if (callId === BUILD_COMMAND.id) return { kind: 'shell', command: BUILD_COMMAND }
+    find: ({ name }) => {
       if (name !== REVIEW_AGENT.label) return null
       return {
         kind: 'delegation',
@@ -446,13 +399,13 @@ function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
 
 // Each block titles its work and shows only the newest line, and opens its feed or terminal.
 export const DelegationCards: Story = {
-  args: { feed: delegationFeed, selectedSessionId: 'delegations' },
+  args: { feed: delegationFeed, selectedSessionId: 'subagents' },
   render: (args) => <LinkedFeed {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const agent = canvas.getByRole('region', { name: 'Background Agent' })
+    await expect(canvas.getAllByRole('region', { name: 'Background Agent' })).toHaveLength(3)
+    const agent = canvas.getAllByRole('region', { name: 'Background Agent' }).at(-1) as HTMLElement
     await expect(agent).toHaveTextContent('Done')
-    await expect(within(agent).getByText('Done')).not.toHaveClass('sr-only')
     await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
     await expect(agent).toHaveTextContent('gpt-5.6-terra · 1m 12s · 4.2k tokens')
@@ -464,14 +417,6 @@ export const DelegationCards: Story = {
     await expect(
       canvas.getByText('Opened Review the Feed card for keyboard access.'),
     ).toBeInTheDocument()
-    const shell = canvas.getByRole('region', { name: 'Background Task' })
-    await expect(shell).toHaveTextContent('Build the app')
-    await expect(shell).toHaveTextContent('Completed')
-    await expect(shell).toHaveTextContent('1m 12s')
-    await expect(shell).toHaveTextContent('bun run build')
-    await expect(shell).not.toHaveTextContent('Started bun run build')
-    await userEvent.click(within(shell).getByRole('button'))
-    await expect(canvas.getByText('Opened bun run build')).toBeInTheDocument()
   },
 }
 
@@ -925,45 +870,14 @@ const allVariationsFeed = {
       shape: 'prose' as const,
       id: 'variations-delegation-label',
       role: 'assistant' as const,
-      text: '**Delegation cards** (an agent still running, a shell activity group that completed)',
+      text: '**Delegation cards** (an agent that has started)',
     },
     {
-      shape: 'delegation' as const,
+      shape: 'subagent' as const,
       id: 'variations-agent',
-      actor: 'agent' as const,
-      action: 'Review the Feed card for keyboard access.',
-      status: 'running',
-      progress: 'Checking focus and motion',
-      groupId: 'variations-review',
-      callId: null,
-    },
-    {
-      shape: 'delegation-group' as const,
-      id: 'delegation:variations-build',
-      actor: 'shell' as const,
-      groupId: 'variations-build',
-      entries: [
-        {
-          shape: 'delegation' as const,
-          id: 'variations-shell-start',
-          actor: 'shell' as const,
-          action: 'Started bun run build',
-          status: 'running',
-          progress: null,
-          groupId: 'variations-build',
-          callId: null,
-        },
-        {
-          shape: 'delegation' as const,
-          id: 'variations-shell-end',
-          actor: 'shell' as const,
-          action: 'Build completed',
-          status: 'completed',
-          progress: null,
-          groupId: 'variations-build',
-          callId: null,
-        },
-      ],
+      subagentId: 'variations-review',
+      event: 'started' as const,
+      name: 'Review the Feed card for keyboard access.',
     },
     {
       shape: 'prose' as const,
@@ -988,7 +902,6 @@ export const AllRowVariations: Story = {
     await expect(canvas.getByRole('button', { name: 'Ran a command, edited a file' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
     await expect(canvas.getByRole('region', { name: 'Background Agent' })).toBeVisible()
-    await expect(canvas.getByRole('region', { name: 'Background Task' })).toBeVisible()
     const link = canvas.getByRole('link', {
       name: 'https://github.com/milad-alizadeh/argo/pull/2203',
     })

@@ -2,22 +2,22 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { DelegationUsageFacts } from '@/domains/sessions/contract/background-work-contract'
-import { sessionFeedQuery } from '@/domains/sessions/renderer/hooks/session-feed-query'
+import type { SubagentUsageFacts } from '@/domains/sessions/contract/background-work-contract'
 import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import {
   SESSION_REFRESH_MS,
-  sessionDelegationUsageQueryKey,
   sessionShellOutputQueryKey,
+  sessionSubagentUsageQueryKey,
 } from '@/domains/sessions/renderer/session-queries'
 import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
 import { useWatchedQueries } from '@/platform/renderer/core/hooks/use-watched-topic'
+import { sessionFeedQuery } from './session-feed-query'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
 export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
-  const queryKey = sessionDelegationUsageQueryKey(sessionId ?? '')
-  const usage = useQuery<Record<string, DelegationUsageFacts>>({
+  const queryKey = sessionSubagentUsageQueryKey(sessionId ?? '')
+  const usage = useQuery<Record<string, SubagentUsageFacts>>({
     queryKey,
     enabled: sessionId !== null,
     gcTime: 0,
@@ -25,8 +25,8 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return {}
-      const reply = await window.argo.readDelegationUsage({ sessionId })
-      if (reply.type !== 'session.delegation.usage.read') return {}
+      const reply = await window.argo.readSubagentUsage({ sessionId })
+      if (reply.type !== 'session.subagent.usage.read') return {}
       return Object.fromEntries(reply.usage.map(({ id, tokens, model }) => [id, { tokens, model }]))
     },
   })
@@ -58,13 +58,9 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 
 // One Subagent's own transcript, read as its own document so the Session's Feed is never displaced
 // by it. Null until a Subagent is picked.
-export function useDelegationFeed(sessionId: SessionId | null, delegationId: string | null) {
+export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
   const queryClient = useQueryClient()
-  const query = sessionFeedQuery(
-    queryClient,
-    delegationId === null ? null : sessionId,
-    delegationId,
-  )
+  const query = sessionFeedQuery(queryClient, subagentId === null ? null : sessionId, subagentId)
   const feed = useQuery<SessionFeed | null, SessionContractError>(query)
   // A Subagent's transcript sits under the same watched trees as its Session's own.
   useWatchedQueries('sessions', [query.queryKey])

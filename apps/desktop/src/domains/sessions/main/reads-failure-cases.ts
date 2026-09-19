@@ -88,15 +88,15 @@ export const DECLARATIONS: Declaration[] = [
     },
   },
   {
-    operation: 'delegationUsage',
+    operation: 'subagentUsage',
     fields: { sessionId: SESSION_ID },
     withoutSource: (reply) => assert.equal(reply.code, 'missing-session'),
     withoutCapability: (reply) => {
-      assert.equal(reply.type, 'session.delegation.usage.read')
+      assert.equal(reply.type, 'session.subagent.usage.read')
       assert.deepEqual(reply.usage, [])
     },
     throwing: {
-      readDelegationUsage: async () => {
+      readSubagentUsage: async () => {
         throw denied()
       },
     },

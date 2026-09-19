@@ -1,9 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { withoutModelInputCopies } from '@/agents/codex/sessions/model-input-copies'
-import { answeringEveryNestedCall } from '@/agents/codex/sessions/nested-results'
-import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
-import type { ThreadNames } from '@/agents/codex/sessions/thread-names'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
@@ -14,6 +10,11 @@ import {
 } from '@/domains/sessions/main/discover-transcript-sessions'
 import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
 import { isRecord } from '@/shared/validation'
+import { withoutModelInputCopies } from './model-input-copies'
+import { answeringEveryNestedCall } from './nested-results'
+import { parseCodexTranscriptLine } from './records'
+import { readingSubagentCalls } from './subagent-calls'
+import type { ThreadNames } from './thread-names'
 
 export type Discovery = TranscriptDiscovery
 
@@ -54,7 +55,9 @@ function droppingSubagentThreads(records: TranscriptRecord[]): TranscriptRecord[
 }
 
 export function normalizeCodexMessageRecords(records: TranscriptRecord[]): TranscriptRecord[] {
-  return answeringEveryNestedCall(withoutModelInputCopies(withoutDuplicateMessages(records)))
+  return readingSubagentCalls(
+    answeringEveryNestedCall(withoutModelInputCopies(withoutDuplicateMessages(records))),
+  )
 }
 
 export function normalizeCodexRecords(records: TranscriptRecord[]): TranscriptRecord[] {
@@ -86,7 +89,7 @@ export const {
 } = reader
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 
-function spawnTaskName(line: string, delegationId: string): string | null {
+function spawnTaskName(line: string, subagentId: string): string | null {
   let record: unknown
   try {
     record = JSON.parse(line)
@@ -97,7 +100,7 @@ function spawnTaskName(line: string, delegationId: string): string | null {
   const payload = record.payload
   if (
     payload.type !== 'function_call' ||
-    payload.call_id !== delegationId ||
+    payload.call_id !== subagentId ||
     payload.name !== 'spawn_agent' ||
     typeof payload.arguments !== 'string'
   )
@@ -110,13 +113,13 @@ function spawnTaskName(line: string, delegationId: string): string | null {
   }
 }
 
-async function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, delegationId: string) {
+async function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, subagentId: string) {
   for (const file of chain?.files ?? []) {
     const text = await readFile(file.path, 'utf8').catch(() => null)
     if (text === null) continue
     const name = text
       .split('\n')
-      .map((line) => spawnTaskName(line, delegationId))
+      .map((line) => spawnTaskName(line, subagentId))
       .find((candidate) => candidate !== null)
     if (name !== undefined) return name
   }
@@ -126,9 +129,9 @@ async function taskName(chain: Awaited<ReturnType<typeof readSessionFiles>>, del
 // Codex stores each spawned agent as a normal transcript, deliberately omitted from the Roster.
 // Its metadata gives the exact parent Session and task path, so opening one card can locate and
 // read that one transcript without teaching shared Session code about Codex's file format.
-export async function readDelegationFiles(root: string, sessionId: string, delegationId: string) {
+export async function readSubagentFiles(root: string, sessionId: string, subagentId: string) {
   const parent = await readSessionFiles(root, sessionId)
-  const name = await taskName(parent, delegationId)
+  const name = await taskName(parent, subagentId)
   if (name === null) return null
   const paths = await transcriptPaths(root)
   const matches = []
@@ -144,7 +147,7 @@ export async function readDelegationFiles(root: string, sessionId: string, deleg
     )
     if (trace !== undefined)
       matches.push({
-        id: delegationId,
+        id: subagentId,
         retiredIds: [],
         files: [transcriptFileFrom(file.path, { fileName: file.name, records })],
         originUnread: false,

@@ -43,20 +43,20 @@ export type SessionStatus = z.infer<typeof sessionStatusSchema>
 export const sessionTitleSchema = z.strictObject({ text: z.string(), source: titleSourceSchema })
 export type SessionTitle = z.infer<typeof sessionTitleSchema>
 
-// CONTEXT.md L3 · Subagent, as the parent Session's transcript shows it: the Tool Call that spawned
-// it, with the label that call gave it, absent rather than invented where the call carried none.
-// `landed` is whether the call's result came back. Whether an unlanded one is still running is a
-// question about the parent's own status too, which is why that fold is `delegation.ts`'s.
-// `startedAt` is when the call was written and `endedAt` when its result or its completion
-// notification landed, so the two together are how long the Subagent ran.
-export const sessionDelegationSchema = z.strictObject({
+// CONTEXT.md L3 · Subagent, as the parent Session's transcript shows it: the events its adapter
+// reported, folded by Subagent id into one entry. `state` is what the newest event says, and the
+// Feed's newest row for the same Subagent says the same. Whether a running one is still running is
+// a question about the parent's own status too, which is why that fold is `subagents.ts`'s.
+// `startedAt` and `endedAt` are when its first event and its last `responded` were written.
+export const SUBAGENT_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
+export const sessionSubagentSchema = z.strictObject({
   id: identifierSchema,
   label: z.string().nullable(),
-  landed: z.boolean(),
+  state: z.enum(SUBAGENT_STATES),
   startedAt: z.string().nullable(),
   endedAt: z.string().nullable(),
 })
-export type SessionDelegation = z.infer<typeof sessionDelegationSchema>
+export type SessionSubagent = z.infer<typeof sessionSubagentSchema>
 
 const countSchema = z.number().int().nonnegative()
 export const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const

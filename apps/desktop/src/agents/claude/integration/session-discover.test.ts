@@ -18,7 +18,7 @@ const feed = {
   type: 'session.feed',
   requestId: 'feed-1',
   sessionId: 'resumeParent',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

@@ -386,6 +386,6 @@
     "subagent": "Subagent {{index}}",
     "finished": "{{count}} finished",
     "unresolved_one": "One delegation, unresolved",
-    "unresolved_other": "{{count}} delegations, unresolved"
+    "unresolved_other": "{{count}} subagents, unresolved"
   }
 }

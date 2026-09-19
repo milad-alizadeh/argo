@@ -75,7 +75,7 @@ export function feedOf(live: () => LiveMessage[], root: string) {
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId: SESSION,
-      delegationId: null,
+      subagentId: null,
       revision,
     })) as { type: string; revision: string; rows?: Row[] }
     return reply

@@ -49,7 +49,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     })) as { type: string; rows?: unknown[] }
     assert.equal(feedReply.type, 'session.feed.read')

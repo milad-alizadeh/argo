@@ -13,8 +13,8 @@ import { observedRosterRow } from '@/domains/sessions/contract/roster-row-defini
 import {
   type BackgroundTask,
   readActivity,
-  readDelegations,
   readShellCommands,
+  readSubagents,
   readTurnStartedAt,
 } from '@/domains/sessions/contract/signals'
 import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
@@ -42,10 +42,7 @@ export function chainMessages(chain: SessionChain): TranscriptMessage[] {
 // The completion notifications the chain carries, whatever tool started the task they end.
 export function chainBackgroundTasks(chain: SessionChain): BackgroundTask[] {
   return chain.files.flatMap((file) =>
-    file.records.flatMap((record) => {
-      if (record.kind === 'background-task') return [record]
-      return record.kind === 'delegation' && record.ending !== undefined ? [record.ending] : []
-    }),
+    file.records.filter((record): record is BackgroundTask => record.kind === 'background-task'),
   )
 }
 
@@ -160,7 +157,7 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
     turnStartedAt: readTurnStartedAt(messages),
     activity: readActivity(messages),
     plan: readPlan(chain.files.flatMap((file) => file.records)),
-    delegations: readDelegations(records),
+    subagents: readSubagents(records),
     shell: readShellCommands(messages, notifications),
     pullRequest: readPullRequest(chain),
     usage: readRosterUsage(messages, records),

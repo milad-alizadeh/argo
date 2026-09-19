@@ -23,12 +23,12 @@ type Ownership = {
 // A Subagent's Feed is read through the same path as a Session's: the owner answers with the
 // Subagent's chain in place of its own, and nothing else about the read changes. A driver's live
 // overlay is the Session's turn and says nothing about a Subagent, so no overlay is applied.
-function delegationSource(owner: SessionSource, delegationId: string): SessionSource {
+function delegationSource(owner: SessionSource, subagentId: string): SessionSource {
   return {
     ...owner,
     overlayFor: undefined,
     readSessionFiles: async (sessionId) =>
-      (await owner.readDelegationFiles?.(sessionId, delegationId)) ?? null,
+      (await owner.readSubagentFiles?.(sessionId, subagentId)) ?? null,
   }
 }
 
@@ -66,19 +66,19 @@ export function createFeedReader(
   const reads = createFeedReads()
   return {
     async readSessionFeed(request: SessionFeedRequest) {
-      const { sessionId, delegationId } = request
+      const { sessionId, subagentId } = request
       const controller = reads.start(sessionId)
       try {
         const owner = await ownership.ownerFor(sessionId)
         if (owner === undefined) return sessionError('missing-session', request.requestId)
         let reply: SessionFeedReply
-        if (delegationId !== null) {
+        if (subagentId !== null) {
           const context = {
-            source: delegationSource(owner, delegationId),
+            source: delegationSource(owner, subagentId),
             feeds,
             projections,
             managed: false,
-            key: `${sessionId}#${delegationId}`,
+            key: `${sessionId}#${subagentId}`,
             signal: controller.signal,
           }
           reply = await readOwnedFeed(context, request)

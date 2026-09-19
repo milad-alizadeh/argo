@@ -75,7 +75,7 @@ export function feedRequest(
     type: 'session.feed',
     requestId,
     sessionId,
-    delegationId: null,
+    subagentId: null,
     revision,
   } as const
 }

@@ -6,8 +6,7 @@ import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type { SessionFeedRow } from '@/domains/sessions/contract/models'
 import type { ToolEvidence, ToolResult } from '@/domains/sessions/contract/tool-feed'
 import { groupedRowIndexes, groupToolRuns } from '@/domains/sessions/contract/tool-groups'
-import { groupDelegations } from '@/domains/sessions/main/delegation-groups'
-import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from '@/domains/sessions/main/feed'
+import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
 import {
   advancedCursors,
   type FileCursor,
@@ -16,7 +15,7 @@ import {
   updatedPending,
   updatedResults,
   updatedSkillBodies,
-} from '@/domains/sessions/main/feed-incremental-cursor'
+} from './feed-incremental-cursor'
 
 export type FeedProjectionState = {
   chainId: string
@@ -63,13 +62,7 @@ function mergedRows(records: PositionedRecord[], evidence: ToolEvidence) {
   const sourcesByRowId = new Map(
     grouped.map((row, index) => [row.id, groupedSources[index] ?? 0] as const),
   )
-  return groupDelegations(grouped).map((row) => ({
-    row,
-    source:
-      row.shape === 'delegation-group'
-        ? Math.min(...row.entries.map((entry) => sourcesByRowId.get(entry.id) ?? 0))
-        : (sourcesByRowId.get(row.id) ?? 0),
-  }))
+  return grouped.map((row) => ({ row, source: sourcesByRowId.get(row.id) ?? 0 }))
 }
 
 // Everything is safe to freeze except a Tool Call still missing a result, and a trailing run of

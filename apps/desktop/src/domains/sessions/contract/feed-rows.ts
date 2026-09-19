@@ -1,11 +1,13 @@
 import { z } from 'zod'
-import { feedImageUrlSchema } from '@/domains/sessions/contract/feed-images'
-import { questionSchema } from '@/domains/sessions/contract/question'
+import { identifierSchema } from '@/shared/validation'
+import { feedImageUrlSchema } from './feed-images'
+import { questionSchema } from './question'
 import {
+  BACKGROUND_STATES,
+  SUBAGENT_EVENTS,
   TRANSCRIPT_EVENT_KINDS,
   type TranscriptEventKind,
-} from '@/domains/sessions/contract/transcript'
-import { identifierSchema } from '@/shared/validation'
+} from './transcript'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)
@@ -63,39 +65,21 @@ export const liveActivitySchema = z.strictObject({
 })
 export type LiveActivity = z.infer<typeof liveActivitySchema>
 
-const delegationRowSchema = z.strictObject({
-  shape: z.literal('delegation'),
+const subagentRowSchema = z.strictObject({
+  shape: z.literal('subagent'),
   id: identifierSchema,
-  actor: z.enum(['agent', 'shell']),
-  action: z.string().nullable(),
-  status: z.string().nullable(),
-  progress: z.string().nullable(),
-  groupId: identifierSchema.nullable(),
-  callId: identifierSchema.nullable(),
+  subagentId: identifierSchema,
+  event: z.enum(SUBAGENT_EVENTS),
+  // How a `responded` row ended; absent on the other two events.
+  state: z.enum(BACKGROUND_STATES).optional(),
+  // Each fact is absent where the harness does not give it, never a placeholder.
+  name: z.string().optional(),
+  type: z.string().optional(),
+  model: z.string().optional(),
+  durationMs: z.number().int().nonnegative().optional(),
+  tokens: z.number().int().nonnegative().optional(),
+  text: z.string().optional(),
 })
-
-const delegationGroupEntrySchema = delegationRowSchema.extend({
-  groupId: identifierSchema,
-})
-
-const delegationGroupSchema = z
-  .strictObject({
-    shape: z.literal('delegation-group'),
-    id: identifierSchema,
-    actor: z.enum(['agent', 'shell']),
-    groupId: identifierSchema,
-    entries: z.array(delegationGroupEntrySchema).min(1),
-  })
-  .superRefine((group, context) => {
-    group.entries.forEach((entry, index) => {
-      if (entry.groupId !== group.groupId || entry.actor !== group.actor)
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'A delegation activity entry must match its enclosing group.',
-          path: ['entries', index, 'groupId'],
-        })
-    })
-  })
 
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   toolRowSchema,
@@ -129,8 +113,7 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     // diagnostics; absent for a harness event, which has none worth keeping.
     raw: z.string().nullable().optional(),
   }),
-  delegationRowSchema,
-  delegationGroupSchema,
+  subagentRowSchema,
   z.strictObject({
     shape: z.literal('marker'),
     id: identifierSchema,

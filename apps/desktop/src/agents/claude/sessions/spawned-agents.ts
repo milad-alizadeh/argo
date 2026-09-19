@@ -1,47 +1,25 @@
-// A Subagent the Session spawned, read the way Codex's `SubAgentActivity` is read: the spawning
-// call becomes the delegation's own record and draws no tool row, and its answer lands it. The
-// Feed and the Roster then draw one Thread card for either CLI (CONTEXT.md L3 · Subagent).
-import type {
-  ToolCall,
-  TranscriptMessage,
-  TranscriptRecord,
+// A Subagent the Session spawned, reported as lifecycle events the way Codex's `SubAgentActivity`
+// is: the spawning call becomes a `started` event and draws no tool row, `SendMessage` becomes a
+// `messaged` one, and a foreground result becomes `responded` in the place it arrived. A
+// background Subagent answers with a receipt, so its task notification does that later
+// (`task-notification.ts`), joined by the tool-use id (CONTEXT.md L3 · Subagent).
+import {
+  resultText,
+  type SubagentEvent,
+  type ToolCall,
+  type TranscriptMessage,
+  type TranscriptRecord,
 } from '@/domains/sessions/contract/transcript'
+import { responded, started } from './subagent-events'
+import { Agents, messaged, stopped } from './subagent-targets'
 
 // The CLI renamed `Task` to `Agent`; a transcript written before the rename still names the old one.
 const SPAWNING_TOOLS = new Set(['Task', 'Agent'])
+const MESSAGING_TOOLS = new Set(['SendMessage'])
+const STOP_TOOLS = new Set(['TaskStop', 'KillShell'])
 
-type Delegation = Extract<TranscriptRecord, { kind: 'delegation' }>
-
-function isSpawn(call: ToolCall): boolean {
-  return SPAWNING_TOOLS.has(call.name)
-}
-
-function description(call: ToolCall): string | null {
-  return typeof call.input.description === 'string' && call.input.description.trim().length > 0
-    ? call.input.description
-    : null
-}
-
-function spawned(call: ToolCall, message: TranscriptMessage): Delegation {
-  return {
-    kind: 'delegation',
-    uuid: `${call.id}:spawned`,
-    timestamp: message.timestamp,
-    actor: 'agent',
-    action: description(call),
-    status: 'running',
-    progress: null,
-    groupId: call.id,
-    callId: call.id,
-  }
-}
-
-function landed(call: ToolCall, message: TranscriptMessage): Delegation {
-  return { ...spawned(call, message), uuid: `${call.id}:landed`, status: 'completed' }
-}
-
-export function withoutCalls(message: TranscriptMessage, spawns: ToolCall[]): TranscriptMessage {
-  const ids = new Set(spawns.map((call) => call.id))
+export function withoutCalls(message: TranscriptMessage, calls: ToolCall[]): TranscriptMessage {
+  const ids = new Set(calls.map((call) => call.id))
   return {
     ...message,
     blocks: message.blocks.filter((block) => block.shape !== 'tool' || !ids.has(block.callId)),
@@ -49,27 +27,49 @@ export function withoutCalls(message: TranscriptMessage, spawns: ToolCall[]): Tr
   }
 }
 
-// An answer that is only a receipt (`Async agent launched`) lands nothing: the task notification
-// the CLI writes later does, through `readTaskDelivery`.
-function landings(message: TranscriptMessage, open: Map<string, ToolCall>): Delegation[] {
+// An answer that is only a receipt (`Async agent launched`) ends nothing: the task notification
+// the CLI writes later does.
+function responses(message: TranscriptMessage, agents: Agents): SubagentEvent[] {
   return message.answeredCalls.flatMap((callId) => {
-    const call = open.get(callId)
+    const call = agents.get(callId)
     if (call === undefined) return []
-    open.delete(callId)
-    const receipt = message.toolResults?.some(
-      (result) => result.callId === callId && result.background !== undefined,
-    )
-    return receipt === true ? [] : [landed(call, message)]
+    const result = message.toolResults?.find((candidate) => candidate.callId === callId)
+    if (result?.background !== undefined) {
+      agents.receipt(callId, result.background.taskId)
+      return []
+    }
+    agents.close(callId)
+    return [
+      responded(call, message.timestamp, {
+        state: result?.failed === true ? 'failed' : 'completed',
+        reply: result === undefined ? null : resultText(result.blocks),
+      }),
+    ]
   })
 }
 
 export function readingSpawnedAgents(records: TranscriptRecord[]): TranscriptRecord[] {
-  const open = new Map<string, ToolCall>()
+  const agents = new Agents()
   return records.flatMap((record): TranscriptRecord[] => {
     if (record.kind !== 'message') return [record]
-    const spawns = record.toolCalls.filter(isSpawn)
-    for (const call of spawns) open.set(call.id, call)
-    const message = spawns.length === 0 ? record : withoutCalls(record, spawns)
-    return [message, ...spawns.map((call) => spawned(call, record)), ...landings(record, open)]
+    const spawns = record.toolCalls.filter((call) => SPAWNING_TOOLS.has(call.name))
+    for (const call of spawns) agents.spawn(call)
+    const messages = record.toolCalls.filter((call) => MESSAGING_TOOLS.has(call.name))
+    const ended = responses(record, agents)
+    // A stop call that names no Subagent is a Shell's, which `background-stop.ts` reads.
+    const stops = record.toolCalls
+      .filter((call) => STOP_TOOLS.has(call.name))
+      .flatMap((call) => {
+        const events = stopped(call, record.timestamp, agents)
+        return events.length === 0 ? [] : [{ call, events }]
+      })
+    const hidden = [...spawns, ...messages, ...stops.map((stop) => stop.call)]
+    return [
+      hidden.length === 0 ? record : withoutCalls(record, hidden),
+      ...spawns.map((call) => started(call, record.timestamp)),
+      ...messages.flatMap((call) => messaged(call, record.timestamp, agents)),
+      ...ended,
+      ...stops.flatMap((stop) => stop.events),
+    ]
   })
 }

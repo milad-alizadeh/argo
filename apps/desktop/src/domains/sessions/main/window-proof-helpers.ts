@@ -37,7 +37,7 @@ export async function assertWindowGrowsToFarSession(reader: SessionReader, farId
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId: farId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     }),
   )

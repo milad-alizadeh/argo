@@ -122,7 +122,7 @@ describe.each(indexedAdapters)('reconcile of $cli history through the Session in
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId: sessionIdAt(0),
-      delegationId: null,
+      subagentId: null,
       revision: null,
     })
     // The read's own `start` runs synchronously before its first await, so the flag is already up

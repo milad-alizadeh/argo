@@ -144,7 +144,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     turnStartedAt: null,
     activity: null,
     plan: null,
-    delegations: [],
+    subagents: [],
     shell: [],
     pullRequest: null,
     archived: false,

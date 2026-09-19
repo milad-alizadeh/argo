@@ -9,7 +9,7 @@ const feed = {
   version: 1,
   type: 'session.feed',
   requestId: 'feed-1',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

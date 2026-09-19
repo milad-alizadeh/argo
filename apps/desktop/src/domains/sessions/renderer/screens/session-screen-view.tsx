@@ -26,15 +26,13 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   const { pick, selectedSessionId, session, work } = model
   return (
     <SessionWorkButtons
-      delegations={session?.delegations ?? []}
-      delegationUsage={model.delegationUsage}
-      onSelectDelegation={(delegationId) =>
-        pick({ sessionId: selectedSessionId, delegationId, shellId: null })
+      subagents={session?.subagents ?? []}
+      subagentUsage={model.subagentUsage}
+      onSelectDelegation={(subagentId) =>
+        pick({ sessionId: selectedSessionId, subagentId, shellId: null })
       }
-      onSelectShell={(shellId) =>
-        pick({ sessionId: selectedSessionId, delegationId: null, shellId })
-      }
-      selectedDelegationId={work.delegationId}
+      onSelectShell={(shellId) => pick({ sessionId: selectedSessionId, subagentId: null, shellId })}
+      selectedDelegationId={work.subagentId}
       selectedShellId={work.shellId}
       shell={session?.shell ?? []}
     />
@@ -70,7 +68,7 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
         work={{
           kind: 'delegation',
           delegation: model.delegation,
-          usage: model.delegationUsage[model.delegation.id] ?? { tokens: null, model: null },
+          usage: model.subagentUsage[model.delegation.id] ?? { tokens: null, model: null },
         }}
       />
     )

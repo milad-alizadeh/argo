@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
-import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
-import { SessionDelegationInspector } from '@/domains/sessions/renderer/components/inspector/session-delegation-inspector'
-import { SessionEvidenceInspector } from '@/domains/sessions/renderer/components/inspector/session-evidence-inspector'
-import { SessionShellInspector } from '@/domains/sessions/renderer/components/inspector/session-shell-inspector'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
 import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
+import { SessionDelegationInspector } from './session-delegation-inspector'
+import { SessionEvidenceInspector } from './session-evidence-inspector'
+import { SessionShellInspector } from './session-shell-inspector'
 
 // What the reader picked out of the header's work buttons, held against the Session it was picked
 // in: a selection made in one Session says nothing about the next, and keying it this way retires
 // it without an effect that fires a frame late (#1582).
 export type WorkSelection = {
   sessionId: string | null
-  delegationId: string | null
+  subagentId: string | null
   shellId: string | null
 }
 
@@ -29,7 +29,7 @@ export function SessionInspector({
   shellOutput,
 }: {
   activeEvidenceId: string | null
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   delegationFeed: SessionFeed | null
   evidence: SessionEvidence | null
   sessionId: string | null

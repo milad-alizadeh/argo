@@ -3,15 +3,15 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
-import { transcriptPaths } from '@/agents/codex/sessions/discover'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
-import { hasOpenDelegation } from '@/domains/sessions/main/delegation'
 import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
+import { hasOpenSubagent } from '@/domains/sessions/main/subagents'
 import {
   createTranscriptRecordReader,
   ROSTER_FILE_LIMIT,
 } from '@/domains/sessions/main/transcript-lines'
+import { transcriptPaths } from './discover'
 
 // The Turn marks codex-cli 0.147.0 writes as `event_msg` payloads.
 const TURN_MARK_TYPES = ['task_started', 'task_complete', 'turn_aborted'] as const
@@ -71,7 +71,7 @@ export function joinOpenTurns(
   open: ReadonlySet<string>,
 ): SessionRosterRow[] {
   return rows.map((row) =>
-    isLiveElsewhere(row, open) || (row.posture === 'external' && hasOpenDelegation(row.delegations))
+    isLiveElsewhere(row, open) || (row.posture === 'external' && hasOpenSubagent(row.subagents))
       ? { ...row, status: 'running', locked: true }
       : row,
   )

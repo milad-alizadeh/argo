@@ -1,25 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
-import {
-  sessionDelegation,
-  sessionShellCommand,
-} from '@/domains/sessions/renderer/session-fixtures'
+
+import { sessionShellCommand, sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
+import { SessionWorkButtons } from './session-work-buttons'
 
 // A fixed clock, so every duration these stories draw is the same on every run.
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')
 
 const DELEGATIONS = [
-  sessionDelegation({
+  sessionSubagent({
     id: 'call-review',
     label: 'Interface review',
     startedAt: '2026-09-02T08:00:00.000Z',
   }),
-  sessionDelegation({
+  sessionSubagent({
     id: 'call-sweep',
     label: 'Find every caller',
-    landed: true,
+    state: 'completed',
     startedAt: '2026-09-02T08:00:10.000Z',
     endedAt: '2026-09-02T08:01:22.000Z',
   }),
@@ -55,13 +53,13 @@ function expectDotAlignedWithTitle(item: HTMLElement) {
 
 // The header's own selection, so a play function can operate the story the way a reader does.
 function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>) {
-  const [delegationId, setDelegationId] = useState<string | null>(null)
+  const [subagentId, setDelegationId] = useState<string | null>(null)
   const [shellId, setShellId] = useState<string | null>(null)
   return (
     <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border/60 px-3">
       <SessionWorkButtons
-        delegations={DELEGATIONS}
-        delegationUsage={{
+        subagents={DELEGATIONS}
+        subagentUsage={{
           'call-review': { tokens: 18_400, model: 'claude-opus-5' },
           'call-sweep': { tokens: 2700, model: 'gpt-5.6-terra' },
         }}
@@ -74,13 +72,13 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
           setShellId(id)
           setDelegationId(null)
         }}
-        selectedDelegationId={delegationId}
+        selectedDelegationId={subagentId}
         selectedShellId={shellId}
         shell={SHELL}
         {...props}
       />
       <output className="type-meta text-muted-foreground">
-        {`Picked: ${delegationId ?? shellId ?? 'nothing'}`}
+        {`Picked: ${subagentId ?? shellId ?? 'nothing'}`}
       </output>
     </div>
   )
@@ -107,7 +105,7 @@ export const SubagentsAndShell: Story = {
 export const ReadableAgentName: Story = {
   render: () => (
     <Header
-      delegations={[sessionDelegation({ id: 'call-standards', label: 'standards_review' })]}
+      subagents={[sessionSubagent({ id: 'call-standards', label: 'standards_review' })]}
       shell={[]}
     />
   ),
@@ -174,7 +172,7 @@ export const PicksASubagent: Story = {
 export const EverythingFinished: Story = {
   render: () => (
     <Header
-      delegations={DELEGATIONS.filter((delegation) => delegation.landed)}
+      subagents={DELEGATIONS.filter((delegation) => delegation.state === 'completed')}
       shell={SHELL.filter((command) => command.state !== 'running')}
     />
   ),
@@ -191,7 +189,7 @@ export const EverythingFinished: Story = {
 
 // One kind alone draws one button: a background Shell needs no Subagent beside it (#1582 AC1).
 export const ShellOnly: Story = {
-  render: () => <Header delegations={[]} />,
+  render: () => <Header subagents={[]} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Shell · 2' })).toBeVisible()

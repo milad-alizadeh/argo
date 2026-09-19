@@ -1,5 +1,6 @@
 import type { BackgroundTaskRecord } from '@/domains/sessions/contract/background-task-record'
 import type { SessionEntry } from '@/domains/sessions/contract/models'
+import type { SubagentCall, SubagentEvent } from '@/domains/sessions/contract/subagent-event'
 import type { ToolCall } from '@/domains/sessions/contract/tool-call'
 import type {
   ContentBlock,
@@ -14,6 +15,12 @@ export type {
   BackgroundTaskRecord,
 } from '@/domains/sessions/contract/background-task-record'
 export { BACKGROUND_STATES } from '@/domains/sessions/contract/background-task-record'
+export {
+  SUBAGENT_EVENTS,
+  type SubagentEvent,
+  type SubagentEventName,
+  type SubagentFacts,
+} from '@/domains/sessions/contract/subagent-event'
 export type {
   EditedFile,
   EditFacts,
@@ -37,7 +44,6 @@ export {
   resultText,
   TRANSCRIPT_EVENT_KINDS,
 } from '@/domains/sessions/contract/transcript-content'
-
 export type { PlanChange } from '@/domains/sessions/contract/transcript-plan'
 export type { TranscriptUsage } from '@/domains/sessions/contract/transcript-usage'
 
@@ -68,20 +74,7 @@ export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'event'; uuid: string; event: TranscriptEventKind; text: string | null }
-  | {
-      kind: 'delegation'
-      uuid: string
-      timestamp?: string | null
-      actor: 'agent' | 'shell'
-      action: string | null
-      status: string | null
-      progress: string | null
-      groupId: string | null
-      // The Shell call a background task's notification names, so its block can open that command.
-      callId: string | null
-      // A notice delivered while the Session was idle is a user record, so it carries the ending.
-      ending?: BackgroundTaskRecord
-    }
+  | SubagentEvent
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // The Skill tool's result is a placeholder ("Launching skill: X"); the CLI delivers the skill's
@@ -94,8 +87,11 @@ export type TranscriptRecord =
       uuid: string
       boundary?: boolean
       subagent?: boolean
+      // A collaboration call the Subagent events read a fact from: the model a spawn chose, or the
+      // target a stop names (`codex/sessions/subagent-calls.ts`).
+      subagentCall?: SubagentCall
       // Codex records a spawned thread's parent and path in its session metadata. The adapter
-      // uses them to open that thread from the parent Session's delegation card.
+      // uses them to open that thread from the parent Session's Subagent row.
       parentSessionId?: string | null
       agentPath?: string | null
       agentNickname?: string | null

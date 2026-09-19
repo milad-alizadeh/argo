@@ -42,7 +42,7 @@ function reading(revision: string | null) {
     type: 'session.feed' as const,
     requestId: 'feed-1',
     sessionId: SESSION,
-    delegationId: null,
+    subagentId: null,
     revision,
   }
 }

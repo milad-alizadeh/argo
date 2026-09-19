@@ -125,7 +125,7 @@ test('excludes a subagent thread from the roster even though it holds assistant 
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     }),
   )

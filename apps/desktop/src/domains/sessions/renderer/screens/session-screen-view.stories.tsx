@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
-import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
 import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
 import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
 import { Roster, type RosterActions } from '@/domains/sessions/renderer/components/roster/roster'
@@ -9,15 +9,15 @@ import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/
 import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
-import { SessionShell } from '@/domains/sessions/renderer/screens/session-shell'
 import {
-  sessionDelegation,
   sessionRosterRow,
   sessionShellCommand,
+  sessionSubagent,
 } from '@/domains/sessions/renderer/session-fixtures'
 import type { Session, SessionFeed, SessionsListed } from '@/domains/sessions/renderer/types'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { SessionScreenView } from './session-screen-view'
+import { SessionShell } from './session-shell'
 
 const SESSION_ROSTER = [
   sessionRosterRow({
@@ -44,8 +44,8 @@ const SESSION_ROSTER = [
         { content: 'Record the visual review', position: 2, status: 'pending' },
       ],
     },
-    delegations: [
-      sessionDelegation({
+    subagents: [
+      sessionSubagent({
         id: 'interface-review',
         label: 'Interface review',
         startedAt: '2026-09-13T15:44:00Z',
@@ -135,7 +135,7 @@ function feedFor(sessionId: string) {
   } satisfies SessionFeed
 }
 
-function delegationFeedFor(delegation: SessionDelegation) {
+function delegationFeedFor(delegation: SessionSubagent) {
   const sessionId = `composer-review#${delegation.id}`
   return {
     version: 1,
@@ -217,7 +217,7 @@ function ReviewInspector({
   delegation,
   shell,
 }: {
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   shell: SessionShellCommand | null
 }) {
   return (
@@ -240,7 +240,7 @@ function ReviewInspectorBar({
   delegation,
   shell,
 }: {
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   shell: SessionShellCommand | null
 }) {
   if (shell !== null) return <SessionWorkInspectorHeader work={{ kind: 'shell', command: shell }} />
@@ -270,7 +270,7 @@ function ReviewScreen({
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
-  const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
+  const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
@@ -293,7 +293,7 @@ function ReviewScreen({
         onRetryFeed={() => {}}
         headerControls={
           <SessionWorkButtons
-            delegations={session.delegations}
+            subagents={session.subagents}
             onSelectDelegation={pick}
             onSelectShell={pick}
             selectedDelegationId={delegation?.id ?? null}

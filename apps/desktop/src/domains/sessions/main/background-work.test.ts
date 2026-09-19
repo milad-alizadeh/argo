@@ -1,16 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type {
-  SessionDelegation,
-  SessionRosterRow,
-  SessionShellCommand,
-} from '@/domains/sessions/contract/models'
-import { hasRunningBackgroundWork } from '@/domains/sessions/main/background-work'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import { rosterRow } from '@/domains/sessions/contract/roster-row-test-fixture'
+import { hasRunningBackgroundWork } from './background-work'
 
-const agent: SessionDelegation = {
+const agent: SessionSubagent = {
   id: 'agent',
   label: null,
-  landed: false,
+  state: 'running',
   startedAt: null,
   endedAt: null,
 }
@@ -29,36 +26,14 @@ function shell(state: SessionShellCommand['state']): SessionShellCommand {
   }
 }
 
-const session: SessionRosterRow = {
-  id: 'session',
-  retiredIds: [],
-  cli: 'claude',
-  posture: 'managed',
-  title: null,
-  status: 'running',
-  entry: 'interactive',
-  cwd: null,
-  branch: null,
-  updatedAt: null,
-  unreadableLines: 0,
-  originUnread: false,
-  turnStartedAt: null,
-  activity: null,
-  plan: null,
-  delegations: [],
-  shell: [],
-  pullRequest: null,
-  ticket: null,
-  archived: false,
-  setup: { model: null, effort: null, mode: null },
-}
+const session = rosterRow({ status: 'running' })
 
 test('finds running background work only on a managed Session', () => {
   assert.equal(hasRunningBackgroundWork(session), false)
   assert.equal(
     hasRunningBackgroundWork({
       ...session,
-      delegations: [agent],
+      subagents: [agent],
     }),
     true,
   )
@@ -73,7 +48,7 @@ test('finds running background work only on a managed Session', () => {
     hasRunningBackgroundWork({
       ...session,
       status: 'idle',
-      delegations: [agent],
+      subagents: [agent],
     }),
     false,
   )

@@ -4,8 +4,6 @@ import {
   sessionChooseAttachmentsReplySchema,
   sessionChooseAttachmentsRequestSchema,
   sessionCompactRequestSchema,
-  sessionDelegationUsageReplySchema,
-  sessionDelegationUsageRequestSchema,
   sessionHandoffRequestSchema,
   sessionInterruptRequestSchema,
   sessionListReplySchema,
@@ -23,6 +21,8 @@ import {
   sessionStartRequestSchema,
   sessionStatAttachmentsReplySchema,
   sessionStatAttachmentsRequestSchema,
+  sessionSubagentUsageReplySchema,
+  sessionSubagentUsageRequestSchema,
   sessionTicketConnectRequestSchema,
   sessionTicketDisconnectRequestSchema,
 } from '@/domains/sessions/contract/contract'
@@ -45,11 +45,11 @@ export const SESSION_OPERATIONS = {
     request: sessionShellOutputRequestSchema,
     reply: sessionShellOutputReplySchema,
   },
-  delegationUsage: {
-    name: 'session.delegation.usage',
-    channel: 'argo:session:delegation:usage',
-    request: sessionDelegationUsageRequestSchema,
-    reply: sessionDelegationUsageReplySchema,
+  subagentUsage: {
+    name: 'session.subagent.usage',
+    channel: 'argo:session:subagent:usage',
+    request: sessionSubagentUsageRequestSchema,
+    reply: sessionSubagentUsageReplySchema,
   },
   rename: {
     name: 'session.rename',

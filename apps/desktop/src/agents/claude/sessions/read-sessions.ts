@@ -4,6 +4,11 @@
 
 import { compactionEndedAt, markCompactingRows } from '@/agents/claude/compaction/compaction-roster'
 import type { LiveMessage } from '@/agents/claude/drive/live-messages'
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import { discoverRoster } from '@/domains/sessions/main/discover-roster'
+import type { SessionSource } from '@/domains/sessions/main/reader'
+import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 import {
   backfillTick,
   clearFullRecords,
@@ -13,21 +18,16 @@ import {
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from '@/agents/claude/sessions/discover'
-import { draftOverlay } from '@/agents/claude/sessions/live-feed'
+} from './discover'
+import { draftOverlay } from './live-feed'
 import {
   joinLiveProcesses,
   lockLiveProcesses,
   type ProcessState,
   readLiveProcesses,
-} from '@/agents/claude/sessions/live-processes'
-import { readShellOutput } from '@/agents/claude/sessions/shell-output'
-import { readDelegationChain, readDelegationTokens } from '@/agents/claude/sessions/subagents'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import type { SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+} from './live-processes'
+import { readShellOutput } from './shell-output'
+import { readSubagentChain, readSubagentTokens } from './subagents'
 
 async function completeCompactions(
   transcripts: string,
@@ -129,10 +129,10 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
-    readDelegationFiles: async (sessionId, delegationId) =>
-      readDelegationChain(await readSessionFiles(roots.transcripts, sessionId), delegationId),
-    readDelegationUsage: async (sessionId) =>
-      readDelegationTokens(await readSessionFiles(roots.transcripts, sessionId)),
+    readSubagentFiles: async (sessionId, subagentId) =>
+      readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
+    readSubagentUsage: async (sessionId) =>
+      readSubagentTokens(await readSessionFiles(roots.transcripts, sessionId)),
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,

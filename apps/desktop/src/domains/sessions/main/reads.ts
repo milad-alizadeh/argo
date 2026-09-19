@@ -5,15 +5,15 @@
 import { readFile } from 'node:fs/promises'
 import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type {
-  SessionDelegationUsageRequest,
   SessionFileRequest,
   SessionShellOutputRequest,
   SessionSkillRequest,
+  SessionSubagentUsageRequest,
 } from '@/domains/sessions/contract/contract'
-import { fromNothing, fromOwner, MISSING_SESSION } from '@/domains/sessions/main/read-declaration'
-import { skillFileContent } from '@/domains/sessions/main/read-skill-file'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
-import { fileInWorkspace } from '@/domains/sessions/main/workspace-file'
+import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
+import { skillFileContent } from './read-skill-file'
+import type { SessionSource } from './session-source'
+import { fileInWorkspace } from './workspace-file'
 
 // The workspace one Session ran in, as its last record named it.
 function workspaceOf(chain: SessionChain) {
@@ -56,9 +56,9 @@ export const shellOutputRead = fromOwner(
 )
 
 export const delegationUsageRead = fromOwner(
-  'session.delegation.usage.read',
-  async (owner: SessionSource, request: SessionDelegationUsageRequest) => ({
+  'session.subagent.usage.read',
+  async (owner: SessionSource, request: SessionSubagentUsageRequest) => ({
     sessionId: request.sessionId,
-    usage: (await owner.readDelegationUsage?.(request.sessionId)) ?? [],
+    usage: (await owner.readSubagentUsage?.(request.sessionId)) ?? [],
   }),
 )
