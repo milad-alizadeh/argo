@@ -28,6 +28,16 @@ export const sessionSearchQueryKey = (
   query: string,
 ) => ['sessions', 'search', projectRoot, status, query] as const
 
+const pendingRosterInvalidations = new WeakMap<QueryClient, Promise<void>>()
+
 export function invalidateSessionRoster(queryClient: QueryClient) {
-  return queryClient.invalidateQueries({ queryKey: sessionRosterQueryKey })
+  const pending = pendingRosterInvalidations.get(queryClient)
+  if (pending !== undefined) return pending
+
+  const invalidation = Promise.resolve().then(() => {
+    pendingRosterInvalidations.delete(queryClient)
+    return queryClient.invalidateQueries({ queryKey: sessionRosterQueryKey })
+  })
+  pendingRosterInvalidations.set(queryClient, invalidation)
+  return invalidation
 }

@@ -5,6 +5,7 @@ import {
   ALLOWED_TARGETS,
   COMPOSITION_ROOTS,
   FACET_POLICIES,
+  SOURCE_ROOTS,
   TARGET_FACETS,
 } from './domain-facet-policy.mjs'
 
@@ -58,18 +59,9 @@ function isWithin(filePath, directory) {
   return filePath === directory || filePath.startsWith(`${directory}/`)
 }
 
-function isLegacyContract(targetPath) {
-  const filename = path.posix.basename(withoutExtension(targetPath))
-  return (
-    filename === 'contract' ||
-    filename.endsWith('-contract') ||
-    filename === 'messages' ||
-    filename === 'operations'
-  )
-}
-
-function isLegacyCoreImplementation(targetPath) {
-  return isWithin(targetPath, 'apps/desktop/src/core') && !isLegacyContract(targetPath)
+function isLegacyRoot(targetPath) {
+  const root = targetPath.match(/^apps\/desktop\/src\/([^/.]+)/)?.[1]
+  return root !== undefined && !SOURCE_ROOTS.has(root)
 }
 
 function privilegedImport(facet, specifier, targetPath) {
@@ -78,10 +70,7 @@ function privilegedImport(facet, specifier, targetPath) {
   if (policy.refusesElectron && isElectronImport(specifier)) return true
   if (policy.refusesReact && (specifier === 'react' || specifier.startsWith('react/'))) return true
   if (targetPath === null) return false
-  return (
-    (policy.refusesLegacyCoreImplementation && isLegacyCoreImplementation(targetPath)) ||
-    policy.privilegedRoots.some((directory) => isWithin(targetPath, directory))
-  )
+  return policy.privilegedRoots.some((directory) => isWithin(targetPath, directory))
 }
 
 function importViolation(sourcePath, sourceFacet, specifier) {
@@ -94,6 +83,7 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   if (COMPOSITION_ROOTS.has(withoutExtension(targetPath))) {
     return { kind: 'composition-root', ...shared }
   }
+  if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
   if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null
   return { kind: 'runtime-facet', ...shared, targetFacet: target.facet }

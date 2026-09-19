@@ -6,6 +6,7 @@ import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { developmentSetupDocumentEnvironment } from '../src/domains/projects/main/setup/setup-document-source.mjs'
 import { startControlServer } from './dev-control-server.mjs'
 import { stopElectronProcess, stopForgeProcess } from './dev-launch-stop.mjs'
 import { currentBranch, developmentBuildLabel } from './development-label.mjs'
@@ -112,7 +113,8 @@ function runLinker() {
 
 async function main() {
   const worktree = await realpath(REPOSITORY_ROOT)
-  const instance = developmentInstance(worktree, process.env[PORT_ENV], currentBranch(worktree))
+  const branch = currentBranch(worktree)
+  const instance = developmentInstance(worktree, process.env[PORT_ENV], branch)
   await assertPortAvailable(instance.port, instance.id)
   await rm(instance.readyFile, { force: true })
   await rm(instance.controlFile, { force: true })
@@ -140,6 +142,7 @@ async function main() {
       ARGO_DESKTOP_CONTROL_TOKEN: controlToken,
       ARGO_DESKTOP_WINDOW_TITLE: instance.title,
       ARGO_DESKTOP_WORKTREE: instance.worktree,
+      ...developmentSetupDocumentEnvironment(branch),
     },
     stdio: 'inherit',
   })

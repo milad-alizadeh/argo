@@ -1,3 +1,14 @@
+import path from 'node:path'
+import { z } from 'zod'
+import { identifierSchema } from '@/shared/validation'
+import {
+  migrateSetupCheckpoints,
+  readSetupCheckpoint,
+  type SetupCheckpoint,
+} from './setup-checkpoint-store'
+
+export type { SetupCheckpoint } from './setup-checkpoint-store'
+
 export type ProjectRegistration = {
   id: string
   path: string
@@ -7,16 +18,6 @@ export type ProjectRegistration = {
 export type ProjectRegistry = {
   projects: ProjectRegistration[]
   selectedId: string | null
-}
-
-export const setupPhaseSchema = z.enum(['editing', 'validating', 'ready', 'failed', 'cancelled'])
-export type SetupPhase = z.infer<typeof setupPhaseSchema>
-
-export type SetupCheckpoint = {
-  projectId: string
-  worktreePath: string
-  phase: SetupPhase
-  configurationSource: string
 }
 
 type Statement = {
@@ -56,7 +57,8 @@ CREATE TABLE IF NOT EXISTS project_setup_checkpoint (
   project_id TEXT PRIMARY KEY REFERENCES project(id),
   worktree_path TEXT NOT NULL,
   phase TEXT NOT NULL CHECK (phase IN ('editing', 'validating', 'ready', 'failed', 'cancelled')),
-  configuration_source TEXT NOT NULL
+  configuration_source TEXT NOT NULL,
+  document_revision TEXT NOT NULL
 ) STRICT;
 `
 
@@ -66,13 +68,6 @@ const projectRowSchema = z.strictObject({
   common_directory: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
 })
 const selectedRowSchema = z.strictObject({ project_id: identifierSchema.nullable() })
-const checkpointRowSchema = z.strictObject({
-  project_id: identifierSchema,
-  worktree_path: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
-  phase: setupPhaseSchema,
-  configuration_source: z.string(),
-})
-
 export function isProjectStoreInvalid(error: unknown): boolean {
   return error instanceof z.ZodError
 }
@@ -96,31 +91,9 @@ function selectedId(database: ProjectDatabase): string | null {
   return selectedRowSchema.parse(result).project_id
 }
 
-function checkpoint(database: ProjectDatabase, projectId: string): SetupCheckpoint | null {
-  const row = database
-    .prepare(
-      'SELECT project_id, worktree_path, phase, configuration_source FROM project_setup_checkpoint WHERE project_id = ?',
-    )
-    .get(projectId)
-  if (row === undefined || row === null) return null
-  const parsed = checkpointRowSchema.parse(row)
-  return {
-    projectId: parsed.project_id,
-    worktreePath: parsed.worktree_path,
-    phase: parsed.phase,
-    configurationSource: parsed.configuration_source,
-  }
-}
-
 export function createProjectStore(database: ProjectDatabase): ProjectStore {
   database.exec(PROJECT_SCHEMA)
-  try {
-    database.exec(
-      "ALTER TABLE project_setup_checkpoint ADD COLUMN configuration_source TEXT NOT NULL DEFAULT ''",
-    )
-  } catch {
-    // A new database creates the column above; an existing one has it after this migration.
-  }
+  migrateSetupCheckpoints(database)
   const insert = database.prepare(
     'INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)',
   )
@@ -128,7 +101,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
     'INSERT INTO project_selection (singleton, project_id) VALUES (1, ?) ON CONFLICT(singleton) DO UPDATE SET project_id = excluded.project_id',
   )
   const writeCheckpoint = database.prepare(
-    'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source) VALUES (?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source',
+    'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision',
   )
   const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
 
@@ -170,16 +143,18 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
       updatePath.run(projectPath, projectId)
     },
 
-    readSetupCheckpoint: (projectId) => checkpoint(database, projectId),
+    readSetupCheckpoint: (projectId) => readSetupCheckpoint(database, projectId),
 
-    writeSetupCheckpoint: ({ projectId, worktreePath, phase, configurationSource }) => {
-      writeCheckpoint.run(projectId, worktreePath, phase, configurationSource)
+    writeSetupCheckpoint: ({
+      projectId,
+      worktreePath,
+      phase,
+      configurationSource,
+      documentRevision,
+    }) => {
+      writeCheckpoint.run(projectId, worktreePath, phase, configurationSource, documentRevision)
     },
 
     close: () => database.close(),
   }
 }
-
-import path from 'node:path'
-import { z } from 'zod'
-import { identifierSchema } from '@/shared/validation'

@@ -11,6 +11,7 @@ import { withEditFacts } from './edit-facts'
 import { withLookupFacts } from './lookup-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
+import { withOtherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
 import { readSubagentCall } from './subagent-calls'
 
@@ -146,6 +147,7 @@ export function readToolRecord(
       .map(withCommandFacts)
       .map(withLookupFacts)
       .map(withEditFacts)
+      .map(withOtherFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

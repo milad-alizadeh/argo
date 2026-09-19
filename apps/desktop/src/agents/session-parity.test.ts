@@ -99,6 +99,21 @@ test('a file read, a web search and a web fetch read the same for Claude and for
   assert.equal(claude.roster.status, codex.roster.status)
 })
 
+// What each harness lacks here, by name: neither records a server or tool fact outside the call's
+// name, and only Claude has a Skill tool, so a skill row is a Claude case alone (see the Claude
+// integration test). A poll or wait call draws no row in either.
+test('an MCP call reads the same for Claude and for Codex, and a poll draws no row', async (context) => {
+  const claude = await read('claude', context, 'parityOrchestration')
+  const codex = await read('codex', context, 'parityOrchestration')
+
+  const expected = [
+    { kind: 'tool', status: 'succeeded', label: 'github · list_issues', text: null },
+  ]
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
+  assert.equal(claude.roster.status, codex.roster.status)
+})
+
 // What each harness lacks for an edit, by name: Claude has no tool that deletes a file, so a
 // deletion is a Codex row only (see `codexDelete`), and Codex writes no per-file result, so a
 // multi-file patch shares one status across its rows.

@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 import { createProjectStore } from './sqlite-store'
 
 function openStore(databasePath: string) {
@@ -56,6 +57,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
     configurationSource: '{"version":1}\n',
+    documentRevision: SETUP_DOCUMENT_REVISION,
   })
   first.close()
 
@@ -65,6 +67,7 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
     configurationSource: '{"version":1}\n',
+    documentRevision: SETUP_DOCUMENT_REVISION,
   })
   reopened.close()
 })
@@ -80,6 +83,7 @@ test('updates a Project path without discarding its setup checkpoint', async (co
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'ready',
     configurationSource: '{"version":1}\n',
+    documentRevision: SETUP_DOCUMENT_REVISION,
   })
 
   store.updateProjectPath('project-1', '/tmp/project/.argo/worktrees/setup-project-1')
@@ -122,7 +126,9 @@ test('adds configuration source to a checkpoint database from before manual setu
     worktreePath: '/tmp/project/.argo/worktrees/setup-project-1',
     phase: 'editing',
     configurationSource: '{"version":1}\n',
+    documentRevision: SETUP_DOCUMENT_REVISION,
   })
   assert.equal(store.readSetupCheckpoint('project-1')?.configurationSource, '{"version":1}\n')
+  assert.equal(store.readSetupCheckpoint('project-1')?.documentRevision, SETUP_DOCUMENT_REVISION)
   store.close()
 })

@@ -12,6 +12,16 @@ export const ALLOWED_TARGETS = {
   renderer: new Set(['contract', 'renderer', 'shared']),
 }
 
+// The only top-level homes under src/; anything else is a legacy root.
+export const SOURCE_ROOTS = new Set([
+  'agents',
+  'domains',
+  'platform',
+  'providers',
+  'renderer',
+  'shared',
+])
+
 export const FACETS = new Set(Object.keys(ALLOWED_TARGETS))
 export const TARGET_FACETS = new Set([...FACETS, 'shared'])
 
@@ -26,7 +36,6 @@ export const FACET_POLICIES = {
     refusesNode: true,
     refusesElectron: true,
     refusesReact: true,
-    refusesLegacyCoreImplementation: true,
     privilegedRoots: [
       APPLICATION_ROOTS.main,
       APPLICATION_ROOTS.preload,
@@ -41,7 +50,6 @@ export const FACET_POLICIES = {
     refusesNode: true,
     refusesElectron: true,
     refusesReact: true,
-    refusesLegacyCoreImplementation: true,
     privilegedRoots: [
       APPLICATION_ROOTS.main,
       APPLICATION_ROOTS.preload,
@@ -54,21 +62,18 @@ export const FACET_POLICIES = {
     refusesNode: false,
     refusesElectron: false,
     refusesReact: false,
-    refusesLegacyCoreImplementation: false,
     privilegedRoots: [],
   },
   preload: {
     refusesNode: false,
     refusesElectron: false,
     refusesReact: false,
-    refusesLegacyCoreImplementation: false,
     privilegedRoots: [],
   },
   renderer: {
     refusesNode: true,
     refusesElectron: true,
     refusesReact: false,
-    refusesLegacyCoreImplementation: true,
     privilegedRoots: [
       APPLICATION_ROOTS.main,
       APPLICATION_ROOTS.preload,
