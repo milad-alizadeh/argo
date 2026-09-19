@@ -6,30 +6,19 @@ function notification(uuid: string, body: string) {
   return JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: body } })
 }
 
-test('reads a background task notification as its readable name, not raw envelope prose', () => {
+test('reads a background command notification as the end of its call, never a delegation', () => {
   const line = notification(
     'task-1',
-    '<task-notification>\n<task-id>a1</task-id>\n<tool-use-id>toolu_1</tool-use-id>\n<status>completed</status>\n<summary>Background command "Install dependencies" completed (exit code 0)</summary>\n</task-notification>',
+    '<task-notification>\n<task-id>a1</task-id>\n<tool-use-id>toolu_1</tool-use-id>\n<status>killed</status>\n<summary>Background command "Install dependencies" was stopped</summary>\n</task-notification>',
   )
   assert.deepEqual(parseTranscriptLine(line), {
-    kind: 'delegation',
-    uuid: 'task-1',
-    timestamp: null,
-    actor: 'shell',
-    action: 'Install dependencies',
-    status: 'completed',
-    progress: null,
-    groupId: 'a1',
+    kind: 'background-task',
+    taskId: 'a1',
     callId: 'toolu_1',
-    ending: {
-      kind: 'background-task',
-      taskId: 'a1',
-      callId: 'toolu_1',
-      outputPath: null,
-      state: 'completed',
-      summary: 'Background command "Install dependencies" completed (exit code 0)',
-      timestamp: null,
-    },
+    outputPath: null,
+    state: 'interrupted',
+    summary: 'Background command "Install dependencies" was stopped',
+    timestamp: null,
   })
 })
 

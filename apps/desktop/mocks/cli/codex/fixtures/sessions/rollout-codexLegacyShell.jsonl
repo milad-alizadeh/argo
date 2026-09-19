@@ -1,0 +1,5 @@
+{"timestamp":"2026-09-19T11:00:00.000Z","type":"session_meta","payload":{"session_id":"codexLegacyShell","id":"codexLegacyShell","timestamp":"2026-09-19T11:00:00.000Z","cwd":"/Users/x/argo","originator":"codex_cli_rs","cli_version":"0.40.0","source":"cli","thread_source":"user"}}
+{"timestamp":"2026-09-19T11:00:01.000Z","ordinal":1,"type":"response_item","payload":{"type":"message","id":"msg_prompt","role":"user","content":[{"type":"input_text","text":"List the files."}]}}
+{"timestamp":"2026-09-19T11:00:02.000Z","ordinal":2,"type":"response_item","payload":{"type":"function_call","id":"fc_1","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"ls -la\"]}","call_id":"call_1"}}
+{"timestamp":"2026-09-19T11:00:03.000Z","ordinal":3,"type":"response_item","payload":{"type":"function_call_output","id":"fco_1","call_id":"call_1","output":"Chunk ID: a1\nWall time: 0.1 seconds\nProcess exited with code 0\nOutput:\nREADME.md"}}
+{"timestamp":"2026-09-19T11:00:04.000Z","ordinal":4,"type":"response_item","payload":{"type":"function_call","id":"fc_2","name":"shell_command","arguments":"{\"command\":\"git status --short\"}","call_id":"call_2"}}

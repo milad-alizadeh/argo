@@ -24,6 +24,8 @@ function firstReportLine(text: string): string | null {
   return line ?? null
 }
 
+const COMMAND_SUMMARY = 'Background command "'
+
 // The CLI's summary names the task in quotes after one of these prefixes, e.g.
 // `Background command "Install dependencies" completed (exit code 0)`.
 const SUMMARY_KINDS = [
@@ -49,6 +51,10 @@ export function readTaskDelivery(
   text: string,
 ): TranscriptRecord {
   const ending = readTaskEnding(text, record.timestamp)
+  // A background command is an `execute` Tool Call: its end is a background-task record on that
+  // call, never a delegation.
+  if (ending !== null && taggedField(text, 'summary')?.startsWith(COMMAND_SUMMARY) === true)
+    return ending
   const notification = readTaskNotification(text)
   const callId = identifierTag(text, 'tool-use-id')
   const taskId = identifierTag(text, 'task-id')

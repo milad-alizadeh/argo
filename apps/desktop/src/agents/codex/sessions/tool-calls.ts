@@ -6,6 +6,7 @@
 
 import { isRecord } from '@/shared/validation'
 import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
+import { withCommandFacts } from './command-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
 import { readToolResults } from './rich-results'
@@ -108,7 +109,9 @@ export function readToolRecord(
     if (calls.length === 0 || typeof payload.id !== 'string') return null
     if (calls.every((call) => COLLABORATION_CALLS.has(call.name)))
       return { kind: 'trace', uuid: payload.id, boundary: true }
-    const visible = calls.filter((call) => !COLLABORATION_CALLS.has(call.name))
+    const visible = calls
+      .filter((call) => !COLLABORATION_CALLS.has(call.name))
+      .map(withCommandFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

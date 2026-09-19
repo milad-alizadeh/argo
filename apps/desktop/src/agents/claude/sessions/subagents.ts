@@ -13,8 +13,8 @@ import {
   transcriptFileFrom,
 } from '../../../domains/sessions/contract/transcript'
 import { createTranscriptRecordReader } from '../../../domains/sessions/main/transcript-lines'
+import { normalizeClaudeRecords } from './normalize-records'
 import { parseTranscriptLine } from './records'
-import { readingSpawnedAgents } from './spawned-agents'
 
 const META = '.meta.json'
 const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)
@@ -62,7 +62,7 @@ async function readSubagentFile(filePath: string): Promise<TranscriptFile | null
   return asOwnThread(
     transcriptFileFrom(filePath, {
       fileName: path.basename(filePath),
-      records: readingSpawnedAgents(records),
+      records: normalizeClaudeRecords(records),
     }),
   )
 }

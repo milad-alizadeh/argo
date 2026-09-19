@@ -31,7 +31,18 @@ function called(uuid: string, ...toolCalls: ToolCall[]): TranscriptMessage {
 const PROMPT = said('prompt', 'user', [{ shape: 'prose', text: 'do the thing' }])
 const HEADLINE = 'Refining exact selection style selectors'
 const THINKING = said('thinking', 'assistant', [{ shape: 'thought', text: HEADLINE }])
-const CALL = called('call', { id: 'call-1', name: 'Bash', input: { command: 'bun test' } })
+const CALL = called('call', {
+  id: 'call-1',
+  name: 'command',
+  input: {},
+  execute: {
+    kind: 'execute',
+    command: 'bun test',
+    label: null,
+    text: 'bun test',
+    background: false,
+  },
+})
 
 test('a thought newer than every call of the Turn is the activity, as the Feed tail draws it', () => {
   assert.deepEqual(readActivity([PROMPT, CALL, THINKING]), {

@@ -41,7 +41,7 @@ const toolCallSchema = z.strictObject({
       removed: z.number().int().nonnegative(),
     })
     .nullable(),
-  status: z.enum(['succeeded', 'failed', 'running']),
+  status: z.enum(['succeeded', 'failed', 'running', 'interrupted']),
   evidence: toolEvidenceSchema,
   // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
   // kind routed to the evidence panel, which reads the call through `evidence` instead.
