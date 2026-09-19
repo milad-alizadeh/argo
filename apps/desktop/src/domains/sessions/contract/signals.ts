@@ -16,7 +16,7 @@ const SHELL_TOOL = 'Bash'
 // The one input field an activity names, in the order a call is likelier to carry it. A path is
 // cut to its last segment, because the row is narrow and the deck head already draws the place.
 const PATH_FIELDS = ['file_path', 'notebook_path', 'path']
-const TEXT_FIELDS = ['pattern', 'description', 'command', 'url', 'query']
+const TEXT_FIELDS = ['pattern', 'description', 'command', 'cmd', 'url', 'query']
 
 function calls(messages: TranscriptMessage[]): ToolCall[] {
   return messages.flatMap((message) => message.toolCalls)

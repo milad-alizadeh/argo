@@ -75,6 +75,6 @@ test('names the roster activity line after the newest tool call, the same way it
     kind: 'command',
     open: false,
     tool: 'exec_command',
-    target: null,
+    target: 'bun run quality',
   })
 })

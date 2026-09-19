@@ -73,6 +73,16 @@ test('names a running Bash call by its command when no description was given', (
   })
 })
 
+test("names a running Codex command by its command when no description was given", () => {
+  assert.deepEqual(openActivity('exec_command', { cmd: 'bun run quality' }), {
+    label: 'Ran bun run quality',
+    kind: 'command',
+    open: true,
+    tool: 'exec_command',
+    target: 'bun run quality',
+  })
+})
+
 test('uses the Feed label for a non-command tool while retaining its activity metadata', () => {
   assert.deepEqual(openActivity('Read', { file_path: '/workspace/src/app.ts' }), {
     label: 'Read app.ts',
