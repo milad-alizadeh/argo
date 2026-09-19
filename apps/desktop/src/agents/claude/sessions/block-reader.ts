@@ -7,6 +7,7 @@ import type {
   ToolResult,
 } from '../../../domains/sessions/contract/transcript'
 import { bashFacts } from './bash-facts'
+import { editFacts } from './edit-facts'
 import { lookupFacts } from './lookup-facts'
 import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
 
@@ -68,6 +69,7 @@ function readToolCall(id: string, name: string, input: Record<string, unknown>):
     ...(execute === undefined ? {} : { execute }),
     ...lookupFacts(name, input),
     ...skillOrOtherFacts(name, input),
+    ...editFacts(name, input),
   }
 }
 

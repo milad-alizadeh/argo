@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { claudeQuestionSchema } from './claude-contract'
+import { editPresentation, fileName } from './file-presentation'
 import type { SessionFeedRow } from './models'
-import { fileChange, patchOf, searchLabel, searchOutcome } from './tool-changes'
+import { searchLabel, searchOutcome } from './tool-changes'
 import {
   type BackgroundState,
   type ExecuteFacts,
@@ -44,17 +45,6 @@ function commandLabel({ label, command }: ExecuteFacts) {
   return label ?? `Ran ${command ?? 'command'}`
 }
 
-const TOOL_DETAILS = {
-  Edit: (call: ToolCall) => ({ kind: 'edited' as const, label: `Edited ${filePath(call)}` }),
-  Write: (call: ToolCall) => ({ kind: 'created' as const, label: `Created ${filePath(call)}` }),
-  apply_patch: (call: ToolCall) => {
-    const change = patchOf(call)
-    return change === null
-      ? { kind: 'edited' as const, label: 'Edited file' }
-      : { kind: change.kind, label: change.label }
-  },
-} as const
-
 // The transcript names a skill by its kebab-case slug ("simple-english"); the row shows the
 // reader-facing sentence form ("Simple english") instead.
 export function skillTitle(slug: string): string {
@@ -64,23 +54,17 @@ export function skillTitle(slug: string): string {
   return [`${first[0]?.toUpperCase()}${first.slice(1)}`, ...rest].join(' ')
 }
 
-// A row names the file, never the path that reached it: every surface drawing this label is narrow
-// and the absolute path is both too long to read and the same prefix on every line (#2273).
-export function fileName(path: unknown) {
-  if (typeof path !== 'string') return 'file'
-  return path.split('/').findLast((segment) => segment.length > 0) ?? path
-}
-
-const filePath = (call: ToolCall) => fileName(call.input.file_path)
-
 // Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
 // compact surface never has to rebuild reader-facing words from the CLI's execution type. An
 // unclassified tool reads as something the agent ran, the same verb as a command, under the
 // title the agent gave the call when it gave one (Codex's `js` writes `{title, code}`).
-export function toolPresentation(call: ToolCall) {
+// `file` picks which of an edit's files the presentation is for.
+export function toolPresentation(call: ToolCall, file = 0) {
   // The agent's own description is already a whole label; the command's first line is the fallback.
   if (call.execute !== undefined)
     return { kind: 'command' as const, label: commandLabel(call.execute) }
+  const edited = call.edit?.files[file]
+  if (edited !== undefined) return editPresentation(edited)
   if (call.read !== undefined)
     return { kind: 'read' as const, label: `Read ${fileName(call.read.target)}` }
   if (call.skill !== undefined)
@@ -88,12 +72,10 @@ export function toolPresentation(call: ToolCall) {
   if (call.other !== undefined) return { kind: 'tool' as const, label: call.other.label }
   if (call.search !== undefined || call.fetch !== undefined)
     return { kind: 'searched' as const, label: searchLabel(call) }
-  return (
-    TOOL_DETAILS[call.name as keyof typeof TOOL_DETAILS]?.(call) ?? {
-      kind: 'tool' as const,
-      label: text(call.input.title) ?? `Ran ${call.name}`,
-    }
-  )
+  return {
+    kind: 'tool' as const,
+    label: text(call.input.title) ?? `Ran ${call.name}`,
+  }
 }
 
 // A tool no row knows still shows what it was asked: its code, a lone string argument as itself,
@@ -108,13 +90,17 @@ function unclassifiedText(input: ToolCall['input']): string | null {
   return JSON.stringify(input, null, 2)
 }
 
-function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
+function evidenceOf(
+  call: ToolCall,
+  result: ToolResult | undefined,
+  file: number,
+): ToolRow['evidence'] {
   // A Skill call's own result is a fixed placeholder ("Launching skill: X"); its real content is
   // the skill body, carried through `text` (see `toolText`), not the evidence panel.
   if (call.skill !== undefined) return null
-  const presentation = toolPresentation(call)
-  const change = fileChange(call)
-  if (change !== null) return { kind: 'diff', title: presentation.label, source: change.patch }
+  const presentation = toolPresentation(call, file)
+  const edited = call.edit?.files[file]
+  if (edited !== undefined) return { kind: 'diff', title: presentation.label, source: edited.diff }
   const source = result === undefined ? null : resultText(result.blocks)
   if (source === null) return null
   const kind = call.read === undefined ? 'output' : 'document'
@@ -139,24 +125,24 @@ function toolText(call: ToolCall, skillBodies: Map<string, string>): string | nu
   if (call.skill !== undefined) return skillBodies.get(call.id) ?? null
   if (call.fetch !== undefined) return call.fetch.url
   if (call.search !== undefined) return call.search.query
-  if (call.read !== undefined) return null
+  if (call.read !== undefined || call.edit !== undefined) return null
   if (call.other !== undefined)
     return call.other.source === null ? unclassifiedText(call.input) : null
-  return Object.hasOwn(TOOL_DETAILS, call.name) ? null : unclassifiedText(call.input)
+  return unclassifiedText(call.input)
 }
 
-function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {
+function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 0): ToolRow {
   const result = results.get(call.id)
-  const presentation = toolPresentation(call)
+  const presentation = toolPresentation(call, file)
   const outcome = presentation.kind === 'searched' ? searchOutcome(result) : null
   return {
     shape: 'tool',
-    id: call.id,
+    id: file === 0 ? call.id : `${call.id}#${file}`,
     ...presentation,
     label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
-    lineCounts: fileChange(call)?.lineCounts ?? null,
+    lineCounts: call.edit?.files[file]?.lineCounts ?? null,
     status: outcome === null ? toolStatus(result) : 'failed',
-    evidence: evidenceOf(call, result),
+    evidence: evidenceOf(call, result, file),
     text: toolText(call, skillBodies),
   }
 }
@@ -175,11 +161,14 @@ function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null
   }
 }
 
-function feedRow(call: ToolCall, evidence: ToolEvidence): SessionFeedRow {
-  if (call.name === ASK_TOOL) return askRow(call, evidence.results) ?? toolRow(call, evidence)
-  return toolRow(call, evidence)
+// An edit over several files draws one row per file.
+function feedRows(call: ToolCall, evidence: ToolEvidence): SessionFeedRow[] {
+  if (call.name === ASK_TOOL) return [askRow(call, evidence.results) ?? toolRow(call, evidence)]
+  const files = call.edit?.files ?? []
+  if (files.length > 1) return files.map((_, file) => toolRow(call, evidence, file))
+  return [toolRow(call, evidence)]
 }
 
 export function toolRows(calls: ToolCall[], evidence: ToolEvidence): SessionFeedRow[] {
-  return calls.map((call) => feedRow(call, evidence))
+  return calls.flatMap((call) => feedRows(call, evidence))
 }

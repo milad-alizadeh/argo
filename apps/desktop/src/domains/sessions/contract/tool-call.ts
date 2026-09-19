@@ -40,6 +40,19 @@ export type OtherFacts = {
   source: { server: string; tool: string } | null
 }
 
+// One file an edit touched. `diff` is the typed diff Result: the change is known from the call
+// itself, so it is ready before the harness answers.
+export type EditedFile = {
+  change: 'create' | 'update' | 'delete'
+  file: string | null
+  diff: string
+  lineCounts: { added: number; removed: number }
+}
+
+// A file change. A harness that writes one call for several files fills one entry per file, and
+// the Feed draws one row for each.
+export type EditFacts = { kind: 'edit'; files: EditedFile[] }
+
 // The new shape lives beside the raw one: a call an adapter classified carries its kind's facts,
 // and every other kind still reads `name` and `input`.
 export type ToolCall = {
@@ -52,4 +65,5 @@ export type ToolCall = {
   fetch?: FetchFacts
   skill?: SkillFacts
   other?: OtherFacts
+  edit?: EditFacts
 }

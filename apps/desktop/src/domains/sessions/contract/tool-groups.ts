@@ -33,6 +33,7 @@ export const TOOL_KIND_PRESENTATION: Record<
 > = {
   command: { icon: 'terminal', route: 'inline', verb: 'ran', noun: 'command' },
   edited: { icon: 'file', route: 'evidence', verb: 'edited', noun: 'file' },
+  deleted: { icon: 'file', route: 'evidence', verb: 'deleted', noun: 'file' },
   created: { icon: 'file', route: 'evidence', verb: 'created', noun: 'file' },
   read: { icon: 'search', route: 'evidence', verb: 'read', noun: 'file' },
   tool: { icon: 'wrench', route: 'inline', verb: 'ran', noun: 'tool' },
