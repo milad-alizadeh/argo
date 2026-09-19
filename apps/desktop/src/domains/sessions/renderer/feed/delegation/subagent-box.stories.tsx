@@ -1,8 +1,8 @@
-// The Subagent box in every state: started, messaged, responded per end state, a missing fact,
-// and a box with no Subagent transcript to open.
+// The Subagent line in every state: started, messaged, responded per end state, a missing fact,
+// and a line with no Subagent transcript to open.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { SubagentBox, type SubagentRow } from './subagent-box'
 
@@ -46,65 +46,84 @@ const box = (row: SubagentRow, onOpen?: () => void) => (
   </Stage>
 )
 
+const line = (canvasElement: HTMLElement, text: string | RegExp) =>
+  within(canvasElement).getByText(text)
+
+async function expand(canvasElement: HTMLElement) {
+  await userEvent.click(within(canvasElement).getByRole('button', { name: /^Agent/ }))
+}
+
 export const Started: Story = {
-  render: () => box(STARTED, fn()),
+  render: () => box(STARTED),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Started')).toBeVisible()
+    await waitFor(() =>
+      expect(line(canvasElement, 'Agent "Semantic compound verify" started')).toBeVisible(),
+    )
+    await expand(canvasElement)
+    await waitFor(() => expect(line(canvasElement, 'gpt-5.6-terra')).toBeVisible())
   },
 }
 
 // The text the Session sent is never drawn.
 export const Messaged: Story = {
-  render: () => box({ ...STARTED, event: 'messaged', text: 'A very long message' }, fn()),
+  render: () => box({ ...STARTED, event: 'messaged', text: 'A very long message' }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Messaged')).toBeVisible()
+    await waitFor(() => expect(line(canvasElement, /messaged$/)).toBeVisible())
+    await expand(canvasElement)
     await expect(within(canvasElement).queryByText('A very long message')).toBeNull()
   },
 }
 
 export const RespondedCompleted: Story = {
-  render: () => box(RESPONDED, fn()),
+  render: () => box(RESPONDED),
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText('Completed · gpt-5.6-terra · 2m 37s · 18k tokens'),
-    ).toBeVisible()
-    await expect(within(canvasElement).getByText(REPLY)).toBeVisible()
+    await expand(canvasElement)
+    await waitFor(() =>
+      expect(line(canvasElement, 'Completed · gpt-5.6-terra · 2m 37s · 18k tokens')).toBeVisible(),
+    )
+    await waitFor(() => expect(line(canvasElement, REPLY)).toBeVisible())
   },
 }
 
 export const RespondedFailed: Story = {
-  render: () =>
-    box({ ...RESPONDED, state: 'failed', text: 'Could not read the locale catalog' }, fn()),
+  render: () => box({ ...RESPONDED, state: 'failed', text: 'Could not read the locale catalog' }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/^Failed/)).toBeVisible()
+    await expand(canvasElement)
+    await waitFor(() => expect(line(canvasElement, /^Failed/)).toBeVisible())
   },
 }
 
 export const RespondedInterrupted: Story = {
-  render: () => box({ ...RESPONDED, state: 'interrupted', text: undefined }, fn()),
+  render: () => box({ ...RESPONDED, state: 'interrupted', text: undefined }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/^Interrupted/)).toBeVisible()
+    await expand(canvasElement)
+    await waitFor(() => expect(line(canvasElement, /^Interrupted/)).toBeVisible())
   },
 }
 
 // Codex gives no reply, duration or tokens: nothing stands in for them.
 export const MissingFact: Story = {
   render: () =>
-    box(
-      { ...RESPONDED, model: undefined, durationMs: undefined, tokens: undefined, text: undefined },
-      fn(),
-    ),
+    box({
+      ...RESPONDED,
+      model: undefined,
+      durationMs: undefined,
+      tokens: undefined,
+      text: undefined,
+    }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Completed')).toBeVisible()
+    await expand(canvasElement)
+    await waitFor(() => expect(line(canvasElement, 'Completed')).toBeVisible())
     await expect(within(canvasElement).queryByText(/·/)).toBeNull()
   },
 }
 
-export const StartedMissingFact: Story = {
+// With nothing to show and no way in, the line is plain text with no toggle.
+export const NotClickable: Story = {
   render: () => box({ ...STARTED, model: undefined }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Started')).toBeVisible()
-    await expect(within(canvasElement).queryByText(/·|gpt/)).toBeNull()
+    await waitFor(() => expect(line(canvasElement, /started$/)).toBeVisible())
+    await expect(within(canvasElement).queryByRole('button')).toBeNull()
   },
 }
 
@@ -112,14 +131,8 @@ export const ClickOpensTheSubagentFeed: Story = {
   render: () => box(RESPONDED, OPEN),
   play: async ({ canvasElement }) => {
     OPEN.mockClear()
-    await userEvent.click(within(canvasElement).getByRole('button'))
+    await expand(canvasElement)
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /^Open the/ }))
     await expect(OPEN).toHaveBeenCalledTimes(1)
-  },
-}
-
-export const NotClickable: Story = {
-  render: () => box(RESPONDED),
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button')).toBeNull()
   },
 }
