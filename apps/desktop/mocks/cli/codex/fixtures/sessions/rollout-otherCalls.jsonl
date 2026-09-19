@@ -1,0 +1,6 @@
+{"timestamp":"2026-09-19T10:00:00.000Z","type":"session_meta","payload":{"session_id":"otherCalls","id":"otherCalls","timestamp":"2026-09-19T10:00:00.000Z","cwd":"/Users/x/argo","originator":"Codex Desktop","cli_version":"0.154.0-alpha.6.2","source":"vscode","thread_source":"user"}}
+{"timestamp":"2026-09-19T10:00:00.500Z","ordinal":1,"type":"response_item","payload":{"type":"message","id":"msg_prompt","role":"user","content":[{"type":"input_text","text":"Go."}]}}
+{"timestamp":"2026-09-19T10:00:01.000Z","ordinal":2,"type":"response_item","payload":{"type":"function_call","id":"fc_1","call_id":"o1","name":"update_goal","arguments":"{\"goal\":\"ship\"}"}}
+{"timestamp":"2026-09-19T10:00:02.000Z","ordinal":3,"type":"response_item","payload":{"type":"function_call","id":"fc_2","call_id":"o2","name":"future_tool","arguments":"{}"}}
+{"timestamp":"2026-09-19T10:00:03.000Z","ordinal":4,"type":"response_item","payload":{"type":"function_call","id":"fc_3","call_id":"o3","name":"write_stdin","arguments":"{}"}}
+{"timestamp":"2026-09-19T10:00:04.000Z","ordinal":5,"type":"response_item","payload":{"type":"function_call","id":"fc_4","call_id":"o4","name":"sleep","arguments":"{}"}}

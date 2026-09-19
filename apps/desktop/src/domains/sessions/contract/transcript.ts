@@ -7,8 +7,10 @@ export type {
   EditFacts,
   ExecuteFacts,
   FetchFacts,
+  OtherFacts,
   ReadFacts,
   SearchFacts,
+  SkillFacts,
   ToolCall,
   ToolCallStatus,
 } from './tool-call'
