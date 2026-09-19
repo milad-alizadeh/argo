@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { isRecord } from '@/shared/validation'
 import type {
-  DelegationUsageFacts,
-  SessionDelegationUsage,
+  SessionSubagentUsage,
+  SubagentUsageFacts,
 } from '../../../domains/sessions/contract/background-work-contract'
 import { transcriptPaths } from './discover'
 
-function delegationFacts(line: string): Partial<DelegationUsageFacts> {
+function delegationFacts(line: string): Partial<SubagentUsageFacts> {
   let parsed: unknown
   try {
     parsed = JSON.parse(line)
@@ -34,10 +34,10 @@ function delegationFacts(line: string): Partial<DelegationUsageFacts> {
   return { tokens: Math.max(0, input - cached) + output }
 }
 
-async function delegationFactsFromFile(filePath: string): Promise<Required<DelegationUsageFacts>> {
+async function delegationFactsFromFile(filePath: string): Promise<Required<SubagentUsageFacts>> {
   const text = await readFile(filePath, 'utf8').catch(() => null)
   if (text === null) return { tokens: null, model: null }
-  const facts: Required<DelegationUsageFacts> = { tokens: null, model: null }
+  const facts: Required<SubagentUsageFacts> = { tokens: null, model: null }
   for (const line of text.split('\n')) {
     const reported = delegationFacts(line)
     if (reported.tokens !== undefined) facts.tokens = reported.tokens
@@ -46,10 +46,10 @@ async function delegationFactsFromFile(filePath: string): Promise<Required<Deleg
   return facts
 }
 
-export async function readDelegationTokens(
+export async function readSubagentTokens(
   root: string,
   delegationIds: readonly string[],
-): Promise<SessionDelegationUsage[]> {
+): Promise<SessionSubagentUsage[]> {
   const paths = await transcriptPaths(root)
   const pathsById = new Map(
     paths.map(({ name, path }) => [name.replace(/\.jsonl$/, ''), path] as const),

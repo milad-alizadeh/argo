@@ -4,7 +4,7 @@
 // rather than guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
 import { fileName } from './file-presentation'
-import type { SessionActivity, SessionDelegation, SessionShellCommand } from './models'
+import type { SessionActivity, SessionShellCommand, SessionSubagent } from './models'
 import { toolPresentation } from './tool-feed'
 import type { ToolCall, TranscriptMessage, TranscriptRecord } from './transcript'
 
@@ -37,26 +37,23 @@ function callTimes(messages: TranscriptMessage[]): CallTimes {
   return { started, ended }
 }
 
-// Every Subagent is read from the delegation records its adapter wrote (Codex's
-// `SubAgentActivity`, Claude's spawning call and task notification), keyed by the group the
-// adapter chose, so the Roster and the Feed name the same card for either CLI. A record with no
-// status opened the thread; any status but `running` lands it.
-export function readDelegations(records: TranscriptRecord[]): SessionDelegation[] {
-  const delegations = new Map<string, SessionDelegation>()
+// Every Subagent is folded from the lifecycle events its adapter wrote, keyed by Subagent id, so
+// the Roster and the Feed name the same state for either harness: a `started` or `messaged` event
+// leaves it running and a `responded` one ends it in the state it carries.
+export function readSubagents(records: TranscriptRecord[]): SessionSubagent[] {
+  const subagents = new Map<string, SessionSubagent>()
   for (const record of records) {
-    if (record.kind !== 'delegation' || record.actor !== 'agent' || record.groupId === null)
-      continue
-    const previous = delegations.get(record.groupId)
-    const landed = record.status !== null && record.status !== 'running'
-    delegations.set(record.groupId, {
-      id: record.groupId,
-      label: record.action ?? previous?.label ?? null,
-      landed,
-      startedAt: previous?.startedAt ?? record.timestamp ?? null,
-      endedAt: landed ? (record.timestamp ?? null) : null,
+    if (record.kind !== 'subagent') continue
+    const previous = subagents.get(record.subagentId)
+    subagents.set(record.subagentId, {
+      id: record.subagentId,
+      label: record.name ?? previous?.label ?? null,
+      state: record.event === 'responded' ? record.state : 'running',
+      startedAt: previous?.startedAt ?? record.timestamp,
+      endedAt: record.event === 'responded' ? record.timestamp : null,
     })
   }
-  return [...delegations.values()]
+  return [...subagents.values()]
 }
 
 function endings(notifications: BackgroundTask[]): Map<string, BackgroundTask> {

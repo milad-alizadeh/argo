@@ -97,7 +97,7 @@ const feedQuery = async () => {
       type: 'session.feed',
       requestId: `feed-${feedReads}`,
       sessionId: SESSION,
-      delegationId: null,
+      subagentId: null,
       revision,
     })
     feedBytes += JSON.stringify(reply).length

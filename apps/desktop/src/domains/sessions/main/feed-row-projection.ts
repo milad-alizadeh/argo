@@ -2,6 +2,7 @@ import type { SessionFeedRow } from '../contract/models'
 import { type ToolEvidence, toolRows } from '../contract/tool-feed'
 import type {
   ContentBlock,
+  SubagentEvent,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
@@ -23,6 +24,22 @@ function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {
         : [],
     ),
   )
+}
+
+function subagentRow(record: SubagentEvent): SessionFeedRow {
+  return {
+    shape: 'subagent',
+    id: record.uuid,
+    subagentId: record.subagentId,
+    event: record.event,
+    ...(record.event === 'responded' ? { state: record.state } : {}),
+    ...(record.name === undefined ? {} : { name: record.name }),
+    ...(record.type === undefined ? {} : { type: record.type }),
+    ...(record.model === undefined ? {} : { model: record.model }),
+    ...(record.durationMs === undefined ? {} : { durationMs: record.durationMs }),
+    ...(record.tokens === undefined ? {} : { tokens: record.tokens }),
+    ...(record.text === undefined ? {} : { text: record.text }),
+  }
 }
 
 export function rowsOfRecord(
@@ -55,19 +72,7 @@ export function rowsOfRecord(
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
   if (record.kind === 'event')
     return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text, raw: null }]
-  if (record.kind === 'delegation')
-    return [
-      {
-        shape: 'delegation',
-        id: record.uuid,
-        actor: record.actor,
-        action: record.action,
-        status: record.status,
-        progress: record.progress,
-        groupId: record.groupId,
-        callId: record.callId,
-      },
-    ]
+  if (record.kind === 'subagent') return [subagentRow(record)]
   // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []

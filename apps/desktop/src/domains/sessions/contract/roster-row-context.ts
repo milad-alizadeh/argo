@@ -15,7 +15,7 @@ export type RosterRowContext = {
   turnStartedAt: string | null
   activity: unknown
   plan: unknown
-  delegations: unknown
+  subagents: unknown
   shell: unknown
   pullRequest: unknown
   usage: { contextTokens: unknown; spentTokens: unknown }

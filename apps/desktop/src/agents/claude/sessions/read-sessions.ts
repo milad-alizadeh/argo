@@ -29,7 +29,7 @@ import {
   readLiveProcesses,
 } from './live-processes'
 import { readShellOutput } from './shell-output'
-import { readDelegationChain, readDelegationTokens } from './subagents'
+import { readSubagentChain, readSubagentTokens } from './subagents'
 
 async function completeCompactions(
   transcripts: string,
@@ -131,10 +131,10 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) =>
       readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
-    readDelegationFiles: async (sessionId, delegationId) =>
-      readDelegationChain(await readSessionFiles(roots.transcripts, sessionId), delegationId),
-    readDelegationUsage: async (sessionId) =>
-      readDelegationTokens(await readSessionFiles(roots.transcripts, sessionId)),
+    readSubagentFiles: async (sessionId, subagentId) =>
+      readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
+    readSubagentUsage: async (sessionId) =>
+      readSubagentTokens(await readSessionFiles(roots.transcripts, sessionId)),
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,

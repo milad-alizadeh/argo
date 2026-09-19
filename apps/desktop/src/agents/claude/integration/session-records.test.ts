@@ -81,6 +81,7 @@ test('reads slash commands as the words the person typed', async () => {
     '/effort',
     '/implement 318 open storybook while you do it',
     'Quote <local-command-caveat>this markup</local-command-caveat> exactly.',
+    'Review the Feed card for keyboard access.',
   ])
 })
 
@@ -93,37 +94,18 @@ test('keeps local command output out of the prompt path', async () => {
   assert.equal(file.openingPrompt, '/effort')
 })
 
-test('reads harness delegation and related Shell updates without protocol markup', async () => {
+test('reads a voice request as a prompt and Shell updates as status, without protocol markup', async () => {
   const file = await fixtureFile('harnessNoise')
   assert.deepEqual(
-    file.records.filter((record) => record.kind === 'delegation'),
+    file.records.filter((record) => record.kind === 'event' && record.uuid.startsWith('u-shell')),
     [
-      {
-        kind: 'delegation',
-        uuid: 'u-delegation',
-        timestamp: '2026-07-20T16:00:08.000Z',
-        actor: 'agent',
-        action: 'Review the Feed card for keyboard access.',
-        status: 'running',
-        progress: 'Checking focus and motion',
-        groupId: 'feed-review',
-        callId: null,
-      },
-      ...[
-        ['u-shell-start', '2026-07-20T16:00:09.000Z', 'Started bun run build', 'running'],
-        ['u-shell-end', '2026-07-20T16:00:10.000Z', 'Build completed', 'completed'],
-      ].map(([uuid, timestamp, action, status]) => ({
-        kind: 'delegation',
-        uuid,
-        timestamp,
-        actor: 'shell',
-        action,
-        status,
-        progress: null,
-        groupId: 'build',
-        callId: null,
-      })),
+      { kind: 'event', uuid: 'u-shell-start', event: 'status', text: 'Started bun run build' },
+      { kind: 'event', uuid: 'u-shell-end', event: 'status', text: 'Build completed' },
     ],
+  )
+  assert.equal(
+    file.records.some((record) => record.kind === 'subagent'),
+    false,
   )
 })
 

@@ -3,14 +3,14 @@
 // header control at all.
 import { Bot, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { DelegationUsageFacts } from '../../../contract/background-work-contract'
-import type { SessionDelegation, SessionShellCommand } from '../../../contract/models'
+import type { SubagentUsageFacts } from '../../../contract/background-work-contract'
+import type { SessionShellCommand, SessionSubagent } from '../../../contract/models'
 import { delegationEntries, shellEntries } from './session-work-entries'
 import { SessionWorkMenu } from './session-work-menu'
 
 export function SessionWorkButtons({
-  delegations,
-  delegationUsage,
+  subagents,
+  subagentUsage,
   now,
   onSelectDelegation,
   onSelectShell,
@@ -18,12 +18,12 @@ export function SessionWorkButtons({
   selectedShellId,
   shell,
 }: {
-  delegations: readonly SessionDelegation[]
+  subagents: readonly SessionSubagent[]
   // The recorded facts for each Subagent, keyed by the call that spawned it.
-  delegationUsage?: Readonly<Record<string, DelegationUsageFacts>>
+  subagentUsage?: Readonly<Record<string, SubagentUsageFacts>>
   // The clock a running entry is measured against. Passed in so a story draws a fixed duration.
   now?: number
-  onSelectDelegation: (delegationId: string) => void
+  onSelectDelegation: (subagentId: string) => void
   onSelectShell: (shellId: string) => void
   selectedDelegationId: string | null
   selectedShellId: string | null
@@ -34,7 +34,7 @@ export function SessionWorkButtons({
   return (
     <>
       <SessionWorkMenu
-        entries={delegationEntries(delegations, { now: clock, usage: delegationUsage ?? {} }, t)}
+        entries={delegationEntries(subagents, { now: clock, usage: subagentUsage ?? {} }, t)}
         icon={Bot}
         label="Subagents"
         onSelect={onSelectDelegation}

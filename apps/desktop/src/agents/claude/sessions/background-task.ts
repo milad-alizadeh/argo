@@ -13,7 +13,7 @@ const NOTIFICATION_STATES = {
   stopped: 'interrupted',
 } as const satisfies Record<string, BackgroundState>
 
-function backgroundState(value: string | null): BackgroundState | null {
+export function backgroundState(value: string | null): BackgroundState | null {
   return value !== null && Object.hasOwn(NOTIFICATION_STATES, value)
     ? NOTIFICATION_STATES[value as keyof typeof NOTIFICATION_STATES]
     : null

@@ -5,10 +5,10 @@
 import { readFile } from 'node:fs/promises'
 import type { SessionChain } from '../contract/chains'
 import type {
-  SessionDelegationUsageRequest,
   SessionFileRequest,
   SessionShellOutputRequest,
   SessionSkillRequest,
+  SessionSubagentUsageRequest,
 } from '../contract/contract'
 import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
 import { skillFileContent } from './read-skill-file'
@@ -56,9 +56,9 @@ export const shellOutputRead = fromOwner(
 )
 
 export const delegationUsageRead = fromOwner(
-  'session.delegation.usage.read',
-  async (owner: SessionSource, request: SessionDelegationUsageRequest) => ({
+  'session.subagent.usage.read',
+  async (owner: SessionSource, request: SessionSubagentUsageRequest) => ({
     sessionId: request.sessionId,
-    usage: (await owner.readDelegationUsage?.(request.sessionId)) ?? [],
+    usage: (await owner.readSubagentUsage?.(request.sessionId)) ?? [],
   }),
 )

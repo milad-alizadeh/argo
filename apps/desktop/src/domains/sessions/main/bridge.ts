@@ -7,8 +7,6 @@ import {
   type SessionArchiveListRequest,
   type SessionArchiveSetReply,
   type SessionArchiveSetRequest,
-  type SessionDelegationUsageReply,
-  type SessionDelegationUsageRequest,
   type SessionFeedCancelRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
@@ -24,6 +22,8 @@ import {
   type SessionShellOutputRequest,
   type SessionSkillReply,
   type SessionSkillRequest,
+  type SessionSubagentUsageReply,
+  type SessionSubagentUsageRequest,
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionError,
@@ -53,7 +53,7 @@ export type SessionReader = {
   readSkillFile(request: SessionSkillRequest): Promise<SessionSkillReply>
   cancelSessionFeed(request: SessionFeedCancelRequest): Promise<SessionAcceptedReply>
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
-  readDelegationUsage(request: SessionDelegationUsageRequest): Promise<SessionDelegationUsageReply>
+  readSubagentUsage(request: SessionSubagentUsageRequest): Promise<SessionSubagentUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
@@ -109,7 +109,7 @@ export function attachSessionBridge(
       skill: (request, context) => context.reader.readSkillFile(request),
       cancelFeed: (request, context) => context.reader.cancelSessionFeed(request),
       shellOutput: (request, context) => context.reader.readShellOutput(request),
-      delegationUsage: (request, context) => context.reader.readDelegationUsage(request),
+      subagentUsage: (request, context) => context.reader.readSubagentUsage(request),
       rename: (request, context) => context.reader.renameSession(request),
       connectTicket: (request, context) => context.reader.connectTicket(request),
       disconnectTicket: (request, context) => context.reader.disconnectTicket(request),

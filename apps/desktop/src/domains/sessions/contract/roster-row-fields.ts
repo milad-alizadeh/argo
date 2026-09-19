@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { identifierSchema } from '../../../shared/validation'
 import {
   sessionActivitySchema,
-  sessionDelegationSchema,
   sessionEntrySchema,
   sessionPlanSchema,
   sessionPostureSchema,
@@ -10,6 +9,7 @@ import {
   sessionSetupSchema,
   sessionShellCommandSchema,
   sessionStatusSchema,
+  sessionSubagentSchema,
   sessionTicketSchema,
   sessionTitleSchema,
 } from './models'
@@ -90,9 +90,9 @@ export const rosterRowFields = [
     'held-when-present',
   ]),
   field([
-    'delegations',
-    () => z.array(sessionDelegationSchema),
-    ({ delegations }) => delegations,
+    'subagents',
+    () => z.array(sessionSubagentSchema),
+    ({ subagents }) => subagents,
     'empty',
     'observed',
   ]),

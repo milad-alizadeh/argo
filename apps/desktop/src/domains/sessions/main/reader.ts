@@ -98,7 +98,7 @@ export function createSessionReader(
     cancelSessionFeed: feedReader.cancelSessionFeed,
     isFeedReadActive: feedReader.isFeedReadActive,
     readShellOutput: (request) => shellOutputRead(reads, request),
-    readDelegationUsage: (request) => delegationUsageRead(reads, request),
+    readSubagentUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),
   }
 }

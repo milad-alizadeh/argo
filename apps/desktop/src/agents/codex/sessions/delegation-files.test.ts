@@ -63,7 +63,7 @@ test('reads a spawned agent transcript from its parent delegation', async (conte
       type: 'session.feed',
       requestId: 'delegation-feed',
       sessionId: parentId,
-      delegationId: 'call-agent',
+      subagentId: 'call-agent',
       revision: null,
     }),
   )

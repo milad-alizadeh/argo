@@ -6,7 +6,7 @@ import { createSessionClient } from '../../../domains/sessions/preload/client.ts
 
 const feed = {
   sessionId: 'session-a',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

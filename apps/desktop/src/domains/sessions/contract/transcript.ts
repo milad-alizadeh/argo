@@ -1,5 +1,6 @@
 import type { FeedImageUrl } from './feed-images'
 import type { FeedMarker, PlanEntryStatus, SessionEntry } from './models'
+import type { SubagentEvent } from './subagent-event'
 import type { ToolCall } from './tool-call'
 
 export type {
@@ -86,6 +87,13 @@ export type TranscriptMessage = {
 export const BACKGROUND_STATES = ['completed', 'failed', 'interrupted'] as const
 export type BackgroundState = (typeof BACKGROUND_STATES)[number]
 
+export {
+  SUBAGENT_EVENTS,
+  type SubagentEvent,
+  type SubagentEventName,
+  type SubagentFacts,
+} from './subagent-event'
+
 export const TRANSCRIPT_EVENT_KINDS = ['status', 'transcript', 'context', 'command'] as const
 export type TranscriptEventKind = (typeof TRANSCRIPT_EVENT_KINDS)[number]
 
@@ -93,20 +101,7 @@ export type TranscriptRecord =
   | TranscriptMessage
   | { kind: 'command-output'; uuid: string; timestamp: string | null; text: string }
   | { kind: 'event'; uuid: string; event: TranscriptEventKind; text: string | null }
-  | {
-      kind: 'delegation'
-      uuid: string
-      timestamp?: string | null
-      actor: 'agent' | 'shell'
-      action: string | null
-      status: string | null
-      progress: string | null
-      groupId: string | null
-      // The Shell call a background task's notification names, so its block can open that command.
-      callId: string | null
-      // A notice delivered while the Session was idle is a user record, so it carries the ending.
-      ending?: BackgroundTaskRecord
-    }
+  | SubagentEvent
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   // The Skill tool's result is a placeholder ("Launching skill: X"); the CLI delivers the skill's
@@ -119,8 +114,17 @@ export type TranscriptRecord =
       uuid: string
       boundary?: boolean
       subagent?: boolean
+      // A collaboration call the Subagent events read a fact from: the model a spawn chose, or the
+      // target a stop names (`codex/sessions/subagent-calls.ts`).
+      subagentCall?: {
+        intent: 'start' | 'stop'
+        callId: string
+        timestamp: string | null
+        target: string | null
+        model: string | null
+      }
       // Codex records a spawned thread's parent and path in its session metadata. The adapter
-      // uses them to open that thread from the parent Session's delegation card.
+      // uses them to open that thread from the parent Session's Subagent row.
       parentSessionId?: string | null
       agentPath?: string | null
       agentNickname?: string | null

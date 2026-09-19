@@ -4,7 +4,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionDelegation } from '../../../contract/models'
+import type { SessionSubagent } from '../../../contract/models'
 import { FeedDocument } from '../../feed/feed-document'
 import { INACTIVE_FEED_LIVE_FACTS } from '../../feed/feed-live-facts'
 import type { SessionEvidence, SessionFeed } from '../../types'
@@ -34,7 +34,7 @@ export function SessionDelegationInspector({
   onOpenSession,
 }: {
   activeEvidenceId: string | null
-  delegation: SessionDelegation
+  delegation: SessionSubagent
   // What the read has returned so far, or null while the first read is in flight.
   feed: SessionFeed | null
   now?: number
@@ -67,7 +67,7 @@ export function SessionDelegationInspector({
             }}
             liveFacts={{
               ...INACTIVE_FEED_LIVE_FACTS,
-              isRunning: !delegation.landed,
+              isRunning: delegation.state === 'running',
             }}
             reading={feed}
           />

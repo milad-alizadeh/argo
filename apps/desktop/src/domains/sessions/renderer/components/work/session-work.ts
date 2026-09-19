@@ -2,15 +2,15 @@
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
-import type { DelegationUsageFacts } from '../../../contract/background-work-contract'
-import type { SessionDelegation, SessionShellCommand, ShellState } from '../../../contract/models'
+import type { SubagentUsageFacts } from '../../../contract/background-work-contract'
+import type { SessionShellCommand, SessionSubagent, ShellState } from '../../../contract/models'
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
 export type SessionWork =
   | {
       kind: 'delegation'
-      delegation: SessionDelegation
-      usage: DelegationUsageFacts
+      delegation: SessionSubagent
+      usage: SubagentUsageFacts
     }
   | { kind: 'shell'; command: SessionShellCommand }
 
@@ -26,8 +26,8 @@ export const WORK_STATE_MARKS: Record<WorkState, string> = {
   interrupted: 'bg-warn',
 }
 
-export function delegationState(delegation: SessionDelegation): WorkState {
-  return delegation.landed ? 'done' : 'running'
+export function subagentWorkState(subagent: SessionSubagent): WorkState {
+  return subagent.state === 'completed' ? 'done' : subagent.state
 }
 
 export function readableDelegationName(name: string): string {
@@ -48,7 +48,10 @@ export function workDuration(
   endedAt: string | null,
   now: number,
 ): string | null {
-  const span = elapsed(startedAt, endedAt, now)
+  return durationText(elapsed(startedAt, endedAt, now))
+}
+
+export function durationText(span: number | null): string | null {
   if (span === null) return null
   const seconds = Math.floor(span / 1000)
   if (seconds < 60) return `${seconds}s`

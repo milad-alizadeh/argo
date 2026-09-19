@@ -34,7 +34,7 @@ export const PROJECT_PROOF_SURFACE = [
   'openProject',
   'pathForFile',
   'readConnection',
-  'readDelegationUsage',
+  'readSubagentUsage',
   'readSessionFeed',
   'readSessionPermission',
   'readShellOutput',

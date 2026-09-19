@@ -59,7 +59,7 @@ export function SessionMetadata({ session }: { session: Session }) {
   const hasMetadata =
     session.plan?.state === 'available' ||
     session.plan?.state === 'malformed' ||
-    session.delegations.length > 0 ||
+    session.subagents.length > 0 ||
     session.pullRequest !== null ||
     ticketKey !== null ||
     timing !== null
@@ -80,10 +80,10 @@ export function SessionMetadata({ session }: { session: Session }) {
           <GitPullRequestArrow aria-hidden="true" />
         </span>
       ) : null}
-      {session.delegations.length > 0 ? (
+      {session.subagents.length > 0 ? (
         <span className="inline-flex items-center gap-1">
           <Bot aria-hidden="true" />
-          <span>{session.delegations.length}</span>
+          <span>{session.subagents.length}</span>
         </span>
       ) : null}
     </span>

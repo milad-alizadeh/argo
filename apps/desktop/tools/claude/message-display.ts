@@ -25,7 +25,7 @@ async function replies(reader: Reader, sessionId: string) {
     type: 'session.feed',
     requestId: 'live',
     sessionId,
-    delegationId: null,
+    subagentId: null,
     revision: null,
   })) as { rows?: Row[] }
   return (reply.rows ?? []).filter((row) => row.shape === 'prose' && row.role === 'assistant')

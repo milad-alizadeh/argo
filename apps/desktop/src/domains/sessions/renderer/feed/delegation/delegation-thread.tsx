@@ -4,12 +4,7 @@ import { Bot, Check, ChevronRight, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
-import {
-  type AgentThread,
-  delegationFacts,
-  isRunning,
-  useDelegationClock,
-} from './delegation-facts'
+import { type AgentThread, delegationFacts } from './delegation-facts'
 import './delegation-thread.css'
 
 const NODE_BOX = 'flex size-(--size-icon-control) shrink-0 items-center justify-center'
@@ -42,17 +37,9 @@ function ThreadStep({ node, children }: { node: ReactNode; children: ReactNode }
 }
 
 // One Subagent. `onOpen` is the link into the child's own Session; without one, no chevron.
-export function ThreadCard({
-  agent,
-  now,
-  onOpen,
-}: {
-  agent: AgentThread
-  now: number
-  onOpen?: () => void
-}) {
+export function ThreadCard({ agent, onOpen }: { agent: AgentThread; onOpen?: () => void }) {
   const { t } = useTranslation('sessions')
-  const { title, state, facts, line } = delegationFacts(agent, now, t)
+  const { title, state, facts, line } = delegationFacts(agent, t)
   const running = agent.phase === 'running'
   return (
     <div className={`border bg-card px-snug py-tight ${FEED_CARD_RADIUS_CLASS}`}>
@@ -97,7 +84,6 @@ export function DelegationThread({
   onOpen?: (agent: AgentThread) => void
 }) {
   const { t } = useTranslation('sessions')
-  const now = useDelegationClock(isRunning(agents))
   return (
     <section aria-label={t('marks.subagents')} className="min-w-0 py-1" data-slot="feed-delegation">
       <ol className="flex min-w-0 flex-col gap-tight">
@@ -105,7 +91,6 @@ export function DelegationThread({
           <li key={agent.id}>
             <ThreadCard
               agent={agent}
-              now={now}
               onOpen={onOpen === undefined ? undefined : () => onOpen(agent)}
             />
           </li>

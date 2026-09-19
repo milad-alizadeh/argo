@@ -1,30 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionFeedRowSchema, sessionRosterRowSchema } from '../contract/models'
+import { rosterRow } from '../contract/roster-row-test-fixture'
 
-const roster = {
-  id: 'session-one',
-  retiredIds: [],
-  cli: 'claude',
-  posture: 'managed',
-  title: null,
-  status: 'idle',
-  entry: 'interactive',
-  cwd: null,
-  branch: null,
-  updatedAt: null,
-  unreadableLines: 0,
-  originUnread: false,
-  turnStartedAt: null,
-  activity: null,
-  plan: null,
-  delegations: [],
-  shell: [],
-  pullRequest: null,
-  ticket: null,
-  archived: false,
-  setup: { model: null, effort: null, mode: null },
-}
+const roster = rosterRow()
 
 test('accepts only complete Roster rows', () => {
   for (const [value, accepted] of [

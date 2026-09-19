@@ -31,40 +31,40 @@ export type SessionShellOutputRead = z.infer<typeof sessionShellOutputReadSchema
 // What each Subagent of one Session has spent (#1582). The parent transcript records no usage
 // for the work a Subagent does, so this is read from the Subagent's own transcript, and only
 // while a reader is looking at the roster that draws it.
-export const sessionDelegationUsageRequestSchema = z.strictObject({
+export const sessionSubagentUsageRequestSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('session.delegation.usage'),
+  type: z.literal('session.subagent.usage'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
 })
-export type SessionDelegationUsageRequest = z.infer<typeof sessionDelegationUsageRequestSchema>
+export type SessionSubagentUsageRequest = z.infer<typeof sessionSubagentUsageRequestSchema>
 
-export const sessionDelegationUsageSchema = z.strictObject({
+export const sessionSubagentUsageSchema = z.strictObject({
   id: identifierSchema,
   tokens: z.number().nullable(),
   model: z.string().nullable().optional(),
 })
-export type SessionDelegationUsage = z.infer<typeof sessionDelegationUsageSchema>
-export type DelegationUsageFacts = Omit<SessionDelegationUsage, 'id'>
+export type SessionSubagentUsage = z.infer<typeof sessionSubagentUsageSchema>
+export type SubagentUsageFacts = Omit<SessionSubagentUsage, 'id'>
 
-export const sessionDelegationUsageReadSchema = z.strictObject({
+export const sessionSubagentUsageReadSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('session.delegation.usage.read'),
+  type: z.literal('session.subagent.usage.read'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
   // One entry per Subagent whose transcript was read, keyed by the call that spawned it. Tokens
   // are null when absent. Model is absent when an adapter does not read it and null when unread.
-  usage: z.array(sessionDelegationUsageSchema),
+  usage: z.array(sessionSubagentUsageSchema),
 })
-export type SessionDelegationUsageRead = z.infer<typeof sessionDelegationUsageReadSchema>
+export type SessionSubagentUsageRead = z.infer<typeof sessionSubagentUsageReadSchema>
 
 export const sessionShellOutputReplySchema = z.union([
   sessionShellOutputReadSchema,
   sessionErrorSchema,
 ])
 export type SessionShellOutputReply = z.infer<typeof sessionShellOutputReplySchema>
-export const sessionDelegationUsageReplySchema = z.union([
-  sessionDelegationUsageReadSchema,
+export const sessionSubagentUsageReplySchema = z.union([
+  sessionSubagentUsageReadSchema,
   sessionErrorSchema,
 ])
-export type SessionDelegationUsageReply = z.infer<typeof sessionDelegationUsageReplySchema>
+export type SessionSubagentUsageReply = z.infer<typeof sessionSubagentUsageReplySchema>

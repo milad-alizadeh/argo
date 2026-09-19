@@ -92,6 +92,6 @@ test('the Roster row for a pending Session is a fresh, untouched Session on the 
   expect(row.cwd).toBe('/argo')
   expect(row.status).toBe('starting')
   expect(row.title).toBeNull()
-  expect(row.delegations).toEqual([])
+  expect(row.subagents).toEqual([])
   expect(row.shell).toEqual([])
 })

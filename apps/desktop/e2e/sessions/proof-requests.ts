@@ -2,12 +2,12 @@
 // document revision, so either CLI must return rows rather than an unchanged acknowledgement.
 export const CLAUDE_FEED_REQUEST = {
   sessionId: 'resumeChild',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 
 export const CODEX_FEED_REQUEST = {
   sessionId: 'rollout-codexChild',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }

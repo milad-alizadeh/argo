@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { sessionDelegation, sessionRosterRow } from '../../session-fixtures'
+import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import { useRosterFilterStore } from '../../state/use-roster-filter-store'
 import { useRosterWindowStore } from '../../state/use-roster-window-store'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
@@ -13,7 +13,7 @@ const session = sessionRosterRow({
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
-  delegations: [sessionDelegation({ id: 'interface-review', label: 'Interface review' })],
+  subagents: [sessionSubagent({ id: 'interface-review', label: 'Interface review' })],
 }) satisfies SessionsListed['sessions'][number]
 
 const listed = {

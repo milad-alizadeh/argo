@@ -21,9 +21,9 @@ function firstLine(text: string | null | undefined): string | undefined {
 }
 
 function promptLine(record: TranscriptRecord): string | undefined {
-  // A voice thread opens on what the person said, handed over as a delegation rather than a prompt.
-  if (record.kind === 'delegation')
-    return record.actor === 'agent' ? firstLine(record.action) : undefined
+  // A voice thread opens on what the person said, handed over as a voice request rather than a prompt.
+  if (record.kind === 'event')
+    return record.event === 'command' ? firstLine(record.text) : undefined
   if (record.kind !== 'message' || record.role !== 'user') return undefined
   return record.blocks
     .map((block) =>

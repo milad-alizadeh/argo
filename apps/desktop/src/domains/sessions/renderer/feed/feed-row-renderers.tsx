@@ -4,11 +4,11 @@ import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedGallery, FeedImage } from './content/feed-images'
 import { FeedMarkdown } from './content/feed-markdown'
-import { FeedDelegation } from './feed-delegation'
 import { FeedEvent } from './feed-event'
 import { FeedMarker } from './feed-marker'
 import { FeedPrompt } from './feed-prompt'
 import { FeedQuestion } from './feed-question'
+import { FeedSubagent } from './feed-subagent'
 import { RunningText } from './feed-tool-status'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 import type { ToolGroupState } from './tool-group-state'
@@ -98,8 +98,7 @@ export const FEED_ROW_RENDERERS = {
   ),
   'command-output': ({ row }) => <PlainText text={row.text} />,
   event: ({ row }) => <FeedEvent row={row} />,
-  delegation: ({ row }) => <FeedDelegation row={row} />,
-  'delegation-group': ({ row }) => <FeedDelegation row={row} />,
+  subagent: ({ row }) => <FeedSubagent row={row} />,
   marker: ({ row }) => <FeedMarker row={row} />,
   source: ({ row }) => <p>{row.label}</p>,
   image: ({ row }) => (

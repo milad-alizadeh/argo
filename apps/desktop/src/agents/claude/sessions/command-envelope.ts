@@ -6,7 +6,7 @@ import type {
 } from '../../../domains/sessions/contract/transcript'
 import { taggedField, taggedText } from '../../envelope-tags'
 import { readableCommandOutput } from './command-output'
-import { identifierTag, readTaskDelivery } from './task-notification'
+import { readTaskDelivery } from './task-notification'
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content
@@ -75,29 +75,6 @@ function harnessEvent(record: Record<string, unknown>, text: string): HarnessEve
   return { kind: 'event', uuid: '', event: presentation.event, text: eventText }
 }
 
-function readRealtimeDelegation(
-  record: Record<string, unknown>,
-  message: TranscriptMessage,
-  text: string,
-): TranscriptRecord | null {
-  if (!isHarnessDelivery(record) || envelopeName(text) !== 'realtime_delegation') return null
-  const body = completeEnvelope(text, 'realtime_delegation')
-  if (body === null) return { kind: 'trace', uuid: message.uuid }
-  const action = taggedField(body, 'input')
-  if (action === null) return { kind: 'trace', uuid: message.uuid }
-  return {
-    kind: 'delegation',
-    uuid: message.uuid,
-    timestamp: message.timestamp,
-    actor: 'agent',
-    action,
-    status: taggedField(body, 'status'),
-    progress: taggedField(body, 'progress'),
-    groupId: identifierTag(body, 'id'),
-    callId: null,
-  }
-}
-
 function readCommandPrompt(text: string): string | null | undefined {
   if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return undefined
   const name = taggedText(text, 'command-name')
@@ -120,8 +97,6 @@ export function readCommandEnvelope(
   const content = isRecord(record.message) ? record.message.content : null
   const text = envelopeText(content)
   if (text === null) return null
-  const delegation = readRealtimeDelegation(record, message, text)
-  if (delegation !== null) return delegation
   const event = harnessEvent(record, text)
   if (event !== null)
     return event.kind === 'trace'
