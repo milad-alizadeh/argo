@@ -5,13 +5,10 @@ import { type SessionFeedRow, sessionFeedRowSchema } from '../contract/feed-rows
 import { toolRows } from '../contract/tool-feed'
 import { groupToolRuns, TOOL_KIND_PRESENTATION } from '../contract/tool-groups'
 import type { ToolCall } from '../contract/transcript'
+import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, name: 'Bash', input: { command } }
-}
-
-function edit(id: string, path: string): ToolCall {
-  return { id, name: 'Edit', input: { file_path: path, old_string: 'a', new_string: 'b' } }
 }
 
 function unclassified(id: string): ToolCall {
@@ -72,13 +69,13 @@ test('several consecutive Codex exec calls read as commands, the same as Bash', 
 })
 
 test('several consecutive file edits state the count', () => {
-  const found = group(rowsFor([edit('e1', 'a.ts'), edit('e2', 'b.ts')]))
+  const found = group(rowsFor([editCall('e1', 'a.ts'), editCall('e2', 'b.ts')]))
   assert.equal(found.label, 'Edited 2 files')
 })
 
 test('a mixed run states both counts in one summary', () => {
   const found = group(
-    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), edit('e1', 'a.ts')]),
+    rowsFor([bash('c1', 'bun test'), bash('c2', 'bun run build'), editCall('e1', 'a.ts')]),
   )
   assert.equal(found.label, 'Ran 2 commands, edited a file')
 })
@@ -128,17 +125,17 @@ test('a long tool run keeps its group id inside the Session feed contract', () =
 })
 
 test('a web search reads as its query under a globe, and a fetch as its page', () => {
-  const found = group(rowsFor([{ id: 'w', name: 'web__run', input: { query: 'argo cockpit' } }]))
+  const found = group(rowsFor([searchCall('w', 'argo cockpit', 'web')]))
   assert.equal(found.calls[0]?.kind, 'searched')
   assert.equal(found.calls[0]?.label, 'Searched argo cockpit')
   assert.equal(TOOL_KIND_PRESENTATION.searched.icon, 'globe')
   const url = 'https://rdap.verisign.com/com/v1/domain/argo.com'
-  const fetched = group(rowsFor([{ id: 'f', name: 'web__run', input: { url } }]))
+  const fetched = group(rowsFor([fetchCall('f', url)]))
   assert.equal(fetched.calls[0]?.label, `Fetched ${url}`)
 })
 
 test('a web call that Codex reported failing carries the outcome in its title', () => {
-  const call: ToolCall = { id: 'f', name: 'web__run', input: { url: 'https://x.test/a' } }
+  const call = fetchCall('f', 'https://x.test/a')
   const results = new Map([
     [
       'f',

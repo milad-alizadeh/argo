@@ -1,0 +1,6 @@
+{"timestamp":"2026-09-19T10:00:00.000Z","type":"session_meta","payload":{"session_id":"parityOrchestration","id":"parityOrchestration","timestamp":"2026-09-19T10:00:00.000Z","cwd":"/Users/x/argo","originator":"Codex Desktop","cli_version":"0.154.0-alpha.6.2","source":"vscode","thread_source":"user"}}
+{"timestamp":"2026-09-19T10:00:00.500Z","ordinal":1,"type":"response_item","payload":{"type":"message","id":"msg_prompt","role":"user","content":[{"type":"input_text","text":"List the open issues."}]}}
+{"timestamp":"2026-09-19T10:00:01.000Z","ordinal":2,"type":"response_item","payload":{"type":"function_call","id":"fc_1","call_id":"m1","name":"mcp__github__list_issues","arguments":"{\"state\":\"open\"}"}}
+{"timestamp":"2026-09-19T10:00:02.000Z","ordinal":3,"type":"response_item","payload":{"type":"function_call_output","id":"fco_1","call_id":"m1","output":"3 issues"}}
+{"timestamp":"2026-09-19T10:00:03.000Z","ordinal":4,"type":"response_item","payload":{"type":"function_call","id":"fc_2","call_id":"m2","name":"wait","arguments":"{\"session_id\":1}"}}
+{"timestamp":"2026-09-19T10:00:04.000Z","ordinal":5,"type":"response_item","payload":{"type":"function_call_output","id":"fco_2","call_id":"m2","output":"still running"}}

@@ -7,8 +7,11 @@
 import { isRecord } from '@/shared/validation'
 import type { ToolCall, TranscriptRecord } from '../../../domains/sessions/contract/transcript'
 import { withCommandFacts } from './command-facts'
+import { withEditFacts } from './edit-facts'
+import { withLookupFacts } from './lookup-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
+import { withOtherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
@@ -53,9 +56,11 @@ function readArguments(value: unknown): Record<string, unknown> {
     const url = [writtenField(value, 'ref_id'), writtenField(value, 'url')].find(
       (found) => found?.startsWith('http') === true,
     )
+    const path = writtenField(value, 'path')
     return {
       arguments: value,
       ...(cmd === null ? {} : { cmd }),
+      ...(path === null ? {} : { path }),
       ...(query === null ? {} : { query }),
       ...(url === undefined ? {} : { url }),
     }
@@ -98,6 +103,28 @@ const COLLABORATION_CALLS = new Set([
   'interrupt_agent',
 ])
 
+// A `web_search_call` item is the call and its outcome in one line, so it lands with its own
+// result. `web.search` and `web__run` are the same act written as a function call.
+function readWebSearchRecord(
+  record: Record<string, unknown>,
+  payload: Record<string, unknown>,
+): TranscriptRecord | null {
+  if (typeof payload.id !== 'string') return null
+  const call = withLookupFacts({
+    id: payload.id,
+    name: 'web_search_call',
+    input: isRecord(payload.action) ? payload.action : {},
+  })
+  return messageRecord(record, {
+    uuid: payload.id,
+    role: 'assistant',
+    originSessionId: null,
+    blocks: [{ shape: 'tool', callId: call.id }],
+    toolCalls: [call],
+    toolResults: [{ callId: call.id, blocks: [], failed: payload.status === 'failed' }],
+  })
+}
+
 // The call becomes the row itself (an assistant delivery); its result carries no block of its
 // own, matching how a Claude `tool_result` lands in a message with nothing left to draw.
 export function readToolRecord(
@@ -112,6 +139,9 @@ export function readToolRecord(
     const visible = calls
       .filter((call) => !COLLABORATION_CALLS.has(call.name))
       .map(withCommandFacts)
+      .map(withLookupFacts)
+      .map(withEditFacts)
+      .map(withOtherFacts)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',
@@ -120,6 +150,7 @@ export function readToolRecord(
       toolCalls: visible,
     })
   }
+  if (payload.type === 'web_search_call') return readWebSearchRecord(record, payload)
   if (payload.type === 'function_call_output' || payload.type === 'custom_tool_call_output') {
     const results = readToolResults(payload)
     if (results.length === 0 || typeof payload.id !== 'string') return null

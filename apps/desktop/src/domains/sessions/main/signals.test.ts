@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readActivity } from '../contract/signals'
 import type { ToolCall, ToolResult, TranscriptMessage } from '../contract/transcript'
+import { readCall } from './tool-feed-test-fixtures'
 
 function promptMessage(): TranscriptMessage {
   return {
@@ -47,17 +48,16 @@ function resultMessage(callId: string, result: ToolResult): TranscriptMessage {
   }
 }
 
-// The newest call of a Turn the transcript has not answered yet.
-function openActivity(name: string, input: ToolCall['input']) {
-  return readActivity([promptMessage(), callMessage({ id: 'call-1', name, input })])
-}
-
 test('uses the Feed label for a non-command tool while retaining its activity metadata', () => {
-  assert.deepEqual(openActivity('Read', { file_path: '/workspace/src/app.ts' }), {
+  const activity = readActivity([
+    promptMessage(),
+    callMessage(readCall('call-1', '/workspace/src/app.ts')),
+  ])
+  assert.deepEqual(activity, {
     label: 'Read app.ts',
     kind: 'read',
     open: true,
-    tool: 'Read',
+    tool: 'file',
     target: 'app.ts',
   })
 })

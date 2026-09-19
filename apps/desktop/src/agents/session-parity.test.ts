@@ -9,6 +9,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { createSessionReader } from '../domains/sessions/main/reader'
 import { fed, feedRequest, listed, rowsOf } from '../domains/sessions/main/reader-test-helpers'
+import { toolCallsOf } from '../domains/sessions/main/tool-calls-of'
 import { claudeSessionSource } from './claude/sessions/read-sessions'
 import { readerOverRollout } from './codex/sessions/rollout-reader-test-helper'
 
@@ -16,27 +17,24 @@ const SESSIONS = fileURLToPath(new URL('../../mocks/cli', import.meta.url))
 type Context = { after: (cleanup: () => Promise<void>) => void }
 
 const HARNESSES = {
-  claude: async (context: Context) => {
+  claude: async (context: Context, session: string) => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'argo-parity-claude-'))
     context.after(() => rm(root, { recursive: true, force: true }))
     await mkdir(path.join(root, 'project-one'), { recursive: true })
     await copyFile(
-      path.join(SESSIONS, 'claude/fixtures/sessions/parityExecute.jsonl'),
-      path.join(root, 'project-one', 'parityExecute.jsonl'),
+      path.join(SESSIONS, `claude/fixtures/sessions/${session}.jsonl`),
+      path.join(root, 'project-one', `${session}.jsonl`),
     )
     return createSessionReader([claudeSessionSource({ transcripts: root })])
   },
-  codex: (context: Context) =>
-    readerOverRollout(context, {
-      fixture: 'rollout-parityExecute.jsonl',
-      session: 'parityExecute',
-    }),
+  codex: (context: Context, session: string) =>
+    readerOverRollout(context, { fixture: `rollout-${session}.jsonl`, session }),
 }
 
-async function read(harness: keyof typeof HARNESSES, context: Context) {
-  const reader = await HARNESSES[harness](context)
-  const feed = rowsOf(await fed(reader, feedRequest('parityExecute')))
-  const roster = (await listed(reader))?.sessions.find((row) => row.id === 'parityExecute')
+async function read(harness: keyof typeof HARNESSES, context: Context, session = 'parityExecute') {
+  const reader = await HARNESSES[harness](context, session)
+  const feed = rowsOf(await fed(reader, feedRequest(session)))
+  const roster = (await listed(reader))?.sessions.find((row) => row.id === session)
   assert.ok(roster !== undefined, `${harness} lists the Session`)
   return { feed, roster }
 }
@@ -47,19 +45,13 @@ test('a command reads the same for Claude and for Codex', async (context) => {
   const claude = await read('claude', context)
   const codex = await read('codex', context)
 
-  const calls = (feed: typeof claude.feed) =>
-    feed.flatMap((row) =>
-      row.shape === 'tool-group'
-        ? row.calls.map(({ kind, status, label, text }) => ({ kind, status, label, text }))
-        : [],
-    )
   const expected = [
     { kind: 'command', status: 'succeeded', label: 'Ran bun test', text: 'bun test' },
     { kind: 'command', status: 'failed', label: 'Ran bun run lint', text: 'bun run lint' },
     { kind: 'command', status: 'running', label: 'Ran bun run build', text: 'bun run build' },
   ]
-  assert.deepEqual(calls(claude.feed), expected)
-  assert.deepEqual(calls(codex.feed), expected)
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
 
   const shell = (row: typeof claude.roster) =>
     row.shell.map(({ command, label, background, state, outputPath, result }) => ({
@@ -84,4 +76,63 @@ test('a command reads the same for Claude and for Codex', async (context) => {
   ]
   assert.deepEqual(shell(claude.roster), running)
   assert.deepEqual(shell(codex.roster), running)
+})
+
+// What each harness lacks for a lookup, by name: Codex writes no typed file search, so a file
+// search is a Claude row only, and neither harness records a page or query outcome here.
+test('a file read, a web search and a web fetch read the same for Claude and for Codex', async (context) => {
+  const claude = await read('claude', context, 'parityLookup')
+  const codex = await read('codex', context, 'parityLookup')
+
+  const expected = [
+    { kind: 'read', status: 'succeeded', label: 'Read shot.png', text: null },
+    { kind: 'searched', status: 'succeeded', label: 'Searched argo cockpit', text: 'argo cockpit' },
+    {
+      kind: 'searched',
+      status: 'succeeded',
+      label: 'Fetched https://example.com/argo',
+      text: 'https://example.com/argo',
+    },
+  ]
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
+  assert.equal(claude.roster.status, codex.roster.status)
+})
+
+// What each harness lacks here, by name: neither records a server or tool fact outside the call's
+// name, and only Claude has a Skill tool, so a skill row is a Claude case alone (see the Claude
+// integration test). A poll or wait call draws no row in either.
+test('an MCP call reads the same for Claude and for Codex, and a poll draws no row', async (context) => {
+  const claude = await read('claude', context, 'parityOrchestration')
+  const codex = await read('codex', context, 'parityOrchestration')
+
+  const expected = [
+    { kind: 'tool', status: 'succeeded', label: 'github · list_issues', text: null },
+  ]
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
+  assert.equal(claude.roster.status, codex.roster.status)
+})
+
+// What each harness lacks for an edit, by name: Claude has no tool that deletes a file, so a
+// deletion is a Codex row only (see `codexDelete`), and Codex writes no per-file result, so a
+// multi-file patch shares one status across its rows.
+test('a written file and two edits read the same for Claude and for Codex', async (context) => {
+  const claude = await read('claude', context, 'parityEdit')
+  const codex = await read('codex', context, 'parityEdit')
+
+  const expected = [
+    { kind: 'created', status: 'succeeded', label: 'Created notes.md', text: null },
+    { kind: 'edited', status: 'succeeded', label: 'Edited app.ts', text: null },
+    { kind: 'edited', status: 'succeeded', label: 'Edited util.ts', text: null },
+  ]
+  assert.deepEqual(toolCallsOf(claude.feed), expected)
+  assert.deepEqual(toolCallsOf(codex.feed), expected)
+  assert.equal(claude.roster.status, codex.roster.status)
+  // The Roster names the newest file either way; `tool` is the harness's own name and differs.
+  const activity = (row: typeof claude.roster) => {
+    const { kind, label, target } = row.activity ?? { kind: null, label: null, target: null }
+    return { kind, label, target }
+  }
+  assert.deepEqual(activity(claude.roster), activity(codex.roster))
 })
