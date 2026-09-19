@@ -13,13 +13,21 @@ export function selectDevelopmentProject(projects: ProjectStore, repository: Rep
     (project) => project.commonDirectory === repository.commonDirectory,
   )
   if (existing) {
-    if (existing.path !== repository.path) projects.updateProjectPath(existing.id, repository.path)
+    if (!keepsReadySetupWorktree(projects, existing)) {
+      if (existing.path !== repository.path)
+        projects.updateProjectPath(existing.id, repository.path)
+    }
     if (registry.selectedId !== existing.id) projects.selectProject(existing.id)
     return
   }
   const project = { id: `project-${randomUUID()}`, ...repository }
   projects.insertProject(project)
   projects.selectProject(project.id)
+}
+
+function keepsReadySetupWorktree(projects: ProjectStore, project: ProjectRegistration) {
+  const checkpoint = projects.readSetupCheckpoint(project.id)
+  return checkpoint?.phase === 'ready' && checkpoint.worktreePath === project.path
 }
 
 export async function seedDevelopmentProject(

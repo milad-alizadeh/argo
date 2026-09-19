@@ -5,12 +5,18 @@ import os from 'node:os'
 import path from 'node:path'
 import { test as base, type TestInfo } from '@playwright/test'
 import type { BrowserContext, ElectronApplication, Page } from 'playwright-core'
+import {
+  type MockSetupDocument,
+  startMockSetupDocumentLoopback,
+} from '../mocks/providers/setup/mock-setup-document-loopback'
 import { packagedTestCopy } from './packaged-app'
 import { FlowPerformanceProfile, performanceProfileEnabled } from './performance-profile'
 
 export type PackagedProofFixtures = {
   // A temporary directory this test alone writes to, removed however the test ends.
   root: string
+  setupBackend: 'production' | 'remote'
+  setupDocument: MockSetupDocument | undefined
 }
 
 export type PackagedProofWorkerFixtures = {
@@ -48,6 +54,19 @@ export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtur
       await use(root)
     } finally {
       await rm(root, { recursive: true, force: true })
+    }
+  },
+  setupBackend: ['production', { option: true }],
+  setupDocument: async ({ setupBackend }, use) => {
+    if (setupBackend === 'production') {
+      await use(undefined)
+      return
+    }
+    const setupDocument = await startMockSetupDocumentLoopback()
+    try {
+      await use(setupDocument)
+    } finally {
+      await setupDocument.close()
     }
   },
 })

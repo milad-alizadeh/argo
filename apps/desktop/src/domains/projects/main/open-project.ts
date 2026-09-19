@@ -1,10 +1,13 @@
 import { opendir } from 'node:fs/promises'
 import { isRecord } from '@/shared/validation'
 import { type ProjectOpenReply, type ProjectOpenRequest, projectError } from '../contract/contract'
+import type { SetupDocument } from '../contract/setup-document'
 import { toSummary } from './presentation'
 import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
 import type { ProjectStore } from './register-project'
-import { isProjectStoreInvalid } from './sqlite-store'
+import { isProjectStoreInvalid, type SetupCheckpoint } from './sqlite-store'
+
+type OpenProjectStore = ProjectStore & { loadSetupDocument: () => Promise<SetupDocument> }
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {
@@ -20,7 +23,7 @@ function loadProjects(store: ProjectStore) {
 
 export async function openProject(
   request: ProjectOpenRequest,
-  store: ProjectStore,
+  store: OpenProjectStore,
 ): Promise<ProjectOpenReply> {
   const projects = loadProjects(store)
   if (!Array.isArray(projects)) return { ...projects, requestId: request.requestId }
@@ -34,8 +37,10 @@ export async function openProject(
   const configuration = await readProjectConfiguration(project.path)
   const configurationSource = await readProjectConfigurationSource(project.path)
   const checkpoint = store.projects.readSetupCheckpoint(project.id)
+  const documentChanged = await setupDocumentChanged(checkpoint, store)
   if (
     configuration === null ||
+    documentChanged ||
     (checkpoint?.phase === 'ready' && checkpoint.configurationSource !== configurationSource)
   ) {
     if (checkpoint) {
@@ -57,6 +62,18 @@ export async function openProject(
     type: 'project.opened',
     requestId: request.requestId,
     project: { id: summary.id, name: summary.name },
+  }
+}
+
+async function setupDocumentChanged(
+  checkpoint: SetupCheckpoint | null,
+  store: Pick<OpenProjectStore, 'loadSetupDocument'>,
+) {
+  if (checkpoint?.phase !== 'ready') return false
+  try {
+    return (await store.loadSetupDocument()).revision !== checkpoint.documentRevision
+  } catch {
+    return false
   }
 }
 

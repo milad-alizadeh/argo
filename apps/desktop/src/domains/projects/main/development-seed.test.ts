@@ -55,3 +55,32 @@ test('keeps the Project identity and connection when a different worktree opens 
     selectedId: 'project-argo',
   })
 })
+
+test('keeps the ready setup worktree when a development window restarts', () => {
+  const projectPath = '/worktrees/ticket-2391'
+  const setupPath = '/repositories/argo/.argo/worktrees/setup-project-argo'
+  const projects = store({
+    projects: [
+      {
+        id: 'project-argo',
+        path: setupPath,
+        commonDirectory: '/repositories/argo/.git',
+      },
+    ],
+    selectedId: 'project-argo',
+  })
+  projects.writeSetupCheckpoint({
+    projectId: 'project-argo',
+    worktreePath: setupPath,
+    phase: 'ready',
+    configurationSource: '{"version":1}',
+    documentRevision: '2026-09-19.1',
+  })
+
+  selectDevelopmentProject(projects, {
+    path: projectPath,
+    commonDirectory: '/repositories/argo/.git',
+  })
+
+  assert.equal(projects.read().projects[0]?.path, setupPath)
+})

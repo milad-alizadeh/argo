@@ -126,6 +126,10 @@ describe('the root command surface', () => {
 describe('forge.config.ts', () => {
   const config = read(path.join(desktopRoot, 'forge.config.ts'))
 
+  test('drops development caches from the packaged app', () => {
+    expect(config).toContain('/^\\/node_modules\\/\\.cache($|\\/)/')
+  })
+
   // AutoUnpackNativesPlugin only knows `**/*.node`, and `spawn-helper` has no extension. Under
   // the plugin alone the helper stays inside the archive, node-pty's `app.asar.unpacked` rewrite
   // points at nothing, and every spawn fails silently.
