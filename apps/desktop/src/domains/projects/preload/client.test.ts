@@ -111,6 +111,7 @@ test('sends manual setup through the Project contract', async () => {
       requestId: request.requestId,
       project: { id: 'project-1', name: 'example' },
       source: '{"version":1}\n',
+      saved: true,
     }
   })
 
