@@ -6,6 +6,7 @@ import type {
   ToolCall,
   ToolResult,
 } from '../../../domains/sessions/contract/transcript'
+import { askFacts } from './ask-facts'
 import { bashFacts } from './bash-facts'
 import { editFacts } from './edit-facts'
 import { lookupFacts } from './lookup-facts'
@@ -67,6 +68,7 @@ function readToolCall(id: string, name: string, input: Record<string, unknown>):
     name,
     input,
     ...(execute === undefined ? {} : { execute }),
+    ...askFacts(name, input),
     ...lookupFacts(name, input),
     ...skillOrOtherFacts(name, input),
     ...editFacts(name, input),

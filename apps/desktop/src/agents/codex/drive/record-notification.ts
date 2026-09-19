@@ -10,7 +10,7 @@ import type { PendingCodexQuestion } from './question-protocol'
 import { readRequestUserInput } from './question-protocol'
 import { readUpdatedThreadName } from './rename-protocol'
 
-type HeldSession = {
+export type HeldSession = {
   messages: LiveMessages
   plan: SessionPlan | null
   status: SessionRosterRow['status']
@@ -42,6 +42,7 @@ export function recordCodexNotification({
   const question = readRequestUserInput(message)
   if (question?.threadId === sessionId) {
     session.pendingQuestion = question
+    session.status = 'asking'
     return true
   }
   if (session.messages.record(message)) return false

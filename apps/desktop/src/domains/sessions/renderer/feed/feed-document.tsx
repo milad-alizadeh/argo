@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
+import type { QuestionAnswer } from '../../contract/question'
 import { foldSettledToolRuns, withHeadline } from '../../contract/tool-groups'
 import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
 import { sessionPostureLocksAnswer } from '../types'
@@ -16,7 +16,7 @@ import { useSettledFeed } from './use-settled-feed'
 // Shared by FeedDocument and BasicFeed's own prop type, so the two don't drift out of sync.
 export type FeedQuestionHandlers = {
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
   stallTimeoutMs?: number

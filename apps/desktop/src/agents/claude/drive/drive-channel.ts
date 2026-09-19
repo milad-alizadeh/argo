@@ -1,4 +1,4 @@
-import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '../../../domains/sessions/contract/question'
 import type {
   OwnershipLedger,
   OwnershipStanding,
@@ -120,7 +120,7 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
     },
     // Queued behind any Turn or rename already typing, so an answer never interleaves keystrokes
     // with one of those.
-    answer(session: ManagedSession, answers: ClaudeQuestionAnswer[]) {
+    answer(session: ManagedSession, answers: QuestionAnswer[]) {
       const delivery = session.queue.then(() => {
         if (session.ended) throw new ClaudeSessionDriverError('not-drivable')
         return deliverAnswer(session, answers, waitWhileLive(session))

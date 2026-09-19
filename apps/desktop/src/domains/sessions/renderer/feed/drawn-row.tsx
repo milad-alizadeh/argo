@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
+import type { QuestionAnswer } from '../../contract/question'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { FeedRow } from './feed-row'
 import type { Reveal } from './reveal'
@@ -21,7 +21,7 @@ type DrawnRowInputs = {
   onOpenEvidence: (evidence: SessionEvidence) => void
   toolGroups: ToolGroupState
   revealCache: RevealCache
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
   // Argo can only write an answer into a Session whose channel it currently holds (#2205); every
@@ -55,7 +55,7 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
     [],
   )
   const onAnswerQuestion = useCallback(
-    (questionId: string, answers: ClaudeQuestionAnswer[]) =>
+    (questionId: string, answers: QuestionAnswer[]) =>
       answerQuestion.current(sessionId, questionId, answers),
     [sessionId],
   )

@@ -1,6 +1,6 @@
-import type { ClaudeQuestionAnswer } from '../../../domains/sessions/contract/claude-contract'
 import type { ClaudePermission } from '../../../domains/sessions/contract/contract'
 import type { SessionRosterRow } from '../../../domains/sessions/contract/models'
+import type { QuestionAnswer } from '../../../domains/sessions/contract/question'
 import { managedRow } from '../../../domains/sessions/main/managed-row'
 import { rollupSessionStatus } from '../../../domains/sessions/main/session-status-rollup'
 import {
@@ -39,7 +39,7 @@ export type ClaudeSessionDriver = {
   decideQuestion: (
     sessionId: string,
     questionId: string,
-    answers: ClaudeQuestionAnswer[],
+    answers: QuestionAnswer[],
   ) => Promise<boolean>
   close: () => void
 }
@@ -75,7 +75,7 @@ async function decideQuestion(
     channel: ReturnType<typeof channelActions>
     sessions: Sessions
   },
-  request: { sessionId: string; questionId: string; answers: ClaudeQuestionAnswer[] },
+  request: { sessionId: string; questionId: string; answers: QuestionAnswer[] },
 ): Promise<boolean> {
   const session = context.sessions.get(request.sessionId)
   if (!session) return false

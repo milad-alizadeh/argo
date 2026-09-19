@@ -1,3 +1,5 @@
+import type { Question } from './question'
+
 // Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines on Codex is
 // `failed` with the reason as its text; a call stopped before it finished is `interrupted`.
 export const TOOL_CALL_STATUSES = [
@@ -40,6 +42,10 @@ export type OtherFacts = {
   source: { server: string; tool: string } | null
 }
 
+// A question the agent put to the person, and the one typed fact both harnesses report for it.
+// `unsupported` is why the shared form cannot answer it, null when it can.
+export type AskFacts = { kind: 'ask'; questions: Question[]; unsupported: string | null }
+
 // One file an edit touched. `diff` is the typed diff Result: the change is known from the call
 // itself, so it is ready before the harness answers.
 export type EditedFile = {
@@ -65,5 +71,6 @@ export type ToolCall = {
   fetch?: FetchFacts
   skill?: SkillFacts
   other?: OtherFacts
+  ask?: AskFacts
   edit?: EditFacts
 }

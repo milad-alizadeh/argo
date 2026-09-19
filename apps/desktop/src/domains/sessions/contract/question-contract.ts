@@ -10,7 +10,7 @@ export const sessionQuestionDecisionRequestSchema = z.strictObject({
   type: z.literal('session.question.decide'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
-  // The `AskUserQuestion` tool call id the Feed's `ask` row carries, so a decision cannot answer
+  // The id the Feed's `ask` row carries, so a decision cannot answer
   // a question this Session has already moved past.
   questionId: identifierSchema,
   answers: z.array(questionAnswerSchema).min(1),

@@ -1,9 +1,8 @@
-import { z } from 'zod'
-import { claudeQuestionSchema } from './claude-contract'
 import { editPresentation, fileName } from './file-presentation'
 import type { SessionFeedRow } from './models'
 import { searchLabel, searchOutcome } from './tool-changes'
 import {
+  type AskFacts,
   type BackgroundState,
   type ExecuteFacts,
   resultText,
@@ -31,11 +30,6 @@ export function displayedToolLabel(
 
 // A call's result and a Skill's body both arrive as later, separate records, keyed by call id.
 export type ToolEvidence = { results: Map<string, ToolResult>; skillBodies: Map<string, string> }
-
-const ASK_TOOL = 'AskUserQuestion'
-const claudeQuestionCallInputSchema = z.strictObject({
-  questions: z.array(claudeQuestionSchema).min(1),
-})
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
@@ -147,23 +141,17 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 
   }
 }
 
-// `AskUserQuestion`'s own input carries the structured question verbatim, so the row draws it
-// directly rather than summarising it into a label the way every other tool call is described.
-function askRow(call: ToolCall, results: Map<string, ToolResult>): AskRow | null {
-  const parsed = claudeQuestionCallInputSchema.safeParse(call.input)
-  if (!parsed.success) return null
-  return {
-    shape: 'ask',
-    id: call.id,
-    questions: parsed.data.questions,
-    answer: resultText(results.get(call.id)?.blocks ?? []),
-    unsupported: null,
-  }
+// The one ask row both harnesses draw: the question verbatim, never summarised into a label the
+// way every other tool call is described.
+export function askRow(id: string, ask: AskFacts, answer: string | null): AskRow {
+  return { shape: 'ask', id, questions: ask.questions, answer, unsupported: ask.unsupported }
 }
 
 // An edit over several files draws one row per file.
 function feedRows(call: ToolCall, evidence: ToolEvidence): SessionFeedRow[] {
-  if (call.name === ASK_TOOL) return [askRow(call, evidence.results) ?? toolRow(call, evidence)]
+  if (call.ask !== undefined) {
+    return [askRow(call.id, call.ask, resultText(evidence.results.get(call.id)?.blocks ?? []))]
+  }
   const files = call.edit?.files ?? []
   if (files.length > 1) return files.map((_, file) => toolRow(call, evidence, file))
   return [toolRow(call, evidence)]

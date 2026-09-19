@@ -1,4 +1,4 @@
-import type { ClaudeQuestionAnswer } from '../../contract/claude-contract'
+import type { QuestionAnswer } from '../../contract/question'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../types'
 import type { FeedDocumentContext } from './feed-document'
 import { FeedDocument } from './feed-document'
@@ -22,7 +22,7 @@ export type KeptDocumentShared = {
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
   stallTimeoutMs: number

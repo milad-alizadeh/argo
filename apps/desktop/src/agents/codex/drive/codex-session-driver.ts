@@ -150,7 +150,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       const pending = session.pendingQuestion
       if (pending.itemId !== questionId) return false
       session.channel.respond(pending.requestId, codexAnswersFor(pending, answers))
-      session.pendingQuestion = null
+      Object.assign(session, { pendingQuestion: null, status: 'running' })
       return true
     },
     close: closeManagedSessions(sessions, driver.ownership),

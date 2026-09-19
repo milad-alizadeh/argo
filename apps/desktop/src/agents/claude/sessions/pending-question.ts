@@ -1,5 +1,5 @@
 import { chainMessages } from '../../../domains/sessions/main/roster'
-import { ASK_TOOL, pendingAskCall } from '../../../domains/sessions/main/status'
+import { pendingAskCall } from '../../../domains/sessions/main/status'
 import { readSessionFiles } from './discover'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared
@@ -12,6 +12,6 @@ export async function claudePendingQuestion(
 ): Promise<{ id: string } | null> {
   const chain = await readSessionFiles(transcripts, sessionId).catch(() => null)
   if (!chain) return null
-  const id = pendingAskCall(chainMessages(chain), ASK_TOOL)
+  const id = pendingAskCall(chainMessages(chain))
   return id === null ? null : { id }
 }
