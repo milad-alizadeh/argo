@@ -222,6 +222,7 @@
     "agent": { "label": "Background Agent" },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
     "open": "Open the {{name}} Session",
+    "event": { "started": "Started", "messaged": "Messaged", "responded": "Responded" },
     "tokens": "{{amount}} tokens"
   },
   "workState": {
