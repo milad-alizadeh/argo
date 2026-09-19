@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { type ComponentProps, useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { parseSetupDocument } from '../../contract/setup-document'
 import { SetupDocumentForm } from './setup-document-form'
@@ -84,6 +85,7 @@ export const RecommendedPlan: Story = {
     saving: null,
     testConfiguration: fn(),
   },
+  render: (args) => <ControlledSetupDocumentForm {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Customize plan' })).toBeVisible()
@@ -98,4 +100,18 @@ export const RecommendedPlan: Story = {
     await expect(testRunner).toHaveTextContent('Vitest')
     await expect(canvas.getByRole('checkbox', { name: 'Add a Component explorer' })).toBeChecked()
   },
+}
+
+function ControlledSetupDocumentForm(props: ComponentProps<typeof SetupDocumentForm>) {
+  const [source, setSource] = useState(props.configurationSource)
+  return (
+    <SetupDocumentForm
+      {...props}
+      configurationSource={source}
+      onConfigurationChange={(nextSource) => {
+        props.onConfigurationChange(nextSource)
+        setSource(nextSource)
+      }}
+    />
+  )
 }

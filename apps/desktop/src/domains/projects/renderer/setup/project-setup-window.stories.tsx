@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, within } from 'storybook/test'
 import { parseSetupDocument } from '../../contract/setup-document'
 import { ProjectSetupView, ProjectSetupWindow } from './project-setup-window'
 
@@ -14,6 +14,27 @@ const STORY_CONFIGURATION_SOURCE = `${JSON.stringify(
         run: 'bun run dev',
         build: 'bun run build',
         test: 'bun run test',
+      },
+    },
+  },
+  null,
+  2,
+)}\n`
+
+const STORY_IMPORTED_CONFIGURATION_SOURCE = `${JSON.stringify(
+  {
+    version: 1,
+    targets: {
+      desktop: {
+        default: true,
+        path: 'apps/desktop',
+        packageManager: 'npm',
+        componentExplorer: true,
+        browserTests: true,
+        setup: 'npm install',
+        run: 'npm run dev',
+        build: 'npm run build',
+        test: 'npm run test',
       },
     },
   },
@@ -215,8 +236,16 @@ export const CompleteSetupJourney: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
     await expect(canvas.getByRole('heading', { name: 'Import .argo/settings.json' })).toBeVisible()
-    await expect(canvas.getByLabelText('Project configuration')).toBeVisible()
+    const configuration = canvas.getByLabelText('Project configuration')
+    await expect(configuration).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Test configuration' })).toBeVisible()
+    fireEvent.change(configuration, { target: { value: STORY_IMPORTED_CONFIGURATION_SOURCE } })
+    await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Customize plan' }))
+    await expect(canvas.getByRole('combobox', { name: 'Package manager' })).toHaveTextContent('npm')
+    await expect(canvas.getByRole('checkbox', { name: 'Add Playwright journeys' })).toBeChecked()
+    await userEvent.click(canvas.getByRole('button', { name: 'Back' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Import config' }))
     await expect(
       within(document.body).getByText('Config saved.', { selector: '[data-slot="toast-title"]' }),

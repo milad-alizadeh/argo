@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
+import { setupStoreFixture } from '../../../../../test-fixtures/projects/setup/setup-store.fixture'
 import { setupWorktreeFixture } from '../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
 import {
   SETUP_DOCUMENT_REVISION,
@@ -83,30 +84,17 @@ test('reports the GitHub Setup document failure', async () => {
 
 test('starts Setup with the configuration from the GitHub document', async (context) => {
   const { project } = await setupWorktreeFixture(context)
-  let stored: SetupCheckpoint | null = null
+  const setup = setupStoreFixture(project, setupDocument)
   const reply = await beginManualSetup(
     { projectId: 'project-1', requestId: 'setup-1' },
-    {
-      projects: {
-        read: () => ({
-          projects: [{ id: 'project-1', path: project, commonDirectory: project }],
-          selectedId: 'project-1',
-        }),
-        readSetupCheckpoint: () => stored,
-        updateProjectPath: () => undefined,
-        writeSetupCheckpoint: (checkpoint) => {
-          stored = checkpoint
-        },
-      },
-      loadSetupDocument: async () => setupDocument,
-    },
+    setup.store,
   )
 
   assert.equal(reply.type, 'project.setup.editing')
   if (reply.type !== 'project.setup.editing') return
   assert.equal(reply.document.locales.en.title, 'Set up this Project')
   assert.equal(JSON.parse(reply.source).targets.app.path, 'apps/desktop')
-  assert.equal(stored?.configurationSource, reply.source)
+  assert.equal(setup.checkpoint()?.configurationSource, reply.source)
 })
 
 test('writes manual configuration in the setup worktree, not the current checkout', async (context) => {

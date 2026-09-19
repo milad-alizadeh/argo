@@ -53,8 +53,10 @@ export async function saveManualSetup(
   if ('type' in context) return context
   const { document, project } = context
   try {
+    const reviewedRevision =
+      store.projects.readSetupCheckpoint(project.id)?.documentRevision ?? document.revision
     const checkpoint = await saveManualProjectConfiguration({
-      documentRevision: document.revision,
+      documentRevision: reviewedRevision,
       project,
       source: request.source,
       store: store.projects,

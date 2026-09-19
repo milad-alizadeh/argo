@@ -3,23 +3,12 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { projectConfigurationSource } from '../../../../../test-fixtures/projects/project-configuration.fixture'
 import { readProjectConfigurationSource } from '../project-configuration'
 import type { SetupCheckpoint } from '../sqlite-store'
 import { saveManualProjectConfiguration } from './manual-configuration'
 
-const source = JSON.stringify({
-  version: 1,
-  targets: {
-    app: {
-      default: true,
-      path: '.',
-      setup: 'bun install',
-      run: 'bun run dev',
-      build: 'bun run build',
-      test: 'bun test',
-    },
-  },
-})
+const source = projectConfigurationSource()
 
 test('keeps a tested configuration ready after importing it', async (context) => {
   const worktreePath = await mkdtemp(path.join(os.tmpdir(), 'argo-ready-setup-'))

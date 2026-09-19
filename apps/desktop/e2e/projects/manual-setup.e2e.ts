@@ -1,7 +1,6 @@
 import type { ElectronApplication, Page } from 'playwright-core'
 import type { MockSetupDocument } from '../../mocks/providers/setup/mock-setup-document-loopback'
 import { expect, test } from '../packaged-proof'
-import { LOCALLY_READY_CONFIGURATION } from './fixtures/locally-ready-project'
 import { launch, prepareManual, readManualSetupConfiguration } from './fixtures/project.fixture'
 
 test.use({ setupBackend: 'remote' })
@@ -114,7 +113,16 @@ test('keeps raw configuration in Import config and opens the tested Project', as
     await page.getByRole('button', { name: 'Back' }).click()
     await expect(configuration).toHaveCount(0)
     await page.getByRole('button', { name: 'Import config' }).click()
-    await page.getByLabel('Project configuration').fill(LOCALLY_READY_CONFIGURATION)
+    const imported = JSON.parse(await page.getByLabel('Project configuration').inputValue())
+    imported.targets.desktop.packageManager = 'npm'
+    imported.targets.desktop.browserTests = true
+    await page.getByLabel('Project configuration').fill(JSON.stringify(imported, null, 2))
+    await page.getByRole('button', { name: 'Back' }).click()
+    await page.getByRole('button', { name: 'Customize plan' }).click()
+    await expect(page.getByRole('combobox', { name: 'Package manager' })).toContainText('npm')
+    await expect(page.getByRole('checkbox', { name: 'Add Playwright journeys' })).toBeChecked()
+    await page.getByRole('button', { name: 'Back' }).click()
+    await page.getByRole('button', { name: 'Import config' }).click()
     await page.getByRole('button', { name: 'Test configuration' }).click()
     await page
       .getByRole('region', { name: 'Notifications' })
