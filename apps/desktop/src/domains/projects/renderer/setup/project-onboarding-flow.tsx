@@ -1,120 +1,12 @@
-// THROWAWAY PROTOTYPE (#2464): three intentionally different structures for one onboarding flow.
-import { Bot, Folder, PanelRight, Sparkles } from 'lucide-react'
+import { Bot, Folder, Sparkles } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { useTranslation } from 'react-i18next'
+import type { OnboardingController } from './project-onboarding'
 import { ProjectOnboardingShell } from './project-onboarding-layout'
-import type { PrototypeController } from './project-onboarding-prototype'
-import {
-  AgentTimeline,
-  ProjectEntryScene,
-  RecommendationSummary,
-  RepresentativeSessionSidebar,
-  SetupEvidence,
-  SetupProgress,
-  SetupStageContent,
-} from './project-onboarding-prototype-parts'
+import { AgentTimeline, RecommendationSummary, SetupStageContent } from './project-onboarding-parts'
 
-export function ProjectOnboardingVariantA({ controller }: { controller: PrototypeController }) {
-  if (controller.state.stage === 'entry') return <ProjectEntryScene controller={controller} />
-  return (
-    <main className="prototype-runway" aria-label="Project onboarding prototype, setup runway">
-      <header className="prototype-runway__chrome drag-region">
-        <div className="no-drag-region flex items-center gap-2">
-          <Folder className="size-4" />
-          <span className="type-heading">Set up argo</span>
-        </div>
-      </header>
-      <div className="prototype-runway__workspace">
-        <aside className="prototype-runway__steps">
-          <p className="mb-4 px-3 type-label text-muted-foreground">
-            One decision at a time. You can go back without losing your choices.
-          </p>
-          <SetupProgress stage={controller.state.stage} />
-        </aside>
-        <section className="prototype-runway__stage">
-          <div className="mx-auto w-full max-w-4xl">
-            <SetupStageContent controller={controller} presentation="runway" />
-          </div>
-        </section>
-      </div>
-    </main>
-  )
-}
-
-export function ProjectOnboardingVariantB({ controller }: { controller: PrototypeController }) {
-  if (controller.state.stage === 'entry') return <ProjectEntryScene controller={controller} />
-  return (
-    <CockpitShell
-      header={<InspectorProjectHeader />}
-      sidebar={<InspectorSidebar controller={controller} />}
-    >
-      <main
-        className="prototype-inspector"
-        aria-label="Project onboarding prototype, cockpit inspector"
-      >
-        <header className="prototype-inspector__header drag-region">
-          <div>
-            <span className="type-label text-muted-foreground">/Users/milad/Developer/argo</span>
-            <h1 className="mt-2 type-title">Prepare argo for agent Sessions</h1>
-          </div>
-          <PanelRight className="size-4 text-muted-foreground" />
-        </header>
-        <div className="prototype-inspector__workspace">
-          <section className="prototype-inspector__stage">
-            <SetupStageContent controller={controller} presentation="inspector" />
-          </section>
-          <aside className="prototype-inspector__evidence">
-            <SetupEvidence controller={controller} />
-            {[
-              'recommendations',
-              'customize',
-              'project-setup',
-              'applying',
-              'apply-failed',
-              'starting',
-              'complete',
-            ].includes(controller.state.stage) ? (
-              <div className="mt-7">
-                <h2 className="mb-3 type-heading">Current plan</h2>
-                <RecommendationSummary controller={controller} />
-              </div>
-            ) : null}
-          </aside>
-        </div>
-      </main>
-    </CockpitShell>
-  )
-}
-
-function InspectorProjectHeader() {
-  return (
-    <div className="flex items-center gap-2 px-2 type-body font-medium">
-      <Folder className="size-4" />
-      argo
-    </div>
-  )
-}
-
-function InspectorSidebar({ controller }: { controller: PrototypeController }) {
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-border/60 px-4 py-4">
-        <div className="flex items-center gap-2 type-heading">
-          <Sparkles className="size-4" />
-          Project setup
-        </div>
-        <p className="mt-1 type-label text-muted-foreground">A live checklist for this Project.</p>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-        <SetupProgress stage={controller.state.stage} />
-        <div className="my-5 border-t border-border/60" />
-        <RepresentativeSessionSidebar />
-      </div>
-    </div>
-  )
-}
-
-export function ProjectOnboardingVariantC({ controller }: { controller: PrototypeController }) {
+export function ProjectOnboardingFlow({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const conversationRef = useRef<HTMLElement>(null)
   const previousStageRef = useRef(controller.state.stage)
 
@@ -125,24 +17,23 @@ export function ProjectOnboardingVariantC({ controller }: { controller: Prototyp
     if (!conversation) return
     conversation.scrollTop = 0
     const animationFrame = window.requestAnimationFrame(() => {
-      conversation.querySelector<HTMLElement>('.prototype-stage-heading')?.focus({
+      conversation.querySelector<HTMLElement>('.onboarding-stage-heading')?.focus({
         preventScroll: true,
       })
     })
     return () => window.cancelAnimationFrame(animationFrame)
   }, [controller.state.stage])
 
-  if (controller.state.stage === 'entry') return <ProjectEntryScene controller={controller} />
   return (
     <ProjectOnboardingShell
-      accessibleName="Project onboarding prototype, agent briefing"
+      accessibleName={t('onboarding.label')}
       contentRef={conversationRef}
       event={
         <>
-          <span className="prototype-briefing__avatar">
+          <span className="onboarding-briefing__avatar">
             <Folder className="size-4" />
           </span>
-          <p>{controller.state.event}</p>
+          <p>{t(`onboarding.event.${controller.state.event}`)}</p>
         </>
       }
       header={
@@ -151,34 +42,32 @@ export function ProjectOnboardingVariantC({ controller }: { controller: Prototyp
             <Bot className="size-4" />
           </span>
           <div>
-            <h1 className="type-heading">Project setup agent</h1>
-            <p className="type-meta text-muted-foreground">argo · plan, then make changes</p>
+            <h1 className="type-heading">{t('onboarding.agent.title')}</h1>
+            <p className="type-meta text-muted-foreground">{t('onboarding.agent.subtitle')}</p>
           </div>
         </div>
       }
       introduction={
         <>
-          <span className="prototype-briefing__avatar">
+          <span className="onboarding-briefing__avatar">
             <Sparkles className="size-4" />
           </span>
-          <p>
-            I will help prepare this Project for agent Sessions. You approve every choice before I
-            apply the setup.
-          </p>
+          <p>{t('onboarding.agent.introduction')}</p>
         </>
       }
-      sidebar={<BriefingArtifact controller={controller} />}
-      sidebarDisclosureLabel="Plan summary and progress"
+      sidebar={<SetupReview controller={controller} />}
+      sidebarDisclosureLabel={t('onboarding.review.disclosure')}
     >
       <SetupStageContent controller={controller} presentation="briefing" />
     </ProjectOnboardingShell>
   )
 }
 
-function BriefingArtifact({ controller }: { controller: PrototypeController }) {
+function SetupReview({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   return (
     <>
-      <h2 className="type-heading">Setup review</h2>
+      <h2 className="type-heading">{t('onboarding.review.title')}</h2>
       <div className="mt-5">
         <RecommendationSummary controller={controller} />
       </div>

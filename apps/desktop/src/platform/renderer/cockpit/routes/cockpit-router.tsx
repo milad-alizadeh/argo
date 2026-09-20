@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
-import { createHashRouter, Navigate, Outlet, useMatches, useSearchParams } from 'react-router'
+import { createHashRouter, Navigate, Outlet, useMatches, useNavigate } from 'react-router'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
-import { ProjectOnboardingPrototype } from '@/domains/projects/renderer/setup/project-onboarding-prototype'
+import { ProjectOnboarding } from '@/domains/projects/renderer/setup/project-onboarding'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/components/composer/development-identity-bar'
 import { SessionsSidebar } from '@/domains/sessions/renderer/components/roster/sessions-sidebar'
@@ -22,10 +22,6 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '@/platform/shared/commands'
-import {
-  PROJECT_ONBOARDING_PROTOTYPE_KEY,
-  PROJECT_ONBOARDING_PROTOTYPE_VALUE,
-} from '@/platform/shared/project-onboarding-prototype'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode
@@ -43,36 +39,32 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 
 // The switcher that answers the add-Project chord is not mounted here, so this window answers it.
 function EmptyProjectScreen() {
-  const [cockpit, actions] = useProjects()
+  const [cockpit] = useProjects()
+  const navigate = useNavigate()
   useCommands((command) => {
-    if (command === REGISTER_PROJECT_COMMAND) actions.open()
+    if (command === REGISTER_PROJECT_COMMAND) navigate('/projects/new')
   })
-  return <EmptyProjectWindow busy={cockpit.busy} onAdd={actions.open} />
+  return <EmptyProjectWindow busy={cockpit.busy} onAdd={() => navigate('/projects/new')} />
 }
 
 export function CockpitRouteLayout() {
-  const [searchParams] = useSearchParams()
-  if (
-    window.argo.development !== null &&
-    searchParams.get(PROJECT_ONBOARDING_PROTOTYPE_KEY) === PROJECT_ONBOARDING_PROTOTYPE_VALUE
-  ) {
-    return <ProjectOnboardingPrototype />
-  }
   return <CockpitRouteLayoutContent />
 }
 
 function CockpitRouteLayoutContent() {
   const [cockpit] = useProjects()
+  const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
     if (destination) window.location.hash = DESTINATION_PATHS[destination]
   })
-  const sidebar = useMatches().reduce<ReactNode | null>(
+  const sidebar = matches.reduce<ReactNode | null>(
     (currentSidebar, match) =>
       isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
 
+  if (matches.some((match) => match.id === 'project-onboarding')) return <Outlet />
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   if (cockpit.status === 'setup' && cockpit.project) {
     return <ProjectSetupWindow project={cockpit.project} />
@@ -93,6 +85,7 @@ export const cockpitRouter = createHashRouter([
     element: <CockpitRouteLayout />,
     children: [
       { index: true, element: <Navigate replace to="/sessions" /> },
+      { id: 'project-onboarding', path: '/projects/new', element: <ProjectOnboarding /> },
       {
         path: '/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,

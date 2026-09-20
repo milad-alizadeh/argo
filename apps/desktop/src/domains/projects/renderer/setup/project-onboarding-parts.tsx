@@ -1,5 +1,4 @@
 import {
-  Bot,
   Check,
   CheckCircle2,
   Circle,
@@ -28,23 +27,15 @@ import {
   Wrench,
   XCircle,
 } from 'lucide-react'
-import { type ReactNode } from 'react'
+import { type ReactNode, useId } from 'react'
 import { useNavigate } from 'react-router'
 import { type FileDiff, FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Input } from '@/platform/renderer/components/ui/input'
-import { Progress, ProgressLabel } from '@/platform/renderer/components/ui/progress'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/platform/renderer/components/ui/select'
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
+import { i18n } from '@/platform/renderer/i18n/config'
 import {
-  ANALYSIS_TASKS,
   applyTasksFor,
   type OnboardingApplyTask,
   type OnboardingController,
@@ -53,11 +44,14 @@ import {
   type OnboardingTarget,
   targetsFromManualSource,
 } from './project-onboarding'
+import { AnalyzingStage } from './project-onboarding-analysis-stage'
+import { HarnessStage, NoDefaultHarnessStage } from './project-onboarding-harness-stage'
 import {
   ProjectOnboardingStageActions as StageActions,
   ProjectOnboardingStageContent as StageContent,
   ProjectOnboardingStageHeader as StageHeading,
 } from './project-onboarding-layout'
+import { FolderStage, MethodStage } from './project-onboarding-method-stage'
 import {
   BackAction,
   OptionRow,
@@ -68,10 +62,13 @@ import {
 
 export type OnboardingPresentation = 'briefing'
 
-const HARNESS_CHOICES = [
-  { label: 'Codex', value: 'codex' },
-  { label: 'Claude Code', value: 'claude' },
-] as const
+function onboardingText(key: string, options?: Record<string, string | number>) {
+  return i18n.t(`projects:onboarding.${key}`, options)
+}
+
+function recommendationText(recommendation: OnboardingRecommendation, field: 'label' | 'reason') {
+  return onboardingText(`recommendation.${recommendation.copyKey}.${field}`)
+}
 
 const PROGRESS_STAGES: Array<{ ids: OnboardingStage[]; label: string }> = [
   { ids: ['method', 'no-default', 'harness', 'manual'], label: '1 · Setup method' },
@@ -183,254 +180,6 @@ function targetCount(count: number) {
 function runnableTargetCount(count: number) {
   return `${count} runnable Target${count === 1 ? '' : 's'}`
 }
-function FolderStage({ controller }: { controller: OnboardingController }) {
-  const { actions, state } = controller
-  return (
-    <>
-      <StageHeading
-        description="Choose the Project folder. Argo will find Targets inside it."
-      >
-        Choose a Project folder
-      </StageHeading>
-      <button
-        className="onboarding-folder-choice mt-8"
-        onClick={actions.chooseFolder}
-        type="button"
-      >
-        <span className="grid size-11 place-items-center rounded-lg bg-muted">
-          <FolderOpen className="size-5" />
-        </span>
-        <span className="min-w-0 text-left">
-          <strong className="block type-body font-medium">argo</strong>
-          <span className="block truncate type-label text-muted-foreground">
-            {state.projectPath}
-          </span>
-        </span>
-        <span className="ml-auto type-label text-muted-foreground">Choose</span>
-      </button>
-    </>
-  )
-}
-
-function MethodStage({ controller }: { controller: OnboardingController }) {
-  const { actions, state } = controller
-  const defaultHarnessLabel = state.defaultHarness === 'claude' ? 'Claude Code' : 'Codex'
-  return (
-    <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Ask an agent to find Targets and recommend setup, or define Target commands without changing Project files."
-      >
-        1 · Choose a setup method
-      </StageHeading>
-      <div className="onboarding-method-grid mt-8">
-        <SectionCard
-          className="onboarding-agent-method-card"
-          icon={<Sparkles />}
-          subtitle="A harness is the app that Argo uses to run an agent."
-          title="Set up with an agent"
-        >
-          <div className="onboarding-agent-method-card__controls">
-            <HarnessSelect label="Harness" onChange={actions.setHarness} value={state.harness} />
-            <div className="mt-3 flex items-center gap-2">
-              {state.defaultHarness ? (
-                <>
-                  <CheckCircle2 className="size-4 text-diff-added" />
-                  <p className="type-label text-muted-foreground">
-                    {defaultHarnessLabel} is the default harness. It is ready.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Circle className="size-4 text-muted-foreground" />
-                  <p className="type-label text-muted-foreground">
-                    Choose a default harness before Argo analyzes the Project.
-                  </p>
-                </>
-              )}
-            </div>
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              {!state.defaultHarness ? (
-                <Button
-                  onClick={() => actions.configureDefaultHarness(state.harness)}
-                  variant="outline"
-                >
-                  Use {state.harness === 'codex' ? 'Codex' : 'Claude Code'} as default
-                </Button>
-              ) : null}
-              <Button
-                disabled={!state.defaultHarness}
-                onClick={() => actions.chooseMethod('agent')}
-              >
-                Analyze Project
-              </Button>
-            </div>
-          </div>
-        </SectionCard>
-        <button
-          className="onboarding-method-choice onboarding-section-card"
-          onClick={() => actions.chooseMethod('manual')}
-          type="button"
-        >
-          <SectionCardHeader
-            icon={<FileJson />}
-            subtitle="Store Target definitions in Argo without touching Project files."
-            title="Manual setup"
-          />
-        </button>
-      </div>
-      <div className="mt-5 flex items-center justify-between rounded-xl border border-dashed px-4 py-3">
-        <p className="type-label text-muted-foreground">
-          You can open this Project now and finish setup later.
-        </p>
-        <Button onClick={actions.skipSetup} variant="ghost">
-          Skip for now
-        </Button>
-      </div>
-    </>
-  )
-}
-
-function NoDefaultHarnessStage({ controller }: { controller: OnboardingController }) {
-  const { actions } = controller
-  const [choice, setChoice] = useState<'codex' | 'claude'>('codex')
-  return (
-    <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Choose a default harness before Argo analyzes the Project. This choice also becomes the default for new Sessions."
-      >
-        Choose your default harness
-      </StageHeading>
-      <div className="mt-8 max-w-md space-y-3">
-        <HarnessSelect label="Default harness" onChange={setChoice} value={choice} />
-        <Button className="w-full" onClick={() => actions.configureDefaultHarness(choice)}>
-          Save default harness
-        </Button>
-      </div>
-    </>
-  )
-}
-
-function HarnessStage({ controller }: { controller: OnboardingController }) {
-  const { actions, state } = controller
-  return (
-    <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Argo will start a short-lived agent that plans setup for this Project. It will not write files during planning."
-      >
-        Choose the setup agent
-      </StageHeading>
-      <div className="mt-8 max-w-lg rounded-xl border bg-card p-5 shadow-surface">
-        <div className="flex items-start gap-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
-            <Bot className="size-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <HarnessSelect label="Harness" onChange={actions.setHarness} value={state.harness} />
-            <p className="mt-3 type-label text-muted-foreground">
-              The agent can read Project files. Argo applies changes in a separate phase that you
-              start later.
-            </p>
-          </div>
-        </div>
-        <Button className="mt-5 w-full" onClick={actions.beginAnalysis}>
-          Plan Project setup
-        </Button>
-      </div>
-    </>
-  )
-}
-
-function HarnessSelect({
-  label,
-  onChange,
-  value,
-}: {
-  label: string
-  onChange: (value: 'codex' | 'claude') => void
-  value: 'codex' | 'claude'
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block type-body font-medium" htmlFor={`${label}-onboarding`}>
-        {label}
-      </label>
-      <Select
-        items={HARNESS_CHOICES}
-        onValueChange={(nextValue) => {
-          if (nextValue === 'codex' || nextValue === 'claude') onChange(nextValue)
-        }}
-        value={value}
-      >
-        <SelectTrigger className="w-full" id={`${label}-onboarding`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {HARNESS_CHOICES.map((choice) => (
-            <SelectItem key={choice.value} value={choice.value}>
-              {choice.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
-
-function AnalyzingStage({ controller }: { controller: OnboardingController }) {
-  const { state } = controller
-  const progress = ((state.analysisStep + 1) / ANALYSIS_TASKS.length) * 100
-  return (
-    <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="The setup agent builds a plan. It does not write files, install dependencies, or run Project commands yet."
-      >
-        2 · Analyze the Project
-      </StageHeading>
-      <div className="mt-9 max-w-2xl">
-        <p className="project-setup-shimmer type-heading" role="status">
-          {ANALYSIS_TASKS[state.analysisStep]?.detail}
-        </p>
-        <Progress className="mt-5" value={progress}>
-          <ProgressLabel>Planning</ProgressLabel>
-          <span className="ml-auto type-label text-muted-foreground">
-            {state.analysisStep + 1} of {ANALYSIS_TASKS.length}
-          </span>
-        </Progress>
-        <PlanningTaskList current={state.analysisStep} />
-      </div>
-    </>
-  )
-}
-
-function PlanningTaskList({ current }: { current: number }) {
-  return (
-    <ol className="onboarding-task-list mt-7">
-      {ANALYSIS_TASKS.map((task, index) => {
-        const status = planningTaskStatus(index, current)
-        return (
-          <li data-status={status} key={task.label}>
-            <OptionRow
-              detail={task.detail}
-              icon={<TaskStatusIcon status={status} />}
-              title={task.label}
-            />
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
-
-function planningTaskStatus(index: number, current: number): TaskStatus {
-  if (index < current) return 'passed'
-  if (index === current) return 'running'
-  return 'pending'
-}
-
 function RecommendationsStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   if (state.planOutcome !== 'ready') return <PlanBoundary controller={controller} />
@@ -513,7 +262,9 @@ export function RecommendationSummary({ controller }: { controller: OnboardingCo
   ]
   const acceptedRecommendations = proposed.filter(({ accepted }) => accepted)
   const targetTools = controller.state.targets.flatMap(({ recommendations }) =>
-    recommendations.filter(({ accepted }) => accepted).map(({ label }) => label),
+    recommendations
+      .filter(({ accepted }) => accepted)
+      .map((recommendation) => recommendationText(recommendation, 'label')),
   )
   const dependencies = [
     ...new Set(
@@ -644,7 +395,7 @@ function RecommendationLink({ recommendation }: { recommendation: OnboardingReco
       rel="noreferrer"
       target="_blank"
     >
-      {recommendation.label}
+      {recommendationText(recommendation, 'label')}
     </a>
   )
 }
@@ -711,7 +462,11 @@ function SuggestionFact({
           <RecommendationLink recommendation={recommendation} />
         </strong>
       </div>
-      <p>{recommendation[detail]}</p>
+      <p>
+        {detail === 'effect' && recommendation.effect
+          ? recommendation.effect
+          : recommendationText(recommendation, 'reason')}
+      </p>
       <RecommendationDependencies recommendation={recommendation} />
     </div>
   )
@@ -894,14 +649,16 @@ function RecommendationEditor({
           <OptionRow
             action={
               <Switch
-                aria-label={`Accept ${recommendation.label}`}
+                aria-label={onboardingText('action.acceptRecommendation', {
+                  label: recommendationText(recommendation, 'label'),
+                })}
                 checked={recommendation.accepted}
                 onCheckedChange={() => onToggle(recommendation.id)}
               />
             }
             detail={
               <>
-                <span>{recommendation.reason}</span>
+                <span>{recommendationText(recommendation, 'reason')}</span>
                 <RecommendationDependencies recommendation={recommendation} />
               </>
             }

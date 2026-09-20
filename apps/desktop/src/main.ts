@@ -20,10 +20,6 @@ import {
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { installMenu } from '@/platform/main/menu'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
-import {
-  PROJECT_ONBOARDING_PROTOTYPE_ENV,
-  PROJECT_ONBOARDING_PROTOTYPE_HASH,
-} from '@/platform/shared/project-onboarding-prototype'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
@@ -63,12 +59,7 @@ if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStor
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
-const PROJECT_ONBOARDING_PROTOTYPE_ENABLED =
-  DEVELOPMENT_INSTANCE !== null && process.env[PROJECT_ONBOARDING_PROTOTYPE_ENV] === '1'
-const DEVELOPMENT_RENDERER_URL =
-  PROJECT_ONBOARDING_PROTOTYPE_ENABLED && MAIN_WINDOW_VITE_DEV_SERVER_URL
-    ? `${MAIN_WINDOW_VITE_DEV_SERVER_URL}${PROJECT_ONBOARDING_PROTOTYPE_HASH}`
-    : MAIN_WINDOW_VITE_DEV_SERVER_URL
+const DEVELOPMENT_RENDERER_URL = MAIN_WINDOW_VITE_DEV_SERVER_URL
 
 function currentSetupDocumentSource() {
   if (PROOF_ENABLED) return 'proof'

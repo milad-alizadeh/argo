@@ -28,6 +28,104 @@
     "review": {
       "title": "Setup review",
       "disclosure": "Setup review and progress"
+    },
+    "progress": {
+      "method": "1 · Setup method",
+      "analyze": "2 · Analyze",
+      "targets": "3 · Targets",
+      "project": "4 · Project setup",
+      "apply": "5 · Apply"
+    },
+    "event": {
+      "choose-folder": "Choose a Project folder",
+      "manual-selected": "Manual setup selected",
+      "default-harness-required": "Choose a default harness",
+      "analysis-started": "Setup analysis started",
+      "plan-ready": "Setup plan ready",
+      "apply-started": "Applying setup",
+      "back": "Went back",
+      "folder-selected": "Project folder selected",
+      "setup-skipped": "Setup skipped",
+      "project-started": "Project started"
+    },
+    "recommendation": {
+      "argo-skill-bundle": {
+        "label": "Argo skill bundle",
+        "reason": "Adds the Project skills that Argo maintains."
+      },
+      "matt-pocock": {
+        "label": "Matt Pocock skills",
+        "reason": "Adds selected engineering workflow skills."
+      },
+      "writing-skills": {
+        "label": "Writing skills",
+        "reason": "Adds skills for clear instructions and documentation."
+      },
+      "rtk-filters": {
+        "label": "RTK filters",
+        "reason": "Keeps command output focused during Project work."
+      },
+      "quality-gates": {
+        "label": "Quality gates",
+        "reason": "Runs the Project checks before changes land."
+      },
+      "agent-instructions": {
+        "label": "Agent instructions",
+        "reason": "Records the Project rules for coding agents."
+      },
+      "guardrail-hooks": {
+        "label": "Guardrail hooks",
+        "reason": "Protects the Project worktree and branch flow."
+      },
+      "interface-review": {
+        "label": "Interface review",
+        "reason": "Reviews live UI changes for accessibility and behavior."
+      },
+      "visual-direction": {
+        "label": "Visual direction",
+        "reason": "Records the visual choices for UI work."
+      },
+      "agent-doc-audit": {
+        "label": "Agent document audit",
+        "reason": "Reviews agent instructions for accuracy."
+      },
+      "codex-todos": {
+        "label": "Codex task tracking",
+        "reason": "Tracks multi-step work in Codex."
+      },
+      "storybook": { "label": "Storybook", "reason": "Reviews each UI state in isolation." },
+      "playwright": { "label": "Playwright", "reason": "Tests user flows in the packaged app." },
+      "markdown-checks": {
+        "label": "Markdown checks",
+        "reason": "Checks the Project Markdown files."
+      },
+      "typedoc": { "label": "TypeDoc", "reason": "Generates API documentation." }
+    },
+    "task": {
+      "inspect-folder": {
+        "label": "Inspect Project folder",
+        "detail": "Reading the Project structure"
+      },
+      "identify-targets": {
+        "label": "Identify Targets",
+        "detail": "Finding runnable parts of the Project"
+      },
+      "resolve-commands": {
+        "label": "Resolve commands",
+        "detail": "Reading the available commands"
+      },
+      "audit-setup": { "label": "Audit setup", "detail": "Reviewing existing setup" },
+      "recommend-capabilities": {
+        "label": "Recommend capabilities",
+        "detail": "Preparing suggested tools"
+      },
+      "define-verification": {
+        "label": "Define verification",
+        "detail": "Preparing required checks"
+      }
+    },
+    "action": {
+      "acceptRecommendation": "Accept {{label}}"
     }
   },
   "setup": {

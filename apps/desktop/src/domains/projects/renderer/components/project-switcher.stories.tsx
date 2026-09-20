@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
+import { MemoryRouter } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
@@ -10,7 +11,9 @@ function ProjectSwitcherStory() {
   const [queryClient] = useState(() => new QueryClient())
   return (
     <QueryClientProvider client={queryClient}>
-      <ProjectSwitcher />
+      <MemoryRouter>
+        <ProjectSwitcher />
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }

@@ -1,4 +1,4 @@
-<!-- THROWAWAY PROTOTYPE (#2464): source notes for vendored tool marks. -->
+<!-- Source notes for vendored tool marks. -->
 
 - `storybook.svg` is `icon/icon-storybook-default.svg` from the official
   [`storybookjs/brand`](https://github.com/storybookjs/brand) repository at `main`.

@@ -21,26 +21,26 @@ export function ProjectOnboardingShell({
   sidebarDisclosureLabel: string
 }) {
   return (
-    <main aria-label={accessibleName} className="prototype-briefing">
-      <header className="prototype-briefing__chrome drag-region">{header}</header>
-      <div className="prototype-briefing__workspace">
-        <section className="prototype-briefing__conversation" ref={contentRef}>
-          <div className="prototype-briefing__message prototype-briefing__message--agent">
+    <main aria-label={accessibleName} className="onboarding-briefing">
+      <header className="onboarding-briefing__chrome drag-region">{header}</header>
+      <div className="onboarding-briefing__workspace">
+        <section className="onboarding-briefing__conversation" ref={contentRef}>
+          <div className="onboarding-briefing__message onboarding-briefing__message--agent">
             {introduction}
           </div>
-          <div className="prototype-briefing__message prototype-briefing__message--event">
+          <div className="onboarding-briefing__message onboarding-briefing__message--event">
             {event}
           </div>
-          <details className="prototype-briefing__artifact-disclosure">
+          <details className="onboarding-briefing__artifact-disclosure">
             <summary>
               <span>{sidebarDisclosureLabel}</span>
               <ChevronDown aria-hidden="true" />
             </summary>
-            <div className="prototype-briefing__artifact-disclosure-body">{sidebar}</div>
+            <div className="onboarding-briefing__artifact-disclosure-body">{sidebar}</div>
           </details>
-          <div className="prototype-briefing__response">{children}</div>
+          <div className="onboarding-briefing__response">{children}</div>
         </section>
-        <aside className="prototype-briefing__artifact">{sidebar}</aside>
+        <aside className="onboarding-briefing__artifact">{sidebar}</aside>
       </div>
     </main>
   )
@@ -58,7 +58,10 @@ export function ProjectOnboardingStageHeader({
   return (
     <header>
       {back}
-      <h1 className="prototype-stage-heading type-title font-heading text-foreground" tabIndex={-1}>
+      <h1
+        className="onboarding-stage-heading type-title font-heading text-foreground"
+        tabIndex={-1}
+      >
         {children}
       </h1>
       <p className="mt-2 max-w-2xl type-body text-muted-foreground">{description}</p>
