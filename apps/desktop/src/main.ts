@@ -1,6 +1,7 @@
 import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
 import { attachBridges } from '@/bridges'
@@ -8,6 +9,7 @@ import { seedDevelopmentProject } from '@/domains/projects/main/development-seed
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/contract/feed-images'
+import { createSQLiteSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -19,6 +21,12 @@ import {
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { installMenu } from '@/platform/main/menu'
+import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
+import {
+  backupSharedDatabase,
+  sharedDatabaseBackupPath,
+  sharedDatabasePath,
+} from '@/platform/main/storage/shared-database'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 
@@ -60,13 +68,25 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
 
-function currentSetupDocumentSource() {
-  if (PROOF_ENABLED) return 'proof'
-  if (DEVELOPMENT_INSTANCE) return 'development'
-  return 'production'
+function openDurableStores(projectData: string) {
+  const databasePath = sharedDatabasePath(projectData)
+  const backupPath = sharedDatabaseBackupPath(projectData)
+  return recoverDurableStore({
+    databasePath,
+    backupPath,
+    open: () => {
+      const projects = openProjectStore(projectData)
+      const ticketLinkDatabase = new DatabaseSync(databasePath)
+      const ticketLinks = createSQLiteSessionTicketLinkStore(ticketLinkDatabase, () =>
+        backupSharedDatabase(ticketLinkDatabase, backupPath),
+      )
+      return { projects, ticketLinks }
+    },
+  })
 }
-
-const SETUP_DOCUMENT_SOURCE = currentSetupDocumentSource()
+let SETUP_DOCUMENT_SOURCE: 'proof' | 'development' | 'production' = 'production'
+if (DEVELOPMENT_INSTANCE) SETUP_DOCUMENT_SOURCE = 'development'
+if (PROOF_ENABLED) SETUP_DOCUMENT_SOURCE = 'proof'
 if (DEVELOPMENT_INSTANCE) {
   // safeStorage keys belong to an app, so every development worktree must keep one app identity.
   app.setName(DEVELOPMENT_APPLICATION_NAME)
@@ -74,7 +94,6 @@ if (DEVELOPMENT_INSTANCE) {
   app.dock?.setBadge(ticket ?? '')
   app.setPath('userData', DEVELOPMENT_INSTANCE.userData)
   app.setPath('sessionData', path.join(DEVELOPMENT_INSTANCE.directory, 'session-data'))
-  // Loopback only; agent-browser attaches here to profile, and a packaged app never opens it (#2228).
   app.commandLine.appendSwitch('remote-debugging-port', String(DEVELOPMENT_INSTANCE.debugPort))
 }
 
@@ -85,7 +104,7 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const projects = openProjectStore(projectData)
+  const { projects, ticketLinks } = openDurableStores(projectData)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -108,6 +127,7 @@ function createWindow(): void {
         accountData,
         connectionData,
         projects,
+        ticketLinks,
         rendererURL,
         proofEnabled: PROOF_ENABLED,
         setupDocumentSource: SETUP_DOCUMENT_SOURCE,

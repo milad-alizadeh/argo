@@ -91,7 +91,10 @@ function selectedId(database: ProjectDatabase): string | null {
   return selectedRowSchema.parse(result).project_id
 }
 
-export function createProjectStore(database: ProjectDatabase): ProjectStore {
+export function createProjectStore(
+  database: ProjectDatabase,
+  afterWrite: () => void = () => {},
+): ProjectStore {
   database.exec(PROJECT_SCHEMA)
   migrateSetupCheckpoints(database)
   const insert = database.prepare(
@@ -125,6 +128,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
         }
         if (registry.selectedId !== null) select.run(registry.selectedId)
         database.exec('COMMIT')
+        afterWrite()
       } catch (error) {
         database.exec('ROLLBACK')
         throw error
@@ -133,14 +137,17 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
 
     insertProject: (project) => {
       insert.run(project.id, project.path, project.commonDirectory)
+      afterWrite()
     },
 
     selectProject: (projectId) => {
       select.run(projectId)
+      afterWrite()
     },
 
     updateProjectPath: (projectId, projectPath) => {
       updatePath.run(projectPath, projectId)
+      afterWrite()
     },
 
     readSetupCheckpoint: (projectId) => readSetupCheckpoint(database, projectId),
@@ -153,6 +160,7 @@ export function createProjectStore(database: ProjectDatabase): ProjectStore {
       documentRevision,
     }) => {
       writeCheckpoint.run(projectId, worktreePath, phase, configurationSource, documentRevision)
+      afterWrite()
     },
 
     close: () => database.close(),
