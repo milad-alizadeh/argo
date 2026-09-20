@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { questionAnswerSchema, questionSchema } from '@/domains/sessions/contract/question'
 import { identifierSchema } from '@/shared/validation'
 
 export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku'] as const
@@ -27,13 +26,3 @@ export const claudePermissionSchema = z.strictObject({
   input: z.record(z.string(), z.unknown()),
 })
 export type ClaudePermission = z.infer<typeof claudePermissionSchema>
-
-// `AskUserQuestion` questions and their answers are the CLI-neutral Question/QuestionAnswer
-// shape (./question, #1841) under Claude's own names, since Claude's tool call already produces
-// that shape verbatim (several questions in one call are answered top to bottom, per
-// docs/designs/cockpit-feed-ask.md).
-export const claudeQuestionSchema = questionSchema
-export type ClaudeQuestion = z.infer<typeof claudeQuestionSchema>
-
-export const claudeQuestionAnswerSchema = questionAnswerSchema
-export type ClaudeQuestionAnswer = z.infer<typeof claudeQuestionAnswerSchema>

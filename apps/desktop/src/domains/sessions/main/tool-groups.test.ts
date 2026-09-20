@@ -8,15 +8,15 @@ import type { ToolCall } from '@/domains/sessions/contract/transcript'
 import { editCall, fetchCall, searchCall } from '@/domains/sessions/main/tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
-  return { id, name: 'Bash', input: { command } }
+  return { id, kind: 'execute', command, label: null, text: command, background: false }
 }
 
 function unclassified(id: string): ToolCall {
-  return { id, name: 'SomeMcpTool', input: {} }
+  return { id, kind: 'other', label: 'Ran SomeMcpTool', text: null, source: null }
 }
 
 function execCommand(id: string, cmd: string): ToolCall {
-  return { id, name: 'exec_command', input: { cmd } }
+  return { id, kind: 'execute', command: cmd, label: null, text: cmd, background: false }
 }
 
 function rowsFor(calls: ToolCall[]): SessionFeedRow[] {

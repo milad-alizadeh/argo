@@ -2,6 +2,7 @@ import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
 import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
 import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
+import { askRow } from '@/domains/sessions/contract/tool-feed'
 import { discoverRoster } from '@/domains/sessions/main/discover-roster'
 import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
 import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
@@ -25,11 +26,11 @@ import { readSubagentChain } from './subagents'
 import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
-type ReaderOptions = {
+export type ReaderOptions = {
   roster?: () => SessionRosterRow[]
   liveMessages?: (sessionId: string) => LiveMessage[]
   // Codex has no persisted transcript record of a still-open question (unlike Claude's
-  // `AskUserQuestion` tool call, #1841): the Feed's `ask` row exists only while this returns one.
+  // ask tool call, #1841): the Feed's `ask` row exists only while this returns one.
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
@@ -61,13 +62,7 @@ function draftRows(rows: readonly SessionFeedRow[], live: LiveMessage[]): Sessio
 // the request's own item ID, unprefixed: a decision names it back to `decideQuestion`, which
 // checks it against the same pending question's `itemId` (question-protocol.ts).
 function questionRow(pending: PendingCodexQuestion): SessionFeedRow {
-  return {
-    shape: 'ask',
-    id: pending.itemId,
-    questions: pending.questions,
-    answer: null,
-    unsupported: pending.unsupported,
-  }
+  return askRow(pending.itemId, pending, null)
 }
 
 function combinedOverlay(

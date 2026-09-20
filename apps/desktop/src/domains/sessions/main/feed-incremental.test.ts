@@ -13,11 +13,11 @@ function prose(uuid: string, text: string): TranscriptMessage {
   return message({ uuid, blocks: [{ shape: 'prose', text }] })
 }
 
-function toolCall(uuid: string, callId: string, name: string): TranscriptMessage {
+function toolCall(uuid: string, callId: string, _name: string): TranscriptMessage {
   return message({
     uuid,
     blocks: [{ shape: 'tool', callId }],
-    toolCalls: [{ id: callId, name, input: {} }],
+    toolCalls: [{ id: callId, kind: 'other', label: 'Ran a tool', text: null, source: null }],
   })
 }
 

@@ -1,5 +1,4 @@
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -20,6 +19,7 @@ import {
   sessionError,
 } from '@/domains/sessions/contract/contract'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import type { RosterStatus } from '@/domains/sessions/contract/search-contract'
 import { createDomainClient } from '@/shared/ipc/client'
 
@@ -49,7 +49,7 @@ export type SessionClient = {
   decideSessionQuestion(request: {
     sessionId: string
     questionId: string
-    answers: ClaudeQuestionAnswer[]
+    answers: QuestionAnswer[]
   }): Promise<SessionAcceptedReply>
   listSessions(request: {
     projectRoot: string | null

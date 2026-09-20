@@ -6,12 +6,12 @@
 
 import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { isRecord } from '@/shared/validation'
-import { withCommandFacts } from './command-facts'
-import { withEditFacts } from './edit-facts'
-import { withLookupFacts } from './lookup-facts'
+import { commandFacts } from './command-facts'
+import { editFacts } from './edit-facts'
+import { lookupFacts } from './lookup-facts'
 import { messageRecord } from './message-record'
 import { nestedToolCalls } from './nested-tool-call'
-import { withOtherFacts } from './other-facts'
+import { otherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
 import { readSubagentCall } from './subagent-calls'
 
@@ -68,7 +68,9 @@ function readArguments(value: unknown): Record<string, unknown> {
   }
 }
 
-function readToolCalls(payload: Record<string, unknown>): ToolCall[] {
+type RawToolCall = { id: string; name: string; input: Record<string, unknown> }
+
+function rawToolCalls(payload: Record<string, unknown>): RawToolCall[] {
   if (typeof payload.call_id !== 'string' || typeof payload.name !== 'string') return []
   if (COMMAND_POLLS.has(payload.name)) return []
   if (payload.type === 'function_call')
@@ -106,12 +108,21 @@ const COLLABORATION_CALLS = new Set([
 
 // A `web_search_call` item is the call and its outcome in one line, so it lands with its own
 // result. `web.search` and `web__run` are the same act written as a function call.
+function classified({ id, name, input }: RawToolCall): ToolCall {
+  const facts =
+    commandFacts(name, input) ??
+    lookupFacts(name, input) ??
+    editFacts(name, input) ??
+    otherFacts(name, input)
+  return { id, ...(facts ?? { kind: 'other', label: `Ran ${name}`, text: null, source: null }) }
+}
+
 function readWebSearchRecord(
   record: Record<string, unknown>,
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   if (typeof payload.id !== 'string') return null
-  const call = withLookupFacts({
+  const call = classified({
     id: payload.id,
     name: 'web_search_call',
     input: isRecord(payload.action) ? payload.action : {},
@@ -133,7 +144,7 @@ export function readToolRecord(
   payload: Record<string, unknown>,
 ): TranscriptRecord | null {
   if (payload.type === 'function_call' || payload.type === 'custom_tool_call') {
-    const calls = readToolCalls(payload)
+    const calls = rawToolCalls(payload)
     if (calls.length === 0 || typeof payload.id !== 'string') return null
     if (calls.every((call) => COLLABORATION_CALLS.has(call.name)))
       return {
@@ -142,12 +153,7 @@ export function readToolRecord(
         boundary: true,
         ...readSubagentCall(record, calls),
       }
-    const visible = calls
-      .filter((call) => !COLLABORATION_CALLS.has(call.name))
-      .map(withCommandFacts)
-      .map(withLookupFacts)
-      .map(withEditFacts)
-      .map(withOtherFacts)
+    const visible = calls.filter((call) => !COLLABORATION_CALLS.has(call.name)).map(classified)
     return messageRecord(record, {
       uuid: payload.id,
       role: 'assistant',

@@ -8,5 +8,5 @@ const MCP_NAME = /^mcp__([^_](?:[^_]|_(?!_))*)__(.+)$/
 export function mcpOther(name: string): OtherFacts | null {
   const [, server, tool] = MCP_NAME.exec(name) ?? []
   if (server === undefined || tool === undefined) return null
-  return { kind: 'other', label: `${server} · ${tool}`, source: { server, tool } }
+  return { kind: 'other', label: `${server} · ${tool}`, text: null, source: { server, tool } }
 }

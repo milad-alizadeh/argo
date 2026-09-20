@@ -1,16 +1,17 @@
 // Joins Codex's collaboration calls to the `SubAgentActivity` events they cause. A spawn's model is
 // on the call and nowhere else, and `interrupt_agent` names its target by path or by name while its
 // activity records only the thread, so the fold reads both across the whole rollout.
-import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { agentLabel } from './subagent-activity'
 
 type SubagentCall = NonNullable<Extract<TranscriptRecord, { kind: 'trace' }>['subagentCall']>
+type RawToolCall = { id: string; name: string; input: Record<string, unknown> }
 
 // The two collaboration calls whose arguments the Subagent events need: the model a spawn chose,
 // and the target a stop names. The rest report through `SubAgentActivity` alone.
 export function readSubagentCall(
   record: Record<string, unknown>,
-  calls: readonly ToolCall[],
+  calls: readonly RawToolCall[],
 ): { subagentCall?: NonNullable<Extract<TranscriptRecord, { kind: 'trace' }>['subagentCall']> } {
   const call = calls.find((candidate) => SUBAGENT_CALLS[candidate.name] !== undefined)
   const intent = call === undefined ? undefined : SUBAGENT_CALLS[call.name]

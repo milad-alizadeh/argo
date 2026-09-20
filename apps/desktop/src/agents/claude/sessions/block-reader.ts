@@ -1,3 +1,4 @@
+import { askFacts } from '@/agents/claude/sessions/ask-facts'
 import { bashFacts } from '@/agents/claude/sessions/bash-facts'
 import { editFacts } from '@/agents/claude/sessions/edit-facts'
 import { lookupFacts } from '@/agents/claude/sessions/lookup-facts'
@@ -15,6 +16,14 @@ import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/
 
 const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
+
+const SUBAGENT_INTENTS: Record<string, 'start' | 'message' | 'stop'> = {
+  Task: 'start',
+  Agent: 'start',
+  SendMessage: 'message',
+  TaskStop: 'stop',
+  KillShell: 'stop',
+}
 
 // A pasted image is inline bytes; any other image source keeps the generic source fallback.
 function readImage(value: unknown): ContentBlock | null {
@@ -61,15 +70,39 @@ export function readBlocks(content: unknown): ContentBlock[] {
 }
 
 function readToolCall(id: string, name: string, input: Record<string, unknown>): ToolCall {
-  const execute = name === 'Bash' ? bashFacts(input) : undefined
+  const control = subagentControlFacts(name, input)
+  const facts = control ??
+    (name === 'Bash' ? bashFacts(input) : null) ??
+    askFacts(name, input) ??
+    lookupFacts(name, input) ??
+    editFacts(name, input) ??
+    skillOrOtherFacts(name, input) ?? {
+      kind: 'other' as const,
+      label: `Ran ${name}`,
+      text: null,
+      source: null,
+    }
+  return { id, ...facts }
+}
+
+function field(input: Record<string, unknown>, key: string): string | null {
+  const value = input[key]
+  return typeof value === 'string' && value.trim().length > 0 ? value : null
+}
+
+function subagentControlFacts(
+  name: string,
+  input: Record<string, unknown>,
+): Omit<Extract<ToolCall, { kind: 'subagent-control' }>, 'id'> | null {
+  const intent = SUBAGENT_INTENTS[name]
+  if (intent === undefined) return null
   return {
-    id,
-    name,
-    input,
-    ...(execute === undefined ? {} : { execute }),
-    ...lookupFacts(name, input),
-    ...skillOrOtherFacts(name, input),
-    ...editFacts(name, input),
+    kind: 'subagent-control' as const,
+    intent,
+    target: field(input, 'to') ?? field(input, 'task_id') ?? field(input, 'shell_id'),
+    name: field(input, 'description') ?? field(input, 'name'),
+    type: field(input, 'subagent_type'),
+    model: field(input, 'model'),
   }
 }
 

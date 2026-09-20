@@ -1,10 +1,5 @@
 // The lifecycle events a Claude Subagent call reads as, and the facts each carries.
-import type { SubagentEvent, ToolCall } from '@/domains/sessions/contract/transcript'
-
-export function text(input: Record<string, unknown>, key: string): string | undefined {
-  const value = input[key]
-  return typeof value === 'string' && value.trim().length > 0 ? value : undefined
-}
+import type { SubagentControlFacts, SubagentEvent } from '@/domains/sessions/contract/transcript'
 
 // The first line of a reply, with the Markdown marks a reader would not want stripped.
 export function replyLine(reply: string): string | undefined {
@@ -14,10 +9,10 @@ export function replyLine(reply: string): string | undefined {
     .find((line) => line.length > 0)
 }
 
-export function facts(call: ToolCall) {
-  const name = text(call.input, 'description')
-  const type = text(call.input, 'subagent_type')
-  const model = text(call.input, 'model')
+export function facts(call: SubagentControlFacts) {
+  const name = call.name ?? undefined
+  const type = call.type ?? undefined
+  const model = call.model ?? undefined
   return {
     ...(name === undefined ? {} : { name }),
     ...(type === undefined ? {} : { type }),
@@ -25,7 +20,10 @@ export function facts(call: ToolCall) {
   }
 }
 
-export function started(call: ToolCall, timestamp: string | null): SubagentEvent {
+export function started(
+  call: SubagentControlFacts & { id: string },
+  timestamp: string | null,
+): SubagentEvent {
   return {
     kind: 'subagent',
     uuid: `${call.id}:started`,
@@ -37,7 +35,7 @@ export function started(call: ToolCall, timestamp: string | null): SubagentEvent
 }
 
 export function responded(
-  call: ToolCall,
+  call: SubagentControlFacts & { id: string },
   timestamp: string | null,
   ending: { state: 'completed' | 'failed' | 'interrupted'; reply: string | null },
 ): SubagentEvent {

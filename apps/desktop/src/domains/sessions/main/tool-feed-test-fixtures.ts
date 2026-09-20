@@ -4,8 +4,8 @@ import type { ToolCall } from '@/domains/sessions/contract/transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 
-export function toolCall(overrides: Partial<ToolCall> & { id: string; name: string }): ToolCall {
-  return { input: {}, ...overrides }
+export function toolCall(overrides: ToolCall): ToolCall {
+  return overrides
 }
 
 // A command the way its harness adapter hands it over: the kind, with no harness tool name in it.
@@ -22,23 +22,25 @@ export function executeCall({
 }): ToolCall {
   return {
     id,
-    name: 'command',
-    input: {},
-    execute: { kind: 'execute', command, label, text: command, background },
+    kind: 'execute',
+    command,
+    label,
+    text: command,
+    background,
   }
 }
 
 // A file read, a search and a web page read the way an adapter hands them over.
 export function readCall(id: string, target: string | null): ToolCall {
-  return { id, name: 'file', input: {}, read: { kind: 'read', target } }
+  return { id, kind: 'read', target }
 }
 
 export function searchCall(id: string, query: string | null, scope: 'files' | 'web'): ToolCall {
-  return { id, name: 'search', input: {}, search: { kind: 'search', scope, query } }
+  return { id, kind: 'search', scope, query }
 }
 
 export function fetchCall(id: string, url: string | null): ToolCall {
-  return { id, name: 'page', input: {}, fetch: { kind: 'fetch', url } }
+  return { id, kind: 'fetch', url }
 }
 
 // A file change the way an adapter hands it over.
@@ -55,9 +57,8 @@ export function editCall(
   }
   return {
     id,
-    name: 'files',
-    input: {},
-    edit: { kind: 'edit', files: [edited] },
+    kind: 'edit',
+    files: [edited],
   } satisfies ToolCall
 }
 

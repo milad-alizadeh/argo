@@ -4,15 +4,12 @@
 import { withoutCalls } from '@/agents/claude/sessions/spawned-agents'
 import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
 
-const STOP_TOOLS = ['TaskStop', 'KillShell']
-
-function isStop(call: ToolCall): boolean {
-  return STOP_TOOLS.includes(call.name)
+function isStop(call: ToolCall): call is Extract<ToolCall, { kind: 'subagent-control' }> {
+  return call.kind === 'subagent-control' && call.intent === 'stop'
 }
 
-function stoppedTask(call: ToolCall): string | null {
-  const id = call.input.task_id ?? call.input.shell_id
-  return typeof id === 'string' ? id : null
+function stoppedTask(call: Extract<ToolCall, { kind: 'subagent-control' }>): string | null {
+  return call.target
 }
 
 export function readingBackgroundStops(records: TranscriptRecord[]): TranscriptRecord[] {

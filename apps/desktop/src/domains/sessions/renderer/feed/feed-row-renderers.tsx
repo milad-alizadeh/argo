@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/question'
 import { FeedGallery, FeedImage } from '@/domains/sessions/renderer/feed/content/feed-images'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
 import type { SessionEvidence, SessionFeedRow } from '@/domains/sessions/renderer/types'
@@ -43,7 +43,7 @@ export type FeedRowRendererProps = {
   activeEvidenceId: string | null
   toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (questionId: string, answers: QuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
   questionLocked: boolean

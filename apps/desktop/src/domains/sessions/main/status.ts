@@ -21,23 +21,21 @@ const STOPPED_REASONS = ['max_tokens', 'max_turn_requests', 'refusal']
 // carrying this leaves the Turn OPEN rather than closing it on a word outside the vocabulary.
 const CONTINUES_TURN = 'tool_use'
 
-export const ASK_TOOL = 'AskUserQuestion'
-
 // The one external reading of `asking` the glossary allows: pending has to be CONFIRMABLE from
 // the record. A structured question in the last assistant record that no later record answers
 // is confirmable; anything softer would be a fabricated `asking`. Shared with the Claude adapter's
 // own pending-question read (`agents/claude/sessions/pending-question.ts`), which names the call
 // it found rather than only a boolean.
-export function pendingAskCall(messages: TranscriptMessage[], toolName: string): string | null {
+export function pendingAskCall(messages: TranscriptMessage[]): string | null {
   const last = messages.at(-1)
   if (last === undefined || last.role !== 'assistant') return null
   const answered = new Set(messages.flatMap((message) => message.answeredCalls))
-  const pending = last.toolCalls.find((call) => call.name === toolName && !answered.has(call.id))
+  const pending = last.toolCalls.find((call) => call.kind === 'ask' && !answered.has(call.id))
   return pending?.id ?? null
 }
 
 function isAskPending(messages: TranscriptMessage[]): boolean {
-  return pendingAskCall(messages, ASK_TOOL) !== null
+  return pendingAskCall(messages) !== null
 }
 
 export function readExternalStatus(

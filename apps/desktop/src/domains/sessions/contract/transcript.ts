@@ -22,6 +22,7 @@ export {
   type SubagentFacts,
 } from '@/domains/sessions/contract/subagent-event'
 export type {
+  AskFacts,
   EditedFile,
   EditFacts,
   ExecuteFacts,
@@ -30,6 +31,7 @@ export type {
   ReadFacts,
   SearchFacts,
   SkillFacts,
+  SubagentControlFacts,
   ToolCall,
   ToolCallStatus,
 } from '@/domains/sessions/contract/tool-call'
