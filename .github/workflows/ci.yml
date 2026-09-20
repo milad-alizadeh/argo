@@ -98,12 +98,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:facets
 
-      # Named ahead of the broader workspace run so a Session Feed regression fails fast, under
-      # its own label, instead of surfacing inside the wider "Workspace tests" output (#2201).
-      - name: Session Feed tests
-        if: ${{ !cancelled() }}
-        run: bun run turbo run test:feed --filter=@argo/desktop
-
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
       # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being
