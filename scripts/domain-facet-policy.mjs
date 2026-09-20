@@ -32,6 +32,10 @@ export const COMPOSITION_ROOTS = new Set([
   APPLICATION_ROOTS.renderer,
 ])
 
+// A declared composition root under harnesses/: it wires each Harness's driver into shared
+// Session composition, so it may reach into Sessions main the way apps/desktop/src/main does.
+export const HARNESS_COMPOSITION_ROOT = 'apps/desktop/src/harnesses/composition'
+
 export const FACET_POLICIES = {
   shared: {
     refusesNode: true,

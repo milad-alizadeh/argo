@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"th-a-2"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"th-p","message":{"role":"user","content":"Inspect the Session lifecycle."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"th-a-1","message":{"role":"assistant","content":[{"type":"thinking","thinking":"Revising session lifecycle handling","signature":"sig-1"}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"th-a-2","message":{"role":"assistant","stop_reason":"end_turn","content":[{"type":"text","text":"The lifecycle is ready."}]}}

@@ -11,6 +11,7 @@ export type DriveOk = { ok: true }
 
 export type SessionDriveAdapter = {
   harness: string
+  failureMessage(code: DriveSessionErrorCode): string
   // A duck-typed Zod schema: lets Claude plug in its Turn-setup vocabulary and Codex refuse any
   // Turn setup at all (#1885 is out of scope), without the router knowing either shape.
   turnSetupSchema: { safeParse: (value: unknown) => { success: boolean } }

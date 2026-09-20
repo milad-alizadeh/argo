@@ -27,7 +27,7 @@ const CONTINUES_TURN = 'tool_use'
 // The one external reading of `asking` the glossary allows: pending has to be CONFIRMABLE from
 // the record. A structured question in the last assistant record that no later record answers
 // is confirmable; anything softer would be a fabricated `asking`. Shared with the Claude adapter's
-// own pending-question read (`agents/claude/sessions/pending-question.ts`), which names the call
+// own pending-question read (`harnesses/claude/sessions/pending-question.ts`), which names the call
 // it found rather than only a boolean.
 export function pendingAskCall(messages: TranscriptMessage[]): string | null {
   const last = messages.at(-1)

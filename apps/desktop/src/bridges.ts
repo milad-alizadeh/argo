@@ -12,13 +12,7 @@ import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bu
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
-import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
-import {
-  attachSessions,
-  closeSessionDrivers,
-  createSessionDrivers,
-  watchClaudeCompactions,
-} from '@/harnesses/composition/session-bridges'
+import { attachSessions } from '@/harnesses/composition/session-bridges'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { accountProviders, ticketSources } from '@/providers/composition'
@@ -49,19 +43,22 @@ export function attachBridges(
   } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
-  const drivers = createSessionDrivers({ userData, home, proofEnabled })
-  // A proof or acceptance run leaves the person's hooks and compaction starts alone.
-  const compactionStarts =
-    proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
   attachWindowNavigation(window)
   attachProjectBridge(window, {
     projects,
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
   })
-  attachSessions(window, { rendererURL, home, userData, drivers, ticketLinks, compactionStarts })
+  const harnesses = attachSessions(window, {
+    rendererURL,
+    home,
+    userData,
+    ticketLinks,
+    proofEnabled,
+    acceptance: request.acceptance,
+  })
   attachAppearanceBridge(window, { userData, rendererURL })
-  attachCodexCompactionBridge(window, { home, rendererURL })
+  for (const harness of harnesses) harness.attachSettingsBridge?.(window, { home, rendererURL })
   const access = createAccountAccess({
     userData,
     accountData,
@@ -88,6 +85,6 @@ export function attachBridges(
   app.once('before-quit', (event) => {
     event.preventDefault()
     ticketLinks.close()
-    void closeSessionDrivers(drivers).then(() => app.quit())
+    void Promise.all(harnesses.map((harness) => harness.close())).then(() => app.quit())
   })
 }

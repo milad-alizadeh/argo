@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"mc-r"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"mc-p","message":{"role":"user","content":"Keep going."}}
+{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"mc-c","parentUuid":"mc-p"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"mc-r","parentUuid":"mc-c","message":{"role":"user","content":"carry on"}}
