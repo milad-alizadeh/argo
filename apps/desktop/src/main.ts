@@ -137,9 +137,7 @@ function createWindow(): void {
       installMenu(window)
     },
     loaded: (window) => {
-      void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window).catch((error: unknown) =>
-        console.error(error),
-      )
+      void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window)
     },
   })
 }
