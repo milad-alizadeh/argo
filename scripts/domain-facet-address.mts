@@ -2,7 +2,12 @@
 // belongs to, plus resolving one import specifier to the path it names. Split from
 // domain-facet-boundaries.mts on length alone; that file applies policy to what this resolves.
 import path from 'node:path'
-import { type Facet, SOURCE_ROOTS, TARGET_FACETS } from './domain-facet-policy.mts'
+import {
+  HARNESS_COMPOSITION_ROOT,
+  type Facet,
+  SOURCE_ROOTS,
+  TARGET_FACETS,
+} from './domain-facet-policy.mts'
 
 export type FacetAddress = { domain: string; facet: Facet }
 
@@ -18,17 +23,26 @@ function isFacet(value: string): value is Facet {
   return TARGET_FACETS.has(value)
 }
 
-function isHarnessImplementation(parts: string[], harnesses: number): boolean {
-  const harness = parts[harnesses + 1]
-  const kind = parts[harnesses + 2]
+const TEMPORARY_HARNESS_MAIN_ALLOWANCES = new Set([
+  'apps/desktop/src/harnesses/claude/integration/claude-driver-launch.ts',
+  'apps/desktop/src/harnesses/claude/integration/live-feed-transcript.ts',
+  'apps/desktop/src/harnesses/session-parity-harnesses.ts',
+  'apps/desktop/src/harnesses/claude/compaction/compaction-hook.ts',
+  'apps/desktop/src/harnesses/codex/compaction/bridge.ts',
+])
+
+function harnessFacet(parts: string[], harnesses: number, sourcePath: string): Facet {
   const file = parts.at(-1) ?? ''
-  if (harness === undefined || harness === 'composition') return false
-  if (kind === 'drive') return !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
-  return kind === 'sessions' && !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
+  if (/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)) return 'main'
+  if (isWithin(sourcePath, HARNESS_COMPOSITION_ROOT)) return 'main'
+  if (TEMPORARY_HARNESS_MAIN_ALLOWANCES.has(sourcePath)) return 'main'
+  if (parts[harnesses + 2] === 'renderer') return 'renderer'
+  return 'harness'
 }
 
 export function facetAddress(filePath: string): FacetAddress | null {
-  const parts = normalized(filePath).split('/')
+  const sourcePath = normalized(filePath)
+  const parts = sourcePath.split('/')
   const domains = parts.indexOf('domains')
   if (domains >= 0) {
     const domain = parts[domains + 1]
@@ -47,7 +61,7 @@ export function facetAddress(filePath: string): FacetAddress | null {
   if (harnesses >= 0) {
     return {
       domain: 'harness',
-      facet: isHarnessImplementation(parts, harnesses) ? 'harness' : 'main',
+      facet: harnessFacet(parts, harnesses, sourcePath),
     }
   }
   return parts[source + 1] === 'shared' ? { domain: 'shared', facet: 'shared' } : null

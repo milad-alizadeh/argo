@@ -91,6 +91,13 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
+      # A domain facet may import only its declared set of other facets (#2505). Node reads every
+      # source file under apps/desktop/src and flags an import that crosses a facet boundary; this
+      # step also runs the checker's own tests over synthetic files.
+      - name: Domain facet boundaries
+        if: ${{ !cancelled() }}
+        run: bun run quality:facets
+
       # Named ahead of the broader workspace run so a Session Feed regression fails fast, under
       # its own label, instead of surfacing inside the wider "Workspace tests" output (#2201).
       - name: Session Feed tests

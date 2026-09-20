@@ -1,0 +1,8 @@
+{"type":"last-prompt","leafUuid":"tg-r-3"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"tg-p","message":{"role":"user","content":"Do the group check."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"tg-a-1","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"tg-c1","name":"Bash","input":{"command":"bun test"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"tg-r-1","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tg-c1","content":"1 pass","is_error":false}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:03.000Z","uuid":"tg-a-2","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"tg-c2","name":"Edit","input":{"file_path":"/Users/x/argo/app.ts","old_string":"old","new_string":"new"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:04.000Z","uuid":"tg-r-2","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tg-c2","content":"ok","is_error":false}]}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:05.000Z","uuid":"tg-a-3","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"tg-c3","name":"Read","input":{"file_path":"/Users/x/argo/notes.md"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:06.000Z","uuid":"tg-r-3","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tg-c3","content":"looked","is_error":false}]}}

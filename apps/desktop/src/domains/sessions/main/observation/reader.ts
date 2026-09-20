@@ -1,6 +1,5 @@
 import {
   driveSessionError,
-  isDriveHarness,
   type SessionRenameRequest,
   type SessionUnreadFocusRequest,
   sessionError,
@@ -82,8 +81,7 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
   const owner = await ownerFor(request.sessionId)
   if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
-    const harness = isDriveHarness(owner.harness) ? owner.harness : 'claude'
-    return driveSessionError('not-drivable', harness, request.requestId)
+    return driveSessionError('not-drivable', owner.harness, request.requestId)
   }
   return owner.rename(request)
 }

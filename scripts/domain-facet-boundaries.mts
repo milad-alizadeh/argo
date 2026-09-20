@@ -34,21 +34,16 @@ function isElectronImport(specifier: string): boolean {
 }
 
 function isPublicDomainImport({
-  sourcePath,
   source,
   target,
   targetPath,
 }: {
-  sourcePath: string
   source: FacetAddress
   target: FacetAddress
   targetPath: string
 }): boolean {
   const sessionMain = target.domain === 'sessions' && target.facet === 'main'
   if (source.domain === 'harness' && source.facet === 'main' && sessionMain) {
-    return true
-  }
-  if (sourcePath.startsWith('apps/desktop/src/harnesses/composition/') && sessionMain) {
     return true
   }
   if (
@@ -96,7 +91,7 @@ function importViolation(
     target &&
     source.domain !== target.domain &&
     (target.domain !== 'platform' || targetPath.endsWith('/main/port')) &&
-    isPublicDomainImport({ sourcePath, source, target, targetPath })
+    isPublicDomainImport({ source, target, targetPath })
   if (
     source &&
     target &&
