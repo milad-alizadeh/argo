@@ -2,6 +2,14 @@
 // the private reader composes those sources at the application root.
 export type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
 export { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
+export { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+export {
+  createOwnershipLedger,
+  isProcessAlive,
+  type OwnershipLedger,
+  type OwnershipStanding,
+} from '@/domains/sessions/main/lifecycle/ownership-ledger'
+export { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 export { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
 export {
   createTranscriptDiscoverer,

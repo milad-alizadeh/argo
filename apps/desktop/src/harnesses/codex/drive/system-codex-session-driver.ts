@@ -1,10 +1,7 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import process from 'node:process'
-import {
-  createOwnershipLedger,
-  isProcessAlive,
-} from '@/domains/sessions/main/lifecycle/ownership-ledger'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/port'
 import { openCodexChannel } from '@/harnesses/codex/drive/codex-channel'
 import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver'
 import { codexResumeTarget } from '@/harnesses/codex/sessions/resume-target'

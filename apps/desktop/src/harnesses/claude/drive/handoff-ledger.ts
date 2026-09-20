@@ -2,7 +2,7 @@
 // never committed — a source→destination edge, recorded once the fresh Session exists so the
 // relationship survives a restart through the normal discovery path.
 import { z } from 'zod'
-import { readDocumentSync, writeDocumentSync } from '@/platform/main/storage/portable-file'
+import { readDocumentSync, writeDocumentSync } from '@/platform/main/port'
 
 const ledgerSchema = z.record(z.string(), z.string())
 type Ledger = z.infer<typeof ledgerSchema>

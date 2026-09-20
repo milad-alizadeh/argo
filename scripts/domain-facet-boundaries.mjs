@@ -21,8 +21,8 @@ function isHarnessImplementation(parts, harnesses) {
   const harness = parts[harnesses + 1]
   const kind = parts[harnesses + 2]
   const file = parts.at(-1) ?? ''
-  if (harness !== 'claude' && harness !== 'codex') return false
-  if (kind === 'drive') return withoutExtension(file) === 'session-drive-adapter'
+  if (harness === undefined || harness === 'composition') return false
+  if (kind === 'drive') return !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
   return kind === 'sessions' && !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
 }
 function facetAddress(filePath) {
@@ -123,7 +123,7 @@ function importViolation(sourcePath, sourceFacet, specifier) {
     source &&
     target &&
     source.domain !== target.domain &&
-    target.domain !== 'platform' &&
+    (target.domain !== 'platform' || targetPath.endsWith('/main/port')) &&
     isPublicDomainImport({ sourcePath, source, target, targetPath })
   if (
     source &&

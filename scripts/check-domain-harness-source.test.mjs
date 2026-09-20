@@ -14,3 +14,16 @@ test('refuses a harness Session source importing Sessions main code', () => {
     [['harness', 'main']],
   )
 })
+
+test('refuses any harness drive implementation importing Sessions main code', () => {
+  const files = [
+    {
+      path: 'apps/desktop/src/harnesses/third/drive/driver.ts',
+      source: "import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'",
+    },
+  ]
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['harness', 'main']],
+  )
+})

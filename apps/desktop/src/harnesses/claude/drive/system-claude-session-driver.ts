@@ -1,10 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
-import {
-  createOwnershipLedger,
-  isProcessAlive,
-} from '@/domains/sessions/main/lifecycle/ownership-ledger'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/port'
 import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 import { createHandoffLedger } from '@/harnesses/claude/drive/handoff-ledger'
 import { createMessageDisplay } from '@/harnesses/claude/drive/message-display'

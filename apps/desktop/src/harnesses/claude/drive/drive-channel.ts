@@ -1,8 +1,5 @@
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
-import type {
-  OwnershipLedger,
-  OwnershipStanding,
-} from '@/domains/sessions/main/lifecycle/ownership-ledger'
+import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main/port'
 import type { CompanionPart } from '@/harnesses/claude/drive/companion-plugin'
 import {
   type ClaudeTurnRequest,
