@@ -126,10 +126,6 @@
       ],
       "outputs": []
     },
-    "test:feed": {
-      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
-      "outputs": []
-    },
     "test:storybook": {
       "inputs": ["$TURBO_DEFAULT$", "!*.md"],
       "outputs": []
