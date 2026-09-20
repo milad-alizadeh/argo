@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const SESSION = 'codexHeartbeat'
 const FIXTURE = fileURLToPath(

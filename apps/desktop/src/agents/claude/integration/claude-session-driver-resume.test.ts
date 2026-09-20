@@ -9,7 +9,7 @@ import {
   ownedBeforeRestart,
   PASTED,
 } from '@/agents/claude/integration/claude-driver-launch.ts'
-import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
 
 const turn = (prompt: string) => ({ prompt, setup: OPENING })
 

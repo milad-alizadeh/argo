@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { useProjects } from '@/domains/projects/renderer/port'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { useSessionComposer } from '@/domains/sessions/renderer/composer/use-session-composer'
 import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-session-permission'

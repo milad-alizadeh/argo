@@ -37,6 +37,26 @@ test('refuses imports that point away from the Project contract', () => {
   )
 })
 
+test('allows a domain to use another domain only through its declared public port', () => {
+  const files = [
+    projectFile(
+      'main',
+      'ticket-reader',
+      "import { ticketSource } from '@/domains/connections/main/port'",
+    ),
+    projectFile(
+      'main',
+      'account-reader',
+      "import { registry } from '@/domains/accounts/main/registry'",
+    ),
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ kind, specifier }) => [kind, specifier]),
+    [['private-domain-import', '@/domains/accounts/main/registry']],
+  )
+})
+
 test('refuses privileged imports from contracts and renderer code', () => {
   const files = [
     projectFile('contract', 'messages', "import fs from 'node:fs'"),

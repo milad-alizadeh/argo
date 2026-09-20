@@ -64,6 +64,21 @@ function isLegacyRoot(targetPath) {
   return root !== undefined && !SOURCE_ROOTS.has(root)
 }
 
+function isPublicDomainImport(source, target, targetPath) {
+  if (
+    source.domain === target.domain ||
+    target.domain === 'platform' ||
+    target.domain === 'shared'
+  ) {
+    return true
+  }
+  if (target.facet === 'contract') return true
+  return (
+    (target.facet === 'main' && targetPath.endsWith('/main/port')) ||
+    (target.facet === 'renderer' && targetPath.endsWith('/renderer/port'))
+  )
+}
+
 function privilegedImport(facet, specifier, targetPath) {
   const policy = FACET_POLICIES[facet]
   if (policy.refusesNode && isNodeImport(specifier)) return true
@@ -75,6 +90,7 @@ function privilegedImport(facet, specifier, targetPath) {
 
 function importViolation(sourcePath, sourceFacet, specifier) {
   const shared = { path: sourcePath, sourceFacet, specifier }
+  const source = facetAddress(sourcePath)
   const targetPath = resolvedImport(sourcePath, specifier)
   if (privilegedImport(sourceFacet, specifier, targetPath)) {
     return { kind: 'privileged-import', ...shared }
@@ -85,6 +101,9 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   }
   if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
+  if (source && target && !isPublicDomainImport(source, target, targetPath)) {
+    return { kind: 'private-domain-import', ...shared, targetFacet: target.facet }
+  }
   if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null
   return { kind: 'runtime-facet', ...shared, targetFacet: target.facet }
 }

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fixtureFiles } from '@/agents/claude/integration/session-fixtures'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/feed.ts'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/projection/feed.ts'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental.ts'
 
 async function feedOf(names) {
   return projectFeed(stitchChains(await fixtureFiles(names))[0], undefined).rows

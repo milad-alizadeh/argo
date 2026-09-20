@@ -14,11 +14,11 @@ import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
 import { clearHandoff, completeHandoffs, startHandoff } from '@/agents/claude/drive/handoff-driver'
 import type { LiveMessage } from '@/agents/claude/drive/live-messages'
 import { claudeManagedStatus } from '@/agents/claude/drive/managed-status'
-import type { ClaudePermission } from '@/agents/claude/drive/turn-setup-contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string

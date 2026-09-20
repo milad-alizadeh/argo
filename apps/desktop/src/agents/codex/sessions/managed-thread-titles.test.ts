@@ -8,7 +8,7 @@ import {
   THREADS_SCHEMA,
   writeStateStore,
 } from '@/agents/codex/sessions/thread-title-fixtures'
-import { managedRow } from '@/domains/sessions/main/managed-row'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 
 const CODEX_NAME = 'Implement Geist desktop typography contract'
 

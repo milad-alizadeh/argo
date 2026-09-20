@@ -8,7 +8,10 @@ import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
-import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/contract/feed-images'
+import {
+  ATTACHMENT_SCHEME,
+  attachmentPathFromUrl,
+} from '@/domains/sessions/contract/model/feed-images'
 import { createSQLiteSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {

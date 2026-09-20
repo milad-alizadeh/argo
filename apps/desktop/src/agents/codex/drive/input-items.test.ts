@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { inputItemsFor } from '@/agents/codex/drive/input-items'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
 test('sends the draft alone when there are no attachments', () => {
   assert.deepEqual(inputItemsFor('Ship the composer.', []), [

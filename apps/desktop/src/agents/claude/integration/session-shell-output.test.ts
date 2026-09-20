@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   pointShellOutputAtRoot,
   shellOutputRoot,

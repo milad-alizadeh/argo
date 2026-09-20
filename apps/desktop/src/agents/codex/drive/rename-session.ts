@@ -1,6 +1,6 @@
 import type { CodexSessionDriver } from '@/agents/codex/drive/codex-session-driver'
-import type { SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import { driveSessionError } from '@/domains/sessions/contract/contract'
+import type { SessionRenameRequest } from '@/domains/sessions/contract/ipc/contract'
+import { driveSessionError } from '@/domains/sessions/contract/ipc/contract'
 
 export async function renameCodexSession(
   request: SessionRenameRequest,

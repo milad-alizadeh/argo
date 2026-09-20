@@ -16,7 +16,7 @@ import {
   readAccounts,
   writeAccounts,
 } from '@/domains/accounts/main/registry'
-import { readConnections } from '@/domains/tickets/main/connections'
+import { readConnections } from '@/domains/connections/main/port'
 
 // Named field by field, so a field added to the stored record never reaches the renderer by
 // accident; the grant lives in another file entirely.
@@ -54,7 +54,7 @@ export async function listing(
   return {
     accounts,
     notice: !registry.noticeDismissed,
-    providers: availableProviders(access.endpoints),
+    providers: availableProviders(access.providers, access.endpoints),
   }
 }
 

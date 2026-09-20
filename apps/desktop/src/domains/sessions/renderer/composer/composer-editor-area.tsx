@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { ComposerAttachments } from '@/domains/sessions/renderer/composer/composer-attachments'
 import { ComposerEditor } from '@/domains/sessions/renderer/composer/session-composer-editor'
 import { SessionPlanPopover } from '@/domains/sessions/renderer/composer/session-plan-popover'

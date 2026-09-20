@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { useComposer } from '@/domains/sessions/renderer/composer/composer'
 import { ComposerForm } from '@/domains/sessions/renderer/composer/composer-form'
 import { activeReference } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'

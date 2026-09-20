@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { patchFiles } from '@/domains/sessions/contract/patch-files'
+import { patchFiles } from '@/domains/sessions/contract/model/patch-files'
 import { CodeBlock } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
 import { FeedMermaid } from '@/domains/sessions/renderer/feed/content/feed-mermaid'

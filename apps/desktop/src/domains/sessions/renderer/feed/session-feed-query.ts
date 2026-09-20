@@ -2,7 +2,7 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
-import { mergeAppendedFeed } from '@/domains/sessions/contract/feed-contract'
+import { mergeAppendedFeed } from '@/domains/sessions/contract/model/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,

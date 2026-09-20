@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react'
-import type { LiveActivity } from '@/domains/sessions/contract/feed-rows'
+import type { LiveActivity } from '@/domains/sessions/contract/model/feed-rows'
 import { toolPresentation } from '@/domains/sessions/renderer/feed/feed-tools'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 

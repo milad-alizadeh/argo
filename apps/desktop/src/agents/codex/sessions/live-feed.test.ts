@@ -5,8 +5,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const SESSION = 'liveThread'
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import type { SessionShellOutput } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import type { SessionShellOutput } from '@/domains/sessions/contract/model/background-work-contract'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { RosterStatus } from '@/domains/sessions/contract/contract'
+import type { RosterStatus } from '@/domains/sessions/contract/ipc/contract'
 
 // Which Sessions the roster shows. The Archive used to be a disclosure row inside the list, which
 // made it a place in the list rather than a way of reading it; it is a filter over one list now.

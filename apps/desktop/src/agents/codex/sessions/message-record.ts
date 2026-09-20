@@ -5,7 +5,7 @@ import type {
   ToolCall,
   ToolResult,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 export function messageBlocks(

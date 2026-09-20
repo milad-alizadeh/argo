@@ -1,7 +1,7 @@
 import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Question, QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { Question, QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'

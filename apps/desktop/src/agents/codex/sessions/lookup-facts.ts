@@ -1,4 +1,8 @@
-import type { FetchFacts, ReadFacts, SearchFacts } from '@/domains/sessions/contract/transcript'
+import type {
+  FetchFacts,
+  ReadFacts,
+  SearchFacts,
+} from '@/domains/sessions/contract/model/transcript'
 
 type Input = Record<string, unknown>
 type LookupFacts = ReadFacts | SearchFacts | FetchFacts

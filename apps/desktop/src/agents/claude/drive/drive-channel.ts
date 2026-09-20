@@ -11,8 +11,11 @@ import type { LiveMessages } from '@/agents/claude/drive/live-messages'
 import { type ClaudeProcess, openChannel, type Seed } from '@/agents/claude/drive/open-channel'
 import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate'
 import { deliverAnswer } from '@/agents/claude/drive/question-answer'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main/ownership-ledger'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type {
+  OwnershipLedger,
+  OwnershipStanding,
+} from '@/domains/sessions/main/lifecycle/ownership-ledger'
 
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.

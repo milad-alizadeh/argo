@@ -4,8 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { projectRosterRow } from '@/domains/sessions/main/roster'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
 
 function activity(kind: 'started' | 'completed', timestamp: string, subagentId: string) {
   return {

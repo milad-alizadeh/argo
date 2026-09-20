@@ -2,13 +2,13 @@ import { askFacts } from '@/agents/claude/sessions/ask-facts'
 import { bashFacts } from '@/agents/claude/sessions/bash-facts'
 import { editFacts } from '@/agents/claude/sessions/edit-facts'
 import { lookupFacts } from '@/agents/claude/sessions/lookup-facts'
-import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/feed-images'
+import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/model/feed-images'
 import type {
   ContentBlock,
   RichResultBlock,
   ToolCall,
   ToolResult,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
 

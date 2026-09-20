@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readSubagents } from '@/domains/sessions/contract/signals'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import { readSubagents } from '@/domains/sessions/contract/observation/signals'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
 import { parseTranscriptLine } from './records'
 import { readingSpawnedAgents } from './spawned-agents'
 

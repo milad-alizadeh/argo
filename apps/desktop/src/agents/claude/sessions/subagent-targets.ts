@@ -1,5 +1,8 @@
 // Finds the Subagent a `SendMessage` or a stop call names, and reports it as an event.
-import type { SubagentControlFacts, SubagentEvent } from '@/domains/sessions/contract/transcript'
+import type {
+  SubagentControlFacts,
+  SubagentEvent,
+} from '@/domains/sessions/contract/model/transcript'
 import { facts, responded } from './subagent-events'
 
 type Control = SubagentControlFacts & { id: string }

@@ -1,5 +1,5 @@
 import { readPatchFiles } from '@/agents/codex/sessions/apply-patch'
-import type { EditedFile, EditFacts } from '@/domains/sessions/contract/transcript'
+import type { EditedFile, EditFacts } from '@/domains/sessions/contract/model/transcript'
 
 // The patch is the call's own `patch` field when a script named it, else the bare text of a
 // direct `custom_tool_call`.

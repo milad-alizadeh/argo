@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { WireMessage } from '@/agents/codex/drive/protocol'
-import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/models'
+import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
 
 const planUpdateSchema = z.object({
   turnId: z.string(),

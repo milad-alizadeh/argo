@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/attachments-contract'
+import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/drive/attachments-contract'
 import { composerActions } from '@/domains/sessions/renderer/composer/composer-store-actions'
 import {
   type ComposerTicketContext,
@@ -26,7 +26,7 @@ export type PendingTurn = {
   id: string
   text: string
   setup?: TurnSetup
-  attachments: import('@/domains/sessions/contract/attachments-contract').SessionAttachmentInput[]
+  attachments: import('@/domains/sessions/contract/drive/attachments-contract').SessionAttachmentInput[]
 }
 
 const attachmentSchema = z.object({

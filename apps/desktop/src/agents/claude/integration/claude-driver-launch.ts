@@ -8,8 +8,8 @@ import { CYCLE_MODE, REDRAW } from '@/agents/claude/drive/claude-setup.ts'
 import type { ResumeTarget } from '@/agents/claude/drive/drive-channel.ts'
 import { createHandoffLedger, type HandoffLedger } from '@/agents/claude/drive/handoff-ledger.ts'
 import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate.ts'
-import type { ClaudeTurnSetup } from '@/agents/claude/drive/turn-setup-contract'
-import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
 
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

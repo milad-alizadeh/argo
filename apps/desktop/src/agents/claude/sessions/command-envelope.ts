@@ -3,7 +3,7 @@ import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 import { readableCommandOutput } from './command-output'
 import { readTaskDelivery } from './task-notification'

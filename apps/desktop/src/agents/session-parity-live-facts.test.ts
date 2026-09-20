@@ -5,9 +5,9 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { readerOverRollout } from '@/agents/codex/sessions/rollout-reader-test-helper'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed, tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 const FIXTURES = fileURLToPath(new URL('../../mocks/cli', import.meta.url))
 const COMPACTING_SINCE = new Date().toISOString()

@@ -3,8 +3,12 @@ import { inputItemsFor } from '@/agents/codex/drive/input-items'
 import type { ManagedSession, ManagedSessionOptions } from '@/agents/codex/drive/managed-session'
 import { openManagedChannel, rememberManagedSession } from '@/agents/codex/drive/managed-session'
 import { readStartedTurn, readThreadId } from '@/agents/codex/drive/protocol'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
-import { CODEX_OPENING_SETUP, type CodexTurnSetup, codexTurnSettings } from './turn-setup-contract'
+import {
+  CODEX_OPENING_SETUP,
+  type CodexTurnSetup,
+  codexTurnSettings,
+} from '@/agents/codex/drive/turn-setup-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
 export async function beginSession(options: {
   driver: ManagedSessionOptions

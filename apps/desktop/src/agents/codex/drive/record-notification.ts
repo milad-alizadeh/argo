@@ -10,8 +10,8 @@ import { readCompletedTurn, readThreadStatus } from '@/agents/codex/drive/protoc
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
 import { readRequestUserInput } from '@/agents/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/agents/codex/drive/rename-protocol'
-import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
+import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 
 export type HeldSession = {
   messages: LiveMessages
