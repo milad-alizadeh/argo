@@ -1431,11 +1431,8 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
           viewedLabel="Viewed"
         />
       </div>
-      <div className="mt-6 flex justify-center gap-2">
+      <div className="mt-6 flex justify-end">
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
-        <Button onClick={actions.reset} variant="outline">
-          Restart prototype
-        </Button>
       </div>
     </>
   )
@@ -1578,11 +1575,8 @@ function ManualCompleteStage({ controller }: { controller: PrototypeController }
           </p>
         </div>
       )}
-      <div className="mt-6 flex justify-center gap-2">
+      <div className="mt-6 flex justify-end">
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
-        <Button onClick={actions.reset} variant="outline">
-          Restart prototype
-        </Button>
       </div>
     </>
   )
