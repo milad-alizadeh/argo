@@ -9,24 +9,19 @@ function first<T>(items: T[]): T {
   return item
 }
 
+function parsePlan(plan: ReturnType<typeof planFixture>) {
+  return parseSetupPlanningResult({ status: 'ready-for-review', revision: 'plan-1', plan })
+}
+
 test('accepts a well-formed ready-for-review planning result', () => {
-  const result = parseSetupPlanningResult({
-    status: 'ready-for-review',
-    revision: 'plan-1',
-    plan: planFixture(),
-  })
+  const result = parsePlan(planFixture())
   assert.equal(result.status, 'ready-for-review')
 })
 
 test('rejects a plan with duplicate target ids', () => {
   const plan = planFixture()
   assert.throws(
-    () =>
-      parseSetupPlanningResult({
-        status: 'ready-for-review',
-        revision: 'plan-1',
-        plan: { ...plan, targets: [...plan.targets, first(plan.targets)] },
-      }),
+    () => parsePlan({ ...plan, targets: [...plan.targets, first(plan.targets)] }),
     /Duplicate id/,
   )
 })
@@ -34,22 +29,15 @@ test('rejects a plan with duplicate target ids', () => {
 test('rejects a nonempty target list with no default target', () => {
   const plan = planFixture()
   assert.throws(
-    () =>
-      parseSetupPlanningResult({
-        status: 'ready-for-review',
-        revision: 'plan-1',
-        plan: { ...plan, targets: [{ ...first(plan.targets), isDefault: false }] },
-      }),
+    () => parsePlan({ ...plan, targets: [{ ...first(plan.targets), isDefault: false }] }),
     /exactly one default target/,
   )
 })
 
 test('accepts a zero-target plan with no default target and no verification', () => {
-  const result = parseSetupPlanningResult({
-    status: 'ready-for-review',
-    revision: 'plan-1',
-    plan: planFixture({ targets: [], capabilities: [], repositoryActions: [], verification: [] }),
-  })
+  const result = parsePlan(
+    planFixture({ targets: [], capabilities: [], repositoryActions: [], verification: [] }),
+  )
   assert.equal(result.status, 'ready-for-review')
 })
 
@@ -73,15 +61,11 @@ test('rejects a self-referencing prerequisite', () => {
   const plan = planFixture()
   assert.throws(
     () =>
-      parseSetupPlanningResult({
-        status: 'ready-for-review',
-        revision: 'plan-1',
-        plan: {
-          ...plan,
-          repositoryActions: [
-            { ...first(plan.repositoryActions), prerequisiteIds: ['action-write-biome'] },
-          ],
-        },
+      parsePlan({
+        ...plan,
+        repositoryActions: [
+          { ...first(plan.repositoryActions), prerequisiteIds: ['action-write-biome'] },
+        ],
       }),
     /own prerequisite/,
   )
@@ -91,15 +75,11 @@ test('rejects a prerequisite cycle', () => {
   const plan = planFixture()
   assert.throws(
     () =>
-      parseSetupPlanningResult({
-        status: 'ready-for-review',
-        revision: 'plan-1',
-        plan: {
-          ...plan,
-          repositoryActions: [
-            { ...first(plan.repositoryActions), prerequisiteIds: ['verify-desktop-test'] },
-          ],
-        },
+      parsePlan({
+        ...plan,
+        repositoryActions: [
+          { ...first(plan.repositoryActions), prerequisiteIds: ['verify-desktop-test'] },
+        ],
       }),
     /Prerequisite cycle/,
   )

@@ -98,6 +98,12 @@ const actionSchema = z.object({
   rollbackNote: z.string().optional(),
 })
 
+const repositoryActionSchema = actionSchema.extend({ scope: z.literal('repository') })
+const targetActionSchema = actionSchema.extend({
+  scope: z.literal('target'),
+  targetId: identifierSchema,
+})
+
 const verificationStepSchema = z.object({
   id: identifierSchema,
   targetId: identifierSchema,
@@ -123,10 +129,8 @@ export const setupPlanSchema = z
     targets: z.array(targetSchema),
     capabilities: z.array(capabilitySchema),
     toolRecommendations: z.array(toolRecommendationSchema),
-    repositoryActions: z.array(actionSchema.extend({ scope: z.literal('repository') })),
-    targetActions: z.array(
-      actionSchema.extend({ scope: z.literal('target'), targetId: identifierSchema }),
-    ),
+    repositoryActions: z.array(repositoryActionSchema),
+    targetActions: z.array(targetActionSchema),
     verification: z.array(verificationStepSchema),
     risks: z.array(
       z.object({
@@ -152,10 +156,8 @@ export const acceptedSetupPlanSchema = z.object({
   targets: z.array(targetSchema),
   capabilities: z.array(capabilitySchema.omit({ disposition: true })),
   toolRecommendations: z.array(toolRecommendationSchema),
-  repositoryActions: z.array(actionSchema.extend({ scope: z.literal('repository') })),
-  targetActions: z.array(
-    actionSchema.extend({ scope: z.literal('target'), targetId: identifierSchema }),
-  ),
+  repositoryActions: z.array(repositoryActionSchema),
+  targetActions: z.array(targetActionSchema),
   verification: z.array(verificationStepSchema),
   handoff: handoffSchema,
 })

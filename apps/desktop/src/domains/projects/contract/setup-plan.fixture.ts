@@ -1,4 +1,4 @@
-import type { SetupPlan } from './setup-plan'
+import type { AcceptedSetupPlan, SetupPlan } from './setup-plan'
 
 function source(): SetupPlan['source'] {
   return {
@@ -93,5 +93,22 @@ export function planFixture(overrides: Partial<SetupPlan> = {}): SetupPlan {
       applicationOrder: [],
     },
     ...overrides,
+  }
+}
+
+export function acceptedPlanFixture(source: SetupPlan): AcceptedSetupPlan {
+  return {
+    sourceRevision: source.source.planRevision,
+    projectRoot: source.source.projectRoot,
+    fingerprints: source.source.fingerprints,
+    targets: source.targets,
+    capabilities: source.capabilities.map(
+      ({ disposition: _disposition, ...capability }) => capability,
+    ),
+    toolRecommendations: source.toolRecommendations,
+    repositoryActions: source.repositoryActions,
+    targetActions: source.targetActions,
+    verification: source.verification,
+    handoff: source.handoff,
   }
 }

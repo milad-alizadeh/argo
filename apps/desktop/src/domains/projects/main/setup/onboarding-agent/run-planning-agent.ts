@@ -4,6 +4,8 @@ import {
 } from '@/domains/projects/contract/setup-plan'
 import type { SetupPlanningProgressEvent } from '@/domains/projects/contract/setup-progress'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
+import { parseAgentOutput } from './parse-agent-output'
+import { forwardProgress } from './progress-forwarder'
 import { PLAN_MARKER, planningAgentPrompt } from './prompts'
 import type { OnboardingAgentDriver } from './run-onboarding-agent'
 import { runOnboardingAgent } from './run-onboarding-agent'
@@ -30,7 +32,6 @@ export async function runPlanningAgent(
     timeoutMs?: number
   },
 ): Promise<PlanningRunOutcome> {
-  let announced = 0
   const outcome = await runOnboardingAgent(driver, {
     cwd: request.setupWorktreePath,
     prompt: planningAgentPrompt(request),
@@ -40,30 +41,14 @@ export async function runPlanningAgent(
     effort: request.effort,
     pollIntervalMs: request.pollIntervalMs,
     timeoutMs: request.timeoutMs,
-    onProgress: (text) => {
-      const events = parsePlanningStepEvents(text, request.planRevision)
-      for (const event of events.slice(announced)) request.onStepEvent?.(event)
-      announced = events.length
-    },
+    onProgress: forwardProgress(
+      (text) => parsePlanningStepEvents(text, request.planRevision),
+      request.onStepEvent,
+    ),
   })
 
   if (outcome.outcome === 'timed-out') return { kind: 'timed-out' }
 
-  let payload: unknown
-  try {
-    payload = JSON.parse(outcome.payload)
-  } catch (error) {
-    return {
-      kind: 'invalid-output',
-      issues: [`Planning output was not valid JSON: ${String(error)}`],
-    }
-  }
-  const parsed = setupPlanningResultSchema.safeParse(payload)
-  if (!parsed.success) {
-    return {
-      kind: 'invalid-output',
-      issues: parsed.error.issues.map((issue: { message: string }) => issue.message),
-    }
-  }
-  return { kind: 'result', result: parsed.data }
+  const parsed = parseAgentOutput(outcome.payload, setupPlanningResultSchema, 'Planning')
+  return parsed.kind === 'parsed' ? { kind: 'result', result: parsed.value } : parsed
 }

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
 import type { SetupApplicationProgressEvent } from '@/domains/projects/contract/setup-progress'
+import { parseAgentOutput } from './parse-agent-output'
+import { forwardProgress } from './progress-forwarder'
 import { APPLY_MARKER, applicationAgentPrompt } from './prompts'
 import { type OnboardingAgentDriver, runOnboardingAgent } from './run-onboarding-agent'
 import { parseApplicationStepEvents } from './step-events'
@@ -34,7 +36,6 @@ export async function runApplicationAgent(
     timeoutMs?: number
   },
 ): Promise<ApplicationRunOutcome> {
-  let announced = 0
   const outcome = await runOnboardingAgent(driver, {
     cwd: request.setupWorktreePath,
     prompt: applicationAgentPrompt({
@@ -46,30 +47,14 @@ export async function runApplicationAgent(
     marker: APPLY_MARKER,
     pollIntervalMs: request.pollIntervalMs,
     timeoutMs: request.timeoutMs,
-    onProgress: (text) => {
-      const events = parseApplicationStepEvents(text, request.acceptedPlan.sourceRevision)
-      for (const event of events.slice(announced)) request.onStepEvent?.(event)
-      announced = events.length
-    },
+    onProgress: forwardProgress(
+      (text) => parseApplicationStepEvents(text, request.acceptedPlan.sourceRevision),
+      request.onStepEvent,
+    ),
   })
 
   if (outcome.outcome === 'timed-out') return { kind: 'timed-out' }
 
-  let payload: unknown
-  try {
-    payload = JSON.parse(outcome.payload)
-  } catch (error) {
-    return {
-      kind: 'invalid-output',
-      issues: [`Application output was not valid JSON: ${String(error)}`],
-    }
-  }
-  const parsed = applicationReportSchema.safeParse(payload)
-  if (!parsed.success) {
-    return {
-      kind: 'invalid-output',
-      issues: parsed.error.issues.map((issue: { message: string }) => issue.message),
-    }
-  }
-  return { kind: 'report', report: parsed.data }
+  const parsed = parseAgentOutput(outcome.payload, applicationReportSchema, 'Application')
+  return parsed.kind === 'parsed' ? { kind: 'report', report: parsed.value } : parsed
 }

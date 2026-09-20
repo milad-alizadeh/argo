@@ -19,10 +19,8 @@ export async function startOnboardingPlan(
   request: OnboardingPlanStartRequest,
   context: OnboardingContext,
 ): Promise<OnboardingRunStarted | ProjectError> {
-  if (request.harness !== 'claude')
-    return projectError('onboarding-harness-unavailable', request.requestId)
-  const project = projectFor(request.projectId, context.setup.projects)
-  if (!project) return projectError('missing-project', request.requestId)
+  const project = onboardingProject(request, context.setup)
+  if ('code' in project) return project
   let document: Awaited<ReturnType<SetupStore['loadSetupDocument']>>
   try {
     document = await context.setup.loadSetupDocument()
@@ -65,10 +63,8 @@ export async function startOnboardingApply(
   request: OnboardingApplyStartRequest,
   context: OnboardingContext,
 ): Promise<OnboardingRunStarted | ProjectError> {
-  if (request.harness !== 'claude')
-    return projectError('onboarding-harness-unavailable', request.requestId)
-  const project = projectFor(request.projectId, context.setup.projects)
-  if (!project) return projectError('missing-project', request.requestId)
+  const project = onboardingProject(request, context.setup)
+  if ('code' in project) return project
   const checkpoint = context.setup.projects.readSetupCheckpoint(project.id)
   const setupWorktreePath = checkpoint?.worktreePath ?? (await prepareSetupWorktree(project))
   const runId = context.runs.startApplyRun({
@@ -96,4 +92,17 @@ export function onboardingApplyStatus(
     drift: run.drift,
     issues: run.issues,
   }
+}
+
+function onboardingProject(
+  request: Pick<OnboardingPlanStartRequest, 'harness' | 'projectId' | 'requestId'>,
+  setup: SetupStore,
+): NonNullable<ReturnType<typeof projectFor>> | ProjectError {
+  if (request.harness !== 'claude') {
+    return projectError('onboarding-harness-unavailable', request.requestId)
+  }
+  return (
+    projectFor(request.projectId, setup.projects) ??
+    projectError('missing-project', request.requestId)
+  )
 }

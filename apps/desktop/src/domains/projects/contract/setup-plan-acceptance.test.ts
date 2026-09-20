@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { validateAcceptedSetupPlan } from './setup-plan'
-import { planFixture } from './setup-plan.fixture'
+import { acceptedPlanFixture, planFixture } from './setup-plan.fixture'
 import { validatePlanRevision } from './setup-plan-validation'
 
 function first<T>(items: T[]): T {
@@ -44,34 +44,15 @@ test('validatePlanRevision flags an id that changed kind across revisions', () =
 
 test('validateAcceptedSetupPlan accepts a subset derived from the source plan', () => {
   const source = planFixture()
-  const outcome = validateAcceptedSetupPlan(source, {
-    sourceRevision: source.source.planRevision,
-    projectRoot: source.source.projectRoot,
-    fingerprints: source.source.fingerprints,
-    targets: source.targets,
-    capabilities: source.capabilities.map(({ disposition: _disposition, ...rest }) => rest),
-    toolRecommendations: source.toolRecommendations,
-    repositoryActions: source.repositoryActions,
-    targetActions: source.targetActions,
-    verification: source.verification,
-    handoff: source.handoff,
-  })
+  const outcome = validateAcceptedSetupPlan(source, acceptedPlanFixture(source))
   assert.equal(outcome.valid, true)
 })
 
 test('validateAcceptedSetupPlan rejects an id absent from the source plan', () => {
   const source = planFixture()
   const outcome = validateAcceptedSetupPlan(source, {
-    sourceRevision: source.source.planRevision,
-    projectRoot: source.source.projectRoot,
-    fingerprints: source.source.fingerprints,
+    ...acceptedPlanFixture(source),
     targets: [{ ...first(source.targets), id: 'invented-target' }],
-    capabilities: [],
-    toolRecommendations: [],
-    repositoryActions: [],
-    targetActions: [],
-    verification: [],
-    handoff: source.handoff,
   })
   assert.equal(outcome.valid, false)
   assert.match(outcome.issues.join('\n'), /not present in the reviewed source plan/)
@@ -80,16 +61,8 @@ test('validateAcceptedSetupPlan rejects an id absent from the source plan', () =
 test('validateAcceptedSetupPlan rejects a stale fingerprint', () => {
   const source = planFixture()
   const outcome = validateAcceptedSetupPlan(source, {
-    sourceRevision: source.source.planRevision,
-    projectRoot: source.source.projectRoot,
+    ...acceptedPlanFixture(source),
     fingerprints: { 'AGENTS.md': 'stale-hash' },
-    targets: [],
-    capabilities: [],
-    toolRecommendations: [],
-    repositoryActions: [],
-    targetActions: [],
-    verification: [],
-    handoff: source.handoff,
   })
   assert.equal(outcome.valid, false)
   assert.match(outcome.issues.join('\n'), /Fingerprint/)

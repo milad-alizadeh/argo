@@ -1,23 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
+import { driverEmitting } from './onboarding-agent.fixture'
 import { runApplicationAgent } from './run-application-agent'
-import type { OnboardingAgentDriver } from './run-onboarding-agent'
-
-function driverEmitting(...frames: string[]): OnboardingAgentDriver {
-  let index = 0
-  return {
-    start: () => 'session-1',
-    liveMessages: () => {
-      const text = frames[Math.min(index, frames.length - 1)] ?? ''
-      index += 1
-      return [{ id: 'message-1', text }]
-    },
-    interrupt: () => {},
-    pendingPermission: () => null,
-    decidePermission: () => false,
-  }
-}
 
 const acceptedPlan: AcceptedSetupPlan = {
   sourceRevision: 'plan-1',
