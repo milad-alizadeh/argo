@@ -2,6 +2,7 @@
 // the private reader composes those sources at the application root.
 export type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
 export { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
+export { LIVE_ACTIVITY_SILENCE_MS } from '@/domains/sessions/main/lifecycle/liveness'
 export { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 export {
   createOwnershipLedger,

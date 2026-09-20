@@ -118,7 +118,7 @@ function rosterDiscovery(root: string, options?: ReaderOptions): SessionSource['
       managed: options?.roster?.() ?? [],
       joins: {
         observed: threadNames === undefined ? [] : [(rows) => nameThreads(rows, threadNames)],
-        merged: [(rows) => joinOpenTurns(rows, open), (rows) => joinHeldRollouts(rows, held)],
+        merged: [(rows) => joinOpenTurns(rows, open, now), (rows) => joinHeldRollouts(rows, held)],
       },
       projectRoot: discoverOptions?.projectRoot,
     })

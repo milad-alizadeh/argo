@@ -8,6 +8,7 @@ import {
   createTranscriptRecordReader,
   hasOpenSubagent,
   isLiveElsewhere,
+  LIVE_ACTIVITY_SILENCE_MS,
   ROSTER_FILE_LIMIT,
 } from '@/domains/sessions/main/port'
 import { transcriptPaths } from './transcript-paths'
@@ -26,10 +27,6 @@ const turnMarkSchema = z.object({
   payload: z.object({ type: z.enum(TURN_MARK_TYPES) }),
 })
 
-// Three times the longest silence measured inside a running Codex Turn (10 minutes over 89,725
-// gaps, 2026-09): a client that quit or crashed mid-Turn leaves that Turn open for good.
-const LIVE_TURN_SILENCE_MS = 30 * 60 * 1000
-
 function parseTurnMark(line: string): TurnMark | null {
   if (!TURN_MARK_TYPES.some((type) => line.includes(`"${type}"`))) return null
   let value: unknown
@@ -44,7 +41,7 @@ function parseTurnMark(line: string): TurnMark | null {
 
 async function writtenWithin(file: { path: string }, now: number) {
   const written = await stat(file.path).catch(() => null)
-  return written !== null && now - written.mtimeMs < LIVE_TURN_SILENCE_MS
+  return written !== null && now - written.mtimeMs < LIVE_ACTIVITY_SILENCE_MS
 }
 
 // The thread ids whose newest Turn is open in a rollout written within the silence bound.
@@ -68,9 +65,11 @@ export function createOpenTurnReader(root: string) {
 export function joinOpenTurns(
   rows: SessionRosterRow[],
   open: ReadonlySet<string>,
+  now: number,
 ): SessionRosterRow[] {
   return rows.map((row) =>
-    isLiveElsewhere(row, open) || (row.posture === 'external' && hasOpenSubagent(row.subagents))
+    isLiveElsewhere(row, open) ||
+    (row.posture === 'external' && hasOpenSubagent(row.subagents, now))
       ? { ...row, status: 'running', locked: true }
       : row,
   )
