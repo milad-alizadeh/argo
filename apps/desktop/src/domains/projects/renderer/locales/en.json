@@ -17,6 +17,19 @@
     "description": "Argo shows the Sessions, Tickets and Atlas of one Project. Choose its folder to begin.",
     "add": "Add Project…"
   },
+  "onboarding": {
+    "label": "Project setup",
+    "back": "Back",
+    "agent": {
+      "title": "Project setup agent",
+      "subtitle": "Argo · plan, then apply",
+      "introduction": "I will prepare this Project for agent Sessions. You approve every choice before I apply setup."
+    },
+    "review": {
+      "title": "Setup review",
+      "disclosure": "Setup review and progress"
+    }
+  },
   "setup": {
     "label": "Set up {{name}}",
     "title": "Set up {{name}} before starting Sessions",

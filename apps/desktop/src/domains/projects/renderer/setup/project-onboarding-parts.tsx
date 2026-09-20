@@ -1,10 +1,7 @@
-// THROWAWAY PROTOTYPE (#2464): representative controls and content for Project onboarding.
 import {
-  ArrowLeft,
   Bot,
   Check,
   CheckCircle2,
-  ChevronDown,
   Circle,
   Code2,
   FileCog,
@@ -15,7 +12,6 @@ import {
   Library,
   ListChecks,
   LoaderCircle,
-  MessagesSquare,
   Package,
   Palette,
   PenLine,
@@ -32,20 +28,10 @@ import {
   Wrench,
   XCircle,
 } from 'lucide-react'
-import { type ReactNode, useId, useState } from 'react'
-import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { type FileDiff, FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/platform/renderer/components/ui/dropdown-menu'
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Progress, ProgressLabel } from '@/platform/renderer/components/ui/progress'
 import {
@@ -58,29 +44,36 @@ import {
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
 import {
+  ANALYSIS_TASKS,
+  applyTasksFor,
+  type OnboardingApplyTask,
+  type OnboardingController,
+  type OnboardingRecommendation,
+  type OnboardingStage,
+  type OnboardingTarget,
+  targetsFromManualSource,
+} from './project-onboarding'
+import {
   ProjectOnboardingStageActions as StageActions,
   ProjectOnboardingStageContent as StageContent,
   ProjectOnboardingStageHeader as StageHeading,
 } from './project-onboarding-layout'
 import {
-  ANALYSIS_TASKS,
-  applyTasksFor,
-  type PrototypeApplyTask,
-  type PrototypeController,
-  type PrototypeRecommendation,
-  type PrototypeStage,
-  type PrototypeTarget,
-  targetsFromManualSource,
-} from './project-onboarding-prototype'
+  BackAction,
+  OptionRow,
+  SectionCard,
+  SectionCardHeader,
+  SubsectionHeader,
+} from './project-onboarding-primitives'
 
-export type PrototypePresentation = 'runway' | 'inspector' | 'briefing'
+export type OnboardingPresentation = 'briefing'
 
 const HARNESS_CHOICES = [
   { label: 'Codex', value: 'codex' },
   { label: 'Claude Code', value: 'claude' },
 ] as const
 
-const PROGRESS_STAGES: Array<{ ids: PrototypeStage[]; label: string }> = [
+const PROGRESS_STAGES: Array<{ ids: OnboardingStage[]; label: string }> = [
   { ids: ['method', 'no-default', 'harness', 'manual'], label: '1 · Setup method' },
   { ids: ['analyzing'], label: '2 · Analyze' },
   { ids: ['recommendations', 'customize'], label: '3 · Targets' },
@@ -88,108 +81,11 @@ const PROGRESS_STAGES: Array<{ ids: PrototypeStage[]; label: string }> = [
   { ids: ['applying', 'apply-failed', 'starting'], label: '5 · Apply' },
 ]
 
-function stageProgress(stage: PrototypeStage) {
+function stageProgress(stage: OnboardingStage) {
   return PROGRESS_STAGES.findIndex(({ ids }) => ids.includes(stage))
 }
 
-export function ProjectEntryScene({ controller }: { controller: PrototypeController }) {
-  const { actions, state } = controller
-  if (state.entryPoint === 'empty') {
-    return <EmptyProjectWindow busy={false} onAdd={actions.openFolder} />
-  }
-  return (
-    <CockpitShell
-      header={<PrototypeProjectSelector onAdd={actions.openFolder} />}
-      sidebar={<RepresentativeSessionSidebar />}
-    >
-      <RepresentativeSession />
-    </CockpitShell>
-  )
-}
-
-function PrototypeProjectSelector({ onAdd }: { onAdd: () => void }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button aria-label="Current Project: Argo" size="sm" variant="ghost" />}
-      >
-        <Folder />
-        <span className="max-w-36 truncate font-medium">Argo</span>
-        <ChevronDown className="text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <Folder />
-            <span className="flex-1">Argo</span>
-            <Check />
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Folder />
-            <span className="flex-1">Waypoint</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onAdd}>
-          <Plus />
-          Add Project…
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-export function RepresentativeSessionSidebar() {
-  return (
-    <div className="flex h-full flex-col px-3 py-3">
-      <div className="flex items-center justify-between px-2 py-1">
-        <span className="type-heading">Sessions</span>
-        <Button aria-label="New Session" size="icon-xs" variant="ghost">
-          <Plus />
-        </Button>
-      </div>
-      <div className="mt-3 space-y-1">
-        <RepresentativeSessionRow active label="Project onboarding exploration" />
-        <RepresentativeSessionRow label="Desktop release checklist" />
-        <RepresentativeSessionRow label="Ticket feed performance" />
-      </div>
-    </div>
-  )
-}
-
-function RepresentativeSessionRow({ active = false, label }: { active?: boolean; label: string }) {
-  return (
-    <div className={`rounded-lg px-3 py-2 ${active ? 'bg-selected' : 'text-muted-foreground'}`}>
-      <div className="flex items-center gap-2 type-body">
-        <span className={`size-1.5 rounded-full ${active ? 'bg-active' : 'bg-idle'}`} />
-        <span className="truncate">{label}</span>
-      </div>
-      <p className="mt-1 truncate pl-3.5 type-meta text-muted-foreground">argo/#2464</p>
-    </div>
-  )
-}
-
-function RepresentativeSession() {
-  return (
-    <div className="flex h-full flex-col">
-      <div className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-end px-8 pb-24">
-        <div className="rounded-xl border bg-card px-5 py-4 shadow-surface">
-          <div className="flex items-center gap-2 type-heading">
-            <MessagesSquare className="size-4" />
-            Project onboarding exploration
-          </div>
-          <p className="mt-2 type-body text-muted-foreground">
-            Add another Project from the selector to start the onboarding prototype.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function SetupProgress({ stage }: { stage: PrototypeStage }) {
+export function SetupProgress({ stage }: { stage: OnboardingStage }) {
   const current = stageProgress(stage)
   return (
     <ol className="space-y-1">
@@ -218,19 +114,19 @@ export function SetupStageContent({
   controller,
   presentation,
 }: {
-  controller: PrototypeController
-  presentation: PrototypePresentation
+  controller: OnboardingController
+  presentation: OnboardingPresentation
 }) {
   const content = stageContent(controller)
   return (
     <div
-      className="prototype-stage"
+      className="onboarding-stage"
       data-presentation={presentation}
       data-stage={controller.state.stage}
     >
       {content}
       {shouldOfferSkip(controller) ? (
-        <div className="prototype-persistent-skip">
+        <div className="onboarding-persistent-skip">
           <Button onClick={controller.actions.skipSetup} variant="ghost">
             Skip for now
           </Button>
@@ -240,7 +136,7 @@ export function SetupStageContent({
   )
 }
 
-function shouldOfferSkip(controller: PrototypeController) {
+function shouldOfferSkip(controller: OnboardingController) {
   if (controller.state.method === 'manual') {
     return controller.state.stage === 'manual'
   }
@@ -249,7 +145,7 @@ function shouldOfferSkip(controller: PrototypeController) {
   )
 }
 
-function stageContent(controller: PrototypeController) {
+function stageContent(controller: OnboardingController) {
   switch (controller.state.stage) {
     case 'folder':
       return <FolderStage controller={controller} />
@@ -277,8 +173,6 @@ function stageContent(controller: PrototypeController) {
       return <StartingStage controller={controller} />
     case 'complete':
       return <CompleteStage controller={controller} />
-    case 'entry':
-      return null
   }
 }
 
@@ -289,150 +183,20 @@ function targetCount(count: number) {
 function runnableTargetCount(count: number) {
   return `${count} runnable Target${count === 1 ? '' : 's'}`
 }
-
-function SectionCard({
-  action,
-  children,
-  className = '',
-  collapsible = true,
-  icon,
-  subtitle,
-  title,
-}: {
-  action?: ReactNode
-  children: ReactNode
-  className?: string
-  collapsible?: boolean
-  icon: ReactNode
-  subtitle?: string
-  title: string
-}) {
-  const bodyId = useId()
-  const [expanded, setExpanded] = useState(true)
-  return (
-    <section className={`prototype-section-card ${className}`}>
-      <div className="prototype-section-card__header-row">
-        <SectionCardHeader
-          controls={collapsible ? bodyId : undefined}
-          expanded={collapsible ? expanded : undefined}
-          icon={icon}
-          onToggle={collapsible ? () => setExpanded((current) => !current) : undefined}
-          subtitle={subtitle}
-          title={title}
-        />
-        {action ? <span className="prototype-section-card__action">{action}</span> : null}
-      </div>
-      <div hidden={collapsible && !expanded} id={bodyId}>
-        {children}
-      </div>
-    </section>
-  )
-}
-
-function SectionCardHeader({
-  controls,
-  expanded,
-  icon,
-  onToggle,
-  subtitle,
-  title,
-}: {
-  controls?: string
-  expanded?: boolean
-  icon: ReactNode
-  onToggle?: () => void
-  subtitle?: string
-  title: string
-}) {
-  const content = (
-    <>
-      <span className="prototype-section-card__icon">{icon}</span>
-      <span className="min-w-0">
-        <strong>{title}</strong>
-        {subtitle ? <small>{subtitle}</small> : null}
-      </span>
-      {onToggle ? (
-        <ChevronDown
-          aria-hidden="true"
-          className="prototype-section-card__chevron"
-          data-expanded={expanded}
-        />
-      ) : null}
-    </>
-  )
-  if (onToggle) {
-    return (
-      <button
-        aria-controls={controls}
-        aria-expanded={expanded}
-        className="prototype-section-card__header prototype-section-card__toggle"
-        onClick={onToggle}
-        type="button"
-      >
-        {content}
-      </button>
-    )
-  }
-  return <div className="prototype-section-card__header">{content}</div>
-}
-
-function SubsectionHeader({ icon, title }: { icon?: ReactNode; title: string }) {
-  return (
-    <h3 className="prototype-subsection-header">
-      {icon ? <span>{icon}</span> : null}
-      {title}
-    </h3>
-  )
-}
-
-function OptionRow({
-  action,
-  detail,
-  icon,
-  title,
-}: {
-  action?: ReactNode
-  detail?: ReactNode
-  icon?: ReactNode
-  title: ReactNode
-}) {
-  return (
-    <div className="prototype-option-row">
-      {icon ? <span className="prototype-option-row__icon">{icon}</span> : null}
-      <span className="min-w-0 flex-1">
-        <strong>{title}</strong>
-        {detail ? <small>{detail}</small> : null}
-      </span>
-      {action ? <span className="prototype-option-row__action">{action}</span> : null}
-    </div>
-  )
-}
-
-function BackAction({ controller }: { controller: PrototypeController }) {
-  return (
-    <Button
-      aria-label="Back"
-      className="-ml-2 mb-3 size-9"
-      onClick={controller.actions.back}
-      size="icon-sm"
-      variant="ghost"
-    >
-      <ArrowLeft />
-    </Button>
-  )
-}
-
-function FolderStage({ controller }: { controller: PrototypeController }) {
+function FolderStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   return (
     <>
       <StageHeading
-        back={<BackAction controller={controller} />}
         description="Choose the Project folder. Argo will find Targets inside it."
       >
         Choose a Project folder
       </StageHeading>
-      <button className="prototype-folder-choice mt-8" onClick={actions.chooseFolder} type="button">
+      <button
+        className="onboarding-folder-choice mt-8"
+        onClick={actions.chooseFolder}
+        type="button"
+      >
         <span className="grid size-11 place-items-center rounded-lg bg-muted">
           <FolderOpen className="size-5" />
         </span>
@@ -448,7 +212,7 @@ function FolderStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function MethodStage({ controller }: { controller: PrototypeController }) {
+function MethodStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   const defaultHarnessLabel = state.defaultHarness === 'claude' ? 'Claude Code' : 'Codex'
   return (
@@ -459,14 +223,14 @@ function MethodStage({ controller }: { controller: PrototypeController }) {
       >
         1 · Choose a setup method
       </StageHeading>
-      <div className="prototype-method-grid mt-8">
+      <div className="onboarding-method-grid mt-8">
         <SectionCard
-          className="prototype-agent-method-card"
+          className="onboarding-agent-method-card"
           icon={<Sparkles />}
           subtitle="A harness is the app that Argo uses to run an agent."
           title="Set up with an agent"
         >
-          <div className="prototype-agent-method-card__controls">
+          <div className="onboarding-agent-method-card__controls">
             <HarnessSelect label="Harness" onChange={actions.setHarness} value={state.harness} />
             <div className="mt-3 flex items-center gap-2">
               {state.defaultHarness ? (
@@ -504,7 +268,7 @@ function MethodStage({ controller }: { controller: PrototypeController }) {
           </div>
         </SectionCard>
         <button
-          className="prototype-method-choice prototype-section-card"
+          className="onboarding-method-choice onboarding-section-card"
           onClick={() => actions.chooseMethod('manual')}
           type="button"
         >
@@ -527,7 +291,7 @@ function MethodStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function NoDefaultHarnessStage({ controller }: { controller: PrototypeController }) {
+function NoDefaultHarnessStage({ controller }: { controller: OnboardingController }) {
   const { actions } = controller
   const [choice, setChoice] = useState<'codex' | 'claude'>('codex')
   return (
@@ -548,7 +312,7 @@ function NoDefaultHarnessStage({ controller }: { controller: PrototypeController
   )
 }
 
-function HarnessStage({ controller }: { controller: PrototypeController }) {
+function HarnessStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   return (
     <>
@@ -590,7 +354,7 @@ function HarnessSelect({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block type-body font-medium" htmlFor={`${label}-prototype`}>
+      <label className="mb-1.5 block type-body font-medium" htmlFor={`${label}-onboarding`}>
         {label}
       </label>
       <Select
@@ -600,7 +364,7 @@ function HarnessSelect({
         }}
         value={value}
       >
-        <SelectTrigger className="w-full" id={`${label}-prototype`}>
+        <SelectTrigger className="w-full" id={`${label}-onboarding`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -615,7 +379,7 @@ function HarnessSelect({
   )
 }
 
-function AnalyzingStage({ controller }: { controller: PrototypeController }) {
+function AnalyzingStage({ controller }: { controller: OnboardingController }) {
   const { state } = controller
   const progress = ((state.analysisStep + 1) / ANALYSIS_TASKS.length) * 100
   return (
@@ -644,7 +408,7 @@ function AnalyzingStage({ controller }: { controller: PrototypeController }) {
 
 function PlanningTaskList({ current }: { current: number }) {
   return (
-    <ol className="prototype-task-list mt-7">
+    <ol className="onboarding-task-list mt-7">
       {ANALYSIS_TASKS.map((task, index) => {
         const status = planningTaskStatus(index, current)
         return (
@@ -667,7 +431,7 @@ function planningTaskStatus(index: number, current: number): TaskStatus {
   return 'pending'
 }
 
-function RecommendationsStage({ controller }: { controller: PrototypeController }) {
+function RecommendationsStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   if (state.planOutcome !== 'ready') return <PlanBoundary controller={controller} />
   return (
@@ -695,7 +459,7 @@ function RecommendationsStage({ controller }: { controller: PrototypeController 
   )
 }
 
-function PlanBoundary({ controller }: { controller: PrototypeController }) {
+function PlanBoundary({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   if (state.planOutcome === 'needs-input') {
     return (
@@ -742,7 +506,7 @@ function PlanBoundary({ controller }: { controller: PrototypeController }) {
   )
 }
 
-export function RecommendationSummary({ controller }: { controller: PrototypeController }) {
+export function RecommendationSummary({ controller }: { controller: OnboardingController }) {
   const proposed = [
     ...controller.state.repositoryRecommendations,
     ...controller.state.targets.flatMap(({ recommendations }) => recommendations),
@@ -807,27 +571,27 @@ export function RecommendationSummary({ controller }: { controller: PrototypeCon
   )
 }
 
-function TargetSummary({ target }: { target: PrototypeTarget }) {
+function TargetSummary({ target }: { target: OnboardingTarget }) {
   const acceptedRecommendations = target.recommendations.filter(({ accepted }) => accepted)
   return (
     <SectionCard
-      className="prototype-target-card"
+      className="onboarding-target-card"
       icon={<Package />}
       subtitle={target.path}
       title={target.name}
     >
-      <section className="prototype-found-area">
+      <section className="onboarding-found-area">
         <SubsectionHeader icon={<Code2 />} title="Current setup" />
-        <div className="prototype-found-area__identity">
+        <div className="onboarding-found-area__identity">
           <Fact label="Framework" value={target.framework} />
           <Fact label="Package manager" value={target.packageManager} />
         </div>
-        <div className="prototype-target-card__commands">
+        <div className="onboarding-target-card__commands">
           <CommandFact label="Start command" value={target.startCommand} />
           <CommandFact label="Build command" value={target.buildCommand} />
           <CommandFact label="Test command" value={target.testCommand} />
         </div>
-        <div className="prototype-existing-tools">
+        <div className="onboarding-existing-tools">
           <small>Existing tools</small>
           <span>
             {target.existingTools.length ? (
@@ -838,14 +602,14 @@ function TargetSummary({ target }: { target: PrototypeTarget }) {
           </span>
         </div>
       </section>
-      <section className="prototype-suggestions-area">
+      <section className="onboarding-suggestions-area">
         <SubsectionHeader icon={<Sparkles />} title="The agent will add" />
         {acceptedRecommendations.length ? (
           acceptedRecommendations.map((recommendation) => (
             <SuggestionFact key={recommendation.id} recommendation={recommendation} />
           ))
         ) : (
-          <p className="prototype-empty-suggestions">
+          <p className="onboarding-empty-suggestions">
             The agent proposed no changes for this Target.
           </p>
         )}
@@ -856,7 +620,7 @@ function TargetSummary({ target }: { target: PrototypeTarget }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <span className="prototype-found-fact">
+    <span className="onboarding-found-fact">
       <small>{label}</small>
       <strong>{value || 'Not set'}</strong>
     </span>
@@ -872,10 +636,10 @@ function CommandFact({ label, value }: { label: string; value: string }) {
   )
 }
 
-function RecommendationLink({ recommendation }: { recommendation: PrototypeRecommendation }) {
+function RecommendationLink({ recommendation }: { recommendation: OnboardingRecommendation }) {
   return (
     <a
-      className="prototype-recommendation-link"
+      className="onboarding-recommendation-link"
       href={recommendation.href}
       rel="noreferrer"
       target="_blank"
@@ -886,33 +650,33 @@ function RecommendationLink({ recommendation }: { recommendation: PrototypeRecom
 }
 
 const RECOMMENDATION_LOGOS: Record<string, string> = {
-  playwright: new URL('./prototype-assets/playwright.svg', import.meta.url).href,
-  storybook: new URL('./prototype-assets/storybook.svg', import.meta.url).href,
+  playwright: new URL('./onboarding-assets/playwright.svg', import.meta.url).href,
+  storybook: new URL('./onboarding-assets/storybook.svg', import.meta.url).href,
 }
 
 const RECOMMENDATION_ICONS: Record<string, ReactNode> = {
-  'argo-skills': <Sparkles aria-hidden="true" className="prototype-tool-logo" />,
-  audit: <SearchCheck aria-hidden="true" className="prototype-tool-logo" />,
-  docs: <FileJson aria-hidden="true" className="prototype-tool-logo" />,
-  guards: <ShieldCheck aria-hidden="true" className="prototype-tool-logo" />,
-  'interface-review': <ScanEye aria-hidden="true" className="prototype-tool-logo" />,
-  'project-docs': <FileCog aria-hidden="true" className="prototype-tool-logo" />,
-  quality: <CheckCircle2 aria-hidden="true" className="prototype-tool-logo" />,
-  tasks: <ListChecks aria-hidden="true" className="prototype-tool-logo" />,
-  terminal: <TerminalSquare aria-hidden="true" className="prototype-tool-logo" />,
-  'visual-direction': <Palette aria-hidden="true" className="prototype-tool-logo" />,
-  workflow: <Workflow aria-hidden="true" className="prototype-tool-logo" />,
-  writing: <PenLine aria-hidden="true" className="prototype-tool-logo" />,
+  'argo-skills': <Sparkles aria-hidden="true" className="onboarding-tool-logo" />,
+  audit: <SearchCheck aria-hidden="true" className="onboarding-tool-logo" />,
+  docs: <FileJson aria-hidden="true" className="onboarding-tool-logo" />,
+  guards: <ShieldCheck aria-hidden="true" className="onboarding-tool-logo" />,
+  'interface-review': <ScanEye aria-hidden="true" className="onboarding-tool-logo" />,
+  'project-docs': <FileCog aria-hidden="true" className="onboarding-tool-logo" />,
+  quality: <CheckCircle2 aria-hidden="true" className="onboarding-tool-logo" />,
+  tasks: <ListChecks aria-hidden="true" className="onboarding-tool-logo" />,
+  terminal: <TerminalSquare aria-hidden="true" className="onboarding-tool-logo" />,
+  'visual-direction': <Palette aria-hidden="true" className="onboarding-tool-logo" />,
+  workflow: <Workflow aria-hidden="true" className="onboarding-tool-logo" />,
+  writing: <PenLine aria-hidden="true" className="onboarding-tool-logo" />,
 }
 
-function RecommendationIcon({ recommendation }: { recommendation: PrototypeRecommendation }) {
+function RecommendationIcon({ recommendation }: { recommendation: OnboardingRecommendation }) {
   const source = RECOMMENDATION_LOGOS[recommendation.icon]
   if (source) {
-    return <img alt="" aria-hidden="true" className="prototype-tool-logo" src={source} />
+    return <img alt="" aria-hidden="true" className="onboarding-tool-logo" src={source} />
   }
   return (
     RECOMMENDATION_ICONS[recommendation.icon] ?? (
-      <Wrench aria-hidden="true" className="prototype-tool-logo" />
+      <Wrench aria-hidden="true" className="onboarding-tool-logo" />
     )
   )
 }
@@ -920,11 +684,11 @@ function RecommendationIcon({ recommendation }: { recommendation: PrototypeRecom
 function RecommendationDependencies({
   recommendation,
 }: {
-  recommendation: PrototypeRecommendation
+  recommendation: OnboardingRecommendation
 }) {
   if (!recommendation.bundledDependencies?.length) return null
   return (
-    <span className="prototype-suggestion__dependencies">
+    <span className="onboarding-suggestion__dependencies">
       {recommendation.bundledDependencies.map((dependency) => (
         <code key={dependency}>{dependency}</code>
       ))}
@@ -937,11 +701,11 @@ function SuggestionFact({
   recommendation,
 }: {
   detail?: 'effect' | 'reason'
-  recommendation: PrototypeRecommendation
+  recommendation: OnboardingRecommendation
 }) {
   return (
-    <div className="prototype-suggestion">
-      <div className="prototype-suggestion__title">
+    <div className="onboarding-suggestion">
+      <div className="onboarding-suggestion__title">
         <RecommendationIcon recommendation={recommendation} />
         <strong>
           <RecommendationLink recommendation={recommendation} />
@@ -953,7 +717,7 @@ function SuggestionFact({
   )
 }
 
-function CustomizeStage({ controller }: { controller: PrototypeController }) {
+function CustomizeStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   return (
     <>
@@ -981,7 +745,7 @@ function CustomizeStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function ProjectSetupStage({ controller }: { controller: PrototypeController }) {
+function ProjectSetupStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   return (
     <>
@@ -1010,8 +774,8 @@ function TargetEditor({
   controller,
   target,
 }: {
-  controller: PrototypeController
-  target: PrototypeTarget
+  controller: OnboardingController
+  target: OnboardingTarget
 }) {
   const { actions } = controller
   return (
@@ -1026,7 +790,7 @@ function TargetEditor({
           <Trash2 />
         </Button>
       }
-      className="prototype-setting-section"
+      className="onboarding-setting-section"
       icon={<Package />}
       subtitle={target.path}
       title={target.name}
@@ -1114,13 +878,13 @@ function RecommendationEditor({
 }: {
   icon?: ReactNode
   onToggle: (recommendationId: string) => void
-  recommendations: PrototypeRecommendation[]
+  recommendations: OnboardingRecommendation[]
   subtitle: string
   title: string
 }) {
   return (
     <SectionCard
-      className="prototype-recommendation-editor"
+      className="onboarding-recommendation-editor"
       icon={icon}
       subtitle={subtitle}
       title={title}
@@ -1180,7 +944,7 @@ function RepositoryRecommendationGroups({
   recommendations,
 }: {
   onToggle: (recommendationId: string) => void
-  recommendations: PrototypeRecommendation[]
+  recommendations: OnboardingRecommendation[]
 }) {
   return REPOSITORY_RECOMMENDATION_GROUPS.map((group) => (
     <RecommendationEditor
@@ -1196,27 +960,27 @@ function RepositoryRecommendationGroups({
   ))
 }
 
-function ManualTargetSummary({ target }: { target: PrototypeTarget }) {
+function ManualTargetSummary({ target }: { target: OnboardingTarget }) {
   return (
     <SectionCard
-      className="prototype-target-card prototype-manual-target-card"
+      className="onboarding-target-card onboarding-manual-target-card"
       icon={<FileJson />}
       subtitle={target.path || 'No path set'}
       title={target.name}
     >
-      <div className="prototype-target-card__commands">
+      <div className="onboarding-target-card__commands">
         <CommandFact label="Start command" value={target.startCommand} />
         <CommandFact label="Build command" value={target.buildCommand} />
         <CommandFact label="Test command" value={target.testCommand} />
       </div>
-      <p className="prototype-manual-target-card__note">
+      <p className="onboarding-manual-target-card__note">
         Argo validates only the JSON structure. It did not inspect or run these commands.
       </p>
     </SectionCard>
   )
 }
 
-function ManualStage({ controller }: { controller: PrototypeController }) {
+function ManualStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   const parsedTargets = targetsFromManualSource(state.manualSource)
   return (
@@ -1237,7 +1001,7 @@ function ManualStage({ controller }: { controller: PrototypeController }) {
           <Textarea
             aria-invalid={parsedTargets === null}
             aria-label="Project Target configuration"
-            className="prototype-manual-source font-mono"
+            className="onboarding-manual-source font-mono"
             onChange={(event) => actions.setManualSource(event.target.value)}
             value={state.manualSource}
           />
@@ -1274,13 +1038,13 @@ function ManualStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function manualStatus(targets: PrototypeTarget[] | null, validated: boolean) {
+function manualStatus(targets: OnboardingTarget[] | null, validated: boolean) {
   if (!targets) return 'Use a JSON object with a targets object. Target fields must be strings.'
   if (validated) return 'The JSON structure is valid.'
   return `${targetCount(targets.length)} found. Empty Targets and commands are allowed.`
 }
 
-function ApplyStage({ controller }: { controller: PrototypeController }) {
+function ApplyStage({ controller }: { controller: OnboardingController }) {
   const { state } = controller
   return (
     <>
@@ -1301,7 +1065,7 @@ function ApplyStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function ApplyFailedStage({ controller }: { controller: PrototypeController }) {
+function ApplyFailedStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   const failed = state.targets.find(({ id }) => id === state.failureTargetId)
   return (
@@ -1322,11 +1086,11 @@ function ApplyFailedStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function ApplyTaskList({ controller }: { controller: PrototypeController }) {
+function ApplyTaskList({ controller }: { controller: OnboardingController }) {
   const { state } = controller
   const tasks = applyTasksFor(state)
   return (
-    <ol className="prototype-task-list mt-8">
+    <ol className="onboarding-task-list mt-8">
       {tasks.map((task, index) => {
         const status = applyTaskStatus(task, index, state)
         return (
@@ -1346,9 +1110,9 @@ function ApplyTaskList({ controller }: { controller: PrototypeController }) {
 type TaskStatus = 'pending' | 'running' | 'waiting' | 'passed' | 'failed'
 
 function applyTaskStatus(
-  task: PrototypeApplyTask,
+  task: OnboardingApplyTask,
   index: number,
-  state: PrototypeController['state'],
+  state: OnboardingController['state'],
 ): TaskStatus {
   if (index < state.applyStep) return 'passed'
   if (index > state.applyStep) return 'pending'
@@ -1372,13 +1136,13 @@ function TaskStatusIcon({ status }: { status: TaskStatus }) {
   }
 }
 
-function StartingStage({ controller }: { controller: PrototypeController }) {
+function StartingStage({ controller }: { controller: OnboardingController }) {
   return (
     <div className="flex min-h-96 flex-col items-center justify-center text-center">
       <span className="grid size-14 place-items-center rounded-full bg-muted">
         <Play className="size-6" />
       </span>
-      <h1 className="prototype-stage-heading mt-5 type-title" tabIndex={-1}>
+      <h1 className="onboarding-stage-heading mt-5 type-title" tabIndex={-1}>
         Starting the Project
       </h1>
       <p className="project-setup-shimmer mt-2 type-body" role="status">
@@ -1388,26 +1152,23 @@ function StartingStage({ controller }: { controller: PrototypeController }) {
   )
 }
 
-function CompleteStage({ controller }: { controller: PrototypeController }) {
-  const { actions, state } = controller
+function CompleteStage({ controller }: { controller: OnboardingController }) {
+  const { state } = controller
   if (state.skippedSetup) {
     return (
       <div className="flex min-h-96 flex-col items-center justify-center text-center">
         <span className="grid size-14 place-items-center rounded-full bg-muted">
           <FolderOpen className="size-6" />
         </span>
-        <h1 className="prototype-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
+        <h1 className="onboarding-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
           argo is open
         </h1>
         <p className="mt-2 max-w-lg type-body text-muted-foreground">
           Setup was skipped. This Project has no required Targets or configuration yet.
         </p>
-        <div className="mt-6 flex gap-2">
-          <Button onClick={actions.finishSetup}>Finish setup</Button>
-          <Button onClick={() => actions.openEntry('selector')} variant="outline">
-            Open Project
-          </Button>
-        </div>
+        <StageActions>
+          <OpenProjectButton />
+        </StageActions>
       </div>
     )
   }
@@ -1418,7 +1179,7 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-diff-added/10 text-diff-added">
           <CheckCircle2 className="size-7" />
         </span>
-        <h1 className="prototype-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
+        <h1 className="onboarding-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
           argo is running
         </h1>
         <p className="mt-2 type-body text-muted-foreground">
@@ -1451,13 +1212,13 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
         />
       </div>
       <StageActions>
-        <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
+        <OpenProjectButton />
       </StageActions>
     </>
   )
 }
 
-function setupDiffFiles(state: PrototypeController['state']): FileDiff[] {
+function setupDiffFiles(state: OnboardingController['state']): FileDiff[] {
   const acceptedRepositoryIds = new Set(
     state.repositoryRecommendations
       .filter(({ accepted }) => accepted)
@@ -1522,7 +1283,7 @@ function setupDiffFiles(state: PrototypeController['state']): FileDiff[] {
   return files
 }
 
-function setupSettingsDiff(targets: PrototypeTarget[]) {
+function setupSettingsDiff(targets: OnboardingTarget[]) {
   const targetLines = targets.flatMap((target, index) => [
     `+    "${target.id}": {`,
     `+      "path": "${target.path}",`,
@@ -1556,7 +1317,7 @@ function packageDependenciesDiff(dependencies: string[]): FileDiff {
   }
 }
 
-function ManualCompleteStage({ controller }: { controller: PrototypeController }) {
+function ManualCompleteStage({ controller }: { controller: OnboardingController }) {
   const { actions, state } = controller
   return (
     <>
@@ -1564,7 +1325,7 @@ function ManualCompleteStage({ controller }: { controller: PrototypeController }
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-muted">
           <FileJson className="size-7" />
         </span>
-        <h1 className="prototype-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
+        <h1 className="onboarding-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
           Manual configuration saved
         </h1>
         <p className="mx-auto mt-2 max-w-2xl type-body text-muted-foreground">
@@ -1595,13 +1356,22 @@ function ManualCompleteStage({ controller }: { controller: PrototypeController }
         </div>
       )}
       <StageActions>
-        <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
+        <OpenProjectButton />
       </StageActions>
     </>
   )
 }
 
-export function SetupEvidence({ controller }: { controller: PrototypeController }) {
+function OpenProjectButton({ variant }: { variant?: 'outline' }) {
+  const navigate = useNavigate()
+  return (
+    <Button onClick={() => navigate('/sessions')} variant={variant}>
+      Open Project
+    </Button>
+  )
+}
+
+export function SetupEvidence({ controller }: { controller: OnboardingController }) {
   const { state } = controller
   return (
     <div className="space-y-3">
@@ -1630,7 +1400,7 @@ function EvidenceRow({ icon, label, value }: { icon: ReactNode; label: string; v
   )
 }
 
-export function AgentTimeline({ controller }: { controller: PrototypeController }) {
+export function AgentTimeline({ controller }: { controller: OnboardingController }) {
   const { state } = controller
   const applying = ['applying', 'apply-failed', 'starting', 'complete'].includes(state.stage)
   const items = [
@@ -1647,7 +1417,7 @@ export function AgentTimeline({ controller }: { controller: PrototypeController 
     },
   ]
   return (
-    <ol className="prototype-agent-timeline">
+    <ol className="onboarding-agent-timeline">
       {items.map((item) => (
         <li data-complete={item.complete} key={item.label}>
           <span>
