@@ -1,6 +1,6 @@
 import { CircleGauge } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
+import { HARNESSES } from '@/domains/sessions/renderer/harness/harnesses'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
@@ -28,7 +28,7 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
   const { t } = useTranslation('sessions')
   const usage = PLAN_USAGE[harness]
   const primaryPercentage = usage[0].percentage
-  const harnessLabel = harness === 'codex' ? 'Codex' : 'Claude Code'
+  const harnessLabel = HARNESSES[harness].label
   return (
     <Popover>
       <PopoverTrigger

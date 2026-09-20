@@ -29,7 +29,7 @@ export function createFileReader(source: TranscriptDiscoverySource): ReadFile {
     try {
       const records = await readRecords(file.path)
       return transcriptFileFrom(file.path, {
-        fileName: file.name,
+        sessionId: file.sessionId,
         records: source.normalizeRecords?.(records) ?? records,
       })
     } catch {

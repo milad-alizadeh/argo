@@ -1,8 +1,3 @@
-import {
-  CODEX_OPENING_SETUP,
-  type CodexTurnSetup,
-  codexTurnSettings,
-} from '../../../domains/sessions/contract/codex-contract'
 import { CodexSessionDriverError } from './codex-session-error'
 import {
   type ManagedSession,
@@ -11,6 +6,7 @@ import {
   rememberManagedSession,
 } from './managed-session'
 import { readStartedTurn, readThreadId } from './protocol'
+import { CODEX_OPENING_SETUP, type CodexTurnSetup, codexTurnSettings } from './turn-setup-contract'
 
 export async function beginSession(options: {
   driver: ManagedSessionOptions

@@ -1,5 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises'
-import path from 'node:path'
+import { readFile } from 'node:fs/promises'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
@@ -15,25 +14,9 @@ import { answeringEveryNestedCall } from './nested-results'
 import { parseCodexTranscriptLine } from './records'
 import { readingSubagentCalls } from './subagent-calls'
 import type { ThreadNames } from './thread-names'
+import { transcriptPaths } from './transcript-paths'
 
 export type Discovery = TranscriptDiscovery
-
-async function directories(root: string): Promise<string[]> {
-  return (await readdir(root, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(root, entry.name))
-}
-
-async function transcriptPathsInDay(root: string) {
-  return (await readdir(root, { withFileTypes: true }))
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
-    .map((entry) => ({ path: path.join(root, entry.name), name: sessionIdFileName(entry.name) }))
-}
-
-export function sessionIdFileName(fileName: string) {
-  const sessionId = fileName.match(/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\.jsonl$/i)?.[1]
-  return sessionId === undefined ? fileName : `${sessionId}.jsonl`
-}
 
 function withoutDuplicateMessages(records: TranscriptRecord[]): TranscriptRecord[] {
   const messageIds = new Set<string>()
@@ -62,13 +45,6 @@ export function normalizeCodexMessageRecords(records: TranscriptRecord[]): Trans
 
 export function normalizeCodexRecords(records: TranscriptRecord[]): TranscriptRecord[] {
   return droppingSubagentThreads(normalizeCodexMessageRecords(records))
-}
-
-export async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
-  const years = await directories(root)
-  const months = (await Promise.all(years.map(directories))).flat()
-  const days = (await Promise.all(months.map(directories))).flat()
-  return (await Promise.all(days.map(transcriptPathsInDay))).flat()
 }
 
 const reader = createTranscriptDiscoverer({
@@ -149,7 +125,7 @@ export async function readSubagentFiles(root: string, sessionId: string, subagen
       matches.push({
         id: subagentId,
         retiredIds: [],
-        files: [transcriptFileFrom(file.path, { fileName: file.name, records })],
+        files: [transcriptFileFrom(file.path, { sessionId: file.sessionId, records })],
         originUnread: false,
       })
   }

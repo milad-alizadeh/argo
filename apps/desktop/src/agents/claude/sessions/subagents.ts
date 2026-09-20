@@ -58,7 +58,7 @@ async function readSubagentFile(filePath: string): Promise<TranscriptFile | null
   if (records === null) return null
   return asOwnThread(
     transcriptFileFrom(filePath, {
-      fileName: path.basename(filePath),
+      sessionId: path.basename(filePath).replace(/\.jsonl$/, ''),
       records: normalizeClaudeRecords(records),
     }),
   )

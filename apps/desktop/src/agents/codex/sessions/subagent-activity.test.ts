@@ -83,7 +83,7 @@ test('projects one row per event without collaboration tool rows', () => {
       originUnread: false,
       files: [
         transcriptFileFrom('/tmp/session-1.jsonl', {
-          fileName: 'session-1.jsonl',
+          sessionId: 'session-1',
           records: [
             collaborationCall('spawn_agent'),
             started,

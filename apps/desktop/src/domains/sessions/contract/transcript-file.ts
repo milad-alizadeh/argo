@@ -49,11 +49,11 @@ function readOpeningPrompt(records: TranscriptRecord[]): string | null {
 export function readTranscriptFile(
   path: string,
   {
-    fileName,
+    sessionId,
     lines,
     parse,
   }: {
-    fileName: string
+    sessionId: string
     lines: Iterable<string>
     parse: TranscriptParser
   },
@@ -71,22 +71,17 @@ export function readTranscriptFile(
     }
     records.push(record)
   }
-  return transcriptFileFrom(path, { fileName, records })
-}
-
-// The Session id a transcript file's name carries.
-export function sessionIdOfFile(fileName: string) {
-  return fileName.replace(/\.jsonl$/, '')
+  return transcriptFileFrom(path, { sessionId, records })
 }
 
 export function transcriptFileFrom(
   path: string,
-  { fileName, records }: { fileName: string; records: TranscriptRecord[] },
+  { sessionId, records }: { sessionId: string; records: TranscriptRecord[] },
 ): TranscriptFile {
   const message = firstOf(records, 'message')
   return {
     path,
-    sessionId: sessionIdOfFile(fileName),
+    sessionId,
     resumedFrom: firstOf(records, 'link')?.leafUuid ?? null,
     originSessionId: message?.originSessionId ?? null,
     openedAt: earliestTimestamp(records),

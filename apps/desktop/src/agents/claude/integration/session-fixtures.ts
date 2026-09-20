@@ -35,7 +35,7 @@ export const LATER_TURN = `${JSON.stringify({
 
 export async function fixtureFile(name) {
   return readTranscriptFile(`/fixtures/${name}.jsonl`, {
-    fileName: `${name}.jsonl`,
+    sessionId: name,
     lines: await fixtureLines(name),
   })
 }

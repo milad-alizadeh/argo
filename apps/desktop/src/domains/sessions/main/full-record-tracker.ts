@@ -26,12 +26,12 @@ export function createFullRecordTracker(
 
   async function readFullFile(file: {
     path: string
-    name: string
+    sessionId: string
   }): Promise<TranscriptFile | null> {
     try {
       const records = await fullRecords.readRecords(file.path)
       return transcriptFileFrom(file.path, {
-        fileName: file.name,
+        sessionId: file.sessionId,
         records: normalizeRecords?.(records) ?? records,
       })
     } catch {
@@ -45,7 +45,7 @@ export function createFullRecordTracker(
     for (const file of chain.files) fullPaths.set(file.sessionId, paths)
     fullPaths.set(chain.id, paths)
     const read = await Promise.all(
-      chain.files.map((file) => readFullFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
+      chain.files.map((file) => readFullFile({ path: file.path, sessionId: file.sessionId })),
     )
     if (paths.some((path) => discardedFullPaths.has(path))) fullRecords.clear(paths)
     return read.filter((file): file is TranscriptFile => file !== null)

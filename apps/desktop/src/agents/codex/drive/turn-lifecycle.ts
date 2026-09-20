@@ -4,11 +4,7 @@ import type { ManagedSession, ManagedSessionOptions } from '@/agents/codex/drive
 import { openManagedChannel, rememberManagedSession } from '@/agents/codex/drive/managed-session'
 import { readStartedTurn, readThreadId } from '@/agents/codex/drive/protocol'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
-import {
-  CODEX_OPENING_SETUP,
-  type CodexTurnSetup,
-  codexTurnSettings,
-} from '@/domains/sessions/contract/codex-contract'
+import { CODEX_OPENING_SETUP, type CodexTurnSetup, codexTurnSettings } from './turn-setup-contract'
 
 export async function beginSession(options: {
   driver: ManagedSessionOptions

@@ -87,7 +87,7 @@ export function mockDiscoverer(onLine: (line: string) => void = () => {}) {
       const names = await readdir(root).catch(() => [])
       return names
         .filter((name) => name.endsWith('.jsonl'))
-        .map((name) => ({ path: path.join(root, name), name }))
+        .map((name) => ({ path: path.join(root, name), sessionId: name.replace(/\.jsonl$/, '') }))
     },
   })
 }

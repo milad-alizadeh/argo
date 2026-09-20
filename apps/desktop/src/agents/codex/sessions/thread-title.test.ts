@@ -21,7 +21,7 @@ test('names a voice thread by the first thing the person said', () => {
       },
     })
   const file = readTranscriptFile('/tmp/voice.jsonl', {
-    fileName: 'voice.jsonl',
+    sessionId: 'voice',
     lines: [said('\nTighten the typography\n'), said('And the spacing')],
     parse: parseCodexTranscriptLine,
   })
