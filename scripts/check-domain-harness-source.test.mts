@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { domainFacetViolations } from './domain-facet-boundaries.mts'
+import { domainFacetViolations, type SourceFile } from './domain-facet-boundaries.mts'
 
 test('refuses a harness Session source importing Sessions main code', () => {
   const files = [
@@ -30,7 +30,7 @@ test('refuses any harness drive implementation importing Sessions main code', ()
 
 // The harness facet inverted (#2505): every path under harnesses/ is now the harness facet by
 // default, and only two directories are declared exceptions.
-const harnessFile = (path, source) => ({ path, source })
+const harnessFile = (path: string, source: string): SourceFile => ({ path, source })
 const IMPORTS_SESSION_MAIN = "import '@/domains/sessions/main/observation/reader'"
 
 test('treats compaction, integration, and a root harnesses/ file as the harness facet', () => {

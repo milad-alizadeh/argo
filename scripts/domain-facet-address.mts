@@ -3,8 +3,8 @@
 // domain-facet-boundaries.mts on length alone; that file applies policy to what this resolves.
 import path from 'node:path'
 import {
-  HARNESS_COMPOSITION_ROOT,
   type Facet,
+  HARNESS_COMPOSITION_ROOT,
   SOURCE_ROOTS,
   TARGET_FACETS,
 } from './domain-facet-policy.mts'
