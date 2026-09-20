@@ -9,11 +9,13 @@ type Control = SubagentControlFacts & { id: string }
 export class Agents {
   private readonly open = new Map<string, Control>()
   private readonly spawned = new Map<string, Control>()
+  private readonly started = new Map<string, string | null>()
   private readonly tasks = new Map<string, string>()
 
-  spawn(call: Control) {
+  spawn(call: Control, timestamp: string | null) {
     this.open.set(call.id, call)
     this.spawned.set(call.id, call)
+    this.started.set(call.id, timestamp)
   }
 
   receipt(callId: string, taskId: string) {
@@ -26,6 +28,10 @@ export class Agents {
 
   get(callId: string) {
     return this.open.get(callId)
+  }
+
+  startedAt(callId: string) {
+    return this.started.get(callId) ?? null
   }
 
   // A message can reach a Subagent that already responded, so it looks through every spawn.
@@ -60,5 +66,12 @@ export function stopped(call: Control, timestamp: string | null, agents: Agents)
   const spawn = target === null ? undefined : agents.named(target)
   if (spawn === undefined) return []
   agents.close(spawn.id)
-  return [responded(spawn, timestamp, { state: 'interrupted', reply: null })]
+  return [
+    responded({
+      call: spawn,
+      timestamp,
+      startedAt: agents.startedAt(spawn.id),
+      ending: { state: 'interrupted', reply: null },
+    }),
+  ]
 }

@@ -1,13 +1,9 @@
 // The one shape the Subagent row reads: one lifecycle event, as the card draws it.
 import type { TFunction } from 'i18next'
-import {
-  durationText,
-  readableDelegationName,
-  spentTokens,
-} from '@/domains/sessions/renderer/work/session-work'
-import { joined } from '@/domains/sessions/renderer/work/session-work-entries'
+import type { WorkState } from '@/domains/sessions/renderer/work/session-work'
+import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
 
-export type DelegationPhase = 'running' | 'succeeded' | 'failed'
+export type DelegationPhase = 'running' | 'succeeded' | 'failed' | 'interrupted'
 
 export type AgentThread = {
   id: string
@@ -34,13 +30,25 @@ const PHASE_STATE_KEYS = {
   running: 'running',
   succeeded: 'done',
   failed: 'failed',
+  interrupted: 'interrupted',
 } as const
 
 export function delegationFacts(agent: AgentThread, t: TFunction<'sessions'>): DelegationFacts {
+  const state: WorkState = PHASE_STATE_KEYS[agent.phase]
+  const presentation = workPresentation(
+    {
+      kind: 'subagent',
+      id: agent.id,
+      name: agent.name,
+      state,
+      model: agent.model,
+      durationMs: agent.durationMs,
+      tokens: agent.tokens,
+    },
+    t,
+  )
   return {
-    title: readableDelegationName(agent.name),
-    state: t(`workState.${PHASE_STATE_KEYS[agent.phase]}`),
-    facts: joined([agent.model, durationText(agent.durationMs), spentTokens(agent.tokens, t)]),
+    ...presentation,
     line: agent.line,
   }
 }

@@ -47,8 +47,6 @@ export function rosterMetadata(record: TranscriptRecord): TranscriptRecord {
     ...record,
     blocks: record.role === 'user' ? openingLine(record.blocks) : headlineThought(record.blocks),
     toolCalls: record.toolCalls.map(rosterCall),
-    toolResults: record.toolResults
-      ?.filter((result) => result.background !== undefined)
-      .map((result) => ({ ...result, blocks: [] })),
+    toolResults: record.toolResults?.map((result) => ({ ...result, blocks: [] })),
   }
 }

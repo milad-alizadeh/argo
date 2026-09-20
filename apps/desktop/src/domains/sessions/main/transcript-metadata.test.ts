@@ -57,6 +57,7 @@ test('keeps roster facts while dropping Feed payloads', () => {
       },
     ],
     toolResults: [
+      { callId: 'tool-1', blocks: [], failed: false },
       {
         callId: 'tool-2',
         blocks: [],
