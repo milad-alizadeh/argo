@@ -3,9 +3,9 @@ import '@fontsource-variable/geist-mono/wght.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { UnreadMarkerBrowserPrototype } from '@/domains/sessions/renderer/components/roster/unread-marker-browser-prototype'
-import { App } from '@/platform/renderer/app'
+import { UnreadMarkerBrowserPrototype } from '@/domains/sessions/renderer/roster/unread-marker-browser-prototype'
 import { AppQueryProvider } from '@/platform/renderer/app-query-provider'
+import { App } from '@/renderer/app'
 import '../platform/renderer/styles/globals.css'
 
 const host = document.getElementById('root')

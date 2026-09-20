@@ -8,7 +8,7 @@ import { Standing } from '@/domains/sessions/renderer/feed/standing'
 import { useHeldPrompt } from '@/domains/sessions/renderer/feed/use-held-prompt'
 import { useKeptDocuments } from '@/domains/sessions/renderer/feed/use-kept-documents'
 import { awaitingAssistantReply } from '@/domains/sessions/renderer/feed/use-settled-feed'
-import { isOptimisticSessionId } from '@/domains/sessions/renderer/state/use-session-creation-store'
+import { isOptimisticSessionId } from '@/domains/sessions/renderer/session-creation'
 import type { SessionError, SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
 
 import './feed.css'

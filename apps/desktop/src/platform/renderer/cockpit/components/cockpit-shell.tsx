@@ -2,7 +2,6 @@ import { PanelLeftIcon } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
-import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -15,7 +14,7 @@ import { readCssSize } from '@/platform/renderer/lib/read-css-size'
 type CockpitShellProps = {
   rail?: ReactNode
   sidebar: ReactNode
-  header?: ReactNode
+  header: ReactNode
   footer?: ReactNode
   children: ReactNode
 }
@@ -100,13 +99,7 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
   )
 }
 
-export function CockpitShell({
-  rail,
-  sidebar,
-  header = <ProjectSwitcher />,
-  footer,
-  children,
-}: CockpitShellProps) {
+export function CockpitShell({ rail, sidebar, header, footer, children }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
   const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
   const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')

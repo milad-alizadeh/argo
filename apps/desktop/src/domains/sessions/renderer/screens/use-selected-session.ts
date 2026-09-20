@@ -1,5 +1,5 @@
-import { useArchivedSessions } from '@/domains/sessions/renderer/hooks/use-archived-sessions'
-import type { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
+import { useArchivedSessions } from '@/domains/sessions/renderer/roster/use-archived-sessions'
+import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 // The active Roster never carries an archived Session (#1593): a direct open of one (a restored
 // route, a stored selection) asks the reader for its row by id instead of finding it in the

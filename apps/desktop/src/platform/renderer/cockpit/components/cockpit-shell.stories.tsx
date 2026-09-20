@@ -25,6 +25,7 @@ type Story = StoryObj<typeof CockpitShell>
 const args = {
   rail: <CockpitNavigationRail />,
   sidebar: <aside aria-label="Cockpit sidebar" />,
+  header: <div data-component="CockpitHeaderFixture" />,
   children: <main aria-label="Cockpit content" />,
 }
 

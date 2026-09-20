@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/components/composer/run-setup-menu'
 import {
   type ComposerIdentity,
   composerIdentityKey,
-} from '@/domains/sessions/renderer/hooks/composer-identity'
-import { useComposerStore } from '@/domains/sessions/renderer/state/use-composer-store'
+} from '@/domains/sessions/renderer/composer/composer-identity'
+import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
+import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import {
   refusalOf,
   resolvedTurnSetup,
