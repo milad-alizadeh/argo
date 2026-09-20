@@ -137,12 +137,12 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     harness: 'codex',
     ...indexCapabilities(root, options?.index),
     discoverSessions: rosterDiscovery(root, options),
-    readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
+    readSessionFiles: (sessionId) => readSessionFiles(root, sessionId, options?.index),
     readSubagentFiles: async (sessionId, subagentId) =>
       (await readSubagentFilesForParent(root, sessionId, subagentId)) ??
       readSubagentChain(root, subagentId),
     readSubagentUsage: async (sessionId) => {
-      const chain = await readSessionFiles(root, sessionId)
+      const chain = await readSessionFiles(root, sessionId, options?.index)
       const subagentIds = [
         ...new Set(
           chain?.files
