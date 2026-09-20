@@ -4,6 +4,10 @@ import * as pty from 'node-pty'
 
 export const DEFAULT_COLS = 80
 export const DEFAULT_ROWS = 24
+// node-pty's exit callback runs through a native ThreadSafeFunction; if `app.quit()`/`app.exit()`
+// fires before it does, the callback can land mid-Node-environment-teardown and abort the process
+// (#2494). `kill()` waits for it, bounded so a PTY that never reports exit cannot hang a quit.
+const KILL_TIMEOUT_MS = 5_000
 
 export class PtySession {
   readonly child: pty.IPty
@@ -45,8 +49,17 @@ export class PtySession {
     this.child.resize(cols, rows)
   }
 
-  kill(): void {
-    this.child.kill()
+  // Resolves once the PTY has actually exited, not just once the signal was sent.
+  kill(): Promise<void> {
+    if (this.exits > 0) return Promise.resolve()
+    return new Promise((resolve) => {
+      const timer = setTimeout(resolve, KILL_TIMEOUT_MS)
+      this.child.onExit(() => {
+        clearTimeout(timer)
+        resolve()
+      })
+      this.child.kill()
+    })
   }
 
   // Resolves when `needle` has appeared in everything the PTY has said so far, so a token that

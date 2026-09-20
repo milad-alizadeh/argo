@@ -28,7 +28,7 @@ export async function startsAndSaysSomething(cwd: string): Promise<void> {
     session.write(`${command}\n`)
     await session.waitFor(needle, CASE_TIMEOUT_MS)
   } finally {
-    session.kill()
+    await session.kill()
   }
 }
 
@@ -49,7 +49,7 @@ export async function echoesWhatIsTyped(cwd: string): Promise<void> {
     session.write('\n')
     await session.waitFor(needle, CASE_TIMEOUT_MS)
   } finally {
-    session.kill()
+    await session.kill()
   }
 }
 
@@ -63,7 +63,7 @@ export async function resizeReachesTheShell(cwd: string): Promise<void> {
     session.write('stty size\n')
     await session.waitFor('30 100', CASE_TIMEOUT_MS)
   } finally {
-    session.kill()
+    await session.kill()
   }
 }
 
@@ -79,7 +79,7 @@ export async function interruptStopsTheForegroundJob(cwd: string): Promise<void>
     session.write(`${command}\n`)
     await session.waitFor(needle, CASE_TIMEOUT_MS)
   } finally {
-    session.kill()
+    await session.kill()
   }
 }
 
@@ -100,7 +100,7 @@ export async function killLeavesNoOrphan(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, ['-c', 'sleep 30'], cwd)
   const { pid } = session.child
   await sleep(SETTLE_MS)
-  session.kill()
+  await session.kill()
   const deadline = Date.now() + CASE_TIMEOUT_MS
   while (Date.now() < deadline) {
     try {

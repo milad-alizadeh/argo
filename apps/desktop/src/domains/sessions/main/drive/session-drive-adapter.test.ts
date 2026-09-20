@@ -35,7 +35,7 @@ function mockClaudeAdapter(): SessionDriveAdapter {
     decidePermission: () => true,
     isLockedElsewhere: () => false,
     decideQuestion: async () => true,
-    close: () => {},
+    close: async () => {},
   })
 }
 
