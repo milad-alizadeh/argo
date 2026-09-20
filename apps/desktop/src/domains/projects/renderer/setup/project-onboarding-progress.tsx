@@ -1,61 +1,8 @@
-import { Check, CheckCircle2, Circle, Code2, GitBranch, Package, Settings2 } from 'lucide-react'
+import { Check, Circle, Code2, GitBranch, Package, Settings2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OnboardingController, OnboardingStage } from './project-onboarding'
+import type { OnboardingController } from './project-onboarding'
 import { onboardingText, runnableTargetCount } from './project-onboarding-copy'
-
-const progressStages: Array<{ ids: OnboardingStage[]; label: string }> = [
-  {
-    ids: ['method', 'no-default', 'harness', 'manual'],
-    label: onboardingText('onboarding.progress.method'),
-  },
-  { ids: ['analyzing'], label: onboardingText('onboarding.progress.analyze') },
-  { ids: ['recommendations', 'customize'], label: onboardingText('onboarding.progress.targets') },
-  { ids: ['project-setup'], label: onboardingText('onboarding.progress.project') },
-  {
-    ids: ['applying', 'apply-failed', 'starting'],
-    label: onboardingText('onboarding.progress.apply'),
-  },
-]
-
-export function SetupProgress({ stage }: { stage: OnboardingStage }) {
-  const current = progressStages.findIndex(({ ids }) => ids.includes(stage))
-  return (
-    <ol className="space-y-1">
-      {progressStages.map((item, index) => (
-        <ProgressItem
-          active={index === current && stage !== 'complete'}
-          complete={index < current || stage === 'complete'}
-          item={item}
-          key={item.label}
-        />
-      ))}
-    </ol>
-  )
-}
-
-function ProgressItem({
-  active,
-  complete,
-  item,
-}: {
-  active: boolean
-  complete: boolean
-  item: { label: string }
-}) {
-  return (
-    <li
-      className={`flex items-center gap-3 rounded-lg px-3 py-2 type-body ${active ? 'bg-selected text-foreground' : 'text-muted-foreground'}`}
-    >
-      {complete ? (
-        <CheckCircle2 className="size-4 text-diff-added" />
-      ) : (
-        <Circle className={`size-4 ${active ? 'fill-foreground/10' : ''}`} />
-      )}
-      {item.label}
-    </li>
-  )
-}
 
 export function SetupEvidence({ controller }: { controller: OnboardingController }) {
   const { t } = useTranslation('projects')
@@ -100,22 +47,23 @@ function EvidenceRow({ icon, label, value }: { icon: ReactNode; label: string; v
 }
 
 export function AgentTimeline({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { state } = controller
   const applying = ['applying', 'apply-failed', 'starting', 'complete'].includes(state.stage)
   const items = [
-    { complete: state.stage !== 'folder', label: onboardingText('onboarding.timeline.folder') },
-    { complete: Boolean(state.method), label: onboardingText('onboarding.timeline.method') },
+    { complete: state.stage !== 'folder', label: t('onboarding.timeline.folder') },
+    { complete: Boolean(state.method), label: t('onboarding.timeline.method') },
     {
       complete: !['folder', 'method', 'no-default', 'harness', 'analyzing'].includes(state.stage),
-      label: onboardingText('onboarding.timeline.plan'),
+      label: t('onboarding.timeline.plan'),
     },
-    { complete: applying, label: onboardingText('onboarding.timeline.approved') },
+    { complete: applying, label: t('onboarding.timeline.approved') },
     {
       complete: state.stage === 'complete',
       label:
         state.method === 'manual' || state.skippedSetup
-          ? onboardingText('onboarding.timeline.opened')
-          : onboardingText('onboarding.timeline.started'),
+          ? t('onboarding.timeline.opened')
+          : t('onboarding.timeline.started'),
     },
   ]
   return (

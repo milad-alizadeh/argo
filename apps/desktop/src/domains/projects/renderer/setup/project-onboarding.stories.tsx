@@ -6,6 +6,7 @@ import { type OnboardingState, ProjectOnboarding } from './project-onboarding'
 
 const STUB_LANGUAGE = 'zz'
 const STUB_PROJECT_SETUP_TITLE = 'STUB Project changes'
+const STUB_PROGRESS_LABEL = 'STUB plan prepared'
 
 function ProjectOnboardingStory({
   initialState,
@@ -125,6 +126,25 @@ export const ProjectSetupUsesLocaleCatalog: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText(STUB_PROJECT_SETUP_TITLE)).toBeVisible()
+  },
+}
+
+export const ProgressUsesActiveLocale: Story = {
+  args: { initialState: { method: 'agent', stage: 'project-setup' }, pauseProgress: true },
+  beforeEach: async () => {
+    i18n.addResourceBundle(STUB_LANGUAGE, 'projects', {
+      onboarding: { timeline: { plan: STUB_PROGRESS_LABEL } },
+    })
+    return async () => {
+      i18n.removeResourceBundle(STUB_LANGUAGE, 'projects')
+      await i18n.changeLanguage('en')
+    }
+  },
+  play: async ({ canvasElement }) => {
+    await i18n.changeLanguage(STUB_LANGUAGE)
+    const labels = within(canvasElement).getAllByText(STUB_PROGRESS_LABEL)
+    await expect(labels.length).toBeGreaterThan(0)
+    await expect(labels.at(-1)).toBeVisible()
   },
 }
 
