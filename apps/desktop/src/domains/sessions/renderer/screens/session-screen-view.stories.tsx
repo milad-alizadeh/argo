@@ -232,7 +232,10 @@ function ReviewInspector({
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
       shell={shell}
-      shellOutput={'Checked 187 files.\ncheck:design-tokens — clean.\n'}
+      shellOutput={{
+        state: 'available',
+        tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n',
+      }}
     />
   )
 }

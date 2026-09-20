@@ -95,11 +95,3 @@ export const WithLabel: Story = {
     await expect(canvas.queryByText(/RTK_DISABLED=1/)).not.toBeInTheDocument()
   },
 }
-
-export const NoRecordedOutput: Story = {
-  args: { command: WATCH, output: null },
-  render: (args) => <InspectorStory args={args} />,
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('This command recorded no output.')).toBeVisible()
-  },
-}

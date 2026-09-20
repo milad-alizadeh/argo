@@ -19,3 +19,11 @@ Argo is still in development, so this change starts with a new database and does
 existing `portable-v1` files. Durable tables use automatic SQLite backups. If a durable table
 cannot be read safely, Argo opens a recovery surface instead of deleting the database. Index
 recovery remains table-scoped and automatic.
+
+## Amendment · backup and recovery (#2400) · 2026-09-20
+
+Argo writes an SQLite backup after each durable write. The backup contains only the shared
+database, so it does not copy credentials or Session archives. If Argo cannot open the durable
+database, it offers to restore the latest backup or quit. It does not replace the damaged file
+without that choice. The Session index stays disposable. Its own recovery discards only its
+cache tables and rebuilds them from CLI transcripts.

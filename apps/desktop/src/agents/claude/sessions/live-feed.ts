@@ -48,6 +48,6 @@ export function draftOverlay(
       const id = aliases.get(row.id)
       return id === undefined ? row : { ...row, id }
     })
-    return { rows: [...shown, ...drafts], changes: { drafts, aliases: [...aliases] } }
+    return { rows: [...shown, ...drafts], changes: { rows: drafts, aliases: [...aliases] } }
   }
 }
