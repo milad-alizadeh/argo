@@ -15,6 +15,7 @@ import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-link
 import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
 import {
   attachSessions,
+  closeSessionDrivers,
   createSessionDrivers,
   watchClaudeCompactions,
 } from '@/harnesses/composition/session-bridges'
@@ -48,7 +49,7 @@ export function attachBridges(
   } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
-  const drivers = createSessionDrivers(userData, home, proofEnabled)
+  const drivers = createSessionDrivers({ userData, home, proofEnabled })
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
@@ -87,6 +88,6 @@ export function attachBridges(
   app.once('before-quit', (event) => {
     event.preventDefault()
     ticketLinks.close()
-    void Promise.all([drivers.claude.close(), drivers.codex.close()]).then(() => app.quit())
+    void closeSessionDrivers(drivers).then(() => app.quit())
   })
 }

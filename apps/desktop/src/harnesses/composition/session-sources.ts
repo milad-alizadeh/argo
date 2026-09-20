@@ -1,48 +1,31 @@
-// Both Harness adapters' `SessionSource`s, wired to their drivers and the app's shared Session index.
-// Split from `session-bridges.ts` to keep that composition root short.
+// Every registered harness's `SessionSource`, wired to its own driver and the app's shared Session
+// index. Split from `session-bridges.ts` to keep that composition root short. Iterates
+// `sessionHarnesses` (#2488) rather than naming a `harness`.
 
-import type { openSessionIndexOrNone } from '@/domains/sessions/main/index/session-index/open-index'
-import { renameClaudeSession } from '@/harnesses/claude/drive/rename-session'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
-import { claudeProcessesRoot, claudeTranscriptsRoot } from '@/harnesses/claude/sessions/roots'
-import { renameCodexSession } from '@/harnesses/codex/drive/rename-session'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
-import { codexStatePath, codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
-import { codexThreadNames } from '@/harnesses/codex/sessions/state-store'
-import type { createSessionDrivers } from '@/harnesses/composition/session-bridges'
+import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
+import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
+import type { SessionDrivers } from '@/harnesses/composition/session-bridges'
 
 type SessionSourcesOptions = {
   home: string
-  drivers: ReturnType<typeof createSessionDrivers>
+  drivers: SessionDrivers
   compactionStarts: string | undefined
-  index: ReturnType<typeof openSessionIndexOrNone>
+  index: SessionIndex
+  // Defaults to the app's registered list; a test hands its own, including a fixture harness
+  // (#2488).
+  harnesses?: readonly HarnessRegistration<unknown>[]
 }
 
-export function sessionSources({ home, drivers, compactionStarts, index }: SessionSourcesOptions) {
-  const { claude, codex } = drivers
-  return [
-    claudeSessionSource({
-      transcripts: claudeTranscriptsRoot(home),
-      processes: claudeProcessesRoot(home),
-      managedSessions: claude.roster,
-      compactionStarts,
-      beginCompaction: claude.beginCompaction,
-      completeCompaction: claude.completeCompaction,
-      completeHandoffs: claude.completeHandoffs,
-      handoffEdges: claude.handoffEdges,
-      liveMessages: claude.liveMessages,
-      rename: (request) => renameClaudeSession(request, claude),
-      isLockedElsewhere: claude.isLockedElsewhere,
-      index,
-    }),
-    codexSessionSource(codexTranscriptsRoot(home), {
-      roster: codex.roster,
-      liveMessages: codex.liveMessages,
-      pendingQuestion: codex.pendingQuestion,
-      rename: (request) => renameCodexSession(request, codex),
-      isLockedElsewhere: codex.isLockedElsewhere,
-      threadNames: codexThreadNames(codexStatePath(codexTranscriptsRoot(home))),
-      index,
-    }),
-  ]
+export function sessionSources({
+  home,
+  drivers,
+  compactionStarts,
+  index,
+  harnesses = sessionHarnesses,
+}: SessionSourcesOptions): SessionSource[] {
+  return harnesses.map((harness) =>
+    harness.createSource(drivers[harness.harness], { home, compactionStarts, index }),
+  )
 }
