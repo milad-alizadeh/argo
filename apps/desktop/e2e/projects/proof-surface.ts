@@ -19,6 +19,7 @@ export const PROJECT_PROOF_SURFACE = [
   'disconnectSource',
   'discoverSources',
   'dismissAccountNotice',
+  'focusSessionUnread',
   'getAppearance',
   'getCodexAutoCompactLimit',
   'handoffSession',

@@ -20,6 +20,7 @@ export * from '@/domains/sessions/contract/model/background-work-contract'
 export * from '@/domains/sessions/contract/model/feed-contract'
 export * from '@/domains/sessions/contract/model/file-contract'
 export * from '@/domains/sessions/contract/model/session-error'
+export * from '@/domains/sessions/contract/model/unread-contract'
 export * from '@/domains/sessions/contract/ticket-link-contract'
 
 // One drive request table for every Harness (#2030): `start` names its Harness, and every other drive

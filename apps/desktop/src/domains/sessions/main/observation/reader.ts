@@ -2,6 +2,7 @@ import {
   driveSessionError,
   isDriveHarness,
   type SessionRenameRequest,
+  type SessionUnreadFocusRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive/archive-reads'
@@ -123,5 +124,16 @@ export function createSessionReader(
     readShellOutput: (request) => shellOutputRead(reads, request),
     readSubagentUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),
+    async focusSessionUnread(request: SessionUnreadFocusRequest) {
+      const focused = await unread.focus(request.sessionId)
+      return focused
+        ? {
+            version: 1,
+            type: 'session.unread.focused',
+            requestId: request.requestId,
+            sessionId: request.sessionId,
+          }
+        : sessionError('internal-error', request.requestId)
+    },
   }
 }

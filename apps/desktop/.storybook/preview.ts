@@ -69,6 +69,13 @@ host.argo = {
       requestId: 'storybook-feed-cancel',
       sessionId: request.sessionId,
     }),
+  focusSessionUnread: (request: { sessionId: string }) =>
+    Promise.resolve({
+      version: 1,
+      type: 'session.unread.focused',
+      requestId: 'storybook-unread-focus',
+      sessionId: request.sessionId,
+    }),
   readSessionPermission: (request: { requestId: string; sessionId: string }) =>
     Promise.resolve({
       version: 1,
