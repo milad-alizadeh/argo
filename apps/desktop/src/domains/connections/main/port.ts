@@ -24,6 +24,11 @@ export type ConnectionRead =
   | { ok: true; document: ConnectionDocument }
   | { ok: false; reason: 'unreadable' | 'invalid' }
 
+export type ConnectionPort = {
+  read: () => Promise<ConnectionRead>
+  replaceTicket: (projectId: string, next: TicketConnection | null) => Promise<boolean | ConnectionRead>
+}
+
 const OWNED = ['version', 'connections']
 
 function ticketConnection(value: Record<string, unknown>): TicketConnection | null {
@@ -81,4 +86,25 @@ export function writeConnections(
     version: 1,
     connections: [...others, ...written],
   })
+}
+
+// The durable store belongs to Connection. Product domains request one replacement; they never
+// coordinate a read/filter/write sequence themselves.
+export function createConnectionPort(options: {
+  path: string
+  exclusive: <T>(work: () => Promise<T>) => Promise<T>
+}): ConnectionPort {
+  return {
+    read: () => readConnections(options.path),
+    replaceTicket: (projectId, next) =>
+      options.exclusive(async () => {
+        const read = await readConnections(options.path)
+        if (!read.ok) return read
+        const connections = read.document.connections.filter((entry) => entry.projectId !== projectId)
+        return writeConnections(options.path, {
+          ...read.document,
+          connections: next ? [...connections, next] : connections,
+        })
+      }),
+  }
 }

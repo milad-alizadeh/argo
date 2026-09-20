@@ -1,8 +1,6 @@
 import { projectNames } from '@/domains/accounts/main/port'
 import {
-  readConnections,
   type TicketConnection,
-  writeConnections,
 } from '@/domains/connections/main/port'
 import {
   type TicketConnectedReply,
@@ -31,7 +29,7 @@ async function projectExists(call: Call): Promise<boolean> {
 }
 
 export async function findConnection(call: Call) {
-  const read = await readConnections(call.access.paths.connections)
+  const read = await call.connections.read()
   if (!read.ok)
     return { ok: false, error: ticketError(STORAGE_ERRORS[read.reason], call.requestId) } as const
   const found = read.document.connections.find((entry) => entry.projectId === call.projectId)
@@ -65,18 +63,13 @@ export async function writeTicketField<Value>(
   return read(target.accountId, target.scope)
 }
 
-function saveConnection(call: Call, next: TicketConnection | null): Promise<TicketConnectedReply> {
-  return call.access.exclusive(async () => {
-    const read = await readConnections(call.access.paths.connections)
-    if (!read.ok) return ticketError(STORAGE_ERRORS[read.reason], call.requestId)
-    const kept = read.document.connections.filter((entry) => entry.projectId !== call.projectId)
-    const connections = next ? [...kept, next] : kept
-    const document = { ...read.document, connections }
-    if (!(await writeConnections(call.access.paths.connections, document))) {
-      return ticketError('storage-not-written', call.requestId)
-    }
-    return connected(call, next ?? undefined)
-  })
+async function saveConnection(call: Call, next: TicketConnection | null): Promise<TicketConnectedReply> {
+  const saved = await call.connections.replaceTicket(call.projectId, next)
+  if (typeof saved !== 'boolean' && !saved.ok) {
+    return ticketError(STORAGE_ERRORS[saved.reason], call.requestId)
+  }
+  if (!saved) return ticketError('storage-not-written', call.requestId)
+  return connected(call, next ?? undefined)
 }
 
 export async function connectSource(

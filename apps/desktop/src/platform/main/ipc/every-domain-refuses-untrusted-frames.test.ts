@@ -19,6 +19,7 @@ const [
   { GITHUB_ENDPOINTS },
   { accountProviders, ticketSources },
   { createAccountAccess },
+  { createConnectionPort },
   { attachAccountBridge },
   { ACCOUNT_OPERATIONS },
   { attachTicketBridge },
@@ -39,6 +40,7 @@ const [
   import('@/providers/github/endpoints'),
   import('@/providers/composition'),
   import('@/domains/accounts/main/access'),
+  import('@/domains/connections/main/port'),
   import('@/domains/accounts/main/bridge'),
   import('@/domains/accounts/contract/operations'),
   import('@/domains/tickets/main/bridge'),
@@ -87,7 +89,12 @@ async function domains(userData: string) {
   attachAccountBridge(accountMock.window, { access, rendererURL })
 
   const ticketMock = createMockIpcWindow()
-  attachTicketBridge(ticketMock.window, { access, rendererURL, sources: ticketSources })
+  attachTicketBridge(ticketMock.window, {
+    access,
+    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
+    rendererURL,
+    sources: ticketSources,
+  })
 
   const appearanceMock = createMockIpcWindow()
   attachAppearanceBridge(appearanceMock.window, { userData, rendererURL })

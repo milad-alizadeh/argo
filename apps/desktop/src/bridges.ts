@@ -6,6 +6,7 @@ import { attachCodexCompactionBridge } from '@/agents/codex/compaction/bridge'
 import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
+import { createConnectionPort } from '@/domains/connections/main/port'
 import { attachProjectBridge } from '@/domains/projects/main/bridge'
 import { createProjectPort } from '@/domains/projects/main/port'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
@@ -61,7 +62,12 @@ export function attachBridges(
     projects: createProjectPort(projects),
   })
   attachAccountBridge(window, { access, rendererURL })
-  attachTicketBridge(window, { access, rendererURL, sources: ticketSources })
+  attachTicketBridge(window, {
+    access,
+    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
+    rendererURL,
+    sources: ticketSources,
+  })
   app.once('before-quit', () => {
     drivers.claude.close()
     drivers.codex.close()

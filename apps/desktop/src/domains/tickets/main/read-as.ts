@@ -3,6 +3,7 @@
 
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerOf } from '@/domains/accounts/contract/provider'
+import type { ConnectionPort } from '@/domains/connections/main/port'
 import {
   type AccountAccess,
   asAccount,
@@ -29,6 +30,7 @@ const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, Ti
 
 export type Call = {
   access: AccountAccess
+  connections: ConnectionPort
   requestId: string
   projectId: string
   sources: Record<Provider, TicketSource>

@@ -2,6 +2,7 @@ import { accountError } from '@/domains/accounts/contract/contract'
 import { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
 import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
+import { createConnectionPort } from '@/domains/connections/main/port'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import type {
   AccountDispatchClient,
@@ -53,6 +54,7 @@ export function bootMain(options: {
   const ticketWindow = createMockIpcWindow()
   attachTicketBridge(ticketWindow.window, {
     access,
+    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
     rendererURL: RENDERER_URL,
     sources: ticketSources,
   })
