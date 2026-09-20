@@ -246,12 +246,13 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   },
   {
     accepted: true,
-    effect: 'Add hooks.json, then generate the Claude Code and Codex hook configuration files.',
+    effect:
+      'Copy hooks.json and hooks/. Add a worktree rules document when needed, then generate the Claude Code and Codex hook files.',
     id: 'guardrail-hooks',
     kind: 'action',
-    label: 'Worktree and push guards',
+    label: 'Agent guard hooks',
     reason:
-      'Add hooks.json rules that require ticket worktrees and block pushes from unsafe branches.',
+      'Enforce worktree and push rules, copy skills into new worktrees, prompt for task tracking, and clean landed worktrees.',
   },
   {
     accepted: true,
@@ -259,7 +260,8 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     id: 'matt-pocock',
     kind: 'action',
     label: 'Engineering workflow skills',
-    reason: 'Install Matt Pocock’s skills for planning, TDD, debugging, review, and shipping.',
+    reason:
+      'Install skills for planning, TDD, debugging, and review. Choose issue tracking and the domain-doc layout during apply.',
     waitsForUser: true,
   },
   {

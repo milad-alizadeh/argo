@@ -7,19 +7,28 @@ import {
   ChevronDown,
   Circle,
   Code2,
+  FileCog,
   FileJson,
   Folder,
   FolderOpen,
   GitBranch,
+  Library,
+  ListChecks,
   LoaderCircle,
   MessagesSquare,
   Package,
+  Palette,
+  PenLine,
   Play,
   Plus,
+  ScanEye,
+  SearchCheck,
   Settings2,
+  ShieldCheck,
   Sparkles,
   TerminalSquare,
   Trash2,
+  Workflow,
   Wrench,
   XCircle,
 } from 'lucide-react'
@@ -878,12 +887,30 @@ const RECOMMENDATION_LOGOS: Record<string, string> = {
   storybook: new URL('./prototype-assets/storybook.svg', import.meta.url).href,
 }
 
+const RECOMMENDATION_ICONS: Record<string, ReactNode> = {
+  'agent-doc-audit': <SearchCheck aria-hidden="true" className="prototype-tool-logo" />,
+  'agent-instructions': <FileCog aria-hidden="true" className="prototype-tool-logo" />,
+  'argo-skill-bundle': <Sparkles aria-hidden="true" className="prototype-tool-logo" />,
+  'codex-todos': <ListChecks aria-hidden="true" className="prototype-tool-logo" />,
+  'guardrail-hooks': <ShieldCheck aria-hidden="true" className="prototype-tool-logo" />,
+  'interface-review': <ScanEye aria-hidden="true" className="prototype-tool-logo" />,
+  'matt-pocock': <Workflow aria-hidden="true" className="prototype-tool-logo" />,
+  'quality-gates': <CheckCircle2 aria-hidden="true" className="prototype-tool-logo" />,
+  'rtk-filters': <TerminalSquare aria-hidden="true" className="prototype-tool-logo" />,
+  'visual-direction': <Palette aria-hidden="true" className="prototype-tool-logo" />,
+  'writing-skills': <PenLine aria-hidden="true" className="prototype-tool-logo" />,
+}
+
 function RecommendationIcon({ recommendation }: { recommendation: PrototypeRecommendation }) {
   const source = RECOMMENDATION_LOGOS[recommendation.id]
   if (source) {
     return <img alt="" aria-hidden="true" className="prototype-tool-logo" src={source} />
   }
-  return <Wrench aria-hidden="true" className="prototype-tool-logo" />
+  return (
+    RECOMMENDATION_ICONS[recommendation.id] ?? (
+      <Wrench aria-hidden="true" className="prototype-tool-logo" />
+    )
+  )
 }
 
 function RecommendationDependencies({
@@ -1073,11 +1100,13 @@ function TargetField({
 }
 
 function RecommendationEditor({
+  icon = <Wrench />,
   onToggle,
   recommendations,
   subtitle,
   title,
 }: {
+  icon?: ReactNode
   onToggle: (recommendationId: string) => void
   recommendations: PrototypeRecommendation[]
   subtitle: string
@@ -1086,7 +1115,7 @@ function RecommendationEditor({
   return (
     <SectionCard
       className="prototype-recommendation-editor"
-      icon={<Wrench />}
+      icon={icon}
       subtitle={subtitle}
       title={title}
     >
@@ -1127,16 +1156,19 @@ const REPOSITORY_RECOMMENDATION_GROUPS = [
       'visual-direction',
       'agent-doc-audit',
     ],
+    icon: <FileCog />,
     subtitle: 'Writes or updates files in this Project.',
     title: 'Project file changes',
   },
   {
     ids: ['argo-skill-bundle', 'matt-pocock', 'writing-skills'],
+    icon: <Library />,
     subtitle: 'Installs reusable skills for Claude Code and Codex.',
     title: 'Agent skills',
   },
   {
     ids: ['codex-todos'],
+    icon: <Settings2 />,
     subtitle: 'Changes a global harness setting outside this Project.',
     title: 'Harness settings',
   },
@@ -1151,6 +1183,7 @@ function RepositoryRecommendationGroups({
 }) {
   return REPOSITORY_RECOMMENDATION_GROUPS.map((group) => (
     <RecommendationEditor
+      icon={group.icon}
       key={group.title}
       onToggle={onToggle}
       recommendations={group.ids.flatMap((id) =>
