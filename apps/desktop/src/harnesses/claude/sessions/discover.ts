@@ -13,7 +13,9 @@ function sessionIdFromFileName(fileName: string) {
   return fileName.replace(/\.jsonl$/, '')
 }
 
-async function transcriptPaths(root: string): Promise<{ path: string; sessionId: string }[]> {
+export async function transcriptPaths(
+  root: string,
+): Promise<{ path: string; sessionId: string }[]> {
   const directories = await readdir(root, { withFileTypes: true })
   const found: { path: string; sessionId: string }[] = []
   for (const directory of directories) {

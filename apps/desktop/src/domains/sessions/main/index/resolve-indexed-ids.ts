@@ -24,7 +24,7 @@ import { pathOfIndexed } from '@/domains/sessions/main/index/session-index/windo
 
 export type ResolvedIndexedIds = { rows: SessionRosterRow[]; unresolvedIds: string[] }
 
-async function freshIdentityOf(
+export async function freshIdentityOf(
   file: IndexedTranscriptFile,
 ): Promise<TranscriptFileIdentity | null> {
   const found = await stat(file.path).catch(() => null)
