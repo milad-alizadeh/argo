@@ -56,6 +56,7 @@ export const claudeHarness: HarnessRegistration = {
         index,
       }),
       driveAdapter: createClaudeDriveAdapter(claude),
+      onboardingDriver: claude,
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],
       close: () => claude.close(),
       onPermissionsChanged: claude.onPermissionsChanged,

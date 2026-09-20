@@ -18,6 +18,7 @@ export type HarnessRuntime = {
   readonly source: SessionSource
   readonly driveAdapter: SessionDriveAdapter
   readonly watchedTranscriptRoots: readonly string[]
+  readonly onboardingDriver?: unknown
   close(): Promise<void>
   onPermissionsChanged?: WatchedSource
   onRosterChanged?: WatchedSource
