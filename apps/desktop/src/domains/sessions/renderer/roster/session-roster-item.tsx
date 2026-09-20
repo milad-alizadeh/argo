@@ -22,10 +22,7 @@ import {
   STATUS_LABELS,
   STATUS_MARKS,
 } from '@/domains/sessions/renderer/roster/session-roster-status'
-import {
-  unreadMarkerPrototypeDot,
-  useUnreadMarkerPrototypeVariant,
-} from '@/domains/sessions/renderer/roster/unread-marker-prototype'
+import { unreadMarkerPrototypeDot } from '@/domains/sessions/renderer/roster/unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -72,7 +69,6 @@ export function SessionRosterItem({
   selected,
   session,
   tabIndex,
-  prototypeUnread,
 }: {
   archived: boolean
   checked: boolean
@@ -83,10 +79,8 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
-  prototypeUnread?: boolean
 }) {
   const { t } = useTranslation('sessions')
-  const unreadPrototype = useUnreadMarkerPrototypeVariant()
   const [pointerFocused, setPointerFocused] = useState(false)
   const rowHighlight = rowHighlightOf(checked, selected, archived)
   const focusHighlight = pointerFocused
@@ -96,7 +90,7 @@ export function SessionRosterItem({
   const prototypeDot = unreadMarkerPrototypeDot({
     blocked: session.status === 'asking' || session.status === 'permission',
     failed: session.status === 'ended' || session.status === 'stopped',
-    unread: prototypeUnread ?? unreadPrototype !== null,
+    unread: session.unread,
   })
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
@@ -128,7 +122,7 @@ export function SessionRosterItem({
             {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
           </span>
           <span
-            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}
+            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${session.unread ? prototypeDot : STATUS_MARKS[session.status]}`}
             data-slot="session-status"
           />
         </span>
@@ -157,9 +151,7 @@ export function SessionRosterItem({
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
             {running ? <Loader aria-hidden={true} className="ml-auto" size="meta" /> : null}
-            {unreadPrototype === null || prototypeUnread === false ? null : (
-              <span className="sr-only">{t('rosterStatusUnread')}</span>
-            )}
+            {session.unread ? <span className="sr-only">{t('rosterStatusUnread')}</span> : null}
           </span>
           <ActivityLine session={session} />
           {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
