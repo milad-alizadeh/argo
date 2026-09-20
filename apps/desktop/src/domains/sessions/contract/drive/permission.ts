@@ -20,10 +20,3 @@ export const READER_DECISIONS = ['allow', 'deny', 'allowForSession'] as const
 // which joins an interrupt to its approvals (#1841).
 export const PERMISSION_DECISIONS = [...READER_DECISIONS, 'cancel'] as const
 export type PermissionDecision = (typeof PERMISSION_DECISIONS)[number]
-
-// Which of the four words each Harness's Permission actually answers with, so a decision word one Harness
-// needs but another doesn't stays representable rather than silently unsupported.
-export const PERMISSION_DECISIONS_BY_CLI: Record<string, readonly PermissionDecision[]> = {
-  claude: READER_DECISIONS,
-  codex: ['allow', 'deny', 'allowForSession', 'cancel'],
-}

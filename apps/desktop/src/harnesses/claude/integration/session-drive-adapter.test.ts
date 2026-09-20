@@ -105,6 +105,42 @@ test('interrupts only the selected managed Claude Session', async () => {
   assert.deepEqual(interrupted, [sessionId])
 })
 
+test('refuses to start a Claude Session with a malformed Turn setup', async () => {
+  const adapter = createClaudeDriveAdapter(
+    mockDriver({
+      start: () => {
+        throw new Error('A malformed setup must not reach the driver.')
+      },
+    }),
+  )
+
+  const result = await adapter.start({
+    cwd: '/projects/argo',
+    prompt: 'x',
+    setup: { model: 'not-a-model', effort: 'low', mode: 'plan' },
+    attachments: [],
+  })
+  assert.deepEqual(result, { error: 'launch-failed' })
+})
+
+test('refuses to send a Turn with a malformed Turn setup', async () => {
+  const adapter = createClaudeDriveAdapter(
+    mockDriver({
+      send: async () => {
+        throw new Error('A malformed setup must not reach the driver.')
+      },
+    }),
+  )
+
+  const result = await adapter.send({
+    sessionId,
+    prompt: 'x',
+    setup: { model: 'haiku', effort: 'low' },
+    attachments: [],
+  })
+  assert.deepEqual(result, { error: 'not-drivable' })
+})
+
 test('compacts only the selected managed Claude Session', async () => {
   const compacted: string[] = []
   const adapter = createClaudeDriveAdapter(

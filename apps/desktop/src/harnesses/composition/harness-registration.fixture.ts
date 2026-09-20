@@ -59,6 +59,7 @@ function fixtureSource(fixtureDriver: FixtureDriver) {
 function fixtureDriveAdapter(fixtureDriver: FixtureDriver) {
   return {
     harness: 'fixture' as const,
+    failureMessage: () => 'Fixture Harness cannot drive this Session.',
     turnSetupSchema: { safeParse: () => ({ success: true as const, data: undefined }) },
     async start() {
       return { sessionId: 'fixture-1' }
@@ -90,7 +91,7 @@ function fixtureDriveAdapter(fixtureDriver: FixtureDriver) {
 }
 
 export function fixtureHarness(): {
-  harness: HarnessRegistration<FixtureDriver>
+  harness: HarnessRegistration
   driver: FixtureDriver
 } {
   const driver: FixtureDriver = {
@@ -107,23 +108,21 @@ export function fixtureHarness(): {
       startedAt: '2026-09-14T09:00:00.000Z',
     }),
   }
-  const harness: HarnessRegistration<FixtureDriver> = {
+  const harness: HarnessRegistration = {
     harness: 'fixture',
-    createDriver() {
-      return driver
-    },
-    createSource: fixtureSource,
-    createDriveAdapter: fixtureDriveAdapter,
-    watchedTranscriptRoots() {
-      return []
-    },
-    async closeDriver(fixtureDriver) {
-      fixtureDriver.closed = true
-    },
-    onRosterChanged(fixtureDriver) {
-      return (onChanged) => {
-        fixtureDriver.rosterChangedListeners.add(onChanged)
-        return () => fixtureDriver.rosterChangedListeners.delete(onChanged)
+    start() {
+      return {
+        harness: 'fixture',
+        source: fixtureSource(driver),
+        driveAdapter: fixtureDriveAdapter(driver),
+        watchedTranscriptRoots: [],
+        async close() {
+          driver.closed = true
+        },
+        onRosterChanged: (onChanged) => {
+          driver.rosterChangedListeners.add(onChanged)
+          return () => driver.rosterChangedListeners.delete(onChanged)
+        },
       }
     },
   }

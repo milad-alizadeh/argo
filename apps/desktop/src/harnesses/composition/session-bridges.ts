@@ -1,8 +1,4 @@
-// Wiring the Sessions room to a window: every registered harness's driver, the roster reader over
-// all of them, and the Claude compaction hook. Separate from `bridges.ts` so the composition root
-// stays one `attach*` call per domain (ADR-0021). Iterates `sessionHarnesses` (#2488); nothing
-// below switches on or names a `harness`. Adding a harness is one entry in
-// `registered-harnesses.ts`.
+// Wiring the Sessions room to a window. Every Harness starts itself and exposes only its bound runtime.
 import { type BrowserWindow, powerMonitor } from 'electron'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import {
@@ -22,14 +18,11 @@ import {
   sessionUnreadPath,
 } from '@/domains/sessions/main/unread/unread-store'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
-import { installCompactionHook } from '@/harnesses/claude/compaction/compaction-hook'
-import { claudeCompactionStartsRoot, claudeSettingsPath } from '@/harnesses/claude/sessions/roots'
 import type {
-  HarnessDriverDeps,
   HarnessRegistration,
+  HarnessRuntime,
 } from '@/harnesses/composition/harness-registration'
 import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
-import { sessionSources } from '@/harnesses/composition/session-sources'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -39,56 +32,18 @@ import {
 } from '@/platform/main/watch/watch-signals'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
-export type SessionDrivers = Record<string, unknown>
-
-// `harnesses` defaults to the app's registered list; a test hands its own, including a fixture
-// harness, to prove this composition generalises without touching that list (#2488).
-export function createSessionDrivers(
-  deps: HarnessDriverDeps,
-  harnesses: readonly HarnessRegistration<unknown>[] = sessionHarnesses,
-): SessionDrivers {
-  const drivers: SessionDrivers = {}
-  for (const harness of harnesses) drivers[harness.harness] = harness.createDriver(deps)
-  return drivers
-}
-
-export async function closeSessionDrivers(
-  drivers: SessionDrivers,
-  harnesses: readonly HarnessRegistration<unknown>[] = sessionHarnesses,
-): Promise<void> {
-  await Promise.all(harnesses.map((harness) => harness.closeDriver(drivers[harness.harness])))
-}
-
-// ADR-0041: adds the `PreCompact` hook to the user's Claude settings, and names where it writes.
-export function watchClaudeCompactions(home: string) {
-  const starts = claudeCompactionStartsRoot(home)
-  installCompactionHook(claudeSettingsPath(home), starts)
-    .then((install) => {
-      if (install === 'refused')
-        console.warn('Claude settings could not be read, so compactions stay hidden until they end')
-    })
-    .catch((error) => console.error('Claude compaction hook failed to install', error))
-  return starts
-}
-
-// Only Claude raises a Permission off its own local hook; only Codex reports its roster off a
-// channel notification, already reconciled inside its own driver, so it reaches `registerWatching`
-// raw rather than through the tree watch's `withReconcile`. A harness declaring neither relies on
-// the tree watch alone. Exported so a test can prove a fixture harness's callback reaches
-// `registerWatching` without the rest of `attachSessions` (#2488).
-export function harnessWatchedSources(
-  drivers: SessionDrivers,
-  harnesses: readonly HarnessRegistration<unknown>[] = sessionHarnesses,
-): { permissions: WatchedSource[]; sessions: WatchedSource[] } {
+// A Harness callback reaches `registerWatching` raw when its own runtime already reconciles it.
+export function harnessWatchedSources(harnesses: readonly HarnessRuntime[]): {
+  permissions: WatchedSource[]
+  sessions: WatchedSource[]
+} {
   return {
-    permissions: harnesses.flatMap((harness) => {
-      const onChanged = harness.onPermissionsChanged?.(drivers[harness.harness])
-      return onChanged === undefined ? [] : [onChanged]
-    }),
-    sessions: harnesses.flatMap((harness) => {
-      const onChanged = harness.onRosterChanged?.(drivers[harness.harness])
-      return onChanged === undefined ? [] : [onChanged]
-    }),
+    permissions: harnesses.flatMap((harness) =>
+      harness.onPermissionsChanged === undefined ? [] : [harness.onPermissionsChanged],
+    ),
+    sessions: harnesses.flatMap((harness) =>
+      harness.onRosterChanged === undefined ? [] : [harness.onRosterChanged],
+    ),
   }
 }
 
@@ -106,21 +61,21 @@ export function attachSessions(
     rendererURL: string
     home: string
     userData: string
-    drivers: SessionDrivers
     ticketLinks: SessionTicketLinkStore
-    compactionStarts?: string
+    proofEnabled: boolean
+    acceptance: boolean
     // Defaults to the app's registered list; a test hands its own, including a fixture harness,
     // to prove this composition generalises without touching that list (#2488).
-    harnesses?: readonly HarnessRegistration<unknown>[]
+    harnesses?: readonly HarnessRegistration[]
   },
 ) {
   const {
     rendererURL,
     home,
     userData,
-    drivers,
     ticketLinks,
-    compactionStarts,
+    proofEnabled,
+    acceptance,
     harnesses = sessionHarnesses,
   } = request
   // Argo's own archive flag, for every harness at once (#2315).
@@ -129,13 +84,13 @@ export function attachSessions(
   // Both adapters read their bounded window through one index, so a warm Roster reopens no
   // transcript the last pass already projected (#2372).
   const index = indexForWindow(window, userData)
-  const sources = sessionSources({ home, drivers, compactionStarts, index, harnesses })
+  const runtimes = harnesses.map((harness) =>
+    harness.start({ userData, home, proofEnabled, acceptance, index }),
+  )
+  const sources = runtimes.map((runtime) => runtime.source)
   const reader = createSessionReader(sources, ticketLinks, { ...archive, unread })
   const adapters: SessionDriveAdapters = Object.fromEntries(
-    harnesses.map((harness) => [
-      harness.harness,
-      harness.createDriveAdapter(drivers[harness.harness]),
-    ]),
+    runtimes.map((runtime) => [runtime.harness, runtime.driveAdapter]),
   )
   attachSessionBridge(window, { reader, adapters, rendererURL })
   // A Session written by a Harness outside Argo reaches the roster because the trees the CLIs write to
@@ -146,8 +101,8 @@ export function attachSessions(
   // closed handle (#2303). None of the three fires for a Session left running while the window sits
   // untouched in the background, so the periodic backstop bounds how long that loss can hide one
   // (#2414).
-  const transcriptRoots = harnesses.flatMap((harness) => harness.watchedTranscriptRoots(home))
-  const harnessSources = harnessWatchedSources(drivers, harnesses)
+  const transcriptRoots = runtimes.flatMap((runtime) => runtime.watchedTranscriptRoots)
+  const harnessSources = harnessWatchedSources(runtimes)
   registerWatching(window, {
     permissions: harnessSources.permissions,
     sessions: [
@@ -164,4 +119,5 @@ export function attachSessions(
   })
   // Backfill starts on attach; its first completed pass reconciles launch changes (#2373).
   startBackfill(window, sources, reader)
+  return runtimes
 }

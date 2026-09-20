@@ -1,39 +1,31 @@
-// One declared shape per harness (#2488): everything shared Session composition needs to add one,
-// so the composition root iterates entries instead of naming `claude` or `codex`. The channel a
-// Driver owns stays the adapter's (ADR-0024): this shape only says how to build one, not what it
-// does.
+// A Harness exposes one deep startup seam: it binds its driver before shared composition sees it.
+import type { BrowserWindow } from 'electron'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
-export type HarnessDriverDeps = {
+export type HarnessStartDeps = {
   userData: string
   home: string
   proofEnabled: boolean
-}
-
-export type HarnessSourceDeps = {
-  home: string
-  compactionStarts: string | undefined
+  acceptance: boolean
   index: SessionIndex
 }
 
-// `Driver` is this harness's own type and never appears outside its registration: shared code
-// only ever calls back into the same entry that produced the value, so the driver never needs a
-// name shared code could recognise.
-export type HarnessRegistration<Driver> = {
+export type HarnessRuntime = {
   readonly harness: string
-  createDriver(deps: HarnessDriverDeps): Driver
-  createSource(driver: Driver, deps: HarnessSourceDeps): SessionSource
-  createDriveAdapter(driver: Driver): SessionDriveAdapter
-  // Trees the shared `sessions` watch recurses. A harness with no filesystem transcript root
-  // (a future in-memory or remote one) returns none.
-  watchedTranscriptRoots(home: string): readonly string[]
-  closeDriver(driver: Driver): Promise<void>
-  // Only Claude raises a Permission off its own local hook; only Codex reports its roster off a
-  // channel notification rather than a tree write. Both are optional because most harnesses need
-  // neither: the tree watch above already covers a Session written to disk.
-  onPermissionsChanged?(driver: Driver): WatchedSource
-  onRosterChanged?(driver: Driver): WatchedSource
+  readonly source: SessionSource
+  readonly driveAdapter: SessionDriveAdapter
+  readonly watchedTranscriptRoots: readonly string[]
+  readonly onboardingDriver?: unknown
+  close(): Promise<void>
+  onPermissionsChanged?: WatchedSource
+  onRosterChanged?: WatchedSource
+  attachSettingsBridge?(window: BrowserWindow, request: { home: string; rendererURL: string }): void
+}
+
+export type HarnessRegistration = {
+  readonly harness: string
+  start(deps: HarnessStartDeps): HarnessRuntime
 }

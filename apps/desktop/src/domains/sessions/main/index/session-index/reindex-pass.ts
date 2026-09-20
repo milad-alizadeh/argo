@@ -23,12 +23,14 @@ import {
 
 export type Reindexed = {
   owners: Map<string, string>
+  files: TranscriptFile[]
   parsedPaths: string[]
   unreadablePaths: string[]
 }
 
 export const NOTHING_REINDEXED: Reindexed = {
   owners: new Map(),
+  files: [],
   parsedPaths: [],
   unreadablePaths: [],
 }
@@ -97,7 +99,7 @@ export async function reindexChanged(
     // (EMFILE, a half-written line), and forgetting it would serve a chain missing a live member.
     removedPaths: unreadablePaths.filter((path) => !known.identities.has(path)),
   })
-  return { owners, parsedPaths: [...opened.keys()], unreadablePaths }
+  return { owners, files: parsed, parsedPaths: [...opened.keys()], unreadablePaths }
 }
 
 // What every caller of `reindexChanged` must do first: ask the index what it already holds for a

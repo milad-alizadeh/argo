@@ -24,6 +24,8 @@ import {
   type SessionSubagentUsageRequest,
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
+  type SessionUnreadFocusReply,
+  type SessionUnreadFocusRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
@@ -59,6 +61,7 @@ export type SessionReader = {
   readShellOutput(request: SessionShellOutputRequest): Promise<SessionShellOutputReply>
   readSubagentUsage(request: SessionSubagentUsageRequest): Promise<SessionSubagentUsageReply>
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
+  focusSessionUnread(request: SessionUnreadFocusRequest): Promise<SessionUnreadFocusReply>
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
   ownerHarnessFor(sessionId: string): Promise<string | undefined>
@@ -115,6 +118,7 @@ export function attachSessionBridge(
       shellOutput: (request, context) => context.reader.readShellOutput(request),
       subagentUsage: (request, context) => context.reader.readSubagentUsage(request),
       rename: (request, context) => context.reader.renameSession(request),
+      focusUnread: (request, context) => context.reader.focusSessionUnread(request),
       connectTicket: (request, context) => context.reader.connectTicket(request),
       disconnectTicket: (request, context) => context.reader.disconnectTicket(request),
       start: (request, context) => startSession(request, context.adapters),

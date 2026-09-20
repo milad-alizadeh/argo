@@ -2,7 +2,8 @@
 // transcript root and lifecycle callbacks, in the one declared shape shared Session composition
 // iterates. No file outside `harnesses/codex` names this driver's shape.
 import path from 'node:path'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/main/composition/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
+import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
 import { renameCodexSession } from '@/harnesses/codex/drive/rename-session'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from '@/harnesses/codex/drive/system-codex-session-driver'
@@ -11,39 +12,31 @@ import { codexStatePath, codexTranscriptsRoot } from '@/harnesses/codex/sessions
 import { codexThreadNames } from '@/harnesses/codex/sessions/state-store'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 
-type CodexDriver = ReturnType<typeof createSystemCodexSessionDriver>
-
-export const codexHarness: HarnessRegistration<CodexDriver> = {
+export const codexHarness: HarnessRegistration = {
   harness: 'codex',
-  createDriver({ userData, home, proofEnabled }) {
-    return createSystemCodexSessionDriver({
+  start({ userData, home, proofEnabled, index }) {
+    const codex = createSystemCodexSessionDriver({
       executable: proofEnabled ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
       ownership: path.join(userData, 'codex-session-ownership.json'),
       transcripts: codexTranscriptsRoot(home),
     })
-  },
-  createSource(codex, { home, index }) {
     const transcripts = codexTranscriptsRoot(home)
-    return codexSessionSource(transcripts, {
-      roster: codex.roster,
-      liveMessages: codex.liveMessages,
-      pendingQuestion: codex.pendingQuestion,
-      rename: (request) => renameCodexSession(request, codex),
-      isLockedElsewhere: codex.isLockedElsewhere,
-      threadNames: codexThreadNames(codexStatePath(transcripts)),
-      index,
-    })
-  },
-  createDriveAdapter(codex) {
-    return createCodexDriveAdapter(codex)
-  },
-  watchedTranscriptRoots(home) {
-    return [codexTranscriptsRoot(home)]
-  },
-  closeDriver(codex) {
-    return Promise.resolve(codex.close())
-  },
-  onRosterChanged(codex) {
-    return codex.onRosterChanged
+    return {
+      harness: 'codex',
+      source: codexSessionSource(transcripts, {
+        roster: codex.roster,
+        liveMessages: codex.liveMessages,
+        pendingQuestion: codex.pendingQuestion,
+        rename: (request) => renameCodexSession(request, codex),
+        isLockedElsewhere: codex.isLockedElsewhere,
+        threadNames: codexThreadNames(codexStatePath(transcripts)),
+        index,
+      }),
+      driveAdapter: createCodexDriveAdapter(codex),
+      watchedTranscriptRoots: [transcripts],
+      close: () => Promise.resolve(codex.close()),
+      onRosterChanged: codex.onRosterChanged,
+      attachSettingsBridge: attachCodexCompactionBridge,
+    }
   },
 }

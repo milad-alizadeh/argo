@@ -1,7 +1,7 @@
 import {
   driveSessionError,
-  isDriveHarness,
   type SessionRenameRequest,
+  type SessionUnreadFocusRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive/archive-reads'
@@ -81,8 +81,7 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
   const owner = await ownerFor(request.sessionId)
   if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
-    const harness = isDriveHarness(owner.harness) ? owner.harness : 'claude'
-    return driveSessionError('not-drivable', harness, request.requestId)
+    return driveSessionError('not-drivable', owner.harness, request.requestId)
   }
   return owner.rename(request)
 }
@@ -123,5 +122,16 @@ export function createSessionReader(
     readShellOutput: (request) => shellOutputRead(reads, request),
     readSubagentUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),
+    async focusSessionUnread(request: SessionUnreadFocusRequest) {
+      const focused = await unread.focus(request.sessionId)
+      return focused
+        ? {
+            version: 1,
+            type: 'session.unread.focused',
+            requestId: request.requestId,
+            sessionId: request.sessionId,
+          }
+        : sessionError('internal-error', request.requestId)
+    },
   }
 }

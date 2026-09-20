@@ -1,0 +1,4 @@
+{"timestamp":"2026-09-19T10:00:00.000Z","type":"session_meta","payload":{"session_id":"parityEvent","id":"parityEvent","timestamp":"2026-09-19T10:00:00.000Z","cwd":"/Users/x/argo","originator":"Codex Desktop","cli_version":"0.154.0-alpha.6.2","source":"vscode","thread_source":"user"}}
+{"timestamp":"2026-09-19T10:00:00.500Z","ordinal":1,"type":"response_item","payload":{"type":"message","id":"msg_prompt","role":"user","content":[{"type":"input_text","text":"Kick off the build."}]}}
+{"timestamp":"2026-09-19T10:00:01.000Z","ordinal":2,"type":"response_item","payload":{"type":"message","id":"msg_status","role":"user","content":[{"type":"input_text","text":"<status>Build completed</status>"}]}}
+{"timestamp":"2026-09-19T10:00:02.000Z","ordinal":3,"type":"response_item","payload":{"type":"message","id":"answer-1","role":"assistant","content":[{"type":"output_text","text":"Noted."}]}}

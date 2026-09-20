@@ -2,7 +2,6 @@
 // files' full parse held here, evicted only when the reader is done with it (#1717's HELD_FILE_LIMIT
 // eviction lives one level down in transcript-lines.ts; this layer just tracks which paths belong to
 // which Session id so a discard reaches every id that chain has ever answered to).
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import type {
   TranscriptFile,
   TranscriptParser,
@@ -11,8 +10,13 @@ import type {
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
 
+// The chain shape this tracker needs: a member's path and the id its transcript is named for.
+// Narrower than `SessionChain` so a caller that resolved a chain's files straight from the
+// Session index, without stitching, can hand them in without inventing the rest of the type.
+export type ChainFileSet = { id: string; files: readonly { path: string; sessionId: string }[] }
+
 export type FullRecordTracker = {
-  readChainFiles: (chain: SessionChain) => Promise<TranscriptFile[]>
+  readChainFiles: (chain: ChainFileSet) => Promise<TranscriptFile[]>
   clearFullRecords: (sessionId: string) => void
 }
 
@@ -39,7 +43,7 @@ export function createFullRecordTracker(
     }
   }
 
-  async function readChainFiles(chain: SessionChain): Promise<TranscriptFile[]> {
+  async function readChainFiles(chain: ChainFileSet): Promise<TranscriptFile[]> {
     const paths = chain.files.map((file) => file.path)
     for (const path of paths) discardedFullPaths.delete(path)
     for (const file of chain.files) fullPaths.set(file.sessionId, paths)
