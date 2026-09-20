@@ -1,4 +1,4 @@
-import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
+import { projectRosterRow } from '@/domains/sessions/main/port'
 import type { ResumeTarget } from '@/harnesses/claude/drive/drive-channel'
 import { readSessionFiles } from '@/harnesses/claude/sessions/discover'
 

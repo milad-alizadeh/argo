@@ -3,7 +3,7 @@
 // `TaskCreate` and change it with `TaskUpdate`, naming it by the id `TaskCreate`'s result gave.
 
 import type { PlanChange, ToolResult } from '@/domains/sessions/contract/model/transcript'
-import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/projection/plan'
+import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/port'
 import { isRecord } from '@/shared/validation'
 
 const DELETED = 'deleted'

@@ -4,12 +4,12 @@
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
 import {
   createTranscriptRecordReader,
+  hasOpenSubagent,
+  isLiveElsewhere,
   ROSTER_FILE_LIMIT,
-} from '@/domains/sessions/main/observation/transcript-lines'
-import { hasOpenSubagent } from '@/domains/sessions/main/projection/subagents'
+} from '@/domains/sessions/main/port'
 import { transcriptPaths } from './transcript-paths'
 
 // The Turn marks codex-harness 0.147.0 writes as `event_msg` payloads.

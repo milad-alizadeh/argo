@@ -4,10 +4,10 @@ import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcr
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import {
   createTranscriptDiscoverer,
+  createTranscriptRecordReader,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '@/domains/sessions/main/observation/discover-transcript-sessions'
-import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
+} from '@/domains/sessions/main/port'
 import { isRecord } from '@/shared/validation'
 import { withoutModelInputCopies } from './model-input-copies'
 import { answeringEveryNestedCall } from './nested-results'

@@ -11,7 +11,7 @@ import {
   type TranscriptFile,
   transcriptFileFrom,
 } from '@/domains/sessions/contract/model/transcript'
-import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/port'
 import { isRecord } from '@/shared/validation'
 import { normalizeClaudeRecords } from './normalize-records'
 import { parseTranscriptLine } from './records'
