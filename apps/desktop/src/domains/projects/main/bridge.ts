@@ -1,5 +1,6 @@
 import { type BrowserWindow, dialog } from 'electron'
 import { projectError } from '@/domains/projects/contract/contract'
+import { ONBOARDING_OPERATIONS } from '@/domains/projects/contract/onboarding-operations'
 import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
 import { listProjects } from '@/domains/projects/main/list-projects'
 import { openProject } from '@/domains/projects/main/open-project'
@@ -11,6 +12,14 @@ import {
   saveManualSetup,
   validateManualSetup,
 } from '@/domains/projects/main/setup/manual-setup'
+import {
+  onboardingApplyStatus,
+  onboardingPlanStatus,
+  startOnboardingApply,
+  startOnboardingPlan,
+} from '@/domains/projects/main/setup/onboarding-agent/onboarding-handlers'
+import { createOnboardingRunStore } from '@/domains/projects/main/setup/onboarding-agent/onboarding-run-store'
+import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/run-onboarding-agent'
 import {
   loadSetupDocument,
   type SetupDocumentSource,
@@ -40,6 +49,7 @@ export function attachProjectBridge(
     projects: ProjectRegistryStore
     rendererURL: string
     setupDocumentSource?: SetupDocumentSource
+    onboardingDriver: OnboardingAgentDriver
   },
 ): void {
   const setupDocument = () =>
@@ -68,6 +78,19 @@ export function attachProjectBridge(
       register: registerProject,
       relocate: relocateProject,
       select: selectProject,
+    },
+    error: projectError,
+  })
+  registerDomainHandlers({
+    window,
+    rendererURL: storage.rendererURL,
+    operations: ONBOARDING_OPERATIONS,
+    context: { setup: store, runs: createOnboardingRunStore(storage.onboardingDriver) },
+    handlers: {
+      planStart: (request, context) => startOnboardingPlan(request, context),
+      planStatus: (request, context) => onboardingPlanStatus(request, context),
+      applyStart: (request, context) => startOnboardingApply(request, context),
+      applyStatus: (request, context) => onboardingApplyStatus(request, context),
     },
     error: projectError,
   })

@@ -110,6 +110,8 @@ export const PROJECT_ERRORS = {
   'setup-unavailable': 'Argo could not prepare Project setup.',
   'setup-network-unavailable': 'Argo could not download Project setup from GitHub.',
   'setup-document-invalid': 'GitHub returned an invalid Project setup document.',
+  'onboarding-run-not-found': 'This onboarding run is no longer available.',
+  'onboarding-harness-unavailable': 'Argo cannot run guided setup with this harness yet.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS

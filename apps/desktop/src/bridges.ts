@@ -57,6 +57,7 @@ export function attachBridges(
     projects,
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
+    onboardingDriver: drivers.claude,
   })
   attachSessions(window, { rendererURL, home, userData, drivers, ticketLinks, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
