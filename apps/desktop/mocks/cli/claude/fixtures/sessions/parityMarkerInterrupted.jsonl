@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"mi-i"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"mi-p","message":{"role":"user","content":"Run it."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"mi-a","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"mi-c1","name":"Bash","input":{"command":"bun run build"}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"mi-i","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user for tool use]"}]}}

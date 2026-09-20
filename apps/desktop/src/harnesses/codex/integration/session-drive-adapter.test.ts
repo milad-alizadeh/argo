@@ -16,27 +16,6 @@ function mockDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
 
-test('accepts the Codex Turn setup the adapter declares', () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
-  assert.equal(
-    adapter.turnSetupSchema.safeParse({
-      model: 'gpt-5.6-sol',
-      effort: 'high',
-      mode: 'workspace-write',
-    }).success,
-    true,
-  )
-  assert.equal(adapter.turnSetupSchema.safeParse(undefined).success, true)
-  assert.equal(
-    adapter.turnSetupSchema.safeParse({
-      model: 'gpt-5.6-luna',
-      effort: 'ultra',
-      mode: 'workspace-write',
-    }).success,
-    false,
-  )
-})
-
 test('starts a Codex Session', async () => {
   const started: Array<{ attachments: unknown[]; cwd: string; prompt: string }> = []
   const adapter = createCodexDriveAdapter(
@@ -101,6 +80,18 @@ test('does not accept a Turn Codex could not be given', async () => {
 
   const result = await adapter.send({ attachments: [], sessionId, prompt: 'x', setup: undefined })
   assert.deepEqual(result, { error: 'not-drivable' })
+})
+
+test('refuses a malformed Turn setup before it reaches the driver', async () => {
+  const setup = { model: 'gpt-5.6-luna', effort: 'ultra', mode: 'workspace-write' }
+  const adapter = createCodexDriveAdapter(mockDriver())
+  assert.deepEqual(
+    await adapter.start({ attachments: [], cwd: '/projects/argo', prompt: 'x', setup }),
+    { error: 'launch-failed' },
+  )
+  assert.deepEqual(await adapter.send({ attachments: [], sessionId, prompt: 'x', setup }), {
+    error: 'not-drivable',
+  })
 })
 
 test('reports a Codex Session another app already holds active, by the refusal it names', async () => {

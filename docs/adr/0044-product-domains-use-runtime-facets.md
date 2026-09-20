@@ -42,15 +42,20 @@ Contract code cannot import Electron, Node, React, storage, providers, or render
 code cannot import Electron, Node, main implementations, or preload implementations. A domain
 facet cannot import an application composition root.
 
-`scripts/check-domain-facets.mjs` enforces this matrix. The quality gate and CI run
-the checker. Tests stay beside the facet that owns the behavior.
+`scripts/check-domain-facets.mjs` reads every source file under `apps/desktop/src` and reports
+each import that crosses a facet boundary. `bun run quality:facets` runs the checker and its own
+tests, and `bun run quality` runs `quality:facets`. CI runs `quality:facets` as its own step
+(#2505). Tests stay beside the facet that owns the behavior.
 
 Every domain lives in this layout. `src/` holds `domains`, `platform`, `shared`, `harnesses`,
 `providers`, the `renderer` composition root, and the entry points. A harness is a named external
-agent environment. Its Claude or Codex implementation lives in
-`src/harnesses/<harness>/`. The checker treats a harness adapter as a separate facet. It can use
-the Sessions contract, but it cannot use Sessions main code. The checker refuses an import from
-any other top-level root.
+agent environment. Its Claude or Codex implementation lives in `src/harnesses/<harness>/`, under
+its own `harness` facet. A harness facet can use the Sessions contract, but it cannot use Sessions
+main code. A harness can also have a `renderer` facet, under `src/harnesses/<harness>/renderer/`,
+for the harness-specific UI it draws (#2505). The renderer facet follows the same rule as a domain
+renderer: it cannot use Node, Electron, or main-process code. `src/harnesses/composition/` is a
+declared composition root. It wires each harness into the application, so it can use Sessions main
+code the way `src/main.ts` can. The checker refuses an import from any other top-level root.
 
 ## Consequences
 

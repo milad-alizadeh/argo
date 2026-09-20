@@ -1,5 +1,5 @@
 // The renderer holds no threshold state of its own: it shows what the main process read from
-// `~/.codex/config.toml`, and asks it to write a new one (agents/codex/compaction/bridge.ts).
+// `~/.codex/config.toml`, and asks it to write a new one (harnesses/codex/compaction/bridge.ts).
 import { useCallback, useEffect, useState } from 'react'
 import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/domains/sessions/contract/codex-compaction'
 

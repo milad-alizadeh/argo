@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"ev-r"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"ev-p","message":{"role":"user","content":"Kick off the build."}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"ev-status","parentUuid":"ev-p","message":{"role":"user","content":"<task-notification><task-id>build</task-id><status>completed</status><summary>Build completed</summary></task-notification>"}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"ev-r","message":{"role":"assistant","stop_reason":"end_turn","content":[{"type":"text","text":"Noted."}]}}
