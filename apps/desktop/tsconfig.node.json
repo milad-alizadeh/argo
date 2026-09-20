@@ -6,7 +6,7 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
     "lib": ["ES2023"],
-    "types": ["node"],
+    "types": ["node", "bun"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
@@ -14,13 +14,20 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    // The package-time scripts are plain `.mjs` on purpose: Forge's hooks and CI both run them
-    // with bare `node`, with no build step in front. `allowJs` lets `forge.config.ts` import
-    // them with inferred types instead of `any`; `checkJs` stays off, so they are read, not
-    // graded.
-    "allowJs": true
+    // The package-time scripts run under bare `node`, with no build step in front: Node 24 strips
+    // their types at run time (#2503). `erasableSyntaxOnly` refuses the TypeScript that carries a
+    // runtime meaning — enum, namespace, parameter properties — which is the syntax Node cannot
+    // strip. Two of those scripts import main-process source, so the rule covers `src` as well.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
-  "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts", "scripts/**/*.mjs"],
+  "include": [
+    "src/**/*.ts",
+    "*.config.ts",
+    "forge.config.ts",
+    "scripts/**/*.mts",
+    "tools/**/*.mts"
+  ],
   "exclude": [
     "src/renderer",
     "src/platform/renderer",

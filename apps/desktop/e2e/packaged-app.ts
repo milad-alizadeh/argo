@@ -6,7 +6,7 @@ import { cp, realpath } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
-import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../scripts/fuse-profile.mjs'
+import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../scripts/fuse-profile.mts'
 
 function packagedApp(arch: string) {
   // This module is bundled into generated mock drivers. Resolve from the package script's stable

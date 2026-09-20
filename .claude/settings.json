@@ -3,33 +3,33 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree"
       },
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/hooks/pr-ownership-guard.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/pr-ownership-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Bash"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Bash"
       }
     ],
     "UserPromptSubmit": [
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/hooks/task-list-nudge.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/task-list-nudge.mts\""
           }
         ]
       }
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/hooks/worktree-gc.sh\"",
+            "command": "sh \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh\"",
             "timeout": 60,
             "statusMessage": "Reaping landed worktrees"
           }

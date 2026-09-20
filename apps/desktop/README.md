@@ -151,7 +151,7 @@ already refuses an app whose `node-pty` is absent, packed inside the asar, or st
 `spawn-helper` exec bit. Running it standalone is the form a downloaded release artifact would be
 checked in, and it keeps the checks honest if the hook is ever detached from the config.
 
-`prove-packaged-pty.mjs` then launches the real binary inside the `.app` with
+`prove-packaged-pty.mts` then launches the real binary inside the `.app` with
 `ARGO_PTY_ACCEPTANCE=1` and reads back one JSON line plus the exit code. It covers the
 [#1749](https://github.com/milad-alizadeh/argo/issues/1749) boundary: start, input, output, resize,
 interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a flat
@@ -240,8 +240,8 @@ The verdict is a single document holding every assertion any tier makes about th
 the SHA-256 of every artifact it judged: signing and notarization, the nine fuses read back off the
 shipped binary, the entitlements `codesign` reports per signed path, the packaged-PTY acceptance
 run, the package manifest, and the one asset `update.electronjs.org` will match. It ships as a
-release asset, so the release carries its own evidence. `scripts/release-verdict.mjs` builds it and
-`scripts/write-release-verdict.mjs` is the CLI (`bun run desktop:verdict`).
+release asset, so the release carries its own evidence. `scripts/release-verdict.mts` builds it and
+`scripts/write-release-verdict.mts` is the CLI (`bun run desktop:verdict`).
 
 Why a verdict rather than a chain of green steps: a check that never ran has to be as loud as one
 that ran and failed. Every assertion is an entry in one file, so "the check is missing" is a single

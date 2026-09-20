@@ -6,7 +6,7 @@
 import { app } from 'electron'
 import { BEHAVIOUR_CASES } from '@/platform/main/testing/pty-cases'
 import { descriptorsStayFlat } from '@/platform/main/testing/pty-endurance'
-import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
+import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../../../../scripts/acceptance-protocol.mts'
 
 export { RESULT_PREFIX }
 

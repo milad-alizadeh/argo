@@ -185,6 +185,16 @@
       "plugins": ["./lint/biome/components-style.grit"]
     },
     {
+      // A `.mjs` file is generated, not written (#2503). The two named files predate that rule
+      // and run outside this repo's TypeScript projects, so Node still needs them untyped.
+      "includes": [
+        "**/*.mjs",
+        "!packages/argo-skills/skills/setup-quality-gates/templates/file-length-check.mjs",
+        "!docs/research/2026-09-09-mcp-instructions-proof.mjs"
+      ],
+      "plugins": ["./lint/biome/no-new-mjs.grit"]
+    },
+    {
       "includes": ["apps/desktop/src/platform/renderer/components/ui/**"],
       "formatter": { "enabled": false },
       "linter": {
@@ -450,7 +460,7 @@
     {
       "includes": [
         // Cross-CLI hook projection: one branchy function over the harness matrix.
-        "packages/argo-skills/bin/hooks-sync.mjs"
+        "packages/argo-skills/bin/hooks-sync.mts"
       ],
       "linter": {
         "rules": {
@@ -593,7 +603,7 @@
     },
     // KIND: repo tooling reads the ambient environment by design (CI vars, git env, TTY).
     {
-      "includes": ["scripts/**", "hooks/**"],
+      "includes": ["scripts/**", "packages/argo-skills/skills/setup-argo-skills/hooks/**"],
       "linter": {
         "rules": {
           "suspicious": {

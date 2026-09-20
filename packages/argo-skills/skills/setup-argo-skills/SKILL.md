@@ -130,7 +130,7 @@ The git root, not the working directory: the projected commands resolve their sc
 | From the Argo clone | Why it is in the set |
 |---|---|
 | `hooks.json` | the neutral descriptor every projection is generated from |
-| the whole `hooks/` directory | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
+| `packages/argo-skills/skills/setup-argo-skills/hooks/` | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
 | `docs/agents/worktrees.md` | the contract the deny message cites, and only when you set `worktreeGuard.docs` to point at it. A project that keeps its own convention document names that instead, and one that has no convention copies no doc |
 
 The set is lockstep with `hooks.json`: a command added there whose script is missing here
@@ -153,7 +153,7 @@ does not share them is the failure this table exists to prevent.
 Then project the descriptor per agent, from the project root:
 
 ```sh
-node <argo-clone>/packages/argo-skills/bin/hooks-sync.mjs
+node <argo-clone>/packages/argo-skills/bin/hooks-sync.mts
 ```
 
 It regenerates `.claude/settings.json` and `.codex/hooks.json`. Those blocks are generated, so

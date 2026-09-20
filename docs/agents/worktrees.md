@@ -3,7 +3,7 @@
 Implementation work runs in a git worktree under `.claude/worktrees/`, never the shared main
 checkout — multiple agent sessions run concurrently, and isolating each unit of work on its own
 tree and branch keeps them from clobbering each other's files. One `PreToolUse` hook
-(`hooks/worktree-guard.mjs`) enforces both halves: it blocks every agent change to the main
+(`packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts`) enforces both halves: it blocks every agent change to the main
 checkout from outside a worktree, and it enforces the naming below at creation. This file is the
 *how* it cites: naming, resuming an interrupted worktree, recovering a deleted one. It applies to
 all implementation work, not just `/implement` runs, and is self-contained so it stands alone
@@ -45,7 +45,7 @@ the numberless slug may not itself begin with a number, because `argo/901-naming
 
 ### Everything is guarded, and a write through the shell is a write
 
-`hooks/worktree-guard.mjs` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit`, `Bash` and
+`packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit`, `Bash` and
 `EnterWorktree`. Its `decideEdit()` half answers where the work runs. From outside a worktree it
 refuses:
 
@@ -181,7 +181,7 @@ never something a sub-agent takes on its own.
 
 ## Reaping landed worktrees
 
-`bun run worktrees:gc` (`hooks/worktree-gc.sh`) removes only what is provably safe: PR merged,
+`bun run worktrees:gc` (`packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh`) removes only what is provably safe: PR merged,
 tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is reported and left
 alone. `--dry-run` reports without removing.
 
@@ -195,7 +195,7 @@ exists. It is keyed on a ticket rather than a pull request because a design outl
 request built against it. A branch whose name holds no number, and a failed `gh` query, both
 mean keep.
 
-`bun run worktrees:sweep` (`hooks/worktree-gc.sh --artifacts`) is the other sweep and reaps no
+`bun run worktrees:sweep` (`packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh --artifacts`) is the other sweep and reaps no
 worktree at all. It deletes the build output inside every worktree, holding back only the trees
 built in the last 30 minutes. It needs no merged branch, because nothing it deletes is the only
 copy of anything. Run it when the disk is tight, which on this machine is most weeks.

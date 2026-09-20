@@ -1,37 +1,37 @@
 {
-  "$comment": "Neutral guardrail-hook SSOT for this repo \u2014 the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks \u2014 edit here and run `bun run hooks:sync`. Commands are harness-neutral: `$(git rev-parse --show-toplevel)/hooks/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's hooks/ via git-toplevel; a consumer opts in by hand, copying this file AND that directory into its own tree before projecting there, since the guard imposes Argo's worktree discipline on every session in that project. `setup-argo-skills` carries the steps; nothing installs them for you. Optional top-level `worktreeGuard.roots` narrows the worktree edit guard, whose default `[\".\"]` is the whole repository, for a project whose agents must still edit part of the main checkout. See AGENTS.md \"Cross-CLI guardrail hooks\".",
+  "$comment": "Neutral guardrail-hook SSOT for this repo \u2014 the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mts` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks \u2014 edit here and run `bun run hooks:sync`. Commands are harness-neutral: `$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/*` (no $CLAUDE_PROJECT_DIR). The commands invoke that path via git-toplevel; a consumer opts in by hand, copying this file AND that directory into its own tree before projecting there, since the guard imposes Argo's worktree discipline on every session in that project. `setup-argo-skills` carries the steps; nothing installs them for you. Optional top-level `worktreeGuard.roots` narrows the worktree edit guard, whose default `[\".\"]` is the whole repository, for a project whose agents must still edit part of the main checkout. See AGENTS.md \"Cross-CLI guardrail hooks\".",
   "agents": ["claude-code", "codex"],
   "hooks": [
     {
       "event": "pre-tool",
       "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree",
       "$comment": "The worktree discipline, whole: WHERE a change runs (it must be a worktree, never the shared main checkout) and WHICH worktree it is (named at creation, the one moment the name is free to change). These were two hooks on two matchers until they were merged; the matcher here is the union of those two, and the script dispatches internally, so dropping EnterWorktree from it silently unguards worktree creation (#1684). It watches Bash as well as the edit tools because `cat > file` is a write, and the whole repository rather than apps/ and packages/, because \"all of it except X\" is how four files landed in the main checkout under an installed, passing guard (#1276). `worktreeGuard.roots` narrows it for a consumer. The naming half never fires on an edit inside an existing tree, so trees named before it drain untouched (#901).",
-      "command": "node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\"",
+      "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\"",
       "agentGated": true
     },
     {
       "event": "post-tool",
       "matcher": "Bash",
       "$comment": "After an accepted git worktree add succeeds, copy the primary checkout's installed skills into the new tree. Git does not carry ignored .agents/skills or .claude/skills into a linked checkout, so a Session started there would otherwise see no project bundle or whatever stale copy that path already held. The pre-tool half still owns validation; this post-tool half runs only after success, when the destination exists.",
-      "command": "node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\"",
+      "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\"",
       "agentGated": true
     },
     {
       "$comment": "PR ownership: `/ship` is the only skill that pushes a work branch or opens a pull request (#1669). A PreToolUse hook cannot tell which skill is running - Claude Code's payload carries no field naming the active skill and no environment variable does either - so this cannot deny \"unless the skill is ship\". It denies the action outright and takes an explicit opt-out instead: a command carrying the `ARGO_SHIP=1` environment prefix is allowed through, and `ship/SKILL.md` writes that prefix into the commands it tells the agent to run. The marker is part of the command line, so what claimed the exemption is visible in the transcript. Three shapes are allowed unmarked, none of them a work branch: a push that deletes a ref, a push targeting a ref outside refs/heads/ (the PNG evidence ref), and a push to a branch under one of `worktreeGuard.publishBranches` (the design page, which joins to no ticket and which `/ship` has no step for).",
       "event": "pre-tool",
       "matcher": "Bash",
-      "command": "node \"$(git rev-parse --show-toplevel)/hooks/pr-ownership-guard.mjs\"",
+      "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/pr-ownership-guard.mts\"",
       "agentGated": true
     },
     {
       "$comment": "The to-do-list nudge. AGENTS.md carries the same rule, but a rule that competes with a whole file for attention is one sessions skip: measured over 2981 transcripts, only 38% of sessions with three or more file edits wrote a list at all, and the rate fell over time (#1254). The script reads the session's own transcript and goes quiet the moment a list exists, and gives up after three prompts either way. It only ever adds context \u2014 it can never block a prompt.",
       "event": "user-prompt-submit",
-      "command": "node \"$(git rev-parse --show-toplevel)/hooks/task-list-nudge.mjs\"",
+      "command": "node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/task-list-nudge.mts\"",
       "agentGated": true
     },
     {
       "event": "session-end",
-      "command": "sh \"$(git rev-parse --show-toplevel)/hooks/worktree-gc.sh\"",
+      "command": "sh \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh\"",
       "timeout": 60,
       "statusMessage": "Reaping landed worktrees"
     }

@@ -311,7 +311,7 @@ jobs:
       # first and npx's own `--no` then refuses to reinstall it.
       #
       # Bun's linker decides whether the root or apps/desktop holds `electron`, so probe both
-      # rather than assume a layout — `electronBinary()` in packaged-app.mjs makes the same point.
+      # rather than assume a layout — `electronBinary()` in packaged-app.mts makes the same point.
       - name: Install the Electron binary
         if: steps.touched.outputs.desktop == 'true' && steps.replay.outputs.status != 'HIT'
         shell: bash

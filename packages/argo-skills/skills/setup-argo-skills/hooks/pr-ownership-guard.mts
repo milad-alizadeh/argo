@@ -1,0 +1,150 @@
+#!/usr/bin/env node
+// PreToolUse(Bash) guardrail: `/ship` is the only skill that pushes a work branch or opens a
+// pull request (#1669).
+//
+// This replaced a build-time scan that read the skills' own prose and asserted only ship/SKILL.md
+// contained `gh pr create`. That scan could only ever be right about what a skill SAYS. A skill
+// whose prose was clean still had nothing standing between it and the command, and prose drifts
+// from behaviour in both directions. This stops the action instead.
+//
+// WHAT THIS HOOK CANNOT DO, and why the rule below is shaped the way it is.
+//
+// The rule everybody wants is "deny unless the running skill is ship". A PreToolUse hook cannot
+// express it. Claude Code's PreToolUse payload carries session_id, transcript_path, cwd,
+// permission_mode, hook_event_name, tool_name, tool_input, tool_use_id and the subagent fields,
+// and not one of them names the active skill; no CLAUDE_* environment variable carries it
+// either, and there is no on-disk "active skill" state a hook can read. The transcript at
+// `transcript_path` does record tool calls, but it is written asynchronously and lags the turn
+// in hand, so the Skill call that started the current work may simply not be in the file when
+// this hook runs. Reading it would make the guard's verdict depend on a race.
+//
+// So the guard denies the action outright and takes an explicit, visible opt-out instead: a
+// command carrying the `ARGO_SHIP=1` environment prefix passes. `ship/SKILL.md` writes that
+// prefix into the commands it tells the agent to run, which makes the exemption a thing the
+// command line SAYS rather than a thing the guard infers. Two properties follow, and they are
+// the whole reason for the choice:
+//   - It cannot be claimed by accident. Nothing types `ARGO_SHIP=1` while meaning something else.
+//   - What claimed it is in the transcript, next to the command it exempted, so a wrong push is
+//     auditable after the fact rather than invisible.
+// It is emphatically not a security boundary: any agent that reads this file can write the
+// prefix. It is a speed bump with a name on it, which is what a guardrail against an unthinking
+// habit needs to be. AGENTS.md carries the rule itself, because a hook denies but cannot teach.
+//
+// Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT for markerless harnesses like Codex)
+// so it never touches the human's own workflow. decide() is pure string logic; the publish
+// namespaces it reads are set once by the entrypoint below, from the descriptor.
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { Verdict, WorktreeGuardConfiguration } from './hook-io.mts'
+import {
+  ALLOW,
+  readWorktreeGuard,
+  resolveProjectDir,
+  runGuard,
+  toolCall,
+  underAgent,
+} from './hook-io.mts'
+import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mts'
+
+// The opt-out. An environment assignment rather than a flag, because it survives being placed in
+// front of any command and reads as what it is at the point of use.
+export const SHIP_MARKER = 'ARGO_SHIP=1'
+
+// `gh pr new` is a real alias of `gh pr create`, so both spellings open a pull request.
+const PR_SUBCOMMANDS = ['create', 'new']
+
+const HOW =
+  `Opening the PR is \`/ship\`'s step, and only its own: it carries the close-out nothing else ` +
+  `runs, the sweep for \`.only\` and debug prints, the merge from the current base, and the ` +
+  `review findings written into the body. Finish on the branch with the work committed and let ` +
+  `the caller invoke \`/ship\`. If you ARE \`/ship\`, prefix the command with ${SHIP_MARKER}: ` +
+  `that marker is how this hook is told, because nothing in a hook's payload names the skill ` +
+  `that is running.`
+
+const refuse = (what: string): Verdict => ({ block: true, reason: `${what} ${HOW}` })
+
+/** True when a `git push` refspec sends something that is not a branch. */
+function pushesNonBranch(refspec: string): boolean {
+  // `:refs/heads/x` with an empty source deletes rather than publishes.
+  if (refspec.startsWith(':')) return true
+  const destination = refspec.slice(refspec.lastIndexOf(':') + 1)
+  // A fully qualified ref that is not a branch: the PNG evidence ref pixel-review pushes, and
+  // the tag or note shapes that are not work either.
+  return destination.startsWith('refs/') && !destination.startsWith('refs/heads/')
+}
+
+const DELETE_FLAGS = ['--delete', '-d']
+
+// Namespaces that publish rather than carry work, from `worktreeGuard.publishBranches` in the
+// same descriptor the naming guard reads. A design page's branch is the case: it joins to no
+// ticket, it never merges, and `/ship` has no step that pushes it, so a guard reserving the push
+// to `/ship` would leave the process with no way to publish at all. Unconfigured, this is empty
+// and every push is judged as work, which is the right default.
+let publishPrefixes: string[] = []
+export function configurePublish(config: WorktreeGuardConfiguration = {}): string[] {
+  publishPrefixes = config.publishBranches || []
+  return publishPrefixes
+}
+
+/** True when a refspec's destination lands in a publish namespace. */
+function pushesPublishBranch(refspec: string): boolean {
+  const destination = refspec.slice(refspec.lastIndexOf(':') + 1).replace(/^refs\/heads\//, '')
+  return publishPrefixes.some((prefix) => destination.startsWith(prefix))
+}
+
+function checkPush(args: string[]): Verdict {
+  if (args.some((token) => DELETE_FLAGS.includes(token))) return ALLOW
+  const operands = args.filter((token) => !token.startsWith('-'))
+  // operands[0] is the remote; everything after it is a refspec.
+  const refspecs = operands.slice(1)
+  if (refspecs.some(unexpanded)) return ALLOW
+  // Every refspec names something that is not work: a ref outside `refs/heads/`, or a branch in
+  // a publish namespace.
+  const notWork = (refspec: string): boolean =>
+    pushesNonBranch(refspec) || pushesPublishBranch(refspec)
+  if (refspecs.length > 0 && refspecs.every(notWork)) return ALLOW
+  return refuse("This pushes a work branch, and pushing is `/ship`'s step.")
+}
+
+function checkPublishing(tokens: string[]): Verdict {
+  const { prefix, name, args } = invocation(tokens)
+  // The explicit opt-out, read off the command line itself.
+  if (prefix.includes(SHIP_MARKER)) return ALLOW
+  if (name === 'gh') {
+    const [subcommand, action] = args.filter((token) => !token.startsWith('-'))
+    if (subcommand === 'pr' && action !== undefined && PR_SUBCOMMANDS.includes(action)) {
+      return refuse('This opens a pull request.')
+    }
+    return ALLOW
+  }
+  if (name === 'git') {
+    const rest = afterGitOptions(args)
+    if (rest[0] === 'push') return checkPush(rest.slice(1))
+  }
+  return ALLOW
+}
+
+export function decide({
+  toolName,
+  toolInput = {},
+  isAgent,
+}: {
+  toolName?: string | undefined
+  toolInput?: Record<string, unknown>
+  isAgent?: boolean | undefined
+}): Verdict {
+  if (!isAgent) return ALLOW // human workflow — never guarded
+  if (toolName !== 'Bash' || typeof toolInput.command !== 'string') return ALLOW
+  for (const segment of segments(toolInput.command)) {
+    const decision = checkPublishing(tokenize(segment))
+    if (decision.block) return decision
+  }
+  return ALLOW
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await runGuard((payload) => {
+    configurePublish(readWorktreeGuard(resolveProjectDir(payload.cwd || process.cwd())))
+    return decide({ ...toolCall(payload), isAgent: underAgent() })
+  })
+}

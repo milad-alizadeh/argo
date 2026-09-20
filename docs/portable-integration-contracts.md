@@ -181,7 +181,7 @@ Other operating systems need their own adapter and package evidence before suppo
 
 ## Evidence and limits
 
-`project-contract.test.mjs` exercises the application boundary against real isolated files, including actual permission denial.
+`project-contract.test.mts` exercises the application boundary against real isolated files, including actual permission denial.
 `project-client.test.mjs` exercises malformed replies and connection failures at the renderer boundary.
 Both run through the desktop Bun suite. Focused commands name these individual files.
 

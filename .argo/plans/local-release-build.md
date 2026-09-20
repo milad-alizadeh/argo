@@ -15,7 +15,7 @@
 criteria:
   - id: RELEASE-BUILD-1
     check: "The repository, Turbo, and desktop workspace expose one uncached local release build path."
-    evidence: "test:apps/desktop/scripts/packaged-pty-checks.test.mjs"
+    evidence: "test:apps/desktop/scripts/packaged-pty-checks.test.mts"
   - id: RELEASE-BUILD-2
     check: "The local release command packages and runs the shipped app, then prints its absolute path."
     evidence: "cmd:bun run build"
