@@ -43,7 +43,10 @@ export type PrototypeRecommendation = {
   accepted: boolean
   bundledDependencies?: string[]
   effect: string
+  group?: 'project-files' | 'agent-skills' | 'harness-settings'
+  href: string
   id: string
+  icon: string
   kind: 'action' | 'tool' | 'dependency'
   label: string
   reason: string
@@ -146,7 +149,9 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         accepted: true,
         bundledDependencies: ['@storybook/react-vite'],
         effect: 'Add component and screen review to this Target’s setup handoff.',
+        href: 'https://storybook.js.org/',
         id: 'storybook',
+        icon: 'storybook',
         kind: 'tool',
         label: 'Storybook',
         reason: 'Build and test UI components in isolation for faster review.',
@@ -155,7 +160,9 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         accepted: true,
         bundledDependencies: ['@playwright/test'],
         effect: 'Add packaged desktop journeys to this Target’s required verification.',
+        href: 'https://playwright.dev/',
         id: 'playwright',
+        icon: 'playwright',
         kind: 'tool',
         label: 'Playwright journeys',
         reason: 'Run reliable end-to-end tests across critical user journeys.',
@@ -177,7 +184,9 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         accepted: true,
         bundledDependencies: ['markdownlint-cli2'],
         effect: 'Add instruction linting to this Target’s required verification.',
+        href: 'https://github.com/DavidAnson/markdownlint-cli2',
         id: 'markdown-checks',
+        icon: 'quality',
         kind: 'tool',
         label: 'Markdown checks',
         reason: 'Lint Markdown quickly and consistently to keep instructions readable.',
@@ -186,7 +195,9 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
         accepted: false,
         bundledDependencies: ['typedoc'],
         effect: 'Install TypeDoc and add generated reference output for this Target.',
+        href: 'https://typedoc.org/',
         id: 'typedoc',
+        icon: 'docs',
         kind: 'dependency',
         label: 'TypeDoc',
         reason: 'Turn TypeScript comments into searchable HTML documentation.',
@@ -202,7 +213,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Install the Argo skill bundle for Claude Code and Codex. Update the skill lock file.',
+    group: 'agent-skills',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
     id: 'argo-skill-bundle',
+    icon: 'argo-skills',
     kind: 'action',
     label: 'Argo agent skills',
     reason:
@@ -211,7 +225,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Add Bun and test filters to .rtk/filters.toml. Keep existing filters.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/blob/main/.rtk/filters.toml',
     id: 'rtk-filters',
+    icon: 'terminal',
     kind: 'action',
     label: 'RTK output filters',
     reason:
@@ -221,7 +238,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     accepted: true,
     effect:
       'Update biome.jsonc, package scripts, and CI so required quality checks fail the build.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-quality-gates',
     id: 'quality-gates',
+    icon: 'quality',
     kind: 'action',
     label: 'CI quality gates',
     reason:
@@ -230,7 +250,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Enable update_plan in the global Codex configuration. Codex must restart.',
+    group: 'harness-settings',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
     id: 'codex-todos',
+    icon: 'tasks',
     kind: 'action',
     label: 'Codex task checklist',
     reason: 'Show live progress while Codex works through a multi-step task.',
@@ -239,7 +262,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     accepted: true,
     effect:
       'Add task tracking, model choice, and writing rules to the Project’s agent instruction files.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-argo-skills/templates',
     id: 'agent-instructions',
+    icon: 'project-docs',
     kind: 'action',
     label: 'Project agent instructions',
     reason: 'Add task, model, and writing rules to AGENTS.md and each harness instruction file.',
@@ -248,7 +274,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
     accepted: true,
     effect:
       'Copy hooks.json and hooks/. Add a worktree rules document when needed, then generate the Claude Code and Codex hook files.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/blob/main/hooks.json',
     id: 'guardrail-hooks',
+    icon: 'guards',
     kind: 'action',
     label: 'Agent guard hooks',
     reason:
@@ -257,7 +286,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Install the selected engineering skills for Claude Code and Codex.',
+    group: 'agent-skills',
+    href: 'https://github.com/mattpocock/skills',
     id: 'matt-pocock',
+    icon: 'workflow',
     kind: 'action',
     label: 'Engineering workflow skills',
     reason:
@@ -267,7 +299,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Install writing-for-agents and simple-english for Claude Code and Codex.',
+    group: 'agent-skills',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
     id: 'writing-skills',
+    icon: 'writing',
     kind: 'dependency',
     label: 'Writing skills',
     reason:
@@ -276,7 +311,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Add interface-review to the Project’s required UI review process.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/interface-review',
     id: 'interface-review',
+    icon: 'interface-review',
     kind: 'action',
     label: 'UI review rules',
     reason:
@@ -285,7 +323,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: false,
     effect: 'Run a visual direction session and write docs/visual-direction.md.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/visual-exploration',
     id: 'visual-direction',
+    icon: 'visual-direction',
     kind: 'action',
     label: 'Visual direction file',
     reason:
@@ -294,7 +335,10 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect: 'Run audit-agent-docs last and fix the Project’s agent instruction files.',
+    group: 'project-files',
+    href: 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/audit-agent-docs',
     id: 'agent-doc-audit',
+    icon: 'audit',
     kind: 'action',
     label: 'Agent instruction audit',
     reason:

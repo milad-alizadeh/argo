@@ -35,6 +35,7 @@ import {
 import { type ReactNode, useId, useState } from 'react'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { type FileDiff, FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -829,51 +830,11 @@ function CommandFact({ label, value }: { label: string; value: string }) {
   )
 }
 
-function RepositorySummary({ recommendations }: { recommendations: PrototypeRecommendation[] }) {
-  const acceptedRecommendations = recommendations.filter(({ accepted }) => accepted)
-  return (
-    <SectionCard
-      className="prototype-repository-card"
-      icon={<Sparkles />}
-      title="The agent will add"
-    >
-      <div className="prototype-suggestions-area">
-        {acceptedRecommendations.map((recommendation) => (
-          <SuggestionFact key={recommendation.id} recommendation={recommendation} />
-        ))}
-      </div>
-    </SectionCard>
-  )
-}
-
-const RECOMMENDATION_LINKS: Record<string, string> = {
-  'agent-doc-audit':
-    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/audit-agent-docs',
-  'agent-instructions':
-    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-argo-skills/templates',
-  'argo-skill-bundle': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'codex-todos': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'guardrail-hooks': 'https://github.com/milad-alizadeh/argo/blob/main/hooks.json',
-  'interface-review':
-    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/interface-review',
-  'markdown-checks': 'https://github.com/DavidAnson/markdownlint-cli2',
-  'matt-pocock': 'https://github.com/mattpocock/skills',
-  playwright: 'https://playwright.dev/',
-  'quality-gates':
-    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-quality-gates',
-  'rtk-filters': 'https://github.com/milad-alizadeh/argo/blob/main/.rtk/filters.toml',
-  storybook: 'https://storybook.js.org/',
-  typedoc: 'https://typedoc.org/',
-  'visual-direction':
-    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/visual-exploration',
-  'writing-skills': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-}
-
 function RecommendationLink({ recommendation }: { recommendation: PrototypeRecommendation }) {
   return (
     <a
       className="prototype-recommendation-link"
-      href={RECOMMENDATION_LINKS[recommendation.id]}
+      href={recommendation.href}
       rel="noreferrer"
       target="_blank"
     >
@@ -888,26 +849,27 @@ const RECOMMENDATION_LOGOS: Record<string, string> = {
 }
 
 const RECOMMENDATION_ICONS: Record<string, ReactNode> = {
-  'agent-doc-audit': <SearchCheck aria-hidden="true" className="prototype-tool-logo" />,
-  'agent-instructions': <FileCog aria-hidden="true" className="prototype-tool-logo" />,
-  'argo-skill-bundle': <Sparkles aria-hidden="true" className="prototype-tool-logo" />,
-  'codex-todos': <ListChecks aria-hidden="true" className="prototype-tool-logo" />,
-  'guardrail-hooks': <ShieldCheck aria-hidden="true" className="prototype-tool-logo" />,
+  'argo-skills': <Sparkles aria-hidden="true" className="prototype-tool-logo" />,
+  audit: <SearchCheck aria-hidden="true" className="prototype-tool-logo" />,
+  docs: <FileJson aria-hidden="true" className="prototype-tool-logo" />,
+  guards: <ShieldCheck aria-hidden="true" className="prototype-tool-logo" />,
   'interface-review': <ScanEye aria-hidden="true" className="prototype-tool-logo" />,
-  'matt-pocock': <Workflow aria-hidden="true" className="prototype-tool-logo" />,
-  'quality-gates': <CheckCircle2 aria-hidden="true" className="prototype-tool-logo" />,
-  'rtk-filters': <TerminalSquare aria-hidden="true" className="prototype-tool-logo" />,
+  'project-docs': <FileCog aria-hidden="true" className="prototype-tool-logo" />,
+  quality: <CheckCircle2 aria-hidden="true" className="prototype-tool-logo" />,
+  tasks: <ListChecks aria-hidden="true" className="prototype-tool-logo" />,
+  terminal: <TerminalSquare aria-hidden="true" className="prototype-tool-logo" />,
   'visual-direction': <Palette aria-hidden="true" className="prototype-tool-logo" />,
-  'writing-skills': <PenLine aria-hidden="true" className="prototype-tool-logo" />,
+  workflow: <Workflow aria-hidden="true" className="prototype-tool-logo" />,
+  writing: <PenLine aria-hidden="true" className="prototype-tool-logo" />,
 }
 
 function RecommendationIcon({ recommendation }: { recommendation: PrototypeRecommendation }) {
-  const source = RECOMMENDATION_LOGOS[recommendation.id]
+  const source = RECOMMENDATION_LOGOS[recommendation.icon]
   if (source) {
     return <img alt="" aria-hidden="true" className="prototype-tool-logo" src={source} />
   }
   return (
-    RECOMMENDATION_ICONS[recommendation.id] ?? (
+    RECOMMENDATION_ICONS[recommendation.icon] ?? (
       <Wrench aria-hidden="true" className="prototype-tool-logo" />
     )
   )
@@ -928,7 +890,13 @@ function RecommendationDependencies({
   )
 }
 
-function SuggestionFact({ recommendation }: { recommendation: PrototypeRecommendation }) {
+function SuggestionFact({
+  detail = 'reason',
+  recommendation,
+}: {
+  detail?: 'effect' | 'reason'
+  recommendation: PrototypeRecommendation
+}) {
   return (
     <div className="prototype-suggestion">
       <div className="prototype-suggestion__title">
@@ -937,7 +905,7 @@ function SuggestionFact({ recommendation }: { recommendation: PrototypeRecommend
           <RecommendationLink recommendation={recommendation} />
         </strong>
       </div>
-      <p>{recommendation.reason}</p>
+      <p>{recommendation[detail]}</p>
       <RecommendationDependencies recommendation={recommendation} />
     </div>
   )
@@ -1147,32 +1115,58 @@ function RecommendationEditor({
 
 const REPOSITORY_RECOMMENDATION_GROUPS = [
   {
-    ids: [
-      'rtk-filters',
-      'quality-gates',
-      'agent-instructions',
-      'guardrail-hooks',
-      'interface-review',
-      'visual-direction',
-      'agent-doc-audit',
-    ],
+    id: 'project-files',
     icon: <FileCog />,
     subtitle: 'Writes or updates files in this Project.',
     title: 'Project file changes',
   },
   {
-    ids: ['argo-skill-bundle', 'matt-pocock', 'writing-skills'],
+    id: 'agent-skills',
     icon: <Library />,
     subtitle: 'Installs reusable skills for Claude Code and Codex.',
     title: 'Agent skills',
   },
   {
-    ids: ['codex-todos'],
+    id: 'harness-settings',
     icon: <Settings2 />,
     subtitle: 'Changes a global harness setting outside this Project.',
     title: 'Harness settings',
   },
 ] as const
+
+function RepositoryRecommendationSummary({
+  detail,
+  recommendations,
+}: {
+  detail: 'effect' | 'reason'
+  recommendations: PrototypeRecommendation[]
+}) {
+  return REPOSITORY_RECOMMENDATION_GROUPS.map((group) => {
+    const acceptedRecommendations = recommendations.filter(
+      (recommendation) => recommendation.accepted && recommendation.group === group.id,
+    )
+    if (!acceptedRecommendations.length) return null
+    return (
+      <SectionCard
+        className="prototype-repository-card"
+        icon={group.icon}
+        key={group.id}
+        subtitle={group.subtitle}
+        title={group.title}
+      >
+        <div className="prototype-suggestions-area">
+          {acceptedRecommendations.map((recommendation) => (
+            <SuggestionFact
+              detail={detail}
+              key={recommendation.id}
+              recommendation={recommendation}
+            />
+          ))}
+        </div>
+      </SectionCard>
+    )
+  })
+}
 
 function RepositoryRecommendationGroups({
   onToggle,
@@ -1186,8 +1180,8 @@ function RepositoryRecommendationGroups({
       icon={group.icon}
       key={group.title}
       onToggle={onToggle}
-      recommendations={group.ids.flatMap((id) =>
-        recommendations.filter((recommendation) => recommendation.id === id),
+      recommendations={recommendations.filter(
+        (recommendation) => recommendation.group === group.id,
       )}
       subtitle={group.subtitle}
       title={group.title}
@@ -1305,7 +1299,12 @@ function ReviewStage({ controller }: { controller: PrototypeController }) {
             </p>
           </div>
         ) : null}
-        {!manual ? <RepositorySummary recommendations={state.repositoryRecommendations} /> : null}
+        {!manual ? (
+          <RepositoryRecommendationSummary
+            detail="reason"
+            recommendations={state.repositoryRecommendations}
+          />
+        ) : null}
       </div>
       <div className="mt-6 flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-3">
         <p className="type-label text-muted-foreground">
@@ -1491,6 +1490,10 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
           </SectionCard>
         ))}
       </div>
+      <div className="mt-7 space-y-4">
+        <SubsectionHeader icon={<GitBranch />} title="Setup diff" />
+        <FileDiffList accessibleName="Files changed during setup" files={setupDiffFiles(state)} />
+      </div>
       <div className="mt-6 flex justify-center gap-2">
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
         <Button onClick={actions.reset} variant="outline">
@@ -1499,6 +1502,105 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
       </div>
     </>
   )
+}
+
+function setupDiffFiles(state: PrototypeController['state']): FileDiff[] {
+  const acceptedRepositoryIds = new Set(
+    state.repositoryRecommendations
+      .filter(({ accepted }) => accepted)
+      .map((recommendation) => recommendation.id),
+  )
+  const dependencies = state.targets.flatMap((target) =>
+    target.recommendations
+      .filter(({ accepted }) => accepted)
+      .flatMap(({ bundledDependencies = [] }) => bundledDependencies),
+  )
+  const files: FileDiff[] = [
+    {
+      path: '.argo/settings.json',
+      diff: setupSettingsDiff(state.targets),
+    },
+  ]
+  if (dependencies.length) files.push(packageDependenciesDiff(dependencies))
+  if (acceptedRepositoryIds.has('rtk-filters')) {
+    files.push({
+      path: '.rtk/filters.toml',
+      diff: '@@ -1,2 +1,5 @@\n [filters]\n bun = "errors-and-summary"\n+test = "failures-and-summary"\n+typecheck = "diagnostics"\n+build = "errors-and-summary"',
+    })
+  }
+  if (acceptedRepositoryIds.has('quality-gates')) {
+    files.push({
+      path: 'biome.jsonc',
+      diff: '@@ -8,3 +8,6 @@\n   "linter": {\n-    "enabled": false\n+    "enabled": true,\n+    "rules": {\n+      "recommended": true\n+    }\n   }',
+    })
+  }
+  if (
+    ['agent-instructions', 'interface-review', 'agent-doc-audit'].some((id) =>
+      acceptedRepositoryIds.has(id),
+    )
+  ) {
+    files.push({
+      path: 'AGENTS.md',
+      diff: '@@ -18,2 +18,6 @@\n ## Agent workflow\n+Track multi-step work with a live task list.\n+Choose a model for every delegated task.\n+Run interface review for UI changes.\n+Audit these instructions after setup.\n ',
+    })
+  }
+  if (acceptedRepositoryIds.has('guardrail-hooks')) {
+    files.push({
+      path: 'hooks.json',
+      diff: '@@ -0,0 +1,7 @@\n+{\n+  "worktreeGuard": {\n+    "dir": ".claude/worktrees",\n+    "branchPrefix": "project/"\n+  },\n+  "agents": ["claude-code", "codex"]\n+}',
+    })
+  }
+  if (
+    ['argo-skill-bundle', 'matt-pocock', 'writing-skills'].some((id) =>
+      acceptedRepositoryIds.has(id),
+    )
+  ) {
+    files.push({
+      path: 'skills-lock.json',
+      diff: '@@ -1,3 +1,8 @@\n {\n+  "argo-skills": "latest",\n+  "engineering-workflows": "latest",\n+  "simple-english": "latest",\n+  "writing-for-agents": "latest",\n   "version": 1\n }',
+    })
+  }
+  if (acceptedRepositoryIds.has('codex-todos')) {
+    files.push({
+      path: '~/.codex/config.toml',
+      diff: '@@ -1,2 +1,5 @@\n model = "default"\n+\n+[tools.update_plan]\n+enabled = true\n ',
+    })
+  }
+  return files
+}
+
+function setupSettingsDiff(targets: PrototypeTarget[]) {
+  const targetLines = targets.flatMap((target, index) => [
+    `+    "${target.id}": {`,
+    `+      "path": "${target.path}",`,
+    `+      "start": "${target.startCommand}"`,
+    `+    }${index === targets.length - 1 ? '' : ','}`,
+  ])
+  return [
+    '@@ -0,0 +1,12 @@',
+    '+{',
+    '+  "version": 1,',
+    '+  "targets": {',
+    ...targetLines,
+    '+  }',
+    '+}',
+  ].join('\n')
+}
+
+function packageDependenciesDiff(dependencies: string[]): FileDiff {
+  const uniqueDependencies = [...new Set(dependencies)]
+  return {
+    path: 'package.json',
+    diff: [
+      '@@ -12,3 +12,8 @@',
+      '   "devDependencies": {',
+      ...uniqueDependencies.map(
+        (dependency, index) =>
+          `+    "${dependency}": "latest"${index === uniqueDependencies.length - 1 ? '' : ','}`,
+      ),
+      '   }',
+    ].join('\n'),
+  }
 }
 
 function ManualCompleteStage({ controller }: { controller: PrototypeController }) {

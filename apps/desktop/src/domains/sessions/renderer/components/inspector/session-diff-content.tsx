@@ -2,10 +2,6 @@ import { FileText, GitCompareArrows } from 'lucide-react'
 import type { RefObject } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
 import {
-  diffLineDecoration,
-  diffLines,
-} from '@/domains/sessions/renderer/components/inspector/session-diff-lines'
-import {
   CodeBlock,
   CodeBlockActions,
   CodeBlockFilename,
@@ -13,6 +9,7 @@ import {
   CodeBlockTitle,
 } from '@/platform/renderer/components/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/platform/renderer/components/ai-elements/code-block-copy-button'
+import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
