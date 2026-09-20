@@ -34,16 +34,18 @@ import {
 import { readShellOutput } from './shell-output'
 import { readSubagentChain, readSubagentTokens } from './subagents'
 
-async function completeCompactions(
-  transcripts: string,
-  sessions: SessionRosterRow[],
-  complete: ((sessionId: string, completedAt: string) => void) | undefined,
-) {
+async function completeCompactions(options: {
+  transcripts: string
+  sessions: SessionRosterRow[]
+  complete: ((sessionId: string, completedAt: string) => void) | undefined
+  index: SessionIndex | undefined
+}) {
+  const { transcripts, sessions, complete, index } = options
   if (complete === undefined) return
   for (const session of sessions) {
     const startedAt = session.compactionStartedAt
     if (startedAt === null || startedAt === undefined) continue
-    const chain = await readSessionFiles(transcripts, session.id)
+    const chain = await readSessionFiles(transcripts, session.id, index)
     const endedAt = compactionEndedAt(chain, startedAt, Date.now())
     if (endedAt !== undefined) complete(session.id, endedAt)
   }
@@ -90,11 +92,18 @@ async function discoverClaudeSessions(
   roots: ClaudeSessionRoots,
   options: Parameters<SessionSource['discoverSessions']>[0],
 ) {
+  const readChain = (sessionId: string) =>
+    readSessionFiles(roots.transcripts, sessionId, roots.index)
   roots.completeHandoffs?.()
   const live = await readLiveState(roots.processes)
   const discovery = await discoverSessions(roots.transcripts, { ...options, index: roots.index })
   const managed = roots.managedSessions?.() ?? []
-  await completeCompactions(roots.transcripts, managed, roots.completeCompaction)
+  await completeCompactions({
+    transcripts: roots.transcripts,
+    sessions: managed,
+    complete: roots.completeCompaction,
+    index: roots.index,
+  })
   return discoverRoster({
     discovery,
     managed,
@@ -105,7 +114,7 @@ async function discoverClaudeSessions(
         (rows) =>
           markCompactingRows(rows, {
             folder: roots.compactionStarts,
-            readChain: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+            readChain,
             begin: roots.beginCompaction,
           }),
         (rows) => withHandoffEdges(rows, roots.handoffEdges),
@@ -119,10 +128,11 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
   const aliases = new Map<string, Map<string, string>>()
   const liveMessages = roots.liveMessages
   const index = roots.index
+  const readChain = (sessionId: string) => readSessionFiles(roots.transcripts, sessionId, index)
   return {
     harness: 'claude',
     discoverSessions: (options) => discoverClaudeSessions(roots, options),
-    readSessionFiles: (sessionId) => readSessionFiles(roots.transcripts, sessionId),
+    readSessionFiles: readChain,
     backfillTick:
       index === undefined
         ? undefined
@@ -133,16 +143,12 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) => {
-      const tail = await readShellOutput(
-        await readSessionFiles(roots.transcripts, sessionId),
-        shellId,
-      )
+      const tail = await readShellOutput(await readChain(sessionId), shellId)
       return tail === null ? { state: 'absent' } : { state: 'available', tail }
     },
     readSubagentFiles: async (sessionId, subagentId) =>
-      readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
-    readSubagentUsage: async (sessionId) =>
-      readSubagentTokens(await readSessionFiles(roots.transcripts, sessionId)),
+      readSubagentChain(await readChain(sessionId), subagentId),
+    readSubagentUsage: async (sessionId) => readSubagentTokens(await readChain(sessionId)),
     managedSessions: roots.managedSessions,
     isLockedElsewhere: roots.isLockedElsewhere,
     rename: roots.rename,

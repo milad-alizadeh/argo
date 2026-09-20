@@ -4,7 +4,6 @@ import {
   type SessionChain,
 } from '@/domains/sessions/contract/model/chains'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { currentSessionId } from '@/domains/sessions/contract/model/models'
 import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript'
 import {
   boundIndexedWindow,
@@ -18,12 +17,14 @@ import type {
   TranscriptPath,
 } from '@/domains/sessions/main/index/session-index/contract'
 import { createTitleLedger } from '@/domains/sessions/main/lifecycle/title-ledger'
+import { createChainReader } from '@/domains/sessions/main/observation/chain-reader'
 import {
   discoverSessionsWith,
   historyCompleteFor,
   resolveIdsAgainst,
   searchAgainst,
 } from '@/domains/sessions/main/observation/discover-transcript-window'
+import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/roster-page-size'
 import {
   createFileReader,
   createTranscriptParser,
@@ -35,13 +36,7 @@ import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
 import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
 
 export type { TranscriptPath }
-
-// How many transcript files one Roster pass reads, most recently written first, on a cold cursor.
-// A later request grows the window by the same step rather than reading the rest of the tree.
-// Measured on a real tree of 1,055 files holding 3.3 GB: streaming 50 of them costs about 0.4 s,
-// 200 about 1.6 s. The count is stated on the reply rather than hidden, so a Roster that did not
-// reach every file says so instead of reading as the whole machine.
-export const ROSTER_PAGE_SIZE = 50
+export { ROSTER_PAGE_SIZE }
 
 export type TranscriptDiscovery = {
   rows: SessionRosterRow[]
@@ -89,34 +84,6 @@ function metadataSourceOf(source: TranscriptDiscoverySource): TranscriptDiscover
 // history and the full-record tracker, while the index is the app's and is built later (#2372).
 export type TranscriptDiscoveryOptions = { cursor?: string | null; index?: SessionIndex }
 
-// A Session already known by id is found however far back it sits: the window grows by the same
-// step discovery pages by until the id resolves or every file has been read (#2239). Opening a
-// Session this way is a bounded, on-demand read of exactly as much history as that Session needed,
-// never the unconditional whole-tree read the Roster's own passes must not make.
-function createChainReader(parts: {
-  source: TranscriptDiscoverySource
-  summarise: ReturnType<typeof createTranscriptSummariser>
-  chains: ReturnType<typeof createChainCache>
-  tracker: ReturnType<typeof createFullRecordTracker>
-}) {
-  return async function readSessionFiles(root: string, sessionId: string) {
-    // Every chain id and retired id is some file's own id, so an id no file is named for resolves
-    // nowhere. A Session its Harness has not written yet is answered from the listing alone (#2356).
-    const named = await parts.source.transcriptPaths(root)
-    if (!named.some((file) => file.sessionId === sessionId)) return null
-    let windowSize = ROSTER_PAGE_SIZE
-    for (;;) {
-      const { found, files } = await parts.summarise(root, windowSize)
-      const chains = parts.chains(files)
-      const currentId = currentSessionId(chains, sessionId)
-      const chain = chains.find((candidate) => candidate.id === currentId)
-      if (chain !== undefined) return { ...chain, files: await parts.tracker.readChainFiles(chain) }
-      if (found.length <= windowSize) return null
-      windowSize += ROSTER_PAGE_SIZE
-    }
-  }
-}
-
 export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const tracker = createFullRecordTracker(source.parse, source.normalizeRecords)
   const metadataSource = metadataSourceOf(source)
@@ -150,7 +117,13 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
       options,
     )
 
-  const readSessionFiles = createChainReader({ source, summarise, chains: sessionChains, tracker })
+  const readSessionFiles = createChainReader({
+    source,
+    summarise,
+    chains: sessionChains,
+    tracker,
+    indexedWindowFor,
+  })
 
   // Background backfill and reconcile (#2373) share this same bound index's hydration, so a
   // resumed half never re-stitches against a history the window read has not filled.

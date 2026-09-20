@@ -46,11 +46,11 @@ function delegationActivity(kind: 'started' | 'completed') {
 async function completeTurnWithActiveDelegation(rollout: string) {
   await appendFile(
     rollout,
-    `${JSON.stringify({ timestamp: '2026-09-15T21:56:20.000Z', ...delegationActivity('started') })}\n`,
+    `${JSON.stringify({ timestamp: new Date().toISOString(), ...delegationActivity('started') })}\n`,
   )
   await appendFile(
     rollout,
-    `${JSON.stringify({ timestamp: '2026-09-15T21:56:21.000Z', type: 'event_msg', payload: TURN_ENDS.task_complete })}\n`,
+    `${JSON.stringify({ timestamp: new Date().toISOString(), type: 'event_msg', payload: TURN_ENDS.task_complete })}\n`,
   )
 }
 
@@ -105,12 +105,30 @@ test('locks a completed root Turn while its Codex delegation is active', async (
   ])
 })
 
+test('unlocks a completed root Turn when its Codex delegation has been silent for 31 minutes', async (context) => {
+  const { root, rollout } = await rolloutRoot(context)
+  await appendFile(
+    rollout,
+    `${JSON.stringify({
+      timestamp: new Date(Date.now() - 31 * 60 * 1000).toISOString(),
+      ...delegationActivity('started'),
+    })}\n`,
+  )
+  await appendFile(
+    rollout,
+    `${JSON.stringify({ timestamp: new Date().toISOString(), type: 'event_msg', payload: TURN_ENDS.task_complete })}\n`,
+  )
+  assert.deepEqual(await rows(readerFor(root)), [
+    { id: THREAD, posture: 'external', status: 'idle', locked: false },
+  ])
+})
+
 test('unlocks a completed root Turn after its Codex delegation completes', async (context) => {
   const { root, rollout } = await rolloutRoot(context)
   await completeTurnWithActiveDelegation(rollout)
   await appendFile(
     rollout,
-    `${JSON.stringify({ timestamp: '2026-09-15T21:56:22.000Z', ...delegationActivity('completed') })}\n`,
+    `${JSON.stringify({ timestamp: new Date().toISOString(), ...delegationActivity('completed') })}\n`,
   )
   assert.deepEqual(await rows(readerFor(root)), [
     { id: THREAD, posture: 'external', status: 'idle', locked: false },

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
@@ -6,6 +7,7 @@ import {
   newSessionTarget,
   useSessionCreationStore,
 } from '@/domains/sessions/renderer/session-creation'
+import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
 import type { Session, SessionId } from '@/domains/sessions/renderer/types'
 
 export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
@@ -19,6 +21,7 @@ export function useSidebarActions(options: {
 }) {
   const { projectPath, disconnectTicket: disconnect } = options
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const lastHarness = useComposerStore(({ harness }) => harness)
   const pending = useSessionCreationStore(({ pending }) => pending)
 
@@ -46,7 +49,7 @@ export function useSidebarActions(options: {
     }, []),
 
     select: useCallback(
-      (selectedSessionId: SessionId) => {
+      async (selectedSessionId: SessionId) => {
         // Picking a different row abandons an un-sent draft rather than leaving it a ghost row
         // nobody will ever send (#2109).
         if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
@@ -54,8 +57,12 @@ export function useSidebarActions(options: {
         }
         window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
         navigate(`/sessions/${selectedSessionId}`)
+        const reply = await window.argo.focusSessionUnread({ sessionId: selectedSessionId })
+        if (reply.type === 'session.unread.focused') {
+          await invalidateSessionRoster(queryClient)
+        }
       },
-      [navigate, pending],
+      [navigate, pending, queryClient],
     ),
 
     unlinkTicket: useCallback((session: Session) => void disconnect(session.id), [disconnect]),
