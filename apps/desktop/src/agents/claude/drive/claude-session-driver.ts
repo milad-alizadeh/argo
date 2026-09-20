@@ -1,3 +1,4 @@
+import { closeSessions } from '@/agents/claude/drive/claude-session-close'
 import {
   beginCompaction,
   clearCompaction,
@@ -45,22 +46,11 @@ export type ClaudeSessionDriver = {
     questionId: string,
     answers: QuestionAnswer[],
   ) => Promise<boolean>
-  close: () => void
+  close: () => Promise<void>
 }
 
 const INTERRUPT = '\u001b'
 type Sessions = Map<string, ManagedSession>
-
-function closeSessions(options: DriverOptions, sessions: Sessions) {
-  for (const [sessionId, session] of sessions) {
-    session.ended = true
-    session.process.kill?.()
-    session.close()
-    options.ledger.release(sessionId)
-  }
-  sessions.clear()
-  options.gate.close()
-}
 
 function startSession(
   options: DriverOptions,
@@ -155,7 +145,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       decideQuestion({ options, channel, sessions }, { sessionId, questionId, answers }),
     close() {
       channel.close()
-      closeSessions(options, sessions)
+      return closeSessions(options, sessions)
     },
   }
 }

@@ -62,8 +62,8 @@ export function createSystemClaudeSessionDriver(paths: {
   return {
     ...driver,
     handoffEdges: handoffLedger.edgesFor,
-    close() {
-      driver.close()
+    async close() {
+      await driver.close()
       display.close()
     },
   }

@@ -59,8 +59,11 @@ export function attachBridges(
   })
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, { access, rendererURL })
-  app.once('before-quit', () => {
-    drivers.claude.close()
-    drivers.codex.close()
+  // `once` removes this listener before it runs, so the `app.quit()` it triggers below proceeds
+  // straight to quitting rather than re-entering here (#2494: a killed PTY's exit lands
+  // asynchronously, and quitting before it does can abort the process).
+  app.once('before-quit', (event) => {
+    event.preventDefault()
+    void Promise.all([drivers.claude.close(), drivers.codex.close()]).then(() => app.quit())
   })
 }

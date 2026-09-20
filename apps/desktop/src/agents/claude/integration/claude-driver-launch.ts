@@ -4,13 +4,15 @@ import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
 import { createClaudeSessionDriver } from '@/agents/claude/drive/claude-session-driver.ts'
-import { CYCLE_MODE, REDRAW } from '@/agents/claude/drive/claude-setup.ts'
 import type { ResumeTarget } from '@/agents/claude/drive/drive-channel.ts'
 import { createHandoffLedger, type HandoffLedger } from '@/agents/claude/drive/handoff-ledger.ts'
 import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate.ts'
 import type { ClaudeTurnSetup } from '@/agents/claude/drive/turn-setup-contract'
+import { mockPermissionGate } from '@/agents/claude/integration/claude-permission-gate-mock.ts'
+import { FOOTERS, terminal } from '@/agents/claude/integration/claude-terminal-mock.ts'
 import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
 
+export { FOOTERS, mockPermissionGate }
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 
 type Spawned = {
@@ -23,8 +25,6 @@ type Spawned = {
 type Launch = { spawned: Spawned[]; exit: (index: number) => void }
 
 export const OPENING: ClaudeTurnSetup = { model: 'opus', effort: 'high', mode: 'manual' }
-// The Modes this mock offers, in the order Shift+Tab reaches them.
-export const FOOTERS = ['manual mode on', 'accept edits on', 'plan mode on', 'auto mode on']
 
 export async function ledgerFile(context: TestContext) {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-driver-'))
@@ -36,21 +36,6 @@ export async function handoffLedgerFile(context: TestContext) {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-handoffs-'))
   context.after(() => rm(folder, { recursive: true, force: true }))
   return path.join(folder, 'claude-session-handoffs.json')
-}
-
-// A gate that never raises a Permission, for a test with nothing to say about Permission behavior.
-// It still writes a real (inert) hook into the plugin, the way the real gate's `open` would.
-export function mockPermissionGate(): ClaudePermissionGate {
-  return {
-    open: () => ({
-      hook: { event: 'PreToolUse', file: 'permission-hook.sh', script: '' },
-      close: () => {},
-    }),
-    pending: () => null,
-    decide: () => false,
-    onChanged: () => () => {},
-    close: () => {},
-  }
 }
 
 // One Argo launch: a ledger for this window, and a spawn that records each process it opened. Each
@@ -70,6 +55,7 @@ export function launch(
     handoffLedger?: HandoffLedger
     readHandoffBrief?: (briefPath: string) => string | null
     handoffPatienceMs?: number
+    schedule?: (callback: () => void, milliseconds: number) => void
   } = {},
 ) {
   const spawned: Spawned[] = []
@@ -91,7 +77,7 @@ export function launch(
     findExecutable: options.findExecutable ?? (() => '/usr/local/bin/claude'),
     mintSessionId: options.mintSessionId ?? (() => 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'),
     now: options.now ?? (() => STARTED_AT),
-    schedule: (callback) => callback(),
+    schedule: options.schedule ?? ((callback) => callback()),
     ledger,
     resumeTarget:
       options.resumeTarget ?? (async () => ({ cwd: '/projects/argo', tipId: 'tip-session' })),
@@ -136,22 +122,6 @@ export function ownedBeforeRestart(file: string, sessionId: string) {
 export const PASTED = (text: string) => [`\u001b[200~${text}\u001b[201~`, '\r']
 
 export const settle = () => new Promise((resolve) => setImmediate(resolve))
-
-function terminal(writes: string[]) {
-  let listener: (data: string) => void = () => {}
-  let footer = 0
-  return {
-    write: (text: string) => {
-      writes.push(text)
-      if (text === CYCLE_MODE) footer = (footer + 1) % FOOTERS.length
-      if (text === REDRAW) listener(`\u001b[2J\u001b[38;5;246m⏵⏵ ${FOOTERS[footer]}\u001b[39m`)
-    },
-    onData: (next: (data: string) => void) => {
-      listener = next
-    },
-    paint: (data: string) => listener(data),
-  }
-}
 
 // A started Session whose opening Turn has gone out, with its writes cleared.
 export async function startedSession(

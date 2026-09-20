@@ -38,7 +38,7 @@ function mockClaudeDriver() {
       rename: async () => 'Renamed.',
       liveMessages: () => [],
       roster: () => [],
-      close: () => {},
+      close: async () => {},
     },
   }
 }
