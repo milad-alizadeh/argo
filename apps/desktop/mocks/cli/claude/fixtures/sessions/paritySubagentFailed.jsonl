@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"fail-r-1"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"fail-p","message":{"role":"user","content":"Review the Feed."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"fail-a-1","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"fail-agent","name":"Agent","input":{"description":"Review feed","subagent_type":"reviewer","prompt":"Review the Feed."}}]}}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:03.000Z","uuid":"fail-r-1","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"fail-agent","content":"Could not finish.","is_error":true}]}}

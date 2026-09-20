@@ -1,10 +1,12 @@
 // Joins Codex's collaboration calls to the `SubAgentActivity` events they cause. A spawn's model is
 // on the call and nowhere else, and `interrupt_agent` names its target by path or by name while its
 // activity records only the thread, so the fold reads both across the whole rollout.
+import { elapsedMilliseconds } from '@/domains/sessions/contract/duration'
 import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
 import { agentLabel } from './subagent-activity'
 
 type SubagentCall = NonNullable<Extract<TranscriptRecord, { kind: 'trace' }>['subagentCall']>
+type SubagentRecord = Extract<TranscriptRecord, { kind: 'subagent' }>
 type RawToolCall = { id: string; name: string; input: Record<string, unknown> }
 
 // The two collaboration calls whose arguments the Subagent events need: the model a spawn chose,
@@ -40,15 +42,33 @@ export function readingSubagentCalls(records: TranscriptRecord[]): TranscriptRec
     if (call?.intent === 'start' && call.model !== null) models.set(call.callId, call.model)
   }
   const threads = new Map<string, string>()
+  const startedAt = new Map<string, string | null>()
   return records.flatMap((record): TranscriptRecord[] => {
     if (record.kind === 'subagent') {
       if (record.name !== undefined) threads.set(record.name, record.subagentId)
-      const model = record.event === 'started' ? models.get(record.uuid) : undefined
-      return [model === undefined ? record : { ...record, model }]
+      if (record.event === 'started') startedAt.set(record.subagentId, record.timestamp)
+      return [subagentWithFacts(record, models, startedAt)]
     }
     const call = record.kind === 'trace' ? record.subagentCall : undefined
     return call?.intent === 'stop' ? [record, ...interrupted(call, threads)] : [record]
   })
+}
+
+function subagentWithFacts(
+  record: SubagentRecord,
+  models: ReadonlyMap<string, string>,
+  startedAt: ReadonlyMap<string, string | null>,
+): SubagentRecord {
+  const model = record.event === 'started' ? models.get(record.uuid) : undefined
+  const durationMs =
+    record.event === 'responded'
+      ? elapsedMilliseconds(startedAt.get(record.subagentId), record.timestamp)
+      : null
+  return {
+    ...record,
+    ...(model === undefined ? {} : { model }),
+    ...(durationMs === null ? {} : { durationMs }),
+  }
 }
 
 function interrupted(call: SubagentCall, threads: Map<string, string>): TranscriptRecord[] {

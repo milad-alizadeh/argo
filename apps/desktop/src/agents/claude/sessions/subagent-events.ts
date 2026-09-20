@@ -1,4 +1,5 @@
 // The lifecycle events a Claude Subagent call reads as, and the facts each carries.
+import { elapsedMilliseconds } from '@/domains/sessions/contract/duration'
 import type { SubagentControlFacts, SubagentEvent } from '@/domains/sessions/contract/transcript'
 
 // The first line of a reply, with the Markdown marks a reader would not want stripped.
@@ -34,12 +35,19 @@ export function started(
   }
 }
 
-export function responded(
-  call: SubagentControlFacts & { id: string },
-  timestamp: string | null,
-  ending: { state: 'completed' | 'failed' | 'interrupted'; reply: string | null },
-): SubagentEvent {
+export function responded({
+  call,
+  timestamp,
+  startedAt,
+  ending,
+}: {
+  call: SubagentControlFacts & { id: string }
+  timestamp: string | null
+  startedAt: string | null
+  ending: { state: 'completed' | 'failed' | 'interrupted'; reply: string | null }
+}): SubagentEvent {
   const line = ending.reply === null ? undefined : replyLine(ending.reply)
+  const durationMs = elapsedMilliseconds(startedAt, timestamp)
   return {
     kind: 'subagent',
     uuid: `${call.id}:responded`,
@@ -48,6 +56,7 @@ export function responded(
     event: 'responded',
     state: ending.state,
     ...facts(call),
+    ...(durationMs === null ? {} : { durationMs }),
     ...(ending.reply === null ? {} : { reply: ending.reply }),
     ...(line === undefined ? {} : { text: line }),
   }

@@ -34,11 +34,11 @@ export function subagentWorkState(subagent: SessionSubagent): WorkState {
   return subagent.state === 'completed' ? 'done' : subagent.state
 }
 
-export function readableDelegationName(name: string): string {
-  return name.replace(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase())
-}
-
-function elapsed(startedAt: string | null, endedAt: string | null, now: number): number | null {
+export function elapsedDuration(
+  startedAt: string | null,
+  endedAt: string | null,
+  now: number,
+): number | null {
   if (startedAt === null) return null
   const from = Date.parse(startedAt)
   if (Number.isNaN(from)) return null
@@ -52,7 +52,7 @@ export function workDuration(
   endedAt: string | null,
   now: number,
 ): string | null {
-  return durationText(elapsed(startedAt, endedAt, now))
+  return durationText(elapsedDuration(startedAt, endedAt, now))
 }
 
 export function durationText(span: number | null): string | null {

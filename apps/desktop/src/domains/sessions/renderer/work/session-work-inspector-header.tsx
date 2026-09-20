@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import {
-  readableDelegationName,
+  elapsedDuration,
   type SessionWork,
-  spentTokens,
   subagentWorkState,
-  workDuration,
 } from '@/domains/sessions/renderer/work/session-work'
+import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
 export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {
@@ -13,29 +12,34 @@ export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; n
   const currentTime = now ?? Date.now()
   if (work.kind === 'delegation') {
     const { delegation, usage } = work
+    const presentation = workPresentation(
+      {
+        kind: 'subagent',
+        id: delegation.id,
+        name: delegation.label,
+        state: subagentWorkState(delegation),
+        model: usage.model ?? null,
+        durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, currentTime),
+        tokens: usage.tokens ?? null,
+      },
+      t,
+    )
     return (
       <InspectorHeader
-        facts={[
-          t(`workState.${subagentWorkState(delegation)}`),
-          workDuration(delegation.startedAt, delegation.endedAt, currentTime),
-          spentTokens(usage.tokens, t),
-        ]}
-        title={delegation.label === null ? delegation.id : readableDelegationName(delegation.label)}
+        facts={[presentation.state, presentation.facts]}
+        title={presentation.title}
       />
     )
   }
 
   const { command } = work
+  const presentation = workPresentation({ kind: 'shell', ...command, now: currentTime }, t)
 
   return (
     <InspectorHeader
-      facts={[
-        t(`workState.${command.state}`),
-        workDuration(command.startedAt, command.endedAt, currentTime),
-        command.result,
-      ]}
+      facts={[presentation.state, presentation.facts]}
       monospace={command.label === null}
-      title={command.label ?? command.command ?? command.id}
+      title={presentation.title}
     />
   )
 }

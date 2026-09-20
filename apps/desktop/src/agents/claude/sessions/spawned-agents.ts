@@ -37,9 +37,14 @@ function responses(message: TranscriptMessage, agents: Agents): SubagentEvent[] 
     }
     agents.close(callId)
     return [
-      responded(call, message.timestamp, {
-        state: result?.failed === true ? 'failed' : 'completed',
-        reply: result === undefined ? null : resultText(result.blocks),
+      responded({
+        call,
+        timestamp: message.timestamp,
+        startedAt: agents.startedAt(callId),
+        ending: {
+          state: result?.failed === true ? 'failed' : 'completed',
+          reply: result === undefined ? null : resultText(result.blocks),
+        },
       }),
     ]
   })
@@ -52,7 +57,7 @@ export function readingSpawnedAgents(records: TranscriptRecord[]): TranscriptRec
     const spawns = record.toolCalls.filter(
       (call): call is Control => call.kind === 'subagent-control' && call.intent === 'start',
     )
-    for (const call of spawns) agents.spawn(call)
+    for (const call of spawns) agents.spawn(call, record.timestamp)
     const messages = record.toolCalls.filter(
       (call): call is Control => call.kind === 'subagent-control' && call.intent === 'message',
     )

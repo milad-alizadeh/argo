@@ -160,6 +160,7 @@ export const Interrupted: Story = {
   render: () => <FeedRow row={{ ...RESPONDED_ROW, state: 'interrupted', text: undefined }} />,
   play: async ({ canvasElement }) => {
     await readsTheName(canvasElement, 'Semantic compound verify')
+    await expect(within(canvasElement).getByText('Interrupted')).toBeVisible()
   },
 }
 

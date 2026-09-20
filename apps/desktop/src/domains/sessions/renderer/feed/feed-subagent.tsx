@@ -14,7 +14,9 @@ type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 // names how it ended.
 function phaseOf(row: SubagentRow): DelegationPhase {
   if (row.event !== 'responded') return 'running'
-  return row.state === 'completed' ? 'succeeded' : 'failed'
+  if (row.state === 'completed') return 'succeeded'
+  if (row.state === 'interrupted') return 'interrupted'
+  return 'failed'
 }
 
 function threadOf(row: SubagentRow): AgentThread {
