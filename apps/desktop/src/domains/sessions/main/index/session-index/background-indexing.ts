@@ -32,7 +32,7 @@ export function createBackgroundIndexing(
     batchSize: number,
   ): Promise<BackfillProgress> {
     const { pass, ensureHydrated } = indexedWindowFor(index)
-    const progress = await index.backfillProgress(source.cli)
+    const progress = await index.backfillProgress(source.harness)
     if (progress.complete) return progress
     await ensureHydrated()
     const result = await runBackfillBatch({
@@ -41,7 +41,7 @@ export function createBackgroundIndexing(
       progress,
       batchSize,
     })
-    await index.setBackfillProgress(source.cli, result.progress)
+    await index.setBackfillProgress(source.harness, result.progress)
     return result.progress
   }
 

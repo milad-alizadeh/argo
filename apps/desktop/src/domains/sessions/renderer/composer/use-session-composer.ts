@@ -20,7 +20,7 @@ import type { Failure } from '@/domains/sessions/renderer/composer/use-session-c
 import { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
@@ -29,7 +29,7 @@ import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 const NO_ROWS: SessionRosterRow[] = []
 
 type SessionComposerOptions = {
-  cli: SessionCli
+  harness: SessionHarness
   cockpit: Cockpit
   focusOnMount: boolean
   navigate: NavigateFunction
@@ -49,10 +49,10 @@ type ComposerResult = {
 // The facts the setup pane, the mutations, and the Turn Marker all need before they can be wired:
 // who is selected, and the harness setup control that goes with them.
 function useComposerFacts(
-  options: Pick<SessionComposerOptions, 'cli' | 'cockpit' | 'roster' | 'selectedSessionId'>,
+  options: Pick<SessionComposerOptions, 'harness' | 'cockpit' | 'roster' | 'selectedSessionId'>,
   setFailure: (failure: Failure | null) => void,
 ) {
-  const { cli, cockpit, roster, selectedSessionId } = options
+  const { harness, cockpit, roster, selectedSessionId } = options
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
@@ -63,8 +63,8 @@ function useComposerFacts(
   )
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const { control, watchTurn } = useTurnSetup({
-    cli,
-    choices: HARNESSES[cli].setup,
+    harness,
+    choices: HARNESSES[harness].setup,
     identity,
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
@@ -83,15 +83,15 @@ function useComposerFacts(
 }
 
 export function useSessionComposer(options: SessionComposerOptions): ComposerResult {
-  const { cli, cockpit, focusOnMount, navigate, roster, selectedSessionId } = options
+  const { harness, cockpit, focusOnMount, navigate, roster, selectedSessionId } = options
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
   const setDraft = useComposerStore((state) => state.setDraft)
   const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
-    useComposerFacts({ cli, cockpit, roster, selectedSessionId }, setFailure)
+    useComposerFacts({ harness, cockpit, roster, selectedSessionId }, setFailure)
   const { isHandingOff, onCompact, onHandoff, onInterrupt, ...marks } = useComposerActions({
-    cli,
+    harness,
     identity,
     mutations,
     marker,
@@ -102,7 +102,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
     queryClient,
   })
   const onSend = composerSend({
-    cli,
+    harness,
     cockpit,
     identity,
     marker,

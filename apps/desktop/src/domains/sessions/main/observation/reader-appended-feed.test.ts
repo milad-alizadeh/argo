@@ -1,8 +1,7 @@
 // The reader keeps what it parsed of a transcript and reads only the bytes after it (#2127). These
-// cases hold the Feed to the file's whole content whatever the CLI did to it between two reads.
+// cases hold the Feed to the file's whole content whatever the Harness did to it between two reads.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   appendCodexTranscript,
@@ -12,6 +11,7 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'appended'
 
@@ -37,7 +37,7 @@ function texts(rows: { shape: string; text?: string | null }[]) {
   return rows.map((row) => (row.shape === 'prose' ? row.text : row.shape))
 }
 
-test('draws the records a CLI appends after the Feed was read', async (context) => {
+test('draws the records a Harness appends after the Feed was read', async (context) => {
   const { root, next } = await openedFeed(context, 'First.')
 
   await appendCodexTranscript(line(root, 'Second.'))
@@ -74,7 +74,7 @@ test('reads a transcript cut shorter from its start', async (context) => {
   assert.deepEqual(texts(await next()), ['Only.'])
 })
 
-test('still draws a whole line the CLI wrote that is not a record', async (context) => {
+test('still draws a whole line the Harness wrote that is not a record', async (context) => {
   const { root, next } = await openedFeed(context, 'First.')
 
   await appendGarbledCodexLine({ root, sessionId: SESSION })

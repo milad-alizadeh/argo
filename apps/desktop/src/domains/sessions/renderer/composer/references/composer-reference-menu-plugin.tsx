@@ -15,7 +15,7 @@ import {
   referenceMenu,
   referenceMenuKey,
 } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 function replaceActiveReference(editor: LexicalEditor, source: string) {
   editor.update(() => {
@@ -54,11 +54,11 @@ function useReferenceChoices(draft: string, editor: LexicalEditor) {
 }
 
 export function ComposerReferenceMenuPlugin({
-  cli = null,
+  harness = null,
   disabled = false,
   draft,
 }: {
-  cli?: SessionCli | null
+  harness?: SessionHarness | null
   disabled?: boolean
   draft: string
 }) {
@@ -93,7 +93,7 @@ export function ComposerReferenceMenuPlugin({
   return (
     <ComposerReferenceMenu
       choices={menu.choices}
-      cli={cli}
+      harness={harness}
       onChoose={menu.choose}
       selected={menu.selected}
     />

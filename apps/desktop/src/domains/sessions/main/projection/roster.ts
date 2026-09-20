@@ -50,7 +50,7 @@ export function chainBackgroundTasks(chain: SessionChain): BackgroundTask[] {
 }
 
 // The reader's title outranks the summariser's whichever order they arrive in, and Argo's own
-// derived name stands only where the CLI holds none.
+// derived name stands only where the Harness holds none.
 function readTitle(chain: SessionChain): SessionTitle | null {
   const titles = chain.files.flatMap((file) =>
     file.records.filter((record) => record.kind === 'title'),
@@ -93,7 +93,7 @@ function readChainEntry(messages: TranscriptMessage[]): SessionEntry {
 
 // The newest link wins: a Session that opened a second pull request is working on that one now.
 // Only a Claude transcript carries a `pull-request` record today; a chain that never does simply
-// reads no pull request, which is the correct answer for every other CLI too.
+// reads no pull request, which is the correct answer for every other Harness too.
 function readPullRequest(chain: SessionChain) {
   const links = chain.files.flatMap((file) =>
     file.records.filter((record) => record.kind === 'pull-request'),
@@ -137,7 +137,7 @@ function readContextWindowTokens(chain: SessionChain) {
   )
 }
 
-export function projectRosterRow(chain: SessionChain, cli: string): RosterRow {
+export function projectRosterRow(chain: SessionChain, harness: string): RosterRow {
   const messages = chainMessages(chain)
   const records = chain.files.flatMap((file) => file.records)
   const notifications = chainBackgroundTasks(chain)
@@ -146,7 +146,7 @@ export function projectRosterRow(chain: SessionChain, cli: string): RosterRow {
   )
   return observedRosterRow({
     chain,
-    cli,
+    harness,
     messages,
     notifications,
     title: readTitle(chain),

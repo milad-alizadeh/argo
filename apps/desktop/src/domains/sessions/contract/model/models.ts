@@ -85,7 +85,7 @@ export const sessionActivitySchema = liveActivitySchema.extend({
 })
 export type SessionActivity = z.infer<typeof sessionActivitySchema>
 
-// The newest pull request the CLI linked this Session to, as its own `pr-link` record states it.
+// The newest pull request the Harness linked this Session to, as its own `pr-link` record states it.
 // Its state (open, merged, closed, draft) is the code host's fact (CONTEXT.md L4 · Delivery), and
 // no transcript holds it.
 export const sessionPullRequestSchema = z.strictObject({
@@ -117,7 +117,7 @@ export type ShellState = z.infer<typeof shellStateSchema>
 
 // A shell command the Session ran: the first line of what it was asked to run, whether it was
 // sent to the background, and where it stands. `command` is absent where the call carries none.
-// A background command also names the file the CLI streams its output to, and the sentence the
+// A background command also names the file the Harness streams its output to, and the sentence the
 // notification ended it with.
 export const sessionShellCommandSchema = z.strictObject({
   id: identifierSchema,

@@ -28,7 +28,7 @@ import {
 } from '@/domains/sessions/contract/ipc/contract'
 import { SESSION_READ_OPERATIONS } from '@/domains/sessions/contract/ipc/read-operations'
 
-// One drive table for every CLI (#2030): `start` names its CLI, and the rest carry only a
+// One drive table for every Harness (#2030): `start` names its Harness, and the rest carry only a
 // sessionId, routed by the Session's owner.
 export const SESSION_OPERATIONS = {
   list: {

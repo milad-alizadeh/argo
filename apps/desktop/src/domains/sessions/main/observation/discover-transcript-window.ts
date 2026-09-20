@@ -36,8 +36,8 @@ export function resolveIdsAgainst(
   return resolveIndexedIds(indexedWindowFor(index), index, ids)
 }
 
-export async function historyCompleteFor(cli: string, index: SessionIndex): Promise<boolean> {
-  return (await index.backfillProgress(cli)).complete
+export async function historyCompleteFor(harness: string, index: SessionIndex): Promise<boolean> {
+  return (await index.backfillProgress(harness)).complete
 }
 
 // Every chain the index's title, id, and retired-id columns match, presented the same way a
@@ -45,12 +45,12 @@ export async function historyCompleteFor(cli: string, index: SessionIndex): Prom
 // covers whatever history background backfill has already reached rather than the loaded window.
 export async function searchAgainst(options: {
   index: SessionIndex
-  cli: string
+  harness: string
   query: string
   presented: (rows: SessionRosterRow[]) => SessionRosterRow[]
 }): Promise<SessionRosterRow[]> {
-  const { index, cli, query, presented } = options
-  return presented(await index.searchChains(cli, query))
+  const { index, harness, query, presented } = options
+  return presented(await index.searchChains(harness, query))
 }
 
 export async function discoverSessionsWith(
@@ -74,7 +74,7 @@ export async function discoverSessionsWith(
         root,
         windowSize,
         index,
-        cli: source.cli,
+        harness: source.harness,
         indexedWindowFor,
         presented,
       })

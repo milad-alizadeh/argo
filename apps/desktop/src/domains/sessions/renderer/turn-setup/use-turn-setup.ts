@@ -44,13 +44,13 @@ function persistRemembered(remembered: Remembered) {
 }
 
 export function useTurnSetup({
-  cli,
+  harness,
   choices,
   identity,
   rows,
   onRefusal,
 }: {
-  cli: string
+  harness: string
   choices: TurnSetupChoices | null
   identity: ComposerIdentity
   rows: SessionRosterRow[]
@@ -68,10 +68,10 @@ export function useTurnSetup({
       chooseSetup(key, setup)
       setRemembered((current) => ({
         ...current,
-        [cli]: { model: setup.model, effort: setup.effort },
+        [harness]: { model: setup.model, effort: setup.effort },
       }))
     },
-    [chooseSetup, cli],
+    [chooseSetup, harness],
   )
 
   const watchTurn = useCallback(
@@ -105,7 +105,7 @@ export function useTurnSetup({
     identity,
     rows,
     remembered,
-    cli,
+    harness,
     choose,
   })
   return { control, watchTurn }
@@ -117,7 +117,7 @@ function useComposerControl({
   identity,
   rows,
   remembered,
-  cli,
+  harness,
   choose,
 }: {
   choices: TurnSetupChoices | null
@@ -125,7 +125,7 @@ function useComposerControl({
   identity: ComposerIdentity
   rows: SessionRosterRow[]
   remembered: Remembered
-  cli: string
+  harness: string
   choose: (key: string, setup: TurnSetup) => void
 }): TurnSetupControlProps | null {
   const onChange = useCallback(
@@ -137,7 +137,7 @@ function useComposerControl({
     identity,
     chosen,
     rows,
-    remembered: remembered[cli] ?? {},
+    remembered: remembered[harness] ?? {},
   })
   return { choices, value, onChange }
 }

@@ -6,7 +6,7 @@ import type { WatchTopic } from '@/platform/shared/watch'
 // topic; the roster and the Feed are the first callers, and each reads itself again.
 //
 // This is what replaces polling: the roster used to re-read every transcript file twice a second to
-// notice a Session a CLI had written outside Argo, and only while a Session was selected.
+// notice a Session a Harness had written outside Argo, and only while a Session was selected.
 export function useWatchedTopic(topic: WatchTopic, onChanged: () => void) {
   // The latest callback is read through a ref, so a caller passing an inline closure does not
   // resubscribe on every render.

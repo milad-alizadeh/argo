@@ -21,7 +21,7 @@ test('a Send against an already-pending row reuses it instead of beginning a sec
   expect(useSessionCreationStore.getState().pending).toEqual({
     stage: 'reconciling',
     id: 'session-new',
-    cli: 'claude',
+    harness: 'claude',
     cwd: PROJECT.path,
     prompt: 'hello',
   })

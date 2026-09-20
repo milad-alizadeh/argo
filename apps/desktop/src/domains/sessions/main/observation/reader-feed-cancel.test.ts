@@ -2,8 +2,6 @@
 // file-length gate.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   appendCodexTranscript,
@@ -12,6 +10,8 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 // Switching away from a stalled Session (#2102) sends this instead of letting the settle loop
 // run to its bound with nothing left to draw the answer.

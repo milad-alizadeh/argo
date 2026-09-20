@@ -3,8 +3,6 @@
 import assert from 'node:assert/strict'
 import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
@@ -17,8 +15,10 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
-test('answers with the first error when every CLI folder is missing', async (context) => {
+test('answers with the first error when every Harness folder is missing', async (context) => {
   const root = await tempRoot(context)
   const reader = createSessionReader([
     claudeSessionSource({ transcripts: `${root}/claude-absent` }),
@@ -87,7 +87,7 @@ test('reads a Session’s Feed as unchanged, and with a new revision once it gro
   )
 })
 
-// The settle loop's bound (SETTLING_READS, feed-cache.ts) exists so a transcript an external CLI
+// The settle loop's bound (SETTLING_READS, feed-cache.ts) exists so a transcript an external Harness
 // never stops writing still answers instead of holding the reply open forever (#2095, #2102).
 test('settles late on a transcript that never stops changing, instead of never answering', async (context) => {
   const claudeRoot = await tempRoot(context)
@@ -124,7 +124,7 @@ test('settles late on a transcript that never stops changing, instead of never a
   assert.equal(reply.type, 'session.feed.read')
 })
 
-test('says a Session is missing when no CLI can find it', async (context) => {
+test('says a Session is missing when no Harness can find it', async (context) => {
   const claudeRoot = await tempRoot(context)
   const codexRoot = await tempRoot(context)
   const reader = createSessionReader([

@@ -1,9 +1,9 @@
 // How long a Send takes to put the typed prompt on screen, for a new Session and an existing one (#2430).
-// A slow CLI holds every reply back, so only the renderer's own optimistic draw can show the prompt.
+// A slow Harness holds every reply back, so only the renderer's own optimistic draw can show the prompt.
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
 import { chooseHarness, openNewSessionByClick } from '../gestures'
-import type { SessionCliBackend } from '../session-cli-backend'
+import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const NEW_PROMPT = 'Say hello to a brand new Session.'
 const EXISTING_PROMPT = 'Say hello again to this same Session.'
@@ -62,17 +62,17 @@ async function sendWatched(page: Page, prompt: string) {
   })
 }
 
-export async function provePromptLatency(page: Page, backend: SessionCliBackend) {
+export async function provePromptLatency(page: Page, backend: SessionHarnessBackend) {
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
   const created = await sendWatched(page, NEW_PROMPT)
   // The header names the Session by its prompt, never by its temporary id.
   const header = page.getByRole('heading', { level: 1 })
   assert.doesNotMatch((await header.textContent()) ?? '', /optimistic:/)
-  await backend.waitForReply(page, { cli: 'claude', prompt: NEW_PROMPT })
+  await backend.waitForReply(page, { harness: 'claude', prompt: NEW_PROMPT })
 
   const existing = await sendWatched(page, EXISTING_PROMPT)
-  await backend.waitForReply(page, { cli: 'claude', prompt: EXISTING_PROMPT })
+  await backend.waitForReply(page, { harness: 'claude', prompt: EXISTING_PROMPT })
 
   console.log(
     `[prompt-latency] new=${created.shownMs.toFixed(1)}ms existing=${existing.shownMs.toFixed(1)}ms`,

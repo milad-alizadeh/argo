@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-// One Subagent the CLI started and has not answered draws one `started` row, in the Feed's column.
+// One Subagent the Harness started and has not answered draws one `started` row, in the Feed's column.
 export async function proveDelegationCards(page) {
   await page.evaluate(() => {
     window.location.hash = '#/sessions/subagentTail'

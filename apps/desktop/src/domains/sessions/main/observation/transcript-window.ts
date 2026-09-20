@@ -15,7 +15,7 @@ import type {
 import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
 
 export type TranscriptDiscoverySource = {
-  cli: string
+  harness: string
   transcriptPaths: (root: string) => Promise<TranscriptPath[]>
   parse: TranscriptParser
   normalizeRecords?: (records: TranscriptRecord[]) => TranscriptRecord[]

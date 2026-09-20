@@ -1,4 +1,4 @@
-// The terminal half of the #2111 repro: one process appending to a transcript, the way a CLI
+// The terminal half of the #2111 repro: one process appending to a transcript, the way a Harness
 // running outside Argo writes one. It must be its own process — an appender sharing the reader's
 // event loop is starved by the very parse the repro measures, and the stall then never appears.
 import { appendFileSync } from 'node:fs'

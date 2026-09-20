@@ -1,5 +1,5 @@
 // The shared discovery engine's bounded window and cursor (#2239), proven against a minimal mock
-// CLI rather than either real adapter.
+// Harness rather than either real adapter.
 import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
@@ -102,7 +102,7 @@ test('answers a Session no transcript is named for without reading a transcript'
   assert.equal(read.length, 0)
 })
 
-// A CLI can append a Turn inside one mtime tick, and on a coarse-timestamp filesystem the file
+// A Harness can append a Turn inside one mtime tick, and on a coarse-timestamp filesystem the file
 // then reads as untouched. The Roster must still follow it (#2241).
 test('follows a transcript appended to without its mtime moving', async (context) => {
   const root = await mockRoot(context)

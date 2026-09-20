@@ -27,6 +27,7 @@ import {
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
+import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import {
   type AttachmentsStore,
   chooseAttachments,
@@ -43,7 +44,6 @@ import {
   sendSession,
   startSession,
 } from '@/domains/sessions/main/drive/drive'
-import type { SessionDriveAdapters } from '@/domains/sessions/main/drive/session-drive-adapter'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
@@ -61,7 +61,7 @@ export type SessionReader = {
   renameSession(request: SessionRenameRequest): Promise<SessionRenameReply>
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
-  ownerCliFor(sessionId: string): Promise<string | undefined>
+  ownerHarnessFor(sessionId: string): Promise<string | undefined>
   // A selected Feed still reading, so background indexing (#2373) can pause rather than race it.
   isFeedReadActive(): boolean
 }
@@ -85,7 +85,7 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
 }
 
 function ownerContext(context: SessionContext): OwnerContext {
-  return { adapters: context.adapters, ownerCliFor: context.reader.ownerCliFor }
+  return { adapters: context.adapters, ownerHarnessFor: context.reader.ownerHarnessFor }
 }
 
 // The same renderer authority the Project bridge asserts: the main frame of this window, on the

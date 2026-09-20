@@ -1,10 +1,9 @@
-// Reading the Feed of a Session its CLI is still writing (#2095). The reader used to wait for two
-// stat readings of the transcript to agree before it kept a chain, and a live CLI never gives it
+// Reading the Feed of a Session its Harness is still writing (#2095). The reader used to wait for two
+// stat readings of the transcript to agree before it kept a chain, and a live Harness never gives it
 // two that agree, so the read never returned and re-parsed the whole growing file until the heap
 // was gone.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   appendCodexTranscript,
@@ -15,11 +14,12 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'still-writing'
 const READ_BUDGET_MS = 2_000
 
-// The CLI writes another record every time the reader opens the transcript, so no two stat
+// The Harness writes another record every time the reader opens the transcript, so no two stat
 // readings of it ever agree. This is what a streaming reply does to a poll that races it.
 function sourceWrittenDuringEveryRead(root: string, writing: () => boolean) {
   const source = codexSessionSource(root)
@@ -54,7 +54,7 @@ async function liveReader(context: Parameters<typeof tempRoot>[0], writing: () =
   return createSessionReader([sourceWrittenDuringEveryRead(await liveRoot(context), writing)])
 }
 
-test('reads the Feed of a Session its CLI is still writing rather than spinning on it', async (context) => {
+test('reads the Feed of a Session its Harness is still writing rather than spinning on it', async (context) => {
   const reader = await liveReader(context, () => true)
 
   const gaveUp = Symbol('gave up')
@@ -72,8 +72,8 @@ test('reads the Feed of a Session its CLI is still writing rather than spinning 
 })
 
 // The read that raced the writer is stamped as of before it, so what it missed is not cached as
-// the whole Feed: the poll after the CLI goes quiet reads the transcript again.
-test('reads the Feed again once the CLI that was writing it stops', async (context) => {
+// the whole Feed: the poll after the Harness goes quiet reads the transcript again.
+test('reads the Feed again once the Harness that was writing it stops', async (context) => {
   let writing = true
   const reader = await liveReader(context, () => writing)
 
@@ -89,8 +89,8 @@ test('reads the Feed again once the CLI that was writing it stops', async (conte
   assert.notEqual(settled.revision, raced.revision)
 })
 
-// A read taken while the CLI writes can catch the last record half written. A last line with no
-// newline is not yet a record, so it draws nothing until the CLI finishes it (#2127).
+// A read taken while the Harness writes can catch the last record half written. A last line with no
+// newline is not yet a record, so it draws nothing until the Harness finishes it (#2127).
 test('draws nothing for a half-written last record, and the record once it is whole', async (context) => {
   const root = await liveRoot(context)
   const record = {
@@ -117,7 +117,7 @@ test('draws nothing for a half-written last record, and the record once it is wh
   )
 })
 
-// A streaming CLI finishes one record and starts the next between any two reads, so every read
+// A streaming Harness finishes one record and starts the next between any two reads, so every read
 // past the settle bound ends on a torn line. None of them draws it.
 function sourceTornDuringEveryRead(root: string) {
   const source = codexSessionSource(root)

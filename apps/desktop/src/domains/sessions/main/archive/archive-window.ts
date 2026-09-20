@@ -34,7 +34,7 @@ export type SessionWindow = {
 // reset its window to the first page. So an exhausted adapter keeps the window it already holds.
 function grownWindows(windows: RosterCursorMap, next: RosterCursorMap): RosterCursorMap {
   return Object.fromEntries(
-    Object.entries(next).map(([cli, cursor]) => [cli, cursor ?? windows[cli] ?? null]),
+    Object.entries(next).map(([harness, cursor]) => [harness, cursor ?? windows[harness] ?? null]),
   )
 }
 
@@ -42,13 +42,13 @@ async function readWindow(sources: readonly SessionSource[], windows: RosterCurs
   const discovered: Discovered[] = await Promise.all(
     sources.map((source) =>
       source
-        .discoverSessions({ cursor: windows[source.cli] ?? null, projectRoot: null })
+        .discoverSessions({ cursor: windows[source.harness] ?? null, projectRoot: null })
         .catch((error: unknown) => ({ error: sessionError(readFailure(error), WINDOW_READ) })),
     ),
   )
   // The Roster's own merge, so the archive page holds the rows in the order the active list
   // holds them and reads one cursor per adapter the same way (#2025, #2239).
-  const merged = combineDiscoveries(discovered, Object.values(sources).map(cliOf), WINDOW_READ)
+  const merged = combineDiscoveries(discovered, Object.values(sources).map(harnessOf), WINDOW_READ)
   const listed = merged.type === 'session.listed' ? merged : null
   const window: SessionWindow = {
     rows: listed?.sessions ?? [],
@@ -58,8 +58,8 @@ async function readWindow(sources: readonly SessionSource[], windows: RosterCurs
   return { window, next: grownWindows(windows, decodeRosterCursor(listed?.nextCursor ?? null)) }
 }
 
-function cliOf(source: SessionSource) {
-  return source.cli
+function harnessOf(source: SessionSource) {
+  return source.harness
 }
 
 // Reads the window `windows` names, then grows it a page at a time until `satisfied` says the

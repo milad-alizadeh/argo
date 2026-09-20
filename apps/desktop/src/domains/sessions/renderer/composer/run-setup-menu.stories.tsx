@@ -2,27 +2,27 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import { RunSetupMenu } from '@/domains/sessions/renderer/composer/run-setup-menu'
-import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
-  const [cli, setCli] = useState<SessionCli>('claude')
+  const [harness, setHarness] = useState<SessionHarness>('claude')
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
-  const choices = HARNESSES[cli].setup
-  const chooseHarness = (nextCli: SessionCli) => {
-    setCli(nextCli)
-    const nextSetup = HARNESSES[nextCli].setup
+  const choices = HARNESSES[harness].setup
+  const chooseHarness = (nextHarness: SessionHarness) => {
+    setHarness(nextHarness)
+    const nextSetup = HARNESSES[nextHarness].setup
     if (nextSetup !== null) setSetup(nextSetup.opening)
   }
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
-        harness={started ? { cli } : { cli, onChange: chooseHarness }}
+        harness={started ? { harness } : { harness, onChange: chooseHarness }}
         setup={choices ? { choices, value: setup, onChange: setSetup } : null}
       />
       <output hidden data-testid="chosen-setup">
-        {`${cli} ${setup.model} ${setup.effort}`}
+        {`${harness} ${setup.model} ${setup.effort}`}
       </output>
     </div>
   )

@@ -95,7 +95,7 @@ export async function exitFiresExactlyOnce(cwd: string): Promise<void> {
 }
 
 // Killing the PTY has to take the process with it. A survivor is an orphan holding a descriptor
-// and, in the cockpit, a Session that reads as ended while its CLI is still running.
+// and, in the cockpit, a Session that reads as ended while its Harness is still running.
 export async function killLeavesNoOrphan(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, ['-c', 'sleep 30'], cwd)
   const { pid } = session.child

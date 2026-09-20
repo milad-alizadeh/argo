@@ -1,6 +1,10 @@
 import { Hand, ShieldAlert, ShieldCheck } from 'lucide-react'
 
-import { CODEX_EFFORTS, CODEX_MODELS, codexEfforts } from '@/agents/codex/drive/turn-setup-contract'
+import {
+  CODEX_EFFORTS,
+  CODEX_MODELS,
+  codexEfforts,
+} from '@/domains/sessions/contract/codex-turn-setup'
 import type {
   ModeChoice,
   TurnSetupChoices,

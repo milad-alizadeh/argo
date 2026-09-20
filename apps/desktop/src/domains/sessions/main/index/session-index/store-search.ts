@@ -23,21 +23,23 @@ function excerptOf(text: string, query: string): string | null {
 
 export function searchChainsOf(
   database: DatabaseSync,
-  cli: string,
+  harness: string,
   query: string,
 ): SessionRosterRow[] {
   const titleOrId = database
-    .prepare('SELECT chain_id, row_json FROM session_chain WHERE cli = ? ORDER BY updated_at DESC')
-    .all(cli) as { chain_id: string; row_json: string }[]
+    .prepare(
+      'SELECT chain_id, row_json FROM session_chain WHERE harness = ? ORDER BY updated_at DESC',
+    )
+    .all(harness) as { chain_id: string; row_json: string }[]
   const content = plainTextQuery(query)
   const contentMatches =
     content === ''
       ? []
       : (database
           .prepare(
-            'SELECT chain_id, text FROM session_search WHERE cli = ? AND session_search MATCH ?',
+            'SELECT chain_id, text FROM session_search WHERE harness = ? AND session_search MATCH ?',
           )
-          .all(cli, content) as { chain_id: string; text: string }[])
+          .all(harness, content) as { chain_id: string; text: string }[])
   const excerpts = new Map(
     contentMatches.map((match) => [match.chain_id, excerptOf(match.text, query)]),
   )

@@ -4,7 +4,7 @@ import type { BackgroundTask } from '@/domains/sessions/contract/observation/sig
 
 export type RosterRowContext = {
   chain: SessionChain
-  cli: string
+  harness: string
   messages: TranscriptMessage[]
   notifications: BackgroundTask[]
   title: { text: string; source: 'custom' | 'summarised' | 'first-prompt' } | null

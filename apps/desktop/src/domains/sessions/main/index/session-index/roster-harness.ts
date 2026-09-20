@@ -56,7 +56,7 @@ export function rosterHarness() {
     },
     reopen: async (adapter: IndexedAdapter, root: string) => readerAt(adapter, root),
     listing: async (adapter: IndexedAdapter) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.cli}-`))
+      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.harness}-`))
       opened.push(() => rm(root, { recursive: true, force: true }))
       return readerAt(adapter, root)
     },
@@ -64,7 +64,7 @@ export function rosterHarness() {
       adapter: IndexedAdapter,
       indexFor: (databasePath: string) => SessionIndex,
     ) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.cli}-`))
+      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.harness}-`))
       opened.push(() => rm(root, { recursive: true, force: true }))
       const databasePath = path.join(root, 'sessions.db')
       const index = indexFor(databasePath)

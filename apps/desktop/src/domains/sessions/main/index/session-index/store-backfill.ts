@@ -9,12 +9,12 @@ type BackfillRecord = {
   complete: number
 }
 
-export function backfillProgressOf(database: DatabaseSync, cli: string): BackfillProgress {
+export function backfillProgressOf(database: DatabaseSync, harness: string): BackfillProgress {
   const record = database
     .prepare(
-      'SELECT boundary_written_at, boundary_path, complete FROM backfill_progress WHERE cli = ?',
+      'SELECT boundary_written_at, boundary_path, complete FROM backfill_progress WHERE harness = ?',
     )
-    .get(cli) as BackfillRecord | undefined
+    .get(harness) as BackfillRecord | undefined
   if (record === undefined) return { boundary: null, complete: false }
   const boundary =
     record.boundary_written_at === null || record.boundary_path === null
@@ -25,16 +25,16 @@ export function backfillProgressOf(database: DatabaseSync, cli: string): Backfil
 
 export function writeBackfillProgress(
   database: DatabaseSync,
-  cli: string,
+  harness: string,
   progress: BackfillProgress,
 ) {
   database
     .prepare(
-      `INSERT OR REPLACE INTO backfill_progress (cli, boundary_written_at, boundary_path, complete)
+      `INSERT OR REPLACE INTO backfill_progress (harness, boundary_written_at, boundary_path, complete)
        VALUES (?, ?, ?, ?)`,
     )
     .run(
-      cli,
+      harness,
       progress.boundary?.writtenAt ?? null,
       progress.boundary?.path ?? null,
       progress.complete ? 1 : 0,

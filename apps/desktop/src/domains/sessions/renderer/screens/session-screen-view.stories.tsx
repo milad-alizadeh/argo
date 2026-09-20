@@ -59,7 +59,7 @@ const SESSION_ROSTER = [
   }),
   sessionRosterRow({
     id: 'shortcut-review',
-    cli: 'codex',
+    harness: 'codex',
     posture: 'managed',
     title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
     status: 'idle',

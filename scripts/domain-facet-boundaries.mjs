@@ -14,11 +14,17 @@ const BUILT_INS = new Set(builtinModules.map((name) => name.replace(/^node:/, ''
 function normalized(filePath) {
   return filePath.split(path.sep).join('/')
 }
-
 function withoutExtension(filePath) {
   return filePath.replace(/\.(?:[cm]?[jt]sx?|json)$/, '')
 }
-
+function isHarnessImplementation(parts, harnesses) {
+  const harness = parts[harnesses + 1]
+  const kind = parts[harnesses + 2]
+  const file = parts.at(-1) ?? ''
+  if (harness === undefined || harness === 'composition') return false
+  if (kind === 'drive') return !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
+  return kind === 'sessions' && !/(?:test|fixture|test-helper|fixtures)(?:\.|-)/.test(file)
+}
 function facetAddress(filePath) {
   const parts = normalized(filePath).split('/')
   const domains = parts.indexOf('domains')
@@ -35,9 +41,15 @@ function facetAddress(filePath) {
     return { domain: 'platform', facet }
   }
   const source = parts.indexOf('src')
+  const harnesses = parts.indexOf('harnesses')
+  if (harnesses >= 0) {
+    return {
+      domain: 'harness',
+      facet: isHarnessImplementation(parts, harnesses) ? 'harness' : 'main',
+    }
+  }
   return parts[source + 1] === 'shared' ? { domain: 'shared', facet: 'shared' } : null
 }
-
 function resolvedImport(sourcePath, specifier) {
   if (specifier.startsWith('@/')) {
     return path.posix.join('apps/desktop/src', specifier.slice(2))
@@ -45,7 +57,6 @@ function resolvedImport(sourcePath, specifier) {
   if (!specifier.startsWith('.')) return null
   return path.posix.normalize(path.posix.join(path.posix.dirname(sourcePath), specifier))
 }
-
 function isNodeImport(specifier) {
   const name = specifier.replace(/^node:/, '')
   return specifier.startsWith('node:') || BUILT_INS.has(name)
@@ -64,7 +75,14 @@ function isLegacyRoot(targetPath) {
   return root !== undefined && !SOURCE_ROOTS.has(root)
 }
 
-function isPublicDomainImport(source, target, targetPath) {
+function isPublicDomainImport({ sourcePath, source, target, targetPath }) {
+  const sessionMain = target.domain === 'sessions' && target.facet === 'main'
+  if (source.domain === 'harness' && source.facet === 'main' && sessionMain) {
+    return true
+  }
+  if (sourcePath.startsWith('apps/desktop/src/harnesses/composition/') && sessionMain) {
+    return true
+  }
   if (
     source.domain === target.domain ||
     target.domain === 'platform' ||
@@ -101,9 +119,23 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   }
   if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
-  if (source && target && !isPublicDomainImport(source, target, targetPath)) {
+  const crossDomainPublic =
+    source &&
+    target &&
+    source.domain !== target.domain &&
+    (target.domain !== 'platform' || targetPath.endsWith('/main/port')) &&
+    isPublicDomainImport({ sourcePath, source, target, targetPath })
+  if (
+    source &&
+    target &&
+    source.domain !== target.domain &&
+    target.domain !== 'platform' &&
+    !crossDomainPublic
+  ) {
     return { kind: 'private-domain-import', ...shared, targetFacet: target.facet }
   }
+  if (crossDomainPublic) return null
+  if (source?.domain === 'harness' && target?.domain === 'harness') return null
   if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null
   return { kind: 'runtime-facet', ...shared, targetFacet: target.facet }
 }

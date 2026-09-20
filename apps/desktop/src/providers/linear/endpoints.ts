@@ -4,7 +4,7 @@ import { isLoopbackOrigin } from '@/shared/validation'
 // authorization code + PKCE through a loopback redirect, and the client id is public on the same
 // terms as GitHub's (ADR-0018).
 // Empty until the app is registered at Linear, a human act: until then no Linear sign-in is offered.
-export const LINEAR_CLIENT_ID = ''
+export const LINEAR_HARNESSENT_ID = ''
 // `write` moves a Ticket to another status from the cockpit.
 export const LINEAR_SCOPES = ['read', 'write']
 // A redirect URI is registered ahead of time, so the loopback port is fixed rather than free.
@@ -25,7 +25,7 @@ export function linearEndpoints(clientId: string): LinearEndpoints | null {
   }
 }
 
-export const LINEAR_ENDPOINTS: LinearEndpoints | null = linearEndpoints(LINEAR_CLIENT_ID)
+export const LINEAR_ENDPOINTS: LinearEndpoints | null = linearEndpoints(LINEAR_HARNESSENT_ID)
 
 // A packaged proof points both hosts at a mock on this machine.
 export function linearProofEndpoints(origin: string | undefined): LinearEndpoints | null {

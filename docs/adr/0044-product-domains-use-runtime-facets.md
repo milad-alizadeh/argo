@@ -45,9 +45,12 @@ facet cannot import an application composition root.
 `scripts/check-domain-facets.mjs` enforces this matrix. The quality gate and CI run
 the checker. Tests stay beside the facet that owns the behavior.
 
-Every domain lives in this layout. `src/` holds only `domains`, `platform`, `shared`, `agents`,
-`providers`, the `renderer` composition root, and the entry points. The checker refuses an import
-from any other top-level root.
+Every domain lives in this layout. `src/` holds `domains`, `platform`, `shared`, `harnesses`,
+`providers`, the `renderer` composition root, and the entry points. A harness is a named external
+agent environment. Its Claude or Codex implementation lives in
+`src/harnesses/<harness>/`. The checker treats a harness adapter as a separate facet. It can use
+the Sessions contract, but it cannot use Sessions main code. The checker refuses an import from
+any other top-level root.
 
 ## Consequences
 
@@ -57,3 +60,7 @@ entry points contain wiring only.
 
 Each later migration can move one domain without moving the complete application. The boundary
 checker applies to every domain as soon as that domain enters `src/domains`.
+
+Harnesses stay outside product domains because they implement external environments rather than
+one product capability. The application composition root wires them to the Sessions main facet.
+Pure contracts that cross runtimes stay in the Sessions contract.

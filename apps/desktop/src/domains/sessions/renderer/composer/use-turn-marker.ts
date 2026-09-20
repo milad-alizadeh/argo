@@ -36,7 +36,7 @@ export function clearEntry(entries: TurnMarkerEntries, key: string): TurnMarkerE
 
 // The Turn Marker's entries, one per Session (or per not-yet-real draft composer) with a Turn in
 // flight: local, client-owned state (#2099), so the optimistic prompt row and the Marker itself
-// never have to guess whether the CLI has "really" received a Turn before showing it.
+// never have to guess whether the Harness has "really" received a Turn before showing it.
 export function useTurnMarker() {
   const markers = useComposerStore(({ markers }) => markers)
   const beginMarker = useComposerStore(({ beginMarker }) => beginMarker)

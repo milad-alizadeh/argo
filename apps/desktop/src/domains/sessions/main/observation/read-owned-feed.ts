@@ -37,7 +37,7 @@ function feedRevision(chainId: string, stamps: string) {
   return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
 }
 
-// A managed Session reads as an empty Feed until its CLI writes the first transcript line.
+// A managed Session reads as an empty Feed until its Harness writes the first transcript line.
 function unwrittenFeed(value: SessionFeedRequest) {
   return feedReply(value, {
     chainId: value.sessionId,

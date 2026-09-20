@@ -3,7 +3,7 @@
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { MockCli } from '../mock-cli'
+import type { MockHarness } from '../mock-cli'
 import { mockClaudeFolder } from './mock-claude-transcripts'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
@@ -20,7 +20,7 @@ export async function writeMockClaude(root: string, transcripts: string) {
   return executable
 }
 
-export const mockClaudeCli: MockCli = {
+export const mockClaudeHarness: MockHarness = {
   write: writeMockClaude,
   folder: mockClaudeFolder,
   replyMark: (prompt) => `Mock Claude read: ${prompt}`,

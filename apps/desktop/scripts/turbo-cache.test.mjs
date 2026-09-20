@@ -49,7 +49,7 @@ describe('what turbo caches', () => {
     expect(turbo().globalDependencies).toContain('turbo.json')
   })
 
-  // The renderer imports values from `src/core`, `src/agents` and `src/components`, so a
+  // The renderer imports values from `src/core`, `src/harnesses` and `src/components`, so a
   // hand-listed input set naming only some of `src` serves a stale site or a stale story verdict.
   test('hashes every source the Storybook site and its stories carry', () => {
     expect(turbo().tasks['build:storybook'].inputs[0]).toBe('$TURBO_DEFAULT$')

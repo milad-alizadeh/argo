@@ -13,7 +13,7 @@ function titleRank(title: SessionTitle | null): number {
 }
 
 // A managed row's title starts at the opening prompt, and discovery can find a stronger one: the
-// name the CLI gave the thread, or a rename it has persisted. The held title wins a tie, so a
+// name the Harness gave the thread, or a rename it has persisted. The held title wins a tie, so a
 // rename Argo has applied outlives a sweep that has not caught up with it (#2256).
 function strongerTitle(observed: SessionRosterRow, held: SessionRosterRow): SessionTitle | null {
   return titleRank(observed.title) < titleRank(held.title) ? observed.title : held.title
@@ -28,7 +28,7 @@ export function managedRow(id: string, session: ManagedRosterSeed['session']): S
   return managedRosterRow({ id, session: { ...session, plan: session.plan ?? null } })
 }
 
-// A managed Session is driven in memory before its CLI ever writes a transcript, so an adapter's
+// A managed Session is driven in memory before its Harness ever writes a transcript, so an adapter's
 // discovery sweep alone can miss it, or hold a stale posture for one it has already found. The
 // tie-break between the discovered floor and the held row's own status is `session-status-rollup.ts`'s
 // job, not this module's.

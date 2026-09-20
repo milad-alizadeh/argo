@@ -96,7 +96,7 @@ function hold<Entry>(
   }
 }
 
-// A transcript a CLI is still writing grows by appends, so a held file is read from where the last
+// A transcript a Harness is still writing grows by appends, so a held file is read from where the last
 // read stopped rather than parsed whole again (#2127). Every read holds its end point, so a Roster
 // pass that reads a file first leaves the Feed's later read of the same file able to resume too
 // (#2145) — `HELD_FILE_LIMIT`'s LRU eviction is what bounds the memory this costs.

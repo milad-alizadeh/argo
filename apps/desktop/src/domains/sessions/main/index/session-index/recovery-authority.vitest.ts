@@ -120,7 +120,7 @@ async function expectRecoveredAuthority(
 
 function testDeletedIndex(adapter: IndexedAdapter) {
   test('loses no Session, archive choice, Ticket link or Feed when the index is deleted', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), `argo-index-recovery-${adapter.cli}-`))
+    const root = await mkdtemp(path.join(os.tmpdir(), `argo-index-recovery-${adapter.harness}-`))
     const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-index-recovery-user-data-'))
     const databasePath = path.join(root, 'sessions.db')
     const archive = createSessionArchiveStore(sessionArchivePath(userData))
@@ -147,7 +147,7 @@ function testDeletedIndex(adapter: IndexedAdapter) {
 }
 
 describe.each(indexedAdapters)(
-  'the $cli reader preserving authority through recovery',
+  'the $harness reader preserving authority through recovery',
   (adapter) => {
     testStoppedWorker(adapter)
     testDeletedIndex(adapter)

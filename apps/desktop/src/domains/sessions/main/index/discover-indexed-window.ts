@@ -36,7 +36,7 @@ export type DiscoverIndexedWindowOptions = {
   root: string
   windowSize: number
   index: SessionIndex
-  cli: string
+  harness: string
   indexedWindowFor: (index: SessionIndex) => ReturnType<typeof createIndexedWindow>
   presented: (rows: SessionRosterRow[]) => SessionRosterRow[]
 }
@@ -44,10 +44,10 @@ export type DiscoverIndexedWindowOptions = {
 export async function discoverIndexedWindow(
   options: DiscoverIndexedWindowOptions,
 ): Promise<TranscriptDiscovery> {
-  const { root, windowSize, index, cli, indexedWindowFor, presented } = options
+  const { root, windowSize, index, harness, indexedWindowFor, presented } = options
   const [window, progress] = await Promise.all([
     indexedWindowFor(index).readWindow(root, windowSize),
-    index.backfillProgress(cli),
+    index.backfillProgress(harness),
   ])
   return {
     ...window,

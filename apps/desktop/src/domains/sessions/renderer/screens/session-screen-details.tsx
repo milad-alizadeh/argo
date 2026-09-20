@@ -59,7 +59,7 @@ export function SessionComposerArea({
         harness={harness}
         permissionPrompt={
           <PermissionPrompt
-            cli={harness.cli}
+            harness={harness.harness}
             permission={permission.permission}
             onDecide={permission.decide}
           />
@@ -143,7 +143,7 @@ function Failure({ message }: { message: string }) {
   )
 }
 
-// One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9). A Roster lock lifts
+// One lock icon for any read-only Session, regardless of Harness (#2092 AC #4/#9). A Roster lock lifts
 // on its own at the next poll, so it offers no Retry.
 function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
   const { t } = useTranslation('sessions')

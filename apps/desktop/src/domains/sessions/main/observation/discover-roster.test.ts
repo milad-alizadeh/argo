@@ -8,7 +8,7 @@ const PROJECT = '/projects/argo'
 
 function row(id: string, cwd: string): SessionRosterRow {
   return managedRow(id, {
-    cli: 'claude',
+    harness: 'claude',
     compactionPercentage: null,
     compactionStartedAt: null,
     compactionTokens: null,

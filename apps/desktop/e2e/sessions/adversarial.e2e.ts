@@ -17,7 +17,7 @@ test.describe('session-adversarial', () => {
     const page = session.page()
     const firstPrompt = 'Keep the adversarial reply complete.'
     const failedSessionId = await createSessionByClick(page, {
-      cli: 'codex',
+      harness: 'codex',
       prompt: firstPrompt,
     })
     await expect(page.getByText(`Mock Codex read: ${firstPrompt} 🦜`)).toBeVisible()
@@ -38,7 +38,7 @@ test.describe('session-adversarial-stall', () => {
 
   test('shows the stalled reading for a Codex Turn with no Feed row', async ({ session }) => {
     const page = session.page()
-    await createSessionByClick(page, { cli: 'codex', prompt: 'Stall this Turn.' })
+    await createSessionByClick(page, { harness: 'codex', prompt: 'Stall this Turn.' })
     await expect(page.locator('[data-state="stalled"]')).toBeVisible({ timeout: 12_000 })
   })
 })
@@ -49,7 +49,7 @@ test.describe('session-adversarial-permission', () => {
   test('sends the queued Turn after a seeded Claude Permission is allowed', async ({ session }) => {
     const page = session.page()
     await createSessionByClick(page, {
-      cli: 'claude',
+      harness: 'claude',
       prompt: 'Wait for Permission.',
     })
     const composer = page.getByRole('textbox', { name: 'Message' })

@@ -83,7 +83,7 @@ export function fromOwner<
 }
 
 // The first source with the named capability. Where no source has it the read degrades to the
-// declared reply rather than failing: a CLI with no archive of its own has an empty one.
+// declared reply rather than failing: a Harness with no archive of its own has an empty one.
 export function fromCapability<
   Name extends string,
   Capability extends CapabilityName,
@@ -105,7 +105,7 @@ export function fromCapability<
 }
 
 // The reader's own shared state, no adapter behind it. A read whose answer is Argo's rather than
-// any one CLI's resolves no target and takes the whole context (#2315).
+// any one Harness's resolves no target and takes the whole context (#2315).
 export function fromContext<
   Name extends string,
   Request extends { requestId: string },

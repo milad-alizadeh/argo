@@ -1,17 +1,17 @@
 // Proves the drive router's owner routing (#2030) with both real adapters and the real reader
 // owner lookup, one Claude Session and one Codex Session open at the same time. Neither Session
-// has written a transcript, so only the managed report each driver holds can answer `ownerCliFor`.
+// has written a transcript, so only the managed report each driver holds can answer `ownerHarnessFor`.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import { compactSession, sendSession } from '@/domains/sessions/main/drive/drive'
-import type { SessionDriveAdapters } from '@/domains/sessions/main/drive/session-drive-adapter'
 import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const setup = { model: null, effort: null, mode: null } as const
 
@@ -70,7 +70,7 @@ async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot
       transcripts: await tempRoot(context),
       managedSessions: () => [
         managedRow('claude-1', {
-          cli: 'claude',
+          harness: 'claude',
           cwd: '/proj',
           status: 'running',
           setup,
@@ -82,7 +82,7 @@ async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot
     codexSessionSource(await tempRoot(context), {
       roster: () => [
         managedRow('codex-1', {
-          cli: 'codex',
+          harness: 'codex',
           cwd: '/proj',
           status: 'running',
           setup,
@@ -112,7 +112,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       prompt: 'To Claude.',
       setup: { model: 'sonnet', effort: 'medium', mode: 'manual' },
     },
-    { adapters, ownerCliFor: reader.ownerCliFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
   )
   const codexReply = await sendSession(
     {
@@ -122,7 +122,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       sessionId: 'codex-1',
       prompt: 'To Codex.',
     },
-    { adapters, ownerCliFor: reader.ownerCliFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
   )
 
   assert.equal(claudeReply.type, 'session.accepted')
@@ -144,7 +144,7 @@ test('routes compaction to its Claude Session owner', async (context) => {
 
   const reply = await compactSession(
     { version: 1, type: 'session.compact', requestId: 'compact-claude', sessionId: 'claude-1' },
-    { adapters, ownerCliFor: reader.ownerCliFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
   )
 
   assert.equal(reply.type, 'session.accepted')

@@ -79,7 +79,7 @@ export type TranscriptRecord =
   | SubagentEvent
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
-  // The Skill tool's result is a placeholder ("Launching skill: X"); the CLI delivers the skill's
+  // The Skill tool's result is a placeholder ("Launching skill: X"); the Harness delivers the skill's
   // actual body as a separate, later user record tied back to the call by `sourceToolUseID`.
   | { kind: 'skill-body'; uuid: string; callId: string; text: string }
   // A hidden harness envelope draws no Feed row, but `boundary` preserves that a real transcript
@@ -105,7 +105,7 @@ export type TranscriptRecord =
       contextWindowTokens?: number
     }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
-  // A CLI that writes its Plan outside any message, as Codex's `update_plan` call does.
+  // A Harness that writes its Plan outside any message, as Codex's `update_plan` call does.
   | { kind: 'plan'; changes: PlanChange[] }
   | { kind: 'compaction'; uuid: string; timestamp?: string; summary?: string }
   | {
