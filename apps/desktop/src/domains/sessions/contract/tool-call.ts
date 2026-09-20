@@ -39,12 +39,24 @@ export type SkillFacts = { kind: 'skill'; title: string | null }
 export type OtherFacts = {
   kind: 'other'
   label: string
+  text: string | null
   source: { server: string; tool: string } | null
 }
 
 // A question the agent put to the person, and the one typed fact both harnesses report for it.
 // `unsupported` is why the shared form cannot answer it, null when it can.
 export type AskFacts = { kind: 'ask'; questions: Question[]; unsupported: string | null }
+
+// Lifecycle control is adapter-owned input expressed as typed facts until the transcript
+// projector turns it into a Subagent event or a background-task ending. It never draws a Tool Call.
+export type SubagentControlFacts = {
+  kind: 'subagent-control'
+  intent: 'start' | 'message' | 'stop'
+  target: string | null
+  name: string | null
+  type: string | null
+  model: string | null
+}
 
 // One file an edit touched. `diff` is the typed diff Result: the change is known from the call
 // itself, so it is ready before the harness answers.
@@ -59,18 +71,16 @@ export type EditedFile = {
 // the Feed draws one row for each.
 export type EditFacts = { kind: 'edit'; files: EditedFile[] }
 
-// The new shape lives beside the raw one: a call an adapter classified carries its kind's facts,
-// and every other kind still reads `name` and `input`.
-export type ToolCall = {
-  id: string
-  name: string
-  input: Record<string, unknown>
-  execute?: ExecuteFacts
-  read?: ReadFacts
-  search?: SearchFacts
-  fetch?: FetchFacts
-  skill?: SkillFacts
-  other?: OtherFacts
-  ask?: AskFacts
-  edit?: EditFacts
-}
+// A harness adapter classifies every Tool Call before it crosses the transcript contract. The
+// raw harness name and untyped input stay in that adapter; `other.label` is their sole exception.
+export type ToolCall = { id: string } & (
+  | ExecuteFacts
+  | ReadFacts
+  | SearchFacts
+  | FetchFacts
+  | SkillFacts
+  | OtherFacts
+  | AskFacts
+  | SubagentControlFacts
+  | EditFacts
+)

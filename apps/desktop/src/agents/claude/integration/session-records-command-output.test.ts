@@ -11,15 +11,11 @@ test('reads a shell command and its result from one transcript-shaped run', asyn
   assert.deepEqual(command?.toolCalls, [
     {
       id: 'command-run-1',
-      name: 'Bash',
-      input: { command: 'git status --short' },
-      execute: {
-        kind: 'execute',
-        command: 'git status --short',
-        label: null,
-        text: 'git status --short',
-        background: false,
-      },
+      kind: 'execute',
+      command: 'git status --short',
+      label: null,
+      text: 'git status --short',
+      background: false,
     },
   ])
   assert.deepEqual(result?.toolResults, [

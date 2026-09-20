@@ -31,6 +31,7 @@ export type {
   ReadFacts,
   SearchFacts,
   SkillFacts,
+  SubagentControlFacts,
   ToolCall,
   ToolCallStatus,
 } from '@/domains/sessions/contract/tool-call'

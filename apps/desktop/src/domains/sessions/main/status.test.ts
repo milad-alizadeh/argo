@@ -9,9 +9,9 @@ test('a terminal Turn ends a pending ask', () => {
     toolCalls: [
       {
         id: 'ask-1',
-        name: 'ask',
-        input: {},
-        ask: { kind: 'ask', questions: [], unsupported: null },
+        kind: 'ask',
+        questions: [],
+        unsupported: null,
       },
     ],
   })

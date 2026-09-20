@@ -37,15 +37,11 @@ const HEADLINE = 'Refining exact selection style selectors'
 const THINKING = said('thinking', 'assistant', [{ shape: 'thought', text: HEADLINE }])
 const CALL = called('call', {
   id: 'call-1',
-  name: 'command',
-  input: {},
-  execute: {
-    kind: 'execute',
-    command: 'bun test',
-    label: null,
-    text: 'bun test',
-    background: false,
-  },
+  kind: 'execute',
+  command: 'bun test',
+  label: null,
+  text: 'bun test',
+  background: false,
 })
 
 test('a thought newer than every call of the Turn is the activity, as the Feed tail draws it', () => {

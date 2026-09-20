@@ -27,7 +27,7 @@ test('names the newest call of the open Turn with its canonical label and metada
     label: 'Edited SubagentDots.tsx',
     kind: 'edited',
     open: true,
-    tool: 'Edit',
+    tool: 'edit',
     target: 'SubagentDots.tsx',
   })
 })

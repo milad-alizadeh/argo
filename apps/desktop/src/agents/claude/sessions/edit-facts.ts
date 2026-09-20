@@ -1,8 +1,8 @@
-import type { EditedFile, ToolCall } from '@/domains/sessions/contract/transcript'
+import type { EditedFile, EditFacts } from '@/domains/sessions/contract/transcript'
 import { createdPatch, unifiedPatch } from '@/domains/sessions/contract/unified-patch'
 
 type Input = Record<string, unknown>
-type Edits = Pick<ToolCall, 'edit'>
+type Edits = EditFacts
 
 const lineCount = (text: string) => text.split('\n').length
 
@@ -10,7 +10,7 @@ function text(value: unknown): string | null {
   return typeof value === 'string' ? value : null
 }
 
-const single = (file: EditedFile): Edits => ({ edit: { kind: 'edit', files: [file] } })
+const single = (file: EditedFile): Edits => ({ kind: 'edit', files: [file] })
 
 // Claude records an edit's old and new text, so its diff is known before the result lands.
 function edit(input: Input): Edits {
@@ -55,7 +55,7 @@ const EDITS: Record<string, (input: Input) => Edits> = {
   NotebookEdit: notebookEdit,
 }
 
-export function editFacts(name: string, input: Input): Edits {
+export function editFacts(name: string, input: Input): Edits | null {
   const read = Object.hasOwn(EDITS, name) ? EDITS[name] : undefined
-  return read === undefined ? {} : read(input)
+  return read === undefined ? null : read(input)
 }
