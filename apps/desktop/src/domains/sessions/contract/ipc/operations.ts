@@ -27,6 +27,7 @@ import {
   sessionTicketDisconnectRequestSchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import { SESSION_READ_OPERATIONS } from '@/domains/sessions/contract/ipc/read-operations'
+import { SESSION_UNREAD_OPERATIONS } from '@/domains/sessions/contract/ipc/unread-operations'
 
 // One drive table for every Harness (#2030): `start` names its Harness, and the rest carry only a
 // sessionId, routed by the Session's owner.
@@ -39,6 +40,7 @@ export const SESSION_OPERATIONS = {
   },
   ...SESSION_ARCHIVE_SEARCH_OPERATIONS,
   ...SESSION_READ_OPERATIONS,
+  ...SESSION_UNREAD_OPERATIONS,
   shellOutput: {
     name: 'session.shell.output',
     channel: 'argo:session:shell:output',

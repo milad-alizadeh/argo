@@ -17,6 +17,7 @@ import {
   type SessionStartReply,
   type SessionStatAttachmentsReply,
   type SessionSubagentUsageReply,
+  type SessionUnreadFocusReply,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
@@ -80,6 +81,7 @@ export type SessionHarnessent = {
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readSubagentUsage(request: { sessionId: string }): Promise<SessionSubagentUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
+  focusSessionUnread(request: { sessionId: string }): Promise<SessionUnreadFocusReply>
   connectSessionTicket(request: {
     sessionId: string
     projectId: string
@@ -114,6 +116,7 @@ export function createSessionHarnessent(
     readShellOutput: (request) => client.shellOutput(request),
     readSubagentUsage: (request) => client.subagentUsage(request),
     renameSession: (request) => client.rename(request),
+    focusSessionUnread: (request) => client.focusUnread(request),
     connectSessionTicket: (request) => client.connectTicket(request),
     disconnectSessionTicket: (request) => client.disconnectTicket(request),
     chooseSessionAttachments: () => client.chooseAttachments(),
