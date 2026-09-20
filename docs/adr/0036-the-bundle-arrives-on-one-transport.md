@@ -1,12 +1,10 @@
 # 0036 · The bundle arrives on one transport, and the app is what asks
 
-Status: accepted, not yet built · 2026-09-09 · built on #1810
+Status: accepted · 2026-09-09 · hook move implemented by #2503
 
-> **Where the hooks are today.** At the repository root, in `hooks/`, moved there out of
-> `scripts/` so that the guardrails are one directory rather than scattered through a general
-> scripts folder. That is not the location this ADR decides, and it is not meant to be: the move
-> below is #1810's work and waits on the assumption in **Consequences** being proved first. Until
-> then a consumer still copies the hooks by hand, and `setup-argo-skills` still says so.
+> **Where the hooks are today.** The hook sources are in
+> `packages/argo-skills/skills/setup-argo-skills/hooks/`. A consumer still copies the hooks by
+> hand after it opts in.
 
 ## Context
 
@@ -17,12 +15,10 @@ is versioned:
 |---|---|---|
 | skills | `npx skills add milad-alizadeh/argo` | `skills-lock.json` |
 | rtk filters | `curl` from `raw.githubusercontent.com/.../main` | nothing |
-| hooks | a shallow `git clone`, then copy `hooks.json`, `hooks/` and `docs/agents/worktrees.md` by hand | nothing |
+| hooks | copy `hooks.json`, the installed hook directory and `docs/agents/worktrees.md` by hand | nothing |
 
-The hooks are the sharpest case: they are not in the published package at all. `hooks/` sits at
-the repository root, outside `packages/argo-skills/`, so `skills add` cannot carry them and
-`skills update` cannot move them forward. A project can be a version behind on its guardrails
-with nothing on disk that says so.
+The hooks are the sharpest case. A project can be a version behind on its guardrails with nothing
+on disk that says so.
 
 The dependency on the upstream skills is prose. `setup-argo-skills` tells the agent to run
 another skill first if `docs/agents/issue-tracker.md` is missing. Nothing records that Argo's

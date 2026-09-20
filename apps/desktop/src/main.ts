@@ -31,7 +31,7 @@ import {
   sharedDatabasePath,
 } from '@/platform/main/storage/shared-database'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
-import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
 // Registering a privileged scheme is only valid before the app is ready (Electron's own
 // constraint), so this runs at module load, ahead of every other side effect below.
@@ -49,7 +49,7 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // The PTY acceptance boundary (#1749, run against node-pty by #1791) lives in the SHIPPED main
 // process behind this flag, because the only place its properties are true or false is inside the
 // packaged, signed app: behind the hardened runtime, the asar and the code signature. A dev-server
-// run proves none of it. `scripts/prove-packaged-pty.mjs` is what drives the packaged binary.
+// run proves none of it. `scripts/prove-packaged-pty.mts` is what drives the packaged binary.
 //
 // The harness is loaded by a DYNAMIC import, so the 600-cycle loop, the six behaviour cases and
 // the `lsof` call are split into a chunk the ordinary launch never touches. A static import would

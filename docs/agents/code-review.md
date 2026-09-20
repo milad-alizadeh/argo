@@ -8,7 +8,8 @@ Read `AGENTS.md` → *Gates* and `.github/workflows/ci.yml` for current gate com
 `bun run quality` is the local subset, not the whole CI workflow.
 If an installed skill lists older gate commands, use these repository sources.
 
-A focused test names a single file or package, such as `node --test hooks/guards.test.mjs`.
+A focused test names a single file or package, such as
+`node --test packages/argo-skills/skills/setup-argo-skills/hooks/guards.test.mts`.
 `bun run test:hooks` runs the whole hook suite and does not qualify for the reviewer exception.
 A filter that selects no tests proves nothing, even when the command exits successfully.
 

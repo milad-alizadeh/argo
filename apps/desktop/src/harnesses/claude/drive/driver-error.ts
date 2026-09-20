@@ -14,7 +14,10 @@ function messageFor(code: DriverErrorCode): string {
 }
 
 export class ClaudeSessionDriverError extends Error {
-  constructor(readonly code: DriverErrorCode) {
+  readonly code: DriverErrorCode
+
+  constructor(code: DriverErrorCode) {
     super(messageFor(code))
+    this.code = code
   }
 }

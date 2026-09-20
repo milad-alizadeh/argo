@@ -21,11 +21,11 @@
         "tsconfig.json",
         "tsconfig.node.json",
         "tsconfig.web.json",
-        "scripts/assert-packaged-pty.mjs",
-        "scripts/packaged-pty-checks.mjs",
-        "scripts/entitlements.mjs",
-        "scripts/fuse-profile.mjs",
-        "scripts/production-install.mjs",
+        "scripts/assert-packaged-pty.mts",
+        "scripts/packaged-pty-checks.mts",
+        "scripts/entitlements.mts",
+        "scripts/fuse-profile.mts",
+        "scripts/production-install.mts",
         "package.json",
         "package-lock.json",
         "$TURBO_ROOT$/bun.lock"
@@ -36,11 +36,11 @@
     "test:packaged-contents": {
       "dependsOn": ["build"],
       "inputs": [
-        "scripts/assert-packaged-pty.mjs",
-        "scripts/packaged-pty-checks.mjs",
-        "scripts/packaged-mock-cli-checks.mjs",
-        "scripts/packaged-app.mjs",
-        "scripts/acceptance-protocol.mjs",
+        "scripts/assert-packaged-pty.mts",
+        "scripts/packaged-pty-checks.mts",
+        "scripts/packaged-mock-cli-checks.mts",
+        "scripts/packaged-app.mts",
+        "scripts/acceptance-protocol.mts",
         "mocks/cli/mock-cli-process-titles.mts",
         "package-lock.json"
       ],
@@ -49,9 +49,9 @@
     "test:packaged-manifest": {
       "dependsOn": ["build"],
       "inputs": [
-        "scripts/desktop-manifest.mjs",
-        "scripts/package-manifest.mjs",
-        "scripts/packaged-pty-checks.mjs",
+        "scripts/desktop-manifest.mts",
+        "scripts/package-manifest.mts",
+        "scripts/packaged-pty-checks.mts",
         "package-manifest.json",
         "package-lock.json"
       ],
@@ -60,9 +60,9 @@
     "test:packaged-pty": {
       "dependsOn": ["build"],
       "inputs": [
-        "scripts/prove-packaged-pty.mjs",
-        "scripts/packaged-app.mjs",
-        "scripts/acceptance-protocol.mjs"
+        "scripts/prove-packaged-pty.mts",
+        "scripts/packaged-app.mts",
+        "scripts/acceptance-protocol.mts"
       ],
       "outputs": []
     },
@@ -74,8 +74,8 @@
         "src/**",
         "!src/**/*.test.ts",
         "!src/**/*.stories.tsx",
-        "scripts/acceptance-protocol.mjs",
-        "scripts/fuse-profile.mjs",
+        "scripts/acceptance-protocol.mts",
+        "scripts/fuse-profile.mts",
         "playwright.config.ts",
         "tsconfig*.json",
         "package.json"
@@ -91,8 +91,8 @@
         "src/**",
         "!src/**/*.test.ts",
         "!src/**/*.stories.tsx",
-        "scripts/acceptance-protocol.mjs",
-        "scripts/fuse-profile.mjs",
+        "scripts/acceptance-protocol.mts",
+        "scripts/fuse-profile.mts",
         "playwright.config.ts",
         "tsconfig*.json",
         "package.json"
@@ -109,11 +109,11 @@
       "inputs": [
         "src/**",
         ".storybook/**/*.ts",
-        "scripts/**/*.mjs",
+        "scripts/**/*.mts",
         "*.config.ts",
         "tsconfig*.json",
         "package.json",
-        "$TURBO_ROOT$/scripts/design-token-*.mjs"
+        "$TURBO_ROOT$/scripts/design-token-*.mts"
       ],
       "outputs": []
     },
@@ -122,12 +122,8 @@
         "$TURBO_DEFAULT$",
         "!*.md",
         "$TURBO_ROOT$/docs/design/tokens.css",
-        "$TURBO_ROOT$/scripts/design-token-*.mjs"
+        "$TURBO_ROOT$/scripts/design-token-*.mts"
       ],
-      "outputs": []
-    },
-    "test:feed": {
-      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
       "outputs": []
     },
     "test:storybook": {

@@ -9,7 +9,7 @@ import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-gi
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
-import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
+import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { PROJECT_PROOF_STORE_ENV } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import {

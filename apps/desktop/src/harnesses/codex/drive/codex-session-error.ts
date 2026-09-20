@@ -13,7 +13,10 @@ function messageFor(code: CodexDriverErrorCode): string {
 }
 
 export class CodexSessionDriverError extends Error {
-  constructor(readonly code: CodexDriverErrorCode) {
+  readonly code: CodexDriverErrorCode
+
+  constructor(code: CodexDriverErrorCode) {
     super(messageFor(code))
+    this.code = code
   }
 }

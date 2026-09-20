@@ -11,7 +11,7 @@ packages/argo-skills/   the project-AGNOSTIC source of Argo's skills (the toolki
   skills/               Argo's own skills — one SKILL.md folder each, supporting
                         files (e.g. setup-quality-gates/templates/) colocated so each is self-contained
   assets/               seeds a consumer copies in, e.g. rtk-filters.toml
-  bin/hooks-sync.mjs    projects hooks.json into each harness (`bun run hooks:sync`)
+  bin/hooks-sync.mts    projects hooks.json into each harness (`bun run hooks:sync`)
 apps/                   consumers (e.g. the cockpit app) — set up per project, not source
 skills-lock.json        the bundle manifest — every skill by name, third-party and own
                         (also this repo's own install record; dogfooded)

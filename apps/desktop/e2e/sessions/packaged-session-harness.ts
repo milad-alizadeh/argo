@@ -1,5 +1,5 @@
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
-import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mjs'
+import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { PROJECT_PROOF_STORE_ENV } from '../../src/domains/projects/main/proof-protocol'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,

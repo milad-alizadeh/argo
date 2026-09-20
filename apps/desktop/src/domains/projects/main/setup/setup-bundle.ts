@@ -4,7 +4,7 @@ import {
   ARGO_SETUP_DOCUMENT_URL,
   DEVELOPMENT_SETUP_DOCUMENT_URL_ENV,
   parseArgoSetupDocumentURL,
-} from './setup-document-source.mjs'
+} from './setup-document-source.ts'
 
 export { ARGO_SETUP_DOCUMENT_URL }
 
@@ -46,8 +46,11 @@ type SetupDocumentRequest = {
 }
 
 export class SetupDocumentLoadError extends Error {
-  constructor(readonly reason: 'network-unavailable' | 'document-invalid') {
+  readonly reason: 'network-unavailable' | 'document-invalid'
+
+  constructor(reason: 'network-unavailable' | 'document-invalid') {
     super(reason)
+    this.reason = reason
   }
 }
 

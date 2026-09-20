@@ -11,7 +11,7 @@ third-party ones plus Argo's own, kept in this package's `skills/`), and the
 a scaffolder of its own; it is gone, and everything it did beyond the install is now written down
 as steps in [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md) for an agent to follow.
 
-The one file left in `bin/` is `hooks-sync.mjs`, which projects the repo-root `hooks.json` into
+The one file left in `bin/` is `hooks-sync.mts`, which projects the repo-root `hooks.json` into
 each harness. It is not an installer.
 
 ## Project-agnostic by design — set up per project
@@ -70,10 +70,9 @@ the consumer's own skills from a name collision before they are overwritten, see
 `.rtk/filters.toml`, copying `hooks.json` and the hooks it names and projecting them, adding the
 `.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
 
-The guardrail hooks are hand-work today because they are not in this package at all: `hooks/` sits
-at the repository root, outside `packages/argo-skills/`, so `skills add` cannot carry them and
-`skills update` cannot move them forward. [ADR-0036](../../docs/adr/0036-the-bundle-arrives-on-one-transport.md)
-decides they move inside the bundle and arrive with it; that is #1810's work and is not built.
+The guardrail hooks are hand-work today. They live in
+`packages/argo-skills/skills/setup-argo-skills/hooks/`. A project copies them only after the user
+opts in. `skills add` installs the source files, but it does not install the hooks into a project.
 
 **What does not change when they do**: installing them stays a separate yes. They impose Argo's
 worktree discipline on the project — the edit guard refuses an edit outside a worktree and the

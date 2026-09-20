@@ -3,7 +3,7 @@
 You profile the dev instance with the agent-browser CLI, which attaches to its loopback debugging
 port. Two small files fill the gaps that agent-browser leaves:
 
-- `scripts/profiling/scroll.mjs` flings any element through Chromium's real input pipeline.
+- `scripts/profiling/scroll.mts` flings any element through Chromium's real input pipeline.
   agent-browser's `scroll` runs a script `scrollBy`, and its `mouse wheel` always lands at (0, 0).
   Neither one scrolls the way a trackpad does.
 - `scripts/profiling/hot-functions.jq` names the JavaScript functions in a CPU profile.
@@ -30,7 +30,7 @@ Every command goes over the debugging protocol, so none of them holds the real k
 ## The gesture
 
 ```sh
-node scripts/profiling/scroll.mjs --port <debugPort> [--up] [--distance 20000] [--speed 6000] '<selector>'
+node scripts/profiling/scroll.mts --port <debugPort> [--up] [--distance 20000] [--speed 6000] '<selector>'
 ```
 
 The script flings at the center of the visible part of the first element that matches. It prints

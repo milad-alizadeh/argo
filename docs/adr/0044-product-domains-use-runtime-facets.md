@@ -42,7 +42,7 @@ Contract code cannot import Electron, Node, React, storage, providers, or render
 code cannot import Electron, Node, main implementations, or preload implementations. A domain
 facet cannot import an application composition root.
 
-`scripts/check-domain-facets.mjs` reads every source file under `apps/desktop/src` and reports
+`scripts/check-domain-facets.mts` reads every source file under `apps/desktop/src` and reports
 each import that crosses a facet boundary. `bun run quality:facets` runs the checker and its own
 tests, and `bun run quality` runs `quality:facets`. CI runs `quality:facets` as its own step
 (#2505). Tests stay beside the facet that owns the behavior.

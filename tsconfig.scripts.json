@@ -1,0 +1,29 @@
+{
+  // Every script bare `node` runs, in one project. Two audiences share it: this repo's own
+  // development scripts, under `scripts/` and `apps/desktop/scripts/`, and the guardrail hooks
+  // the skills bundle ships into a consumer repository, under `packages/argo-skills/`.
+  //
+  // Nothing here is built. Node 24 strips the types at run time, which is why these files are
+  // `.mts` rather than compiled output (#2503).
+  //
+  // `erasableSyntaxOnly` is the load-bearing option. It refuses the TypeScript that carries a
+  // runtime meaning — enum, namespace, parameter properties — which is exactly the syntax Node
+  // cannot strip. Without it a file passes here and dies on the first `node` invocation. The
+  // application source under `apps/desktop/src` uses that syntax and is built by Vite, so it
+  // stays in `apps/desktop/tsconfig.node.json` and out of this project.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node", "bun"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["scripts/**/*.mts", "packages/argo-skills/**/*.mts"]
+}

@@ -98,12 +98,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:facets
 
-      # Named ahead of the broader workspace run so a Session Feed regression fails fast, under
-      # its own label, instead of surfacing inside the wider "Workspace tests" output (#2201).
-      - name: Session Feed tests
-        if: ${{ !cancelled() }}
-        run: bun run turbo run test:feed --filter=@argo/desktop
-
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
       # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being
@@ -317,7 +311,7 @@ jobs:
       # first and npx's own `--no` then refuses to reinstall it.
       #
       # Bun's linker decides whether the root or apps/desktop holds `electron`, so probe both
-      # rather than assume a layout — `electronBinary()` in packaged-app.mjs makes the same point.
+      # rather than assume a layout — `electronBinary()` in packaged-app.mts makes the same point.
       - name: Install the Electron binary
         if: steps.touched.outputs.desktop == 'true' && steps.replay.outputs.status != 'HIT'
         shell: bash
