@@ -1,7 +1,7 @@
 import { BookMarked, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
 import { Loader } from '@/platform/renderer/components/loader'

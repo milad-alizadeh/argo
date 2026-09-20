@@ -19,6 +19,7 @@ import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { providerEndpoints } from '@/providers/endpoints'
+import { accountProviders, ticketSources } from '@/providers/composition'
 
 export function attachBridges(
   window: BrowserWindow,
@@ -54,12 +55,13 @@ export function attachBridges(
     accountData,
     connectionData,
     endpoints: providerEndpoints(proofEnabled),
+    providers: accountProviders,
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),
     projects: createProjectPort(projects),
   })
   attachAccountBridge(window, { access, rendererURL })
-  attachTicketBridge(window, { access, rendererURL })
+  attachTicketBridge(window, { access, rendererURL, sources: ticketSources })
   app.once('before-quit', () => {
     drivers.claude.close()
     drivers.codex.close()

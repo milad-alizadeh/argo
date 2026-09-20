@@ -6,5 +6,5 @@ export {
   markRevoked,
   projectNames,
 } from './access'
-export { providerOf, readAccounts } from './registry'
+export { readAccounts } from './registry'
 export { asAccount, type TokenFailure } from './tokens'

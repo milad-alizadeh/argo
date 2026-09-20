@@ -3,7 +3,7 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import { openAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import { openAccountsDialog } from '@/domains/accounts/renderer/port'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/connection/connect-source-form'
 import type { SourceDiscovery } from '@/domains/tickets/renderer/connection/source-field'

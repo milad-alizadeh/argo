@@ -1,6 +1,6 @@
 // The durable Connection port. Accounts and Tickets use this seam, never each other's stores.
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { providerOf } from '@/domains/accounts/main/port'
+import { providerOf } from '@/domains/accounts/contract/provider'
 import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
 import { isIdentifier, isRecord } from '@/shared/validation'
 

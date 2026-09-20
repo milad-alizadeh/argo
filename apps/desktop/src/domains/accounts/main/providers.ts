@@ -1,15 +1,9 @@
 // What each provider an Account can belong to does for the Account core: start a sign-in, and renew
 // a grant that lapses. A new provider is one module under `src/providers/` and one line here.
 
-import {
-  type AccountErrorCode,
-  PROVIDERS,
-  type Provider,
-} from '@/domains/accounts/contract/contract'
+import { type AccountErrorCode, PROVIDERS, type Provider } from '@/domains/accounts/contract/contract'
 import type { ProviderEndpoints } from '@/providers/endpoints'
-import { githubAccounts } from '@/providers/github/account-provider'
 import type { Grant, Identity, TokenReply } from '@/providers/grant'
-import { linearAccounts } from '@/providers/linear/account-provider'
 
 export type SignedIn = { identity: Identity; grant: Grant }
 export type SignInEnd = { ok: true; signedIn: SignedIn } | { ok: false; code: AccountErrorCode }
@@ -33,10 +27,7 @@ export type AccountProvider = {
   renew: ((endpoints: ProviderEndpoints, refreshToken: string) => Promise<TokenReply>) | null
 }
 
-export const ACCOUNT_PROVIDERS: Record<Provider, AccountProvider> = {
-  github: githubAccounts,
-  linear: linearAccounts,
-}
-
-export const availableProviders = (endpoints: ProviderEndpoints): Provider[] =>
-  PROVIDERS.filter((provider) => ACCOUNT_PROVIDERS[provider].available(endpoints))
+export const availableProviders = (
+  providers: Record<Provider, AccountProvider>,
+  endpoints: ProviderEndpoints,
+): Provider[] => PROVIDERS.filter((provider) => providers[provider].available(endpoints))

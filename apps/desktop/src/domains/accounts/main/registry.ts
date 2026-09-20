@@ -4,9 +4,9 @@
 import {
   type AccountState,
   displayName,
-  PROVIDERS,
   type Provider,
 } from '@/domains/accounts/contract/contract'
+import { providerOf } from '@/domains/accounts/contract/provider'
 import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
 import { isIdentifier, isRecord } from '@/shared/validation'
 
@@ -40,13 +40,6 @@ const OWNED = ['version', 'accounts', 'noticeDismissed']
 
 export const accountId = (provider: Provider, providerAccountId: string) =>
   `${provider}:${providerAccountId}`
-
-// The provider an Account ID names, read from its prefix, so a Connection whose Account is gone
-// still knows where it reads.
-export function providerOf(id: string): Provider | null {
-  const prefix = id.slice(0, id.indexOf(':'))
-  return PROVIDERS.find((provider) => provider === prefix) ?? null
-}
 
 const STORED_STATES = new Map<unknown, StoredState>([
   ['expired', 'expired'],

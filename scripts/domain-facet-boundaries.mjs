@@ -73,7 +73,10 @@ function isPublicDomainImport(source, target, targetPath) {
     return true
   }
   if (target.facet === 'contract') return true
-  return target.facet === 'main' && targetPath.endsWith('/main/port')
+  return (
+    (target.facet === 'main' && targetPath.endsWith('/main/port')) ||
+    (target.facet === 'renderer' && targetPath.endsWith('/renderer/port'))
+  )
 }
 
 function privilegedImport(facet, specifier, targetPath) {
@@ -98,7 +101,7 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   }
   if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
-  if (source?.facet === 'main' && target && !isPublicDomainImport(source, target, targetPath)) {
+  if (source && target && !isPublicDomainImport(source, target, targetPath)) {
     return { kind: 'private-domain-import', ...shared, targetFacet: target.facet }
   }
   if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null

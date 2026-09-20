@@ -10,9 +10,10 @@ import type {
 import { createProjectPort } from '@/domains/projects/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
-import { attachTicketBridge } from '@/domains/tickets/main/bridge'
+import { attachTicketBridge } from '@/domains/tickets/main/port'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
+import { accountProviders, ticketSources } from '@/providers/composition'
 import { createDomainClient } from '@/shared/ipc/client'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
 import type { MockGitHub } from '../../../../mocks/providers/github/mock-github'
@@ -44,12 +45,17 @@ export function bootMain(options: {
     accountData,
     connectionData: accountData,
     endpoints,
+    providers: accountProviders,
     cipher,
     openExternal,
     projects: createProjectPort(projects),
   })
   const ticketWindow = createMockIpcWindow()
-  attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
+  attachTicketBridge(ticketWindow.window, {
+    access,
+    rendererURL: RENDERER_URL,
+    sources: ticketSources,
+  })
   const tickets: TicketDispatchClient = createDomainClient(
     TICKET_OPERATIONS,
     (channel, ticketRequest) => ticketWindow.trustedInvoke(channel, ticketRequest),

@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next'
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { providerPresentation } from '@/domains/accounts/renderer/port'
 import {
   type Backlog,
   backlogRows,

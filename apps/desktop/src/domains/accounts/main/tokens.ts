@@ -3,7 +3,6 @@
 // the Account expired; each Account on its own, so one lapsing never touches another.
 
 import { type AccountAccess, markRevoked, writeState } from '@/domains/accounts/main/access'
-import { ACCOUNT_PROVIDERS } from '@/domains/accounts/main/providers'
 import { type AccountRecord, readAccounts } from '@/domains/accounts/main/registry'
 import type { Grant } from '@/providers/grant'
 
@@ -31,7 +30,7 @@ function renew(access: AccountAccess, account: AccountRecord, stale: string): Pr
     if (grant.accessToken !== stale && !due(grant)) {
       return { ok: true, token: grant.accessToken, account }
     }
-    const renewer = ACCOUNT_PROVIDERS[account.provider].renew
+  const renewer = access.providers[account.provider].renew
     if (!renewer || !grant.renewal) {
       await writeState(access, { accountId: account.id, state: 'revoked' })
       return { ok: false, reason: 'account-revoked' }

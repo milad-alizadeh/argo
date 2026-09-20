@@ -54,7 +54,7 @@ export async function listing(
   return {
     accounts,
     notice: !registry.noticeDismissed,
-    providers: availableProviders(access.endpoints),
+    providers: availableProviders(access.providers, access.endpoints),
   }
 }
 

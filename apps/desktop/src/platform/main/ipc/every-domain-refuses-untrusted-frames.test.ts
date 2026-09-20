@@ -17,6 +17,7 @@ const [
   assert,
   { createMockIpcWindow, RENDERER_URL },
   { GITHUB_ENDPOINTS },
+  { accountProviders, ticketSources },
   { createAccountAccess },
   { attachAccountBridge },
   { ACCOUNT_OPERATIONS },
@@ -36,6 +37,7 @@ const [
   import('node:assert/strict').then((module) => module.default),
   import('../../../../mocks/contract/mock-ipc-window'),
   import('@/providers/github/endpoints'),
+  import('@/providers/composition'),
   import('@/domains/accounts/main/access'),
   import('@/domains/accounts/main/bridge'),
   import('@/domains/accounts/contract/operations'),
@@ -76,6 +78,7 @@ async function domains(userData: string) {
     userData,
     accountData: userData,
     endpoints: { github: GITHUB_ENDPOINTS, linear: null },
+    providers: accountProviders,
     cipher: { available: () => false, encrypt: () => Buffer.alloc(0), decrypt: () => '' },
     openExternal: async () => undefined,
   })
@@ -84,7 +87,7 @@ async function domains(userData: string) {
   attachAccountBridge(accountMock.window, { access, rendererURL })
 
   const ticketMock = createMockIpcWindow()
-  attachTicketBridge(ticketMock.window, { access, rendererURL })
+  attachTicketBridge(ticketMock.window, { access, rendererURL, sources: ticketSources })
 
   const appearanceMock = createMockIpcWindow()
   attachAppearanceBridge(appearanceMock.window, { userData, rendererURL })
