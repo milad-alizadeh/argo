@@ -23,7 +23,9 @@ const unreadDocumentSchema = z.record(z.string(), storedUnreadSessionSchema)
 
 export type SessionUnreadStore = {
   focus: (sessionId: string) => Promise<boolean>
-  project: <Row extends UnreadSession>(rows: readonly Row[]) => Promise<(Row & { unread: boolean })[]>
+  project: <Row extends UnreadSession>(
+    rows: readonly Row[],
+  ) => Promise<(Row & { unread: boolean })[]>
   setUnread: (sessionIds: readonly string[], unread: boolean) => Promise<boolean>
 }
 
@@ -35,7 +37,10 @@ function isFinished(status: UnreadSession['status']) {
   return status === 'idle' || status === 'stopped' || status === 'ended'
 }
 
-function keyFor(row: Pick<UnreadSession, 'id' | 'retiredIds'>, entries: Record<string, StoredUnreadSession>) {
+function keyFor(
+  row: Pick<UnreadSession, 'id' | 'retiredIds'>,
+  entries: Record<string, StoredUnreadSession>,
+) {
   return [row.id, ...row.retiredIds].find((id) => entries[id] !== undefined) ?? row.id
 }
 
@@ -75,7 +80,14 @@ function inMemory(initial: Record<string, StoredUnreadSession> = {}): SessionUnr
     },
     async project(rows) {
       const result = projected(rows, { ...entries })
-      entries = result.changed ? { ...entries, ...Object.fromEntries(result.sessions.map(({ id, unread, updatedAt }) => [id, { unread, updatedAt }])) } : entries
+      entries = result.changed
+        ? {
+            ...entries,
+            ...Object.fromEntries(
+              result.sessions.map(({ id, unread, updatedAt }) => [id, { unread, updatedAt }]),
+            ),
+          }
+        : entries
       return result.sessions
     },
     async setUnread(sessionIds, unread) {

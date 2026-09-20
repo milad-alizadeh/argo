@@ -9,10 +9,6 @@ import {
   createInMemorySessionArchiveStore,
   type SessionArchiveStore,
 } from '@/domains/sessions/main/archive/archive-store'
-import {
-  createInMemorySessionUnreadStore,
-  type SessionUnreadStore,
-} from '@/domains/sessions/main/unread/unread-store'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
 import type { OwnerFor, ReadContext } from '@/domains/sessions/main/observation/read-declaration'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
@@ -32,11 +28,17 @@ import {
   disconnectTicketReply,
 } from '@/domains/sessions/main/projection/ticket-link-reader'
 import {
+  createInMemorySessionUnreadStore,
+  type SessionUnreadStore,
+} from '@/domains/sessions/main/unread/unread-store'
+import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '@/domains/tickets/main/port'
 
 export type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/session-source'
+
+type ReaderState = SessionArchiveStore & { unread?: SessionUnreadStore }
 
 function createOwnerResolver(sources: SessionSource[]) {
   const owners = new Map<string, SessionSource>()
@@ -88,9 +90,10 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
 export function createSessionReader(
   sources: SessionSource[],
   ticketLinks: SessionTicketLinkStore = createInMemorySessionTicketLinkStore(),
-  archive: SessionArchiveStore = createInMemorySessionArchiveStore(),
-  unread: SessionUnreadStore = createInMemorySessionUnreadStore(),
+  state: ReaderState = createInMemorySessionArchiveStore(),
 ): SessionReader {
+  const archive = state
+  const unread = state.unread ?? createInMemorySessionUnreadStore()
   const feeds = new Map<string, HeldFeed>()
   const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
@@ -102,7 +105,8 @@ export function createSessionReader(
       const owner = await ownership.ownerFor(sessionId)
       return owner?.cli
     },
-    listSessions: (request) => listReply(sources, ownership, { ticketLinks, archive, unread, request }),
+    listSessions: (request) =>
+      listReply(sources, ownership, { ticketLinks, archive, unread, request }),
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (request) => archiveListRead(reads, request),

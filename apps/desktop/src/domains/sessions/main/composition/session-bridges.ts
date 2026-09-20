@@ -101,7 +101,7 @@ export function attachSessions(
   // transcript the last pass already projected (#2372).
   const index = indexForWindow(window, userData)
   const sources = sessionSources({ home, drivers, compactionStarts, index })
-  const reader = createSessionReader(sources, ticketLinks, archive, unread)
+  const reader = createSessionReader(sources, ticketLinks, { ...archive, unread })
   attachSessionBridge(window, {
     reader,
     adapters: {

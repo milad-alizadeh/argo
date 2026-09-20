@@ -22,9 +22,7 @@ import {
   STATUS_LABELS,
   STATUS_MARKS,
 } from '@/domains/sessions/renderer/roster/session-roster-status'
-import {
-  unreadMarkerPrototypeDot,
-} from '@/domains/sessions/renderer/roster/unread-marker-prototype'
+import { unreadMarkerPrototypeDot } from '@/domains/sessions/renderer/roster/unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -153,9 +151,7 @@ export function SessionRosterItem({
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
             {running ? <Loader aria-hidden={true} className="ml-auto" size="meta" /> : null}
-            {session.unread ? (
-              <span className="sr-only">{t('rosterStatusUnread')}</span>
-            ) : null}
+            {session.unread ? <span className="sr-only">{t('rosterStatusUnread')}</span> : null}
           </span>
           <ActivityLine session={session} />
           {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
