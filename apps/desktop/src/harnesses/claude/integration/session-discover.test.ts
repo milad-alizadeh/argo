@@ -3,7 +3,7 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 import {
   fixtureRoot,
   LATER_TURN,
@@ -39,7 +39,7 @@ test('discovers Sessions with no Project registration and states what it read', 
   ])
 })
 
-// The CLI records its cwd with symlinks resolved (macOS `/var` is `/private/var`), so a Project
+// The Harness records its cwd with symlinks resolved (macOS `/var` is `/private/var`), so a Project
 // registered through a symlinked path still owns the Sessions started in it (#2204).
 test('keeps a Session in a Project registered through a symlinked path', async (context) => {
   const root = await fixtureRoot(context, ['externalBasic'])

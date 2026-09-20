@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { readingBackgroundStops } from '@/harnesses/claude/sessions/background-stop'
 import { readingSpawnedAgents } from '@/harnesses/claude/sessions/spawned-agents'
 

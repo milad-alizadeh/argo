@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import {
   OPEN_TURN_COMPLETE,
@@ -10,7 +11,6 @@ import {
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
 } from '@/harnesses/codex/sessions/rollout-test-helpers'
-import { managedRow } from '@/harnesses/session/managed-row'
 
 const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
 

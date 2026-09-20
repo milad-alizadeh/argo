@@ -18,9 +18,9 @@ const BACKENDS = {
 export type SessionOptions = {
   // The Roster shows only for a selected Project (#2307), so every case but the empty-window one wants it.
   projectSelected: boolean
-  // A CLI that holds its reply, so a case can read the app waiting on a Turn (#2119).
+  // A Harness that holds its reply, so a case can read the app waiting on a Turn (#2119).
   slowReply: boolean
-  // Replays the mock CLI's seeded jitter, split bytes and failures.
+  // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
 }
 
@@ -44,7 +44,7 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
-// `real` drives the signed-in local HARNESSES, so only the opt-in `real-sessions` project sets it.
+// `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
 export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>({
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
   projectSelected: [true, { option: true }],

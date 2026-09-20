@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/projection/feed.ts'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental.ts'
 import { fixtureFiles } from '@/harnesses/claude/integration/session-fixtures'
-import { UNREADABLE_ROW, unreadableRowHeight } from '@/harnesses/session/feed.ts'
 
 async function feedOf(names) {
   return projectFeed(stitchChains(await fixtureFiles(names))[0], undefined).rows
@@ -74,7 +74,7 @@ test('states the unreadable row height as arithmetic', () => {
   assert.equal(unreadableRowHeight(), 44)
 })
 
-// The CLI nests a subagent's turn inside the Session's; Argo draws the Subagent as event rows
+// The Harness nests a subagent's turn inside the Session's; Argo draws the Subagent as event rows
 // rather than drawing another agent's work as the reader's own.
 test('leaves a subagent turn out of the Session history', async () => {
   const rows = await feedOf(['subagentTail'])

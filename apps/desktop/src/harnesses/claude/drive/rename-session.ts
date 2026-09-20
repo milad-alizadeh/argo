@@ -1,5 +1,5 @@
-import type { SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import { driveSessionError, sessionError } from '@/domains/sessions/contract/contract'
+import type { SessionRenameRequest } from '@/domains/sessions/contract/ipc/contract'
+import { driveSessionError, sessionError } from '@/domains/sessions/contract/ipc/contract'
 import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
 

@@ -7,12 +7,12 @@ import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
-  const [harness, setCli] = useState<SessionHarness>('claude')
+  const [harness, setHarness] = useState<SessionHarness>('claude')
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
   const choices = HARNESSES[harness].setup
-  const chooseHarness = (nextCli: SessionHarness) => {
-    setCli(nextCli)
-    const nextSetup = HARNESSES[nextCli].setup
+  const chooseHarness = (nextHarness: SessionHarness) => {
+    setHarness(nextHarness)
+    const nextSetup = HARNESSES[nextHarness].setup
     if (nextSetup !== null) setSetup(nextSetup.opening)
   }
   return (

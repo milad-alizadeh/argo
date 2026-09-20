@@ -1,5 +1,5 @@
-import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { rollupSessionStatus } from '@/domains/sessions/contract/session-status-rollup'
+import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 import {
   readCompletedCompaction,
   readStartedCompaction,

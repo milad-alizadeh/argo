@@ -29,7 +29,7 @@ test('re-reads a transcript that was written since the last pass', async (contex
   assert.equal(second.sessions[0].updatedAt, '2026-09-01T08:00:00.000Z')
 })
 
-// The other half of the same fact: a CLI can append a Turn inside one mtime tick, and on a
+// The other half of the same fact: a Harness can append a Turn inside one mtime tick, and on a
 // filesystem whose timestamps are coarser than the write the file reads as untouched. What the
 // summary is keyed on carries the file's size too, so the Roster follows the transcript anyway.
 test('re-reads a transcript that grew without its mtime moving', async (context) => {

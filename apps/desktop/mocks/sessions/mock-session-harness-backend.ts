@@ -1,4 +1,4 @@
-// The backend every packaged Session proof runs against today: each adapter's mock CLI written
+// The backend every packaged Session proof runs against today: each adapter's mock Harness written
 // beside the fixture tree, and both transcript roots pointed at that tree (#2308).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -11,19 +11,22 @@ import type {
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../src/domains/sessions/contract/proof-protocol'
+} from '../../src/domains/sessions/main/composition/proof-protocol'
 import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
-import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
-import { mockCodexCli } from '../cli/codex/mock-codex-cli'
-import type { MockCli } from '../cli/mock-cli'
+import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
+import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
+import type { MockHarness } from '../cli/mock-cli'
 
 // Long enough for a case to read the app's wait state before the mock answers (#2119).
 const SLOW_REPLY_MS = 2_000
 const BUDGET_MS = 30_000
 const HISTORY = { name: 'Session history' }
 
-// Every mock this backend runs, registered once. Adding a CLI is one entry here plus its adapter.
-const MOCKS: Record<SessionHarness, MockCli> = { claude: mockClaudeCli, codex: mockCodexCli }
+// Every mock this backend runs, registered once. Adding a Harness is one entry here plus its adapter.
+const MOCKS: Record<SessionHarness, MockHarness> = {
+  claude: mockClaudeHarness,
+  codex: mockCodexHarness,
+}
 
 function transcriptRoots(fixture: SessionFixture): Record<SessionHarness, string> {
   return { claude: fixture.claudeTranscripts, codex: fixture.codexTranscripts }

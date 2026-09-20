@@ -10,9 +10,9 @@ import process from 'node:process'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../../src/domains/sessions/contract/proof-protocol.ts'
+} from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
-import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-harness-process-titles.mts'
+import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
 

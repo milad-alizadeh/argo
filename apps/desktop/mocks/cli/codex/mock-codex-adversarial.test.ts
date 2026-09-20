@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/domains/sessions/contract/proof-protocol.ts'
-import { startSession } from '../../../src/domains/sessions/main/drive.ts'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
+import { startSession } from '../../../src/domains/sessions/main/drive/drive.ts'
 import { createCodexDriveAdapter } from '../../../src/harnesses/codex/drive/session-drive-adapter.ts'
 import { driverBackedByFixture } from './mock-codex-driver.ts'
 
@@ -16,7 +16,7 @@ test('a seeded Codex reply survives a split through a multi-byte character', asy
         version: 1,
         type: 'session.start',
         requestId: 'start-seeded-reply',
-        harness: 'codex',
+        cli: 'codex',
         cwd: process.cwd(),
         prompt: 'Keep this complete.',
       },

@@ -1,10 +1,10 @@
 import { TAG } from '@/harnesses/claude/compaction/compaction-hook'
 
 const COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
-// The CLI's own report of a `/compact`, which the Feed's compaction divider already makes.
+// The Harness's own report of a `/compact`, which the Feed's compaction divider already makes.
 const COMPACTED = /^Compacted( \(.*\))?$/
 
-// The CLI dims its report with terminal colour codes, and reports every hook `/compact` ran,
+// The Harness dims its report with terminal colour codes, and reports every hook `/compact` ran,
 // Argo's own included (ADR-0041).
 export function readableCommandOutput(stdout: string): string {
   return stdout

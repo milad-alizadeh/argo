@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { messageRecord } from '@/harnesses/codex/sessions/message-record'
 import { isRecord } from '@/shared/validation'
 

@@ -1,4 +1,4 @@
-// The Session contracts under the mock HARNESSES' seeded jitter, split bytes, stalls and failures.
+// The Session contracts under the mock CLIs' seeded jitter, split bytes, stalls and failures.
 import { createSessionByClick } from './gestures'
 import { expect, test } from './session-proof-run'
 

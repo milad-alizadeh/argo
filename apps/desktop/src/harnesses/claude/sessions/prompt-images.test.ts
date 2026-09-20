@@ -94,7 +94,7 @@ test('keeps an image the assistant sent as its source rather than dropping it', 
   )
 })
 
-test('draws a prompt the person sent mid-turn, which the CLI writes as a queued attachment', () => {
+test('draws a prompt the person sent mid-turn, which the Harness writes as a queued attachment', () => {
   const record = parseTranscriptLine(
     JSON.stringify({
       type: 'attachment',

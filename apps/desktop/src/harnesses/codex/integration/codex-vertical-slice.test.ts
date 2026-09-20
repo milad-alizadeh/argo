@@ -6,11 +6,11 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { compactSession, sendSession, startSession } from '@/domains/sessions/main/drive.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { compactSession, sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions.ts'
-import { driverBackedByFixture } from '../../../../mocks/harness/codex/mock-codex-driver.ts'
+import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('starting a Codex Session over the real transport makes it appear in the shared Roster', async () => {
   const driver = driverBackedByFixture()
@@ -63,7 +63,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
         sessionId,
         prompt: 'Continue with the next Turn.',
       },
-      { adapters, ownerCliFor: async () => 'codex' },
+      { adapters, ownerHarnessFor: async () => 'codex' },
     )
     assert.equal(sendReply.type, 'session.accepted')
   } finally {
@@ -124,7 +124,7 @@ test('compacting a Codex Session over the real transport clears once the item co
 
     const compactReply = await compactSession(
       { version: 1, type: 'session.compact', requestId: 'compact-1', sessionId },
-      { adapters, ownerCliFor: async () => 'codex' },
+      { adapters, ownerHarnessFor: async () => 'codex' },
     )
     assert.equal(compactReply.type, 'session.accepted')
     assert.equal(

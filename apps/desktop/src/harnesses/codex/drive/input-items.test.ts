@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
 
 test('sends the draft alone when there are no attachments', () => {

@@ -4,11 +4,11 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { fixtureRoot, unscopedListing } from '@/harnesses/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
-import { managedRow } from '@/harnesses/session/managed-row'
 
 // A pid that existed and has exited, so no live process holds it.
 const exitedPid = spawnSync('true').pid

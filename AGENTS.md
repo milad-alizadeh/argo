@@ -40,18 +40,18 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 ## Desktop Session adapters
 
-Before changing desktop Session observation, transcript discovery, or a harness parser, read
-`docs/adr/0024-session-drive-port-two-adapters.md`. A harness owns one adapter under
-`apps/desktop/src/harnesses/<harness>/`: its filesystem layout and parser live there. Shared Session
-code holds only the IPC contract and projections. Register an adapter once, and keep shared code
-free of harness and filename branches.
+Before changing desktop Session observation, transcript discovery, or a Harness parser, read
+`docs/adr/0024-session-drive-port-two-adapters.md`. A Harness owns one adapter under
+`apps/desktop/src/harnesses/<harness>/`: its filesystem layout and parser live there. Shared
+Session code holds only the IPC contract and projections. Register an adapter once, and keep
+shared code free of Harness and filename branches.
 
 Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
 the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per
 flow in `playwright.config.ts`, run by `bun run test:e2e`; add a flow as a project, never a script.
 Each flow builds its cases on the `test` in `e2e/packaged-proof.ts`: a case declares its starting
 state as a fixture option (`test.use`), never as a case that runs before it. A variant of a flow,
-such as the real-CLI Session backend, is a project `use` option on the same file, never a copy.
+such as the real-Harness Session backend, is a project `use` option on the same file, never a copy.
 `mocks/` holds `mock-*` CLIs, providers and their transcripts; `tools/` holds capture, measure
 and repro scripts. `apps/desktop/scripts/` holds runtime wrappers only.
 

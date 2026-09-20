@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed, tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 
 const SESSION_ID = 'plan-session'
@@ -30,7 +30,7 @@ function createCall(id: string, subject: string) {
   return call(id, 'TaskCreate', { subject, description: `Why ${subject}`, activeForm: subject })
 }
 
-// TaskCreate's result as the CLI writes it: the sentence the model reads, and the id beside it.
+// TaskCreate's result as the Harness writes it: the sentence the model reads, and the id beside it.
 function created(id: string, taskId: string, subject: string) {
   return result(id, {
     content: `Task #${taskId} created successfully: ${subject}`,

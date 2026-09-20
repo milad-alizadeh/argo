@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { taskStartedContextWindow } from '@/harnesses/codex/sessions/context-window'
 import { currentUserBlocks } from '@/harnesses/codex/sessions/current-user-blocks'
 import { delegatedRequest } from '@/harnesses/codex/sessions/harness-envelopes'

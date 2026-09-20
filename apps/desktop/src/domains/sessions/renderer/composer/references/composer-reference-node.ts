@@ -2,9 +2,9 @@ import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
 import { composerReferenceIcon } from '@/domains/sessions/renderer/composer/references/composer-reference-icon'
 import {
-  cliLabel,
+  harnessLabel,
   referenceBySource,
-  referenceSupportsCli,
+  referenceSupportsHarness,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
@@ -41,7 +41,8 @@ export class ComposerReferenceNode extends TextNode {
     const element = super.createDOM(config)
     const text = this.getTextContent()
     const reference = referenceBySource(text)
-    const unsupported = reference !== undefined && !referenceSupportsCli(reference, this.__harness)
+    const unsupported =
+      reference !== undefined && !referenceSupportsHarness(reference, this.__harness)
     element.className = unsupported ? UNSUPPORTED_CLASS : SUPPORTED_CLASS
     element.dataset.reference = text
     element.dataset.contextLabel = reference?.label ?? text
@@ -50,7 +51,7 @@ export class ComposerReferenceNode extends TextNode {
       element.dataset.unsupported = 'true'
       const fact = element.ownerDocument.createElement('span')
       fact.className = 'sr-only'
-      fact.textContent = ` — not available for ${cliLabel(this.__harness)}`
+      fact.textContent = ` — not available for ${harnessLabel(this.__harness)}`
       element.appendChild(fact)
     }
     return element

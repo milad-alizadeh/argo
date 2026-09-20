@@ -3,13 +3,13 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
-import { isLiveElsewhere } from '@/domains/sessions/contract/live-elsewhere'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { hasOpenSubagent } from '@/domains/sessions/contract/subagents'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
 import {
   createTranscriptRecordReader,
   ROSTER_FILE_LIMIT,
-} from '@/harnesses/session/transcript-lines'
+} from '@/domains/sessions/main/observation/transcript-lines'
+import { hasOpenSubagent } from '@/domains/sessions/main/projection/subagents'
 import { transcriptPaths } from './transcript-paths'
 
 // The Turn marks codex-harness 0.147.0 writes as `event_msg` payloads.

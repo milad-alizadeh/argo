@@ -4,14 +4,19 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import {
+  fed,
+  feedRequest,
+  listed,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(
   new URL(
-    '../../../../mocks/harness/codex/fixtures/sessions/rollout-codexToolCalls.jsonl',
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexToolCalls.jsonl',
     import.meta.url,
   ),
 )

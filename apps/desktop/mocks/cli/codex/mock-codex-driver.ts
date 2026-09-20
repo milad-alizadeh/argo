@@ -11,7 +11,7 @@ import { createCodexSessionDriver } from '../../../src/harnesses/codex/drive/cod
 
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
-const fixture = path.join(process.cwd(), 'mocks', 'harness', 'codex', 'mock-codex-app-server.ts')
+const fixture = path.join(process.cwd(), 'mocks', 'cli', 'codex', 'mock-codex-app-server.ts')
 
 export function driverBackedByFixture(
   driverOptions: {
@@ -44,7 +44,7 @@ export function driverBackedByFixture(
   })
 }
 
-export async function ownerCliFor() {
+export async function ownerHarnessFor() {
   return 'codex'
 }
 

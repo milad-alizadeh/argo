@@ -1,6 +1,6 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import type { FeedOverlay } from '@/domains/sessions/main/observation/reader'
 import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
-import type { FeedOverlay } from '@/harnesses/session/session-source'
 
 type Prose = Extract<SessionFeedRow, { shape: 'prose' }>
 
@@ -48,6 +48,6 @@ export function draftOverlay(
       const id = aliases.get(row.id)
       return id === undefined ? row : { ...row, id }
     })
-    return { rows: [...shown, ...drafts], changes: { drafts, aliases: [...aliases] } }
+    return { rows: [...shown, ...drafts], changes: { rows: drafts, aliases: [...aliases] } }
   }
 }

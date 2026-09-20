@@ -1,4 +1,4 @@
-// The packaged app shows its wait state and rejects repeated Sends while the CLI is silent (#2119).
+// The packaged app shows its wait state and rejects repeated Sends while the Harness is silent (#2119).
 // The backend decides what a reply looks like; this proof holds no reply string (#2308).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'

@@ -1,4 +1,4 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
@@ -59,7 +59,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
 
 function InspectorBar({ model }: { model: SessionScreenModel }) {
   if (model.evidence !== null) return null
-  if (model.shell !== null) {
+  if (model.shell !== null && model.shellOutput?.state === 'available') {
     return <SessionWorkInspectorHeader work={{ kind: 'shell', command: model.shell }} />
   }
   if (model.delegation !== null) {

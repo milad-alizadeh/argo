@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver.ts'
-import { mockChannel } from '../../../../mocks/harness/codex/mock-channel.ts'
+import { mockChannel } from '../../../../mocks/cli/codex/mock-channel.ts'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

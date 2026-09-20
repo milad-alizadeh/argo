@@ -1,4 +1,4 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { Wait } from '@/harnesses/claude/drive/deliver-turn'
 
 export type AnswerTarget = { process: { write: (text: string) => void } }
@@ -32,11 +32,11 @@ async function deliverOne(target: AnswerTarget, answer: QuestionAnswer, wait: Wa
     target.process.write(ENTER)
     return
   }
-  // Single-select: Down to the row, Enter (confirmed against the real CLI). Multi-select: Space
+  // Single-select: Down to the row, Enter (confirmed against the real Harness). Multi-select: Space
   // toggles a row without leaving the list, so every target index is visited in ascending order
   // off the same cursor, then one Enter submits the set. The Space-toggle and the shared cursor
   // are UNVERIFIED — no probe has driven a multiSelect question yet — so this path can misfire
-  // against a future CLI build until it is measured for real.
+  // against a future Harness build until it is measured for real.
   let cursor = 1
   for (const index of answer.indices) {
     await pressDown(target, index - cursor, wait)

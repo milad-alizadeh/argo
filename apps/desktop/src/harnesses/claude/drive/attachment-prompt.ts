@@ -2,11 +2,11 @@ import { createHash } from 'node:crypto'
 import { mkdir, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
-// Attachments reach the Claude Code CLI as `@path` file mentions, its own syntax for pointing a
+// Attachments reach the Claude Code Harness as `@path` file mentions, its own syntax for pointing a
 // Turn at a file (verified against Claude Code's own docs, #1845), appended after the draft text
-// rather than through a structured channel, since the CLI is driven by pasting plain text into a PTY.
+// rather than through a structured channel, since the Harness is driven by pasting plain text into a PTY.
 // Claude Code 2.1.272 reads `@"a b.png"` whole; unquoted, a mention ends at the first space.
 function mention(path: string): string {
   return /\s/.test(path) && !path.includes('"') ? `@"${path}"` : `@${path}`

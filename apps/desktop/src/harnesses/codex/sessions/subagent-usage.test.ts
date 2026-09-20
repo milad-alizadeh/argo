@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
-import { projectRosterRow } from '@/harnesses/session/roster'
 
 function activity(kind: 'started' | 'completed', timestamp: string, subagentId: string) {
   return {

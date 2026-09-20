@@ -1,10 +1,10 @@
-import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/models'
+import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/model/models'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { readBackgroundTask } from '@/harnesses/claude/sessions/background-task'
 import {
   readBlocks,
@@ -77,7 +77,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
     role,
     entry: readEntry(record.entrypoint),
     stopReason: typeof message.stop_reason === 'string' ? message.stop_reason : null,
-    // `<synthetic>` marks a reply the CLI wrote itself, such as an API error, so no model ran it.
+    // `<synthetic>` marks a reply the Harness wrote itself, such as an API error, so no model ran it.
     model:
       typeof message.model === 'string' && message.model !== '<synthetic>' ? message.model : null,
     effort: typeof record.effort === 'string' ? record.effort : null,

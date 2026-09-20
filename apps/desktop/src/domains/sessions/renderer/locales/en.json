@@ -2,7 +2,7 @@
   "navigationLabel": "Sessions",
   "sidebarLabel": "Sessions sidebar",
   "title": "Sessions",
-  "subtitle": "CLI messages",
+  "subtitle": "Harness messages",
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "newSession": "New Session",
@@ -290,11 +290,11 @@
     },
     "no-sessions": {
       "title": "No Sessions on this machine",
-      "description": "Argo lists a Session here as soon as a CLI writes one."
+      "description": "Argo lists a Session here as soon as a Harness writes one."
     },
     "roster": {
       "title": "No Sessions on this machine",
-      "description": "Argo lists a Session here as soon as a CLI writes one."
+      "description": "Argo lists a Session here as soon as a Harness writes one."
     },
     "archived": {
       "title": "Nothing archived",

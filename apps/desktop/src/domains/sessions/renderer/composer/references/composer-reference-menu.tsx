@@ -1,9 +1,9 @@
 import { TriangleAlert } from 'lucide-react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
-  cliLabel,
+  harnessLabel,
   referenceSuggestions,
-  referenceSupportsCli,
+  referenceSupportsHarness,
   type SessionReference,
   SessionReferenceIcon,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
@@ -103,7 +103,7 @@ export function ComposerReferenceMenu({
       role="listbox"
     >
       {choices.map((choice, index) => {
-        const unsupported = !referenceSupportsCli(choice, harness)
+        const unsupported = !referenceSupportsHarness(choice, harness)
         return (
           <button
             aria-selected={index === selected}
@@ -127,7 +127,7 @@ export function ComposerReferenceMenu({
               <span className="block type-control">{choice.label}</span>
               <span className="block type-meta text-muted-foreground">
                 {unsupported
-                  ? t('composer.references.unavailable', { harness: cliLabel(harness) })
+                  ? t('composer.references.unavailable', { harness: harnessLabel(harness) })
                   : choice.detail}
               </span>
             </span>

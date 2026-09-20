@@ -1,7 +1,7 @@
 // Where a Codex thread works. `session_meta` names the folder and branch it opened in, and a
 // thread that moved into a worktree names that place only on each command it runs there.
 
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // `session_meta.git` is `{ commit_hash, branch, repository_url }`, absent outside a repository.

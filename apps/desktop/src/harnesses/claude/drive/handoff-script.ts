@@ -7,7 +7,7 @@
 // command below spells out the instruction in full.
 import path from 'node:path'
 
-// A Session id is a CLI's own string and may carry separators. Cut to what a filename can hold,
+// A Session id is a Harness's own string and may carry separators. Cut to what a filename can hold,
 // rather than trusted into a path.
 function fileToken(sessionId: string): string {
   const kept = sessionId.replace(/[^A-Za-z0-9-]/g, '')

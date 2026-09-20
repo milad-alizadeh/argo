@@ -1,4 +1,4 @@
-// The CLI a packaged Session proof runs against (#2308). The harness owns the fixture tree, the
+// The Harness a packaged Session proof runs against (#2308). The harness owns the fixture tree, the
 // packaged app copy and the launches; the backend answers the four questions that change when the
 // proof swaps a mock `claude` and `codex` for the real ones.
 import type { Page } from 'playwright-core'
@@ -13,7 +13,7 @@ export type SessionFixture = {
   project: string
 }
 
-// What one launch asks of the CLI. A slow reply is the state the wait cases read (#2119): a CLI
+// What one launch asks of the Harness. A slow reply is the state the wait cases read (#2119): a Harness
 // that answers instantly never shows the app waiting.
 export type SessionHarnessLaunch = { slowReply: boolean; adversarialSeed?: string }
 
@@ -40,6 +40,6 @@ export type SessionHarnessBackend = {
   waitForReply: (page: Page, reply: SessionReply) => Promise<void>
   // Whether the Feed already shows the reply.
   replied: (page: Page, reply: SessionReply) => Promise<boolean>
-  // Whether the CLI has written the reply where the app reads its transcripts.
+  // Whether the Harness has written the reply where the app reads its transcripts.
   recorded: (reply: SessionReply) => Promise<boolean>
 }

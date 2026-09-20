@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/contract/contract'
+import {
+  type DriveSessionErrorCode,
+  driveSessionError,
+} from '@/domains/sessions/contract/ipc/contract'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
@@ -94,7 +97,7 @@ export const ResumesOnSend: Story = {
   },
 }
 
-// Every refusal draws the same lock card, whatever CLI or message caused it (#2092 AC #4/#9).
+// Every refusal draws the same lock card, whatever Harness or message caused it (#2092 AC #4/#9).
 const REFUSAL: DriveSessionErrorCode = 'held-elsewhere'
 
 // A Session open in another app cannot take a Turn: the refusal replaces the composer with a

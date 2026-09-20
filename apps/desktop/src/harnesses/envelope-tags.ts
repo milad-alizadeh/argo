@@ -1,4 +1,4 @@
-// Both HARNESSES wrap harness text in XML-like envelopes, and a field is one tag's contents.
+// Both CLIs wrap harness text in XML-like envelopes, and a field is one tag's contents.
 export function taggedText(body: string, tag: string): string | null {
   return new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`).exec(body)?.[1] ?? null
 }

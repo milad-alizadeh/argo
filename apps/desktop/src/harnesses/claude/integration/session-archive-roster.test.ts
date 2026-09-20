@@ -6,8 +6,8 @@ import { test } from 'node:test'
 import {
   createSessionArchiveStore,
   sessionArchivePath,
-} from '@/domains/sessions/main/archive-store'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+} from '@/domains/sessions/main/archive/archive-store'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 import {
   fixtureRoot,
   unscopedListing as listing,

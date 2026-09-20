@@ -2,13 +2,13 @@ import assert from 'node:assert/strict'
 import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '@/domains/sessions/main/reader-test-helpers'
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 import { startedSession } from '@/harnesses/claude/integration/claude-driver-launch.ts'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 
@@ -39,7 +39,7 @@ async function compactingSession(context: TestContext, startedAt = at(-MINUTE)) 
   return { transcripts, starts, reader, startedAt }
 }
 
-// The CLI adding a record the reader has already seen the file without.
+// The Harness adding a record the reader has already seen the file without.
 async function append(transcripts: string, record: Record<string, unknown>) {
   const file = path.join(transcripts, 'project-one', `${SESSION}.jsonl`)
   await appendFile(file, `${JSON.stringify(record)}\n`)

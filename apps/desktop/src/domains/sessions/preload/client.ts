@@ -1,4 +1,5 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -17,13 +18,12 @@ import {
   type SessionStatAttachmentsReply,
   type SessionSubagentUsageReply,
   sessionError,
-} from '@/domains/sessions/contract/contract'
-import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import type { RosterStatus } from '@/domains/sessions/contract/search-contract'
+} from '@/domains/sessions/contract/ipc/contract'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
+import type { RosterStatus } from '@/domains/sessions/contract/ipc/search-contract'
 import { createDomainClient } from '@/shared/ipc/client'
 
-export type SessionClient = {
+export type SessionHarnessent = {
   startSession(request: {
     harness: string
     cwd: string
@@ -92,9 +92,9 @@ export type SessionClient = {
   statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
 }
 
-export function createSessionClient(
+export function createSessionHarnessent(
   invoke: (channel: string, request: unknown) => Promise<unknown>,
-): SessionClient {
+): SessionHarnessent {
   const client = createDomainClient(SESSION_OPERATIONS, invoke, sessionError)
   return {
     startSession: (request) => client.start(request),

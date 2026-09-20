@@ -6,8 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/domains/sessions/contract/proof-protocol.ts'
-import { writeMockClaude } from './mock-claude-harness.ts'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
+import { writeMockClaude } from './mock-claude-cli.ts'
 
 const ESCAPE = String.fromCharCode(27)
 

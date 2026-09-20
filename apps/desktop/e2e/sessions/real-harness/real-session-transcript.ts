@@ -45,7 +45,7 @@ async function assistantInTranscript(
     try {
       if (matcher.isAssistant(line)) return { size: (await stat(transcript)).size }
     } catch {
-      // A CLI can have appended a partial line; the next poll will read it whole.
+      // A Harness can have appended a partial line; the next poll will read it whole.
     }
   }
   return null

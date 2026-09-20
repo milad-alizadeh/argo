@@ -11,7 +11,7 @@ export type SessionReference = {
   kind: SessionReferenceKind
   label: string
   source: string
-  // Every CLI supports a reference unless this names the closed set that does; a plugin invoking
+  // Every Harness supports a reference unless this names the closed set that does; a plugin invoking
   // Claude's own permission system has no Codex equivalent to name.
   harness?: readonly SessionHarness[]
 }
@@ -70,12 +70,15 @@ export function referenceBySource(source: string) {
   return sessionReferences.find((reference) => reference.source === source)
 }
 
-export function referenceSupportsCli(reference: SessionReference, harness: SessionHarness | null) {
+export function referenceSupportsHarness(
+  reference: SessionReference,
+  harness: SessionHarness | null,
+) {
   return harness === null || reference.harness === undefined || reference.harness.includes(harness)
 }
 
-export function cliLabel(harness: SessionHarness | null) {
-  return harness ? HARNESSES[harness].label : 'this CLI'
+export function harnessLabel(harness: SessionHarness | null) {
+  return harness ? HARNESSES[harness].label : 'this Harness'
 }
 
 export function referenceInText(text: string) {
@@ -100,13 +103,13 @@ export function SessionReferenceBadge({
 }) {
   const { t } = useTranslation('sessions')
   const reference = referenceBySource(source)
-  const unsupported = reference !== undefined && !referenceSupportsCli(reference, harness)
+  const unsupported = reference !== undefined && !referenceSupportsHarness(reference, harness)
   return (
     <span className={unsupported ? 'mx-0.5 opacity-60' : 'mx-0.5'}>
       <InlineContext icon={renderReferenceIcon(unsupported, reference)} text={source} />
       {unsupported ? (
         <span className="sr-only">
-          {t('composer.references.badgeUnavailable', { harness: cliLabel(harness) })}
+          {t('composer.references.badgeUnavailable', { harness: harnessLabel(harness) })}
         </span>
       ) : null}
     </span>

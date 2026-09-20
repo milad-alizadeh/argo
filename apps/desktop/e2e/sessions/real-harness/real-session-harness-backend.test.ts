@@ -36,13 +36,13 @@ async function startedRealBackend(root: string) {
   return { backend, run: await backend.start({ root, fixture: {} as SessionFixture }) }
 }
 
-test('resolves both real HARNESSES before it starts the packaged app', () => {
+test('resolves both real CLIs before it starts the packaged app', () => {
   expect(
     resolveRealSessionExecutables((name) => ({ claude: '/bin/claude', codex: '/bin/codex' })[name]),
   ).toEqual({ claude: '/bin/claude', codex: '/bin/codex' })
 })
 
-test('names the missing CLI in the setup error', () => {
+test('names the missing Harness in the setup error', () => {
   expect(() =>
     resolveRealSessionExecutables((name) => (name === 'claude' ? '/bin/claude' : null)),
   ).toThrow('codex is not available on PATH')
@@ -70,7 +70,7 @@ test('reaches the Claude login in the real Keychain from the isolated HOME', asy
     )
   }))
 
-// Argo reads an absent transcript folder as unreachable, and the HARNESSES create theirs only on first write (#2356).
+// Argo reads an absent transcript folder as unreachable, and the CLIs create theirs only on first write (#2356).
 test('gives the isolated HOME the transcript folders Argo reads', async () =>
   inTemporaryRoot(async (root) => {
     const sourceHome = await writeSubscriptionCredentials(root)

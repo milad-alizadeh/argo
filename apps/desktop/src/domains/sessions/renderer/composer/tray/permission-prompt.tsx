@@ -1,7 +1,7 @@
 import { ChevronDown, ShieldQuestion } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Permission } from '@/domains/sessions/contract/contract'
+import type { Permission } from '@/domains/sessions/contract/ipc/contract'
 import {
   focusAfterLeaving,
   useExitPresence,
@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 
-// What each CLI's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
+// What each Harness's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
 const STANDING_ALLOW = {
   claude: 'permission.allowSimilar',
   codex: 'permission.allowAll',

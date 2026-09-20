@@ -7,7 +7,7 @@ import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// The mock folder starts empty, so the Roster row must precede a CLI transcript.
+// The mock folder starts empty, so the Roster row must precede a Harness transcript.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionHarnessBackend,
@@ -19,10 +19,10 @@ export async function proveSessionCreatedByClick(
   const sessionId = await createSessionByClick(page, {
     harness,
     prompt: PROMPT,
-    cliWrote: () => backend.recorded(reply),
+    harnessWrote: () => backend.recorded(reply),
   })
 
-  // The gesture ended in a real Session: the CLI answers the prompt it was sent.
+  // The gesture ended in a real Session: the Harness answers the prompt it was sent.
   await backend.waitForReply(page, reply)
   // Read after the Feed lands because a duplicate start can reach the Roster behind the new row.
   const created = (await rosterIds(page)).filter((id) => !known.includes(id))

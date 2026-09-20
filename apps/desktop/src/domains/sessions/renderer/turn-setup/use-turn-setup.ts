@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   type ComposerIdentity,
   composerIdentityKey,

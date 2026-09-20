@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { appendFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { createHeldRolloutReader, heldRolloutIds } from '@/harnesses/codex/sessions/held-rollouts'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import {
@@ -12,7 +13,6 @@ import {
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
 } from '@/harnesses/codex/sessions/rollout-test-helpers'
-import { managedRow } from '@/harnesses/session/managed-row'
 
 const OTHER_THREAD = '01a0b000-0000-7000-8000-000000000009'
 

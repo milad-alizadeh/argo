@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '@/harnesses/session/discover-transcript-sessions'
-import { createTranscriptRecordReader } from '@/harnesses/session/transcript-lines'
+} from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
 import { isRecord } from '@/shared/validation'
 import { withoutModelInputCopies } from './model-input-copies'
 import { answeringEveryNestedCall } from './nested-results'

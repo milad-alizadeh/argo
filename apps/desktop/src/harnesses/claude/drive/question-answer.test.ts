@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { deliverAnswer } from '@/harnesses/claude/drive/question-answer'
 
 const DOWN = '[B'
@@ -11,7 +11,7 @@ function target() {
   return { target: { process: { write: (text: string) => writes.push(text) } }, writes }
 }
 
-// Confirmed against the real CLI: Down to the row (the picker opens on row 1), then Enter.
+// Confirmed against the real Harness: Down to the row (the picker opens on row 1), then Enter.
 test('answers a single-select question with Down to the row and Enter', async () => {
   const { target: session, writes } = target()
   const answer: QuestionAnswer = { kind: 'options', indices: [3] }

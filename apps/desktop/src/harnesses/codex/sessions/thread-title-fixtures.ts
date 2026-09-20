@@ -4,9 +4,9 @@ import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { sessionListReplySchema } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import { codexStatePath } from '@/harnesses/codex/sessions/roots'
 import { readThreadNames } from '@/harnesses/codex/sessions/thread-names'
@@ -18,7 +18,7 @@ export const THREADS_SCHEMA = 'CREATE TABLE threads (id TEXT PRIMARY KEY, title 
 
 const FIXTURE = fileURLToPath(
   new URL(
-    `../../../../mocks/harness/codex/fixtures/sessions/rollout-${CREATED_THREAD}.jsonl`,
+    `../../../../mocks/cli/codex/fixtures/sessions/rollout-${CREATED_THREAD}.jsonl`,
     import.meta.url,
   ),
 )

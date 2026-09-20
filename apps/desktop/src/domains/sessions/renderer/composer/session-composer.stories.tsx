@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
@@ -303,14 +303,14 @@ function CodexComposerStory() {
   )
 }
 
-function NewSessionHarnessStory() {
-  const [harness, setCli] = useState<SessionHarness>('claude')
+function NewSessionHarnessestory() {
+  const [harness, setHarness] = useState<SessionHarness>('claude')
   const [started, setStarted] = useState<string | null>(null)
 
   return (
     <>
       <SessionComposer
-        harness={{ harness, onChange: setCli }}
+        harness={{ harness, onChange: setHarness }}
         onSend={async (text) => {
           setStarted(`${harness}: ${text}`)
           return true
@@ -458,7 +458,7 @@ export const CompactionStarts: Story = {
 }
 
 // The sent draft is the mention's own markdown-link syntax, unchanged by the badge it decorates
-// as (#2049): the CLI on the other end still reads `[$implement](path)`.
+// as (#2049): the Harness on the other end still reads `[$implement](path)`.
 export const SkillMentionSendsItsMarkdown: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -837,7 +837,7 @@ export const NarrowShowsModelAndEffort: Story = {
 }
 
 export const NewSessionChoosesCli: Story = {
-  render: () => <NewSessionHarnessStory />,
+  render: () => <NewSessionHarnessestory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })

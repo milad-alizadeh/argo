@@ -40,7 +40,7 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
   })
 
   // An archived Session's row sits under the same watched trees as an active one, so the row being
-  // viewed is read again when a CLI writes rather than twice a second. Each tick paid for a whole
+  // viewed is read again when a Harness writes rather than twice a second. Each tick paid for a whole
   // discovery pass, which made this the most expensive of the polls #2303 removed. Browsing the
   // paged list carries no restoreId and stays read on demand, as it was under the poll.
   useWatchedQueries('sessions', restoreId === null ? [] : [sessionArchiveQueryKey(restoreId)])

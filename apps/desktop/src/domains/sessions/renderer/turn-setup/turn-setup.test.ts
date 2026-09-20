@@ -5,7 +5,7 @@ import {
   CLAUDE_MODELS,
   CLAUDE_MODES,
   claudeTurnSetupSchema,
-} from '@/domains/sessions/contract/claude-turn-setup'
+} from '@/domains/sessions/contract/ipc/contract'
 import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 import {
   refusalOf,
@@ -17,7 +17,7 @@ import {
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 
-test('reads a Session setup off the CLI words its transcript wrote', () => {
+test('reads a Session setup off the Harness words its transcript wrote', () => {
   expect(
     setupFromReading(CLAUDE_TURN_SETUP, {
       model: 'claude-sonnet-5',

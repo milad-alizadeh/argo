@@ -1,9 +1,9 @@
-// A Subagent and a background Shell are different things the CLI records, and the reader picks
+// A Subagent and a background Shell are different things the Harness records, and the reader picks
 // between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
-import type { SubagentUsageFacts } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/background-work-contract'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './session-work'
 import { workPresentation } from './work-presentation'
 

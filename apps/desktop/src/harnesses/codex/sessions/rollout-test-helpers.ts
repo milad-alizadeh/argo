@@ -2,15 +2,15 @@ import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed } from '@/domains/sessions/main/reader-test-helpers'
+import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 export const OPEN_TURN_THREAD = '01a0b000-0000-7000-8000-000000000001'
 
 // A rollout codex-harness 0.147.0 wrote with its newest Turn still open.
 export const OPEN_TURN_FIXTURE = fileURLToPath(
   new URL(
-    '../../../../mocks/harness/codex/fixtures/sessions/rollout-codexOpenTurn.jsonl',
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexOpenTurn.jsonl',
     import.meta.url,
   ),
 )

@@ -1,9 +1,9 @@
 // The changes a Claude record makes to its Session's Plan (CONTEXT.md L3 · Plan). `TodoWrite`
-// writes the whole list and older transcripts still carry it; current HARNESSES add one step with
+// writes the whole list and older transcripts still carry it; current CLIs add one step with
 // `TaskCreate` and change it with `TaskUpdate`, naming it by the id `TaskCreate`'s result gave.
 
-import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/contract/plan'
-import type { PlanChange, ToolResult } from '@/domains/sessions/contract/transcript'
+import type { PlanChange, ToolResult } from '@/domains/sessions/contract/model/transcript'
+import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/projection/plan'
 import { isRecord } from '@/shared/validation'
 
 const DELETED = 'deleted'
@@ -24,7 +24,7 @@ function readTodos(call: PlanCall): PlanChange {
   )
 }
 
-// The CLI refuses a step with no subject, so such a call adds nothing.
+// The Harness refuses a step with no subject, so such a call adds nothing.
 function readCreate(call: PlanCall): PlanChange | null {
   const content = text(call.input.subject)
   return content === null ? null : { kind: 'add', callId: call.id, content }

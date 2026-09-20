@@ -2,13 +2,13 @@
 // the file's line cap: driving a Session Codex never launched, and Codex being unavailable.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver.ts'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
 import {
   driverBackedByFixture,
-  ownerCliFor,
-} from '../../../../mocks/harness/codex/mock-codex-driver.ts'
+  ownerHarnessFor,
+} from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('driving a Session with no findable transcript reports a drivable failure, not a stall', async () => {
   const driver = driverBackedByFixture()
@@ -21,7 +21,7 @@ test('driving a Session with no findable transcript reports a drivable failure, 
       sessionId: 'never-started',
       prompt: 'x',
     },
-    { adapters, ownerCliFor },
+    { adapters, ownerHarnessFor },
   )
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.code, 'missing-session')

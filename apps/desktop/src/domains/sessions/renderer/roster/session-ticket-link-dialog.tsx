@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ConnectTicketInput } from '@/domains/sessions/renderer/roster/use-session-ticket-link'
 import type { Session } from '@/domains/sessions/renderer/types'
-import { useConnection, useTicketList } from '@/domains/tickets/renderer/hooks/use-tickets'
+import { useConnection, useTicketList } from '@/domains/tickets/renderer/port'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,

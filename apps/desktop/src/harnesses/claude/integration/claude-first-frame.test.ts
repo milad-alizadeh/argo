@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
 import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
 import { FIRST_FRAME_TIMEOUT_MS } from '@/harnesses/claude/drive/first-frame.ts'
 import {
@@ -14,7 +15,6 @@ import {
   STARTED_AT,
   settle,
 } from '@/harnesses/claude/integration/claude-driver-launch.ts'
-import { createOwnershipLedger } from '@/harnesses/ownership-ledger.ts'
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
 const turn = (prompt: string) => ({ prompt, setup: OPENING })

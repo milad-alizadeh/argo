@@ -8,7 +8,7 @@ import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
 
-// The harness tab labels, typed against SessionHarness so a new CLI cannot be left out. The strings
+// The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
 // themselves live in the renderer's turn setup (claude-turn-setup.ts, codex-turn-setup.ts), which
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
@@ -24,8 +24,8 @@ export type CreateRequest = {
   harness: SessionHarness
   prompt: string
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
-  // row a managed Session stands on must not wait for the CLI to write (managed-row.ts).
-  cliWrote?: () => Promise<boolean>
+  // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
+  harnessWrote?: () => Promise<boolean>
 }
 
 type CreatedRow = { id: string; label: string; newRows: number }
@@ -134,11 +134,11 @@ async function waitForCreatedRow(
   for (;;) {
     const created = await readCreatedRow(page, known, request.prompt)
     if (created !== null) return created
-    if (request.cliWrote !== undefined) {
+    if (request.harnessWrote !== undefined) {
       assert.equal(
-        await request.cliWrote(),
+        await request.harnessWrote(),
         false,
-        'the CLI wrote before the new Session reached the Roster',
+        'the Harness wrote before the new Session reached the Roster',
       )
     }
     if (Date.now() > deadline) throw new Error('Sending from the new Session composer made no row.')

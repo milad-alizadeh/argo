@@ -1,11 +1,11 @@
-// A minimal mock CLI transcript reader, shared by every test proving the discovery engine
+// A minimal mock Harness transcript reader, shared by every test proving the discovery engine
 // (#2239, #2290) rather than either real adapter: the bound window, its cursor, and chain
-// resolution belong to this module regardless of which CLI's files it is reading.
+// resolution belong to this module regardless of which Harness's files it is reading.
 import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { TranscriptRecord } from '../../src/domains/sessions/contract/transcript'
-import { createTranscriptDiscoverer } from '../../src/harnesses/session/discover-transcript-sessions'
+import type { TranscriptRecord } from '../../src/domains/sessions/contract/model/transcript'
+import { createTranscriptDiscoverer } from '../../src/domains/sessions/main/observation/discover-transcript-sessions'
 
 export type MockTranscript = {
   root: string
@@ -17,7 +17,7 @@ export type MockTranscript = {
   title?: { text: string; source: 'custom' | 'summarised' }
 }
 
-// A mock CLI's transcript: one message line, so a fixture tree of many Sessions is cheap to
+// A mock Harness's transcript: one message line, so a fixture tree of many Sessions is cheap to
 // build. `writtenAt` sets the file's mtime directly, the field the engine's window sorts on, so
 // a test can name recency without racing the filesystem clock across many fast writes.
 export async function writeMockTranscript({

@@ -5,7 +5,7 @@ import {
   CodexSessionDriverError,
   createCodexSessionDriver,
 } from '@/harnesses/codex/drive/codex-session-driver.ts'
-import { mockChannel, mockChannelFailing } from '../../../../mocks/harness/codex/mock-channel.ts'
+import { mockChannel, mockChannelFailing } from '../../../../mocks/cli/codex/mock-channel.ts'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

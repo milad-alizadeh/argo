@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const sessionId = '01a0abe3-4484-7271-9336-9c4dc2be9f7b'

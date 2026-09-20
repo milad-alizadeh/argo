@@ -1,4 +1,4 @@
-import type { EditedFile, EditFacts } from '@/domains/sessions/contract/transcript'
+import type { EditedFile, EditFacts } from '@/domains/sessions/contract/model/transcript'
 import { readPatchFiles } from '@/harnesses/codex/sessions/apply-patch'
 
 // The patch is the call's own `patch` field when a script named it, else the bare text of a

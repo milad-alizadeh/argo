@@ -2,16 +2,18 @@
 // exception: archiving is Argo's own store, shared by every adapter
 // (`domains/sessions/main/archive-store.ts`).
 
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionIndex, SessionSource } from '@/domains/sessions/main/port'
+import { discoverRoster } from '@/domains/sessions/main/port'
 import {
   compactionEndedAt,
   markCompactingRows,
 } from '@/harnesses/claude/compaction/compaction-roster'
 import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
-import { discoverRoster } from '@/harnesses/session/discover-roster'
-import type { SessionIndex } from '@/harnesses/session/session-index-contract'
-import type { SessionSource } from '@/harnesses/session/session-source'
 import {
   backfillTick,
   clearFullRecords,
@@ -130,8 +132,13 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     historyComplete: index === undefined ? undefined : () => historyComplete(index),
     searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
-    readShellOutput: async (sessionId, shellId) =>
-      readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
+    readShellOutput: async (sessionId, shellId) => {
+      const tail = await readShellOutput(
+        await readSessionFiles(roots.transcripts, sessionId),
+        shellId,
+      )
+      return tail === null ? { state: 'absent' } : { state: 'available', tail }
+    },
     readSubagentFiles: async (sessionId, subagentId) =>
       readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
     readSubagentUsage: async (sessionId) =>

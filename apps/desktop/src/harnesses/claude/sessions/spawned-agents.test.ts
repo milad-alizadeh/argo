@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readSubagents } from '@/domains/sessions/contract/signals'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import { readSubagents } from '@/domains/sessions/contract/observation/signals'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
 import { parseTranscriptLine } from './records'
 import { readingSpawnedAgents } from './spawned-agents'
 
@@ -101,7 +101,7 @@ test('draws one row for each event of a Subagent messaged and answered in the fo
   assert.equal(responded?.shape === 'subagent' && responded.state, 'completed')
 })
 
-test('lands a Subagent the CLI answered in the foreground at its answer', () => {
+test('lands a Subagent the Harness answered in the foreground at its answer', () => {
   assert.deepEqual(readSubagents(records(SPAWN, answer('Eleven callers.'))), [
     {
       id: 'toolu_1',

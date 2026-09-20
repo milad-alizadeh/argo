@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
-import type { SessionStatus } from '@/domains/sessions/contract/models'
-import type { Question, QuestionAnswer, QuestionOption } from '@/domains/sessions/contract/question'
+import type {
+  Question,
+  QuestionAnswer,
+  QuestionOption,
+} from '@/domains/sessions/contract/drive/question'
+import type { SessionStatus } from '@/domains/sessions/contract/model/models'
 import type { RequestID, WireMessage } from '@/harnesses/codex/drive/protocol'
 import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol'
 

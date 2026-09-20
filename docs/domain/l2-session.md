@@ -38,7 +38,7 @@
   stored third posture: the roster is still rebuilt from the transcripts every launch (ADR-0004,
   ADR-0008).
 
-  A Session **is the root Agent** (`parentId: null`). Key attributes: **`cli`**
+  A Session **is the root Agent** (`parentId: null`). Key attributes: **`harness`**
   (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of
   every L1-triangle derivation and of external liveness matching).
 

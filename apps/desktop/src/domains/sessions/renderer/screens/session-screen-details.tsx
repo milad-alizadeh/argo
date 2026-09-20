@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-form'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { PermissionPrompt } from '@/domains/sessions/renderer/composer/tray/permission-prompt'
@@ -143,7 +143,7 @@ function Failure({ message }: { message: string }) {
   )
 }
 
-// One lock icon for any read-only Session, regardless of CLI (#2092 AC #4/#9). A Roster lock lifts
+// One lock icon for any read-only Session, regardless of Harness (#2092 AC #4/#9). A Roster lock lifts
 // on its own at the next poll, so it offers no Retry.
 function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
   const { t } = useTranslation('sessions')

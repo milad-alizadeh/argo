@@ -7,11 +7,11 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { decideSessionQuestion, startSession } from '@/domains/sessions/main/drive.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { decideSessionQuestion, startSession } from '@/domains/sessions/main/drive/drive.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions.ts'
-import { driverBackedByFixture } from '../../../../mocks/harness/codex/mock-codex-driver.ts'
+import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 async function until<Value>(read: () => Value | null, attempts = 50): Promise<Value> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -22,7 +22,7 @@ async function until<Value>(read: () => Value | null, attempts = 50): Promise<Va
   throw new Error('Timed out waiting for the pending Codex question.')
 }
 
-const ownerCliFor = async () => 'codex' as const
+const ownerHarnessFor = async () => 'codex' as const
 
 function decideRequest(requestId: string, sessionId: string, questionId: string) {
   return {
@@ -89,14 +89,14 @@ test('a real request_user_input reaches the Feed as an ask row, and the chosen a
     // answer stays available to retry (#1841's "Failure keeps the answer available for retry").
     const staleDecision = await decideSessionQuestion(
       decideRequest('decide-stale', sessionId, 'not-the-pending-item'),
-      { adapters, ownerCliFor },
+      { adapters, ownerHarnessFor },
     )
     assert.equal(staleDecision.type, 'session.error')
     assert.ok(pending === (await until(() => driver.pendingQuestion(sessionId))))
 
     const decision = await decideSessionQuestion(decideRequest('decide-1', sessionId, askRow.id), {
       adapters,
-      ownerCliFor,
+      ownerHarnessFor,
     })
     assert.equal(decision.type, 'session.accepted')
     assert.equal(driver.pendingQuestion(sessionId), null)

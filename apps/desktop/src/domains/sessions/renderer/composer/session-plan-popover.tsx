@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/models'
+import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,

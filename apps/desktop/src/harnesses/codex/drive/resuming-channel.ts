@@ -1,3 +1,4 @@
+import type { OwnershipStanding } from '@/domains/sessions/main/lifecycle/ownership-ledger'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import {
   type ManagedSession,
@@ -6,7 +7,6 @@ import {
   rememberManagedSession,
 } from '@/harnesses/codex/drive/managed-session'
 import { readThreadId } from '@/harnesses/codex/drive/protocol'
-import type { OwnershipStanding } from '@/harnesses/ownership-ledger'
 
 function refuseUnlessResumable(standing: OwnershipStanding) {
   switch (standing) {

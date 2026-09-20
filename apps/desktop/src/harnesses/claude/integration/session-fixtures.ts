@@ -3,11 +3,11 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
 import { readTranscriptFile } from '@/harnesses/claude/sessions/transcript-file.ts'
-import { projectRosterRow } from '@/harnesses/session/roster.ts'
 import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 
 export const unscopedListing = {

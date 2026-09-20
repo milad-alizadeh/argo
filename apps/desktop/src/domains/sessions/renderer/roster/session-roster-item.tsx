@@ -37,7 +37,7 @@ function selectionModifierOf(event: {
   return 'plain'
 }
 
-function knownCli(harness: string): harness is SessionHarness {
+function knownHarness(harness: string): harness is SessionHarness {
   return (SESSION_HARNESSES as readonly string[]).includes(harness)
 }
 
@@ -125,7 +125,7 @@ export function SessionRosterItem({
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
           <span className="roster-harness-mark">
-            {knownCli(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
+            {knownHarness(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
           </span>
           <span
             className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}

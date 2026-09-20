@@ -1,5 +1,5 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   type ComposerIdentity,
   findSessionRow,
@@ -35,7 +35,7 @@ export function managedSessionIsRunning(
 }
 
 // Bundles the mutations and the Turn Marker, whose availability and wiring all hinge on the same
-// facts (the CLI, the current identity, and the selected roster row), so the main hook states
+// facts (the Harness, the current identity, and the selected roster row), so the main hook states
 // each fact once.
 export function useComposerActions(options: {
   harness: SessionHarness

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { answeringEveryNestedCall } from '@/harnesses/codex/sessions/nested-results'
 import { readToolRecord } from '@/harnesses/codex/sessions/tool-calls'
 

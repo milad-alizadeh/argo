@@ -1,4 +1,7 @@
-import type { ContentBlock, TranscriptEventKind } from '@/domains/sessions/contract/transcript'
+import type {
+  ContentBlock,
+  TranscriptEventKind,
+} from '@/domains/sessions/contract/model/transcript'
 import { USER_HARNESS_ENVELOPES } from '@/harnesses/codex/sessions/harness-envelopes'
 import { isRecord } from '@/shared/validation'
 

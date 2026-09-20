@@ -17,7 +17,9 @@ const [
   assert,
   { createMockIpcWindow, RENDERER_URL },
   { GITHUB_ENDPOINTS },
+  { accountProviders, ticketSources },
   { createAccountAccess },
+  { createConnectionPort },
   { attachAccountBridge },
   { ACCOUNT_OPERATIONS },
   { attachTicketBridge },
@@ -36,15 +38,17 @@ const [
   import('node:assert/strict').then((module) => module.default),
   import('../../../../mocks/contract/mock-ipc-window'),
   import('@/providers/github/endpoints'),
+  import('@/providers/composition'),
   import('@/domains/accounts/main/access'),
+  import('@/domains/connections/main/port'),
   import('@/domains/accounts/main/bridge'),
   import('@/domains/accounts/contract/operations'),
   import('@/domains/tickets/main/bridge'),
   import('@/domains/tickets/contract/operations'),
   import('@/domains/projects/main/bridge'),
   import('@/domains/projects/contract/operations'),
-  import('@/domains/sessions/main/bridge'),
-  import('@/domains/sessions/contract/operations'),
+  import('@/domains/sessions/main/composition/bridge'),
+  import('@/domains/sessions/contract/ipc/operations'),
   import('@/platform/main/appearance'),
   import('@/platform/shared/appearance'),
 ])
@@ -76,6 +80,7 @@ async function domains(userData: string) {
     userData,
     accountData: userData,
     endpoints: { github: GITHUB_ENDPOINTS, linear: null },
+    providers: accountProviders,
     cipher: { available: () => false, encrypt: () => Buffer.alloc(0), decrypt: () => '' },
     openExternal: async () => undefined,
   })
@@ -84,7 +89,15 @@ async function domains(userData: string) {
   attachAccountBridge(accountMock.window, { access, rendererURL })
 
   const ticketMock = createMockIpcWindow()
-  attachTicketBridge(ticketMock.window, { access, rendererURL })
+  attachTicketBridge(ticketMock.window, {
+    access,
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
+    rendererURL,
+    sources: ticketSources,
+  })
 
   const appearanceMock = createMockIpcWindow()
   attachAppearanceBridge(appearanceMock.window, { userData, rendererURL })

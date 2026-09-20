@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
-import { toolCallsOf } from '@/domains/sessions/main/tool-calls-of'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { toolCallsOf } from '@/domains/sessions/main/projection/tool-calls-of'
 import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 

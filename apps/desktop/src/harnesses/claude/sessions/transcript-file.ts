@@ -2,7 +2,7 @@ import {
   readTranscriptFile as read,
   type TranscriptFile,
   withoutBlocks,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { normalizeClaudeRecords } from '@/harnesses/claude/sessions/normalize-records'
 import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
 

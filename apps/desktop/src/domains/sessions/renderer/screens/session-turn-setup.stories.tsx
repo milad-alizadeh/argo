@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import type { SessionSetup } from '@/domains/sessions/contract/models'
+import type { SessionSetup } from '@/domains/sessions/contract/model/models'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
@@ -11,7 +11,7 @@ const SESSION_ID = 'managed-turn-setup'
 const OPENING_TURN = '2026-09-13T10:00:00.000Z'
 const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
-// A managed Claude Session whose next Turn runs on whatever `reply` says the CLI used.
+// A managed Claude Session whose next Turn runs on whatever `reply` says the Harness used.
 function managedSession(reply: SessionSetup, sent: unknown[]) {
   const row = sessionRosterRow({
     id: SESSION_ID,

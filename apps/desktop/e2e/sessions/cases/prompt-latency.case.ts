@@ -1,5 +1,5 @@
 // How long a Send takes to put the typed prompt on screen, for a new Session and an existing one (#2430).
-// A slow CLI holds every reply back, so only the renderer's own optimistic draw can show the prompt.
+// A slow Harness holds every reply back, so only the renderer's own optimistic draw can show the prompt.
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
 import { chooseHarness, openNewSessionByClick } from '../gestures'

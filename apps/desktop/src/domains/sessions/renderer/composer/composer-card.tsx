@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 import type { DragEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { ComposerEditorArea } from '@/domains/sessions/renderer/composer/composer-editor-area'
 import { ComposerToolbar } from '@/domains/sessions/renderer/composer/composer-toolbar'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'

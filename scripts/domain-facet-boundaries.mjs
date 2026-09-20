@@ -19,6 +19,17 @@ function withoutExtension(filePath) {
   return filePath.replace(/\.(?:[cm]?[jt]sx?|json)$/, '')
 }
 
+function isHarnessAdapter(parts, harnesses) {
+  const harness = parts[harnesses + 1]
+  const kind = parts[harnesses + 2]
+  const file = withoutExtension(parts.at(-1) ?? '')
+  return (
+    (harness === 'claude' || harness === 'codex') &&
+    ((kind === 'drive' && file === 'session-drive-adapter') ||
+      (kind === 'sessions' && file === 'read-sessions'))
+  )
+}
+
 function facetAddress(filePath) {
   const parts = normalized(filePath).split('/')
   const domains = parts.indexOf('domains')
@@ -35,12 +46,9 @@ function facetAddress(filePath) {
     return { domain: 'platform', facet }
   }
   const source = parts.indexOf('src')
-  if (parts[source + 1] === 'harnesses') {
-    if (['claude', 'codex'].includes(parts[source + 2])) {
-      return { domain: 'harness', facet: 'harness' }
-    }
-    // Generic Session support is harness-main code; only named harness directories are adapters.
-    return { domain: 'harness', facet: 'main' }
+  const harnesses = parts.indexOf('harnesses')
+  if (harnesses >= 0) {
+    return { domain: 'harness', facet: isHarnessAdapter(parts, harnesses) ? 'harness' : 'main' }
   }
   return parts[source + 1] === 'shared' ? { domain: 'shared', facet: 'shared' } : null
 }
@@ -71,6 +79,29 @@ function isLegacyRoot(targetPath) {
   return root !== undefined && !SOURCE_ROOTS.has(root)
 }
 
+function isPublicDomainImport(source, target, targetPath) {
+  if (
+    source.domain === 'harness' &&
+    source.facet === 'main' &&
+    target.domain === 'sessions' &&
+    target.facet === 'main'
+  ) {
+    return true
+  }
+  if (
+    source.domain === target.domain ||
+    target.domain === 'platform' ||
+    target.domain === 'shared'
+  ) {
+    return true
+  }
+  if (target.facet === 'contract') return true
+  return (
+    (target.facet === 'main' && targetPath.endsWith('/main/port')) ||
+    (target.facet === 'renderer' && targetPath.endsWith('/renderer/port'))
+  )
+}
+
 function privilegedImport(facet, specifier, targetPath) {
   const policy = FACET_POLICIES[facet]
   if (policy.refusesNode && isNodeImport(specifier)) return true
@@ -82,6 +113,7 @@ function privilegedImport(facet, specifier, targetPath) {
 
 function importViolation(sourcePath, sourceFacet, specifier) {
   const shared = { path: sourcePath, sourceFacet, specifier }
+  const source = facetAddress(sourcePath)
   const targetPath = resolvedImport(sourcePath, specifier)
   if (privilegedImport(sourceFacet, specifier, targetPath)) {
     return { kind: 'privileged-import', ...shared }
@@ -92,14 +124,24 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   }
   if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
+  const crossDomainPublic =
+    source &&
+    target &&
+    source.domain !== target.domain &&
+    target.domain !== 'platform' &&
+    isPublicDomainImport(source, target, targetPath)
   if (
-    !target ||
-    ALLOWED_TARGETS[sourceFacet].has(target.facet) ||
-    (sourceFacet === 'harness' && target.domain === 'harness' && target.facet === 'main') ||
-    (sourceFacet === 'harness' && target.domain === 'platform' && target.facet === 'main')
+    source &&
+    target &&
+    source.domain !== target.domain &&
+    target.domain !== 'platform' &&
+    !crossDomainPublic
   ) {
-    return null
+    return { kind: 'private-domain-import', ...shared, targetFacet: target.facet }
   }
+  if (crossDomainPublic) return null
+  if (source?.domain === 'harness' && target?.domain === 'harness') return null
+  if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null
   return { kind: 'runtime-facet', ...shared, targetFacet: target.facet }
 }
 

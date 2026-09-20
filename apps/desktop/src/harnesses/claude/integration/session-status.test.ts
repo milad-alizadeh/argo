@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
 import { fixtureFiles } from '@/harnesses/claude/integration/session-fixtures'
-import { projectRosterRow } from '@/harnesses/session/roster.ts'
 
 async function rowOf(names) {
   return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')
@@ -33,7 +33,7 @@ test('projects every row as external, because ownership is not observed here', a
   assert.equal(row.harness, 'claude')
 })
 
-test('titles a Session by what a person typed over what the CLI summarised', async () => {
+test('titles a Session by what a person typed over what the Harness summarised', async () => {
   assert.deepEqual((await rowOf(['titledHeadless'])).title, {
     text: 'The name a person typed',
     source: 'custom',

@@ -1,6 +1,6 @@
-// A surgical edit of `~/.codex/config.toml`: the file is the Codex CLI's own, shared with
+// A surgical edit of `~/.codex/config.toml`: the file is the Codex Harness's own, shared with
 // `codex` itself and never checked into this repo, so a write here must touch only the one key
-// (docs/adr/0024-session-drive-port-two-adapters.md — a CLI owns its own adapter and config
+// (docs/adr/0024-session-drive-port-two-adapters.md — a Harness owns its own adapter and config
 // shape). A full TOML parse-and-reserialize would reorder keys and drop comments the person
 // wrote by hand; reading and writing one line among the top-level keys does not.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'

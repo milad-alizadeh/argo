@@ -2,7 +2,7 @@ import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { taggedField, taggedText } from '@/harnesses/envelope-tags'
 import { isRecord } from '@/shared/validation'
 import { readableCommandOutput } from './command-output'
@@ -111,7 +111,7 @@ export function readCommandEnvelope(
     return { kind: 'compaction-summary', uuid: message.uuid, text }
   const prompt = readCommandPrompt(text)
   if (prompt === undefined) return null
-  // The CLI echoes `/compact` after the boundary; the person's own `/compact` prompt precedes it.
+  // The Harness echoes `/compact` after the boundary; the person's own `/compact` prompt precedes it.
   if (prompt === null || prompt.split(' ')[0] === '/compact')
     return { kind: 'trace', uuid: message.uuid }
   return { ...message, blocks: [{ shape: 'event', event: 'command', text: prompt }] }

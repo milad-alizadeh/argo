@@ -7,8 +7,8 @@ import { test } from 'node:test'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/contract'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+} from '@/domains/sessions/contract/ipc/contract'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const listing = {
@@ -34,7 +34,7 @@ test('does not list transcripts without messages, but counts and re-reads them',
   context.after(() => rm(root, { recursive: true, force: true }))
   const day = path.join(root, '2026', '09', '12')
   await mkdir(day, { recursive: true })
-  const fixtures = path.join(process.cwd(), 'mocks', 'harness', 'codex', 'fixtures', 'sessions')
+  const fixtures = path.join(process.cwd(), 'mocks', 'cli', 'codex', 'fixtures', 'sessions')
   const empty = path.join(day, 'emptyTranscript.jsonl')
   await copyFile(path.join(fixtures, 'emptyTranscript.jsonl'), empty)
   await copyFile(

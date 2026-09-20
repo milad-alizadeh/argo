@@ -10,9 +10,9 @@ import type {
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../src/domains/sessions/contract/proof-protocol'
-import { mockClaudeCli } from '../cli/claude/mock-claude-cli'
-import { mockCodexCli } from '../cli/codex/mock-codex-cli'
+} from '../../src/domains/sessions/main/composition/proof-protocol'
+import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
+import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
 
 type Started = {
@@ -40,7 +40,7 @@ async function started(read: (start: Started) => Promise<void>) {
   }
 }
 
-test('hands the app an executable mock for each CLI', () =>
+test('hands the app an executable mock for each Harness', () =>
   started(async ({ root, run }) => {
     expect(run.executables).toEqual({
       claude: path.join(root, 'claude'),
@@ -58,7 +58,7 @@ test('points every transcript root at the fixture tree', () =>
     })
   }))
 
-test('holds the reply back only when a case asks for a slow CLI', () =>
+test('holds the reply back only when a case asks for a slow Harness', () =>
   started(async ({ run }) => {
     expect(run.launchEnv({ slowReply: false })).toEqual({ [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0' })
     const slow = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_DELAY_MS_ENV]
@@ -77,9 +77,12 @@ test('reads a recorded Claude reply out of the transcript the mock wrote', () =>
   started(async ({ fixture, backend }) => {
     const reply = { harness: 'claude' as const, prompt: 'Say the word.' }
     expect(await backend.recorded(reply)).toBe(false)
-    const folder = mockClaudeCli.folder(fixture.claudeTranscripts)
+    const folder = mockClaudeHarness.folder(fixture.claudeTranscripts)
     await mkdir(folder, { recursive: true })
-    await writeFile(path.join(folder, 'one.jsonl'), `${mockClaudeCli.replyMark(reply.prompt)}\n`)
+    await writeFile(
+      path.join(folder, 'one.jsonl'),
+      `${mockClaudeHarness.replyMark(reply.prompt)}\n`,
+    )
     expect(await backend.recorded(reply)).toBe(true)
   }))
 
@@ -88,11 +91,16 @@ test('reads a recorded Codex turn out of a nested transcript tree', () =>
   started(async ({ fixture, backend }) => {
     const reply = { harness: 'codex' as const, prompt: 'Carry on.' }
     expect(await backend.recorded(reply)).toBe(false)
-    const nested = path.join(mockCodexCli.folder(fixture.codexTranscripts), 'one', 'two', 'three')
+    const nested = path.join(
+      mockCodexHarness.folder(fixture.codexTranscripts),
+      'one',
+      'two',
+      'three',
+    )
     await mkdir(nested, { recursive: true })
     await writeFile(
       path.join(nested, 'rollout-one.jsonl'),
-      `{"message":"${mockCodexCli.replyMark(reply.prompt)}"}\n`,
+      `{"message":"${mockCodexHarness.replyMark(reply.prompt)}"}\n`,
     )
     expect(await backend.recorded(reply)).toBe(true)
   }))

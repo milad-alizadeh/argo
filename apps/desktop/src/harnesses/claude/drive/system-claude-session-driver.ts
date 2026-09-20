@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
+import {
+  createOwnershipLedger,
+  isProcessAlive,
+} from '@/domains/sessions/main/lifecycle/ownership-ledger'
 import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 import { createHandoffLedger } from '@/harnesses/claude/drive/handoff-ledger'
 import { createMessageDisplay } from '@/harnesses/claude/drive/message-display'
@@ -8,7 +12,6 @@ import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-
 import { claudePendingQuestion } from '@/harnesses/claude/sessions/pending-question'
 import { claudeResumeTarget } from '@/harnesses/claude/sessions/resume-target'
 import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
-import { createOwnershipLedger, isProcessAlive } from '@/harnesses/ownership-ledger'
 
 function readHandoffBrief(briefPath: string): string | null {
   try {
@@ -62,8 +65,8 @@ export function createSystemClaudeSessionDriver(paths: {
   return {
     ...driver,
     handoffEdges: handoffLedger.edgesFor,
-    close() {
-      driver.close()
+    async close() {
+      await driver.close()
       display.close()
     },
   }

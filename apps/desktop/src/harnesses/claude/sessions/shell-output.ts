@@ -1,11 +1,11 @@
-// What one background Shell has written (#1582). The CLI streams a background command's output
+// What one background Shell has written (#1582). The Harness streams a background command's output
 // to a file of its own and names that file in the receipt it answers the call with, so reading
 // the command means reading that file. The renderer names the CALL; the path is resolved here,
 // from the Session's own transcript, and never accepted from outside the main process.
 import { open, stat } from 'node:fs/promises'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import { readShellCommands } from '@/domains/sessions/contract/signals'
-import { chainBackgroundTasks, chainMessages } from '@/harnesses/session/roster'
+import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
+import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster'
 
 // How much of the tail one read carries. A watcher left running for an hour writes more than a
 // pane can draw, and the end is the part a reader is watching.
@@ -36,7 +36,7 @@ export async function readShellOutput(
     (candidate) => candidate.id === shellId,
   )
   if (command?.outputPath == null) return null
-  // The file is the CLI's, not Argo's: a command whose output was cleaned up reads as no output
+  // The file is the Harness's, not Argo's: a command whose output was cleaned up reads as no output
   // rather than as a failure of the pane around it.
   return readTail(command.outputPath).catch(() => null)
 }

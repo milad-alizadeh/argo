@@ -9,7 +9,7 @@ import {
   type ToolCall,
   type TranscriptMessage,
   type TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { responded, started } from './subagent-events'
 import { Agents, messaged, stopped } from './subagent-targets'
 
@@ -25,7 +25,7 @@ export function withoutCalls(message: TranscriptMessage, calls: ToolCall[]): Tra
 }
 
 // An answer that is only a receipt (`Async agent launched`) ends nothing: the task notification
-// the CLI writes later does.
+// the Harness writes later does.
 function responses(message: TranscriptMessage, agents: Agents): SubagentEvent[] {
   return message.answeredCalls.flatMap((callId) => {
     const call = agents.get(callId)

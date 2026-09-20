@@ -40,7 +40,7 @@ function withEnvironment<T>(overrides: Record<string, string | undefined>, run: 
   }
 }
 
-test('finds a CLI on a directory the login shell PATH names', async (context) => {
+test('finds a Harness on a directory the login shell PATH names', async (context) => {
   const bin = await directory(context)
   writeFileSync(path.join(bin, 'widget'), '#!/bin/sh\n', { mode: 0o700 })
   const shell = await loginShellNaming(context, bin)

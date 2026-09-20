@@ -6,25 +6,23 @@ import { copyFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import type { SessionFeedRow } from '../domains/sessions/contract/models'
-import { createSessionReader } from '../domains/sessions/main/reader'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   fed,
   feedRequest,
   listed,
   rowsOf,
   tempRoot,
-} from '../domains/sessions/main/reader-test-helpers'
-import { managedRow } from '../harnesses/session/managed-row'
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 import { claudeSessionSource } from './claude/sessions/read-sessions'
 import { createLiveMessages } from './codex/drive/live-messages'
 import { type HeldSession, recordCodexNotification } from './codex/drive/record-notification'
 import { readerOverRollout } from './codex/sessions/rollout-reader-test-helper'
 
 const SESSION = 'parityAsk'
-const FIXTURES = fileURLToPath(
-  new URL('../../mocks/harness/claude/fixtures/sessions', import.meta.url),
-)
+const FIXTURES = fileURLToPath(new URL('../../mocks/cli/claude/fixtures/sessions', import.meta.url))
 type Context = { after: (cleanup: () => Promise<void>) => void }
 type Reader = ReturnType<typeof createSessionReader>
 

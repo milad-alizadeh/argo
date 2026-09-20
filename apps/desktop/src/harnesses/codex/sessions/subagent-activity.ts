@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { isIdentifier } from '@/shared/validation'
 
 // What a `SubAgentActivity` kind reports as a Subagent event; `completed` is the only one that ends it.

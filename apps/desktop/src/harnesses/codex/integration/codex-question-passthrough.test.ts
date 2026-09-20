@@ -5,9 +5,9 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
-import { driverBackedByFixture } from '../../../../mocks/harness/codex/mock-codex-driver.ts'
+import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('a Codex Turn still carries the shared editor markdown to the transport when it is not asking', async () => {
   const echoDir = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-question-echo-'))
@@ -36,7 +36,7 @@ test('a Codex Turn still carries the shared editor markdown to the transport whe
         sessionId: startReply.type === 'session.started' ? startReply.sessionId : '',
         prompt: 'Continue without asking.',
       },
-      { adapters, ownerCliFor: async () => 'codex' },
+      { adapters, ownerHarnessFor: async () => 'codex' },
     )
     assert.equal(sendReply.type, 'session.accepted')
     const lines = readFileSync(echoFile, 'utf8').trim().split('\n')

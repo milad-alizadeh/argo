@@ -7,10 +7,10 @@ const APPLICATION_ROOTS = {
 export const ALLOWED_TARGETS = {
   shared: new Set(['shared']),
   contract: new Set(['contract', 'shared']),
-  harness: new Set(['contract', 'harness', 'shared']),
-  main: new Set(['contract', 'harness', 'main', 'shared']),
+  main: new Set(['contract', 'main', 'shared']),
   preload: new Set(['contract', 'preload', 'shared']),
   renderer: new Set(['contract', 'renderer', 'shared']),
+  harness: new Set(['contract', 'shared']),
 }
 
 // The only top-level homes under src/; anything else is a legacy root.
@@ -59,12 +59,6 @@ export const FACET_POLICIES = {
       'apps/desktop/src/renderer',
     ],
   },
-  harness: {
-    refusesNode: false,
-    refusesElectron: false,
-    refusesReact: false,
-    privilegedRoots: [],
-  },
   main: {
     refusesNode: false,
     refusesElectron: false,
@@ -87,5 +81,11 @@ export const FACET_POLICIES = {
       'apps/desktop/src/platform/main/storage',
       'apps/desktop/src/providers',
     ],
+  },
+  harness: {
+    refusesNode: false,
+    refusesElectron: false,
+    refusesReact: false,
+    privilegedRoots: [],
   },
 }

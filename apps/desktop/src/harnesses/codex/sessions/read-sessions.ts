@@ -1,11 +1,17 @@
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { askRow } from '@/domains/sessions/contract/tool-feed'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { askRow } from '@/domains/sessions/contract/model/tool-feed'
+import {
+  discoverRoster,
+  type FeedOverlay,
+  type SessionIndex,
+  type SessionSource,
+} from '@/domains/sessions/main/port'
 import type { LiveMessage } from '@/harnesses/codex/drive/codex-session-driver'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { discoverRoster } from '@/harnesses/session/discover-roster'
-import type { SessionIndex } from '@/harnesses/session/session-index-contract'
-import type { FeedOverlay, SessionSource } from '@/harnesses/session/session-source'
 import {
   backfillTick,
   clearFullRecords,
@@ -73,7 +79,10 @@ function combinedOverlay(
   return (rows) => {
     const drafts = draftRows(rows, live)
     const asks = pending === null ? [] : [questionRow(pending)]
-    return { rows: [...rows, ...drafts, ...asks], changes: [...drafts, ...asks] }
+    return {
+      rows: [...rows, ...drafts, ...asks],
+      changes: { rows: [...drafts, ...asks], aliases: [] },
+    }
   }
 }
 
@@ -144,6 +153,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       return readSubagentTokens(root, subagentIds)
     },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
+    readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,

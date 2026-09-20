@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { ComposerCard } from '@/domains/sessions/renderer/composer/composer-card'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { AttachmentTray } from '@/domains/sessions/renderer/composer/tray/attachment-tray'

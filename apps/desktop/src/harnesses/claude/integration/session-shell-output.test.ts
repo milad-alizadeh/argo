@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
 import {
@@ -33,15 +33,15 @@ test('reads a background Shell by its call, from the file the receipt named', as
   const reply = await readOutput(root, 'sh-call-build')
   assert.equal(reply.type, 'session.shell.output.read')
   assert.equal(reply.shellId, 'sh-call-build')
-  assert.equal(reply.output, 'building\ndone in 3s\n')
+  assert.deepEqual(reply.output, { state: 'available', tail: 'building\ndone in 3s\n' })
 })
 
-// A foreground command records no output source, and a command whose file the CLI cleaned up no
+// A foreground command records no output source, and a command whose file the Harness cleaned up no
 // longer has one. Both read as no output rather than as a failure of the pane around them.
 test('reads no output where the Shell recorded no source', async (context) => {
   const root = await fixtureRoot(context, ['shellRunning'])
   const foreground = await readOutput(root, 'sh-call-suite')
-  assert.equal(foreground.output, null)
+  assert.deepEqual(foreground.output, { state: 'absent' })
   const unknown = await readOutput(root, 'no-such-call')
-  assert.equal(unknown.output, null)
+  assert.deepEqual(unknown.output, { state: 'absent' })
 })

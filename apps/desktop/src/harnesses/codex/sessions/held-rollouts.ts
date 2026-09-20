@@ -5,8 +5,8 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { isLiveElsewhere } from '@/domains/sessions/contract/live-elsewhere'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
 import { sessionIdFromFileName } from '@/harnesses/codex/sessions/transcript-paths'
 
 const run = promisify(execFile)

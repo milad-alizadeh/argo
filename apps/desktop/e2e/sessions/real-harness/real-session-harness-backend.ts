@@ -14,14 +14,14 @@ import { realCodexCli } from './real-codex-harness'
 
 const BUDGET_MS = 180_000
 const POLL_MS = 250
-const REAL_CLI_UNSET_ENV = [
+const REAL_HARNESS_UNSET_ENV = [
   'ANTHROPIC_API_KEY',
   'OPENAI_API_KEY',
   'ARGO_CLAUDE_TRANSCRIPTS',
   'ARGO_CODEX_TRANSCRIPTS',
   'ARGO_CLAUDE_ARCHIVE',
 ]
-const REAL_CLIS = { claude: realClaudeCli, codex: realCodexCli }
+const REAL_HARNESSES = { claude: realClaudeCli, codex: realCodexCli }
 
 type ExecutableFinder = (name: SessionHarness) => string | null
 
@@ -31,7 +31,7 @@ function credentialPath(home: string, parts: string[]) {
 
 export function resolveRealSessionExecutables(findExecutable: ExecutableFinder) {
   const executables = {} as Record<SessionHarness, string>
-  for (const harness of Object.keys(REAL_CLIS) as SessionHarness[]) {
+  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
     const executable = findExecutable(harness)
     if (executable === null) throw new Error(`${harness} is not available on PATH.`)
     executables[harness] = executable
@@ -41,24 +41,24 @@ export function resolveRealSessionExecutables(findExecutable: ExecutableFinder) 
 
 export async function prepareRealSessionHome(root: string, sourceHome: string) {
   const home = path.join(root, 'home')
-  for (const harness of Object.keys(REAL_CLIS) as SessionHarness[]) {
-    const source = credentialPath(sourceHome, REAL_CLIS[harness].credential)
-    const destination = credentialPath(home, REAL_CLIS[harness].credential)
+  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
+    const source = credentialPath(sourceHome, REAL_HARNESSES[harness].credential)
+    const destination = credentialPath(home, REAL_HARNESSES[harness].credential)
     try {
       await mkdir(path.dirname(destination), { recursive: true })
       await copyFile(source, destination)
     } catch {
       throw new Error(
-        `${REAL_CLIS[harness].label} authentication is unavailable: ${source} is missing.`,
+        `${REAL_HARNESSES[harness].label} authentication is unavailable: ${source} is missing.`,
       )
     }
-    for (const parts of REAL_CLIS[harness].linked) {
+    for (const parts of REAL_HARNESSES[harness].linked) {
       const linked = credentialPath(home, parts)
       await mkdir(path.dirname(linked), { recursive: true })
       await symlink(credentialPath(sourceHome, parts), linked)
     }
-    // A machine the CLI has run on holds this folder, and Argo reads its absence as unreachable (#2356).
-    await mkdir(REAL_CLIS[harness].transcripts(home), { recursive: true })
+    // A machine the Harness has run on holds this folder, and Argo reads its absence as unreachable (#2356).
+    await mkdir(REAL_HARNESSES[harness].transcripts(home), { recursive: true })
   }
   return home
 }
@@ -67,12 +67,12 @@ function verifyRealSessionAuthentication(
   executables: Record<SessionHarness, string>,
   home: string,
 ) {
-  for (const harness of Object.keys(REAL_CLIS) as SessionHarness[]) {
+  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
     try {
-      execFileSync(executables[harness], REAL_CLIS[harness].authentication, {
+      execFileSync(executables[harness], REAL_HARNESSES[harness].authentication, {
         env: Object.fromEntries(
           Object.entries({ ...process.env, HOME: home }).filter(
-            ([name]) => !REAL_CLI_UNSET_ENV.includes(name),
+            ([name]) => !REAL_HARNESS_UNSET_ENV.includes(name),
           ),
         ),
         stdio: 'pipe',
@@ -80,7 +80,7 @@ function verifyRealSessionAuthentication(
     } catch (error) {
       const output = error instanceof Error && 'stderr' in error ? String(error.stderr).trim() : ''
       throw new Error(
-        `${REAL_CLIS[harness].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
+        `${REAL_HARNESSES[harness].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
       )
     }
   }
@@ -105,7 +105,7 @@ export function createRealSessionHarnessBackend(
 
   const transcriptFor = (harness: SessionHarness) => transcriptRoots[harness]
   const reply = (entry: SessionReply) =>
-    REAL_CLIS[entry.harness].replyAfterPrompt(transcriptFor(entry.harness), entry.prompt)
+    REAL_HARNESSES[entry.harness].replyAfterPrompt(transcriptFor(entry.harness), entry.prompt)
 
   return {
     name: 'real',
@@ -114,13 +114,13 @@ export function createRealSessionHarnessBackend(
       const executables = resolveRealSessionExecutables(findExecutable)
       const home = await prepareRealSessionHome(root, sourceHome)
       verifyAuthentication(executables, home)
-      for (const harness of Object.keys(REAL_CLIS) as SessionHarness[])
-        transcriptRoots[harness] = REAL_CLIS[harness].transcripts(home)
+      for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[])
+        transcriptRoots[harness] = REAL_HARNESSES[harness].transcripts(home)
       return {
         executables,
         transcripts: null,
         launchEnv: () => ({ HOME: home }),
-        unsetEnv: REAL_CLI_UNSET_ENV,
+        unsetEnv: REAL_HARNESS_UNSET_ENV,
       }
     },
     waitForReply: async (_page, entry) => {

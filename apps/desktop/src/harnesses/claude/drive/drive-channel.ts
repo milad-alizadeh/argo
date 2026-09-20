@@ -1,4 +1,8 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type {
+  OwnershipLedger,
+  OwnershipStanding,
+} from '@/domains/sessions/main/lifecycle/ownership-ledger'
 import type { CompanionPart } from '@/harnesses/claude/drive/companion-plugin'
 import {
   type ClaudeTurnRequest,
@@ -12,7 +16,6 @@ import type { LiveMessages } from '@/harnesses/claude/drive/live-messages'
 import { type ClaudeProcess, openChannel, type Seed } from '@/harnesses/claude/drive/open-channel'
 import type { ClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate'
 import { deliverAnswer } from '@/harnesses/claude/drive/question-answer'
-import type { OwnershipLedger, OwnershipStanding } from '@/harnesses/ownership-ledger'
 
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.

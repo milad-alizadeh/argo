@@ -3,8 +3,8 @@ import { createInterface } from 'node:readline'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../../src/domains/sessions/contract/proof-protocol.ts'
-import { MOCK_CODEX_PROCESS_TITLE } from '../mock-harness-process-titles.mts'
+} from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
+import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'

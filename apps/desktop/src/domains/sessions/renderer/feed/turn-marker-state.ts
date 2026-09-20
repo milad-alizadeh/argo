@@ -3,13 +3,13 @@
 // posture and the client-owned Send that opened this Turn optimistically, before any record
 // confirms it.
 
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
-import { attachedImageUrl } from '@/domains/sessions/contract/feed-images'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import { attachedImageUrl } from '@/domains/sessions/contract/model/feed-images'
 import type {
   SessionFeedRow,
   SessionPosture,
   SessionStatus,
-} from '@/domains/sessions/contract/models'
+} from '@/domains/sessions/contract/model/models'
 
 export const TURN_MARKER_STAGES = ['starting', 'resuming', 'live'] as const
 export type TurnMarkerStage = (typeof TURN_MARKER_STAGES)[number]
@@ -20,7 +20,7 @@ export type TurnMarkerPhase = (typeof TURN_MARKER_PHASES)[number]
 export type TurnMarkerEntry = {
   stage: TurnMarkerStage
   // The Session's own turnStartedAt at the moment Send was pressed, so the real record catching
-  // up (a different value) is the one honest "the CLI has spoken" signal (turn-setup.ts's
+  // up (a different value) is the one honest "the Harness has spoken" signal (turn-setup.ts's
   // turnSettled reads the same fact for the same reason).
   since: string | null
   startedAt: number
@@ -109,7 +109,7 @@ export function turnMarkerView(entry: TurnMarkerEntry, row: TurnMarkerRow | null
   return { phase: 'working', startedAt: entry.startedAt }
 }
 
-// A Turn no Send here opened, such as one typed into the CLI itself, still reads Working while the
+// A Turn no Send here opened, such as one typed into the Harness itself, still reads Working while the
 // Session runs, timed from the Turn's own start.
 export function runningTurnView(row: TurnMarkerRow | null): TurnMarkerView | null {
   if (row?.status !== 'running' || row.turnStartedAt === null) return null

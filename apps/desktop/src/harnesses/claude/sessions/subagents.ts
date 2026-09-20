@@ -5,10 +5,13 @@
 // and the Subagent the Roster row already draws (CONTEXT.md L3 · Subagent).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { SessionSubagentUsage } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import { type TranscriptFile, transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { createTranscriptRecordReader } from '@/harnesses/session/transcript-lines'
+import type { SessionSubagentUsage } from '@/domains/sessions/contract/model/background-work-contract'
+import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import {
+  type TranscriptFile,
+  transcriptFileFrom,
+} from '@/domains/sessions/contract/model/transcript'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
 import { isRecord } from '@/shared/validation'
 import { normalizeClaudeRecords } from './normalize-records'
 import { parseTranscriptLine } from './records'

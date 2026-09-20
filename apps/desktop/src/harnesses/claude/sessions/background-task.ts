@@ -1,8 +1,11 @@
-import type { BackgroundState, BackgroundTaskRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  BackgroundState,
+  BackgroundTaskRecord,
+} from '@/domains/sessions/contract/model/transcript'
 import { taggedField } from '@/harnesses/envelope-tags'
 import { isRecord } from '@/shared/validation'
 
-// The CLI's notification words, folded into the states the contract holds.
+// The Harness's notification words, folded into the states the contract holds.
 const NOTIFICATION_STATES = {
   completed: 'completed',
   failed: 'failed',
@@ -33,7 +36,7 @@ export function readTaskEnding(body: string, timestamp: unknown): BackgroundTask
   }
 }
 
-// The CLI's `task-notification`: one background task ended. Mid-Turn the CLI writes it three
+// The Harness's `task-notification`: one background task ended. Mid-Turn the Harness writes it three
 // times, as two queue operations and this attachment, and only the attachment carries a timestamp.
 export function readBackgroundTask(record: Record<string, unknown>): BackgroundTaskRecord | null {
   const attachment = isRecord(record.attachment) ? record.attachment : null

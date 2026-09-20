@@ -6,7 +6,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../src/domains/sessions/contract/proof-protocol'
+} from '../../src/domains/sessions/main/composition/proof-protocol'
 import { appExecutable } from '../packaged-app'
 import type {
   SessionFixture,
@@ -31,7 +31,7 @@ function keepRecentConsole(page: Page, lines: string[]) {
 }
 
 // Unset leaves the shipped app reading the machine's own transcript roots under HOME, which is
-// what a backend running the real HARNESSES asks for.
+// what a backend running the real CLIs asks for.
 function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<string, string> {
   if (transcripts === null) return {}
   return {
@@ -54,7 +54,7 @@ function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch)
 
 export type PackagedSession = Awaited<ReturnType<typeof createPackagedSessionHarness>>
 
-// Launches the packaged app against the HARNESSES the backend names, and restarts it in place so a case
+// Launches the packaged app against the CLIs the backend names, and restarts it in place so a case
 // can read what a fresh process makes of the same fixture root.
 export async function createPackagedSessionHarness(request: {
   root: string
@@ -72,7 +72,7 @@ export async function createPackagedSessionHarness(request: {
   let page: Page | undefined
   let recentConsole: string[] = []
 
-  // The HARNESSES read their launch environment when the app spawns them, so it is fixed per launch.
+  // The CLIs read their launch environment when the app spawns them, so it is fixed per launch.
   const open = async () => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),

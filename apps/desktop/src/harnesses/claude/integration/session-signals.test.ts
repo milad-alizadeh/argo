@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionListReplySchema } from '@/domains/sessions/contract/contract.ts'
-import { readSubagentReading } from '@/domains/sessions/contract/subagents.ts'
+import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract.ts'
+import { readSubagentReading } from '@/domains/sessions/main/projection/subagents.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {
@@ -95,7 +95,7 @@ test('counts an open delegation as running only while its Session is live', () =
   })
 })
 
-test('reads the newest pull request the CLI linked, and none where it linked nothing', async () => {
+test('reads the newest pull request the Harness linked, and none where it linked nothing', async () => {
   assert.deepEqual((await rowOf(['marks'])).pullRequest, {
     number: 1312,
     url: 'https://github.com/x/marks/pull/1312',

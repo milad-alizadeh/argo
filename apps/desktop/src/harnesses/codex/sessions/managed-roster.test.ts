@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed, tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
-import { managedRow } from '@/harnesses/session/managed-row'
 
-// The AC that a managed Session with no transcript yet appears in the Roster holds for each CLI
+// The AC that a managed Session with no transcript yet appears in the Roster holds for each Harness
 // (claude-driver-launch.ts and managed-permission-roster.test.ts cover Claude's side).
 test('a managed Codex Session with no transcript yet appears in the Roster with the `managed` posture', async (context) => {
   const root = await tempRoot(context)

@@ -6,7 +6,7 @@ import type {
   SessionListRequest,
   SessionSearched,
   SessionsListed,
-} from '@/domains/sessions/contract/contract'
+} from '@/domains/sessions/contract/ipc/contract'
 
 export type {
   SessionArchiveListed,
@@ -33,7 +33,7 @@ export type SessionDiagramEvidence = {
   title: string
   source: string
 }
-// A skill a prompt mentions, opened by the path the CLI wrote into the prompt.
+// A skill a prompt mentions, opened by the path the Harness wrote into the prompt.
 export type SessionSkillEvidence = {
   shape: 'skill'
   id: string

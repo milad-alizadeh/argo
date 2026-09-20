@@ -4,14 +4,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import type { LiveMessage } from '@/harnesses/codex/drive/codex-session-driver'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'codexHeartbeat'
 const FIXTURE = fileURLToPath(
   new URL(
-    '../../../../mocks/harness/codex/fixtures/sessions/rollout-codexHeartbeat.jsonl',
+    '../../../../mocks/cli/codex/fixtures/sessions/rollout-codexHeartbeat.jsonl',
     import.meta.url,
   ),
 )
@@ -92,7 +92,7 @@ test('opens a thread the voice session created with its request, never the injec
   await copyFile(
     fileURLToPath(
       new URL(
-        `../../../../mocks/harness/codex/fixtures/sessions/rollout-${session}.jsonl`,
+        `../../../../mocks/cli/codex/fixtures/sessions/rollout-${session}.jsonl`,
         import.meta.url,
       ),
     ),

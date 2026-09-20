@@ -1,4 +1,4 @@
-// Session journeys on the project's backend: `sessions` runs the mock, `real-sessions` the HARNESSES (#2308).
+// Session journeys on the project's backend: `sessions` runs the mock, `real-sessions` the CLIs (#2308).
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
@@ -65,7 +65,7 @@ test.describe('with seeded transcripts', () => {
   })
 })
 
-test.describe('with a slow CLI', () => {
+test.describe('with a slow Harness', () => {
   test.use({ slowReply: true })
 
   test('session-reply-wait', async ({ session, backend }) => {

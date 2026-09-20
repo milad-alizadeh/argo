@@ -1,4 +1,4 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
 // app-server v2 `TextElement` (v2/turn.rs, rust-v0.147.0): a UTF-8 byte range and its placeholder.
 type TextElement = { byteRange: { start: number; end: number }; placeholder: string }

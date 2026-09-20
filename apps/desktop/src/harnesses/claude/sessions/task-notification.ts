@@ -1,4 +1,7 @@
-import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model/transcript'
 import { taggedField } from '@/harnesses/envelope-tags'
 import { isIdentifier } from '@/shared/validation'
 import { backgroundState, readTaskEnding } from './background-task'
@@ -17,7 +20,7 @@ function reportText(text: string): string | null {
 
 const COMMAND_SUMMARY = 'Background command "'
 
-// The CLI's summary names the task in quotes after one of these prefixes, e.g.
+// The Harness's summary names the task in quotes after one of these prefixes, e.g.
 // `Agent "Consolidate stories" finished`. An agent or workflow is a Subagent; anything else is a
 // notice about work the Feed has no row for beyond its own words.
 const SUBAGENT_PREFIXES = ['Agent', 'Dynamic workflow']
@@ -27,7 +30,7 @@ function quotedName(summary: string | null, prefixes: readonly string[]): string
   return /^[^"]*"(.+)"/s.exec(summary)?.[1] ?? null
 }
 
-// A background task's delivery is not the person's own words: it is the CLI handing back a
+// A background task's delivery is not the person's own words: it is the Harness handing back a
 // summary, with the task's full result attached for the model, not the reader.
 export function readTaskDelivery(
   record: Record<string, unknown>,
@@ -57,7 +60,7 @@ export function readTaskDelivery(
       ...(line === undefined ? {} : { text: line }),
     }
   }
-  // Any other notice, such as a monitor's event, is the CLI's own status line.
+  // Any other notice, such as a monitor's event, is the Harness's own status line.
   const event = taggedField(text, 'event')
   return {
     kind: 'event',

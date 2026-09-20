@@ -2,7 +2,7 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
-import { mergeAppendedFeed } from '@/domains/sessions/contract/feed-contract'
+import { mergeAppendedFeed } from '@/domains/sessions/contract/model/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -38,7 +38,7 @@ export function sessionFeedQuery(
     // React Query immediately drops the transcript and aborts its in-flight reader work. This
     // avoids an async manual cleanup that could race a rapid A -> B -> A switch.
     gcTime: 0,
-    // A CLI writing this Session's transcript is what adds a row, and the watch on the transcript
+    // A Harness writing this Session's transcript is what adds a row, and the watch on the transcript
     // trees reports that write, so the reader of this Feed subscribes to the topic rather than
     // re-reading the document twice a second. That poll cost the roster too: it re-rendered the whole
     // sidebar on every tick, 185291 renders in a 13-second idle recording.

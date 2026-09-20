@@ -1,4 +1,7 @@
-import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model/transcript'
 import { commandSource } from '@/harnesses/claude/sessions/command-source'
 import { messageEnvelope } from '@/harnesses/claude/sessions/message-envelope'
 

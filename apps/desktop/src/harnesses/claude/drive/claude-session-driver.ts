@@ -1,7 +1,9 @@
-import type { ClaudePermission } from '@/domains/sessions/contract/claude-turn-setup'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import { rollupSessionStatus } from '@/domains/sessions/contract/session-status-rollup'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
+import { closeSessions } from '@/harnesses/claude/drive/claude-session-close'
 import {
   beginCompaction,
   clearCompaction,
@@ -22,7 +24,6 @@ import {
 } from '@/harnesses/claude/drive/handoff-driver'
 import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
 import { claudeManagedStatus } from '@/harnesses/claude/drive/managed-status'
-import { managedRow } from '@/harnesses/session/managed-row'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -49,22 +50,11 @@ export type ClaudeSessionDriver = {
     questionId: string,
     answers: QuestionAnswer[],
   ) => Promise<boolean>
-  close: () => void
+  close: () => Promise<void>
 }
 
 const INTERRUPT = '\u001b'
 type Sessions = Map<string, ManagedSession>
-
-function closeSessions(options: DriverOptions, sessions: Sessions) {
-  for (const [sessionId, session] of sessions) {
-    session.ended = true
-    session.process.kill?.()
-    session.close()
-    options.ledger.release(sessionId)
-  }
-  sessions.clear()
-  options.gate.close()
-}
 
 function startSession(
   options: DriverOptions,
@@ -159,7 +149,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       decideQuestion({ options, channel, sessions }, { sessionId, questionId, answers }),
     close() {
       channel.close()
-      closeSessions(options, sessions)
+      return closeSessions(options, sessions)
     },
   }
 }

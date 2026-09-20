@@ -4,7 +4,7 @@ import {
   CLAUDE_EFFORTS,
   CLAUDE_MODELS,
   type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/claude-turn-setup'
+} from '@/domains/sessions/contract/ipc/contract'
 import type {
   ModeChoice,
   SetupChoice,

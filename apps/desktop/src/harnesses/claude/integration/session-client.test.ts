@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionStartRequestSchema } from '@/domains/sessions/contract/contract.ts'
-import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations.ts'
-import { createSessionClient } from '@/domains/sessions/preload/client.ts'
+import { sessionStartRequestSchema } from '@/domains/sessions/contract/ipc/contract.ts'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations.ts'
+import { createSessionHarnessent } from '@/domains/sessions/preload/client.ts'
 
 const feed = {
   sessionId: 'session-a',
@@ -31,7 +31,7 @@ const read = {
 }
 
 function clientReturning(reply) {
-  return createSessionClient(async (_channel, request) => ({
+  return createSessionHarnessent(async (_channel, request) => ({
     ...reply,
     requestId: request.requestId,
   }))
@@ -45,7 +45,7 @@ test('passes a reply of the shape it asked for through', async () => {
 })
 
 test('refuses a reply that answers a different request', async () => {
-  const client = createSessionClient(async () => ({ ...listed, requestId: 'list-2' }))
+  const client = createSessionHarnessent(async () => ({ ...listed, requestId: 'list-2' }))
   const reply = await client.listSessions({ projectRoot: null })
   assert.equal(reply.code, 'invalid-response')
 })
@@ -76,7 +76,7 @@ test('refuses a reply that is not one of the shapes this contract holds', async 
 })
 
 test('names a lost connection, which the renderer can see no other way', async () => {
-  const client = createSessionClient(async () => {
+  const client = createSessionHarnessent(async () => {
     throw new Error('the window went away')
   })
   assert.equal((await client.listSessions({ projectRoot: null })).code, 'connection-lost')
@@ -106,7 +106,7 @@ test('starts a managed Session through the named Session action', async () => {
     type: 'session.started',
     sessionId: 'managed-1',
   }
-  const client = createSessionClient(async (channel, received) => {
+  const client = createSessionHarnessent(async (channel, received) => {
     assert.equal(channel, SESSION_OPERATIONS.start.channel)
     const parsed = sessionStartRequestSchema.parse(received)
     assert.equal(parsed.harness, request.harness)

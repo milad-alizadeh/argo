@@ -1,5 +1,5 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import { sendMessage } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'

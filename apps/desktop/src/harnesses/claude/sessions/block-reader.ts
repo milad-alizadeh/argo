@@ -1,10 +1,10 @@
-import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/feed-images'
+import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/model/feed-images'
 import type {
   ContentBlock,
   RichResultBlock,
   ToolCall,
   ToolResult,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { askFacts } from '@/harnesses/claude/sessions/ask-facts'
 import { bashFacts } from '@/harnesses/claude/sessions/bash-facts'
 import { editFacts } from '@/harnesses/claude/sessions/edit-facts'

@@ -1,4 +1,4 @@
-import type { ExecuteFacts } from '@/domains/sessions/contract/transcript'
+import type { ExecuteFacts } from '@/domains/sessions/contract/model/transcript'
 
 type Input = Record<string, unknown>
 

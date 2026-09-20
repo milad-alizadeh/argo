@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 
