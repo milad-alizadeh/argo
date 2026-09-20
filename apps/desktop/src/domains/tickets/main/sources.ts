@@ -2,7 +2,6 @@
 // read one page of open Tickets and move a Ticket to another status. A new provider is one module
 // under `src/providers/` and one line here; nothing in the service branches on which provider it is.
 
-import type { Provider } from '@/domains/accounts/contract/contract'
 import type {
   Ticket,
   TicketErrorCode,

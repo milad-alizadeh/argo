@@ -1,8 +1,8 @@
 import type { CodexProcess } from '@/agents/codex/drive/codex-channel'
 import type { LiveMessage, LiveMessages } from '@/agents/codex/drive/live-messages'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { CodexTurnSetup } from '@/agents/codex/drive/turn-setup-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 

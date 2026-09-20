@@ -3,22 +3,14 @@
 
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerOf } from '@/domains/accounts/contract/provider'
+import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/accounts/main/port'
 import type { ConnectionPort } from '@/domains/connections/main/port'
-import {
-  type AccountAccess,
-  asAccount,
-  type TokenFailure,
-} from '@/domains/accounts/main/port'
 import {
   type TicketError,
   type TicketErrorCode,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import {
-  type Reader,
-  type SourceRead,
-  type TicketSource,
-} from '@/domains/tickets/main/sources'
+import type { Reader, SourceRead, TicketSource } from '@/domains/tickets/main/sources'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',

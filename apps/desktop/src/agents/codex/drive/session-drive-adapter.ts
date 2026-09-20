@@ -1,9 +1,6 @@
 import type { CodexSessionDrive } from '@/agents/codex/drive/codex-session-driver'
 import { CodexSessionDriverError } from '@/agents/codex/drive/codex-session-error'
-import {
-  type CodexTurnSetup,
-  codexTurnSetupSchema,
-} from '@/agents/codex/drive/turn-setup-contract'
+import { type CodexTurnSetup, codexTurnSetupSchema } from '@/agents/codex/drive/turn-setup-contract'
 import type {
   DriveFailure,
   SessionDriveAdapter,

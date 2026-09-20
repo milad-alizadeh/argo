@@ -33,8 +33,16 @@ export function createAccountAccess(options: {
   openExternal: (url: string) => Promise<void>
   projects?: ProjectPort
 }): AccountAccess {
-  const { userData, accountData, connectionData, endpoints, providers, cipher, openExternal, projects } =
-    options
+  const {
+    userData,
+    accountData,
+    connectionData,
+    endpoints,
+    providers,
+    cipher,
+    openExternal,
+    projects,
+  } = options
   return {
     endpoints,
     providers,

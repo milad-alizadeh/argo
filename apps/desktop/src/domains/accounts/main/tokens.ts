@@ -30,7 +30,7 @@ function renew(access: AccountAccess, account: AccountRecord, stale: string): Pr
     if (grant.accessToken !== stale && !due(grant)) {
       return { ok: true, token: grant.accessToken, account }
     }
-  const renewer = access.providers[account.provider].renew
+    const renewer = access.providers[account.provider].renew
     if (!renewer || !grant.renewal) {
       await writeState(access, { accountId: account.id, state: 'revoked' })
       return { ok: false, reason: 'account-revoked' }

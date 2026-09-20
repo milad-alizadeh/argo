@@ -20,8 +20,8 @@ import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
-import { providerEndpoints } from '@/providers/endpoints'
 import { accountProviders, ticketSources } from '@/providers/composition'
+import { providerEndpoints } from '@/providers/endpoints'
 
 export function attachBridges(
   window: BrowserWindow,
@@ -74,7 +74,10 @@ export function attachBridges(
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, {
     access,
-    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
     rendererURL,
     sources: ticketSources,
   })

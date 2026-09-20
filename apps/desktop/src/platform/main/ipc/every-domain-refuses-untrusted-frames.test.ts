@@ -91,7 +91,10 @@ async function domains(userData: string) {
   const ticketMock = createMockIpcWindow()
   attachTicketBridge(ticketMock.window, {
     access,
-    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
     rendererURL,
     sources: ticketSources,
   })

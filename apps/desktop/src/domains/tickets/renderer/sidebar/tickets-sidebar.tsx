@@ -1,12 +1,13 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  openAccountsDialog,
+  providerPresentation,
   SignInNotice,
   type SignInNoticeProps,
+  useAccounts,
+  useDismissNotice,
 } from '@/domains/accounts/renderer/port'
-import { useAccounts, useDismissNotice } from '@/domains/accounts/renderer/port'
-import { providerPresentation } from '@/domains/accounts/renderer/port'
-import { openAccountsDialog } from '@/domains/accounts/renderer/port'
 import { useSelectedProject } from '@/domains/projects/renderer/port'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'

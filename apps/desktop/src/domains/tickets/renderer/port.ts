@@ -1,8 +1,8 @@
 // The renderer capabilities other product domains may use. Ticket feature internals stay private.
 export { SourceSettings } from '@/domains/tickets/renderer/connection/source-settings'
 export {
-  useConnectSource,
   useConnection,
+  useConnectSource,
   useDisconnectSource,
   useSources,
   useTicketList,

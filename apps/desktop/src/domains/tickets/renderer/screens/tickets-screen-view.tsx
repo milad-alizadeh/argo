@@ -1,7 +1,6 @@
 import { FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AccountsDialog } from '@/domains/accounts/renderer/port'
-import { useAccountsDialog } from '@/domains/accounts/renderer/port'
+import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
 import {
   ConnectSourceFields,
   ConnectSourceForm,

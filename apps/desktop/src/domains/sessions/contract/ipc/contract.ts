@@ -7,8 +7,8 @@ import { permissionSchema, READER_DECISIONS } from '@/domains/sessions/contract/
 import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
 
-export * from '@/domains/sessions/contract/drive/attachments-contract'
 export * from '@/agents/claude/drive/turn-setup-contract'
+export * from '@/domains/sessions/contract/drive/attachments-contract'
 export * from '@/domains/sessions/contract/drive/handoff-contract'
 export * from '@/domains/sessions/contract/drive/permission'
 export * from '@/domains/sessions/contract/drive/question-contract'

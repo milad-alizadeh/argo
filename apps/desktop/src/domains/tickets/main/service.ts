@@ -1,7 +1,5 @@
 import { projectNames } from '@/domains/accounts/main/port'
-import {
-  type TicketConnection,
-} from '@/domains/connections/main/port'
+import type { TicketConnection } from '@/domains/connections/main/port'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
@@ -63,7 +61,10 @@ export async function writeTicketField<Value>(
   return read(target.accountId, target.scope)
 }
 
-async function saveConnection(call: Call, next: TicketConnection | null): Promise<TicketConnectedReply> {
+async function saveConnection(
+  call: Call,
+  next: TicketConnection | null,
+): Promise<TicketConnectedReply> {
   const saved = await call.connections.replaceTicket(call.projectId, next)
   if (typeof saved !== 'boolean' && !saved.ok) {
     return ticketError(STORAGE_ERRORS[saved.reason], call.requestId)

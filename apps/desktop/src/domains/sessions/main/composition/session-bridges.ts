@@ -23,7 +23,10 @@ import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
 } from '@/domains/sessions/main/composition/proof-protocol'
-import { startBackfill, withReconcile } from '@/domains/sessions/main/index/session-background-indexing'
+import {
+  startBackfill,
+  withReconcile,
+} from '@/domains/sessions/main/index/session-background-indexing'
 import { sessionIndexPath } from '@/domains/sessions/main/index/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/index/session-index/worker-index'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'

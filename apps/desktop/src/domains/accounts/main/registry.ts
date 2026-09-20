@@ -1,11 +1,7 @@
 // The secret-free Account records, one per provider identity, under `userData` (#1763). The key is
 // the provider's own stable id and never the login, which renames (ADR-0018).
 
-import {
-  type AccountState,
-  displayName,
-  type Provider,
-} from '@/domains/accounts/contract/contract'
+import { type AccountState, displayName, type Provider } from '@/domains/accounts/contract/contract'
 import { providerOf } from '@/domains/accounts/contract/provider'
 import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
 import { isIdentifier, isRecord } from '@/shared/validation'

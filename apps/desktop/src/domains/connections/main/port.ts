@@ -26,7 +26,10 @@ export type ConnectionRead =
 
 export type ConnectionPort = {
   read: () => Promise<ConnectionRead>
-  replaceTicket: (projectId: string, next: TicketConnection | null) => Promise<boolean | ConnectionRead>
+  replaceTicket: (
+    projectId: string,
+    next: TicketConnection | null,
+  ) => Promise<boolean | ConnectionRead>
 }
 
 const OWNED = ['version', 'connections']
@@ -100,7 +103,9 @@ export function createConnectionPort(options: {
       options.exclusive(async () => {
         const read = await readConnections(options.path)
         if (!read.ok) return read
-        const connections = read.document.connections.filter((entry) => entry.projectId !== projectId)
+        const connections = read.document.connections.filter(
+          (entry) => entry.projectId !== projectId,
+        )
         return writeConnections(options.path, {
           ...read.document,
           connections: next ? [...connections, next] : connections,

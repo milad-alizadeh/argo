@@ -2,19 +2,19 @@ import { accountError } from '@/domains/accounts/contract/contract'
 import { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
 import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
-import { createConnectionPort } from '@/domains/connections/main/port'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import type {
   AccountDispatchClient,
   TicketDispatchClient,
 } from '@/domains/accounts/main/harness-dispatch'
+import { createConnectionPort } from '@/domains/connections/main/port'
 import { createProjectPort } from '@/domains/projects/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
 import { attachTicketBridge } from '@/domains/tickets/main/port'
+import { accountProviders, ticketSources } from '@/providers/composition'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
-import { accountProviders, ticketSources } from '@/providers/composition'
 import { createDomainClient } from '@/shared/ipc/client'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
 import type { MockGitHub } from '../../../../mocks/providers/github/mock-github'
@@ -54,7 +54,10 @@ export function bootMain(options: {
   const ticketWindow = createMockIpcWindow()
   attachTicketBridge(ticketWindow.window, {
     access,
-    connections: createConnectionPort({ path: access.paths.connections, exclusive: access.exclusive }),
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
     rendererURL: RENDERER_URL,
     sources: ticketSources,
   })
