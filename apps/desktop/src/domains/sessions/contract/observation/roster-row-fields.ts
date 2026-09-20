@@ -113,6 +113,8 @@ export const rosterRowFields = [
   field(['ticket', () => sessionTicketSchema.nullable(), () => null, 'null', 'observed']),
   // Argo's own flag, joined on the Session's id and every id it has retired (`archive-store.ts`).
   field(['archived', () => z.boolean(), () => false, 'false', 'observed']),
+  // Reader state is Argo-owned and joined after discovery, never inferred from Session status.
+  field(['unread', () => z.boolean(), () => false, 'false', 'observed']),
   // Search adds one reader-visible excerpt to matching rows; normal roster reads omit it.
   field(['searchExcerpt', optionalSearchExcerpt, () => undefined, 'absent', 'observed']),
   field(['contextTokens', optionalCount, ({ usage }) => usage.contextTokens, 'null', 'observed']),
