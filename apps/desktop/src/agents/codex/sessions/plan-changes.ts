@@ -13,8 +13,8 @@ import {
   codeMatch,
   nestedToolCall,
 } from '@/agents/codex/sessions/nested-tool-call'
-import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/transcript'
-import { readPlanSnapshot } from '@/domains/sessions/main/plan'
+import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import { readPlanSnapshot } from '@/domains/sessions/main/projection/plan'
 import { isRecord } from '@/shared/validation'
 
 const PLAN_FUNCTION = 'update_plan'

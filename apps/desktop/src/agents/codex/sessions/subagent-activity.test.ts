@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
 
 function subagentActivity(kind: string, agentThreadId: string, agentPath: string) {
   return parseCodexTranscriptLine(
@@ -23,29 +23,24 @@ function subagentActivity(kind: string, agentThreadId: string, agentPath: string
   )
 }
 
-test('reads Codex subagent activity as one Agent card entry', () => {
-  assert.deepEqual(subagentActivity('started', 'thread-1', '/root/review_feed'), {
-    kind: 'delegation',
-    uuid: 'subagent-started',
-    timestamp: '2026-09-16T16:38:00.000Z',
-    actor: 'agent',
-    action: 'Review feed',
-    status: 'running',
-    progress: null,
-    groupId: 'thread-1',
-    callId: null,
-  })
-  assert.deepEqual(subagentActivity('completed', 'thread-1', '/root/review_feed'), {
-    kind: 'delegation',
-    uuid: 'subagent-completed',
-    timestamp: '2026-09-16T16:39:00.000Z',
-    actor: 'agent',
-    action: 'Review feed',
-    status: 'completed',
-    progress: null,
-    groupId: 'thread-1',
-    callId: null,
-  })
+test('reads each Codex subagent activity as one lifecycle event', () => {
+  const events = ['started', 'interacted', 'completed'].map((kind) =>
+    subagentActivity(kind, 'thread-1', '/root/review_feed'),
+  )
+  assert.deepEqual(
+    events.map(
+      (event) => event?.kind === 'subagent' && [event.subagentId, event.event, event.name],
+    ),
+    [
+      ['thread-1', 'started', 'Review feed'],
+      ['thread-1', 'messaged', 'Review feed'],
+      ['thread-1', 'responded', 'Review feed'],
+    ],
+  )
+  assert.equal(
+    events[2]?.kind === 'subagent' && events[2].event === 'responded' && events[2].state,
+    'completed',
+  )
 })
 
 function collaborationCall(name: string) {
@@ -65,12 +60,7 @@ function collaborationCall(name: string) {
   return record
 }
 
-test('hides Codex collaboration calls behind their Agent cards', () => {
-  assert.deepEqual(collaborationCall('spawn_agent'), {
-    kind: 'trace',
-    uuid: 'spawn_agent-item',
-    boundary: true,
-  })
+test('hides Codex collaboration calls behind the events they read as', () => {
   for (const name of ['wait_agent', 'send_message', 'followup_task', 'list_agents']) {
     assert.deepEqual(collaborationCall(name), {
       kind: 'trace',
@@ -78,9 +68,11 @@ test('hides Codex collaboration calls behind their Agent cards', () => {
       boundary: true,
     })
   }
+  assert.equal(collaborationCall('spawn_agent').kind, 'trace')
+  assert.equal(collaborationCall('interrupt_agent').kind, 'trace')
 })
 
-test('projects one Agent card without collaboration tool rows', () => {
+test('projects one row per event without collaboration tool rows', () => {
   const started = subagentActivity('started', 'thread-1', '/root/review_feed')
   const completed = subagentActivity('completed', 'thread-1', '/root/review_feed')
   if (started === null || completed === null) throw new Error('expected subagent activity')
@@ -91,7 +83,7 @@ test('projects one Agent card without collaboration tool rows', () => {
       originUnread: false,
       files: [
         transcriptFileFrom('/tmp/session-1.jsonl', {
-          fileName: 'session-1.jsonl',
+          sessionId: 'session-1',
           records: [
             collaborationCall('spawn_agent'),
             started,
@@ -103,9 +95,8 @@ test('projects one Agent card without collaboration tool rows', () => {
     },
     undefined,
   )
-  assert.equal(rows.length, 1)
-  const [row] = rows
-  assert.equal(row?.shape, 'delegation-group')
-  assert.equal(row?.actor, 'agent')
-  assert.equal(row?.entries.length, 2)
+  assert.deepEqual(
+    rows.map((row) => (row.shape === 'subagent' ? row.event : row.shape)),
+    ['started', 'responded'],
+  )
 })

@@ -1,0 +1,62 @@
+// A Subagent and a background Shell are different things the CLI records, and the reader picks
+// between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
+// one entry here keeps the menu from branching on which kind it is drawing.
+import type { TFunction } from 'i18next'
+import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/background-work-contract'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
+import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './session-work'
+import { workPresentation } from './work-presentation'
+
+export type WorkEntry = {
+  id: string
+  title: string
+  // Raw command text is read as code; a derived label, Subagent or Shell, is prose.
+  monospace: boolean
+  running: boolean
+  mark: string
+  state: string
+  facts: string
+}
+
+export function delegationEntries(
+  subagents: readonly SessionSubagent[],
+  { now, usage }: { now: number; usage: Readonly<Record<string, SubagentUsageFacts>> },
+  t: TFunction<'sessions'>,
+): WorkEntry[] {
+  return subagents.map((delegation) => {
+    const state = subagentWorkState(delegation)
+    const presentation = workPresentation(
+      {
+        kind: 'subagent',
+        id: delegation.id,
+        name: delegation.label,
+        state,
+        model: usage[delegation.id]?.model ?? null,
+        durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, now),
+        tokens: usage[delegation.id]?.tokens ?? null,
+      },
+      t,
+    )
+    return {
+      id: delegation.id,
+      ...presentation,
+      monospace: false,
+      running: state === 'running',
+      mark: WORK_STATE_MARKS[state],
+    }
+  })
+}
+
+export function shellEntries(
+  shell: readonly SessionShellCommand[],
+  now: number,
+  t: TFunction<'sessions'>,
+): WorkEntry[] {
+  return shell.map((command) => ({
+    id: command.id,
+    ...workPresentation({ kind: 'shell', ...command, now }, t),
+    monospace: command.label === null,
+    running: command.state === 'running',
+    mark: WORK_STATE_MARKS[command.state],
+  }))
+}

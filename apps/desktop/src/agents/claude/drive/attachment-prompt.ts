@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
 // Attachments reach the Claude Code CLI as `@path` file mentions, its own syntax for pointing a
 // Turn at a file (verified against Claude Code's own docs, #1845), appended after the draft text

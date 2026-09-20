@@ -1,12 +1,13 @@
 import { CheckCircle2, Circle, LoaderCircle } from 'lucide-react'
 import { Progress, ProgressLabel } from '@/platform/renderer/components/ui/progress'
-import { i18n } from '@/platform/renderer/i18n/config'
+import { i18n } from '@/platform/renderer/i18n/i18n'
 import { ANALYSIS_TASKS, type OnboardingController } from './project-onboarding'
 import { ProjectOnboardingStageHeader as StageHeading } from './project-onboarding-layout'
 import { BackAction, OptionRow } from './project-onboarding-primitives'
 
 function analysisTaskText(taskId: string, field: 'detail' | 'label') {
-  return i18n.t(`projects:onboarding.task.${taskId}.${field}`)
+  const key = `projects:onboarding.task.${taskId}.${field}`
+  return i18n.t(key, { defaultValue: taskId })
 }
 
 export function AnalyzingStage({ controller }: { controller: OnboardingController }) {

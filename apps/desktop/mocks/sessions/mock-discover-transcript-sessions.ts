@@ -4,8 +4,8 @@
 import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { TranscriptRecord } from '../../src/domains/sessions/contract/transcript'
-import { createTranscriptDiscoverer } from '../../src/domains/sessions/main/discover-transcript-sessions'
+import type { TranscriptRecord } from '../../src/domains/sessions/contract/model/transcript'
+import { createTranscriptDiscoverer } from '../../src/domains/sessions/main/observation/discover-transcript-sessions'
 
 export type MockTranscript = {
   root: string
@@ -87,7 +87,7 @@ export function mockDiscoverer(onLine: (line: string) => void = () => {}) {
       const names = await readdir(root).catch(() => [])
       return names
         .filter((name) => name.endsWith('.jsonl'))
-        .map((name) => ({ path: path.join(root, name), name }))
+        .map((name) => ({ path: path.join(root, name), sessionId: name.replace(/\.jsonl$/, '') }))
     },
   })
 }

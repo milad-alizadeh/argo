@@ -34,7 +34,7 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
-import { i18n } from '@/platform/renderer/i18n/config'
+import { i18n } from '@/platform/renderer/i18n/i18n'
 import {
   applyTasksFor,
   type OnboardingApplyTask,
@@ -63,7 +63,7 @@ import {
 export type OnboardingPresentation = 'briefing'
 
 function onboardingText(key: string, options?: Record<string, string | number>) {
-  return i18n.t(`projects:onboarding.${key}`, options)
+  return i18n.t(`projects:onboarding.${key}`, { defaultValue: key, ...options })
 }
 
 function recommendationText(recommendation: OnboardingRecommendation, field: 'label' | 'reason') {

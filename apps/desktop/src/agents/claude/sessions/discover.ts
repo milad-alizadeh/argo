@@ -8,18 +8,27 @@ import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
-} from '@/domains/sessions/main/discover-transcript-sessions'
+} from '@/domains/sessions/main/observation/discover-transcript-sessions'
 
 export type Discovery = TranscriptDiscovery
 
-async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {
+function sessionIdFromFileName(fileName: string) {
+  return fileName.replace(/\.jsonl$/, '')
+}
+
+async function transcriptPaths(root: string): Promise<{ path: string; sessionId: string }[]> {
   const directories = await readdir(root, { withFileTypes: true })
-  const found: { path: string; name: string }[] = []
+  const found: { path: string; sessionId: string }[] = []
   for (const directory of directories) {
     if (!directory.isDirectory()) continue
     const inside = await readdir(path.join(root, directory.name)).catch(() => [])
     for (const name of inside) {
-      if (name.endsWith('.jsonl')) found.push({ path: path.join(root, directory.name, name), name })
+      if (name.endsWith('.jsonl')) {
+        found.push({
+          path: path.join(root, directory.name, name),
+          sessionId: sessionIdFromFileName(name),
+        })
+      }
     }
   }
   return found

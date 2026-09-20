@@ -4,8 +4,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import {
+  fed,
+  feedRequest,
+  listed,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 
 async function readerFor(
   context: { after: (cleanup: () => Promise<void>) => void },

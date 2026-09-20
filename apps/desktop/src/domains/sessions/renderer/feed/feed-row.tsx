@@ -1,6 +1,6 @@
 import { memo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import {
   isFeedRowStreaming,
   renderFeedRow,
@@ -22,7 +22,7 @@ export type FeedRowProps = {
   toolGroups: ToolGroupState
   revealCache: RevealCache
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (questionId: string, answers: QuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
   questionLocked: boolean

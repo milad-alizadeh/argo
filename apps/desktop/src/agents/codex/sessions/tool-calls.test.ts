@@ -5,8 +5,13 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import {
+  fed,
+  feedRequest,
+  listed,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(
@@ -69,7 +74,7 @@ test('names the roster activity line after the newest tool call, the same way it
     label: 'Ran bun run quality',
     kind: 'command',
     open: false,
-    tool: 'exec_command',
+    tool: 'execute',
     target: null,
   })
 })

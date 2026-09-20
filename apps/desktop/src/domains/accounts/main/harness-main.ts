@@ -7,9 +7,12 @@ import type {
   AccountDispatchClient,
   TicketDispatchClient,
 } from '@/domains/accounts/main/harness-dispatch'
+import { createConnectionPort } from '@/domains/connections/main/port'
+import { createProjectPort } from '@/domains/projects/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
-import { attachTicketBridge } from '@/domains/tickets/main/bridge'
+import { attachTicketBridge } from '@/domains/tickets/main/port'
+import { accountProviders, ticketSources } from '@/providers/composition'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
 import { createDomainClient } from '@/shared/ipc/client'
@@ -43,12 +46,21 @@ export function bootMain(options: {
     accountData,
     connectionData: accountData,
     endpoints,
+    providers: accountProviders,
     cipher,
     openExternal,
-    projects,
+    projects: createProjectPort(projects),
   })
   const ticketWindow = createMockIpcWindow()
-  attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
+  attachTicketBridge(ticketWindow.window, {
+    access,
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
+    rendererURL: RENDERER_URL,
+    sources: ticketSources,
+  })
   const tickets: TicketDispatchClient = createDomainClient(
     TICKET_OPERATIONS,
     (channel, ticketRequest) => ticketWindow.trustedInvoke(channel, ticketRequest),

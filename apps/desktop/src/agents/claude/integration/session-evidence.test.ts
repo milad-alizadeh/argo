@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 
 function readFeed(value: unknown, root: string) {
   return createSessionReader([claudeSessionSource({ transcripts: root })]).readSessionFeed(value)
@@ -69,7 +69,7 @@ test('keeps each line of a multi-line edit in one unified patch', async (context
       type: 'session.feed',
       requestId: 'patch',
       sessionId: 'patch',
-      delegationId: null,
+      subagentId: null,
       revision: null,
     },
     root,
@@ -129,7 +129,7 @@ test('projects recorded command, file, and edit evidence', async (context) => {
       type: 'session.feed',
       requestId: 'evidence',
       sessionId: 'evidence',
-      delegationId: null,
+      subagentId: null,
       revision: null,
     },
     root,

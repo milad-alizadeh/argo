@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseTranscriptLine } from '@/agents/claude/sessions/records'
-import { readTranscriptFile } from '@/domains/sessions/contract/transcript'
+import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript'
 
 test('reads a sent command as its visible source text', () => {
   const line = JSON.stringify({
@@ -37,7 +37,7 @@ test('does not expose incomplete command tags', () => {
 
 test('keeps a command receipt as the Session opening prompt', () => {
   const file = readTranscriptFile('/tmp/command.jsonl', {
-    fileName: 'command.jsonl',
+    sessionId: 'command',
     lines: [
       JSON.stringify({
         type: 'user',

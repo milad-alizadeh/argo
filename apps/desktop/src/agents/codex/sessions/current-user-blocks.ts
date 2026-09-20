@@ -1,5 +1,8 @@
 import { USER_HARNESS_ENVELOPES } from '@/agents/codex/sessions/harness-envelopes'
-import type { ContentBlock, TranscriptEventKind } from '@/domains/sessions/contract/transcript'
+import type {
+  ContentBlock,
+  TranscriptEventKind,
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // Codex injects these as user and developer `input_text` blocks, whole and un-nested, so a

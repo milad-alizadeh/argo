@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const SESSION = 'codexHeartbeat'
 const FIXTURE = fileURLToPath(
@@ -31,7 +31,7 @@ async function feed(
     type: 'session.feed',
     requestId: 'feed-1',
     sessionId: SESSION,
-    delegationId: null,
+    subagentId: null,
     revision: null,
   })
   assert.ok(typeof reply === 'object' && reply !== null && 'rows' in reply)
@@ -66,7 +66,7 @@ test('shows the person, the agent and a heartbeat notification, never the heartb
       event: 'status',
       text: 'Merged #2192: stalled session retry recovery.',
     },
-    { id: 'voice-1', shape: 'delegation', action: 'Check the feed virtualisation next' },
+    { id: 'voice-1', shape: 'event', event: 'command', text: 'Check the feed virtualisation next' },
     { id: 'browser-1:0', shape: 'prose', text: 'start again' },
   ])
   assert.ok(rows.every((row) => !JSON.stringify(row).includes('<heartbeat>')))
@@ -103,7 +103,7 @@ test('opens a thread the voice session created with its request, never the injec
     type: 'session.feed',
     requestId: 'feed-1',
     sessionId: session,
-    delegationId: null,
+    subagentId: null,
     revision: null,
   })
   assert.ok(typeof reply === 'object' && reply !== null && 'rows' in reply)

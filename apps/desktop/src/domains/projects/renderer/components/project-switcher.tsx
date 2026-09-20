@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
-import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { useProjects } from '@/domains/projects/renderer/port'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

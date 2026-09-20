@@ -148,6 +148,7 @@
       "customize": "Customize plan",
       "customizeTitle": "Adjust the recommended setup",
       "import": "Import config",
+      "save": "Save",
       "importDescription": "Paste an existing Project configuration instead of using the recommended plan.",
       "importTitle": "Import .argo/settings.json",
       "included": "{{label}}",

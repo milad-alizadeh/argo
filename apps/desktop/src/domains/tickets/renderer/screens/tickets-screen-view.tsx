@@ -1,18 +1,17 @@
 import { FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AccountsDialog } from '@/domains/accounts/renderer/components/accounts-dialog'
-import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
 import {
   ConnectSourceFields,
   ConnectSourceForm,
-} from '@/domains/tickets/renderer/components/connect-source-form'
-import { TicketDeck } from '@/domains/tickets/renderer/components/ticket-deck'
-import { TicketProblem } from '@/domains/tickets/renderer/components/ticket-problem'
+} from '@/domains/tickets/renderer/connection/connect-source-form'
+import { TicketDeck } from '@/domains/tickets/renderer/detail/ticket-deck'
 import {
   type TicketsScreenProps,
   type TicketsView,
   useTicketsView,
 } from '@/domains/tickets/renderer/hooks/use-tickets-view'
+import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
 import {
   Empty,
   EmptyDescription,

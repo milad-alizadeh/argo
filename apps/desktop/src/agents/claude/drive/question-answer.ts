@@ -1,5 +1,5 @@
 import type { Wait } from '@/agents/claude/drive/deliver-turn'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 
 export type AnswerTarget = { process: { write: (text: string) => void } }
 
@@ -21,7 +21,7 @@ async function pressDown(target: AnswerTarget, rows: number, wait: Wait) {
 
 // One question's answer, in the picker's own row order: the offered options, then one further
 // row for "Type something." (`index` counts from there, 1-based, per claude-contract.ts).
-async function deliverOne(target: AnswerTarget, answer: ClaudeQuestionAnswer, wait: Wait) {
+async function deliverOne(target: AnswerTarget, answer: QuestionAnswer, wait: Wait) {
   if (answer.kind === 'text') {
     // The picker opens with row 1 already highlighted (confirmed), so reaching row N is N-1 presses.
     await pressDown(target, answer.index - 1, wait)
@@ -49,11 +49,7 @@ async function deliverOne(target: AnswerTarget, answer: ClaudeQuestionAnswer, wa
   target.process.write(ENTER)
 }
 
-export async function deliverAnswer(
-  target: AnswerTarget,
-  answers: ClaudeQuestionAnswer[],
-  wait: Wait,
-) {
+export async function deliverAnswer(target: AnswerTarget, answers: QuestionAnswer[], wait: Wait) {
   for (const answer of answers) {
     await deliverOne(target, answer, wait)
     await wait(SUBMIT_DELAY_MS)

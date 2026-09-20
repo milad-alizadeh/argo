@@ -37,7 +37,7 @@ export function ImportSetup({
             onClick={() => void applyConfiguration()}
             type="button"
           >
-            {saving === 'apply' ? t('setup.document.applying') : t('setup.document.import')}
+            {saving === 'apply' ? t('setup.document.applying') : t('setup.document.save')}
           </Button>
         </>
       }

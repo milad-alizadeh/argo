@@ -1,8 +1,6 @@
 import { Check } from 'lucide-react'
 import { useState } from 'react'
-import type { BundledLanguage } from 'shiki/langs'
-import { CodeBlock } from '@/platform/renderer/components/ai-elements/code-block'
-import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { cn } from '@/platform/renderer/lib/utils'
 
 export type FileDiff = { diff: string; path: string }
@@ -11,14 +9,12 @@ export function FileDiffList({
   accessibleName,
   className,
   files,
-  languageForPath = () => null,
   markViewedLabel,
   viewedLabel,
 }: {
   accessibleName: string
   className?: string
   files: FileDiff[]
-  languageForPath?: (path: string) => BundledLanguage | null
   markViewedLabel: (path: string) => string
   viewedLabel: string
 }) {
@@ -31,7 +27,6 @@ export function FileDiffList({
         <FileDiffSection
           file={file}
           key={file.path}
-          language={languageForPath(file.path)}
           markViewedLabel={markViewedLabel}
           viewedLabel={viewedLabel}
         />
@@ -42,12 +37,10 @@ export function FileDiffList({
 
 function FileDiffSection({
   file,
-  language,
   markViewedLabel,
   viewedLabel,
 }: {
   file: FileDiff
-  language: BundledLanguage | null
   markViewedLabel: (path: string) => string
   viewedLabel: string
 }) {
@@ -82,15 +75,32 @@ function FileDiffSection({
         </label>
       </header>
       {viewed ? null : (
-        <CodeBlock
-          code={file.diff}
-          language={language}
-          className="rounded-none border-0 border-b border-border/60 type-code-content last:border-b-0 [&_pre]:p-0"
-          line={(index) => {
-            const line = lines[index] ?? { kind: 'title', oldLine: null, newLine: null }
-            return diffLineDecoration(line)
-          }}
-        />
+        <pre className="overflow-x-auto border-b border-border/60 bg-background type-code-content last:border-b-0">
+          <code>
+            {lines.map((line, index) => {
+              if (line.kind === 'hunk') return null
+              const lineNumber = line.kind === 'removed' ? line.oldLine : line.newLine
+              return (
+                <span
+                  className={cn(
+                    'flex min-w-max px-3',
+                    line.kind === 'added' && 'bg-emerald-500/15',
+                    line.kind === 'removed' && 'bg-rose-500/15',
+                  )}
+                  key={`${index}-${line.source}`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mr-3 w-6 shrink-0 text-right text-muted-foreground select-none"
+                  >
+                    {lineNumber ?? ''}
+                  </span>
+                  <span>{line.source}</span>
+                </span>
+              )
+            })}
+          </code>
+        </pre>
       )}
     </section>
   )

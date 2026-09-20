@@ -1,23 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
-import type { SessionDelegation, SessionShellCommand } from '@/domains/sessions/contract/models'
-import { SessionComposer } from '@/domains/sessions/renderer/components/composer/session-composer'
-import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
-import { Roster, type RosterActions } from '@/domains/sessions/renderer/components/roster/roster'
-import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
-import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
+import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
+import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
-import { SessionShell } from '@/domains/sessions/renderer/screens/session-shell'
+import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'
 import {
-  sessionDelegation,
   sessionRosterRow,
   sessionShellCommand,
+  sessionSubagent,
 } from '@/domains/sessions/renderer/session-fixtures'
 import type { Session, SessionFeed, SessionsListed } from '@/domains/sessions/renderer/types'
+import { SessionWorkButtons } from '@/domains/sessions/renderer/work/session-work-buttons'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { SessionScreenView } from './session-screen-view'
+import { SessionShell } from './session-shell'
 
 const SESSION_ROSTER = [
   sessionRosterRow({
@@ -44,8 +45,8 @@ const SESSION_ROSTER = [
         { content: 'Record the visual review', position: 2, status: 'pending' },
       ],
     },
-    delegations: [
-      sessionDelegation({
+    subagents: [
+      sessionSubagent({
         id: 'interface-review',
         label: 'Interface review',
         startedAt: '2026-09-13T15:44:00Z',
@@ -135,7 +136,7 @@ function feedFor(sessionId: string) {
   } satisfies SessionFeed
 }
 
-function delegationFeedFor(delegation: SessionDelegation) {
+function delegationFeedFor(delegation: SessionSubagent) {
   const sessionId = `composer-review#${delegation.id}`
   return {
     version: 1,
@@ -217,7 +218,7 @@ function ReviewInspector({
   delegation,
   shell,
 }: {
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   shell: SessionShellCommand | null
 }) {
   return (
@@ -231,7 +232,10 @@ function ReviewInspector({
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
       shell={shell}
-      shellOutput={'Checked 187 files.\ncheck:design-tokens — clean.\n'}
+      shellOutput={{
+        state: 'available',
+        tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n',
+      }}
     />
   )
 }
@@ -240,7 +244,7 @@ function ReviewInspectorBar({
   delegation,
   shell,
 }: {
-  delegation: SessionDelegation | null
+  delegation: SessionSubagent | null
   shell: SessionShellCommand | null
 }) {
   if (shell !== null) return <SessionWorkInspectorHeader work={{ kind: 'shell', command: shell }} />
@@ -270,11 +274,12 @@ function ReviewScreen({
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
-  const delegation = session.delegations.find(({ id }) => id === picked?.id) ?? null
+  const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
     <CockpitShell
+      header={<ProjectSwitcher />}
       sidebar={
         <ReviewSidebar onSelect={setSelectedSessionId} selectedSessionId={selectedSessionId} />
       }
@@ -293,7 +298,7 @@ function ReviewScreen({
         onRetryFeed={() => {}}
         headerControls={
           <SessionWorkButtons
-            delegations={session.delegations}
+            subagents={session.subagents}
             onSelectDelegation={pick}
             onSelectShell={pick}
             selectedDelegationId={delegation?.id ?? null}
@@ -323,6 +328,7 @@ function NewSessionScreen() {
   withListedSessions([])
   return (
     <CockpitShell
+      header={<ProjectSwitcher />}
       sidebar={
         <Roster
           actions={{

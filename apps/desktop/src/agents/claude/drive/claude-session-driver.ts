@@ -14,11 +14,11 @@ import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
 import { clearHandoff, completeHandoffs, startHandoff } from '@/agents/claude/drive/handoff-driver'
 import type { LiveMessage } from '@/agents/claude/drive/live-messages'
 import { claudeManagedStatus } from '@/agents/claude/drive/managed-status'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
-import type { ClaudePermission } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { rollupSessionStatus } from '@/domains/sessions/main/session-status-rollup'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
@@ -43,7 +43,7 @@ export type ClaudeSessionDriver = {
   decideQuestion: (
     sessionId: string,
     questionId: string,
-    answers: ClaudeQuestionAnswer[],
+    answers: QuestionAnswer[],
   ) => Promise<boolean>
   close: () => void
 }
@@ -79,7 +79,7 @@ async function decideQuestion(
     channel: ReturnType<typeof channelActions>
     sessions: Sessions
   },
-  request: { sessionId: string; questionId: string; answers: ClaudeQuestionAnswer[] },
+  request: { sessionId: string; questionId: string; answers: QuestionAnswer[] },
 ): Promise<boolean> {
   const session = context.sessions.get(request.sessionId)
   if (!session) return false

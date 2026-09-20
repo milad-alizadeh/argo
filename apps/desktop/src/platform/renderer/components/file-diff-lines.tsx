@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 
-type DiffLine = {
+export type DiffLine = {
   kind: 'added' | 'context' | 'hunk' | 'removed' | 'title'
   newLine: number | null
   oldLine: number | null
+  source: string
 }
 
 export function diffLines(source: string): DiffLine[] {
@@ -17,12 +18,15 @@ export function diffLines(source: string): DiffLine[] {
       if (matched !== null) {
         oldLine = Number(matched[1])
         newLine = Number(matched[2])
-        return { kind: 'hunk', oldLine: null, newLine: null }
+        return { kind: 'hunk', oldLine: null, newLine: null, source: line }
       }
-      if (line.startsWith('-')) return { kind: 'removed', oldLine: oldLine++, newLine: null }
-      if (line.startsWith('+')) return { kind: 'added', oldLine: null, newLine: newLine++ }
-      if (line.startsWith(' ')) return { kind: 'context', oldLine: oldLine++, newLine: newLine++ }
-      return { kind: 'title', oldLine: null, newLine: null }
+      if (line.startsWith('-'))
+        return { kind: 'removed', oldLine: oldLine++, newLine: null, source: line }
+      if (line.startsWith('+'))
+        return { kind: 'added', oldLine: null, newLine: newLine++, source: line }
+      if (line.startsWith(' '))
+        return { kind: 'context', oldLine: oldLine++, newLine: newLine++, source: line }
+      return { kind: 'title', oldLine: null, newLine: null, source: line }
     })
 }
 

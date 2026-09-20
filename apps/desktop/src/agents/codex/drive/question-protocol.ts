@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import type { RequestID, WireMessage } from '@/agents/codex/drive/protocol'
 import { protocolRecord, protocolString } from '@/agents/codex/drive/protocol'
-import type { Question, QuestionAnswer, QuestionOption } from '@/domains/sessions/contract/question'
+import type {
+  Question,
+  QuestionAnswer,
+  QuestionOption,
+} from '@/domains/sessions/contract/drive/question'
+import type { SessionStatus } from '@/domains/sessions/contract/model/models'
 
 // A pending `item/tool/requestUserInput` server request (EXPERIMENTAL, grounded against codex-cli
 // 0.147.0's generated schema behind `features.default_mode_request_user_input`, #1841). Codex asks
@@ -92,4 +97,13 @@ export function readRequestUserInput(message: WireMessage): PendingCodexQuestion
         ? null
         : 'This question asks for a secret value, which Argo cannot show or submit.',
   }
+}
+
+// A decided question leaves the Session running, unless a later status already replaced `asking`.
+export function settleQuestion(session: {
+  pendingQuestion: PendingCodexQuestion | null
+  status: SessionStatus
+}) {
+  session.pendingQuestion = null
+  if (session.status === 'asking') session.status = 'running'
 }

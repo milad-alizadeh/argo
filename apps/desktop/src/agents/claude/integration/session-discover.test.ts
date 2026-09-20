@@ -10,7 +10,7 @@ import {
   listSessions,
 } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 
 const feed = {
@@ -18,7 +18,7 @@ const feed = {
   type: 'session.feed',
   requestId: 'feed-1',
   sessionId: 'resumeParent',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

@@ -1,14 +1,20 @@
-import type { ToolCall } from '@/domains/sessions/contract/transcript'
+import type {
+  FetchFacts,
+  ReadFacts,
+  SearchFacts,
+} from '@/domains/sessions/contract/model/transcript'
 
 type Input = Record<string, unknown>
-type LookupFacts = Pick<ToolCall, 'read' | 'search' | 'fetch'>
+type LookupFacts = ReadFacts | SearchFacts | FetchFacts
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
 const webSearch = (query: string | null): LookupFacts => ({
-  search: { kind: 'search', scope: 'web', query },
+  kind: 'search',
+  scope: 'web',
+  query,
 })
 
 // A search action carries `query`, and `queries` when the model fanned it out.
@@ -20,7 +26,7 @@ function searchQuery(input: Input): string | null {
 // The web actions of a rollout `web_search_call` item, keyed by `action.type`.
 const WEB_SEARCH_ACTIONS: Record<string, (input: Input) => LookupFacts> = {
   search: (input) => webSearch(searchQuery(input)),
-  open_page: (input) => ({ fetch: { kind: 'fetch', url: text(input.url) } }),
+  open_page: (input) => ({ kind: 'fetch', url: text(input.url) }),
   find_in_page: (input) => webSearch(text(input.pattern)),
 }
 
@@ -29,21 +35,20 @@ const WEB_SEARCH_ACTIONS: Record<string, (input: Input) => LookupFacts> = {
 const LOOKUPS: Record<string, (input: Input) => LookupFacts> = {
   web__run: (input) => {
     const url = text(input.url)
-    return url === null ? webSearch(searchQuery(input)) : { fetch: { kind: 'fetch', url } }
+    return url === null ? webSearch(searchQuery(input)) : { kind: 'fetch', url }
   },
   'web.search': (input) => webSearch(searchQuery(input)),
   web_search_call: (input) => {
     const action = typeof input.type === 'string' ? input.type : ''
-    return pick(WEB_SEARCH_ACTIONS, action)?.(input) ?? {}
+    return pick(WEB_SEARCH_ACTIONS, action)?.(input) ?? webSearch(null)
   },
-  view_image: (input) => ({ read: { kind: 'read', target: text(input.path) } }),
+  view_image: (input) => ({ kind: 'read', target: text(input.path) }),
 }
 
 function pick<Value>(table: Record<string, Value>, key: string): Value | undefined {
   return Object.hasOwn(table, key) ? table[key] : undefined
 }
 
-export function withLookupFacts(call: ToolCall): ToolCall {
-  const facts = pick(LOOKUPS, call.name)?.(call.input)
-  return facts === undefined ? call : { ...call, ...facts }
+export function lookupFacts(name: string, input: Input): LookupFacts | null {
+  return pick(LOOKUPS, name)?.(input) ?? null
 }

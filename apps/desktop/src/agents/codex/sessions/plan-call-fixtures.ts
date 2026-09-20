@@ -2,8 +2,8 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed, tempRoot } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed, tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 export const SESSION_ID = '01a0870e-f790-7fd0-984c-95e8686f1f0c'
 export const TIMESTAMP = '2026-09-15T10:00:00.000Z'

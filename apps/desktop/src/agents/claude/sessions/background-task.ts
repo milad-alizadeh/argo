@@ -1,5 +1,8 @@
 import { taggedField } from '@/agents/envelope-tags'
-import type { BackgroundState, BackgroundTaskRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  BackgroundState,
+  BackgroundTaskRecord,
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // The CLI's notification words, folded into the states the contract holds.
@@ -10,7 +13,7 @@ const NOTIFICATION_STATES = {
   stopped: 'interrupted',
 } as const satisfies Record<string, BackgroundState>
 
-function backgroundState(value: string | null): BackgroundState | null {
+export function backgroundState(value: string | null): BackgroundState | null {
   return value !== null && Object.hasOwn(NOTIFICATION_STATES, value)
     ? NOTIFICATION_STATES[value as keyof typeof NOTIFICATION_STATES]
     : null

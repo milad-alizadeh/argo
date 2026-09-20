@@ -1,12 +1,12 @@
 import { type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
 import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/feed-jump-to-latest'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import type { useSessions } from '@/domains/sessions/renderer/hooks/use-sessions'
 import type { SessionEvidence } from '@/domains/sessions/renderer/types'
+import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
@@ -20,7 +20,7 @@ export type SessionWorkspaceProps = {
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (sessionId: string, questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
 }

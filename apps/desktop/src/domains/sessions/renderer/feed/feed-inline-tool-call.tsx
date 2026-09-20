@@ -1,5 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
+import { displayedToolLabel } from '@/domains/sessions/contract/model/tool-feed'
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockFilename,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from '@/domains/sessions/renderer/ai-elements/code-block'
+import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
+import { CollapsibleText } from '@/domains/sessions/renderer/feed/collapsible-text'
 import {
   codeLanguageLabel,
   detectCodeLanguage,
@@ -18,15 +27,6 @@ import {
   type ToolGroupState,
   useToolGroupOpen,
 } from '@/domains/sessions/renderer/feed/tool-group-state'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '@/platform/renderer/components/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/platform/renderer/components/ai-elements/code-block-copy-button'
-import { CollapsibleText } from '@/platform/renderer/components/collapsible-text'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own

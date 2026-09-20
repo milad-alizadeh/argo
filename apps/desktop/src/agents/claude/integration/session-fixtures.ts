@@ -5,9 +5,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
 import { readTranscriptFile } from '@/agents/claude/sessions/transcript-file.ts'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { projectRosterRow } from '@/domains/sessions/main/roster.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
 import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 
 export const unscopedListing = {
@@ -35,7 +35,7 @@ export const LATER_TURN = `${JSON.stringify({
 
 export async function fixtureFile(name) {
   return readTranscriptFile(`/fixtures/${name}.jsonl`, {
-    fileName: `${name}.jsonl`,
+    sessionId: name,
     lines: await fixtureLines(name),
   })
 }
@@ -52,5 +52,5 @@ export async function fixtureRoot(context, names, directory = 'project-one') {
 
 // The Roster row the named fixtures project into, which is what most signal tests assert on.
 export async function fixtureRosterRow(names) {
-  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
+  return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')
 }

@@ -43,8 +43,10 @@ export type OnboardingTarget = {
 }
 
 export type OnboardingApplyTask = {
+  detail: string
   id: string
   kind: 'prepare' | 'action' | 'install' | 'verify'
+  label: string
   recommendationId?: string
   targetId?: string
   waitsForUser?: boolean

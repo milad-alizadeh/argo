@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { answeringEveryNestedCall } from '@/agents/codex/sessions/nested-results'
 import { readToolRecord } from '@/agents/codex/sessions/tool-calls'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 
 const RECORD = { timestamp: '2026-09-18T17:08:08.000Z' }
 
@@ -35,7 +35,7 @@ test('answers every call of a script from its one output, even with a JavaScript
   assert.equal(results?.kind, 'message')
   if (calls?.kind !== 'message' || results?.kind !== 'message') return
   assert.deepEqual(
-    calls.toolCalls.map((call) => call.input.cmd),
+    calls.toolCalls.map((call) => (call.kind === 'execute' ? call.command : null)),
     ['bun test', 'bun run lint', 'bun run build'],
   )
   assert.deepEqual(results.answeredCalls, ['call:0', 'call:1', 'call:2'])
@@ -80,7 +80,19 @@ function scriptCalls(script: string, field: string) {
   })
   assert.equal(read.kind, 'message')
   if (read.kind !== 'message') return []
-  return read.toolCalls.map(({ name, input }) => ({ name, [field]: input[field] }))
+  return read.toolCalls.map((call) => {
+    const value = (() => {
+      switch (call.kind) {
+        case 'edit':
+          return call.files[0]?.diff
+        case 'search':
+          return call.query
+        default:
+          return null
+      }
+    })()
+    return { name: call.kind, [field]: value }
+  })
 }
 
 test('reads an apply_patch call through the constant its script declared', () => {
@@ -91,8 +103,8 @@ test('reads an apply_patch call through the constant its script declared', () =>
   ].join('\n')
   assert.deepEqual(scriptCalls(script, 'patch'), [
     {
-      name: 'apply_patch',
-      patch: '*** Begin Patch\n*** Update File: /repo/src/app.ts\n@@\n-old\n+new\n*** End Patch',
+      name: 'edit',
+      patch: 'Update File: /repo/src/app.ts\n@@ -0,0 +0,0 @@\n-old\n+new',
     },
   ])
 })
@@ -105,7 +117,7 @@ test('names a web search by its first query, quotes unescaped, as Codex does', (
     '],response_length:"long"}); text(r);',
   ].join('\n')
   assert.deepEqual(scriptCalls(script, 'query'), [
-    { name: 'web__run', query: '"Steerline" software app company' },
+    { name: 'search', query: '"Steerline" software app company' },
   ])
 })
 

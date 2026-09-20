@@ -1,9 +1,7 @@
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
-import { SessionInspector } from '@/domains/sessions/renderer/components/inspector/session-inspector'
-import { SessionWorkButtons } from '@/domains/sessions/renderer/components/work/session-work-buttons'
-import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/components/work/session-work-inspector-header'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
 import { backgroundWorkLinks } from '@/domains/sessions/renderer/screens/background-work-links'
 import {
   SessionComposerArea,
@@ -15,8 +13,10 @@ import {
   useSessionScreenModel,
 } from '@/domains/sessions/renderer/screens/use-session-screen-model'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
+import { SessionWorkButtons } from '@/domains/sessions/renderer/work/session-work-buttons'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
 
-// An unanswered `AskUserQuestion` tool call, if the Feed is currently showing one.
+// An unanswered ask row, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {
   const row = feed?.rows.find((row) => row.shape === 'ask' && row.answer === null)
   return row?.id ?? null
@@ -26,15 +26,13 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   const { pick, selectedSessionId, session, work } = model
   return (
     <SessionWorkButtons
-      delegations={session?.delegations ?? []}
-      delegationUsage={model.delegationUsage}
-      onSelectDelegation={(delegationId) =>
-        pick({ sessionId: selectedSessionId, delegationId, shellId: null })
+      subagents={session?.subagents ?? []}
+      subagentUsage={model.subagentUsage}
+      onSelectDelegation={(subagentId) =>
+        pick({ sessionId: selectedSessionId, subagentId, shellId: null })
       }
-      onSelectShell={(shellId) =>
-        pick({ sessionId: selectedSessionId, delegationId: null, shellId })
-      }
-      selectedDelegationId={work.delegationId}
+      onSelectShell={(shellId) => pick({ sessionId: selectedSessionId, subagentId: null, shellId })}
+      selectedDelegationId={work.subagentId}
       selectedShellId={work.shellId}
       shell={session?.shell ?? []}
     />
@@ -61,7 +59,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
 
 function InspectorBar({ model }: { model: SessionScreenModel }) {
   if (model.evidence !== null) return null
-  if (model.shell !== null) {
+  if (model.shell !== null && model.shellOutput?.state === 'available') {
     return <SessionWorkInspectorHeader work={{ kind: 'shell', command: model.shell }} />
   }
   if (model.delegation !== null) {
@@ -70,7 +68,7 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
         work={{
           kind: 'delegation',
           delegation: model.delegation,
-          usage: model.delegationUsage[model.delegation.id] ?? { tokens: null, model: null },
+          usage: model.subagentUsage[model.delegation.id] ?? { tokens: null, model: null },
         }}
       />
     )
@@ -99,11 +97,8 @@ export function SessionScreenView() {
   const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
-  const answerQuestion = (
-    _sessionId: string,
-    questionId: string,
-    answers: ClaudeQuestionAnswer[],
-  ) => void question.decide(questionId, answers)
+  const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
+    void question.decide(questionId, answers)
   return (
     <BackgroundWork.Provider value={backgroundWorkLinks(model)}>
       <SessionShell

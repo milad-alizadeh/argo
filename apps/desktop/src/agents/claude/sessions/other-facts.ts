@@ -1,28 +1,9 @@
-import { mcpOther } from '../../../domains/sessions/contract/mcp-call'
-import { skillTitle } from '../../../domains/sessions/contract/tool-feed'
-import type { ToolCall } from '../../../domains/sessions/contract/transcript'
+import { mcpOther } from '@/domains/sessions/contract/model/mcp-call'
+import { skillTitle } from '@/domains/sessions/contract/model/tool-feed'
+import type { OtherFacts, SkillFacts } from '@/domains/sessions/contract/model/transcript'
 
 type Input = Record<string, unknown>
-type SkillOrOther = Pick<ToolCall, 'skill' | 'other'>
-
-// Claude tools another module already reads as a row, a Plan change, a Subagent or a stop.
-const HANDLED_ELSEWHERE = new Set([
-  'Bash',
-  'Read',
-  'Glob',
-  'Grep',
-  'WebSearch',
-  'WebFetch',
-  'Edit',
-  'Write',
-  'NotebookEdit',
-  'AskUserQuestion',
-  'Task',
-  'Agent',
-  'SendMessage',
-  'TaskStop',
-  'KillShell',
-])
+type SkillOrOther = SkillFacts | OtherFacts
 
 // Poll and wait calls: they read a task the Feed already drew, so they draw no row.
 export const POLL_TOOLS = new Set(['TaskOutput', 'Monitor'])
@@ -44,16 +25,24 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-export function skillOrOtherFacts(name: string, input: Input): SkillOrOther {
+function inputText(input: Input): string | null {
+  const values = Object.values(input)
+  const only = values.length === 1 && typeof values[0] === 'string' ? values[0] : null
+  return only ?? (values.length === 0 ? null : JSON.stringify(input, null, 2))
+}
+
+export function skillOrOtherFacts(name: string, input: Input): SkillOrOther | null {
   if (name === 'Skill') {
     const slug = text(input.skill)
-    return { skill: { kind: 'skill', title: slug === null ? null : skillTitle(slug) } }
+    return { kind: 'skill', title: slug === null ? null : skillTitle(slug) }
   }
-  if (HANDLED_ELSEWHERE.has(name)) return {}
   const mcp = mcpOther(name)
-  if (mcp !== null) return { other: mcp }
+  if (mcp !== null) return { ...mcp, text: null }
   const label = Object.hasOwn(ORCHESTRATION_LABELS, name) ? ORCHESTRATION_LABELS[name] : undefined
   return {
-    other: { kind: 'other', label: text(input.title) ?? label ?? `Ran ${name}`, source: null },
+    kind: 'other',
+    label: text(input.title) ?? label ?? `Ran ${name}`,
+    text: inputText(input),
+    source: null,
   }
 }

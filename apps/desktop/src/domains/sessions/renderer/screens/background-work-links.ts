@@ -7,18 +7,19 @@ export function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLi
     find: ({ callId, name }) => {
       const command = session?.shell.find((entry) => entry.id === callId)
       if (command !== undefined) return { kind: 'shell', command }
+      // A realtime delegation's envelope names no call, only the name the agent was sent with.
       const delegation =
-        session?.delegations.find((entry) => entry.id === callId) ??
-        session?.delegations.findLast((entry) => name !== null && entry.label === name)
+        session?.subagents.find((entry) => entry.id === callId) ??
+        session?.subagents.findLast((entry) => name !== null && entry.label === name)
       if (delegation === undefined) return null
-      const usage = model.delegationUsage[delegation.id] ?? { tokens: null, model: null }
+      const usage = model.subagentUsage[delegation.id] ?? { tokens: null, model: null }
       return { kind: 'delegation', delegation, usage }
     },
     open: (target) =>
       pick(
         target.kind === 'shell'
-          ? { sessionId: selectedSessionId, delegationId: null, shellId: target.command.id }
-          : { sessionId: selectedSessionId, delegationId: target.delegation.id, shellId: null },
+          ? { sessionId: selectedSessionId, subagentId: null, shellId: target.command.id }
+          : { sessionId: selectedSessionId, subagentId: target.delegation.id, shellId: null },
       ),
   }
 }

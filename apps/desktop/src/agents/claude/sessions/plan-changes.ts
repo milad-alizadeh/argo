@@ -2,8 +2,8 @@
 // writes the whole list and older transcripts still carry it; current CLIs add one step with
 // `TaskCreate` and change it with `TaskUpdate`, naming it by the id `TaskCreate`'s result gave.
 
-import type { PlanChange, ToolCall, ToolResult } from '@/domains/sessions/contract/transcript'
-import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/plan'
+import type { PlanChange, ToolResult } from '@/domains/sessions/contract/model/transcript'
+import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/projection/plan'
 import { isRecord } from '@/shared/validation'
 
 const DELETED = 'deleted'
@@ -12,7 +12,9 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
-function readTodos(call: ToolCall): PlanChange {
+type PlanCall = { id: string; name: string; input: Record<string, unknown> }
+
+function readTodos(call: PlanCall): PlanChange {
   const todos = call.input.todos
   if (!Array.isArray(todos)) return { kind: 'unreadable' }
   return readPlanSnapshot(
@@ -23,12 +25,12 @@ function readTodos(call: ToolCall): PlanChange {
 }
 
 // The CLI refuses a step with no subject, so such a call adds nothing.
-function readCreate(call: ToolCall): PlanChange | null {
+function readCreate(call: PlanCall): PlanChange | null {
   const content = text(call.input.subject)
   return content === null ? null : { kind: 'add', callId: call.id, content }
 }
 
-function readUpdate(call: ToolCall): PlanChange | null {
+function readUpdate(call: PlanCall): PlanChange | null {
   const key = text(call.input.taskId)
   if (key === null) return null
   if (call.input.status === DELETED) return { kind: 'remove', key }
@@ -37,7 +39,7 @@ function readUpdate(call: ToolCall): PlanChange | null {
   return { kind: 'update', key, content: text(call.input.subject), status }
 }
 
-const PLAN_TOOLS = new Map<string, (call: ToolCall) => PlanChange | null>([
+const PLAN_TOOLS = new Map<string, (call: PlanCall) => PlanChange | null>([
   ['TodoWrite', readTodos],
   ['TaskCreate', readCreate],
   ['TaskUpdate', readUpdate],
@@ -54,10 +56,20 @@ function readAdded(results: ToolResult[], toolUseResult: unknown): PlanChange[] 
 }
 
 export function readPlanChanges(
-  calls: ToolCall[],
+  content: unknown,
   results: ToolResult[],
   toolUseResult: unknown,
 ): PlanChange[] {
+  const calls = Array.isArray(content)
+    ? content.flatMap((block): PlanCall[] =>
+        isRecord(block) &&
+        block.type === 'tool_use' &&
+        typeof block.id === 'string' &&
+        typeof block.name === 'string'
+          ? [{ id: block.id, name: block.name, input: isRecord(block.input) ? block.input : {} }]
+          : [],
+      )
+    : []
   const written = calls.flatMap((call) => {
     const change = PLAN_TOOLS.get(call.name)?.(call) ?? null
     return change === null ? [] : [change]

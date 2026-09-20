@@ -26,7 +26,6 @@
     "format-and-lint:fix": "biome check . --write",
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",
     "install:electron": "node node_modules/electron/install.js",
-    "prototype:project-onboarding": "ARGO_PROJECT_ONBOARDING_PROTOTYPE=1 bun run --cwd apps/desktop dev",
     "quality": "bun run format-and-lint && bun run quality:workflows && bun run quality:types && bun run quality:duplication",
     "quality:workflows": "node --test scripts/check-ci-workflow.test.mjs",
     "quality:duplication": "jscpd --config .jscpd.json --baseline-from-ref origin/main --fail-on-new-clones=0 apps packages scripts hooks",

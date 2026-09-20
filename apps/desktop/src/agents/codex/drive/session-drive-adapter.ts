@@ -1,13 +1,10 @@
 import type { CodexSessionDrive } from '@/agents/codex/drive/codex-session-driver'
 import { CodexSessionDriverError } from '@/agents/codex/drive/codex-session-error'
-import {
-  type CodexTurnSetup,
-  codexTurnSetupSchema,
-} from '@/domains/sessions/contract/codex-contract'
+import { type CodexTurnSetup, codexTurnSetupSchema } from '@/agents/codex/drive/turn-setup-contract'
 import type {
   DriveFailure,
   SessionDriveAdapter,
-} from '@/domains/sessions/main/session-drive-adapter'
+} from '@/domains/sessions/main/drive/session-drive-adapter'
 
 // `codex app-server` refuses a thread already active in another process (its own client or the
 // standalone Codex app) with a JSON-RPC error naming that fact; every other refusal falls back to

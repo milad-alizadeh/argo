@@ -8,8 +8,8 @@ import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/contract'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+} from '@/domains/sessions/contract/ipc/contract'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const listing = {
   version: 1 as const,
@@ -125,7 +125,7 @@ test('excludes a subagent thread from the roster even though it holds assistant 
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     }),
   )

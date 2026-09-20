@@ -64,7 +64,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
         label: 'Read order.ts',
         kind: 'read',
         open: true,
-        tool: 'Read',
+        tool: 'read',
         target: 'order.ts',
       },
     },

@@ -4,10 +4,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const sessionId = '01a0abe3-4484-7271-9336-9c4dc2be9f7b'
-const delegationId = '01a0abe3-96a2-7272-8db3-d24dbf36d454'
+const subagentId = '01a0abe3-96a2-7272-8db3-d24dbf36d454'
 
 function completedReview() {
   return {
@@ -34,7 +34,7 @@ async function writeDelegation(root: string, records: object[]) {
     })}\n`,
   )
   await writeFile(
-    path.join(day, `rollout-2026-09-16T21-23-34-${delegationId}.jsonl`),
+    path.join(day, `rollout-2026-09-16T21-23-34-${subagentId}.jsonl`),
     records.map((record) => JSON.stringify(record)).join('\n'),
   )
 }
@@ -45,7 +45,7 @@ async function delegationRows(root: string) {
     type: 'session.feed',
     requestId: 'feed-1',
     sessionId,
-    delegationId,
+    subagentId,
     revision: null,
   })
   assert.ok(reply.type === 'session.feed.read')
@@ -59,7 +59,7 @@ test('opens a Codex subagent transcript from its Agent card', async (context) =>
     {
       type: 'session_meta',
       timestamp: '2026-09-16T21:23:34.000Z',
-      payload: { id: delegationId, thread_source: 'subagent' },
+      payload: { id: subagentId, thread_source: 'subagent' },
     },
     completedReview(),
   ])

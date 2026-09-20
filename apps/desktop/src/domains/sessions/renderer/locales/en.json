@@ -252,6 +252,7 @@
   },
   "archivedEmpty": "No archived Sessions",
   "archivedStillIndexing": "Still indexing older Sessions",
+  "readingSessions": "Reading Sessions",
   "readingArchivedSessions": "Reading archived Sessions",
   "loadingMoreArchivedSessions": "Loading more archived Sessions",
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",
@@ -353,9 +354,9 @@
     "currentFile": "Current file",
     "diff": "Diff",
     "label": "File diff",
-    "copyDiff": "Copy diff",
     "markViewed": "Mark {{path}} as viewed",
-    "viewed": "Viewed"
+    "viewed": "Viewed",
+    "copyDiff": "Copy diff"
   },
   "row": {
     "activity": "Ran {{tool}} {{target}}",
@@ -387,6 +388,6 @@
     "subagent": "Subagent {{index}}",
     "finished": "{{count}} finished",
     "unresolved_one": "One delegation, unresolved",
-    "unresolved_other": "{{count}} delegations, unresolved"
+    "unresolved_other": "{{count}} subagents, unresolved"
   }
 }

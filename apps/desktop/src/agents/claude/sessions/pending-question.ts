@@ -1,6 +1,6 @@
 import { readSessionFiles } from '@/agents/claude/sessions/discover'
-import { chainMessages } from '@/domains/sessions/main/roster'
-import { ASK_TOOL, pendingAskCall } from '@/domains/sessions/main/status'
+import { chainMessages } from '@/domains/sessions/main/projection/roster'
+import { pendingAskCall } from '@/domains/sessions/main/projection/status'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared
 // `pendingAskCall` predicate: a structured question in the last assistant record that no later
@@ -12,6 +12,6 @@ export async function claudePendingQuestion(
 ): Promise<{ id: string } | null> {
   const chain = await readSessionFiles(transcripts, sessionId).catch(() => null)
   if (!chain) return null
-  const id = pendingAskCall(chainMessages(chain), ASK_TOOL)
+  const id = pendingAskCall(chainMessages(chain))
   return id === null ? null : { id }
 }

@@ -33,7 +33,11 @@ export function ProjectOnboardingFlow({ controller }: { controller: OnboardingCo
           <span className="onboarding-briefing__avatar">
             <Folder className="size-4" />
           </span>
-          <p>{t(`onboarding.event.${controller.state.event}`)}</p>
+          <p>
+            {t(`onboarding.event.${controller.state.event}`, {
+              defaultValue: controller.state.event,
+            })}
+          </p>
         </>
       }
       header={

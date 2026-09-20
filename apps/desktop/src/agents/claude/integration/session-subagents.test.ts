@@ -2,26 +2,26 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 
 // The `Task` call in `subagentTail`, and the Subagent transcript its meta file joins to it.
 const DELEGATION = 'call-task-1'
 
-function feedRequest(delegationId: string | null) {
+function feedRequest(subagentId: string | null) {
   return {
     version: 1 as const,
     type: 'session.feed' as const,
     requestId: 'feed-1',
     sessionId: 'subagentTail',
-    delegationId,
+    subagentId,
     revision: null,
   }
 }
 
-async function readFeed(root: string, delegationId: string | null) {
+async function readFeed(root: string, subagentId: string | null) {
   const reply = await createSessionReader([
     claudeSessionSource({ transcripts: root }),
-  ]).readSessionFeed(feedRequest(delegationId))
+  ]).readSessionFeed(feedRequest(subagentId))
   assert.equal(reply.type, 'session.feed.read')
   return reply.type === 'session.feed.read' ? reply : null
 }
@@ -57,14 +57,14 @@ test('reads what each Subagent spent from its own transcript', async (context) =
   const root = await fixtureRoot(context, ['subagentTail'])
   const reply = await createSessionReader([
     claudeSessionSource({ transcripts: root }),
-  ]).readDelegationUsage({
+  ]).readSubagentUsage({
     version: 1,
-    type: 'session.delegation.usage',
+    type: 'session.subagent.usage',
     requestId: 'usage-1',
     sessionId: 'subagentTail',
   })
-  assert.equal(reply.type, 'session.delegation.usage.read')
-  assert.deepEqual(reply.type === 'session.delegation.usage.read' ? reply.usage : null, [
+  assert.equal(reply.type, 'session.subagent.usage.read')
+  assert.deepEqual(reply.type === 'session.subagent.usage.read' ? reply.usage : null, [
     { id: DELEGATION, tokens: 2700, model: null },
   ])
 })

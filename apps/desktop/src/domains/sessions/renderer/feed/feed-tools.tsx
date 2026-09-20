@@ -1,8 +1,10 @@
 import { FilePenLine, Globe, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/tool-feed'
-import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/contract/tool-groups'
+import { displayedToolLabel } from '@/domains/sessions/contract/model/tool-feed'
+import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/contract/model/tool-groups'
+import { TaskItem } from '@/domains/sessions/renderer/ai-elements/task'
+import { CollapsibleText } from '@/domains/sessions/renderer/feed/collapsible-text'
 import { groupIcon, liveActivity } from '@/domains/sessions/renderer/feed/feed-group-title'
 import {
   FeedInlineToolCall,
@@ -15,8 +17,6 @@ import {
   useToolGroupOpen,
 } from '@/domains/sessions/renderer/feed/tool-group-state'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
-import { TaskItem } from '@/platform/renderer/components/ai-elements/task'
-import { CollapsibleText } from '@/platform/renderer/components/collapsible-text'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]

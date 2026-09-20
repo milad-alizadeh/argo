@@ -8,13 +8,13 @@ import { promptBlocks } from '@/agents/claude/sessions/prompt-images'
 import { queuedPromptRecord } from '@/agents/claude/sessions/queued-prompt'
 import { readSkillBody } from '@/agents/claude/sessions/skill-body'
 import { readStandaloneRecord } from '@/agents/claude/sessions/standalone-records'
-import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/models'
+import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/model/models'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
@@ -61,7 +61,7 @@ function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant'
   if (typeof record.uuid !== 'string') return null
   const results = readToolResults(content, record.toolUseResult)
   const calls = readToolCalls(content)
-  const planChanges = readPlanChanges(calls, results, record.toolUseResult)
+  const planChanges = readPlanChanges(content, results, record.toolUseResult)
   const parsed: TranscriptMessage = {
     ...(planChanges.length === 0 ? {} : { planChanges }),
     toolCalls: calls,

@@ -6,9 +6,9 @@ import {
   AccountsPanel,
   type AccountsPanelProps,
 } from '@/domains/accounts/renderer/components/accounts-dialog'
-import { ConnectSourceFields } from '@/domains/tickets/renderer/components/connect-source-form'
-import { ada, octocat } from '@/domains/tickets/renderer/components/ticket-fixtures'
-import { i18n } from '@/platform/renderer/i18n/config'
+import { ConnectSourceFields } from '@/domains/tickets/renderer/connection/connect-source-form'
+import { ada, octocat } from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { i18n } from '@/platform/renderer/i18n/i18n'
 
 const idle: AccountsPanelProps['signIn'] = {
   phase: 'idle',

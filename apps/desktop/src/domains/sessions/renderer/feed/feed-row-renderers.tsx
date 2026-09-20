@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ClaudeQuestionAnswer } from '@/domains/sessions/contract/claude-contract'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { FeedGallery, FeedImage } from '@/domains/sessions/renderer/feed/content/feed-images'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
-import { FeedDelegation } from '@/domains/sessions/renderer/feed/feed-delegation'
-import { FeedEvent } from '@/domains/sessions/renderer/feed/feed-event'
-import { FeedMarker } from '@/domains/sessions/renderer/feed/feed-marker'
-import { FeedPrompt } from '@/domains/sessions/renderer/feed/feed-prompt'
-import { FeedQuestion } from '@/domains/sessions/renderer/feed/feed-question'
-import { RunningText } from '@/domains/sessions/renderer/feed/feed-tool-status'
-import { FeedToolGroup, FeedToolLine } from '@/domains/sessions/renderer/feed/feed-tools'
-import type { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
 import type { SessionEvidence, SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { FeedEvent } from './feed-event'
+import { FeedMarker } from './feed-marker'
+import { FeedPrompt } from './feed-prompt'
+import { FeedQuestion } from './feed-question'
+import { FeedSubagent } from './feed-subagent'
+import { RunningText } from './feed-tool-status'
+import { FeedToolGroup, FeedToolLine } from './feed-tools'
+import type { ToolGroupState } from './tool-group-state'
 
 type AssistantProseRow = Extract<SessionFeedRow, { shape: 'prose' }> & { role: 'assistant' }
 type PromptRow = Extract<SessionFeedRow, { shape: 'prose' }> & { role: 'user' }
@@ -43,7 +43,7 @@ export type FeedRowRendererProps = {
   activeEvidenceId: string | null
   toolGroups: ToolGroupState
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onAnswerQuestion: (questionId: string, answers: ClaudeQuestionAnswer[]) => void
+  onAnswerQuestion: (questionId: string, answers: QuestionAnswer[]) => void
   answering: boolean
   questionFailure: string | null
   questionLocked: boolean
@@ -98,8 +98,7 @@ export const FEED_ROW_RENDERERS = {
   ),
   'command-output': ({ row }) => <PlainText text={row.text} />,
   event: ({ row }) => <FeedEvent row={row} />,
-  delegation: ({ row }) => <FeedDelegation row={row} />,
-  'delegation-group': ({ row }) => <FeedDelegation row={row} />,
+  subagent: ({ row }) => <FeedSubagent row={row} />,
   marker: ({ row }) => <FeedMarker row={row} />,
   source: ({ row }) => <p>{row.label}</p>,
   image: ({ row }) => (

@@ -8,8 +8,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter.ts'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions.ts'
-import { compactSession, sendSession, startSession } from '@/domains/sessions/main/drive.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { compactSession, sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('starting a Codex Session over the real transport makes it appear in the shared Roster', async () => {
@@ -49,7 +49,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
       type: 'session.feed',
       requestId: 'feed-1',
       sessionId,
-      delegationId: null,
+      subagentId: null,
       revision: null,
     })) as { type: string; rows?: unknown[] }
     assert.equal(feedReply.type, 'session.feed.read')

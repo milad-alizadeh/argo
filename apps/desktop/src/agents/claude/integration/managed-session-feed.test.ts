@@ -3,13 +3,13 @@ import { test } from 'node:test'
 import { launch, ledgerFile, OPENING } from '@/agents/claude/integration/claude-driver-launch.ts'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 
 const feed = {
   version: 1,
   type: 'session.feed',
   requestId: 'feed-1',
-  delegationId: null,
+  subagentId: null,
   revision: null,
 }
 

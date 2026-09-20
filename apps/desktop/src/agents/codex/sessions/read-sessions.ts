@@ -1,39 +1,39 @@
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { askRow } from '@/domains/sessions/contract/model/tool-feed'
+import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/reader'
 import {
   backfillTick,
   clearFullRecords,
   discoverSessions,
   historyComplete,
   nameThreads,
-  readDelegationFiles as readDelegationFilesForParent,
   readSessionFiles,
+  readSubagentFiles as readSubagentFilesForParent,
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from '@/agents/codex/sessions/discover'
-import { draftText } from '@/agents/codex/sessions/harness-envelopes'
-import {
-  createHeldRolloutReader,
-  joinHeldRollouts,
-  type OpenFileListing,
-} from '@/agents/codex/sessions/held-rollouts'
-import { createOpenTurnReader, joinOpenTurns } from '@/agents/codex/sessions/open-turns'
-import { readDelegationTokens } from '@/agents/codex/sessions/subagent-tokens'
-import { readDelegationChain } from '@/agents/codex/sessions/subagents'
-import type { ThreadNames } from '@/agents/codex/sessions/thread-names'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+} from './discover'
+import { draftText } from './harness-envelopes'
+import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
+import { createOpenTurnReader, joinOpenTurns } from './open-turns'
+import { readSubagentTokens } from './subagent-tokens'
+import { readSubagentChain } from './subagents'
+import type { ThreadNames } from './thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
-type ReaderOptions = {
+export type ReaderOptions = {
   roster?: () => SessionRosterRow[]
   liveMessages?: (sessionId: string) => LiveMessage[]
   // Codex has no persisted transcript record of a still-open question (unlike Claude's
-  // `AskUserQuestion` tool call, #1841): the Feed's `ask` row exists only while this returns one.
+  // ask tool call, #1841): the Feed's `ask` row exists only while this returns one.
   pendingQuestion?: (sessionId: string) => PendingCodexQuestion | null
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   isLockedElsewhere?: (sessionId: string) => boolean
@@ -65,13 +65,7 @@ function draftRows(rows: readonly SessionFeedRow[], live: LiveMessage[]): Sessio
 // the request's own item ID, unprefixed: a decision names it back to `decideQuestion`, which
 // checks it against the same pending question's `itemId` (question-protocol.ts).
 function questionRow(pending: PendingCodexQuestion): SessionFeedRow {
-  return {
-    shape: 'ask',
-    id: pending.itemId,
-    questions: pending.questions,
-    answer: null,
-    unsupported: pending.unsupported,
-  }
+  return askRow(pending.itemId, pending, null)
 }
 
 function combinedOverlay(
@@ -82,7 +76,10 @@ function combinedOverlay(
   return (rows) => {
     const drafts = draftRows(rows, live)
     const asks = pending === null ? [] : [questionRow(pending)]
-    return { rows: [...rows, ...drafts, ...asks], changes: [...drafts, ...asks] }
+    return {
+      rows: [...rows, ...drafts, ...asks],
+      changes: { rows: [...drafts, ...asks], aliases: [] },
+    }
   }
 }
 
@@ -138,25 +135,22 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
     ...indexCapabilities(root, options?.index),
     discoverSessions: rosterDiscovery(root, options),
     readSessionFiles: (sessionId) => readSessionFiles(root, sessionId),
-    readDelegationFiles: async (sessionId, delegationId) =>
-      (await readDelegationFilesForParent(root, sessionId, delegationId)) ??
-      readDelegationChain(root, delegationId),
-    readDelegationUsage: async (sessionId) => {
+    readSubagentFiles: async (sessionId, subagentId) =>
+      (await readSubagentFilesForParent(root, sessionId, subagentId)) ??
+      readSubagentChain(root, subagentId),
+    readSubagentUsage: async (sessionId) => {
       const chain = await readSessionFiles(root, sessionId)
-      const delegationIds = [
+      const subagentIds = [
         ...new Set(
           chain?.files
             .flatMap((file) => file.records)
-            .flatMap((record) =>
-              record.kind === 'delegation' && record.actor === 'agent' && record.groupId !== null
-                ? [record.groupId]
-                : [],
-            ) ?? [],
+            .flatMap((record) => (record.kind === 'subagent' ? [record.subagentId] : [])) ?? [],
         ),
       ]
-      return readDelegationTokens(root, delegationIds)
+      return readSubagentTokens(root, subagentIds)
     },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
+    readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,

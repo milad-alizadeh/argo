@@ -34,7 +34,7 @@
     "src/platform/shared/watch.test.ts",
     "src/platform/main/watch/**/*.test.ts",
     "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts",
-    "src/domains/sessions/main/reads.test.ts",
+    "src/domains/sessions/main/projection/reads.test.ts",
     "src/agents/codex/sessions/thread-titles.test.ts",
     "src/agents/codex/sessions/thread-names.test.ts",
     "src/agents/codex/sessions/managed-thread-titles.test.ts",

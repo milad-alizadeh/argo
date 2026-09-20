@@ -1,10 +1,10 @@
 import { readImage } from '@/agents/codex/sessions/prompt-images'
-import { dataImageUrl } from '@/domains/sessions/contract/feed-images'
+import { dataImageUrl } from '@/domains/sessions/contract/model/feed-images'
 import {
   type RichResultBlock,
   resultText,
   type ToolResult,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 function resultBlocks(output: unknown): RichResultBlock[] {

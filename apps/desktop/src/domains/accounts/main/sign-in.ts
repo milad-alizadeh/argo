@@ -9,11 +9,7 @@ import {
 } from '@/domains/accounts/contract/contract'
 import type { AccountAccess } from '@/domains/accounts/main/access'
 import { listed } from '@/domains/accounts/main/listing'
-import {
-  ACCOUNT_PROVIDERS,
-  type SignInEnd,
-  type SignInStart,
-} from '@/domains/accounts/main/providers'
+import type { SignInEnd, SignInStart } from '@/domains/accounts/main/providers'
 import { accountId } from '@/domains/accounts/main/registry'
 import { saveIdentity } from '@/domains/accounts/main/save-identity'
 
@@ -55,7 +51,7 @@ export function createSignIn(access: AccountAccess) {
     // A second connect replaces the first: the person asked again, so the old sign-in is abandoned.
     async connect(requestId: string, provider: Provider): Promise<AccountChallengeReply> {
       if (!access.grants.available()) return accountError('secure-storage-unavailable', requestId)
-      const source = ACCOUNT_PROVIDERS[provider]
+      const source = access.providers[provider]
       if (!source.available(access.endpoints)) {
         return accountError('provider-unavailable', requestId)
       }

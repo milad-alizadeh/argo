@@ -2,16 +2,19 @@
 // `<project>/<sessionId>.jsonl` has a folder `<project>/<sessionId>/subagents/` next to it
 // holding one `agent-<id>.jsonl` per Subagent, each with an `agent-<id>.meta.json` naming the
 // `Task` call that spawned it. That meta file is the only join between a Subagent's transcript
-// and the delegation the Roster row already draws (CONTEXT.md L3 · Subagent).
+// and the Subagent the Roster row already draws (CONTEXT.md L3 · Subagent).
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { normalizeClaudeRecords } from '@/agents/claude/sessions/normalize-records'
-import { parseTranscriptLine } from '@/agents/claude/sessions/records'
-import type { SessionDelegationUsage } from '@/domains/sessions/contract/background-work-contract'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import { type TranscriptFile, transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { createTranscriptRecordReader } from '@/domains/sessions/main/transcript-lines'
+import type { SessionSubagentUsage } from '@/domains/sessions/contract/model/background-work-contract'
+import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import {
+  type TranscriptFile,
+  transcriptFileFrom,
+} from '@/domains/sessions/contract/model/transcript'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
 import { isRecord } from '@/shared/validation'
+import { normalizeClaudeRecords } from './normalize-records'
+import { parseTranscriptLine } from './records'
 
 const META = '.meta.json'
 const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)
@@ -58,7 +61,7 @@ async function readSubagentFile(filePath: string): Promise<TranscriptFile | null
   if (records === null) return null
   return asOwnThread(
     transcriptFileFrom(filePath, {
-      fileName: path.basename(filePath),
+      sessionId: path.basename(filePath).replace(/\.jsonl$/, ''),
       records: normalizeClaudeRecords(records),
     }),
   )
@@ -66,24 +69,24 @@ async function readSubagentFile(filePath: string): Promise<TranscriptFile | null
 
 // One Subagent's transcript as a chain of its own, so the Feed the reader already projects for a
 // Session projects this the same way. Null where the Session records no Subagent for that call.
-export async function readDelegationChain(
+export async function readSubagentChain(
   chain: SessionChain | null,
-  delegationId: string,
+  subagentId: string,
 ): Promise<SessionChain | null> {
   if (chain === null) return null
-  const filePath = (await subagentPaths(chain)).get(delegationId)
+  const filePath = (await subagentPaths(chain)).get(subagentId)
   if (filePath === undefined) return null
   const file = await readSubagentFile(filePath)
   if (file === null) return null
-  return { id: delegationId, retiredIds: [], files: [file], originUnread: false }
+  return { id: subagentId, retiredIds: [], files: [file], originUnread: false }
 }
 
 // What each Subagent spent, summed the way the Roster sums a Session's own spend: the tokens the
 // work consumed, cache reads excluded, and the model that answered it. A Subagent whose
 // transcript reports neither reads null for both.
-export async function readDelegationTokens(
+export async function readSubagentTokens(
   chain: SessionChain | null,
-): Promise<SessionDelegationUsage[]> {
+): Promise<SessionSubagentUsage[]> {
   if (chain === null) return []
   const paths = [...(await subagentPaths(chain))]
   return Promise.all(

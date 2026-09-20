@@ -1,7 +1,7 @@
 import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { sessionName } from '@/domains/sessions/renderer/components/roster/roster-rows'
+import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
 import { SESSION_SPLIT } from '@/domains/sessions/renderer/screens/session-screen-layout'
 import {
   SessionWorkspace,
@@ -9,7 +9,7 @@ import {
 } from '@/domains/sessions/renderer/screens/session-workspace'
 import { worktreeName } from '@/domains/sessions/renderer/screens/session-worktree'
 import type { Session } from '@/domains/sessions/renderer/types'
-import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
+import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 
 import './session-screen.css'
 

@@ -4,15 +4,15 @@ import {
   readTranscriptFile as read,
   type TranscriptFile,
   withoutBlocks,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 
 export type { TranscriptFile }
 export { withoutBlocks }
 
 export function readTranscriptFile(
   path: string,
-  { fileName, lines }: { fileName: string; lines: Iterable<string> },
+  { sessionId, lines }: { sessionId: string; lines: Iterable<string> },
 ) {
-  const file = read(path, { fileName, lines, parse: parseTranscriptLine })
+  const file = read(path, { sessionId, lines, parse: parseTranscriptLine })
   return { ...file, records: normalizeClaudeRecords(file.records) }
 }

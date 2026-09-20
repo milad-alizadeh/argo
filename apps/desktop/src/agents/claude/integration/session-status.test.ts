@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fixtureFiles } from '@/agents/claude/integration/session-fixtures'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { projectRosterRow } from '@/domains/sessions/main/roster.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
 
 async function rowOf(names) {
-  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
+  return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')
 }
 
 test('reads a closed Turn as idle and a Turn inside the vocabulary as stopped', async () => {

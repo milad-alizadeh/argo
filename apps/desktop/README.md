@@ -302,10 +302,12 @@ entry basenames are the contract with `main` in `package.json` and the preload p
 `src/platform/main/window/create-window.ts`.
 
 The renderer is the cockpit shell: a chrome band, a sidebar of five destinations, and one deck.
-`src/platform/renderer/components/ui/` is written by the shadcn CLI and is never hand-edited;
-each `src/domains/*/renderer/` facet contains its domain components and hooks. The frame and the surfaces are
-[ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), the design workflow is
-[`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
+`src/renderer/` assembles the product routes, providers, and locale catalogs.
+`src/platform/renderer/` owns browser behavior, the design system, and proven cross-domain layout.
+The shadcn CLI writes `src/platform/renderer/components/ui/`. Authors never edit those files by
+hand. Each `src/domains/*/renderer/` facet groups its renderer modules by product capability. The
+frame and the surfaces are [ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md). The
+design workflow is [`docs/design-stack.md`](../../docs/design-stack.md). The prose rules are in
 [`apps/desktop/AGENTS.md`](AGENTS.md).
 
 ## Portable integration tests
