@@ -3,9 +3,9 @@
 import { test } from 'node:test'
 import { claudeRoot, writeManySessions } from '@/agents/claude/integration/session-window-fixture'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/window-proof-helpers'
+import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/observation/window-proof-helpers'
 
 test('a Session outside the initial window is unread on first discovery, but reachable by growing the cursor or asking for it by id', async (context) => {
   const root = await claudeRoot(context)

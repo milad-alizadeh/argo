@@ -1,5 +1,5 @@
 import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { ComposerIdentity } from '@/domains/sessions/renderer/composer/composer-identity'
 import {
   codeFrom,

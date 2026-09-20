@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createCodexSessionDriver } from '@/agents/codex/drive/codex-session-driver.ts'
 import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter.ts'
-import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import {
   driverBackedByFixture,
   ownerCliFor,

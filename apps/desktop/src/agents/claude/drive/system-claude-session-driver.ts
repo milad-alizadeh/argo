@@ -8,7 +8,10 @@ import { createClaudePermissionGate } from '@/agents/claude/drive/permission-gat
 import { claudePendingQuestion } from '@/agents/claude/sessions/pending-question'
 import { claudeResumeTarget } from '@/agents/claude/sessions/resume-target'
 import { findExecutableOnLoginShellPath } from '@/agents/executable-path'
-import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/ownership-ledger'
+import {
+  createOwnershipLedger,
+  isProcessAlive,
+} from '@/domains/sessions/main/lifecycle/ownership-ledger'
 
 function readHandoffBrief(briefPath: string): string | null {
   try {

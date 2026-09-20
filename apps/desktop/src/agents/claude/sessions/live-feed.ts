@@ -1,6 +1,6 @@
 import type { LiveMessage } from '@/agents/claude/drive/live-messages'
-import type { SessionFeedRow } from '@/domains/sessions/contract/models'
-import type { FeedOverlay } from '@/domains/sessions/main/reader'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import type { FeedOverlay } from '@/domains/sessions/main/observation/reader'
 
 type Prose = Extract<SessionFeedRow, { shape: 'prose' }>
 

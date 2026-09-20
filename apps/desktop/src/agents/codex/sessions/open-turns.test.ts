@@ -8,9 +8,9 @@ import {
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
 } from '@/agents/codex/sessions/rollout-test-helpers'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
 

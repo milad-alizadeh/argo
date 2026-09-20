@@ -1,5 +1,5 @@
-import { questionSchema } from '../../../domains/sessions/contract/question'
-import type { AskFacts } from '../../../domains/sessions/contract/transcript'
+import { questionSchema } from '@/domains/sessions/contract/drive/question'
+import type { AskFacts } from '@/domains/sessions/contract/model/transcript'
 
 const ASK_TOOL = 'AskUserQuestion'
 

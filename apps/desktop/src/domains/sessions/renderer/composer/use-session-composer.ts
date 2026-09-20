@@ -2,8 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
-import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   composerIdentityKey,
   composerIdentityOf,

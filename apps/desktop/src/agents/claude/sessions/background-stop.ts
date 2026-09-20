@@ -2,7 +2,7 @@
 // names the task, and the receipt that started the command names the call, so the join is here.
 
 import { withoutCalls } from '@/agents/claude/sessions/spawned-agents'
-import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { ToolCall, TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 
 function isStop(call: ToolCall): call is Extract<ToolCall, { kind: 'subagent-control' }> {
   return call.kind === 'subagent-control' && call.intent === 'stop'

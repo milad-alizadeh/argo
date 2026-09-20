@@ -5,14 +5,14 @@ import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-account
 import {
   ConnectSourceFields,
   ConnectSourceForm,
-} from '@/domains/tickets/renderer/components/connect-source-form'
-import { TicketDeck } from '@/domains/tickets/renderer/components/ticket-deck'
-import { TicketProblem } from '@/domains/tickets/renderer/components/ticket-problem'
+} from '@/domains/tickets/renderer/connection/connect-source-form'
+import { TicketDeck } from '@/domains/tickets/renderer/detail/ticket-deck'
 import {
   type TicketsScreenProps,
   type TicketsView,
   useTicketsView,
 } from '@/domains/tickets/renderer/hooks/use-tickets-view'
+import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
 import {
   Empty,
   EmptyDescription,

@@ -3,10 +3,10 @@ import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
 import { claudeResumeTarget } from '@/agents/claude/sessions/resume-target.ts'
-import { sessionListReplySchema } from '@/domains/sessions/contract/contract.ts'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models.ts'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract.ts'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models.ts'
+import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 

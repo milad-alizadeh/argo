@@ -3,8 +3,8 @@ import type {
   SessionRosterRow,
   SessionShellCommand,
   SessionSubagent,
-} from '@/domains/sessions/contract/models'
-import { rosterRow } from '@/domains/sessions/contract/roster-row-test-fixture'
+} from '@/domains/sessions/contract/model/models'
+import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
 
 export function sessionShellCommand(
   overrides: Partial<SessionShellCommand> & Pick<SessionShellCommand, 'id'>,

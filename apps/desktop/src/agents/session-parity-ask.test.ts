@@ -6,16 +6,16 @@ import { copyFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import type { SessionFeedRow } from '../domains/sessions/contract/models'
-import { managedRow } from '../domains/sessions/main/managed-row'
-import { createSessionReader } from '../domains/sessions/main/reader'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   fed,
   feedRequest,
   listed,
   rowsOf,
   tempRoot,
-} from '../domains/sessions/main/reader-test-helpers'
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 import { claudeSessionSource } from './claude/sessions/read-sessions'
 import { createLiveMessages } from './codex/drive/live-messages'
 import { type HeldSession, recordCodexNotification } from './codex/drive/record-notification'

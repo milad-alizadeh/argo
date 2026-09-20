@@ -1,6 +1,6 @@
 import { CYCLE_MODE, footerMode, REDRAW, setupCommands } from '@/agents/claude/drive/claude-setup'
 import { claudeTurn } from '@/agents/claude/drive/claude-turn'
-import { CLAUDE_MODES, type ClaudeTurnSetup } from './turn-setup-contract'
+import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
 
 export type Wait = (milliseconds: number) => Promise<void>
 export type ClaudeTurnRequest = { prompt: string; setup: ClaudeTurnSetup }

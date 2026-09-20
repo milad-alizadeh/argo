@@ -5,9 +5,10 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { sessionIdFromFileName } from '@/agents/codex/sessions/transcript-paths'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
+import { sessionIdFileName } from '@/agents/codex/sessions/discover'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { sessionIdOfFile } from '@/domains/sessions/contract/model/transcript-file'
+import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
 
 const run = promisify(execFile)
 
@@ -29,7 +30,7 @@ export function heldRolloutIds(listing: string): ReadonlySet<string> {
   const ids = listing
     .split('\n')
     .filter((line) => line.startsWith('n') && line.endsWith('.jsonl'))
-    .map((line) => sessionIdFromFileName(path.basename(line.slice(1))))
+    .map((line) => sessionIdOfFile(sessionIdFileName(path.basename(line.slice(1)))))
   return new Set(ids)
 }
 

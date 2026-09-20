@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 test('a written and an edited file arrive as edits with their diffs before any result', async (context) => {
   const root = await fixtureRoot(context, ['parityEdit'])

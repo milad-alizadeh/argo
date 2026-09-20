@@ -1,4 +1,4 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'

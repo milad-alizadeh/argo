@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'

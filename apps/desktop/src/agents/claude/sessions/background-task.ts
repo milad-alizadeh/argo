@@ -1,5 +1,8 @@
 import { taggedField } from '@/agents/envelope-tags'
-import type { BackgroundState, BackgroundTaskRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  BackgroundState,
+  BackgroundTaskRecord,
+} from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // The CLI's notification words, folded into the states the contract holds.

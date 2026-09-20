@@ -11,8 +11,8 @@ import type {
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
-import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/components/connect-source-form'
-import type { TicketDeckProps } from '@/domains/tickets/renderer/components/ticket-deck'
+import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/connection/connect-source-form'
+import type { TicketDeckProps } from '@/domains/tickets/renderer/detail/ticket-deck'
 import { listedBacklog, type TicketListing } from '@/domains/tickets/renderer/hooks/listed-backlog'
 import type { ConnectForm } from '@/domains/tickets/renderer/hooks/use-connect-form'
 import {

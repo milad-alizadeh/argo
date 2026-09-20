@@ -43,8 +43,8 @@ const [
   import('@/domains/tickets/contract/operations'),
   import('@/domains/projects/main/bridge'),
   import('@/domains/projects/contract/operations'),
-  import('@/domains/sessions/main/bridge'),
-  import('@/domains/sessions/contract/operations'),
+  import('@/domains/sessions/main/composition/bridge'),
+  import('@/domains/sessions/contract/ipc/operations'),
   import('@/platform/main/appearance'),
   import('@/platform/shared/appearance'),
 ])

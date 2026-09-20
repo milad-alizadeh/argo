@@ -4,13 +4,13 @@ import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { startedSession } from '@/agents/claude/integration/claude-driver-launch.ts'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import type { SessionReader } from '@/domains/sessions/main/bridge'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '@/domains/sessions/main/reader-test-helpers'
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 
 const SESSION = 'session-a'
 const MINUTE = 60_000

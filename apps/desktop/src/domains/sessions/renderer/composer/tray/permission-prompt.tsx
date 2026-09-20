@@ -1,7 +1,7 @@
 import { ChevronDown, ShieldQuestion } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Permission } from '@/domains/sessions/contract/contract'
+import type { Permission } from '@/domains/sessions/contract/ipc/contract'
 import {
   focusAfterLeaving,
   useExitPresence,

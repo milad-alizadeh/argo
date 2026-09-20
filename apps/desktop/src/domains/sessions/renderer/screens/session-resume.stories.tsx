@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/contract/contract'
+import {
+  type DriveSessionErrorCode,
+  driveSessionError,
+} from '@/domains/sessions/contract/ipc/contract'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'

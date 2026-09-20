@@ -4,7 +4,7 @@ import {
   readTranscriptFile as read,
   type TranscriptFile,
   withoutBlocks,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 
 export type { TranscriptFile }
 export { withoutBlocks }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { answeringEveryNestedCall } from '@/agents/codex/sessions/nested-results'
 import { readToolRecord } from '@/agents/codex/sessions/tool-calls'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 
 const RECORD = { timestamp: '2026-09-18T17:08:08.000Z' }
 

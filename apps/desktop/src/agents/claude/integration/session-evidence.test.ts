@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 
 function readFeed(value: unknown, root: string) {
   return createSessionReader([claudeSessionSource({ transcripts: root })]).readSessionFeed(value)

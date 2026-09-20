@@ -1,11 +1,14 @@
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { askRow } from '@/domains/sessions/contract/tool-feed'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { askRow } from '@/domains/sessions/contract/model/tool-feed'
+import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/reader'
 import {
   backfillTick,
   clearFullRecords,

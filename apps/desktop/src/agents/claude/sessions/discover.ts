@@ -8,7 +8,7 @@ import { parseTranscriptLine } from '@/agents/claude/sessions/records'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
-} from '@/domains/sessions/main/discover-transcript-sessions'
+} from '@/domains/sessions/main/observation/discover-transcript-sessions'
 
 export type Discovery = TranscriptDiscovery
 

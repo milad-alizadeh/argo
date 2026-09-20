@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readPatchFiles } from '@/agents/codex/sessions/apply-patch'
 import { readerOverRollout } from '@/agents/codex/sessions/rollout-reader-test-helper'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 const UPDATE = [
   '*** Begin Patch',

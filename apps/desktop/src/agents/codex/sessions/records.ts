@@ -10,7 +10,7 @@ import { readSessionFact, readTurnRecord } from '@/agents/codex/sessions/session
 import { subagentActivity } from '@/agents/codex/sessions/subagent-activity'
 import { commandPlace, gitBranch } from '@/agents/codex/sessions/thread-place'
 import { readToolRecord } from '@/agents/codex/sessions/tool-calls'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // Read off the `item_completed` copy alone; the `response_item` copy repeats it under the same id.

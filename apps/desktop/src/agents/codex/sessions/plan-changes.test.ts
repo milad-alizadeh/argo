@@ -8,7 +8,7 @@ import {
   TIMESTAMP,
   updatePlan,
 } from '@/agents/codex/sessions/plan-call-fixtures'
-import type { SessionPlan } from '@/domains/sessions/contract/models'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 
 const cases: { claim: string; records: unknown[]; plan: SessionPlan | null }[] = [
   {

@@ -3,14 +3,15 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
-import { hasOpenSubagent } from '@/domains/sessions/main/subagents'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { sessionIdOfFile } from '@/domains/sessions/contract/model/transcript-file'
+import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/live-elsewhere'
 import {
   createTranscriptRecordReader,
   ROSTER_FILE_LIMIT,
-} from '@/domains/sessions/main/transcript-lines'
-import { transcriptPaths } from './transcript-paths'
+} from '@/domains/sessions/main/observation/transcript-lines'
+import { hasOpenSubagent } from '@/domains/sessions/main/projection/subagents'
+import { transcriptPaths } from './discover'
 
 // The Turn marks codex-cli 0.147.0 writes as `event_msg` payloads.
 const TURN_MARK_TYPES = ['task_started', 'task_complete', 'turn_aborted'] as const
@@ -58,7 +59,7 @@ export function createOpenTurnReader(root: string) {
     const open = await Promise.all(
       recent.flat().map(async (file) => {
         const marks = await readRecords(file.path).catch(() => [])
-        return marks.at(-1)?.kind === 'opened' ? [file.sessionId] : []
+        return marks.at(-1)?.kind === 'opened' ? [sessionIdOfFile(file.name)] : []
       }),
     )
     return new Set(open.flat())
