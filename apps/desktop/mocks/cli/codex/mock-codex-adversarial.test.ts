@@ -16,7 +16,7 @@ test('a seeded Codex reply survives a split through a multi-byte character', asy
         version: 1,
         type: 'session.start',
         requestId: 'start-seeded-reply',
-        cli: 'codex',
+        harness: 'codex',
         cwd: process.cwd(),
         prompt: 'Keep this complete.',
       },

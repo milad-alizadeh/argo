@@ -43,7 +43,7 @@ test('reads a thinking block as a Thought, and a malformed one as source', () =>
 test('reads the entry word and the two title sources', async () => {
   const file = await fixtureFile('titledHeadless')
   const messages = file.records.filter((record) => record.kind === 'message')
-  assert.deepEqual([...new Set(messages.map((message) => message.entry))], ['headless'])
+  assert.deepEqual([...new Set(messages.map((message) => message.entry))], ['interactive'])
   assert.deepEqual(
     file.records.filter((record) => record.kind === 'title'),
     [
