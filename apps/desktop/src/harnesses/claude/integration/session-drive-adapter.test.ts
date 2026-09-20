@@ -106,12 +106,10 @@ test('interrupts only the selected managed Claude Session', async () => {
 })
 
 test('refuses to start a Claude Session with a malformed Turn setup', async () => {
-  const started: unknown[] = []
   const adapter = createClaudeDriveAdapter(
     mockDriver({
-      start: (request) => {
-        started.push(request)
-        return sessionId
+      start: () => {
+        throw new Error('A malformed setup must not reach the driver.')
       },
     }),
   )
@@ -123,15 +121,13 @@ test('refuses to start a Claude Session with a malformed Turn setup', async () =
     attachments: [],
   })
   assert.deepEqual(result, { error: 'launch-failed' })
-  assert.deepEqual(started, [])
 })
 
 test('refuses to send a Turn with a malformed Turn setup', async () => {
-  const sent: unknown[] = []
   const adapter = createClaudeDriveAdapter(
     mockDriver({
-      send: async (receivedSessionId, turn) => {
-        sent.push([receivedSessionId, turn])
+      send: async () => {
+        throw new Error('A malformed setup must not reach the driver.')
       },
     }),
   )
@@ -143,7 +139,6 @@ test('refuses to send a Turn with a malformed Turn setup', async () => {
     attachments: [],
   })
   assert.deepEqual(result, { error: 'not-drivable' })
-  assert.deepEqual(sent, [])
 })
 
 test('compacts only the selected managed Claude Session', async () => {

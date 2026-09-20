@@ -1,21 +1,6 @@
-// The one shared drive router (ADR-0024, #2030): `start` routes by the named Harness, every other
-// operation by the Session's owner, resolved through the reader's own lookup (#2025/#2026).
-
-import {
-  type SessionAcceptedReply,
-  type SessionCompactRequest,
-  type SessionHandoffRequest,
-  type SessionInterruptRequest,
-  type SessionPermissionDecisionRequest,
-  type SessionPermissionReply,
-  type SessionPermissionRequest,
-  type SessionQuestionDecisionRequest,
-  type SessionSendRequest,
-  type SessionStartReply,
-  type SessionStartRequest,
-  sessionError,
-} from '@/domains/sessions/contract/ipc/contract'
-import { driveSessionError } from '@/domains/sessions/contract/model/session-error'
+import type * as SessionContract from '@/domains/sessions/contract/ipc/contract'
+import { sessionError } from '@/domains/sessions/contract/ipc/contract'
+import { driveSessionErrorWithMessage } from '@/domains/sessions/contract/model/session-error'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,
@@ -34,23 +19,23 @@ function driveFailureReply(
   requestId: string,
 ) {
   if (failure === 'missing-session') return sessionError('missing-session', requestId)
-  return driveSessionError(failure, adapter.harness, requestId, adapter.failureMessage(failure))
+  return driveSessionErrorWithMessage(failure, {
+    harness: adapter.harness,
+    requestId,
+    message: adapter.failureMessage(failure),
+  })
 }
-
 async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<Owned | undefined> {
   const harness = await context.ownerHarnessFor(sessionId)
   if (harness === undefined) return undefined
   const adapter = context.adapters[harness]
   return adapter === undefined ? undefined : { adapter, harness }
 }
-
-// Every operation but `start` runs against the Session's own owner, then reports the shared
-// `accepted` reply or the failure the adapter named — the shape every operation below shares.
 async function ownedAccepted<T>(
   context: OwnerContext,
   request: { sessionId: string; requestId: string },
   run: (owned: Owned) => Promise<{ error: DriveFailureCode } | T>,
-): Promise<SessionAcceptedReply> {
+): Promise<SessionContract.SessionAcceptedReply> {
   const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await run(owned)
@@ -64,11 +49,10 @@ async function ownedAccepted<T>(
     sessionId: request.sessionId,
   }
 }
-
 export async function startSession(
-  request: SessionStartRequest,
+  request: SessionContract.SessionStartRequest,
   adapters: SessionDriveAdapters,
-): Promise<SessionStartReply> {
+): Promise<SessionContract.SessionStartReply> {
   const adapter = adapters[request.harness]
   if (adapter === undefined) return sessionError('invalid-request', request.requestId)
   if (!adapter.turnSetupSchema.safeParse(request.setup).success) {
@@ -88,11 +72,10 @@ export async function startSession(
     sessionId: result.sessionId,
   }
 }
-
 export async function sendSession(
-  request: SessionSendRequest,
+  request: SessionContract.SessionSendRequest,
   context: OwnerContext,
-): Promise<SessionAcceptedReply> {
+): Promise<SessionContract.SessionAcceptedReply> {
   const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   if (!owned.adapter.turnSetupSchema.safeParse(request.setup).success) {
@@ -107,32 +90,31 @@ export async function sendSession(
     }),
   )
 }
-
-// interrupt/compact/handoff all reduce to the same shape: hand the Session id to the named
-// adapter method, no other arguments.
 function singleArgAccepted(
   operation: 'interrupt' | 'compact' | 'handoff',
   request: { sessionId: string; requestId: string },
   context: OwnerContext,
-): Promise<SessionAcceptedReply> {
+): Promise<SessionContract.SessionAcceptedReply> {
   return ownedAccepted(context, request, (owned) =>
     owned.adapter[operation]({ sessionId: request.sessionId }),
   )
 }
-
-export const interruptSession = (request: SessionInterruptRequest, context: OwnerContext) =>
-  singleArgAccepted('interrupt', request, context)
-
-export const compactSession = (request: SessionCompactRequest, context: OwnerContext) =>
-  singleArgAccepted('compact', request, context)
-
-export const handoffSession = (request: SessionHandoffRequest, context: OwnerContext) =>
-  singleArgAccepted('handoff', request, context)
-
-export async function readSessionPermission(
-  request: SessionPermissionRequest,
+export const interruptSession = (
+  request: SessionContract.SessionInterruptRequest,
   context: OwnerContext,
-): Promise<SessionPermissionReply> {
+) => singleArgAccepted('interrupt', request, context)
+export const compactSession = (
+  request: SessionContract.SessionCompactRequest,
+  context: OwnerContext,
+) => singleArgAccepted('compact', request, context)
+export const handoffSession = (
+  request: SessionContract.SessionHandoffRequest,
+  context: OwnerContext,
+) => singleArgAccepted('handoff', request, context)
+export async function readSessionPermission(
+  request: SessionContract.SessionPermissionRequest,
+  context: OwnerContext,
+): Promise<SessionContract.SessionPermissionReply> {
   const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const { permission } = await owned.adapter.readPermission({ sessionId: request.sessionId })
@@ -146,9 +128,9 @@ export async function readSessionPermission(
 }
 
 export function decideSessionPermission(
-  request: SessionPermissionDecisionRequest,
+  request: SessionContract.SessionPermissionDecisionRequest,
   context: OwnerContext,
-): Promise<SessionAcceptedReply> {
+): Promise<SessionContract.SessionAcceptedReply> {
   return ownedAccepted(context, request, (owned) =>
     owned.adapter.decidePermission({
       sessionId: request.sessionId,
@@ -159,9 +141,9 @@ export function decideSessionPermission(
 }
 
 export function decideSessionQuestion(
-  request: SessionQuestionDecisionRequest,
+  request: SessionContract.SessionQuestionDecisionRequest,
   context: OwnerContext,
-): Promise<SessionAcceptedReply> {
+): Promise<SessionContract.SessionAcceptedReply> {
   return ownedAccepted(context, request, (owned) =>
     owned.adapter.decideQuestion({
       sessionId: request.sessionId,

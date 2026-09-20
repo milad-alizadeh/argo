@@ -27,30 +27,33 @@ export const claudeHarness: HarnessRegistration = {
       handoffLedger: path.join(userData, 'claude-session-handoffs.json'),
       executable: proofEnabled ? process.env[SESSION_CLAUDE_EXECUTABLE_ENV] : undefined,
     })
-    const compactionStarts = proofEnabled || acceptance ? undefined : claudeCompactionStartsRoot(home)
+    const compactionStarts =
+      proofEnabled || acceptance ? undefined : claudeCompactionStartsRoot(home)
     if (compactionStarts !== undefined) {
       installCompactionHook(claudeSettingsPath(home), compactionStarts)
         .then((install) => {
           if (install === 'refused')
-            console.warn('Claude settings could not be read, so compactions stay hidden until they end')
+            console.warn(
+              'Claude settings could not be read, so compactions stay hidden until they end',
+            )
         })
         .catch((error) => console.error('Claude compaction hook failed to install', error))
     }
     return {
       harness: 'claude',
       source: claudeSessionSource({
-      transcripts: claudeTranscriptsRoot(home),
-      processes: claudeProcessesRoot(home),
-      managedSessions: claude.roster,
-      compactionStarts,
-      beginCompaction: claude.beginCompaction,
-      completeCompaction: claude.completeCompaction,
-      completeHandoffs: claude.completeHandoffs,
-      handoffEdges: claude.handoffEdges,
-      liveMessages: claude.liveMessages,
-      rename: (request) => renameClaudeSession(request, claude),
-      isLockedElsewhere: claude.isLockedElsewhere,
-      index,
+        transcripts: claudeTranscriptsRoot(home),
+        processes: claudeProcessesRoot(home),
+        managedSessions: claude.roster,
+        compactionStarts,
+        beginCompaction: claude.beginCompaction,
+        completeCompaction: claude.completeCompaction,
+        completeHandoffs: claude.completeHandoffs,
+        handoffEdges: claude.handoffEdges,
+        liveMessages: claude.liveMessages,
+        rename: (request) => renameClaudeSession(request, claude),
+        isLockedElsewhere: claude.isLockedElsewhere,
+        index,
       }),
       driveAdapter: createClaudeDriveAdapter(claude),
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],

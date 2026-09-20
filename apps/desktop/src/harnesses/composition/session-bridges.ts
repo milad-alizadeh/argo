@@ -33,9 +33,10 @@ import {
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 // A Harness callback reaches `registerWatching` raw when its own runtime already reconciles it.
-export function harnessWatchedSources(
-  harnesses: readonly HarnessRuntime[],
-): { permissions: WatchedSource[]; sessions: WatchedSource[] } {
+export function harnessWatchedSources(harnesses: readonly HarnessRuntime[]): {
+  permissions: WatchedSource[]
+  sessions: WatchedSource[]
+} {
   return {
     permissions: harnesses.flatMap((harness) =>
       harness.onPermissionsChanged === undefined ? [] : [harness.onPermissionsChanged],

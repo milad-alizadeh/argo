@@ -39,10 +39,10 @@ export const sessionErrorSchema = z
     version: z.literal(1),
     type: z.literal('session.error'),
     requestId: identifierSchema.nullable(),
-    code: z.enum([...Object.keys(SHARED_SESSION_ERRORS), ...DRIVE_SESSION_ERROR_CODES] as unknown as [
-      SessionErrorCode,
-      ...SessionErrorCode[],
-    ]),
+    code: z.enum([
+      ...Object.keys(SHARED_SESSION_ERRORS),
+      ...DRIVE_SESSION_ERROR_CODES,
+    ] as unknown as [SessionErrorCode, ...SessionErrorCode[]]),
     // The Harness a drive failure names; absent for a shared, Harness-agnostic code (nullish so a caller
     // that predates this field still parses as one).
     harness: z.string().nullish(),
@@ -72,7 +72,17 @@ export function driveSessionError(
   code: DriveSessionErrorCode,
   harness: string,
   requestId: string | null,
-  message = `Argo could not drive this ${harness} Session.`,
+): SessionError {
+  return driveSessionErrorWithMessage(code, {
+    harness,
+    requestId,
+    message: `Argo could not drive this ${harness} Session.`,
+  })
+}
+
+export function driveSessionErrorWithMessage(
+  code: DriveSessionErrorCode,
+  { harness, requestId, message }: { harness: string; requestId: string | null; message: string },
 ): SessionError {
   return {
     version: 1,

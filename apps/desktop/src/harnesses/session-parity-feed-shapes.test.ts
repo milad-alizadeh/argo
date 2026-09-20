@@ -9,7 +9,9 @@ test('tool calls of different kinds fold into one Tool group with a shared label
   const claude = await read('claude', context, 'parityToolGroup')
   const codex = await read('codex', context, 'parityToolGroup')
   const groups = (feed: typeof claude.feed) =>
-    feed.flatMap((row) => (row.shape === 'tool-group' ? [{ label: row.label, count: row.calls.length }] : []))
+    feed.flatMap((row) =>
+      row.shape === 'tool-group' ? [{ label: row.label, count: row.calls.length }] : [],
+    )
   const expected = [{ label: 'Ran a command, edited a file, read a file', count: 3 }]
   assert.deepEqual(groups(claude.feed), expected)
   assert.deepEqual(groups(codex.feed), expected)

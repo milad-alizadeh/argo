@@ -1,4 +1,8 @@
-import { driveSessionError, type SessionRenameRequest, sessionError } from '@/domains/sessions/contract/ipc/contract'
+import {
+  driveSessionError,
+  type SessionRenameRequest,
+  sessionError,
+} from '@/domains/sessions/contract/ipc/contract'
 import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive/archive-reads'
 import {
   createInMemorySessionArchiveStore,

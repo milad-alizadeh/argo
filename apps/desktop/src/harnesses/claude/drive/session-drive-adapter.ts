@@ -44,11 +44,15 @@ const CLAUDE_DECISIONS: Record<PermissionDecision, ClaudePermissionDecision> = {
   cancel: 'deny',
 }
 
+const CLAUDE_ADAPTER_BASE = {
+  harness: 'claude',
+  failureMessage: (code: keyof typeof FAILURE_MESSAGES) => FAILURE_MESSAGES[code],
+  turnSetupSchema: claudeTurnSetupSchema,
+}
+
 export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDriveAdapter {
   return {
-    harness: 'claude',
-    failureMessage: (code) => FAILURE_MESSAGES[code],
-    turnSetupSchema: claudeTurnSetupSchema,
+    ...CLAUDE_ADAPTER_BASE,
     async start({ cwd, prompt, setup, attachments }) {
       const parsedSetup = claudeTurnSetupSchema.safeParse(setup)
       if (!parsedSetup.success) return { error: 'launch-failed' }
