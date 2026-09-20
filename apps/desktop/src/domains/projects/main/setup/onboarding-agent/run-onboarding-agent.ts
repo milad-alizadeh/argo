@@ -4,12 +4,14 @@
 // so this stays on the interactive subscription path: it starts a normal managed Session, feeds
 // it one prompt, and reads its streamed output until the prompt's own completion marker appears.
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
-import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 
-export type OnboardingAgentDriver = Pick<
-  ClaudeSessionDriver,
-  'start' | 'liveMessages' | 'interrupt' | 'pendingPermission' | 'decidePermission'
->
+export type OnboardingAgentDriver = {
+  start(request: { cwd: string; prompt: string; setup: ClaudeTurnSetup }): string
+  liveMessages(sessionId: string): Array<{ text: string }>
+  interrupt(sessionId: string): void
+  pendingPermission(sessionId: string): { id: string } | null
+  decidePermission(sessionId: string, permissionId: string, decision: 'allowSimilar'): boolean
+}
 
 export type RunOnboardingAgentRequest = {
   cwd: string
