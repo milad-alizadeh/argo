@@ -28,6 +28,7 @@
     "test:live-claude-display": "node tools/run-tool.mts tools/claude/message-display.ts",
     "capture:cockpit": "node tools/run-tool.mts tools/cockpit/capture.ts",
     "measure:cockpit": "node tools/run-tool.mts tools/cockpit/measure.ts",
+    "measure:session-open": "node tools/run-tool.mts tools/sessions/open-session-cost.ts",
     "desktop:manifest": "node scripts/desktop-manifest.mts",
     "desktop:verdict": "node scripts/write-release-verdict.mts",
     "test": "bun test && bun run test:node",
