@@ -7,9 +7,9 @@ import { createClaudeSessionDriver } from '@/agents/claude/drive/claude-session-
 import type { ResumeTarget } from '@/agents/claude/drive/drive-channel.ts'
 import { createHandoffLedger, type HandoffLedger } from '@/agents/claude/drive/handoff-ledger.ts'
 import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate.ts'
-import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract.ts'
 import { mockPermissionGate } from '@/agents/claude/integration/claude-permission-gate-mock.ts'
 import { FOOTERS, terminal } from '@/agents/claude/integration/claude-terminal-mock.ts'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract.ts'
 import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
 
 export { FOOTERS, mockPermissionGate }
