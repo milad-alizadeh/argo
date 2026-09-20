@@ -24,7 +24,7 @@ import {
   type SessionIndexWorkerPort,
   SessionIndexWorkerStoppedError,
 } from '@/domains/sessions/main/session-index/worker-index'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

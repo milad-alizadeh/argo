@@ -16,7 +16,7 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 type Context = { after: (cleanup: () => Promise<void>) => void }
 

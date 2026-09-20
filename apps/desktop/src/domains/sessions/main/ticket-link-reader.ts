@@ -7,7 +7,7 @@ import {
   type SessionTicketDisconnectRequest,
   sessionAcceptedSchema,
 } from '@/domains/sessions/contract/contract'
-import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 function accepted(request: { requestId: string; sessionId: string }) {
   return sessionAcceptedSchema.parse({

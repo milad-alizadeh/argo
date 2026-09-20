@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import type { AccountAccess } from '@/domains/accounts/main/access'
+import type { AccountAccess } from '@/domains/accounts/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
 import { updatePriority } from '@/domains/tickets/main/priority-service'

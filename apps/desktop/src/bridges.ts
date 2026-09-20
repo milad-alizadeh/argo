@@ -7,6 +7,7 @@ import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { attachProjectBridge } from '@/domains/projects/main/bridge'
+import { createProjectPort } from '@/domains/projects/main/port'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
@@ -55,7 +56,7 @@ export function attachBridges(
     endpoints: providerEndpoints(proofEnabled),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),
-    projects,
+    projects: createProjectPort(projects),
   })
   attachAccountBridge(window, { access, rendererURL })
   attachTicketBridge(window, { access, rendererURL })

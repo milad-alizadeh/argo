@@ -15,7 +15,7 @@ import {
 } from '@/domains/sessions/main/archive-store'
 import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 const ROOT_ID = 'archivedRoot'
 const RESUMED_ID = 'resumedFromArchivedRoot'
