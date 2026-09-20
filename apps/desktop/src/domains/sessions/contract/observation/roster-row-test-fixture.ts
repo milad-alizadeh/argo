@@ -23,6 +23,7 @@ export function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRos
     pullRequest: null,
     ticket: null,
     archived: false,
+    unread: false,
     setup: { model: null, effort: null, mode: null },
     ...overrides,
   }

@@ -1,0 +1,66 @@
+import type { OnboardingTarget } from './onboarding-model'
+
+export const INITIAL_TARGETS: OnboardingTarget[] = [
+  {
+    buildCommand: 'bun run build',
+    existingTools: ['Biome', 'Vitest'],
+    framework: 'Electron · React · Vite',
+    id: 'desktop',
+    name: 'Desktop app',
+    path: 'apps/desktop',
+    recommendations: [
+      {
+        accepted: true,
+        bundledDependencies: ['@storybook/react-vite'],
+        copyKey: 'storybook',
+        href: 'https://storybook.js.org/',
+        id: 'storybook',
+        icon: 'storybook',
+        kind: 'tool',
+      },
+      {
+        accepted: true,
+        bundledDependencies: ['@playwright/test'],
+        copyKey: 'playwright',
+        href: 'https://playwright.dev/',
+        id: 'playwright',
+        icon: 'playwright',
+        kind: 'tool',
+      },
+    ],
+    packageManager: 'Bun',
+    startCommand: 'bun run dev',
+    testCommand: 'bun run test',
+  },
+  {
+    buildCommand: 'bun run skills:build',
+    existingTools: ['Skills CLI', 'RTK'],
+    framework: 'Markdown skill bundle',
+    id: 'skills',
+    name: 'Argo skills',
+    path: 'packages/argo-skills',
+    recommendations: [
+      {
+        accepted: true,
+        bundledDependencies: ['markdownlint-cli2'],
+        copyKey: 'markdown-checks',
+        href: 'https://github.com/DavidAnson/markdownlint-cli2',
+        id: 'markdown-checks',
+        icon: 'quality',
+        kind: 'tool',
+      },
+      {
+        accepted: false,
+        bundledDependencies: ['typedoc'],
+        copyKey: 'typedoc',
+        href: 'https://typedoc.org/',
+        id: 'typedoc',
+        icon: 'docs',
+        kind: 'dependency',
+      },
+    ],
+    packageManager: 'Bun',
+    startCommand: 'bun run skills:preview',
+    testCommand: 'bun run test:skills',
+  },
+]

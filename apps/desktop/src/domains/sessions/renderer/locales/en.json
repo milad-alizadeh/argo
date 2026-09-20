@@ -354,6 +354,8 @@
     "currentFile": "Current file",
     "diff": "Diff",
     "label": "File diff",
+    "markViewed": "Mark {{path}} as viewed",
+    "viewed": "Viewed",
     "copyDiff": "Copy diff"
   },
   "row": {

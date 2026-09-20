@@ -154,6 +154,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     shell: [],
     pullRequest: null,
     archived: false,
+    unread: false,
     setup: { model: null, effort: null, mode: null },
   }
 }

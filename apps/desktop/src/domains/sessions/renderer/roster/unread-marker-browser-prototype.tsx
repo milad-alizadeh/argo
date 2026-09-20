@@ -108,10 +108,9 @@ function PrototypeRoster() {
               onFocus={() => undefined}
               onSelect={() => undefined}
               onToggleSelect={() => undefined}
-              prototypeUnread={unread}
               selectable={false}
               selected={index === 0}
-              session={session}
+              session={{ ...session, unread }}
               tabIndex={index === 0 ? 0 : -1}
             />
           ))}

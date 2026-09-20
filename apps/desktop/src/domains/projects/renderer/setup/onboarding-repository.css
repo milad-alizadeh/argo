@@ -1,0 +1,94 @@
+.onboarding-found-area,
+.onboarding-suggestions-area {
+  padding: 12px 14px;
+}
+
+.onboarding-found-area {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  background: color-mix(in srgb, var(--muted) 22%, var(--card));
+}
+
+.onboarding-found-area__identity,
+.onboarding-repository-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.onboarding-found-fact {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 56%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 8px 10px;
+}
+
+.onboarding-found-fact small,
+.onboarding-found-fact strong {
+  display: block;
+}
+
+.onboarding-found-fact small {
+  color: var(--muted-foreground);
+  font-size: var(--text-meta);
+}
+
+.onboarding-found-fact strong {
+  overflow: hidden;
+  margin-top: 2px;
+  font-size: var(--text-control);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onboarding-target-card__commands {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.onboarding-target-card__commands > span {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 56%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 8px 10px;
+}
+
+.onboarding-target-card__commands small,
+.onboarding-target-card__commands code {
+  display: block;
+}
+
+.onboarding-target-card__commands small {
+  color: var(--muted-foreground);
+  font-size: var(--text-meta);
+}
+
+.onboarding-target-card__commands code {
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: var(--text-code);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onboarding-existing-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.onboarding-existing-tools > small {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  font-size: var(--text-meta);
+}
+
+.onboarding-existing-tools > span {
+  color: var(--foreground);
+  font-size: var(--text-control);
+}

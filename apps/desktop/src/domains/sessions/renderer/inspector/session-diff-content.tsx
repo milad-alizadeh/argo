@@ -9,10 +9,7 @@ import {
   CodeBlockTitle,
 } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
-import {
-  diffLineDecoration,
-  diffLines,
-} from '@/domains/sessions/renderer/inspector/session-diff-lines'
+import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
@@ -86,7 +83,12 @@ export function DiffContent({
       language={language}
       className="flex min-h-0 flex-1 flex-col rounded-none border-0 type-code-content [&_pre]:min-h-0 [&_pre]:flex-1 [&_pre]:p-0"
       line={(index) => {
-        const line = lines[index] ?? { kind: 'title', oldLine: null, newLine: null }
+        const line = lines[index] ?? {
+          kind: 'title',
+          newLine: null,
+          oldLine: null,
+          source: '',
+        }
         return diffLineDecoration(line)
       }}
     >
