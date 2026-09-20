@@ -5,6 +5,7 @@ import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/port'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
+import { ProjectOnboarding } from '@/domains/projects/renderer/setup/project-onboarding'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
@@ -33,16 +34,18 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 
 export function CockpitRouteLayout() {
   const [cockpit] = useProjects()
+  const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
     if (destination) window.location.hash = DESTINATION_PATHS[destination]
   })
-  const sidebar = useMatches().reduce<ReactNode | null>(
+  const sidebar = matches.reduce<ReactNode | null>(
     (currentSidebar, match) =>
       isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
 
+  if (matches.some((match) => match.id === 'project-onboarding')) return <Outlet />
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   if (cockpit.status === 'setup' && cockpit.project) {
     return <ProjectSetupWindow project={cockpit.project} />
@@ -63,6 +66,7 @@ export const cockpitRouter = createHashRouter([
     element: <CockpitRouteLayout />,
     children: [
       { index: true, element: <Navigate replace to="/sessions" /> },
+      { id: 'project-onboarding', path: '/projects/new', element: <ProjectOnboarding /> },
       {
         path: '/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,

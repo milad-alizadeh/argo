@@ -39,10 +39,9 @@ export const ProjectActions: Story = {
       expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
     )
     dispatchProjectCommand(canvasElement)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: worktree' })).toBeEnabled(),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Current project: worktree' }))
+    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
+    window.location.hash = ''
+    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to argo' }))
     // The previous menu's closing animation leaves it briefly unclickable, still in the DOM.
@@ -53,9 +52,7 @@ export const ProjectActions: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Add project' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: worktree' })).toBeEnabled(),
-    )
+    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
   },
 }
 

@@ -222,6 +222,7 @@
     ".vite/renderer/main_window/assets/php-[hash].js",
     ".vite/renderer/main_window/assets/pieDiagram-5QR66LMP-[hash].js",
     ".vite/renderer/main_window/assets/pkl-[hash].js",
+    ".vite/renderer/main_window/assets/playwright-[hash].svg",
     ".vite/renderer/main_window/assets/plsql-[hash].js",
     ".vite/renderer/main_window/assets/po-[hash].js",
     ".vite/renderer/main_window/assets/polar-[hash].js",

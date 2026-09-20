@@ -2,7 +2,7 @@ import { Check, ChevronDown, Folder, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
-import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
+import { useProjects } from '@/domains/projects/renderer/port'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -20,7 +20,7 @@ export function ProjectSwitcher() {
   const { t } = useTranslation('projects')
   const [cockpit, actions] = useProjects()
   useCommands((command) => {
-    if (command === REGISTER_PROJECT_COMMAND) actions.open()
+    if (command === REGISTER_PROJECT_COMMAND) openProjectOnboarding()
   })
   const projectName = cockpit.project?.name ?? t('switcher.placeholder')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -59,7 +59,7 @@ export function ProjectSwitcher() {
             ))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem aria-label={t('switcher.add')} onClick={actions.open}>
+          <DropdownMenuItem aria-label={t('switcher.add')} onClick={openProjectOnboarding}>
             <Plus />
             {t('switcher.addEllipsis')}
           </DropdownMenuItem>
@@ -80,4 +80,8 @@ export function ProjectSwitcher() {
       ) : null}
     </>
   )
+}
+
+function openProjectOnboarding() {
+  window.location.hash = '/projects/new'
 }

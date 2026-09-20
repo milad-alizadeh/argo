@@ -1,0 +1,128 @@
+import { Check } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
+import { diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { cn } from '@/platform/renderer/lib/utils'
+
+export type FileDiff = { diff: string; path: string }
+
+export function FileDiffList({
+  accessibleName,
+  className,
+  files,
+  markViewedLabel,
+  renderDiff,
+  viewedLabel,
+}: {
+  accessibleName: string
+  className?: string
+  files: FileDiff[]
+  markViewedLabel: (path: string) => string
+  renderDiff?: (file: FileDiff) => ReactNode
+  viewedLabel: string
+}) {
+  return (
+    <section
+      className={cn('min-h-0 overflow-auto rounded-xl border', className)}
+      aria-label={accessibleName}
+    >
+      {files.map((file) => (
+        <FileDiffSection
+          file={file}
+          key={file.path}
+          markViewedLabel={markViewedLabel}
+          renderDiff={renderDiff}
+          viewedLabel={viewedLabel}
+        />
+      ))}
+    </section>
+  )
+}
+
+function FileDiffSection({
+  file,
+  markViewedLabel,
+  renderDiff,
+  viewedLabel,
+}: {
+  file: FileDiff
+  markViewedLabel: (path: string) => string
+  renderDiff?: (file: FileDiff) => ReactNode
+  viewedLabel: string
+}) {
+  const lines = diffLines(file.diff)
+  const [viewed, setViewed] = useState(false)
+  return (
+    <section aria-label={file.path}>
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar" title={file.path}>
+        <label className="flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-left has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-inset">
+          <input
+            aria-label={markViewedLabel(file.path)}
+            checked={viewed}
+            className="sr-only"
+            onChange={(event) => setViewed(event.target.checked)}
+            type="checkbox"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-left type-body font-semibold [direction:rtl] [unicode-bidi:plaintext]">
+              {file.path}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 type-label font-medium">
+            {viewedLabel}
+            <span
+              aria-hidden="true"
+              className="grid size-4 place-items-center rounded-sm border border-input data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground"
+              data-checked={viewed}
+            >
+              {viewed ? <Check className="size-3.5" /> : null}
+            </span>
+          </span>
+        </label>
+      </header>
+      {viewed ? null : (renderDiff?.(file) ?? <PlainFileDiff file={file} lines={lines} />)}
+    </section>
+  )
+}
+
+function PlainFileDiff({ file, lines }: { file: FileDiff; lines: ReturnType<typeof diffLines> }) {
+  return (
+    <pre className="overflow-x-auto border-b border-border/60 bg-background type-code-content last:border-b-0">
+      <code data-language={languageForPath(file.path)}>
+        {lines.map((line) => {
+          if (line.kind === 'hunk') return null
+          const lineNumber = line.kind === 'removed' ? line.oldLine : line.newLine
+          return (
+            <span
+              className={cn(
+                'flex min-w-max px-3',
+                line.kind === 'added' && 'bg-emerald-500/15',
+                line.kind === 'removed' && 'bg-rose-500/15',
+              )}
+              key={`${line.kind}-${line.oldLine ?? 'x'}-${line.newLine ?? 'x'}-${line.source}`}
+            >
+              <span
+                aria-hidden="true"
+                className="mr-3 w-6 shrink-0 text-right text-muted-foreground select-none"
+              >
+                {lineNumber ?? ''}
+              </span>
+              <span>{line.source}</span>
+            </span>
+          )
+        })}
+      </code>
+    </pre>
+  )
+}
+
+function languageForPath(path: string) {
+  const extension = path.split('.').pop()
+  const languages: Record<string, string> = {
+    js: 'javascript',
+    jsx: 'jsx',
+    md: 'markdown',
+    ts: 'typescript',
+    tsx: 'tsx',
+  }
+  return extension ? languages[extension] : undefined
+}
