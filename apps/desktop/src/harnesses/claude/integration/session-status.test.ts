@@ -44,8 +44,8 @@ test('titles a Session by what a person typed over what the Harness summarised',
   })
 })
 
-test('is headless only where every link is, and reads the newest place', async () => {
-  assert.equal((await rowOf(['titledHeadless'])).entry, 'headless')
+test('reads interactive entries and the newest place', async () => {
+  assert.equal((await rowOf(['titledHeadless'])).entry, 'interactive')
   const merged = await rowOf(['worktreeRelocated', 'worktreeOrigin'])
   assert.equal(merged.entry, 'interactive')
   assert.equal(merged.cwd, '/Users/x/proj/.claude/worktrees/argo+735')
