@@ -1,4 +1,4 @@
-import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/contract'
+import { CLAUDE_MODES, type ClaudeTurnSetup } from './turn-setup-contract'
 
 type ClaudeMode = ClaudeTurnSetup['mode']
 

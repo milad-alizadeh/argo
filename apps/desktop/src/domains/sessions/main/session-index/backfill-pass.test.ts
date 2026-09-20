@@ -9,7 +9,12 @@ function identityAt(
   minutesAgo: number,
   path = `/transcripts/${minutesAgo}.jsonl`,
 ): TranscriptFileIdentity {
-  return { path, name: `${minutesAgo}.jsonl`, writtenAt: 1_000_000 - minutesAgo * 60_000, size: 10 }
+  return {
+    path,
+    sessionId: String(minutesAgo),
+    writtenAt: 1_000_000 - minutesAgo * 60_000,
+    size: 10,
+  }
 }
 
 // Newest first, the order every listing already comes in.

@@ -55,7 +55,7 @@ function records(...lines: Record<string, unknown>[]) {
 }
 
 function rowsOf(...lines: Record<string, unknown>[]) {
-  const file = transcriptFileFrom('/x/s.jsonl', { fileName: 's.jsonl', records: records(...lines) })
+  const file = transcriptFileFrom('/x/s.jsonl', { sessionId: 's', records: records(...lines) })
   return projectFeed({ id: 's', retiredIds: [], files: [file], originUnread: false }, undefined)
     .rows
 }

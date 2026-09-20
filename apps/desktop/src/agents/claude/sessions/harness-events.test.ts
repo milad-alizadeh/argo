@@ -71,13 +71,13 @@ test('opens a voice Session on what the person said, never on status activity', 
   if (command?.kind !== 'message' || status?.kind !== 'message') assert.fail('expected activity')
   assert.equal(
     transcriptFileFrom('/tmp/session.jsonl', {
-      fileName: 'session.jsonl',
+      sessionId: 'session',
       records: [status, command],
     }).openingPrompt,
     'Reader command',
   )
   assert.equal(
-    transcriptFileFrom('/tmp/session.jsonl', { fileName: 'session.jsonl', records: [status] })
+    transcriptFileFrom('/tmp/session.jsonl', { sessionId: 'session', records: [status] })
       .openingPrompt,
     null,
   )

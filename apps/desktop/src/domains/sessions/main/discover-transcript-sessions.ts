@@ -6,7 +6,6 @@ import {
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import { currentSessionId } from '@/domains/sessions/contract/models'
 import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
-import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
 import { boundIndexedWindow, presentedRows } from '@/domains/sessions/main/discover-indexed-window'
 import {
   discoverSessionsWith,
@@ -101,7 +100,7 @@ function createChainReader(parts: {
     // Every chain id and retired id is some file's own id, so an id no file is named for resolves
     // nowhere. A Session its CLI has not written yet is answered from the listing alone (#2356).
     const named = await parts.source.transcriptPaths(root)
-    if (!named.some((file) => sessionIdOfFile(file.name) === sessionId)) return null
+    if (!named.some((file) => file.sessionId === sessionId)) return null
     let windowSize = ROSTER_PAGE_SIZE
     for (;;) {
       const { found, files } = await parts.summarise(root, windowSize)

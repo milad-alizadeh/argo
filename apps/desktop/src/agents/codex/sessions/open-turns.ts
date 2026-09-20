@@ -4,14 +4,13 @@
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { sessionIdOfFile } from '@/domains/sessions/contract/transcript-file'
 import { isLiveElsewhere } from '@/domains/sessions/main/live-elsewhere'
 import { hasOpenSubagent } from '@/domains/sessions/main/subagents'
 import {
   createTranscriptRecordReader,
   ROSTER_FILE_LIMIT,
 } from '@/domains/sessions/main/transcript-lines'
-import { transcriptPaths } from './discover'
+import { transcriptPaths } from './transcript-paths'
 
 // The Turn marks codex-cli 0.147.0 writes as `event_msg` payloads.
 const TURN_MARK_TYPES = ['task_started', 'task_complete', 'turn_aborted'] as const
@@ -59,7 +58,7 @@ export function createOpenTurnReader(root: string) {
     const open = await Promise.all(
       recent.flat().map(async (file) => {
         const marks = await readRecords(file.path).catch(() => [])
-        return marks.at(-1)?.kind === 'opened' ? [sessionIdOfFile(file.name)] : []
+        return marks.at(-1)?.kind === 'opened' ? [file.sessionId] : []
       }),
     )
     return new Set(open.flat())

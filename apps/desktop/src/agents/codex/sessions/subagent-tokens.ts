@@ -4,7 +4,7 @@ import type {
   SubagentUsageFacts,
 } from '@/domains/sessions/contract/background-work-contract'
 import { isRecord } from '@/shared/validation'
-import { transcriptPaths } from './discover'
+import { transcriptPaths } from './transcript-paths'
 
 function subagentFacts(line: string): Partial<SubagentUsageFacts> {
   let parsed: unknown
@@ -51,9 +51,7 @@ export async function readSubagentTokens(
   subagentIds: readonly string[],
 ): Promise<SessionSubagentUsage[]> {
   const paths = await transcriptPaths(root)
-  const pathsById = new Map(
-    paths.map(({ name, path }) => [name.replace(/\.jsonl$/, ''), path] as const),
-  )
+  const pathsById = new Map(paths.map(({ sessionId, path }) => [sessionId, path] as const))
   return Promise.all(
     subagentIds.map(async (id) => ({
       id,

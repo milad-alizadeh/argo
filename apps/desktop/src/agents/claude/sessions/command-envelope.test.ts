@@ -37,7 +37,7 @@ test('does not expose incomplete command tags', () => {
 
 test('keeps a command receipt as the Session opening prompt', () => {
   const file = readTranscriptFile('/tmp/command.jsonl', {
-    fileName: 'command.jsonl',
+    sessionId: 'command',
     lines: [
       JSON.stringify({
         type: 'user',

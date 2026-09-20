@@ -11,7 +11,7 @@ import { codexAnswersFor, settleQuestion } from '@/agents/codex/drive/question-p
 import { readRename } from '@/agents/codex/drive/rename-protocol'
 import { createResumingChannel } from '@/agents/codex/drive/resuming-channel'
 import { beginSession, startTurn } from '@/agents/codex/drive/turn-lifecycle'
-import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-contract'
+import { CODEX_OPENING_SETUP } from './turn-setup-contract'
 
 export type {
   CodexProcess,

@@ -4,7 +4,7 @@ import {
   CLAUDE_EFFORTS,
   CLAUDE_MODELS,
   type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/contract'
+} from '@/agents/claude/drive/turn-setup-contract'
 import type {
   ModeChoice,
   SetupChoice,
