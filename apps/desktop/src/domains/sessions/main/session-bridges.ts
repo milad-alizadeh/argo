@@ -28,7 +28,7 @@ import { startBackfill, withReconcile } from '@/domains/sessions/main/session-ba
 import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
 import { sessionSources } from '@/domains/sessions/main/session-sources'
-import { createSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -81,14 +81,12 @@ export function attachSessions(
     home: string
     userData: string
     drivers: ReturnType<typeof createSessionDrivers>
+    ticketLinks: SessionTicketLinkStore
     compactionStarts?: string
   },
 ) {
-  const { rendererURL, home, userData, drivers, compactionStarts } = request
+  const { rendererURL, home, userData, drivers, ticketLinks, compactionStarts } = request
   const { claude, codex } = drivers
-  const ticketLinks = createSessionTicketLinkStore(
-    path.join(userData, 'portable-v1', 'session-tickets.json'),
-  )
   // Argo's own archive flag, for every harness at once (#2315).
   const archive = createSessionArchiveStore(sessionArchivePath(userData))
   // Both adapters read their bounded window through one index, so a warm Roster reopens no

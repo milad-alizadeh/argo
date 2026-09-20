@@ -29,6 +29,15 @@
     "attachFiles": {
       "title": "Attach Files & Folders",
       "confirm": "Attach"
+    },
+    "restoreData": {
+      "title": "Restore Argo Data",
+      "message": "Argo cannot read its saved data.",
+      "detail": "Restore the most recent backup to continue.",
+      "restore": "Restore Backup",
+      "quit": "Quit",
+      "noBackup": "No backup is available. Argo will quit.",
+      "restoreFailed": "Argo could not restore the backup. Argo will quit."
     }
   }
 }
