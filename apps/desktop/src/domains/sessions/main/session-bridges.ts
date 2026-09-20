@@ -24,11 +24,7 @@ import {
   SESSION_CODEX_EXECUTABLE_ENV,
 } from '@/domains/sessions/main/proof-protocol'
 import { createSessionReader } from '@/domains/sessions/main/reader'
-import {
-  reconcileSessions,
-  startBackfill,
-  withReconcile,
-} from '@/domains/sessions/main/session-background-indexing'
+import { startBackfill, withReconcile } from '@/domains/sessions/main/session-background-indexing'
 import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
 import { sessionSources } from '@/domains/sessions/main/session-sources'
@@ -134,8 +130,6 @@ export function attachSessions(
       withReconcile(watchPeriodically(), sources, reader),
     ],
   })
-  // Backfill starts on attach and reconcile runs once at launch, the same signal focus and resume
-  // give it later (#2373).
+  // Backfill starts on attach; its first completed pass reconciles launch changes (#2373).
   startBackfill(window, sources, reader)
-  reconcileSessions(sources, reader)
 }
