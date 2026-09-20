@@ -1492,7 +1492,12 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
       </div>
       <div className="mt-7 space-y-4">
         <SubsectionHeader icon={<GitBranch />} title="Setup diff" />
-        <FileDiffList accessibleName="Files changed during setup" files={setupDiffFiles(state)} />
+        <FileDiffList
+          accessibleName="Files changed during setup"
+          files={setupDiffFiles(state)}
+          markViewedLabel={(path) => `Mark ${path} as viewed`}
+          viewedLabel="Viewed"
+        />
       </div>
       <div className="mt-6 flex justify-center gap-2">
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>

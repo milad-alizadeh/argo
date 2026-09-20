@@ -107,6 +107,13 @@ export const PatchOverTwoFiles: Story = {
     const headers = canvasElement.querySelectorAll('header')
     await expect(headers).toHaveLength(2)
     for (const header of headers) await expect(getComputedStyle(header).position).toBe('sticky')
+    const viewed = canvas.getByRole('checkbox', { name: 'Mark /repo/src/app.ts as viewed' })
+    await userEvent.click(viewed)
+    await expect(viewed).toBeChecked()
+    await expect(canvas.queryByText(/newValue/)).toBeNull()
+    await userEvent.click(viewed)
+    await expect(viewed).not.toBeChecked()
+    await expect(canvas.getByText(/newValue/)).toBeVisible()
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-language="typescript"]')).not.toBeNull(),
     )

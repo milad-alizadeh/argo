@@ -353,7 +353,9 @@
     "currentFile": "Current file",
     "diff": "Diff",
     "label": "File diff",
-    "copyDiff": "Copy diff"
+    "copyDiff": "Copy diff",
+    "markViewed": "Mark {{path}} as viewed",
+    "viewed": "Viewed"
   },
   "row": {
     "activity": "Ran {{tool}} {{target}}",

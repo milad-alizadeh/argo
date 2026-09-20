@@ -13,6 +13,8 @@ export function SessionPatchViewer({ files }: { files: PatchFile[] }) {
       className="flex-1 rounded-none border-0"
       files={files}
       languageForPath={(path) => detectCodeLanguageFromPath(path)?.grammar ?? null}
+      markViewedLabel={(path) => t('diff.markViewed', { path })}
+      viewedLabel={t('diff.viewed')}
     />
   )
 }
