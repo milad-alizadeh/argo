@@ -1,4 +1,7 @@
-import { setupPlanningResultSchema, type SetupPlanningResult } from '@/domains/projects/contract/setup-plan'
+import {
+  type SetupPlanningResult,
+  setupPlanningResultSchema,
+} from '@/domains/projects/contract/setup-plan'
 import type { SetupPlanningProgressEvent } from '@/domains/projects/contract/setup-progress'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import { PLAN_MARKER, planningAgentPrompt } from './prompts'
@@ -50,7 +53,10 @@ export async function runPlanningAgent(
   try {
     payload = JSON.parse(outcome.payload)
   } catch (error) {
-    return { kind: 'invalid-output', issues: [`Planning output was not valid JSON: ${String(error)}`] }
+    return {
+      kind: 'invalid-output',
+      issues: [`Planning output was not valid JSON: ${String(error)}`],
+    }
   }
   const parsed = setupPlanningResultSchema.safeParse(payload)
   if (!parsed.success) {

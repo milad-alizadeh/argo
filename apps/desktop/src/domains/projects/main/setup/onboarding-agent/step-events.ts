@@ -1,10 +1,10 @@
 // Reads the ARGO_STEP progress protocol both onboarding prompts follow (see prompts.ts) out of a
 // managed Session's streamed text.
 import {
-  setupApplicationProgressEventSchema,
-  setupPlanningProgressEventSchema,
   type SetupApplicationProgressEvent,
   type SetupPlanningProgressEvent,
+  setupApplicationProgressEventSchema,
+  setupPlanningProgressEventSchema,
 } from '@/domains/projects/contract/setup-progress'
 
 const STEP_LINE = /^ARGO_STEP (\{.*\})$/gm
@@ -25,14 +25,20 @@ function withRevision(payload: unknown, revision: string) {
   return { ...(typeof payload === 'object' && payload !== null ? payload : {}), revision }
 }
 
-export function parsePlanningStepEvents(text: string, revision: string): SetupPlanningProgressEvent[] {
+export function parsePlanningStepEvents(
+  text: string,
+  revision: string,
+): SetupPlanningProgressEvent[] {
   return stepPayloads(text).flatMap((payload) => {
     const parsed = setupPlanningProgressEventSchema.safeParse(withRevision(payload, revision))
     return parsed.success ? [parsed.data] : []
   })
 }
 
-export function parseApplicationStepEvents(text: string, revision: string): SetupApplicationProgressEvent[] {
+export function parseApplicationStepEvents(
+  text: string,
+  revision: string,
+): SetupApplicationProgressEvent[] {
   return stepPayloads(text).flatMap((payload) => {
     const parsed = setupApplicationProgressEventSchema.safeParse(withRevision(payload, revision))
     return parsed.success ? [parsed.data] : []

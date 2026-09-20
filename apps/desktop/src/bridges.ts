@@ -8,6 +8,7 @@ import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main/port'
 import { attachProjectBridge } from '@/domains/projects/main/bridge'
 import { createProjectPort } from '@/domains/projects/main/port'
+import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/run-onboarding-agent'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
@@ -50,6 +51,7 @@ export function attachBridges(
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   const drivers = createSessionDrivers({ userData, home, proofEnabled })
+  const onboardingDriver = onboardingDriverFrom(drivers.claude)
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)
@@ -58,7 +60,7 @@ export function attachBridges(
     projects,
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
-    onboardingDriver: drivers.claude,
+    onboardingDriver,
   })
   attachSessions(window, { rendererURL, home, userData, drivers, ticketLinks, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
@@ -91,4 +93,26 @@ export function attachBridges(
     ticketLinks.close()
     void closeSessionDrivers(drivers).then(() => app.quit())
   })
+}
+
+function onboardingDriverFrom(driver: unknown): OnboardingAgentDriver {
+  if (isOnboardingAgentDriver(driver)) return driver
+  throw new Error('The registered Claude driver cannot run onboarding.')
+}
+
+function isOnboardingAgentDriver(driver: unknown): driver is OnboardingAgentDriver {
+  return (
+    typeof driver === 'object' &&
+    driver !== null &&
+    'start' in driver &&
+    'liveMessages' in driver &&
+    'interrupt' in driver &&
+    'pendingPermission' in driver &&
+    'decidePermission' in driver &&
+    typeof driver.start === 'function' &&
+    typeof driver.liveMessages === 'function' &&
+    typeof driver.interrupt === 'function' &&
+    typeof driver.pendingPermission === 'function' &&
+    typeof driver.decidePermission === 'function'
+  )
 }

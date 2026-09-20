@@ -5,7 +5,8 @@ import { readFile, writeFile } from 'node:fs/promises'
 // mark the directory trusted the same way accepting that dialog would.
 export async function trustSetupWorktree(configPath: string, directory: string): Promise<void> {
   const raw = await readFile(configPath, 'utf8').catch(() => '{}')
-  const config: { projects?: Record<string, { hasTrustDialogAccepted?: boolean }> } = JSON.parse(raw)
+  const config: { projects?: Record<string, { hasTrustDialogAccepted?: boolean }> } =
+    JSON.parse(raw)
   config.projects ??= {}
   if (config.projects[directory]?.hasTrustDialogAccepted) return
   config.projects[directory] = { ...config.projects[directory], hasTrustDialogAccepted: true }

@@ -23,7 +23,10 @@ test('returns the durable worktree when setup resumes', async (context) => {
   const { project, claudeConfigPath } = await setupWorktreeFixture(context)
   const first = await prepareSetupWorktree({ id: 'project-1', path: project }, claudeConfigPath)
 
-  assert.equal(await prepareSetupWorktree({ id: 'project-1', path: project }, claudeConfigPath), first)
+  assert.equal(
+    await prepareSetupWorktree({ id: 'project-1', path: project }, claudeConfigPath),
+    first,
+  )
 })
 
 test('trusts the setup worktree so claude skips its first-launch dialog', async (context) => {

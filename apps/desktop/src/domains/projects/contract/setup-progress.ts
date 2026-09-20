@@ -4,7 +4,13 @@
 import { z } from 'zod'
 import { identifierSchema } from '../../../shared/validation'
 
-export const setupStepStatusSchema = z.enum(['pending', 'running', 'waiting-for-user', 'passed', 'failed'])
+export const setupStepStatusSchema = z.enum([
+  'pending',
+  'running',
+  'waiting-for-user',
+  'passed',
+  'failed',
+])
 export type SetupStepStatus = z.infer<typeof setupStepStatusSchema>
 
 const progressEventShape = {

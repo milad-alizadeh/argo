@@ -2,12 +2,18 @@ import { z } from 'zod'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
 import type { SetupApplicationProgressEvent } from '@/domains/projects/contract/setup-progress'
 import { APPLY_MARKER, applicationAgentPrompt } from './prompts'
-import { runOnboardingAgent, type OnboardingAgentDriver } from './run-onboarding-agent'
+import { type OnboardingAgentDriver, runOnboardingAgent } from './run-onboarding-agent'
 import { parseApplicationStepEvents } from './step-events'
 
 const applicationReportSchema = z.object({
   outcome: z.enum(['completed', 'needs-review', 'failed']),
-  steps: z.array(z.object({ stepId: z.string().min(1), status: z.enum(['passed', 'failed']), message: z.string() })),
+  steps: z.array(
+    z.object({
+      stepId: z.string().min(1),
+      status: z.enum(['passed', 'failed']),
+      message: z.string(),
+    }),
+  ),
   drift: z.string().optional(),
 })
 export type ApplicationReport = z.infer<typeof applicationReportSchema>
@@ -53,7 +59,10 @@ export async function runApplicationAgent(
   try {
     payload = JSON.parse(outcome.payload)
   } catch (error) {
-    return { kind: 'invalid-output', issues: [`Application output was not valid JSON: ${String(error)}`] }
+    return {
+      kind: 'invalid-output',
+      issues: [`Application output was not valid JSON: ${String(error)}`],
+    }
   }
   const parsed = applicationReportSchema.safeParse(payload)
   if (!parsed.success) {

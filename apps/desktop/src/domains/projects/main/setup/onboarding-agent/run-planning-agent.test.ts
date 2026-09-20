@@ -44,7 +44,11 @@ const readyPlan = {
     targetActions: [],
     verification: [],
     risks: [],
-    handoff: { mutationBoundary: 'setup worktree', acceptanceState: 'pending-review', applicationOrder: [] },
+    handoff: {
+      mutationBoundary: 'setup worktree',
+      acceptanceState: 'pending-review',
+      applicationOrder: [],
+    },
   },
 }
 

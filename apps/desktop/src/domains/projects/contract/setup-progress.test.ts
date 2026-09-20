@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseSetupApplicationProgressEvent, parseSetupPlanningProgressEvent } from './setup-progress'
+import {
+  parseSetupApplicationProgressEvent,
+  parseSetupPlanningProgressEvent,
+} from './setup-progress'
 
 test('parses a running planning progress event', () => {
   const event = parseSetupPlanningProgressEvent({
