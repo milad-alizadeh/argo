@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '@/domains/accounts/renderer/components/accounts-dialog'
+import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { ConnectSourceFields } from '@/domains/tickets/renderer/components/connect-source-form'
 import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
 import {
@@ -87,6 +88,7 @@ const meta: Meta<typeof TicketsScreenStory> = {
       <div className="h-dvh w-full">
         <MemoryRouter>
           <CockpitShell
+            header={<ProjectSwitcher />}
             sidebar={
               <TicketsSidebarContent
                 connection={connection('github')}

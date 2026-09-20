@@ -2,7 +2,7 @@ import { TicketDetail } from '@/domains/tickets/renderer/components/ticket-detai
 import { TicketList } from '@/domains/tickets/renderer/components/ticket-list'
 import { useLinkedSessions } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 import type { Backlog } from '@/domains/tickets/renderer/lib/backlog'
-import { InspectorSplit } from '@/platform/renderer/components/inspector-split'
+import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 
 export type TicketDeckProps = {
   backlog: Backlog

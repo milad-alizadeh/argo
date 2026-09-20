@@ -9,13 +9,13 @@ import { ChildProgress } from '@/domains/tickets/renderer/components/child-progr
 import { PriorityMenu } from '@/domains/tickets/renderer/components/priority-menu'
 import { StatusMenu } from '@/domains/tickets/renderer/components/status-menu'
 import { TicketLabel } from '@/domains/tickets/renderer/components/ticket-label'
+import { TreeRails, TreeStem, TreeTwig } from '@/domains/tickets/renderer/components/tree-lines'
 import {
   type BacklogRow,
   closedChildren,
   openBlockers,
 } from '@/domains/tickets/renderer/lib/backlog'
 import type { SourcePresentation } from '@/domains/tickets/renderer/lib/sources'
-import { TreeRails, TreeStem, TreeTwig } from '@/platform/renderer/components/tree-lines'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>

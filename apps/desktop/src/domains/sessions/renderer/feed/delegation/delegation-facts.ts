@@ -1,7 +1,7 @@
 // The one shape the Subagent row reads: one lifecycle event, as the card draws it.
 import type { TFunction } from 'i18next'
-import type { WorkState } from '@/domains/sessions/renderer/components/work/session-work'
-import { workPresentation } from '@/domains/sessions/renderer/components/work/work-presentation'
+import type { WorkState } from '@/domains/sessions/renderer/work/session-work'
+import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
 
 export type DelegationPhase = 'running' | 'succeeded' | 'failed' | 'interrupted'
 
