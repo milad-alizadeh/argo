@@ -58,6 +58,11 @@ import {
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
 import {
+  ProjectOnboardingStageActions as StageActions,
+  ProjectOnboardingStageContent as StageContent,
+  ProjectOnboardingStageHeader as StageHeading,
+} from './project-onboarding-layout'
+import {
   ANALYSIS_TASKS,
   applyTasksFor,
   type PrototypeApplyTask,
@@ -277,17 +282,6 @@ function stageContent(controller: PrototypeController) {
   }
 }
 
-function StageHeading({ children, description }: { children: ReactNode; description: string }) {
-  return (
-    <header>
-      <h1 className="prototype-stage-heading type-title font-heading text-foreground" tabIndex={-1}>
-        {children}
-      </h1>
-      <p className="mt-2 max-w-2xl type-body text-muted-foreground">{description}</p>
-    </header>
-  )
-}
-
 function targetCount(count: number) {
   return `${count} Target${count === 1 ? '' : 's'}`
 }
@@ -432,8 +426,10 @@ function FolderStage({ controller }: { controller: PrototypeController }) {
   const { actions, state } = controller
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Choose the Project folder. Argo will find Targets inside it.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Choose the Project folder. Argo will find Targets inside it."
+      >
         Choose a Project folder
       </StageHeading>
       <button className="prototype-folder-choice mt-8" onClick={actions.chooseFolder} type="button">
@@ -457,8 +453,10 @@ function MethodStage({ controller }: { controller: PrototypeController }) {
   const defaultHarnessLabel = state.defaultHarness === 'claude' ? 'Claude Code' : 'Codex'
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Ask an agent to find Targets and recommend setup, or define Target commands without changing Project files.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Ask an agent to find Targets and recommend setup, or define Target commands without changing Project files."
+      >
         1 · Choose a setup method
       </StageHeading>
       <div className="prototype-method-grid mt-8">
@@ -534,8 +532,10 @@ function NoDefaultHarnessStage({ controller }: { controller: PrototypeController
   const [choice, setChoice] = useState<'codex' | 'claude'>('codex')
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Choose a default harness before Argo analyzes the Project. This choice also becomes the default for new Sessions.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Choose a default harness before Argo analyzes the Project. This choice also becomes the default for new Sessions."
+      >
         Choose your default harness
       </StageHeading>
       <div className="mt-8 max-w-md space-y-3">
@@ -552,8 +552,10 @@ function HarnessStage({ controller }: { controller: PrototypeController }) {
   const { actions, state } = controller
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Argo will start a short-lived agent that plans setup for this Project. It will not write files during planning.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Argo will start a short-lived agent that plans setup for this Project. It will not write files during planning."
+      >
         Choose the setup agent
       </StageHeading>
       <div className="mt-8 max-w-lg rounded-xl border bg-card p-5 shadow-surface">
@@ -618,8 +620,10 @@ function AnalyzingStage({ controller }: { controller: PrototypeController }) {
   const progress = ((state.analysisStep + 1) / ANALYSIS_TASKS.length) * 100
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="The setup agent builds a plan. It does not write files, install dependencies, or run Project commands yet.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="The setup agent builds a plan. It does not write files, install dependencies, or run Project commands yet."
+      >
         2 · Analyze the Project
       </StageHeading>
       <div className="mt-9 max-w-2xl">
@@ -668,23 +672,25 @@ function RecommendationsStage({ controller }: { controller: PrototypeController 
   if (state.planOutcome !== 'ready') return <PlanBoundary controller={controller} />
   return (
     <>
-      <BackAction controller={controller} />
       <StageHeading
+        back={<BackAction controller={controller} />}
         description={`The agent found ${runnableTargetCount(state.targets.length)} without changing the Project.`}
       >
         3 · Targets and tools
       </StageHeading>
-      <div className="mt-7 space-y-4">
-        {state.targets.map((target) => (
-          <TargetSummary key={target.id} target={target} />
-        ))}
-      </div>
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
+      <StageContent>
+        <div className="space-y-4">
+          {state.targets.map((target) => (
+            <TargetSummary key={target.id} target={target} />
+          ))}
+        </div>
+      </StageContent>
+      <StageActions>
         <Button onClick={actions.openCustomization} variant="outline">
           Customize plan
         </Button>
         <Button onClick={actions.openProjectSetup}>Continue to Project setup</Button>
-      </div>
+      </StageActions>
     </>
   )
 }
@@ -951,22 +957,26 @@ function CustomizeStage({ controller }: { controller: PrototypeController }) {
   const { actions, state } = controller
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Keep only the Targets that matter. Each Target owns its path, commands, tools, dependencies, and verification.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Keep only the Targets that matter. Each Target owns its path, commands, tools, dependencies, and verification."
+      >
         Customize Targets and setup actions
       </StageHeading>
-      <div className="mt-7 space-y-5">
-        {state.targets.map((target) => (
-          <TargetEditor controller={controller} key={target.id} target={target} />
-        ))}
-        <Button onClick={actions.addTarget} variant="outline">
-          <Plus />
-          Add Target
-        </Button>
-      </div>
-      <div className="mt-6 flex justify-end">
+      <StageContent>
+        <div className="space-y-5">
+          {state.targets.map((target) => (
+            <TargetEditor controller={controller} key={target.id} target={target} />
+          ))}
+          <Button onClick={actions.addTarget} variant="outline">
+            <Plus />
+            Add Target
+          </Button>
+        </div>
+      </StageContent>
+      <StageActions>
         <Button onClick={actions.openProjectSetup}>Continue to Project setup</Button>
-      </div>
+      </StageActions>
     </>
   )
 }
@@ -975,19 +985,23 @@ function ProjectSetupStage({ controller }: { controller: PrototypeController }) 
   const { actions, state } = controller
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Choose the Project-wide setup that Argo will apply.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Choose the Project-wide setup that Argo will apply."
+      >
         4 · Customize Project setup
       </StageHeading>
-      <div className="mt-7 space-y-5">
-        <RepositoryRecommendationGroups
-          onToggle={actions.toggleRepositoryRecommendation}
-          recommendations={state.repositoryRecommendations}
-        />
-      </div>
-      <div className="mt-6 flex justify-end">
+      <StageContent>
+        <div className="space-y-5">
+          <RepositoryRecommendationGroups
+            onToggle={actions.toggleRepositoryRecommendation}
+            recommendations={state.repositoryRecommendations}
+          />
+        </div>
+      </StageContent>
+      <StageActions>
         <Button onClick={actions.apply}>Apply and verify</Button>
-      </div>
+      </StageActions>
     </>
   )
 }
@@ -1207,8 +1221,10 @@ function ManualStage({ controller }: { controller: PrototypeController }) {
   const parsedTargets = targetsFromManualSource(state.manualSource)
   return (
     <>
-      <BackAction controller={controller} />
-      <StageHeading description="Paste Target definitions for this Project. Argo validates only the JSON structure. It does not inspect or run commands, change files, or install anything.">
+      <StageHeading
+        back={<BackAction controller={controller} />}
+        description="Paste Target definitions for this Project. Argo validates only the JSON structure. It does not inspect or run commands, change files, or install anything."
+      >
         Import Target configuration
       </StageHeading>
       <SectionCard
@@ -1227,23 +1243,26 @@ function ManualStage({ controller }: { controller: PrototypeController }) {
           />
         </div>
       </SectionCard>
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <p className={`type-label ${parsedTargets ? 'text-muted-foreground' : 'text-destructive'}`}>
-          {manualStatus(parsedTargets, state.manualValidated)}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            disabled={parsedTargets === null}
-            onClick={actions.validateManualSource}
-            variant="outline"
+      <StageActions
+        note={
+          <p
+            className={`type-label ${parsedTargets ? 'text-muted-foreground' : 'text-destructive'}`}
           >
-            Validate JSON
-          </Button>
-          <Button disabled={!state.manualValidated} onClick={actions.apply}>
-            Save and open Project
-          </Button>
-        </div>
-      </div>
+            {manualStatus(parsedTargets, state.manualValidated)}
+          </p>
+        }
+      >
+        <Button
+          disabled={parsedTargets === null}
+          onClick={actions.validateManualSource}
+          variant="outline"
+        >
+          Validate JSON
+        </Button>
+        <Button disabled={!state.manualValidated} onClick={actions.apply}>
+          Save and open Project
+        </Button>
+      </StageActions>
       {state.manualValidated && state.targets.length > 0 ? (
         <div className="mt-7 space-y-3">
           {state.targets.map((target) => (
@@ -1293,12 +1312,12 @@ function ApplyFailedStage({ controller }: { controller: PrototypeController }) {
         Target verification failed
       </StageHeading>
       <ApplyTaskList controller={controller} />
-      <div className="mt-6 flex justify-end gap-2">
+      <StageActions>
         <Button onClick={actions.editFailedTarget} variant="outline">
           Edit failed Target
         </Button>
         <Button onClick={actions.retryApply}>Retry failed task</Button>
-      </div>
+      </StageActions>
     </>
   )
 }
@@ -1431,9 +1450,9 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
           viewedLabel="Viewed"
         />
       </div>
-      <div className="mt-6 flex justify-end">
+      <StageActions>
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
-      </div>
+      </StageActions>
     </>
   )
 }
@@ -1575,9 +1594,9 @@ function ManualCompleteStage({ controller }: { controller: PrototypeController }
           </p>
         </div>
       )}
-      <div className="mt-6 flex justify-end">
+      <StageActions>
         <Button onClick={() => actions.openEntry('selector')}>Open Project</Button>
-      </div>
+      </StageActions>
     </>
   )
 }

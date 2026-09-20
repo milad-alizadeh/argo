@@ -1,7 +1,8 @@
 // THROWAWAY PROTOTYPE (#2464): three intentionally different structures for one onboarding flow.
-import { Bot, ChevronDown, Folder, PanelRight, Sparkles } from 'lucide-react'
+import { Bot, Folder, PanelRight, Sparkles } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { ProjectOnboardingShell } from './project-onboarding-layout'
 import type { PrototypeController } from './project-onboarding-prototype'
 import {
   AgentTimeline,
@@ -133,8 +134,18 @@ export function ProjectOnboardingVariantC({ controller }: { controller: Prototyp
 
   if (controller.state.stage === 'entry') return <ProjectEntryScene controller={controller} />
   return (
-    <main className="prototype-briefing" aria-label="Project onboarding prototype, agent briefing">
-      <header className="prototype-briefing__chrome drag-region">
+    <ProjectOnboardingShell
+      accessibleName="Project onboarding prototype, agent briefing"
+      contentRef={conversationRef}
+      event={
+        <>
+          <span className="prototype-briefing__avatar">
+            <Folder className="size-4" />
+          </span>
+          <p>{controller.state.event}</p>
+        </>
+      }
+      header={
         <div className="no-drag-region flex items-center gap-3">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
             <Bot className="size-4" />
@@ -144,42 +155,23 @@ export function ProjectOnboardingVariantC({ controller }: { controller: Prototyp
             <p className="type-meta text-muted-foreground">argo · plan, then make changes</p>
           </div>
         </div>
-      </header>
-      <div className="prototype-briefing__workspace">
-        <section className="prototype-briefing__conversation" ref={conversationRef}>
-          <div className="prototype-briefing__message prototype-briefing__message--agent">
-            <span className="prototype-briefing__avatar">
-              <Sparkles className="size-4" />
-            </span>
-            <p>
-              I will help prepare this Project for agent Sessions. You approve every choice before I
-              apply the setup.
-            </p>
-          </div>
-          <div className="prototype-briefing__message prototype-briefing__message--event">
-            <span className="prototype-briefing__avatar">
-              <Folder className="size-4" />
-            </span>
-            <p>{controller.state.event}</p>
-          </div>
-          <details className="prototype-briefing__artifact-disclosure">
-            <summary>
-              <span>Plan summary and progress</span>
-              <ChevronDown aria-hidden="true" />
-            </summary>
-            <div className="prototype-briefing__artifact-disclosure-body">
-              <BriefingArtifact controller={controller} />
-            </div>
-          </details>
-          <div className="prototype-briefing__response">
-            <SetupStageContent controller={controller} presentation="briefing" />
-          </div>
-        </section>
-        <aside className="prototype-briefing__artifact">
-          <BriefingArtifact controller={controller} />
-        </aside>
-      </div>
-    </main>
+      }
+      introduction={
+        <>
+          <span className="prototype-briefing__avatar">
+            <Sparkles className="size-4" />
+          </span>
+          <p>
+            I will help prepare this Project for agent Sessions. You approve every choice before I
+            apply the setup.
+          </p>
+        </>
+      }
+      sidebar={<BriefingArtifact controller={controller} />}
+      sidebarDisclosureLabel="Plan summary and progress"
+    >
+      <SetupStageContent controller={controller} presentation="briefing" />
+    </ProjectOnboardingShell>
   )
 }
 
