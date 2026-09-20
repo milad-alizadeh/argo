@@ -201,107 +201,102 @@ const INITIAL_TARGETS: PrototypeTarget[] = [
 const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
-    effect:
-      'Update Argo-managed setup files and remove obsolete generated copies. Keep Project-owned files unchanged.',
+    effect: 'Install the Argo skill bundle for Claude Code and Codex. Update the skill lock file.',
     id: 'argo-skill-bundle',
     kind: 'action',
-    label: 'Argo Project setup',
+    label: 'Argo agent skills',
     reason:
-      'Install Argo’s setup skills, commands, and agent instructions so every Session follows this Project’s rules.',
+      'Install Argo’s skills for quality gates, domain docs, agent instructions, interface review, and shipping.',
   },
   {
     accepted: true,
-    effect: 'Resolve name conflicts and remove ignore rules that hide tracked automation.',
-    id: 'owned-skills',
-    kind: 'action',
-    label: 'Preserve Project automation',
-    reason: 'Keep existing agent scripts, skills, and configuration visible and in control.',
-  },
-  {
-    accepted: true,
-    effect: 'Add Bun-aware RTK filters. Keep the Project’s existing filters.',
+    effect: 'Add Bun and test filters to .rtk/filters.toml. Keep existing filters.',
     id: 'rtk-filters',
     kind: 'action',
-    label: 'RTK command filters',
-    reason: 'Shorten noisy command output so agents can find errors faster.',
+    label: 'RTK output filters',
+    reason:
+      'Add .rtk/filters.toml rules that keep errors and remove repeated noise from Bun and test output.',
   },
   {
     accepted: true,
     effect:
-      'Configure enforced quality gates and record the remaining prose requirements in agent instructions.',
+      'Update biome.jsonc, package scripts, and CI so required quality checks fail the build.',
     id: 'quality-gates',
     kind: 'action',
-    label: 'Quality gates as errors',
-    reason: 'Catch lint, type, test, and structure problems before review.',
+    label: 'CI quality gates',
+    reason:
+      'Update Biome, package scripts, and CI so lint, type, test, and Project structure failures block review.',
   },
   {
     accepted: true,
-    effect: 'Enable update_plan in Codex configuration and note that Codex must restart.',
+    effect: 'Enable update_plan in the global Codex configuration. Codex must restart.',
     id: 'codex-todos',
     kind: 'action',
-    label: 'Codex native todo lists',
-    reason: 'Show live task progress while an agent works through longer changes.',
+    label: 'Codex task checklist',
+    reason: 'Show live progress while Codex works through a multi-step task.',
   },
   {
     accepted: true,
     effect:
-      'Install task tracking, subagent-model, and writing-style sections in existing agent docs.',
+      'Add task tracking, model choice, and writing rules to the Project’s agent instruction files.',
     id: 'agent-instructions',
     kind: 'action',
-    label: 'Agent instruction templates',
-    reason: 'Give every agent the same task, model, and writing rules.',
+    label: 'Project agent instructions',
+    reason: 'Add task, model, and writing rules to AGENTS.md and each harness instruction file.',
   },
   {
     accepted: true,
-    effect: 'Add one shared hook file and generate the configuration for each harness.',
+    effect: 'Add hooks.json, then generate the Claude Code and Codex hook configuration files.',
     id: 'guardrail-hooks',
     kind: 'action',
-    label: 'Safety hooks for agents',
-    reason: 'Enforce the same worktree and push rules in Claude Code and Codex.',
+    label: 'Worktree and push guards',
+    reason:
+      'Add hooks.json rules that require ticket worktrees and block pushes from unsafe branches.',
   },
   {
     accepted: true,
-    effect:
-      'Configure GitHub issue tracking, triage labels, and the layout for domain documentation.',
+    effect: 'Install the selected engineering skills for Claude Code and Codex.',
     id: 'matt-pocock',
     kind: 'action',
-    label: 'Matt Pocock engineering skills',
-    reason: 'Add practical engineering workflows for planning, testing, debugging, and review.',
+    label: 'Engineering workflow skills',
+    reason: 'Install Matt Pocock’s skills for planning, TDD, debugging, review, and shipping.',
     waitsForUser: true,
   },
   {
     accepted: true,
-    effect:
-      'Confirm writing-for-agents and simple-english are installed before editing human-facing guidance.',
+    effect: 'Install writing-for-agents and simple-english for Claude Code and Codex.',
     id: 'writing-skills',
     kind: 'dependency',
-    label: 'Writing support skills',
-    reason: 'Keep agent instructions clear for people and precise for agents.',
+    label: 'Writing skills',
+    reason:
+      'Install writing-for-agents and simple-english for precise instructions and clear product copy.',
   },
   {
     accepted: true,
-    effect: 'Connect interface-review as the third UI review axis and add the agent-doc pointer.',
+    effect: 'Add interface-review to the Project’s required UI review process.',
     id: 'interface-review',
     kind: 'action',
-    label: 'Interface review workflow',
-    reason: 'Review usability, accessibility, responsiveness, and visual quality before shipping.',
+    label: 'UI review rules',
+    reason:
+      'Require UI work to be checked for usability, accessibility, responsiveness, and visual polish.',
   },
   {
     accepted: false,
-    effect: 'Run visual-exploration and record an approved direction in docs/visual-direction.md.',
+    effect: 'Run a visual direction session and write docs/visual-direction.md.',
     id: 'visual-direction',
     kind: 'action',
-    label: 'Visual direction',
-    reason: 'Define a clear visual direction before the interface grows.',
+    label: 'Visual direction file',
+    reason:
+      'Explore design options and save the approved colors, type, spacing, and component style in docs/visual-direction.md.',
   },
   {
     accepted: true,
-    effect:
-      'Run audit-agent-docs last, after every selected setup step has changed the instructions.',
+    effect: 'Run audit-agent-docs last and fix the Project’s agent instruction files.',
     id: 'agent-doc-audit',
     kind: 'action',
-    label: 'Audit agent docs',
-    reason: 'Find missing, stale, or conflicting agent instructions after setup.',
+    label: 'Agent instruction audit',
+    reason:
+      'Check AGENTS.md and harness instructions for missing, stale, or conflicting rules, then fix them.',
   },
 ]
 

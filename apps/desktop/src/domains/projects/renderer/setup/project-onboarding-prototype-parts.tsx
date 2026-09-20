@@ -838,21 +838,25 @@ function RepositorySummary({ recommendations }: { recommendations: PrototypeReco
 }
 
 const RECOMMENDATION_LINKS: Record<string, string> = {
-  'agent-doc-audit': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'agent-instructions': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
+  'agent-doc-audit':
+    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/audit-agent-docs',
+  'agent-instructions':
+    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-argo-skills/templates',
   'argo-skill-bundle': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
   'codex-todos': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'guardrail-hooks': 'https://github.com/milad-alizadeh/argo',
-  'interface-review': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
+  'guardrail-hooks': 'https://github.com/milad-alizadeh/argo/blob/main/hooks.json',
+  'interface-review':
+    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/interface-review',
   'markdown-checks': 'https://github.com/DavidAnson/markdownlint-cli2',
   'matt-pocock': 'https://github.com/mattpocock/skills',
-  'owned-skills': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
   playwright: 'https://playwright.dev/',
-  'quality-gates': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
-  'rtk-filters': 'https://github.com/milad-alizadeh/argo',
+  'quality-gates':
+    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/setup-quality-gates',
+  'rtk-filters': 'https://github.com/milad-alizadeh/argo/blob/main/.rtk/filters.toml',
   storybook: 'https://storybook.js.org/',
   typedoc: 'https://typedoc.org/',
-  'visual-direction': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
+  'visual-direction':
+    'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills/skills/visual-exploration',
   'writing-skills': 'https://github.com/milad-alizadeh/argo/tree/main/packages/argo-skills',
 }
 
@@ -887,14 +891,12 @@ function RecommendationDependencies({
 }: {
   recommendation: PrototypeRecommendation
 }) {
-  if (!recommendation.bundledDependencies?.length && recommendation.kind === 'action') return null
+  if (!recommendation.bundledDependencies?.length) return null
   return (
     <span className="prototype-suggestion__dependencies">
-      {recommendation.bundledDependencies?.length
-        ? recommendation.bundledDependencies.map((dependency) => (
-            <code key={dependency}>{dependency}</code>
-          ))
-        : 'No package change'}
+      {recommendation.bundledDependencies.map((dependency) => (
+        <code key={dependency}>{dependency}</code>
+      ))}
     </span>
   )
 }
@@ -1035,6 +1037,7 @@ function TargetEditor({
             actions.toggleTargetRecommendation(target.id, recommendationId)
           }
           recommendations={target.recommendations}
+          subtitle="Choose which tools the agent will add to this Target."
           title="Suggested tools"
         />
       ) : null}
@@ -1072,14 +1075,21 @@ function TargetField({
 function RecommendationEditor({
   onToggle,
   recommendations,
+  subtitle,
   title,
 }: {
   onToggle: (recommendationId: string) => void
   recommendations: PrototypeRecommendation[]
+  subtitle: string
   title: string
 }) {
   return (
-    <SectionCard className="prototype-recommendation-editor" icon={<Wrench />} title={title}>
+    <SectionCard
+      className="prototype-recommendation-editor"
+      icon={<Wrench />}
+      subtitle={subtitle}
+      title={title}
+    >
       <div>
         {recommendations.map((recommendation) => (
           <OptionRow
@@ -1108,20 +1118,27 @@ function RecommendationEditor({
 
 const REPOSITORY_RECOMMENDATION_GROUPS = [
   {
-    ids: ['argo-skill-bundle', 'owned-skills', 'rtk-filters', 'guardrail-hooks'],
-    title: 'Project tooling',
+    ids: [
+      'rtk-filters',
+      'quality-gates',
+      'agent-instructions',
+      'guardrail-hooks',
+      'interface-review',
+      'visual-direction',
+      'agent-doc-audit',
+    ],
+    subtitle: 'Writes or updates files in this Project.',
+    title: 'Project file changes',
   },
   {
-    ids: ['quality-gates'],
-    title: 'Code quality',
+    ids: ['argo-skill-bundle', 'matt-pocock', 'writing-skills'],
+    subtitle: 'Installs reusable skills for Claude Code and Codex.',
+    title: 'Agent skills',
   },
   {
-    ids: ['interface-review', 'visual-direction'],
-    title: 'Interface development',
-  },
-  {
-    ids: ['codex-todos', 'agent-instructions', 'matt-pocock', 'writing-skills', 'agent-doc-audit'],
-    title: 'Agent workflow',
+    ids: ['codex-todos'],
+    subtitle: 'Changes a global harness setting outside this Project.',
+    title: 'Harness settings',
   },
 ] as const
 
@@ -1139,6 +1156,7 @@ function RepositoryRecommendationGroups({
       recommendations={group.ids.flatMap((id) =>
         recommendations.filter((recommendation) => recommendation.id === id),
       )}
+      subtitle={group.subtitle}
       title={group.title}
     />
   ))
