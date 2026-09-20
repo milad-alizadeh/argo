@@ -4,13 +4,8 @@
 import type { TFunction } from 'i18next'
 import type { SubagentUsageFacts } from '@/domains/sessions/contract/background-work-contract'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/models'
-import {
-  readableDelegationName,
-  spentTokens,
-  subagentWorkState,
-  WORK_STATE_MARKS,
-  workDuration,
-} from './session-work'
+import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './session-work'
+import { workPresentation } from './work-presentation'
 
 export type WorkEntry = {
   id: string
@@ -23,11 +18,6 @@ export type WorkEntry = {
   facts: string
 }
 
-// The header list and the Feed card word the same facts the same way, one separator between each.
-export function joined(facts: readonly (string | null)[]): string {
-  return facts.filter((fact) => fact !== null).join(' · ')
-}
-
 export function delegationEntries(
   subagents: readonly SessionSubagent[],
   { now, usage }: { now: number; usage: Readonly<Record<string, SubagentUsageFacts>> },
@@ -35,18 +25,23 @@ export function delegationEntries(
 ): WorkEntry[] {
   return subagents.map((delegation) => {
     const state = subagentWorkState(delegation)
+    const presentation = workPresentation(
+      {
+        kind: 'subagent',
+        name: delegation.label ?? delegation.id,
+        state,
+        model: usage[delegation.id]?.model ?? null,
+        durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, now),
+        tokens: usage[delegation.id]?.tokens ?? null,
+      },
+      t,
+    )
     return {
       id: delegation.id,
-      title: delegation.label === null ? delegation.id : readableDelegationName(delegation.label),
+      ...presentation,
       monospace: false,
       running: state === 'running',
       mark: WORK_STATE_MARKS[state],
-      state: t(`workState.${state}`),
-      facts: joined([
-        usage[delegation.id]?.model ?? null,
-        workDuration(delegation.startedAt, delegation.endedAt, now),
-        spentTokens(usage[delegation.id]?.tokens ?? null, t),
-      ]),
     }
   })
 }
@@ -58,11 +53,9 @@ export function shellEntries(
 ): WorkEntry[] {
   return shell.map((command) => ({
     id: command.id,
-    title: command.label ?? command.command ?? command.id,
+    ...workPresentation({ kind: 'shell', ...command, now }, t),
     monospace: command.label === null,
     running: command.state === 'running',
     mark: WORK_STATE_MARKS[command.state],
-    state: t(`workState.${command.state}`),
-    facts: joined([workDuration(command.startedAt, command.endedAt, now), command.result]),
   }))
 }
