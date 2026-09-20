@@ -28,7 +28,8 @@ export function delegationEntries(
     const presentation = workPresentation(
       {
         kind: 'subagent',
-        name: delegation.label ?? delegation.id,
+        id: delegation.id,
+        name: delegation.label,
         state,
         model: usage[delegation.id]?.model ?? null,
         durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, now),

@@ -11,6 +11,7 @@ test('gives a completed Subagent and Shell their reader text', () => {
     workPresentation(
       {
         kind: 'subagent',
+        id: 'review-feed',
         name: 'review_feed',
         state: 'done',
         model: 'gpt-6',

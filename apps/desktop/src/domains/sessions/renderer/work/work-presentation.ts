@@ -6,7 +6,8 @@ export type WorkPresentation = { title: string; state: string; facts: string }
 
 type SubagentWork = {
   kind: 'subagent'
-  name: string
+  id: string
+  name: string | null
   state: WorkState
   model: string | null
   durationMs: number | null
@@ -40,7 +41,7 @@ export function workPresentation(
 ): WorkPresentation {
   if (work.kind === 'subagent') {
     return {
-      title: readableWorkTitle(work.name),
+      title: work.name === null ? work.id : readableWorkTitle(work.name),
       state: t(`workState.${work.state}`),
       facts: joined([work.model, durationText(work.durationMs), spentTokens(work.tokens, t)]),
     }

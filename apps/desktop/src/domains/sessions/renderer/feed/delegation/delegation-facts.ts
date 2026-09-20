@@ -38,6 +38,7 @@ export function delegationFacts(agent: AgentThread, t: TFunction<'sessions'>): D
   const presentation = workPresentation(
     {
       kind: 'subagent',
+      id: agent.id,
       name: agent.name,
       state,
       model: agent.model,
