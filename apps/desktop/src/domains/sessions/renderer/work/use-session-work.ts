@@ -2,7 +2,10 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/background-work-contract'
+import type {
+  SessionShellOutput,
+  SubagentUsageFacts,
+} from '@/domains/sessions/contract/model/background-work-contract'
 import { sessionFeedQuery } from '@/domains/sessions/renderer/feed/session-feed-query'
 import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import {
@@ -40,7 +43,7 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
 // no longer changes, so it is read once and kept, and the previous text stays on screen while that
 // last read is in flight.
 export function useShellOutput(sessionId: SessionId | null, shellId: string | null, live: boolean) {
-  const output = useQuery<string | null>({
+  const output = useQuery<SessionShellOutput | null>({
     queryKey: sessionShellOutputQueryKey(sessionId ?? '', shellId ?? '', live),
     enabled: sessionId !== null && shellId !== null,
     gcTime: 0,

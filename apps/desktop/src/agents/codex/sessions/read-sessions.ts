@@ -76,7 +76,10 @@ function combinedOverlay(
   return (rows) => {
     const drafts = draftRows(rows, live)
     const asks = pending === null ? [] : [questionRow(pending)]
-    return { rows: [...rows, ...drafts, ...asks], changes: [...drafts, ...asks] }
+    return {
+      rows: [...rows, ...drafts, ...asks],
+      changes: { rows: [...drafts, ...asks], aliases: [] },
+    }
   }
 }
 
@@ -147,6 +150,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       return readSubagentTokens(root, subagentIds)
     },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
+    readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,

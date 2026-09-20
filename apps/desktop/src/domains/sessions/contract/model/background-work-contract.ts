@@ -16,15 +16,22 @@ export const sessionShellOutputRequestSchema = z.strictObject({
 })
 export type SessionShellOutputRequest = z.infer<typeof sessionShellOutputRequestSchema>
 
+// A harness declares whether it can supply a running Shell's output. `absent` is different from
+// an empty tail: the former gives the reader no terminal to draw, while the latter is a terminal
+// that has not received output yet.
+export const sessionShellOutputSchema = z.discriminatedUnion('state', [
+  z.strictObject({ state: z.literal('available'), tail: z.string() }),
+  z.strictObject({ state: z.literal('absent') }),
+])
+export type SessionShellOutput = z.infer<typeof sessionShellOutputSchema>
+
 export const sessionShellOutputReadSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.shell.output.read'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
   shellId: identifierSchema,
-  // The tail of the recorded output, or null where the Shell recorded no output source at all.
-  // An empty string is a source that exists and has written nothing yet, which is not the same.
-  output: z.string().nullable(),
+  output: sessionShellOutputSchema,
 })
 export type SessionShellOutputRead = z.infer<typeof sessionShellOutputReadSchema>
 
