@@ -127,8 +127,13 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     historyComplete: index === undefined ? undefined : () => historyComplete(index),
     searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
-    readShellOutput: async (sessionId, shellId) =>
-      readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
+    readShellOutput: async (sessionId, shellId) => {
+      const tail = await readShellOutput(
+        await readSessionFiles(roots.transcripts, sessionId),
+        shellId,
+      )
+      return tail === null ? { state: 'absent' } : { state: 'available', tail }
+    },
     readSubagentFiles: async (sessionId, subagentId) =>
       readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
     readSubagentUsage: async (sessionId) =>

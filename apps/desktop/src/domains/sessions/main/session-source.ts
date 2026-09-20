@@ -3,7 +3,10 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
 // Argo owns that flag for every CLI at once (`archive-store.ts`, #2315).
-import type { SessionSubagentUsage } from '@/domains/sessions/contract/background-work-contract'
+import type {
+  SessionShellOutput,
+  SessionSubagentUsage,
+} from '@/domains/sessions/contract/background-work-contract'
 import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
 import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
@@ -16,7 +19,7 @@ import type { ResolvedIndexedIds } from './resolve-indexed-ids'
 // rather than a shape the reader interprets.
 export type FeedOverlay = (rows: readonly SessionFeedRow[]) => {
   rows: SessionFeedRow[]
-  changes: unknown
+  changes: { rows: SessionFeedRow[]; aliases: [string, string][] }
 }
 
 // One adapter's page of the active roster (#2239): `cursor` names the window the caller already
@@ -36,8 +39,9 @@ export type SessionSource = {
   disposeFullRecords?: (sessionId: string) => void
   managedSessions?: () => SessionRosterRow[]
   // The tail of one background Shell's recorded output, addressed by the call that started it
-  // (#1582). Absent where the CLI records no output source, which is every CLI but Claude today.
-  readShellOutput?: (sessionId: string, shellId: string) => Promise<string | null>
+  // (#1582). Every harness declares this fact: Codex declares `absent` rather than leaving a
+  // missing method for shared code to infer.
+  readShellOutput: (sessionId: string, shellId: string) => Promise<SessionShellOutput>
   // One Subagent's own transcript, read as a chain so the Feed projects it the same way it
   // projects a Session's (#1582). Absent where the CLI records no Subagent transcript.
   readSubagentFiles?: (sessionId: string, subagentId: string) => Promise<SessionChain | null>
