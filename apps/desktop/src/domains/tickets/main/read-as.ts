@@ -2,9 +2,12 @@
 // that fails named as the Ticket error the Connection shows.
 
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { AccountAccess } from '@/domains/accounts/main/access'
-import { providerOf } from '@/domains/accounts/main/registry'
-import { asAccount, type TokenFailure } from '@/domains/accounts/main/tokens'
+import {
+  type AccountAccess,
+  asAccount,
+  providerOf,
+  type TokenFailure,
+} from '@/domains/accounts/main/port'
 import {
   type TicketError,
   type TicketErrorCode,

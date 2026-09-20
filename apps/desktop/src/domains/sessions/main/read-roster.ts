@@ -9,7 +9,7 @@ import { combineDiscoveries } from '@/domains/sessions/main/merge-discovery'
 import { readFailure } from '@/domains/sessions/main/read-declaration'
 import { decodeRosterCursor } from '@/domains/sessions/main/roster-cursor'
 import type { SessionSource } from '@/domains/sessions/main/session-source'
-import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a

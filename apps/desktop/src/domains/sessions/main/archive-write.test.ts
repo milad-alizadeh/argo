@@ -13,7 +13,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 // `failed` is a storage failure alone (#2315): the flag is Argo's own, so the only reason a
 // Session cannot be archived is that its document does not get written. A directory where the

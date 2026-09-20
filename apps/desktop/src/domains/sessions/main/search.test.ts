@@ -15,7 +15,7 @@ import {
 } from '@/domains/sessions/main/archive-store'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import { indexedAdapters, sessionIdAt } from '@/domains/sessions/main/session-index/roster-fixtures'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
 
 function adapter(cli: string) {
   const found = indexedAdapters.find((candidate) => candidate.cli === cli)

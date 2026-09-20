@@ -32,7 +32,7 @@ import {
 import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
 import { sessionSources } from '@/domains/sessions/main/session-sources'
-import { createSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createSessionTicketLinkStore } from '@/domains/tickets/main/port'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {

@@ -4,8 +4,7 @@
 import type { AccountState } from '@/domains/accounts/contract/contract'
 import { type Cipher, createGrantStore, type GrantStore } from '@/domains/accounts/main/grants'
 import { type AccountRecord, readAccounts, writeAccounts } from '@/domains/accounts/main/registry'
-import { toSummary } from '@/domains/projects/main/presentation'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import type { ProjectPort } from '@/domains/projects/main/port'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 
@@ -13,7 +12,7 @@ export type AccountAccess = {
   endpoints: ProviderEndpoints
   grants: GrantStore
   paths: { accounts: string; connections: string }
-  projects: ProjectStore | null
+  projects: ProjectPort | null
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
   // Opens a URL the main process already validated. Never a URL the renderer named.
   openExternal: (url: string) => Promise<void>
@@ -29,7 +28,7 @@ export function createAccountAccess(options: {
   endpoints: ProviderEndpoints
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
-  projects?: ProjectStore
+  projects?: ProjectPort
 }): AccountAccess {
   const { userData, accountData, connectionData, endpoints, cipher, openExternal, projects } =
     options
@@ -49,12 +48,7 @@ export function createAccountAccess(options: {
 // Project names by ID, for drawing a Connection. A registry that cannot be read names nothing.
 export async function projectNames(access: AccountAccess): Promise<Map<string, string>> {
   try {
-    return new Map(
-      (access.projects?.read().projects ?? []).map((project) => [
-        project.id,
-        toSummary(project).name,
-      ]),
-    )
+    return access.projects?.names() ?? new Map()
   } catch {
     return new Map()
   }

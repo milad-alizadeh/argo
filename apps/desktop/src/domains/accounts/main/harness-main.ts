@@ -7,6 +7,7 @@ import type {
   AccountDispatchClient,
   TicketDispatchClient,
 } from '@/domains/accounts/main/harness-dispatch'
+import { createProjectPort } from '@/domains/projects/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
@@ -45,7 +46,7 @@ export function bootMain(options: {
     endpoints,
     cipher,
     openExternal,
-    projects,
+    projects: createProjectPort(projects),
   })
   const ticketWindow = createMockIpcWindow()
   attachTicketBridge(ticketWindow.window, { access, rendererURL: RENDERER_URL })
