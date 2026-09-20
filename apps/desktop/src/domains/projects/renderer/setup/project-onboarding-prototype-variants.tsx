@@ -68,7 +68,6 @@ export function ProjectOnboardingVariantB({ controller }: { controller: Prototyp
               'recommendations',
               'customize',
               'project-setup',
-              'review',
               'applying',
               'apply-failed',
               'starting',
@@ -187,7 +186,7 @@ export function ProjectOnboardingVariantC({ controller }: { controller: Prototyp
 function BriefingArtifact({ controller }: { controller: PrototypeController }) {
   return (
     <>
-      <h2 className="type-heading">Live setup artifact</h2>
+      <h2 className="type-heading">Setup review</h2>
       <div className="mt-5">
         <RecommendationSummary controller={controller} />
       </div>

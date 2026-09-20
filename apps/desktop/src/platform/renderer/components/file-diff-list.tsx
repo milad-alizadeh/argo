@@ -1,15 +1,11 @@
-import { useId, useState } from 'react'
+import { Check } from 'lucide-react'
+import { useState } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
 import { CodeBlock } from '@/platform/renderer/components/ai-elements/code-block'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
-import { Checkbox } from '@/platform/renderer/components/ui/checkbox'
 import { cn } from '@/platform/renderer/lib/utils'
 
 export type FileDiff = { diff: string; path: string }
-
-function fileName(path: string) {
-  return path.split('/').findLast((segment) => segment.length > 0) ?? path
-}
 
 export function FileDiffList({
   accessibleName,
@@ -56,32 +52,33 @@ function FileDiffSection({
   viewedLabel: string
 }) {
   const lines = diffLines(file.diff)
-  const name = fileName(file.path)
   const [viewed, setViewed] = useState(false)
-  const checkboxId = useId()
   return (
     <section aria-label={file.path}>
-      <header
-        className="sticky top-0 z-10 flex items-center gap-4 border-b border-border/60 bg-sidebar px-4 py-3"
-        title={file.path}
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block truncate type-body font-semibold">{name}</span>
-          {name === file.path ? null : (
-            <span className="block truncate type-meta text-muted-foreground">{file.path}</span>
-          )}
-        </span>
-        <label
-          aria-label={markViewedLabel(file.path)}
-          className="flex shrink-0 cursor-pointer items-center gap-2 type-label font-medium"
-          htmlFor={checkboxId}
-        >
-          {viewedLabel}
-          <Checkbox
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar" title={file.path}>
+        <label className="flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-left has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-inset">
+          <input
+            aria-label={markViewedLabel(file.path)}
             checked={viewed}
-            id={checkboxId}
-            onCheckedChange={(checked) => setViewed(checked === true)}
+            className="sr-only"
+            onChange={(event) => setViewed(event.target.checked)}
+            type="checkbox"
           />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-left type-body font-semibold [direction:rtl] [unicode-bidi:plaintext]">
+              {file.path}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 type-label font-medium">
+            {viewedLabel}
+            <span
+              aria-hidden="true"
+              className="grid size-4 place-items-center rounded-sm border border-input data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground"
+              data-checked={viewed}
+            >
+              {viewed ? <Check className="size-3.5" /> : null}
+            </span>
+          </span>
         </label>
       </header>
       {viewed ? null : (

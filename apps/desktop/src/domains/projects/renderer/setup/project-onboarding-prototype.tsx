@@ -33,7 +33,6 @@ export type PrototypeStage =
   | 'customize'
   | 'project-setup'
   | 'manual'
-  | 'review'
   | 'applying'
   | 'apply-failed'
   | 'starting'
@@ -87,7 +86,6 @@ export type PrototypeState = {
   manualValidated: boolean
   method: PrototypeMethod | null
   planOutcome: PrototypePlanOutcome
-  planRevisionAccepted: boolean
   projectPath: string
   repositoryRecommendations: PrototypeRecommendation[]
   skippedSetup: boolean
@@ -114,7 +112,6 @@ export type PrototypeController = {
     openEntry: (entryPoint: PrototypeEntryPoint) => void
     openFolder: () => void
     openProjectSetup: () => void
-    openReview: () => void
     removeTarget: (targetId: string) => void
     reset: () => void
     retryApply: () => void
@@ -384,7 +381,6 @@ function initialState(entryPoint: PrototypeEntryPoint = 'empty'): PrototypeState
     manualValidated: false,
     method: null,
     planOutcome: 'ready',
-    planRevisionAccepted: false,
     projectPath: '/Users/milad/Developer/argo',
     repositoryRecommendations: structuredClone(INITIAL_REPOSITORY_RECOMMENDATIONS),
     skippedSetup: false,
@@ -404,11 +400,10 @@ const BACK_STAGE: Partial<Record<PrototypeStage, PrototypeStage>> = {
   customize: 'recommendations',
   'project-setup': 'recommendations',
   manual: 'method',
-  review: 'project-setup',
-  applying: 'review',
-  'apply-failed': 'review',
-  starting: 'review',
-  complete: 'review',
+  applying: 'project-setup',
+  'apply-failed': 'project-setup',
+  starting: 'project-setup',
+  complete: 'project-setup',
 }
 
 const VARIANT_NAMES: Record<PrototypeVariant, string> = {
@@ -659,7 +654,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Added a new Target.',
-          planRevisionAccepted: false,
           targets: [
             ...current.targets,
             {
@@ -699,10 +693,7 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Moved back one step.',
-          stage:
-            current.stage === 'review' && current.method === 'manual'
-              ? 'manual'
-              : (BACK_STAGE[current.stage] ?? current.stage),
+          stage: BACK_STAGE[current.stage] ?? current.stage,
         })),
       beginAnalysis: () =>
         setState((current) => ({
@@ -755,7 +746,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Opened Target customization.',
-          planRevisionAccepted: false,
           stage: 'customize',
         })),
       openEntry: (entryPoint) =>
@@ -769,13 +759,6 @@ function usePrototypeController(): PrototypeController {
           event: 'Opened the Project folder chooser.',
           stage: 'folder',
         })),
-      openReview: () =>
-        setState((current) => ({
-          ...current,
-          event: 'Accepted the current plan revision for final review.',
-          planRevisionAccepted: true,
-          stage: 'review',
-        })),
       openProjectSetup: () =>
         setState((current) => ({
           ...current,
@@ -786,7 +769,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Removed a Target from the plan.',
-          planRevisionAccepted: false,
           targets: current.targets.filter(({ id }) => id !== targetId),
         })),
       reset: () => setState(initialState()),
@@ -854,7 +836,6 @@ function usePrototypeController(): PrototypeController {
       toggleRepositoryRecommendation: (recommendationId) =>
         setState((current) => ({
           ...current,
-          planRevisionAccepted: false,
           repositoryRecommendations: current.repositoryRecommendations.map((recommendation) =>
             recommendation.id === recommendationId
               ? { ...recommendation, accepted: !recommendation.accepted }
@@ -864,7 +845,6 @@ function usePrototypeController(): PrototypeController {
       toggleTargetRecommendation: (targetId, recommendationId) =>
         setState((current) => ({
           ...current,
-          planRevisionAccepted: false,
           targets: current.targets.map((target) =>
             target.id === targetId
               ? {
@@ -882,7 +862,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Updated a Target.',
-          planRevisionAccepted: false,
           targets: current.targets.map((target) =>
             target.id === targetId ? { ...target, ...patch } : target,
           ),
@@ -891,7 +870,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Customized a Project-wide setup effect.',
-          planRevisionAccepted: false,
           repositoryRecommendations: current.repositoryRecommendations.map((recommendation) =>
             recommendation.id === recommendationId ? { ...recommendation, effect } : recommendation,
           ),
@@ -900,7 +878,6 @@ function usePrototypeController(): PrototypeController {
         setState((current) => ({
           ...current,
           event: 'Customized a Target recommendation.',
-          planRevisionAccepted: false,
           targets: current.targets.map((target) =>
             target.id === targetId
               ? {

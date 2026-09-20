@@ -80,8 +80,7 @@ const PROGRESS_STAGES: Array<{ ids: PrototypeStage[]; label: string }> = [
   { ids: ['analyzing'], label: '2 · Analyze' },
   { ids: ['recommendations', 'customize'], label: '3 · Targets' },
   { ids: ['project-setup'], label: '4 · Project setup' },
-  { ids: ['review'], label: '5 · Review' },
-  { ids: ['applying', 'apply-failed', 'starting'], label: '6 · Apply' },
+  { ids: ['applying', 'apply-failed', 'starting'], label: '5 · Apply' },
 ]
 
 function stageProgress(stage: PrototypeStage) {
@@ -238,9 +237,9 @@ export function SetupStageContent({
 
 function shouldOfferSkip(controller: PrototypeController) {
   if (controller.state.method === 'manual') {
-    return ['manual', 'review'].includes(controller.state.stage)
+    return controller.state.stage === 'manual'
   }
-  return ['analyzing', 'recommendations', 'customize', 'project-setup', 'review'].includes(
+  return ['analyzing', 'recommendations', 'customize', 'project-setup'].includes(
     controller.state.stage,
   )
 }
@@ -265,8 +264,6 @@ function stageContent(controller: PrototypeController) {
       return <ProjectSetupStage controller={controller} />
     case 'manual':
       return <ManualStage controller={controller} />
-    case 'review':
-      return <ReviewStage controller={controller} />
     case 'applying':
       return <ApplyStage controller={controller} />
     case 'apply-failed':
@@ -303,6 +300,7 @@ function SectionCard({
   action,
   children,
   className = '',
+  collapsible = true,
   icon,
   subtitle,
   title,
@@ -310,6 +308,7 @@ function SectionCard({
   action?: ReactNode
   children: ReactNode
   className?: string
+  collapsible?: boolean
   icon: ReactNode
   subtitle?: string
   title: string
@@ -320,16 +319,16 @@ function SectionCard({
     <section className={`prototype-section-card ${className}`}>
       <div className="prototype-section-card__header-row">
         <SectionCardHeader
-          controls={bodyId}
-          expanded={expanded}
+          controls={collapsible ? bodyId : undefined}
+          expanded={collapsible ? expanded : undefined}
           icon={icon}
-          onToggle={() => setExpanded((current) => !current)}
+          onToggle={collapsible ? () => setExpanded((current) => !current) : undefined}
           subtitle={subtitle}
           title={title}
         />
         {action ? <span className="prototype-section-card__action">{action}</span> : null}
       </div>
-      <div hidden={!expanded} id={bodyId}>
+      <div hidden={collapsible && !expanded} id={bodyId}>
         {children}
       </div>
     </section>
@@ -541,11 +540,7 @@ function NoDefaultHarnessStage({ controller }: { controller: PrototypeController
       </StageHeading>
       <div className="mt-8 max-w-md space-y-3">
         <HarnessSelect label="Default harness" onChange={setChoice} value={choice} />
-        <Button
-          className="w-full"
-          onClick={() => actions.configureDefaultHarness(choice)}
-          size="lg"
-        >
+        <Button className="w-full" onClick={() => actions.configureDefaultHarness(choice)}>
           Save default harness
         </Button>
       </div>
@@ -574,7 +569,7 @@ function HarnessStage({ controller }: { controller: PrototypeController }) {
             </p>
           </div>
         </div>
-        <Button className="mt-5 w-full" onClick={actions.beginAnalysis} size="lg">
+        <Button className="mt-5 w-full" onClick={actions.beginAnalysis}>
           Plan Project setup
         </Button>
       </div>
@@ -677,7 +672,7 @@ function RecommendationsStage({ controller }: { controller: PrototypeController 
       <StageHeading
         description={`The agent found ${runnableTargetCount(state.targets.length)} without changing the Project.`}
       >
-        3 · Review {targetCount(state.targets.length)}
+        3 · Targets and tools
       </StageHeading>
       <div className="mt-7 space-y-4">
         {state.targets.map((target) => (
@@ -746,20 +741,61 @@ export function RecommendationSummary({ controller }: { controller: PrototypeCon
     ...controller.state.repositoryRecommendations,
     ...controller.state.targets.flatMap(({ recommendations }) => recommendations),
   ]
-  const accepted = proposed.filter(({ accepted: isAccepted }) => isAccepted).length
+  const acceptedRecommendations = proposed.filter(({ accepted }) => accepted)
+  const targetTools = controller.state.targets.flatMap(({ recommendations }) =>
+    recommendations.filter(({ accepted }) => accepted).map(({ label }) => label),
+  )
+  const dependencies = [
+    ...new Set(
+      acceptedRecommendations.flatMap(({ bundledDependencies }) => bundledDependencies ?? []),
+    ),
+  ]
   const manual = controller.state.method === 'manual'
+  const projectSetup = REPOSITORY_RECOMMENDATION_GROUPS.map((group) => {
+    const count = controller.state.repositoryRecommendations.filter(
+      (recommendation) => recommendation.accepted && recommendation.group === group.id,
+    ).length
+    if (!count) return null
+    return `${count} ${count === 1 ? group.summaryNoun : `${group.summaryNoun}s`}`
+  }).filter((summary): summary is string => summary !== null)
   return (
-    <SectionCard icon={<Settings2 />} title="Plan summary">
-      <SummaryRow
-        detail={`${controller.state.targets.length}`}
+    <SectionCard
+      icon={<Settings2 />}
+      subtitle={
+        controller.state.stage === 'complete'
+          ? 'What the agent applied.'
+          : 'What the agent will apply.'
+      }
+      title="Setup summary"
+    >
+      <OptionRow
+        detail={controller.state.targets.map(({ name }) => name).join(' · ') || 'None yet'}
         icon={<Package />}
-        label="Targets"
+        title="Targets"
       />
-      <SummaryRow detail={manual ? '0' : `${accepted}`} icon={<Wrench />} label="Changes" />
-      <SummaryRow
-        detail={manual ? 'JSON structure validation' : `${controller.state.targets.length}`}
+      <OptionRow
+        detail={manual ? 'None' : targetTools.join(' · ') || 'None'}
+        icon={<Sparkles />}
+        title="Target tools"
+      />
+      <OptionRow
+        detail={manual ? 'No Project files changed' : projectSetup.join(' · ') || 'No changes'}
+        icon={<FileCog />}
+        title="Project setup"
+      />
+      <OptionRow
+        detail={manual ? 'None' : dependencies.join(' · ') || 'None'}
+        icon={<Library />}
+        title="Dependencies"
+      />
+      <OptionRow
+        detail={
+          manual
+            ? 'JSON structure only'
+            : controller.state.targets.map(({ testCommand }) => testCommand).join(' · ')
+        }
         icon={<TerminalSquare />}
-        label="Checks"
+        title="Verification"
       />
     </SectionCard>
   )
@@ -911,18 +947,6 @@ function SuggestionFact({
   )
 }
 
-function SummaryRow({ detail, icon, label }: { detail: string; icon: ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3 last:border-b-0">
-      <span className="grid size-8 place-items-center rounded-lg bg-muted [&_svg]:size-4">
-        {icon}
-      </span>
-      <span className="type-body font-medium">{label}</span>
-      <span className="ml-auto max-w-44 truncate type-label text-muted-foreground">{detail}</span>
-    </div>
-  )
-}
-
 function CustomizeStage({ controller }: { controller: PrototypeController }) {
   const { actions, state } = controller
   return (
@@ -962,7 +986,7 @@ function ProjectSetupStage({ controller }: { controller: PrototypeController }) 
         />
       </div>
       <div className="mt-6 flex justify-end">
-        <Button onClick={actions.openReview}>Accept revision and review</Button>
+        <Button onClick={actions.apply}>Apply and verify</Button>
       </div>
     </>
   )
@@ -1117,56 +1141,25 @@ const REPOSITORY_RECOMMENDATION_GROUPS = [
   {
     id: 'project-files',
     icon: <FileCog />,
+    summaryNoun: 'project file change',
     subtitle: 'Writes or updates files in this Project.',
     title: 'Project file changes',
   },
   {
     id: 'agent-skills',
     icon: <Library />,
+    summaryNoun: 'agent skill',
     subtitle: 'Installs reusable skills for Claude Code and Codex.',
     title: 'Agent skills',
   },
   {
     id: 'harness-settings',
     icon: <Settings2 />,
+    summaryNoun: 'harness setting',
     subtitle: 'Changes a global harness setting outside this Project.',
     title: 'Harness settings',
   },
 ] as const
-
-function RepositoryRecommendationSummary({
-  detail,
-  recommendations,
-}: {
-  detail: 'effect' | 'reason'
-  recommendations: PrototypeRecommendation[]
-}) {
-  return REPOSITORY_RECOMMENDATION_GROUPS.map((group) => {
-    const acceptedRecommendations = recommendations.filter(
-      (recommendation) => recommendation.accepted && recommendation.group === group.id,
-    )
-    if (!acceptedRecommendations.length) return null
-    return (
-      <SectionCard
-        className="prototype-repository-card"
-        icon={group.icon}
-        key={group.id}
-        subtitle={group.subtitle}
-        title={group.title}
-      >
-        <div className="prototype-suggestions-area">
-          {acceptedRecommendations.map((recommendation) => (
-            <SuggestionFact
-              detail={detail}
-              key={recommendation.id}
-              recommendation={recommendation}
-            />
-          ))}
-        </div>
-      </SectionCard>
-    )
-  })
-}
 
 function RepositoryRecommendationGroups({
   onToggle,
@@ -1246,8 +1239,8 @@ function ManualStage({ controller }: { controller: PrototypeController }) {
           >
             Validate JSON
           </Button>
-          <Button disabled={!state.manualValidated} onClick={actions.openReview}>
-            Review configuration
+          <Button disabled={!state.manualValidated} onClick={actions.apply}>
+            Save and open Project
           </Button>
         </div>
       </div>
@@ -1268,75 +1261,12 @@ function manualStatus(targets: PrototypeTarget[] | null, validated: boolean) {
   return `${targetCount(targets.length)} found. Empty Targets and commands are allowed.`
 }
 
-function ReviewStage({ controller }: { controller: PrototypeController }) {
-  const { actions, state } = controller
-  const manual = state.method === 'manual'
-  return (
-    <>
-      <BackAction controller={controller} />
-      <StageHeading
-        description={
-          manual
-            ? 'Argo will save this JSON configuration and open the Project. It will not inspect or run commands, change files, or install anything.'
-            : 'Argo will apply the setup. It will install the accepted tools and dependencies. Then it will verify each Target before it starts the Project.'
-        }
-      >
-        5 · Review {targetCount(state.targets.length)} for argo
-      </StageHeading>
-      <div className="mt-7 space-y-4">
-        {state.targets.map((target) =>
-          manual ? (
-            <ManualTargetSummary key={target.id} target={target} />
-          ) : (
-            <TargetSummary key={target.id} target={target} />
-          ),
-        )}
-        {manual && state.targets.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-6 text-center">
-            <p className="type-heading">No Targets yet</p>
-            <p className="mt-1 type-label text-muted-foreground">
-              This is a valid setup. Targets and commands can be added later.
-            </p>
-          </div>
-        ) : null}
-        {!manual ? (
-          <RepositoryRecommendationSummary
-            detail="reason"
-            recommendations={state.repositoryRecommendations}
-          />
-        ) : null}
-      </div>
-      <div className="mt-6 flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-3">
-        <p className="type-label text-muted-foreground">
-          {manual
-            ? 'Manual setup stores configuration in Argo only.'
-            : 'Argo applies changes in a separate tracked phase. It starts the Project only after the required tasks pass.'}
-        </p>
-        <div className="flex gap-2">
-          {!manual ? (
-            <Button onClick={actions.openCustomization} variant="outline">
-              Customize
-            </Button>
-          ) : null}
-          <Button
-            disabled={!manual && !state.planRevisionAccepted}
-            onClick={actions.apply}
-            size="lg"
-          >
-            {manual ? 'Save and open Project' : 'Apply and verify'}
-          </Button>
-        </div>
-      </div>
-    </>
-  )
-}
-
 function ApplyStage({ controller }: { controller: PrototypeController }) {
   const { state } = controller
   return (
     <>
       <StageHeading description="A new agent applies each accepted change. Then it verifies each required Target.">
-        6 · Apply and verify the setup plan
+        5 · Apply and verify the setup plan
       </StageHeading>
       <ApplyTaskList controller={controller} />
       {state.waitingTaskId ? (
@@ -1479,6 +1409,7 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
       <div className="mt-7 grid gap-3 sm:grid-cols-2">
         {state.targets.map((target) => (
           <SectionCard
+            collapsible={false}
             icon={<Package />}
             key={target.id}
             subtitle={target.path}
@@ -1494,6 +1425,7 @@ function CompleteStage({ controller }: { controller: PrototypeController }) {
         <SubsectionHeader icon={<GitBranch />} title="Setup diff" />
         <FileDiffList
           accessibleName="Files changed during setup"
+          className="max-h-[60vh]"
           files={setupDiffFiles(state)}
           markViewedLabel={(path) => `Mark ${path} as viewed`}
           viewedLabel="Viewed"
@@ -1628,6 +1560,7 @@ function ManualCompleteStage({ controller }: { controller: PrototypeController }
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
           {state.targets.map((target) => (
             <SectionCard
+              collapsible={false}
               icon={<Package />}
               key={target.id}
               subtitle={target.path || 'No path set'}
