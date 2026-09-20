@@ -1,5 +1,5 @@
 // Choosing a path and proving it is still readable at Send time is the same work for every CLI;
-// only each CLI's own adapter (agents/<cli>/) turns a readable path into that CLI's wire
+// only each CLI's own adapter (harnesses/<harness>/) turns a readable path into that CLI's wire
 // representation of an attachment (#1886).
 import { z } from 'zod'
 import { sessionErrorSchema } from '@/domains/sessions/contract/session-error'

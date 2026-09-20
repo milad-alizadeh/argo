@@ -6,7 +6,7 @@
 
 import { sessionError } from '@/domains/sessions/contract/contract'
 import type { SessionArchiveStore } from '@/domains/sessions/main/archive-store'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 import { isRecord } from '@/shared/validation'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
@@ -34,7 +34,7 @@ const MISSING = Symbol('missing-session')
 type Failure = { [MISSING]: true }
 export const MISSING_SESSION: Failure = { [MISSING]: true }
 
-// The optional members of the observation seam: the capabilities only some CLIs supply.
+// The optional members of the observation seam: the capabilities only some HARNESSES supply.
 type CapabilityName = {
   [Key in keyof SessionSource]-?: undefined extends SessionSource[Key] ? Key : never
 }[keyof SessionSource]

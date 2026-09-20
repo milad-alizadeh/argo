@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import { managedRow } from '@/domains/sessions/main/managed-row'
+import { discoverRoster } from '@/harnesses/session/discover-roster'
+import { managedRow } from '@/harnesses/session/managed-row'
 
 const PROJECT = '/projects/argo'
 
 function row(id: string, cwd: string): SessionRosterRow {
   return managedRow(id, {
-    cli: 'claude',
+    harness: 'claude',
     compactionPercentage: null,
     compactionStartedAt: null,
     compactionTokens: null,

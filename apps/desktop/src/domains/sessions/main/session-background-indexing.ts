@@ -5,7 +5,7 @@
 import type { BrowserWindow } from 'electron'
 import type { SessionReader } from '@/domains/sessions/main/bridge'
 import { createBackfillScheduler } from '@/domains/sessions/main/session-index/backfill-scheduler'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 // One backfill batch at a time, per adapter that has an index to backfill into.

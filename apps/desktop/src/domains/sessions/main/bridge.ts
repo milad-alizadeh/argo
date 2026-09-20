@@ -27,6 +27,7 @@ import {
   sessionError,
 } from '@/domains/sessions/contract/contract'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
+import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import {
   type AttachmentsStore,
   chooseAttachments,
@@ -43,7 +44,6 @@ import {
   sendSession,
   startSession,
 } from '@/domains/sessions/main/drive'
-import type { SessionDriveAdapters } from '@/domains/sessions/main/session-drive-adapter'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 

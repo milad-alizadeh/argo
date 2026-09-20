@@ -4,15 +4,15 @@
 // to keep that factory's own function short.
 import { runBackfillBatch } from '@/domains/sessions/main/session-index/backfill-pass'
 import type {
-  BackfillProgress,
-  SessionIndex,
-  TranscriptFileIdentity,
-} from '@/domains/sessions/main/session-index/contract'
-import type {
   createIndexedWindow,
   IndexedWindowSource,
 } from '@/domains/sessions/main/session-index/indexed-window'
 import { reconcileAll as reconcileCandidates } from '@/domains/sessions/main/session-index/reconcile-pass'
+import type {
+  BackfillProgress,
+  SessionIndex,
+  TranscriptFileIdentity,
+} from '@/harnesses/session/session-index-contract'
 
 export type IndexedWindowFor = (index: SessionIndex) => ReturnType<typeof createIndexedWindow>
 
@@ -32,7 +32,7 @@ export function createBackgroundIndexing(
     batchSize: number,
   ): Promise<BackfillProgress> {
     const { pass, ensureHydrated } = indexedWindowFor(index)
-    const progress = await index.backfillProgress(source.cli)
+    const progress = await index.backfillProgress(source.harness)
     if (progress.complete) return progress
     await ensureHydrated()
     const result = await runBackfillBatch({
@@ -41,7 +41,7 @@ export function createBackgroundIndexing(
       progress,
       batchSize,
     })
-    await index.setBackfillProgress(source.cli, result.progress)
+    await index.setBackfillProgress(source.harness, result.progress)
     return result.progress
   }
 

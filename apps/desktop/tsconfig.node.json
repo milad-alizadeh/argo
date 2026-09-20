@@ -25,8 +25,8 @@
     "src/renderer",
     "src/platform/renderer",
     "src/domains/*/renderer",
-    "src/agents/claude/integration",
-    "src/agents/codex/integration",
+    "src/harnesses/claude/integration",
+    "src/harnesses/codex/integration",
     "src/platform/shared/appearance.test.ts",
     "src/platform/main/appearance.test.ts",
     "src/domains/projects/**/*.test.ts",
@@ -35,9 +35,9 @@
     "src/platform/main/watch/**/*.test.ts",
     "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts",
     "src/domains/sessions/main/reads.test.ts",
-    "src/agents/codex/sessions/thread-titles.test.ts",
-    "src/agents/codex/sessions/thread-names.test.ts",
-    "src/agents/codex/sessions/managed-thread-titles.test.ts",
-    "src/agents/codex/sessions/thread-title-fixtures.ts"
+    "src/harnesses/codex/sessions/thread-titles.test.ts",
+    "src/harnesses/codex/sessions/thread-names.test.ts",
+    "src/harnesses/codex/sessions/managed-thread-titles.test.ts",
+    "src/harnesses/codex/sessions/thread-title-fixtures.ts"
   ]
 }

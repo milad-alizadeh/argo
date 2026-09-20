@@ -2,7 +2,6 @@
 // cases hold the Feed to the file's whole content whatever the CLI did to it between two reads.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   appendCodexTranscript,
@@ -12,6 +11,7 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'appended'
 

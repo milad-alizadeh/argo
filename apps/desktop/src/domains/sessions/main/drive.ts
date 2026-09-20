@@ -15,29 +15,29 @@ import {
   type SessionStartRequest,
   sessionError,
 } from '@/domains/sessions/contract/contract'
-import { driveSessionError, isDriveCli } from '@/domains/sessions/contract/session-error'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,
   SessionDriveAdapters,
-} from '@/domains/sessions/main/session-drive-adapter'
+} from '@/domains/sessions/contract/session-drive-adapter'
+import { driveSessionError, isDriveHarness } from '@/domains/sessions/contract/session-error'
 
 export type OwnerContext = {
   adapters: SessionDriveAdapters
   ownerCliFor: (sessionId: string) => Promise<string | undefined>
 }
-type Owned = { adapter: SessionDriveAdapter; cli: string }
+type Owned = { adapter: SessionDriveAdapter; harness: string }
 
-function driveFailureReply(cli: string, failure: DriveFailureCode, requestId: string) {
+function driveFailureReply(harness: string, failure: DriveFailureCode, requestId: string) {
   if (failure === 'missing-session') return sessionError('missing-session', requestId)
-  return driveSessionError(failure, isDriveCli(cli) ? cli : 'claude', requestId)
+  return driveSessionError(failure, isDriveHarness(harness) ? harness : 'claude', requestId)
 }
 
 async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<Owned | undefined> {
-  const cli = await context.ownerCliFor(sessionId)
-  if (cli === undefined) return undefined
-  const adapter = context.adapters[cli]
-  return adapter === undefined ? undefined : { adapter, cli }
+  const harness = await context.ownerCliFor(sessionId)
+  if (harness === undefined) return undefined
+  const adapter = context.adapters[harness]
+  return adapter === undefined ? undefined : { adapter, harness }
 }
 
 // Every operation but `start` runs against the Session's own owner, then reports the shared
@@ -51,7 +51,7 @@ async function ownedAccepted<T>(
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await run(owned)
   if (result !== null && typeof result === 'object' && 'error' in result) {
-    return driveFailureReply(owned.cli, result.error, request.requestId)
+    return driveFailureReply(owned.harness, result.error, request.requestId)
   }
   return {
     version: 1,
@@ -65,7 +65,7 @@ export async function startSession(
   request: SessionStartRequest,
   adapters: SessionDriveAdapters,
 ): Promise<SessionStartReply> {
-  const adapter = adapters[request.cli]
+  const adapter = adapters[request.harness]
   if (adapter === undefined) return sessionError('invalid-request', request.requestId)
   if (!adapter.turnSetupSchema.safeParse(request.setup).success) {
     return sessionError('invalid-request', request.requestId)
@@ -76,7 +76,7 @@ export async function startSession(
     setup: request.setup,
     attachments: request.attachments ?? [],
   })
-  if ('error' in result) return driveFailureReply(request.cli, result.error, request.requestId)
+  if ('error' in result) return driveFailureReply(request.harness, result.error, request.requestId)
   return {
     version: 1,
     type: 'session.started',

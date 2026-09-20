@@ -13,14 +13,14 @@
 import { stat } from 'node:fs/promises'
 import { rootOf } from '@/domains/sessions/contract/chains'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { createIndexedWindow } from '@/domains/sessions/main/session-index/indexed-window'
+import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
+import { pathOfIndexed } from '@/domains/sessions/main/session-index/window-pass'
 import type {
   IndexedTranscriptFile,
   SessionIndex,
   TranscriptFileIdentity,
-} from '@/domains/sessions/main/session-index/contract'
-import type { createIndexedWindow } from '@/domains/sessions/main/session-index/indexed-window'
-import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
-import { pathOfIndexed } from '@/domains/sessions/main/session-index/window-pass'
+} from '@/harnesses/session/session-index-contract'
 
 export type ResolvedIndexedIds = { rows: SessionRosterRow[]; unresolvedIds: string[] }
 
@@ -38,7 +38,7 @@ export async function resolveIndexedIds(
   ids: readonly string[],
 ): Promise<ResolvedIndexedIds> {
   await bound.ensureHydrated()
-  const { history, cli } = bound.pass.source
+  const { history, harness } = bound.pass.source
   const chainIds = new Set<string>()
   const unresolvedIds: string[] = []
   for (const id of ids) {
@@ -47,7 +47,7 @@ export async function resolveIndexedIds(
   }
   let indexedChainIds = chainIds
   if (chainIds.size > 0) {
-    const known = await index.filesOfChains(cli, [...chainIds])
+    const known = await index.filesOfChains(harness, [...chainIds])
     indexedChainIds = new Set(known.map((file) => file.chainId))
     for (const id of ids) {
       const chainId = rootOf(id, history.parents)
@@ -58,6 +58,7 @@ export async function resolveIndexedIds(
     )
     await reindexCandidates(bound.pass, identities, identities)
   }
-  const rows = indexedChainIds.size === 0 ? [] : await index.rowsOfChains(cli, [...indexedChainIds])
+  const rows =
+    indexedChainIds.size === 0 ? [] : await index.rowsOfChains(harness, [...indexedChainIds])
   return { rows, unresolvedIds }
 }

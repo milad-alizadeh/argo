@@ -1,14 +1,15 @@
 // Both CLI adapters' `SessionSource`s, wired to their drivers and the app's shared Session index.
 // Split from `session-bridges.ts` to keep that composition root short.
-import { renameClaudeSession } from '@/agents/claude/drive/rename-session'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { claudeProcessesRoot, claudeTranscriptsRoot } from '@/agents/claude/sessions/roots'
-import { renameCodexSession } from '@/agents/codex/drive/rename-session'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { codexStatePath, codexTranscriptsRoot } from '@/agents/codex/sessions/roots'
-import { codexThreadNames } from '@/agents/codex/sessions/state-store'
+
 import type { createSessionDrivers } from '@/domains/sessions/main/session-bridges'
 import type { openSessionIndexOrNone } from '@/domains/sessions/main/session-index/open-index'
+import { renameClaudeSession } from '@/harnesses/claude/drive/rename-session'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeProcessesRoot, claudeTranscriptsRoot } from '@/harnesses/claude/sessions/roots'
+import { renameCodexSession } from '@/harnesses/codex/drive/rename-session'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexStatePath, codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
+import { codexThreadNames } from '@/harnesses/codex/sessions/state-store'
 
 type SessionSourcesOptions = {
   home: string

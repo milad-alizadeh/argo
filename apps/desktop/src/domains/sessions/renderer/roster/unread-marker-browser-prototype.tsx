@@ -22,7 +22,7 @@ const ROWS = [
   {
     session: sessionRosterRow({
       id: 'running-read',
-      cli: 'codex',
+      harness: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'running',
@@ -33,7 +33,7 @@ const ROWS = [
   {
     session: sessionRosterRow({
       id: 'running-unread',
-      cli: 'claude',
+      harness: 'claude',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'running',
@@ -44,7 +44,7 @@ const ROWS = [
   {
     session: sessionRosterRow({
       id: 'idle-unread',
-      cli: 'codex',
+      harness: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'idle',
@@ -55,7 +55,7 @@ const ROWS = [
   {
     session: sessionRosterRow({
       id: 'idle-read',
-      cli: 'claude',
+      harness: 'claude',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'idle',
@@ -66,7 +66,7 @@ const ROWS = [
   {
     session: sessionRosterRow({
       id: 'blocked-unread',
-      cli: 'codex',
+      harness: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'managed',
       status: 'asking',

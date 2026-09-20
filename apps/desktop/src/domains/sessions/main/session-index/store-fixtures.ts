@@ -4,16 +4,16 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import type {
-  IndexedSessionChain,
-  IndexedTranscriptFile,
-  SessionIndexWrite,
-} from '@/domains/sessions/main/session-index/contract'
 import {
   createSessionIndexStore,
   type SessionIndexStore,
 } from '@/domains/sessions/main/session-index/store'
+import { managedRow } from '@/harnesses/session/managed-row'
+import type {
+  IndexedSessionChain,
+  IndexedTranscriptFile,
+  SessionIndexWrite,
+} from '@/harnesses/session/session-index-contract'
 
 export function storeHarness() {
   const opened: SessionIndexStore[] = []
@@ -48,7 +48,7 @@ export function storeHarness() {
 export function rowFor(id: string, updatedAt: string, cwd = '/work/one'): SessionRosterRow {
   return {
     ...managedRow(id, {
-      cli: 'claude',
+      harness: 'claude',
       cwd,
       status: 'idle',
       setup: { model: null, effort: null, mode: null },

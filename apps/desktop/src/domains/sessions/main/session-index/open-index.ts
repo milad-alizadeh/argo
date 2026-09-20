@@ -5,9 +5,9 @@
 // changing, which is why the port is asynchronous already.
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 import { recoverableIndexOperation } from '@/domains/sessions/main/session-index/recovery'
 import { createSessionIndexStore } from '@/domains/sessions/main/session-index/store'
+import type { SessionIndex } from '@/harnesses/session/session-index-contract'
 
 // Everything here is rebuilt from the transcripts that remain the authoritative store, so it sits
 // beside `portable-v1` rather than inside it: nothing in this directory is the user's to keep.
@@ -30,19 +30,22 @@ export function openSessionIndex(databasePath: string): SessionIndex {
   mkdirSync(path.dirname(databasePath), { recursive: true })
   const store = createSessionIndexStore(databasePath)
   return {
-    filesAt: async (cli, paths) => recoverableIndexOperation(() => store.filesAt(cli, paths)),
-    filesOfChains: async (cli, chainIds) =>
-      recoverableIndexOperation(() => store.filesOfChains(cli, chainIds)),
-    rowsOfChains: async (cli, chainIds) =>
-      recoverableIndexOperation(() => store.rowsOfChains(cli, chainIds)),
-    searchChains: async (cli, query) =>
-      recoverableIndexOperation(() => store.searchChains(cli, query)),
-    chainLinks: async (cli) => recoverableIndexOperation(() => store.chainLinks(cli)),
-    strandedChains: async (cli) => recoverableIndexOperation(() => store.strandedChains(cli)),
-    write: async (cli, pass) => recoverableIndexOperation(() => store.write(cli, pass)),
-    backfillProgress: async (cli) => recoverableIndexOperation(() => store.backfillProgress(cli)),
-    setBackfillProgress: async (cli, progress) =>
-      recoverableIndexOperation(() => store.setBackfillProgress(cli, progress)),
+    filesAt: async (harness, paths) =>
+      recoverableIndexOperation(() => store.filesAt(harness, paths)),
+    filesOfChains: async (harness, chainIds) =>
+      recoverableIndexOperation(() => store.filesOfChains(harness, chainIds)),
+    rowsOfChains: async (harness, chainIds) =>
+      recoverableIndexOperation(() => store.rowsOfChains(harness, chainIds)),
+    searchChains: async (harness, query) =>
+      recoverableIndexOperation(() => store.searchChains(harness, query)),
+    chainLinks: async (harness) => recoverableIndexOperation(() => store.chainLinks(harness)),
+    strandedChains: async (harness) =>
+      recoverableIndexOperation(() => store.strandedChains(harness)),
+    write: async (harness, pass) => recoverableIndexOperation(() => store.write(harness, pass)),
+    backfillProgress: async (harness) =>
+      recoverableIndexOperation(() => store.backfillProgress(harness)),
+    setBackfillProgress: async (harness, progress) =>
+      recoverableIndexOperation(() => store.setBackfillProgress(harness, progress)),
     close: async () => store.close(),
   }
 }

@@ -28,7 +28,7 @@ import {
   MarkdownTypingShortcutPlugin,
 } from '@/domains/sessions/renderer/composer/session-composer-markdown'
 import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 
 function editorState(text: string) {
@@ -60,7 +60,7 @@ function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {
 }
 
 export function ComposerEditor({
-  cli = null,
+  harness = null,
   contextPickerOpen,
   draft,
   editorRef,
@@ -69,7 +69,7 @@ export function ComposerEditor({
   onSend,
   tickets,
 }: {
-  cli?: SessionCli | null
+  harness?: SessionHarness | null
   contextPickerOpen: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
@@ -117,14 +117,14 @@ export function ComposerEditor({
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
-      <ComposerReferencePlugin cli={cli} />
+      <ComposerReferencePlugin harness={harness} />
       <ComposerTicketReferencePlugin tickets={tickets} />
       <HorizontalRulePlugin />
       <MarkdownPastePlugin />
       <EditorRefPlugin editorRef={editorRef} />
       <FocusOnMountPlugin enabled={focusOnMount} />
       <SendOnEnterPlugin onSend={onSend} />
-      <ComposerReferenceMenuPlugin cli={cli} disabled={contextPickerOpen} draft={draft} />
+      <ComposerReferenceMenuPlugin harness={harness} disabled={contextPickerOpen} draft={draft} />
     </LexicalComposer>
   )
 }

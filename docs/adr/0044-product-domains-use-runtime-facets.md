@@ -57,3 +57,10 @@ entry points contain wiring only.
 
 Each later migration can move one domain without moving the complete application. The boundary
 checker applies to every domain as soon as that domain enters `src/domains`.
+
+## Amendment · harness adapters (#2453) · 2026-09-20
+
+A harness adapter is a port adapter, not a product domain. It lives under
+`apps/desktop/src/harnesses/<harness>/`, beside the harness-specific filesystem layout and parser.
+The main composition root registers adapters. An adapter may depend on the Session contract but not
+on Sessions main internals, and renderer code reaches adapter-owned values through that contract.

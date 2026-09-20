@@ -1,6 +1,6 @@
 import {
   driveSessionError,
-  isDriveCli,
+  isDriveHarness,
   type SessionRenameRequest,
   sessionError,
 } from '@/domains/sessions/contract/contract'
@@ -22,7 +22,6 @@ import {
   workspaceFileRead,
 } from '@/domains/sessions/main/reads'
 import { searchRead } from '@/domains/sessions/main/search-reads'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
 import {
   connectTicketReply,
   disconnectTicketReply,
@@ -31,8 +30,9 @@ import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '@/domains/tickets/main/session-links'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
-export type { FeedOverlay, SessionSource } from '@/domains/sessions/main/session-source'
+export type { FeedOverlay, SessionSource } from '@/harnesses/session/session-source'
 
 function createOwnerResolver(sources: SessionSource[]) {
   const owners = new Map<string, SessionSource>()
@@ -42,8 +42,9 @@ function createOwnerResolver(sources: SessionSource[]) {
   const ownerFor = async (sessionId: string) => {
     const managed = managedOwner(sessionId)
     if (managed !== undefined) return managed
-    const cli = lastDiscoveredCli.get(sessionId)
-    const discovered = cli === undefined ? undefined : sources.find((source) => source.cli === cli)
+    const harness = lastDiscoveredCli.get(sessionId)
+    const discovered =
+      harness === undefined ? undefined : sources.find((source) => source.harness === harness)
     if (discovered !== undefined) return discovered
     const known = owners.get(sessionId)
     if (known !== undefined) return known
@@ -55,10 +56,10 @@ function createOwnerResolver(sources: SessionSource[]) {
     }
     return undefined
   }
-  const rememberDiscoveries = (sessions: { id: string; cli: string }[]) => {
+  const rememberDiscoveries = (sessions: { id: string; harness: string }[]) => {
     lastDiscoveredCli.clear()
     for (const session of sessions) {
-      if (!lastDiscoveredCli.has(session.id)) lastDiscoveredCli.set(session.id, session.cli)
+      if (!lastDiscoveredCli.has(session.id)) lastDiscoveredCli.set(session.id, session.harness)
     }
   }
   return {
@@ -72,14 +73,14 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
   const owner = await ownerFor(request.sessionId)
   if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
-    const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
-    return driveSessionError('not-drivable', cli, request.requestId)
+    const harness = isDriveHarness(owner.harness) ? owner.harness : 'claude'
+    return driveSessionError('not-drivable', harness, request.requestId)
   }
   return owner.rename(request)
 }
 
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
-// driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
+// driver reports, the `harness` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
 export function createSessionReader(
   sources: SessionSource[],
@@ -95,7 +96,7 @@ export function createSessionReader(
   return {
     async ownerCliFor(sessionId) {
       const owner = await ownership.ownerFor(sessionId)
-      return owner?.cli
+      return owner?.harness
     },
     listSessions: (request) => listReply(sources, ownership, { ticketLinks, archive, request }),
     connectTicket: (request) => connectTicketReply(ticketLinks, request),

@@ -16,7 +16,7 @@ afterEach(rosters.cleanUp)
 // is held to is the claim underneath it, that a warm page opens no transcript at all.
 const onTheReferenceMachine = process.env.CI === undefined
 
-describe.each(indexedAdapters)('the $cli warm Roster page', (adapter) => {
+describe.each(indexedAdapters)('the $harness warm Roster page', (adapter) => {
   test('opens no transcript over 4,000 of them, inside the budget', async () => {
     const { root, list } = await rosters.listing(adapter)
     await adapter.write(root, manyTranscripts(4_000))

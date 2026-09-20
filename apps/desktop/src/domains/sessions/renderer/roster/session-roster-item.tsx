@@ -5,9 +5,9 @@ import { SessionReferenceText } from '@/domains/sessions/renderer/composer/refer
 import { useLiveActivityText } from '@/domains/sessions/renderer/feed/live-activity-text'
 import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
 import {
-  SESSION_CLIS,
-  type SessionCli,
-  sessionCliOf,
+  SESSION_HARNESSES,
+  type SessionHarness,
+  sessionHarnessOf,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import { PromptText } from '@/domains/sessions/renderer/prompt/prompt-text'
 import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
@@ -37,8 +37,8 @@ function selectionModifierOf(event: {
   return 'plain'
 }
 
-function knownCli(cli: string): cli is SessionCli {
-  return (SESSION_CLIS as readonly string[]).includes(cli)
+function knownCli(harness: string): harness is SessionHarness {
+  return (SESSION_HARNESSES as readonly string[]).includes(harness)
 }
 
 // The same line the Feed's live tail draws, as still text: the shimmer is the Feed's.
@@ -125,7 +125,7 @@ export function SessionRosterItem({
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
           <span className="roster-harness-mark">
-            {knownCli(session.cli) ? <HarnessLogo cli={session.cli} /> : null}
+            {knownCli(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
           </span>
           <span
             className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${unreadPrototype === null ? STATUS_MARKS[session.status] : prototypeDot}`}
@@ -140,7 +140,7 @@ export function SessionRosterItem({
               <PromptText
                 interactiveLinks={false}
                 renderText={(value) => (
-                  <SessionReferenceText cli={sessionCliOf(session)} text={value} />
+                  <SessionReferenceText harness={sessionHarnessOf(session)} text={value} />
                 )}
                 text={sessionName(session, t('newSession'))}
               />

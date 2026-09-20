@@ -12,7 +12,7 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
   const started = await page.evaluate(
     ({ cwd, prompt }) =>
       window.argo.startSession({
-        cli: 'claude',
+        harness: 'claude',
         cwd,
         prompt,
         setup: { model: 'opus', effort: 'medium', mode: 'manual' },
@@ -22,7 +22,7 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
   assert.equal(started.type, 'session.started')
   const sessionId = started.sessionId
   const transcript = path.join(transcripts, 'mock-claude', `${sessionId}.jsonl`)
-  await waitFor(() => backend.recorded({ cli: 'claude', prompt }))
+  await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
 
   const [beforeRename] = await rosterRow(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })

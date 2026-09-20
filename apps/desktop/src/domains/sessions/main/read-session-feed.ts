@@ -13,7 +13,7 @@ import type { FeedProjectionState } from '@/domains/sessions/main/feed-increment
 import { createFeedReads, isAbortError } from '@/domains/sessions/main/feed-reads'
 import { type OwnerFor, readFailure } from '@/domains/sessions/main/read-declaration'
 import { readFeedWithOverlay, readOwnedFeed } from '@/domains/sessions/main/read-owned-feed'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 type Ownership = {
   ownerFor: OwnerFor

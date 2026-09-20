@@ -6,20 +6,20 @@
 import type { ChainHistory, SessionChain } from '@/domains/sessions/contract/chains'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
+import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
+import { chainsInWindow } from '@/domains/sessions/main/session-index/window-pass'
 import type {
   SessionIndex,
   TranscriptFileIdentity,
   TranscriptPath,
-} from '@/domains/sessions/main/session-index/contract'
-import { reindexCandidates } from '@/domains/sessions/main/session-index/reindex-pass'
-import { chainsInWindow } from '@/domains/sessions/main/session-index/window-pass'
+} from '@/harnesses/session/session-index-contract'
 
 export type ReadTranscripts = (
   paths: readonly TranscriptPath[],
 ) => Promise<{ files: TranscriptFile[]; unreadablePaths: string[] }>
 
 export type IndexedWindowSource = {
-  cli: string
+  harness: string
   // Enumerate every transcript and stat it, newest first. Opens none of them.
   identities: (root: string) => Promise<TranscriptFileIdentity[]>
   readTranscripts: ReadTranscripts
@@ -51,7 +51,7 @@ export function hydratedHistory(source: IndexedWindowSource, index: SessionIndex
   // so this is what keeps a chain's id stable across a restart rather than promoting a resumed
   // half to a root the moment its origin falls outside the window (#2290).
   async function hydrate() {
-    for (const link of await index.chainLinks(source.cli)) {
+    for (const link of await index.chainLinks(source.harness)) {
       source.history.knownIds.add(link.sessionId)
       const parent = link.parentSessionId
       if (parent !== null) source.history.parents.set(link.sessionId, parent)
@@ -78,7 +78,7 @@ export function createIndexedWindow(source: IndexedWindowSource, index: SessionI
     const unreadable = window.filter((file) => reindexed.unreadablePaths.includes(file.path)).length
     return {
       rows: await index.rowsOfChains(
-        source.cli,
+        source.harness,
         chainsInWindow(window, reindexed.held, reindexed.owners),
       ),
       filesFound: listing.length,

@@ -1,19 +1,19 @@
 // Each Session case declares its state with `test.use` and launches against its own root (#2326).
 import type { TestInfo } from '@playwright/test'
 import type { BrowserContext } from 'playwright-core'
-import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
+import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
 import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
-import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
+import { createRealSessionHarnessBackend } from './real-harness/real-session-harness-backend'
 import type { SessionBackendOptions } from './session-backend-option'
-import type { SessionCliBackend, SessionFixture } from './session-cli-backend'
+import type { SessionFixture, SessionHarnessBackend } from './session-harness-backend'
 
 const BACKENDS = {
-  mock: createMockSessionCliBackend,
-  real: createRealSessionCliBackend,
-} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionCliBackend>
+  mock: createMockSessionHarnessBackend,
+  real: createRealSessionHarnessBackend,
+} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionHarnessBackend>
 
 export type SessionOptions = {
   // The Roster shows only for a selected Project (#2307), so every case but the empty-window one wants it.
@@ -25,7 +25,7 @@ export type SessionOptions = {
 }
 
 export type SessionFixtures = SessionOptions & {
-  backend: SessionCliBackend
+  backend: SessionHarnessBackend
   sessionFixture: SessionFixture
   session: PackagedSession
 }
@@ -44,7 +44,7 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
-// `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
+// `real` drives the signed-in local HARNESSES, so only the opt-in `real-sessions` project sets it.
 export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>({
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
   projectSelected: [true, { option: true }],

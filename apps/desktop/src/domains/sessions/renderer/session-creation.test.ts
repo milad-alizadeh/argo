@@ -50,7 +50,7 @@ test('resolving moves the row to the real Session id, still pending confirmation
   expect(useSessionCreationStore.getState().pending).toEqual({
     stage: 'reconciling',
     id: 'session-real',
-    cli: 'claude',
+    harness: 'claude',
     cwd: '/argo',
     prompt: 'hello',
   })

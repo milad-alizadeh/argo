@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
+import { ROSTER_PAGE_SIZE } from '@/harnesses/session/discover-transcript-sessions'
 import {
   mockDiscoverer,
   mockRoot,

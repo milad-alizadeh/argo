@@ -33,7 +33,7 @@ export const rosterRowFields = [
     'empty',
     'observed',
   ]),
-  field(['cli', () => identifierSchema, ({ cli }) => cli, 'session', 'observed']),
+  field(['harness', () => identifierSchema, ({ harness }) => harness, 'session', 'observed']),
   field(['posture', () => sessionPostureSchema, () => 'external', 'managed', 'held']),
   field([
     'title',

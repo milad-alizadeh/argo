@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
 import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/contract'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -61,11 +61,11 @@ export function useSessionMutations() {
   const start = useMutation<
     SessionStarted,
     SessionContractError,
-    Turn & { cli: SessionCli; cwd: string }
+    Turn & { harness: SessionHarness; cwd: string }
   >({
-    mutationFn: async ({ cli, cwd, prompt, setup, attachments }) => {
+    mutationFn: async ({ harness, cwd, prompt, setup, attachments }) => {
       const reply = await window.argo.startSession({
-        cli,
+        harness,
         cwd,
         prompt,
         setup: setup ?? undefined,

@@ -3,7 +3,7 @@
 // what the batch finds changed, is `backfill-window.vitest.ts` because it needs the real index.
 import { describe, expect, test } from 'vitest'
 import { nextBackfillSlice } from '@/domains/sessions/main/session-index/backfill-pass'
-import type { TranscriptFileIdentity } from '@/domains/sessions/main/session-index/contract'
+import type { TranscriptFileIdentity } from '@/harnesses/session/session-index-contract'
 
 function identityAt(
   minutesAgo: number,

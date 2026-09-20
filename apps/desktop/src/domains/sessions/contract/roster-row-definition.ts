@@ -24,7 +24,7 @@ export type ManagedRosterSeed = {
   session: Omit<
     Pick<
       SessionRosterRow,
-      | 'cli'
+      | 'harness'
       | 'compactionPercentage'
       | 'compactionStartedAt'
       | 'compactionTokens'

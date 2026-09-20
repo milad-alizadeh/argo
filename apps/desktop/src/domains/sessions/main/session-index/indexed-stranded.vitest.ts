@@ -11,7 +11,7 @@ afterEach(rosters.cleanUp)
 const origin = sessionIdAt(1)
 const resumed = sessionIdAt(0)
 
-describe.each(indexedAdapters)('the $cli index and a stranded resume', (adapter) => {
+describe.each(indexedAdapters)('the $harness index and a stranded resume', (adapter) => {
   test('joins a resumed half to the origin that arrives after it was indexed', async () => {
     const { root, list } = await rosters.listing(adapter)
     await adapter.write(root, [

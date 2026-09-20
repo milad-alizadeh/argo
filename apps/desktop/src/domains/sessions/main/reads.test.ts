@@ -15,7 +15,7 @@ import {
   owningSource,
   type Reply,
 } from '@/domains/sessions/main/reads-failure-cases'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
 

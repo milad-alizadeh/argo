@@ -6,7 +6,7 @@ import { SessionComposer } from '@/domains/sessions/renderer/composer/session-co
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -113,7 +113,7 @@ function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
 }
 
 // Closing the composer stands in for leaving the Session page and coming back to it.
-function ClosableComposerStory({ cli = 'claude' }: { cli?: SessionCli }) {
+function ClosableComposerStory({ harness = 'claude' }: { harness?: SessionHarness }) {
   const [open, setOpen] = useState(true)
   const [sent, setSent] = useState<string | null>(null)
 
@@ -124,7 +124,7 @@ function ClosableComposerStory({ cli = 'claude' }: { cli?: SessionCli }) {
       </Button>
       {open ? (
         <SessionComposer
-          harness={{ cli }}
+          harness={{ harness }}
           onSend={async (text) => {
             setSent(text)
             return true
@@ -289,7 +289,7 @@ function CodexComposerStory() {
   return (
     <>
       <SessionComposer
-        harness={{ cli: 'codex' }}
+        harness={{ harness: 'codex' }}
         onSend={async (text) => {
           setSent(text)
           return true
@@ -303,16 +303,16 @@ function CodexComposerStory() {
   )
 }
 
-function NewSessionCliStory() {
-  const [cli, setCli] = useState<SessionCli>('claude')
+function NewSessionHarnessStory() {
+  const [harness, setCli] = useState<SessionHarness>('claude')
   const [started, setStarted] = useState<string | null>(null)
 
   return (
     <>
       <SessionComposer
-        harness={{ cli, onChange: setCli }}
+        harness={{ harness, onChange: setCli }}
         onSend={async (text) => {
-          setStarted(`${cli}: ${text}`)
+          setStarted(`${harness}: ${text}`)
           return true
         }}
         plan={null}
@@ -351,7 +351,7 @@ function SetupComposerStory({
           return true
         }}
         sessionId={sessionId}
-        harness={{ cli: 'claude' }}
+        harness={{ harness: 'claude' }}
         setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
       />
       <output data-testid="sent-messages">{sent.join(' · ')}</output>
@@ -649,7 +649,7 @@ export const CodexUnsupportedReferenceIsHonest: Story = {
 // #1887: leaving and returning to a Codex Session restores the exact draft, unsupported
 // reference included, not a document that lost its honest state along the way.
 export const CodexDraftRestoresUnsupportedReference: Story = {
-  render: () => <ClosableComposerStory cli="codex" />,
+  render: () => <ClosableComposerStory harness="codex" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
@@ -837,7 +837,7 @@ export const NarrowShowsModelAndEffort: Story = {
 }
 
 export const NewSessionChoosesCli: Story = {
-  render: () => <NewSessionCliStory />,
+  render: () => <NewSessionHarnessStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })

@@ -5,7 +5,7 @@ import { mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TranscriptRecord } from '../../src/domains/sessions/contract/transcript'
-import { createTranscriptDiscoverer } from '../../src/domains/sessions/main/discover-transcript-sessions'
+import { createTranscriptDiscoverer } from '../../src/harnesses/session/discover-transcript-sessions'
 
 export type MockTranscript = {
   root: string
@@ -78,7 +78,7 @@ function parseMockLine(line: string): TranscriptRecord | null {
 // `onLine` sees every transcript line the engine reads, so a test can state how much it read.
 export function mockDiscoverer(onLine: (line: string) => void = () => {}) {
   return createTranscriptDiscoverer({
-    cli: 'mock',
+    harness: 'mock',
     parse: (line) => {
       onLine(line)
       return parseMockLine(line)

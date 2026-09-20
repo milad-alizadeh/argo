@@ -10,9 +10,9 @@ import type {
   SessionSkillRequest,
   SessionSubagentUsageRequest,
 } from '@/domains/sessions/contract/contract'
+import type { SessionSource } from '@/harnesses/session/session-source'
 import { fromNothing, fromOwner, MISSING_SESSION } from './read-declaration'
 import { skillFileContent } from './read-skill-file'
-import type { SessionSource } from './session-source'
 import { fileInWorkspace } from './workspace-file'
 
 // The workspace one Session ran in, as its last record named it.

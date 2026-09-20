@@ -3,26 +3,15 @@
 // call per domain (ADR-0021).
 import path from 'node:path'
 import { type BrowserWindow, powerMonitor } from 'electron'
-import { installCompactionHook } from '@/agents/claude/compaction/compaction-hook'
-import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
-import { createSystemClaudeSessionDriver } from '@/agents/claude/drive/system-claude-session-driver'
 import {
-  claudeCompactionStartsRoot,
-  claudeSettingsPath,
-  claudeTranscriptsRoot,
-} from '@/agents/claude/sessions/roots'
-import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
-import { createSystemCodexSessionDriver } from '@/agents/codex/drive/system-codex-session-driver'
-import { codexTranscriptsRoot } from '@/agents/codex/sessions/roots'
+  SESSION_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CODEX_EXECUTABLE_ENV,
+} from '@/domains/sessions/contract/proof-protocol'
 import {
   createSessionArchiveStore,
   sessionArchivePath,
 } from '@/domains/sessions/main/archive-store'
 import { attachSessionBridge } from '@/domains/sessions/main/bridge'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CODEX_EXECUTABLE_ENV,
-} from '@/domains/sessions/main/proof-protocol'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   reconcileSessions,
@@ -33,6 +22,17 @@ import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-ind
 import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
 import { sessionSources } from '@/domains/sessions/main/session-sources'
 import { createSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { installCompactionHook } from '@/harnesses/claude/compaction/compaction-hook'
+import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import { createSystemClaudeSessionDriver } from '@/harnesses/claude/drive/system-claude-session-driver'
+import {
+  claudeCompactionStartsRoot,
+  claudeSettingsPath,
+  claudeTranscriptsRoot,
+} from '@/harnesses/claude/sessions/roots'
+import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
+import { createSystemCodexSessionDriver } from '@/harnesses/codex/drive/system-codex-session-driver'
+import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -108,7 +108,7 @@ export function attachSessions(
     },
     rendererURL,
   })
-  // A Session written by a CLI outside Argo reaches the roster because the trees the CLIs write to
+  // A Session written by a CLI outside Argo reaches the roster because the trees the HARNESSES write to
   // are watched, not because the roster re-reads them on a timer. A Permission is the same idea off
   // disk: the gate that holds the CLI's hook open is what tells the screen (#2299). The archive
   // store stands beside the transcripts: the roster and the Archived list are both read out of it.

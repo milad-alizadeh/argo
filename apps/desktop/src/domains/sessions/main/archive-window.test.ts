@@ -5,17 +5,20 @@ import { mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeRoot, writeManySessions } from '@/agents/claude/integration/session-window-fixture'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { sessionArchiveListReplySchema } from '@/domains/sessions/contract/contract'
 import { ARCHIVE_PAGE_LIMIT } from '@/domains/sessions/main/archive-reads'
 import {
   createSessionArchiveStore,
   sessionArchivePath,
 } from '@/domains/sessions/main/archive-store'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import {
+  claudeRoot,
+  writeManySessions,
+} from '@/harnesses/claude/integration/session-window-fixture'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { ROSTER_PAGE_SIZE } from '@/harnesses/session/discover-transcript-sessions'
 
 const ROOT_ID = 'archivedRoot'
 const RESUMED_ID = 'resumedFromArchivedRoot'

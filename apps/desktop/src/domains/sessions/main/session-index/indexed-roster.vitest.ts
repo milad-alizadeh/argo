@@ -1,4 +1,4 @@
-// The Roster served from the Session index, over both CLIs' real adapters (#2372). Node runs
+// The Roster served from the Session index, over both HARNESSES' real adapters (#2372). Node runs
 // these rather than Bun, which ships no `node:sqlite`; `apps/desktop/AGENTS.md` says why. The
 // warm-page budget over a large tree is `indexed-roster-budget.vitest.ts`.
 import { afterEach, describe, expect, test } from 'vitest'
@@ -12,7 +12,7 @@ import { rosterHarness } from '@/domains/sessions/main/session-index/roster-harn
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)
 
-describe.each(indexedAdapters)('the $cli Roster read through the Session index', (adapter) => {
+describe.each(indexedAdapters)('the $harness Roster read through the Session index', (adapter) => {
   test('opens no transcript file on a second read of an unchanged window', async () => {
     const { root, list } = await rosters.listing(adapter)
     await adapter.write(root, manyTranscripts(3))
@@ -58,12 +58,12 @@ describe.each(indexedAdapters)('the $cli Roster read through the Session index',
       title: changed?.title?.text,
       updatedAt: changed?.updatedAt,
       cwd: changed?.cwd,
-      cli: changed?.cli,
+      harness: changed?.harness,
     }).toEqual({
       title: 'Rewritten.',
       updatedAt: '2026-09-13T18:00:00.000Z',
       cwd: '/moved',
-      cli: adapter.cli,
+      harness: adapter.harness,
     })
     expect(after.sessions[0]?.id).toBe(moved)
     expect(after.filesParsed).toBe(1)

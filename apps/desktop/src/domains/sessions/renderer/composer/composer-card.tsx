@@ -103,7 +103,7 @@ export function ComposerCard({
           attachments={attachments}
           contextPickerOpen={contextPickerOpen}
           tickets={tickets}
-          cli={harness?.cli ?? null}
+          harness={harness?.harness ?? null}
           draft={draft}
           editorRef={editorRef}
           focusOnMount={focusOnMount}
@@ -138,7 +138,7 @@ export function ComposerCard({
         <SessionContextBar
           contextTokens={contextTokens}
           contextWindowTokens={contextWindowTokens}
-          harness={harness?.cli}
+          harness={harness?.harness}
           isCompacting={isCompacting}
           isHandingOff={isHandingOff}
           onCompact={onCompact}

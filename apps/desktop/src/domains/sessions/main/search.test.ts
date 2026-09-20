@@ -6,8 +6,6 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/contract'
 import {
   createSessionArchiveStore,
@@ -16,10 +14,12 @@ import {
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import { indexedAdapters, sessionIdAt } from '@/domains/sessions/main/session-index/roster-fixtures'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
-function adapter(cli: string) {
-  const found = indexedAdapters.find((candidate) => candidate.cli === cli)
-  if (found === undefined) throw new Error(`missing ${cli} adapter fixture`)
+function adapter(harness: string) {
+  const found = indexedAdapters.find((candidate) => candidate.harness === harness)
+  if (found === undefined) throw new Error(`missing ${harness} adapter fixture`)
   return found
 }
 

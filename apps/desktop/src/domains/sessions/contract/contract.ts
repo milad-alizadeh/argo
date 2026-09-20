@@ -28,7 +28,7 @@ export const sessionStartRequestSchema = z
     version: z.literal(1),
     type: z.literal('session.start'),
     requestId: identifierSchema,
-    cli: z.string().min(1),
+    harness: z.string().min(1),
     cwd: z.string().min(1),
     prompt: z.string(),
     setup: z.unknown().optional(),

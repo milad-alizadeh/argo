@@ -6,7 +6,7 @@
 // Bumped whenever a table below changes shape or a parser changes what a cached Roster row says:
 // `row_json` is keyed by file identity, so an unchanged file keeps the old projection until the
 // index is discarded. An index at any other version is discarded.
-export const SESSION_INDEX_VERSION = 4
+export const SESSION_INDEX_VERSION = 5
 
 // One row per transcript file Argo has parsed, keyed by the identity that says whether it changed:
 // path, modification time and size together, because a file appended to inside one mtime tick
@@ -28,41 +28,41 @@ export const SESSION_INDEX_VERSION = 4
 // resumes from where the last batch stopped instead of reading the whole tree again (#2373).
 export const SESSION_INDEX_SCHEMA = `
 CREATE TABLE transcript_file (
-  cli TEXT NOT NULL,
+  harness TEXT NOT NULL,
   path TEXT NOT NULL,
   session_id TEXT NOT NULL,
   written_at REAL NOT NULL,
   size INTEGER NOT NULL,
   chain_id TEXT NOT NULL,
-  PRIMARY KEY (cli, path)
+  PRIMARY KEY (harness, path)
 ) STRICT;
-CREATE INDEX transcript_file_chain ON transcript_file (cli, chain_id);
+CREATE INDEX transcript_file_chain ON transcript_file (harness, chain_id);
 
 CREATE TABLE session_chain (
-  cli TEXT NOT NULL,
+  harness TEXT NOT NULL,
   chain_id TEXT NOT NULL,
   updated_at TEXT,
   origin_unread INTEGER NOT NULL,
   row_json TEXT NOT NULL,
-  PRIMARY KEY (cli, chain_id)
+  PRIMARY KEY (harness, chain_id)
 ) STRICT;
 
 CREATE VIRTUAL TABLE session_search USING fts5(
-  cli UNINDEXED,
+  harness UNINDEXED,
   chain_id UNINDEXED,
   text,
   tokenize = 'unicode61'
 );
 
 CREATE TABLE chain_link (
-  cli TEXT NOT NULL,
+  harness TEXT NOT NULL,
   session_id TEXT NOT NULL,
   parent_session_id TEXT,
-  PRIMARY KEY (cli, session_id)
+  PRIMARY KEY (harness, session_id)
 ) STRICT;
 
 CREATE TABLE backfill_progress (
-  cli TEXT PRIMARY KEY,
+  harness TEXT PRIMARY KEY,
   boundary_written_at REAL,
   boundary_path TEXT,
   complete INTEGER NOT NULL

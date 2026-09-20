@@ -9,13 +9,13 @@ import type {
   ComposerAttachment,
   ComposerTicketContext,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 export function ComposerEditorArea({
   attachments,
   contextPickerOpen,
   tickets,
-  cli,
+  harness,
   draft,
   editorRef,
   focusOnMount,
@@ -28,7 +28,7 @@ export function ComposerEditorArea({
   attachments: ComposerAttachment[]
   contextPickerOpen: boolean
   tickets: ComposerTicketContext[]
-  cli: SessionCli | null
+  harness: SessionHarness | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -47,7 +47,7 @@ export function ComposerEditorArea({
       <div className="relative min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
-          cli={cli}
+          harness={harness}
           contextPickerOpen={contextPickerOpen}
           draft={draft}
           editorRef={editorRef}

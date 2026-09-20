@@ -4,8 +4,8 @@ import {
   type SessionListReply,
   sessionError,
 } from '@/domains/sessions/contract/contract'
-import type { TranscriptDiscovery } from '@/domains/sessions/main/discover-transcript-sessions'
 import { encodeRosterCursor, type RosterCursorMap } from '@/domains/sessions/main/roster-cursor'
+import type { TranscriptDiscovery } from '@/harnesses/session/discover-transcript-sessions'
 
 export type Discovered = TranscriptDiscovery | { error: SessionError }
 
@@ -14,12 +14,12 @@ export function isDiscoveryError(discovered: Discovered): discovered is { error:
 }
 
 // Today's aggregation, kept: the Sessions and counts of every adapter that answered, and the
-// first adapter's error only when every adapter failed. `clis` is `discovered`'s own sources, in
+// first adapter's error only when every adapter failed. `harnesses` is `discovered`'s own sources, in
 // the same order, so each adapter's `nextCursor` can be named in the merged cursor (#2239) without
 // `TranscriptDiscovery` itself needing to carry the adapter's name.
 export function combineDiscoveries(
   discovered: Discovered[],
-  clis: readonly string[],
+  harnesses: readonly string[],
   requestId: string,
 ): SessionListReply {
   const successful = discovered.filter(
@@ -33,8 +33,8 @@ export function combineDiscoveries(
   }
   const cursors: RosterCursorMap = {}
   for (const [index, reading] of discovered.entries()) {
-    const cli = clis[index]
-    if (cli !== undefined && !isDiscoveryError(reading)) cursors[cli] = reading.nextCursor
+    const harness = harnesses[index]
+    if (harness !== undefined && !isDiscoveryError(reading)) cursors[harness] = reading.nextCursor
   }
   return {
     version: 1,

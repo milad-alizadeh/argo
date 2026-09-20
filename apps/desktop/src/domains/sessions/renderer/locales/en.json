@@ -136,8 +136,8 @@
     },
     "references": {
       "label": "References",
-      "unavailable": "Not available for {{cli}}",
-      "badgeUnavailable": " — not available for {{cli}}"
+      "unavailable": "Not available for {{harness}}",
+      "badgeUnavailable": " — not available for {{harness}}"
     },
     "taskPlan": {
       "triggerEmpty": "Plan empty",

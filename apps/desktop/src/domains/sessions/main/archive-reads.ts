@@ -17,7 +17,7 @@ import { isArchivedSession } from '@/domains/sessions/main/archive-store'
 import { growWindow } from '@/domains/sessions/main/archive-window'
 import { fromContext, type ReadContext } from '@/domains/sessions/main/read-declaration'
 import { rosterCursorMapSchema } from '@/domains/sessions/main/roster-cursor'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 // A page's worth of Archived Sessions, read on demand rather than on every poll (#1593).
 export const ARCHIVE_PAGE_LIMIT = 20

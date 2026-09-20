@@ -25,7 +25,7 @@ import { createDomainClient } from '@/shared/ipc/client'
 
 export type SessionClient = {
   startSession(request: {
-    cli: string
+    harness: string
     cwd: string
     prompt: string
     setup?: unknown

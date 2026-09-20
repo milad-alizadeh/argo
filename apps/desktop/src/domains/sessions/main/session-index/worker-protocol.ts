@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { sessionRosterRowSchema } from '@/domains/sessions/contract/models'
 
-const cliSchema = z.string().min(1)
+const harnessSchema = z.string().min(1)
 const identifiersSchema = z.array(z.string().min(1))
 const indexedFileSchema = z.strictObject({
   path: z.string().min(1),
@@ -51,47 +51,47 @@ export const sessionIndexWorkerRequestSchema = z.discriminatedUnion('operation',
   z.strictObject({
     ...requestHeader,
     operation: z.literal('filesAt'),
-    args: z.tuple([cliSchema, identifiersSchema]),
+    args: z.tuple([harnessSchema, identifiersSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('filesOfChains'),
-    args: z.tuple([cliSchema, identifiersSchema]),
+    args: z.tuple([harnessSchema, identifiersSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('rowsOfChains'),
-    args: z.tuple([cliSchema, identifiersSchema]),
+    args: z.tuple([harnessSchema, identifiersSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('searchChains'),
-    args: z.tuple([cliSchema, z.string()]),
+    args: z.tuple([harnessSchema, z.string()]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('chainLinks'),
-    args: z.tuple([cliSchema]),
+    args: z.tuple([harnessSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('strandedChains'),
-    args: z.tuple([cliSchema]),
+    args: z.tuple([harnessSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('write'),
-    args: z.tuple([cliSchema, indexWriteSchema]),
+    args: z.tuple([harnessSchema, indexWriteSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('backfillProgress'),
-    args: z.tuple([cliSchema]),
+    args: z.tuple([harnessSchema]),
   }),
   z.strictObject({
     ...requestHeader,
     operation: z.literal('setBackfillProgress'),
-    args: z.tuple([cliSchema, backfillProgressSchema]),
+    args: z.tuple([harnessSchema, backfillProgressSchema]),
   }),
 ])
 export type SessionIndexWorkerRequest = z.infer<typeof sessionIndexWorkerRequestSchema>

@@ -1,4 +1,4 @@
-// Session journeys on the project's backend: `sessions` runs the mock, `real-sessions` the CLIs (#2308).
+// Session journeys on the project's backend: `sessions` runs the mock, `real-sessions` the HARNESSES (#2308).
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'

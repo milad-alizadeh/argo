@@ -1,11 +1,11 @@
-// The two CLIs' transcripts, written the way each CLI writes them, so one indexed-Roster proof
+// The two HARNESSES' transcripts, written the way each CLI writes them, so one indexed-Roster proof
 // runs over both adapters rather than over shared code with a stub CLI beneath it (#2372).
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import type { SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import type { SessionIndex } from '@/harnesses/session/session-index-contract'
 
 // `resumeOf` is the Session this transcript continues, written the way each CLI writes a resume:
 // Claude names the predecessor's uuid, Codex carries the origin thread id on every message.
@@ -25,7 +25,7 @@ function codexFileName(id: string) {
 }
 
 export type IndexedAdapter = {
-  cli: string
+  harness: string
   write: (root: string, transcripts: readonly Transcript[]) => Promise<void>
   source: (root: string, index: SessionIndex) => SessionSource
 }
@@ -36,7 +36,7 @@ async function writeAt(file: string, lines: unknown[], at: string) {
 }
 
 const claude: IndexedAdapter = {
-  cli: 'claude',
+  harness: 'claude',
   write: async (root, transcripts) => {
     for (const transcript of transcripts) {
       const project = path.join(root, 'project-one')
@@ -76,7 +76,7 @@ const claude: IndexedAdapter = {
 }
 
 const codex: IndexedAdapter = {
-  cli: 'codex',
+  harness: 'codex',
   write: async (root, transcripts) => {
     for (const transcript of transcripts) {
       const day = path.join(root, '2026', '09', '13')

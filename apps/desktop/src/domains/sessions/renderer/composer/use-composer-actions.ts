@@ -16,7 +16,7 @@ import {
 } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 export function managedSessionIsRunning(
@@ -38,7 +38,7 @@ export function managedSessionIsRunning(
 // facts (the CLI, the current identity, and the selected roster row), so the main hook states
 // each fact once.
 export function useComposerActions(options: {
-  cli: SessionCli
+  harness: SessionHarness
   identity: ComposerIdentity
   mutations: ReturnType<typeof useSessionMutations>
   marker: ReturnType<typeof useTurnMarker>
@@ -49,7 +49,7 @@ export function useComposerActions(options: {
   queryClient: ReturnType<typeof useQueryClient>
 }) {
   const {
-    cli,
+    harness,
     identity,
     mutations,
     marker,
@@ -77,7 +77,7 @@ export function useComposerActions(options: {
   return {
     isHandingOff,
     onCompact: sessionSelected ? onCompact : undefined,
-    onHandoff: cli === 'claude' && sessionSelected ? onHandoff : undefined,
+    onHandoff: harness === 'claude' && sessionSelected ? onHandoff : undefined,
     onInterrupt,
     markerView,
     optimisticRow,

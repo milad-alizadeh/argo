@@ -4,7 +4,7 @@ import type { TranscriptMessage } from '@/domains/sessions/contract/transcript'
 
 export type RosterRowContext = {
   chain: SessionChain
-  cli: string
+  harness: string
   messages: TranscriptMessage[]
   notifications: BackgroundTask[]
   title: { text: string; source: 'custom' | 'summarised' | 'first-prompt' } | null

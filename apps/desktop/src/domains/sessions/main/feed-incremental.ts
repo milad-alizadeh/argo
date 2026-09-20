@@ -6,7 +6,7 @@ import type { SessionChain } from '@/domains/sessions/contract/chains'
 import type { SessionFeedRow } from '@/domains/sessions/contract/models'
 import type { ToolEvidence, ToolResult } from '@/domains/sessions/contract/tool-feed'
 import { groupedRowIndexes, groupToolRuns } from '@/domains/sessions/contract/tool-groups'
-import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
+import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from '@/harnesses/session/feed'
 import {
   advancedCursors,
   type FileCursor,

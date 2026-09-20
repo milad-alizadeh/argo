@@ -3,11 +3,11 @@
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { MockCli } from '../mock-cli'
+import type { MockCli } from '../mock-harness'
 import { mockClaudeFolder } from './mock-claude-transcripts'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
-const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'mock-claude.ts')
+const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'harness', 'claude', 'mock-claude.ts')
 
 // An executable `claude` the packaged app can spawn: this node, running the mock beside this file.
 export async function writeMockClaude(root: string, transcripts: string) {

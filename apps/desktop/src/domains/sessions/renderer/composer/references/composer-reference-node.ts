@@ -6,7 +6,7 @@ import {
   referenceBySource,
   referenceSupportsCli,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 const SUPPORTED_CLASS =
   'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text !font-semibold text-foreground type-body'
@@ -14,11 +14,11 @@ const UNSUPPORTED_CLASS =
   'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text text-muted-foreground type-body'
 
 export class ComposerReferenceNode extends TextNode {
-  __cli: SessionCli | null
+  __harness: SessionHarness | null
 
-  constructor(text: string, cli: SessionCli | null = null, key?: NodeKey) {
+  constructor(text: string, harness: SessionHarness | null = null, key?: NodeKey) {
     super(text, key)
-    this.__cli = cli
+    this.__harness = harness
   }
 
   static getType() {
@@ -26,7 +26,7 @@ export class ComposerReferenceNode extends TextNode {
   }
 
   static clone(node: ComposerReferenceNode) {
-    return new ComposerReferenceNode(node.__text, node.__cli, node.__key)
+    return new ComposerReferenceNode(node.__text, node.__harness, node.__key)
   }
 
   static importJSON(serializedNode: SerializedTextNode) {
@@ -41,7 +41,7 @@ export class ComposerReferenceNode extends TextNode {
     const element = super.createDOM(config)
     const text = this.getTextContent()
     const reference = referenceBySource(text)
-    const unsupported = reference !== undefined && !referenceSupportsCli(reference, this.__cli)
+    const unsupported = reference !== undefined && !referenceSupportsCli(reference, this.__harness)
     element.className = unsupported ? UNSUPPORTED_CLASS : SUPPORTED_CLASS
     element.dataset.reference = text
     element.dataset.contextLabel = reference?.label ?? text
@@ -50,7 +50,7 @@ export class ComposerReferenceNode extends TextNode {
       element.dataset.unsupported = 'true'
       const fact = element.ownerDocument.createElement('span')
       fact.className = 'sr-only'
-      fact.textContent = ` — not available for ${cliLabel(this.__cli)}`
+      fact.textContent = ` — not available for ${cliLabel(this.__harness)}`
       element.appendChild(fact)
     }
     return element
@@ -61,6 +61,6 @@ export class ComposerReferenceNode extends TextNode {
   }
 }
 
-export function $createComposerReferenceNode(text: string, cli: SessionCli | null = null) {
-  return new ComposerReferenceNode(text, cli)
+export function $createComposerReferenceNode(text: string, harness: SessionHarness | null = null) {
+  return new ComposerReferenceNode(text, harness)
 }

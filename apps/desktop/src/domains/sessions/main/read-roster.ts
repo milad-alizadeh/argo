@@ -8,8 +8,8 @@ import type { Discovered } from '@/domains/sessions/main/merge-discovery'
 import { combineDiscoveries } from '@/domains/sessions/main/merge-discovery'
 import { readFailure } from '@/domains/sessions/main/read-declaration'
 import { decodeRosterCursor } from '@/domains/sessions/main/roster-cursor'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a
@@ -48,7 +48,7 @@ async function withoutArchived<Row extends { id: string; retiredIds: string[] }>
 
 export async function listReply(
   sources: SessionSource[],
-  ownership: { rememberDiscoveries: (sessions: { id: string; cli: string }[]) => void },
+  ownership: { rememberDiscoveries: (sessions: { id: string; harness: string }[]) => void },
   {
     ticketLinks,
     archive,
@@ -63,13 +63,13 @@ export async function listReply(
   const discovered = await Promise.all(
     sources.map((source) =>
       discoverFromSource(source, request.requestId, {
-        cursor: cursors[source.cli] ?? null,
+        cursor: cursors[source.harness] ?? null,
         projectRoot: request.projectRoot,
       }),
     ),
   )
-  const clis = sources.map((source) => source.cli)
-  const reply = combineDiscoveries(discovered, clis, request.requestId)
+  const harnesses = sources.map((source) => source.harness)
+  const reply = combineDiscoveries(discovered, harnesses, request.requestId)
   if (reply.type !== 'session.listed') return reply
   ownership.rememberDiscoveries(reply.sessions)
   // An archived Session is never in the active list (#1593): the Archive page asks for one

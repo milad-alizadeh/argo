@@ -40,12 +40,11 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 ## Desktop Session adapters
 
-Before changing desktop Session observation, transcript discovery, or a CLI parser, read
-`docs/adr/0021-placement-is-declared-per-module.md` and
-`docs/adr/0024-session-drive-port-two-adapters.md`. A CLI owns one adapter under
-`apps/desktop/src/agents/<cli>/`: its filesystem layout and parser live there. Shared Session code
-holds only the IPC contract and projections. Register an adapter once, and keep shared code free
-of CLI and filename branches.
+Before changing desktop Session observation, transcript discovery, or a harness parser, read
+`docs/adr/0024-session-drive-port-two-adapters.md`. A harness owns one adapter under
+`apps/desktop/src/harnesses/<harness>/`: its filesystem layout and parser live there. Shared Session
+code holds only the IPC contract and projections. Register an adapter once, and keep shared code
+free of harness and filename branches.
 
 Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
 the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per

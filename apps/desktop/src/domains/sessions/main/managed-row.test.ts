@@ -10,7 +10,7 @@ import {
   reconcileRosterRow,
   rosterRowFields,
 } from '@/domains/sessions/contract/roster-row-definition'
-import { managedRow, mergeManagedRoster } from '@/domains/sessions/main/managed-row'
+import { managedRow, mergeManagedRoster } from '@/harnesses/session/managed-row'
 
 const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'
@@ -18,7 +18,7 @@ const OBSERVED_TITLE = 'Observed title'
 
 function row(id: string, status: SessionStatus): SessionRosterRow {
   return managedRow(id, {
-    cli: 'claude',
+    harness: 'claude',
     compactionPercentage: null,
     compactionStartedAt: null,
     compactionTokens: null,
@@ -57,7 +57,7 @@ function mergedStatus(discoveredStatus: SessionStatus, heldStatus: SessionStatus
 }
 test('reconciles every Roster field by its declared rule', () => {
   const held = managedRow('session-1', {
-    cli: 'claude',
+    harness: 'claude',
     compactionPercentage: 40,
     compactionStartedAt: '2026-09-14T09:00:00.000Z',
     compactionTokens: '4,000',

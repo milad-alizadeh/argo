@@ -9,12 +9,12 @@ import type { Send } from '@/domains/sessions/renderer/composer/use-send'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 type ComposerSendOptions = {
-  cli: SessionCli
+  harness: SessionHarness
   cockpit: Cockpit
   identity: ComposerIdentity
   marker: TurnMarkerApi
@@ -30,7 +30,7 @@ type ComposerSendOptions = {
 
 export function composerSend(options: ComposerSendOptions): Send {
   const {
-    cli,
+    harness,
     cockpit,
     identity,
     marker,
@@ -53,7 +53,7 @@ export function composerSend(options: ComposerSendOptions): Send {
         )
       : sendToDraftIdentity(
           {
-            cli,
+            harness,
             cockpit,
             marker,
             navigate,

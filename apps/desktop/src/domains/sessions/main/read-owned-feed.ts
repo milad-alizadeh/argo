@@ -16,7 +16,7 @@ import {
   unchangedReply,
 } from '@/domains/sessions/main/feed-cache'
 import { type FeedProjectionState, projectFeed } from '@/domains/sessions/main/feed-incremental'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
 // Feeds are separate documents read from separate files, so they cannot share one entry, and

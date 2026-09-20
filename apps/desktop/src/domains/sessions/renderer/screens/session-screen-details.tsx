@@ -59,7 +59,7 @@ export function SessionComposerArea({
         harness={harness}
         permissionPrompt={
           <PermissionPrompt
-            cli={harness.cli}
+            harness={harness.harness}
             permission={permission.permission}
             onDecide={permission.decide}
           />

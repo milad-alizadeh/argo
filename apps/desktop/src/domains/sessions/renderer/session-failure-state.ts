@@ -3,7 +3,7 @@ import type { SessionErrorCode } from '@/domains/sessions/contract/contract'
 export function sessionFailureState(code: SessionErrorCode) {
   switch (code) {
     case 'access-denied':
-    case 'cli-unavailable':
+    case 'harness-unavailable':
     case 'held-elsewhere':
     case 'missing-session':
     case 'transcripts-unavailable':

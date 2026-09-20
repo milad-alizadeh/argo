@@ -2,13 +2,6 @@
 // chain they belong to, and write the whole re-stitched result back to the index (#2372). Split
 // from `indexed-window.ts` so reading the window stays readable beside it.
 import type { TranscriptFile } from '@/domains/sessions/contract/transcript'
-import {
-  type IndexedTranscriptFile,
-  NO_CHAIN,
-  type SessionIndex,
-  type TranscriptFileIdentity,
-  type TranscriptPath,
-} from '@/domains/sessions/main/session-index/contract'
 import type { IndexedWindowSource } from '@/domains/sessions/main/session-index/indexed-window'
 import {
   chainIdByPath,
@@ -20,6 +13,13 @@ import {
   isUnchanged,
   pathOfIndexed,
 } from '@/domains/sessions/main/session-index/window-pass'
+import {
+  type IndexedTranscriptFile,
+  NO_CHAIN,
+  type SessionIndex,
+  type TranscriptFileIdentity,
+  type TranscriptPath,
+} from '@/harnesses/session/session-index-contract'
 
 export type Reindexed = {
   owners: Map<string, string>
@@ -46,7 +46,7 @@ async function withChainSiblings(
   const files: TranscriptFile[] = []
   const unreadablePaths: string[] = []
   for (;;) {
-    const held = await pass.index.filesOfChains(pass.source.cli, [...wanted])
+    const held = await pass.index.filesOfChains(pass.source.harness, [...wanted])
     const siblings = held.map(pathOfIndexed).filter((file) => !opened.has(file.path))
     if (siblings.length === 0) return { files, unreadablePaths, wanted }
     for (const sibling of siblings) opened.set(sibling.path, sibling)
@@ -74,7 +74,7 @@ export async function reindexChanged(
   // A chain standing under a retired id joins its origin only in a stitch that reads both, and
   // nothing says which arriving file is that origin. There are few of them, so every pass that
   // parses anything re-stitches them all and lets `stitchChains` decide (#2290).
-  const stranded = await pass.index.strandedChains(pass.source.cli)
+  const stranded = await pass.index.strandedChains(pass.source.harness)
   const sibling = await withChainSiblings(pass, opened, [
     ...startedChains,
     ...heldChains,
@@ -85,7 +85,7 @@ export async function reindexChanged(
   const owners = chainIdByPath(chains)
   const unreadablePaths = [...first.unreadablePaths, ...sibling.unreadablePaths]
   const surviving = new Set(chains.map((chain) => chain.id))
-  await pass.index.write(pass.source.cli, {
+  await pass.index.write(pass.source.harness, {
     files: indexedFiles(parsed, known.identities, owners),
     chains: indexedChains(chains, pass.source.project),
     retiredChainIds: [...sibling.wanted].filter((chainId) => !surviving.has(chainId)),
@@ -111,7 +111,7 @@ export async function reindexCandidates(
 ): Promise<Reindexed & { held: ReadonlyMap<string, IndexedTranscriptFile> }> {
   if (candidates.length === 0) return { ...NOTHING_REINDEXED, held: new Map() }
   const found = await pass.index.filesAt(
-    pass.source.cli,
+    pass.source.harness,
     candidates.map((file) => file.path),
   )
   const held = new Map(found.map((file) => [file.path, file]))

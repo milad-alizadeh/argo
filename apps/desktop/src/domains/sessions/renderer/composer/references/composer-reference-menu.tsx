@@ -7,7 +7,7 @@ import {
   type SessionReference,
   SessionReferenceIcon,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {
@@ -85,12 +85,12 @@ export function referenceMenuKey({
 
 export function ComposerReferenceMenu({
   choices,
-  cli = null,
+  harness = null,
   onChoose,
   selected,
 }: {
   choices: readonly ReferenceSuggestion[]
-  cli?: SessionCli | null
+  harness?: SessionHarness | null
   onChoose: (choice: ReferenceSuggestion) => void
   selected: number
 }) {
@@ -103,7 +103,7 @@ export function ComposerReferenceMenu({
       role="listbox"
     >
       {choices.map((choice, index) => {
-        const unsupported = !referenceSupportsCli(choice, cli)
+        const unsupported = !referenceSupportsCli(choice, harness)
         return (
           <button
             aria-selected={index === selected}
@@ -127,7 +127,7 @@ export function ComposerReferenceMenu({
               <span className="block type-control">{choice.label}</span>
               <span className="block type-meta text-muted-foreground">
                 {unsupported
-                  ? t('composer.references.unavailable', { cli: cliLabel(cli) })
+                  ? t('composer.references.unavailable', { harness: cliLabel(harness) })
                   : choice.detail}
               </span>
             </span>

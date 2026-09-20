@@ -3,15 +3,15 @@
 // has written a transcript, so only the managed report each driver holds can answer `ownerCliFor`.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
+import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import { compactSession, sendSession } from '@/domains/sessions/main/drive'
-import { managedRow } from '@/domains/sessions/main/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import { tempRoot } from '@/domains/sessions/main/reader-test-helpers'
-import type { SessionDriveAdapters } from '@/domains/sessions/main/session-drive-adapter'
+import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { managedRow } from '@/harnesses/session/managed-row'
 
 const setup = { model: null, effort: null, mode: null } as const
 
@@ -70,7 +70,7 @@ async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot
       transcripts: await tempRoot(context),
       managedSessions: () => [
         managedRow('claude-1', {
-          cli: 'claude',
+          harness: 'claude',
           cwd: '/proj',
           status: 'running',
           setup,
@@ -82,7 +82,7 @@ async function readerWithBothManagedSessions(context: Parameters<typeof tempRoot
     codexSessionSource(await tempRoot(context), {
       roster: () => [
         managedRow('codex-1', {
-          cli: 'codex',
+          harness: 'codex',
           cwd: '/proj',
           status: 'running',
           setup,

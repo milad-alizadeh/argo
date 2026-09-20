@@ -35,6 +35,13 @@ function facetAddress(filePath) {
     return { domain: 'platform', facet }
   }
   const source = parts.indexOf('src')
+  if (parts[source + 1] === 'harnesses') {
+    if (['claude', 'codex'].includes(parts[source + 2])) {
+      return { domain: 'harness', facet: 'harness' }
+    }
+    // Generic Session support is harness-main code; only named harness directories are adapters.
+    return { domain: 'harness', facet: 'main' }
+  }
   return parts[source + 1] === 'shared' ? { domain: 'shared', facet: 'shared' } : null
 }
 
@@ -85,7 +92,14 @@ function importViolation(sourcePath, sourceFacet, specifier) {
   }
   if (isLegacyRoot(targetPath)) return { kind: 'legacy-root', ...shared }
   const target = facetAddress(targetPath)
-  if (!target || ALLOWED_TARGETS[sourceFacet].has(target.facet)) return null
+  if (
+    !target ||
+    ALLOWED_TARGETS[sourceFacet].has(target.facet) ||
+    (sourceFacet === 'harness' && target.domain === 'harness' && target.facet === 'main') ||
+    (sourceFacet === 'harness' && target.domain === 'platform' && target.facet === 'main')
+  ) {
+    return null
+  }
   return { kind: 'runtime-facet', ...shared, targetFacet: target.facet }
 }
 

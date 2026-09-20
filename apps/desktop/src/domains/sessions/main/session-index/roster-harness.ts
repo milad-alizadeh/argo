@@ -4,9 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { createSessionReader } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
 import { openSessionIndex } from '@/domains/sessions/main/session-index/open-index'
 import type { IndexedAdapter } from '@/domains/sessions/main/session-index/roster-fixtures'
+import type { SessionIndex } from '@/harnesses/session/session-index-contract'
 
 type Reader = ReturnType<typeof createSessionReader>
 
@@ -56,7 +56,7 @@ export function rosterHarness() {
     },
     reopen: async (adapter: IndexedAdapter, root: string) => readerAt(adapter, root),
     listing: async (adapter: IndexedAdapter) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.cli}-`))
+      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.harness}-`))
       opened.push(() => rm(root, { recursive: true, force: true }))
       return readerAt(adapter, root)
     },
@@ -64,7 +64,7 @@ export function rosterHarness() {
       adapter: IndexedAdapter,
       indexFor: (databasePath: string) => SessionIndex,
     ) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.cli}-`))
+      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-${adapter.harness}-`))
       opened.push(() => rm(root, { recursive: true, force: true }))
       const databasePath = path.join(root, 'sessions.db')
       const index = indexFor(databasePath)

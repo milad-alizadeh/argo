@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
-import { rosterMetadata } from '@/domains/sessions/main/roster-metadata'
 import { transcriptMessage } from '@/domains/sessions/main/transcript-test-fixtures'
+import { rosterMetadata } from '@/harnesses/session/roster-metadata'
 
 function message(overrides: Partial<TranscriptMessage>): TranscriptMessage {
   return transcriptMessage({ uuid: 'message-1', ...overrides })

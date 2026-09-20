@@ -4,9 +4,6 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   listed,
@@ -14,6 +11,9 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { ROSTER_PAGE_SIZE } from '@/harnesses/session/discover-transcript-sessions'
 
 // A Project's own reply only ever names its own Sessions, whatever the other Project's history
 // holds (#2239): scope is applied inside each adapter's own discovery, before the reader ever

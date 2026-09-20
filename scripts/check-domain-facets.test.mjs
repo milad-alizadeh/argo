@@ -7,6 +7,11 @@ const projectFile = (facet, name, source) => ({
   source,
 })
 
+const harnessFile = (harness, name, source) => ({
+  path: `apps/desktop/src/harnesses/${harness}/${name}.ts`,
+  source,
+})
+
 test('allows every runtime facet to depend on its Project contract', () => {
   const files = [
     projectFile('contract', 'messages', "import { z } from 'zod'"),
@@ -83,6 +88,47 @@ test('refuses a domain facet importing an application composition root', () => {
   assert.deepEqual(
     domainFacetViolations(files).map(({ kind }) => kind),
     ['composition-root'],
+  )
+})
+
+test('refuses a harness adapter importing Sessions main internals', () => {
+  const files = [
+    harnessFile(
+      'claude',
+      'reader',
+      "import { createSessionReader } from '@/domains/sessions/main/reader'",
+    ),
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['harness', 'main']],
+  )
+})
+
+test('classifies shared harness support as harness main code', () => {
+  const files = [
+    harnessFile(
+      'session',
+      'projection',
+      "import '@/domains/sessions/renderer/roster/session-roster-item'",
+    ),
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['main', 'renderer']],
+  )
+})
+
+test('refuses a renderer facet importing a harness adapter', () => {
+  const files = [
+    projectFile('renderer', 'harness', "import '@/harnesses/codex/drive/codex-session-driver'"),
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['renderer', 'harness']],
   )
 })
 

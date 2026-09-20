@@ -7,13 +7,13 @@ import {
   messageFrom,
 } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 export async function startNewSession(
   request: {
-    cli: SessionCli
+    harness: SessionHarness
     cockpit: Cockpit
     identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
     prompt: string
@@ -30,7 +30,7 @@ export async function startNewSession(
     onFailed: () => void
   },
 ) {
-  const { cli, cockpit, identity, prompt, setup, attachments, start, setFailure } = request
+  const { harness, cockpit, identity, prompt, setup, attachments, start, setFailure } = request
   const { onSubmitted, afterStart, onStarted, onFailed } = callbacks
   if (cockpit.project === null) {
     setFailure({
@@ -44,7 +44,7 @@ export async function startNewSession(
   // The "+" click already began this row (`identity.kind === 'pending'`); a Send from a bare
   // composer with no prior "+" begins one here instead. Either way, one draft row exists.
   const pending =
-    identity.kind === 'pending' ? creation.pending : creation.begin(cli, cockpit.project.path)
+    identity.kind === 'pending' ? creation.pending : creation.begin(harness, cockpit.project.path)
   if (pending === null || pending.stage !== 'draft') return false
   // A rapid second Enter/`+` finds the row already submitting and no-ops (#2109): the observable
   // contract is one user action produces at most one new Session, not which mechanism enforces it.
@@ -52,7 +52,7 @@ export async function startNewSession(
   onSubmitted()
   try {
     const reply = await start.mutateAsync({
-      cli,
+      harness,
       cwd: cockpit.project.path,
       prompt,
       setup,

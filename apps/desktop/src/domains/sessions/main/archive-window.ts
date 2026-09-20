@@ -9,7 +9,7 @@ import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 import { combineDiscoveries, type Discovered } from '@/domains/sessions/main/merge-discovery'
 import { readFailure } from '@/domains/sessions/main/read-declaration'
 import { decodeRosterCursor, type RosterCursorMap } from '@/domains/sessions/main/roster-cursor'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 // The merged reply below needs a request id for its error case, which no caller ever reads: an
 // archive reading answers under its own request id, in its own envelope.
@@ -28,7 +28,7 @@ export type SessionWindow = {
 // reset its window to the first page. So an exhausted adapter keeps the window it already holds.
 function grownWindows(windows: RosterCursorMap, next: RosterCursorMap): RosterCursorMap {
   return Object.fromEntries(
-    Object.entries(next).map(([cli, cursor]) => [cli, cursor ?? windows[cli] ?? null]),
+    Object.entries(next).map(([harness, cursor]) => [harness, cursor ?? windows[harness] ?? null]),
   )
 }
 
@@ -36,7 +36,7 @@ async function readWindow(sources: readonly SessionSource[], windows: RosterCurs
   const discovered: Discovered[] = await Promise.all(
     sources.map((source) =>
       source
-        .discoverSessions({ cursor: windows[source.cli] ?? null, projectRoot: null })
+        .discoverSessions({ cursor: windows[source.harness] ?? null, projectRoot: null })
         .catch((error: unknown) => ({ error: sessionError(readFailure(error), WINDOW_READ) })),
     ),
   )
@@ -53,7 +53,7 @@ async function readWindow(sources: readonly SessionSource[], windows: RosterCurs
 }
 
 function cliOf(source: SessionSource) {
-  return source.cli
+  return source.harness
 }
 
 // Reads the window `windows` names, then grows it a page at a time until `satisfied` says the

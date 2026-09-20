@@ -3,8 +3,8 @@
 // `reads.test.ts` drives each row through the real Session bridge.
 import assert from 'node:assert/strict'
 import type { SESSION_OPERATIONS } from '@/domains/sessions/contract/operations'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import type { SessionSource } from '@/domains/sessions/main/session-source'
+import { managedRow } from '@/harnesses/session/managed-row'
+import type { SessionSource } from '@/harnesses/session/session-source'
 
 export type Reply = Record<string, unknown>
 
@@ -18,7 +18,7 @@ function denied() {
 // body that throws is reached rather than swallowed by the owner lookup's own catch.
 export function owningSource(capabilities: Partial<SessionSource> = {}): SessionSource {
   return {
-    cli: 'claude',
+    harness: 'claude',
     discoverSessions: async () => ({
       rows: [],
       filesFound: 0,
@@ -31,7 +31,7 @@ export function owningSource(capabilities: Partial<SessionSource> = {}): Session
     readSessionFiles: async () => null,
     managedSessions: () => [
       managedRow(SESSION_ID, {
-        cli: 'claude',
+        harness: 'claude',
         cwd: '/work',
         status: 'running',
         setup: { model: null, effort: null, mode: null },

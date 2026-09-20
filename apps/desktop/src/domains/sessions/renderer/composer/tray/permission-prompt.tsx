@@ -7,7 +7,7 @@ import {
   useExitPresence,
 } from '@/domains/sessions/renderer/composer/tray/use-exit-presence'
 import type { PermissionAnswer } from '@/domains/sessions/renderer/composer/use-session-permission'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
 import {
@@ -21,10 +21,10 @@ import {
 const STANDING_ALLOW = {
   claude: 'permission.allowSimilar',
   codex: 'permission.allowAll',
-} as const satisfies Record<SessionCli, string>
+} as const satisfies Record<SessionHarness, string>
 
 type PermissionPromptProps = {
-  cli: SessionCli
+  harness: SessionHarness
   permission: Permission | null
   onDecide: (decision: PermissionAnswer) => Promise<boolean>
 }
@@ -47,7 +47,7 @@ function useFocusAfterLeaving(cardRef: RefObject<HTMLElement | null>, exiting: b
 }
 
 function PermissionCard({
-  cli,
+  harness,
   exiting,
   permission,
   onDecide,
@@ -81,7 +81,7 @@ function PermissionCard({
           <Button disabled={locked} size="sm" variant="outline" onClick={() => void decide('deny')}>
             {t('permission.deny')}
           </Button>
-          <AllowButton cli={cli} disabled={locked} onDecide={decide} />
+          <AllowButton harness={harness} disabled={locked} onDecide={decide} />
         </div>
         <pre className="session-page__composer-permission-call type-code">
           {permission.description}
@@ -92,11 +92,11 @@ function PermissionCard({
 }
 
 function AllowButton({
-  cli,
+  harness,
   disabled,
   onDecide,
 }: {
-  cli: SessionCli
+  harness: SessionHarness
   disabled: boolean
   onDecide: (decision: PermissionAnswer) => Promise<void>
 }) {
@@ -116,7 +116,7 @@ function AllowButton({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-auto">
           <DropdownMenuItem onClick={() => void onDecide('allowForSession')}>
-            {t(STANDING_ALLOW[cli])}
+            {t(STANDING_ALLOW[harness])}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

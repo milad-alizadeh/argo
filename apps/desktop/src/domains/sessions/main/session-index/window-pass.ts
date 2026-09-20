@@ -10,7 +10,7 @@ import {
   type IndexedTranscriptFile,
   NO_CHAIN,
   type TranscriptFileIdentity,
-} from '@/domains/sessions/main/session-index/contract'
+} from '@/harnesses/session/session-index-contract'
 
 export type FileIdentities = ReadonlyMap<string, { writtenAt: number; size: number }>
 

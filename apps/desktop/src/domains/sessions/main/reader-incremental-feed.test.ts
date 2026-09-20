@@ -3,7 +3,6 @@
 // `session.feed.appended` naming how much of the caller's own copy is still good.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   appendCodexTranscript,
@@ -12,6 +11,7 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'incremental'
 

@@ -3,10 +3,7 @@
 // bridge calls, so a refactor inside it leaves these green.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/reader'
 import {
   fed,
@@ -16,6 +13,9 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { managedRow } from '@/harnesses/session/managed-row'
 
 test('reads a Feed from the adapter the Roster names as owner, not the first one registered', async (context) => {
   const claudeRoot = await tempRoot(context)
@@ -25,20 +25,20 @@ test('reads a Feed from the adapter the Roster names as owner, not the first one
   // module never remembers an owner, so the Claude reply always won.
   await writeClaudeTranscript({
     root: claudeRoot,
-    sessionId: 'dup',
+    sessionId: 'managed-dup',
     text: 'From Claude.',
     updatedAt: '2026-09-13T10:00:00.000Z',
   })
   await writeCodexTranscript({
     root: codexRoot,
-    sessionId: 'dup',
+    sessionId: 'managed-dup',
     text: 'From Codex.',
     updatedAt: '2026-09-13T10:00:00.000Z',
   })
 
   const managed: SessionRosterRow[] = [
-    managedRow('dup', {
-      cli: 'codex',
+    managedRow('managed-dup', {
+      harness: 'codex',
       cwd: '/proj',
       status: 'running',
       setup: { model: null, effort: null, mode: null },
@@ -51,7 +51,7 @@ test('reads a Feed from the adapter the Roster names as owner, not the first one
     codexSessionSource(codexRoot, { roster: () => managed }),
   ])
 
-  const reply = await fed(reader, feedRequest('dup'))
+  const reply = await fed(reader, feedRequest('managed-dup'))
   assert.equal(reply.type, 'session.feed.read')
   assert.ok(
     reply.type === 'session.feed.read' &&
@@ -64,7 +64,7 @@ test('reads a Feed from the CLI the most recent listing named as owner, with no 
   const codexRoot = await tempRoot(context)
   // Same fixture shape as the managed-row test above, but routed purely off discovery: no
   // driver reports either session id as managed, so `ownerFor` must fall back to
-  // `lastDiscoveredCli` rather than the managed-report branch.
+  // `lastDiscoveredHarness` rather than the managed-report branch.
   await writeClaudeTranscript({
     root: claudeRoot,
     sessionId: 'dup',
@@ -84,14 +84,14 @@ test('reads a Feed from the CLI the most recent listing named as owner, with no 
 
   await listed(reader)
   const reply = await fed(reader, feedRequest('dup'))
-  assert.equal(reply.type, 'session.feed.read')
-  assert.ok(
+  assert.equal(
     reply.type === 'session.feed.read' &&
       reply.rows.some((row) => 'text' in row && row.text === 'From Codex.'),
+    true,
   )
 })
 
-test('lists Sessions from both CLIs, newest first', async (context) => {
+test('lists Sessions from both HARNESSES, newest first', async (context) => {
   const claudeRoot = await tempRoot(context)
   const codexRoot = await tempRoot(context)
   await writeClaudeTranscript({

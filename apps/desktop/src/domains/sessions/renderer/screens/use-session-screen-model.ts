@@ -80,7 +80,7 @@ export function useSessionScreenModel() {
   const session = useSelectedSession(selectedSessionId, roster)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const composer = useSessionComposer({
-    cli: harness.cli,
+    harness: harness.harness,
     cockpit,
     focusOnMount: location.state === COMPOSER_FOCUS_STATE,
     navigate,

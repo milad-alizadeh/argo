@@ -1,5 +1,5 @@
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { readSubagentReading } from './subagents'
+import { readSubagentReading } from '@/domains/sessions/contract/subagents'
 
 export function hasRunningBackgroundWork(session: SessionRosterRow): boolean {
   if (session.posture !== 'managed') return false
