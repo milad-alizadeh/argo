@@ -52,5 +52,5 @@ export async function fixtureRoot(context, names, directory = 'project-one') {
 
 // The Roster row the named fixtures project into, which is what most signal tests assert on.
 export async function fixtureRosterRow(names) {
-  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
+  return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')
 }

@@ -5,7 +5,7 @@ import { stitchChains } from '@/domains/sessions/contract/chains.ts'
 import { projectRosterRow } from '@/domains/sessions/main/roster.ts'
 
 async function rowOf(names) {
-  return projectRosterRow(stitchChains(await fixtureFiles(names))[0])
+  return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')
 }
 
 test('reads a closed Turn as idle and a Turn inside the vocabulary as stopped', async () => {
