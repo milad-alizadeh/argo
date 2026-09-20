@@ -1,4 +1,4 @@
-import type { ClaudePermission } from '@/domains/sessions/contract/contract'
+import type { ClaudePermission } from '@/agents/claude/drive/turn-setup-contract'
 
 const FILE_EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 // A chained or substituted command could run anything after its first word, so it matches itself.

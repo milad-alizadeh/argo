@@ -62,7 +62,9 @@ export async function reindexChanged(
   changed: readonly TranscriptFileIdentity[],
   known: { held: ReadonlyMap<string, IndexedTranscriptFile>; identities: FileIdentities },
 ): Promise<Reindexed> {
-  const opened = new Map(changed.map((file) => [file.path, { path: file.path, name: file.name }]))
+  const opened = new Map(
+    changed.map((file) => [file.path, { path: file.path, sessionId: file.sessionId }]),
+  )
   const first = await pass.source.readTranscripts([...opened.values()])
   const startedChains = pass.source.stitch(first.files).map((chain) => chain.id)
   const heldChains = changed.flatMap((file) => {

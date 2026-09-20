@@ -100,6 +100,7 @@ export function SessionContextBar({
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
 }) {
+  const selectedHarness = harness ?? 'codex'
   const usedTokens = contextTokens ?? 0
   const capacityTokens = contextWindowTokens ?? null
   const percentage =
@@ -114,12 +115,12 @@ export function SessionContextBar({
       data-component="SessionContextBar"
     >
       <div className="shrink-0 border-l border-border/60 pl-2 @[56rem]:pl-4">
-        <UsagePopover harness={harness ?? 'codex'} />
+        <UsagePopover harness={selectedHarness} />
       </div>
       <div className="shrink-0 @[56rem]:hidden">
         <ContextPopover
           compact
-          harness={harness ?? 'codex'}
+          harness={selectedHarness}
           capacityTokens={capacityTokens}
           percentage={percentage}
           usedTokens={usedTokens}
@@ -127,7 +128,7 @@ export function SessionContextBar({
       </div>
       <div className="hidden shrink-0 @[56rem]:block">
         <ContextPopover
-          harness={harness ?? 'codex'}
+          harness={selectedHarness}
           capacityTokens={capacityTokens}
           labelled
           percentage={percentage}

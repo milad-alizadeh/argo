@@ -22,7 +22,7 @@ test('reads the compaction continuation preamble as a summary, not a prompt', ()
 
 test('folds the compaction continuation preamble into the boundary it follows', () => {
   const file = readTranscriptFile('/tmp/compaction.jsonl', {
-    fileName: 'compaction.jsonl',
+    sessionId: 'compaction',
     lines: [
       '{"type":"system","subtype":"compact_boundary","uuid":"c-1"}',
       JSON.stringify({

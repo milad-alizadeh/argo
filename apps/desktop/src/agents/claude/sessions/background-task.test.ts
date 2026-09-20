@@ -38,7 +38,7 @@ test('ends a background command whose notice arrived while the Session was idle'
   const chain: SessionChain = {
     id: 'session',
     retiredIds: [],
-    files: [transcriptFileFrom('session.jsonl', { fileName: 'session.jsonl', records })],
+    files: [transcriptFileFrom('session.jsonl', { sessionId: 'session', records })],
     originUnread: false,
   }
   const [command] = readShellCommands(chainMessages(chain), chainBackgroundTasks(chain))

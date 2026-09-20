@@ -25,11 +25,10 @@ export function isUnchanged(
   return held !== undefined && held.writtenAt === found.writtenAt && held.size === found.size
 }
 
-// An indexed file addressed the way a parser wants it. `sessionIdOfFile` reads a file's name for
-// its Session id alone, so the id the index holds spells the same name back, whatever shape the
-// CLI's own basename has.
+// An indexed file addressed the way a parser wants it. The adapter supplied its Session id when
+// it discovered the file, so shared code needs no knowledge of the CLI's file name shape.
 export function pathOfIndexed(file: IndexedTranscriptFile) {
-  return { path: file.path, name: `${file.sessionId}.jsonl` }
+  return { path: file.path, sessionId: file.sessionId }
 }
 
 export function chainIdByPath(chains: readonly SessionChain[]): Map<string, string> {

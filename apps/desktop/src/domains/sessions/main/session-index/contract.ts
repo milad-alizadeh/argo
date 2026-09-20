@@ -2,8 +2,8 @@
 // the CLI adapters speak only this; the SQL that serves it lives behind one worker (#2372).
 import type { SessionRosterRow } from '@/domains/sessions/contract/models'
 
-// A transcript file addressed for parsing: where it is, and the name its Session id is read off.
-export type TranscriptPath = { path: string; name: string }
+// A transcript file addressed for parsing: where it is, and the Session it belongs to.
+export type TranscriptPath = { path: string; sessionId: string }
 
 // A transcript file as the index knows it: the identity that says whether it changed, and the
 // Session and chain it belongs to.

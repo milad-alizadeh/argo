@@ -134,7 +134,7 @@ function readContextWindowTokens(chain: SessionChain) {
   )
 }
 
-export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
+export function projectRosterRow(chain: SessionChain, cli: string): RosterRow {
   const messages = chainMessages(chain)
   const records = chain.files.flatMap((file) => file.records)
   const notifications = chainBackgroundTasks(chain)
