@@ -49,7 +49,7 @@ export function SessionBlockedBadge({ session }: { session: Session }) {
   const { t } = useTranslation('sessions')
   if (!NEEDS_INPUT[session.status]) return null
   return (
-    <Badge className="border-warn/40 text-warn" size="compact" variant="outline">
+    <Badge className="border-warn/40 text-warn" size="default" variant="outline">
       {t('needsInput')}
     </Badge>
   )

@@ -412,7 +412,7 @@ export const PendingBadges: Story = {
     await expect(within(wantsAnswer).getByText('Needs input')).toBeVisible()
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
     const permissionBadge = within(wantsPermission).getByText('Needs input')
-    await expect(permissionBadge).toHaveStyle({ fontSize: '13px', height: '16px' })
+    await expect(permissionBadge).toHaveStyle({ fontSize: '13px', height: '20px' })
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(within(idle).queryByText('Needs input')).toBeNull()
   },
