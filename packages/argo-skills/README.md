@@ -70,10 +70,9 @@ the consumer's own skills from a name collision before they are overwritten, see
 `.rtk/filters.toml`, copying `hooks.json` and the hooks it names and projecting them, adding the
 `.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
 
-The guardrail hooks are hand-work today because they are not in this package at all: `hooks/` sits
-at the repository root, outside `packages/argo-skills/`, so `skills add` cannot carry them and
-`skills update` cannot move them forward. [ADR-0036](../../docs/adr/0036-the-bundle-arrives-on-one-transport.md)
-decides they move inside the bundle and arrive with it; that is #1810's work and is not built.
+The guardrail hooks are hand-work today. They live in
+`packages/argo-skills/skills/setup-argo-skills/hooks/`. A project copies them only after the user
+opts in. `skills add` installs the source files, but it does not install the hooks into a project.
 
 **What does not change when they do**: installing them stays a separate yes. They impose Argo's
 worktree discipline on the project — the edit guard refuses an edit outside a worktree and the

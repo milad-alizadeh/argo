@@ -12,10 +12,8 @@ import {
 import type { Facet } from './domain-facet-policy.mts'
 import { ALLOWED_TARGETS, COMPOSITION_ROOTS, FACET_POLICIES } from './domain-facet-policy.mts'
 
-/** One source file, as the caller read it off disk. */
 export type SourceFile = { path: string; source: string }
 
-/** One refused import. `targetFacet` is set only for the kinds that resolved a target. */
 export type FacetViolation = {
   kind: string
   path: string
@@ -120,7 +118,7 @@ export function domainFacetViolations(files: SourceFile[]): FacetViolation[] {
     const source = facetAddress(sourcePath)
     if (!source) return []
     return typescript.preProcessFile(file.source, true, true).importedFiles.flatMap((imported) => {
-      const violation = importViolation(sourcePath, source.facet as Facet, imported.fileName)
+      const violation = importViolation(sourcePath, source.facet, imported.fileName)
       return violation ? [violation] : []
     })
   })

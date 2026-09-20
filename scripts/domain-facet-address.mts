@@ -2,10 +2,9 @@
 // belongs to, plus resolving one import specifier to the path it names. Split from
 // domain-facet-boundaries.mts on length alone; that file applies policy to what this resolves.
 import path from 'node:path'
-import { SOURCE_ROOTS, TARGET_FACETS } from './domain-facet-policy.mts'
+import { type Facet, SOURCE_ROOTS, TARGET_FACETS } from './domain-facet-policy.mts'
 
-/** Where a file sits: which domain owns it, and which runtime it belongs to. */
-export type FacetAddress = { domain: string; facet: string }
+export type FacetAddress = { domain: string; facet: Facet }
 
 export function normalized(filePath: string): string {
   return filePath.split(path.sep).join('/')
@@ -13,6 +12,10 @@ export function normalized(filePath: string): string {
 
 export function withoutExtension(filePath: string): string {
   return filePath.replace(/\.(?:[cm]?[jt]sx?|json)$/, '')
+}
+
+function isFacet(value: string): value is Facet {
+  return TARGET_FACETS.has(value)
 }
 
 function isHarnessImplementation(parts: string[], harnesses: number): boolean {
@@ -30,13 +33,13 @@ export function facetAddress(filePath: string): FacetAddress | null {
   if (domains >= 0) {
     const domain = parts[domains + 1]
     const facet = parts[domains + 2]
-    if (!domain || !facet || !TARGET_FACETS.has(facet)) return null
+    if (!domain || !facet || !isFacet(facet)) return null
     return { domain, facet }
   }
   const platform = parts.indexOf('platform')
   if (platform >= 0) {
     const facet = parts[platform + 1]
-    if (!facet || !TARGET_FACETS.has(facet)) return null
+    if (!facet || !isFacet(facet)) return null
     return { domain: 'platform', facet }
   }
   const source = parts.indexOf('src')

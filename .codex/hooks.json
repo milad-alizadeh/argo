@@ -2,33 +2,33 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree",
         "hooks": [
           {
             "type": "command",
             "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree"
       },
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/pr-ownership-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Bash"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
-        ]
+        ],
+        "matcher": "Bash"
       }
     ],
     "UserPromptSubmit": [
