@@ -46,7 +46,7 @@ export function ProjectOnboardingFlow({ controller }: { controller: OnboardingCo
             <Bot className="size-4" />
           </span>
           <div>
-            <h1 className="type-heading">{t('onboarding.agent.title')}</h1>
+            <p className="type-heading">{t('onboarding.agent.title')}</p>
             <p className="type-meta text-muted-foreground">{t('onboarding.agent.subtitle')}</p>
           </div>
         </div>

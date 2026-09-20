@@ -99,8 +99,8 @@ export const PatchOverTwoFiles: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('app.ts')).toBeVisible()
-    await expect(canvas.getByText('note.md')).toBeVisible()
+    await expect(canvas.getByText('/repo/src/app.ts')).toBeVisible()
+    await expect(canvas.getByText('/repo/docs/note.md')).toBeVisible()
     await expect(canvas.queryByText(/Update File/)).toBeNull()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
     await expect(canvas.getByText(/hello/)).toBeVisible()

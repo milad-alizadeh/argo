@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { cn } from '@/platform/renderer/lib/utils'
 
@@ -10,12 +10,14 @@ export function FileDiffList({
   className,
   files,
   markViewedLabel,
+  renderDiff,
   viewedLabel,
 }: {
   accessibleName: string
   className?: string
   files: FileDiff[]
   markViewedLabel: (path: string) => string
+  renderDiff?: (file: FileDiff) => ReactNode
   viewedLabel: string
 }) {
   return (
@@ -28,6 +30,7 @@ export function FileDiffList({
           file={file}
           key={file.path}
           markViewedLabel={markViewedLabel}
+          renderDiff={renderDiff}
           viewedLabel={viewedLabel}
         />
       ))}
@@ -38,10 +41,12 @@ export function FileDiffList({
 function FileDiffSection({
   file,
   markViewedLabel,
+  renderDiff,
   viewedLabel,
 }: {
   file: FileDiff
   markViewedLabel: (path: string) => string
+  renderDiff?: (file: FileDiff) => ReactNode
   viewedLabel: string
 }) {
   const lines = diffLines(file.diff)
@@ -74,34 +79,50 @@ function FileDiffSection({
           </span>
         </label>
       </header>
-      {viewed ? null : (
-        <pre className="overflow-x-auto border-b border-border/60 bg-background type-code-content last:border-b-0">
-          <code>
-            {lines.map((line, index) => {
-              if (line.kind === 'hunk') return null
-              const lineNumber = line.kind === 'removed' ? line.oldLine : line.newLine
-              return (
-                <span
-                  className={cn(
-                    'flex min-w-max px-3',
-                    line.kind === 'added' && 'bg-emerald-500/15',
-                    line.kind === 'removed' && 'bg-rose-500/15',
-                  )}
-                  key={`${index}-${line.source}`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mr-3 w-6 shrink-0 text-right text-muted-foreground select-none"
-                  >
-                    {lineNumber ?? ''}
-                  </span>
-                  <span>{line.source}</span>
-                </span>
-              )
-            })}
-          </code>
-        </pre>
-      )}
+      {viewed ? null : (renderDiff?.(file) ?? <PlainFileDiff file={file} lines={lines} />)}
     </section>
   )
+}
+
+function PlainFileDiff({ file, lines }: { file: FileDiff; lines: ReturnType<typeof diffLines> }) {
+  return (
+    <pre className="overflow-x-auto border-b border-border/60 bg-background type-code-content last:border-b-0">
+      <code data-language={languageForPath(file.path)}>
+        {lines.map((line) => {
+          if (line.kind === 'hunk') return null
+          const lineNumber = line.kind === 'removed' ? line.oldLine : line.newLine
+          return (
+            <span
+              className={cn(
+                'flex min-w-max px-3',
+                line.kind === 'added' && 'bg-emerald-500/15',
+                line.kind === 'removed' && 'bg-rose-500/15',
+              )}
+              key={`${line.kind}-${line.oldLine ?? 'x'}-${line.newLine ?? 'x'}-${line.source}`}
+            >
+              <span
+                aria-hidden="true"
+                className="mr-3 w-6 shrink-0 text-right text-muted-foreground select-none"
+              >
+                {lineNumber ?? ''}
+              </span>
+              <span>{line.source}</span>
+            </span>
+          )
+        })}
+      </code>
+    </pre>
+  )
+}
+
+function languageForPath(path: string) {
+  const extension = path.split('.').pop()
+  const languages: Record<string, string> = {
+    js: 'javascript',
+    jsx: 'jsx',
+    md: 'markdown',
+    ts: 'typescript',
+    tsx: 'tsx',
+  }
+  return extension ? languages[extension] : undefined
 }

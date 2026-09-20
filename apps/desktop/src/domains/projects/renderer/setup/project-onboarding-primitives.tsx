@@ -1,8 +1,5 @@
-import { ArrowLeft, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { type ReactNode, useId, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/platform/renderer/components/ui/button'
-import type { OnboardingController } from './project-onboarding'
 
 export function SectionCard({
   action,
@@ -119,20 +116,5 @@ export function OptionRow({
       </span>
       {action ? <span className="onboarding-option-row__action">{action}</span> : null}
     </div>
-  )
-}
-
-export function BackAction({ controller }: { controller: OnboardingController }) {
-  const { t } = useTranslation('projects')
-  return (
-    <Button
-      aria-label={t('onboarding.back')}
-      className="-ml-2 mb-3 size-9"
-      onClick={controller.actions.back}
-      size="icon-sm"
-      variant="ghost"
-    >
-      <ArrowLeft />
-    </Button>
   )
 }

@@ -1,9 +1,10 @@
 import { CheckCircle2, Circle, LoaderCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Progress, ProgressLabel } from '@/platform/renderer/components/ui/progress'
 import { i18n } from '@/platform/renderer/i18n/i18n'
 import { ANALYSIS_TASKS, type OnboardingController } from './project-onboarding'
-import { ProjectOnboardingStageHeader as StageHeading } from './project-onboarding-layout'
-import { BackAction, OptionRow } from './project-onboarding-primitives'
+import { OptionRow } from './project-onboarding-primitives'
+import { StageHeadingWithBack } from './project-onboarding-stage-navigation'
 
 function analysisTaskText(taskId: string, field: 'detail' | 'label') {
   const key = `projects:onboarding.task.${taskId}.${field}`
@@ -11,24 +12,27 @@ function analysisTaskText(taskId: string, field: 'detail' | 'label') {
 }
 
 export function AnalyzingStage({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { state } = controller
   const progress = ((state.analysisStep + 1) / ANALYSIS_TASKS.length) * 100
   return (
     <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="The setup agent builds a plan. It does not write files, install dependencies, or run Project commands yet."
-      >
-        2 · Analyze the Project
-      </StageHeading>
+      <StageHeadingWithBack
+        controller={controller}
+        description={t('onboarding.flow.analyzing.description')}
+        title={t('onboarding.flow.analyzing.title')}
+      />
       <div className="mt-9 max-w-2xl">
         <p className="project-setup-shimmer type-heading" role="status">
           {analysisTaskText(ANALYSIS_TASKS[state.analysisStep]?.id ?? 'inspect-folder', 'detail')}
         </p>
         <Progress className="mt-5" value={progress}>
-          <ProgressLabel>Planning</ProgressLabel>
+          <ProgressLabel>{t('onboarding.flow.analyzing.progress')}</ProgressLabel>
           <span className="ml-auto type-label text-muted-foreground">
-            {state.analysisStep + 1} of {ANALYSIS_TASKS.length}
+            {t('onboarding.flow.analyzing.progressCount', {
+              current: state.analysisStep + 1,
+              total: ANALYSIS_TASKS.length,
+            })}
           </span>
         </Progress>
         <PlanningTaskList current={state.analysisStep} />

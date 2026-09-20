@@ -7,9 +7,18 @@ import { onboardingRecommendationActions } from './onboarding-recommendation-act
 import { onboardingSettingsActions } from './onboarding-settings-actions'
 import { onboardingTargetActions } from './onboarding-target-actions'
 
-export function useOnboardingController(): OnboardingController {
-  const [state, setState] = useState<OnboardingState>(initialState)
-  useOnboardingProgress(state, setState)
+export function useOnboardingController({
+  initialState: stateOverride,
+  pauseProgress = false,
+}: {
+  initialState?: Partial<OnboardingState>
+  pauseProgress?: boolean
+} = {}): OnboardingController {
+  const [state, setState] = useState<OnboardingState>(() => ({
+    ...initialState(),
+    ...stateOverride,
+  }))
+  useOnboardingProgress(state, setState, pauseProgress)
   const actions = useMemo(
     () => ({
       ...onboardingFlowActions(setState),

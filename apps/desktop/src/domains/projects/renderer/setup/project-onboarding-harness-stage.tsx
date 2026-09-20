@@ -1,5 +1,6 @@
 import { Bot } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Select,
@@ -9,8 +10,7 @@ import {
   SelectValue,
 } from '@/platform/renderer/components/ui/select'
 import type { OnboardingController, OnboardingHarness } from './project-onboarding'
-import { ProjectOnboardingStageHeader as StageHeading } from './project-onboarding-layout'
-import { BackAction } from './project-onboarding-primitives'
+import { StageHeadingWithBack } from './project-onboarding-stage-navigation'
 
 const HARNESS_CHOICES = [
   { label: 'Codex', value: 'codex' },
@@ -18,20 +18,24 @@ const HARNESS_CHOICES = [
 ] as const
 
 export function NoDefaultHarnessStage({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { actions } = controller
   const [choice, setChoice] = useState<OnboardingHarness>('codex')
   return (
     <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Choose a default harness before Argo analyzes the Project. This choice also becomes the default for new Sessions."
-      >
-        Choose your default harness
-      </StageHeading>
+      <StageHeadingWithBack
+        controller={controller}
+        description={t('onboarding.flow.defaultHarness.description')}
+        title={t('onboarding.flow.defaultHarness.title')}
+      />
       <div className="mt-8 max-w-md space-y-3">
-        <HarnessSelect label="Default harness" onChange={setChoice} value={choice} />
+        <HarnessSelect
+          label={t('onboarding.flow.defaultHarness.label')}
+          onChange={setChoice}
+          value={choice}
+        />
         <Button className="w-full" onClick={() => actions.configureDefaultHarness(choice)}>
-          Save default harness
+          {t('onboarding.flow.defaultHarness.save')}
         </Button>
       </div>
     </>
@@ -39,30 +43,33 @@ export function NoDefaultHarnessStage({ controller }: { controller: OnboardingCo
 }
 
 export function HarnessStage({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { actions, state } = controller
   return (
     <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Argo will start a short-lived agent that plans setup for this Project. It will not write files during planning."
-      >
-        Choose the setup agent
-      </StageHeading>
+      <StageHeadingWithBack
+        controller={controller}
+        description={t('onboarding.flow.harness.description')}
+        title={t('onboarding.flow.harness.title')}
+      />
       <div className="mt-8 max-w-lg rounded-xl border bg-card p-5 shadow-surface">
         <div className="flex items-start gap-4">
           <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
             <Bot className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <HarnessSelect label="Harness" onChange={actions.setHarness} value={state.harness} />
+            <HarnessSelect
+              label={t('onboarding.flow.harness.label')}
+              onChange={actions.setHarness}
+              value={state.harness}
+            />
             <p className="mt-3 type-label text-muted-foreground">
-              The agent can read Project files. Argo applies changes in a separate phase that you
-              start later.
+              {t('onboarding.flow.harness.note')}
             </p>
           </div>
         </div>
         <Button className="mt-5 w-full" onClick={actions.beginAnalysis}>
-          Plan Project setup
+          {t('onboarding.flow.harness.plan')}
         </Button>
       </div>
     </>

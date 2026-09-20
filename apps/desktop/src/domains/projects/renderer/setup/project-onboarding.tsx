@@ -1,3 +1,4 @@
+import type { OnboardingState } from './onboarding-model'
 import { ProjectOnboardingFlow } from './project-onboarding-flow'
 import { useOnboardingController } from './use-onboarding-controller'
 import './project-setup.css'
@@ -16,10 +17,19 @@ export type {
   OnboardingTarget,
 } from './onboarding-model'
 
-export function ProjectOnboarding() {
-  const controller = useOnboardingController()
+export type ProjectOnboardingProps = {
+  initialState?: Partial<OnboardingState>
+  pauseProgress?: boolean
+}
+
+export function ProjectOnboarding({ initialState, pauseProgress }: ProjectOnboardingProps) {
+  const controller = useOnboardingController({ initialState, pauseProgress })
   return (
-    <div className="onboarding-root" data-component="ProjectOnboarding">
+    <div
+      className="onboarding-root"
+      data-component="ProjectOnboarding"
+      data-state={controller.state.stage}
+    >
       <ProjectOnboardingFlow controller={controller} />
     </div>
   )

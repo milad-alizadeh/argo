@@ -4,23 +4,23 @@ import type {
   OnboardingState,
   OnboardingTarget,
 } from './onboarding-model'
-import { i18n } from '@/platform/renderer/i18n/i18n'
+import { onboardingText, recommendationText } from './project-onboarding-copy'
 
 export function applyTasksFor(state: OnboardingState): OnboardingApplyTask[] {
   if (state.method === 'manual') return []
   return [
     {
-      detail: 'Write the approved Project and Target configuration.',
+      detail: onboardingText('applyTask.write.detail'),
       id: 'write-setup',
       kind: 'prepare',
-      label: 'Write .argo/settings.json',
+      label: onboardingText('applyTask.write.label'),
     },
     ...repositoryTasks(state.repositoryRecommendations),
     {
-      detail: 'Make sure that each accepted Project change works.',
+      detail: onboardingText('applyTask.verifyProject.detail'),
       id: 'verify-repository-setup',
       kind: 'verify',
-      label: 'Verify Project changes',
+      label: onboardingText('applyTask.verifyProject.label'),
     },
     ...state.targets.flatMap(targetTasks),
   ]
@@ -47,31 +47,30 @@ function targetTasks(target: OnboardingTarget): OnboardingApplyTask[] {
         detail: recommendationText(recommendation, 'reason'),
         id: `install-${target.id}-${recommendation.id}`,
         kind: 'install' as const,
-        label: `${recommendationText(recommendation, 'label')} for ${target.name}`,
+        label: onboardingText('applyTask.installForTarget', {
+          target: target.name,
+          tool: recommendationText(recommendation, 'label'),
+        }),
         recommendationId: recommendation.id,
         targetId: target.id,
       })),
     {
-      detail: `Run ${target.buildCommand || 'the build command'}.`,
+      detail: onboardingText('applyTask.runCommand', {
+        command: target.buildCommand || onboardingText('applyTask.buildCommand'),
+      }),
       id: `build-${target.id}`,
       kind: 'verify' as const,
-      label: `Build ${target.name}`,
+      label: onboardingText('applyTask.buildTarget', { target: target.name }),
       targetId: target.id,
     },
     {
-      detail: `Run ${target.testCommand || 'the test command'}.`,
+      detail: onboardingText('applyTask.runCommand', {
+        command: target.testCommand || onboardingText('applyTask.testCommand'),
+      }),
       id: `test-${target.id}`,
       kind: 'verify' as const,
-      label: `Test ${target.name}`,
+      label: onboardingText('applyTask.testTarget', { target: target.name }),
       targetId: target.id,
     },
   ]
-}
-
-function recommendationText(
-  recommendation: OnboardingRecommendation,
-  field: 'label' | 'reason',
-): string {
-  const key = `projects:onboarding.recommendation.${recommendation.copyKey}.${field}`
-  return i18n.t(key, { defaultValue: recommendation.copyKey })
 }

@@ -9,10 +9,7 @@ import {
   CodeBlockTitle,
 } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
-import {
-  diffLineDecoration,
-  diffLines,
-} from '@/platform/renderer/components/file-diff-lines'
+import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>

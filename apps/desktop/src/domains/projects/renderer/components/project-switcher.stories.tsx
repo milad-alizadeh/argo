@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { MemoryRouter } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
@@ -11,9 +10,7 @@ function ProjectSwitcherStory() {
   const [queryClient] = useState(() => new QueryClient())
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <ProjectSwitcher />
-      </MemoryRouter>
+      <ProjectSwitcher />
     </QueryClientProvider>
   )
 }
@@ -42,10 +39,9 @@ export const ProjectActions: Story = {
       expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
     )
     dispatchProjectCommand(canvasElement)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: worktree' })).toBeEnabled(),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Current project: worktree' }))
+    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
+    window.location.hash = ''
+    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to argo' }))
     // The previous menu's closing animation leaves it briefly unclickable, still in the DOM.
@@ -56,9 +52,7 @@ export const ProjectActions: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Add project' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: worktree' })).toBeEnabled(),
-    )
+    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
   },
 }
 

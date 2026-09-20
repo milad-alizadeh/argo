@@ -90,3 +90,8 @@
   min-height: 310px;
   resize: vertical;
 }
+
+.onboarding-file-diff-list {
+  --onboarding-file-diff-list-max-height: 60vh;
+  max-height: var(--onboarding-file-diff-list-max-height);
+}

@@ -1,16 +1,19 @@
 import { CheckCircle2, Circle, FileJson, FolderOpen, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { OnboardingController } from './project-onboarding'
 import { HarnessSelect } from './project-onboarding-harness-stage'
 import { ProjectOnboardingStageHeader as StageHeading } from './project-onboarding-layout'
-import { BackAction, SectionCard, SectionCardHeader } from './project-onboarding-primitives'
+import { SectionCard, SectionCardHeader } from './project-onboarding-primitives'
+import { StageHeadingWithBack } from './project-onboarding-stage-navigation'
 
 export function FolderStage({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { actions, state } = controller
   return (
     <>
-      <StageHeading description="Choose the Project folder. Argo will find Targets inside it.">
-        Choose a Project folder
+      <StageHeading description={t('onboarding.flow.folder.description')}>
+        {t('onboarding.flow.folder.title')}
       </StageHeading>
       <button
         className="onboarding-folder-choice mt-8"
@@ -21,50 +24,56 @@ export function FolderStage({ controller }: { controller: OnboardingController }
           <FolderOpen className="size-5" />
         </span>
         <span className="min-w-0 text-left">
-          <strong className="block type-body font-medium">argo</strong>
+          <strong className="block type-body font-medium">{t('onboarding.productName')}</strong>
           <span className="block truncate type-label text-muted-foreground">
             {state.projectPath}
           </span>
         </span>
-        <span className="ml-auto type-label text-muted-foreground">Choose</span>
+        <span className="ml-auto type-label text-muted-foreground">
+          {t('onboarding.flow.folder.choose')}
+        </span>
       </button>
     </>
   )
 }
 
 export function MethodStage({ controller }: { controller: OnboardingController }) {
+  const { t } = useTranslation('projects')
   const { actions, state } = controller
   const defaultHarnessLabel = state.defaultHarness === 'claude' ? 'Claude Code' : 'Codex'
   return (
     <>
-      <StageHeading
-        back={<BackAction controller={controller} />}
-        description="Ask an agent to find Targets and recommend setup, or define Target commands without changing Project files."
-      >
-        1 · Choose a setup method
-      </StageHeading>
+      <StageHeadingWithBack
+        controller={controller}
+        description={t('onboarding.flow.method.description')}
+        title={t('onboarding.flow.method.title')}
+      />
       <div className="onboarding-method-grid mt-8">
         <SectionCard
           className="onboarding-agent-method-card"
           icon={<Sparkles />}
-          subtitle="A harness is the app that Argo uses to run an agent."
-          title="Set up with an agent"
+          subtitle={t('onboarding.flow.method.agent.subtitle')}
+          title={t('onboarding.flow.method.agent.title')}
         >
           <div className="onboarding-agent-method-card__controls">
-            <HarnessSelect label="Harness" onChange={actions.setHarness} value={state.harness} />
+            <HarnessSelect
+              label={t('onboarding.flow.harness.label')}
+              onChange={actions.setHarness}
+              value={state.harness}
+            />
             <div className="mt-3 flex items-center gap-2">
               {state.defaultHarness ? (
                 <>
                   <CheckCircle2 className="size-4 text-diff-added" />
                   <p className="type-label text-muted-foreground">
-                    {defaultHarnessLabel} is the default harness. It is ready.
+                    {t('onboarding.flow.method.defaultReady', { harness: defaultHarnessLabel })}
                   </p>
                 </>
               ) : (
                 <>
                   <Circle className="size-4 text-muted-foreground" />
                   <p className="type-label text-muted-foreground">
-                    Choose a default harness before Argo analyzes the Project.
+                    {t('onboarding.flow.method.defaultRequired')}
                   </p>
                 </>
               )}
@@ -75,14 +84,16 @@ export function MethodStage({ controller }: { controller: OnboardingController }
                   onClick={() => actions.configureDefaultHarness(state.harness)}
                   variant="outline"
                 >
-                  Use {state.harness === 'codex' ? 'Codex' : 'Claude Code'} as default
+                  {t('onboarding.flow.method.useDefault', {
+                    harness: state.harness === 'codex' ? 'Codex' : 'Claude Code',
+                  })}
                 </Button>
               ) : null}
               <Button
                 disabled={!state.defaultHarness}
                 onClick={() => actions.chooseMethod('agent')}
               >
-                Analyze Project
+                {t('onboarding.flow.method.analyze')}
               </Button>
             </div>
           </div>
@@ -94,17 +105,15 @@ export function MethodStage({ controller }: { controller: OnboardingController }
         >
           <SectionCardHeader
             icon={<FileJson />}
-            subtitle="Store Target definitions in Argo without touching Project files."
-            title="Manual setup"
+            subtitle={t('onboarding.flow.method.manual.subtitle')}
+            title={t('onboarding.flow.method.manual.title')}
           />
         </button>
       </div>
       <div className="mt-5 flex items-center justify-between rounded-xl border border-dashed px-4 py-3">
-        <p className="type-label text-muted-foreground">
-          You can open this Project now and finish setup later.
-        </p>
+        <p className="type-label text-muted-foreground">{t('onboarding.flow.method.skipNote')}</p>
         <Button onClick={actions.skipSetup} variant="ghost">
-          Skip for now
+          {t('onboarding.flow.skip')}
         </Button>
       </div>
     </>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
+import { ProjectOnboarding } from '@/domains/projects/renderer/setup/project-onboarding'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
 import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/roster/use-sidebar-actions'
 import { CockpitRouteLayout } from '@/renderer/cockpit-router'
@@ -16,6 +17,11 @@ function CockpitRouteLayoutStory() {
         {
           element: <CockpitRouteLayout />,
           children: [
+            {
+              id: 'project-onboarding',
+              path: '/projects/new',
+              element: <ProjectOnboarding />,
+            },
             {
               path: '/sessions',
               handle: { sidebar: <SessionsSidebar /> },
@@ -62,7 +68,7 @@ function listed(projects: (typeof PROJECT)[], selectedId: string | null) {
 }
 
 // With no Project the cockpit has nothing to show a roster for: the window names the next step, and
-// adding a Project from it opens the cockpit on that Project (#2307).
+// adding a Project from it opens guided Project setup (#2381).
 export const NoProject: Story = {
   beforeEach: () => {
     const before = window.argo
@@ -71,7 +77,6 @@ export const NoProject: Story = {
     window.argo = {
       ...before,
       listProjects: () => Promise.resolve(listed([], null)),
-      registerProject: () => Promise.resolve(listed([PROJECT], PROJECT.id)),
     }
     return () => {
       window.argo = before
@@ -85,9 +90,8 @@ export const NoProject: Story = {
     await expect(canvas.queryByRole('complementary', { name: 'Sessions sidebar' })).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'New Session' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Add Project…' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('complementary', { name: 'Sessions sidebar' })).toBeVisible(),
-    )
+    await waitFor(() => expect(canvas.getByRole('main', { name: 'Project setup' })).toBeVisible())
+    await expect(canvas.getByRole('heading', { name: 'Choose a Project folder' })).toBeVisible()
     await expect(canvas.queryByText('Add a Project to start')).toBeNull()
   },
 }
