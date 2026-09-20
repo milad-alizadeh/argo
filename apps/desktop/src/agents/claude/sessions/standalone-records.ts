@@ -1,6 +1,9 @@
 import { commandSource } from '@/agents/claude/sessions/command-source'
 import { messageEnvelope } from '@/agents/claude/sessions/message-envelope'
-import type { TranscriptMessage, TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type {
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model/transcript'
 
 function setupRecord(record: Record<string, unknown>): TranscriptRecord | null {
   if (record.type !== 'permission-mode' || typeof record.permissionMode !== 'string') return null

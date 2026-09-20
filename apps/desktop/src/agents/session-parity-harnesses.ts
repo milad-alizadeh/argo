@@ -5,8 +5,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
 import { readerOverRollout } from '@/agents/codex/sessions/rollout-reader-test-helper'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { fed, feedRequest, listed, rowsOf } from '@/domains/sessions/main/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import {
+  fed,
+  feedRequest,
+  listed,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader-test-helpers'
 
 const SESSIONS = fileURLToPath(new URL('../../mocks/cli', import.meta.url))
 export type Context = { after: (cleanup: () => Promise<void>) => void }

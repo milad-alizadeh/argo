@@ -14,7 +14,7 @@ import {
   STARTED_AT,
   settle,
 } from '@/agents/claude/integration/claude-driver-launch.ts'
-import { createOwnershipLedger } from '@/domains/sessions/main/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
 const turn = (prompt: string) => ({ prompt, setup: OPENING })

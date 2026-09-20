@@ -4,8 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { sessionListReplySchema } from '@/domains/sessions/contract/contract'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 const listing = {
   version: 1 as const,

@@ -3,8 +3,8 @@ import {
   readCompactionStarts,
   removeCompactionStart,
 } from '@/agents/claude/compaction/compaction-starts'
-import type { SessionChain } from '@/domains/sessions/contract/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
+import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 
 // A compaction of a 200k-token context took 72 s; one this old is a Session killed mid-compaction.
 const COMPACTION_PATIENCE_MS = 30 * 60_000

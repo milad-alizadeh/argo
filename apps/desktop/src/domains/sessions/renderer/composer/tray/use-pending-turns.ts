@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import {
   type PendingTurn,
   useComposerStore,

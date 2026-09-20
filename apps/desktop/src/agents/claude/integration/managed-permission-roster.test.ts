@@ -4,10 +4,10 @@ import type { ClaudePermissionGate } from '@/agents/claude/drive/permission-gate
 import { launch, ledgerFile, OPENING } from '@/agents/claude/integration/claude-driver-launch.ts'
 import { fixtureRoot } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import type { ClaudePermission } from '@/domains/sessions/contract/contract.ts'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { listed } from '@/domains/sessions/main/reader-test-helpers'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract.ts'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
 
 // A gate whose pending Permission this suite sets directly, so a test can raise one without
 // driving the real socket and hook a Claude process would use.

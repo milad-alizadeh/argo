@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
-import { projectFeed } from '@/domains/sessions/main/feed-incremental'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
 
 function subagentActivity(kind: string, agentThreadId: string, agentPath: string) {
   return parseCodexTranscriptLine(

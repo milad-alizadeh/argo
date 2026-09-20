@@ -6,7 +6,7 @@ import {
   rememberManagedSession,
 } from '@/agents/codex/drive/managed-session'
 import { readThreadId } from '@/agents/codex/drive/protocol'
-import type { OwnershipStanding } from '@/domains/sessions/main/ownership-ledger'
+import type { OwnershipStanding } from '@/domains/sessions/main/lifecycle/ownership-ledger'
 
 function refuseUnlessResumable(standing: OwnershipStanding) {
   switch (standing) {

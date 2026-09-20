@@ -4,11 +4,14 @@
 
 import { compactionEndedAt, markCompactingRows } from '@/agents/claude/compaction/compaction-roster'
 import type { LiveMessage } from '@/agents/claude/drive/live-messages'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import type { SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader'
 import {
   backfillTick,
   clearFullRecords,
@@ -127,8 +130,13 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     historyComplete: index === undefined ? undefined : () => historyComplete(index),
     searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
-    readShellOutput: async (sessionId, shellId) =>
-      readShellOutput(await readSessionFiles(roots.transcripts, sessionId), shellId),
+    readShellOutput: async (sessionId, shellId) => {
+      const tail = await readShellOutput(
+        await readSessionFiles(roots.transcripts, sessionId),
+        shellId,
+      )
+      return tail === null ? { state: 'absent' } : { state: 'available', tail }
+    },
     readSubagentFiles: async (sessionId, subagentId) =>
       readSubagentChain(await readSessionFiles(roots.transcripts, sessionId), subagentId),
     readSubagentUsage: async (sessionId) =>

@@ -12,7 +12,12 @@ async function sourceFiles(directory) {
   for (const entry of entries) {
     const entryPath = path.join(directory, entry.name)
     if (entry.isDirectory()) files.push(...(await sourceFiles(entryPath)))
-    else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !entry.name.includes('.test.')) {
+    else if (
+      /\.[cm]?[jt]sx?$/.test(entry.name) &&
+      !entry.name.includes('.test.') &&
+      !entry.name.includes('.stories.') &&
+      entry.name !== 'harness-fixtures.ts'
+    ) {
       files.push({
         path: normalized(path.relative(process.cwd(), entryPath)),
         source: await readFile(entryPath, 'utf8'),

@@ -11,8 +11,8 @@ import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
 import {
   createSessionArchiveStore,
   sessionArchivePath,
-} from '@/domains/sessions/main/archive-store'
-import { createSessionReader } from '@/domains/sessions/main/reader.ts'
+} from '@/domains/sessions/main/archive/archive-store'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
 
 // The shared reader joins an Argo archive flag with the Session's current and retired ids (#2315).
 test('excludes an archived Session from the Roster, under any id it answered to', async (context) => {

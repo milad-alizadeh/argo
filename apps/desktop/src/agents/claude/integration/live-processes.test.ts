@@ -6,9 +6,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fixtureRoot, unscopedListing } from '@/agents/claude/integration/session-fixtures'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
-import type { SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/reader'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 
 // A pid that existed and has exited, so no live process holds it.
 const exitedPid = spawnSync('true').pid

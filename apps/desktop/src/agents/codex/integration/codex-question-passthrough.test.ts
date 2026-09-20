@@ -6,7 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter.ts'
-import { sendSession, startSession } from '@/domains/sessions/main/drive.ts'
+import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 
 test('a Codex Turn still carries the shared editor markdown to the transport when it is not asking', async () => {

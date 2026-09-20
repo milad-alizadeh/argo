@@ -4,9 +4,9 @@ import { codexLaunchEnvironment } from '@/agents/codex/drive/launch-environment'
 import { createLiveMessages, type LiveMessages } from '@/agents/codex/drive/live-messages'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
 import { codexNotificationRecorder } from '@/agents/codex/drive/record-notification'
-import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { managedRow } from '@/domains/sessions/main/managed-row'
-import type { OwnershipLedger } from '@/domains/sessions/main/ownership-ledger'
+import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import type { OwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger'
 
 export type ManagedSession = {
   channel: CodexChannel

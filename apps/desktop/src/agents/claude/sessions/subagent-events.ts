@@ -1,6 +1,9 @@
 // The lifecycle events a Claude Subagent call reads as, and the facts each carries.
 import { elapsedMilliseconds } from '@/domains/sessions/contract/duration'
-import type { SubagentControlFacts, SubagentEvent } from '@/domains/sessions/contract/transcript'
+import type {
+  SubagentControlFacts,
+  SubagentEvent,
+} from '@/domains/sessions/contract/model/transcript'
 
 // The first line of a reply, with the Markdown marks a reader would not want stripped.
 export function replyLine(reply: string): string | undefined {

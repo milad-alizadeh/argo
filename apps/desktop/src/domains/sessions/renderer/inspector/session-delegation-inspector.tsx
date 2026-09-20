@@ -4,7 +4,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionSubagent } from '@/domains/sessions/contract/models'
+import type { SessionSubagent } from '@/domains/sessions/contract/model/models'
 import { FeedDocument } from '@/domains/sessions/renderer/feed/feed-document'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'

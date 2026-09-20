@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseTranscriptLine } from '@/agents/claude/sessions/records'
-import { transcriptFileFrom } from '@/domains/sessions/contract/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 
 test('reads useful harness deliveries as typed reader events', () => {
   const envelopes = [

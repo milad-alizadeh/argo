@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parseCodexTranscriptLine } from '@/agents/codex/sessions/records'
-import { rowsOfRecord } from '@/domains/sessions/main/feed'
+import { rowsOfRecord } from '@/domains/sessions/main/projection/feed'
 
 function eventRows(payload: Record<string, unknown>) {
   const record = parseCodexTranscriptLine(

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
-import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/tool-groups'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/model/tool-groups'
 import { useDrawnRow } from '@/domains/sessions/renderer/feed/drawn-row'
 import { feedContent } from '@/domains/sessions/renderer/feed/feed-content'
 import {

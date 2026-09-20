@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
 import type { RequestID, WireMessage } from '@/agents/codex/drive/protocol'
 import { protocolRecord, protocolString } from '@/agents/codex/drive/protocol'
-import type { SessionStatus } from '@/domains/sessions/contract/models'
-import type { Question, QuestionAnswer, QuestionOption } from '@/domains/sessions/contract/question'
+import type {
+  Question,
+  QuestionAnswer,
+  QuestionOption,
+} from '@/domains/sessions/contract/drive/question'
+import type { SessionStatus } from '@/domains/sessions/contract/model/models'
 
 // A pending `item/tool/requestUserInput` server request (EXPERIMENTAL, grounded against codex-cli
 // 0.147.0's generated schema behind `features.default_mode_request_user_input`, #1841). Codex asks

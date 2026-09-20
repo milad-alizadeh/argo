@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { PatchFile } from '@/domains/sessions/contract/patch-files'
+import type { PatchFile } from '@/domains/sessions/contract/model/patch-files'
 import { CodeBlock } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
 import {

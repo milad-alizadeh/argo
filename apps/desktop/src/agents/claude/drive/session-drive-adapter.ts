@@ -2,16 +2,16 @@ import { embedAttachments, mentionableAttachments } from '@/agents/claude/drive/
 import type { ClaudeSessionDriver } from '@/agents/claude/drive/claude-session-driver'
 import { ClaudeSessionDriverError } from '@/agents/claude/drive/driver-error'
 import type { ClaudePermissionDecision } from '@/agents/claude/drive/permission-gate'
-import type { Permission, PermissionDecision } from '@/domains/sessions/contract/permission'
-import type {
-  DriveFailure,
-  SessionDriveAdapter,
-} from '@/domains/sessions/main/session-drive-adapter'
+import type { Permission, PermissionDecision } from '@/domains/sessions/contract/drive/permission'
 import {
   type ClaudePermission,
   type ClaudeTurnSetup,
   claudeTurnSetupSchema,
-} from './turn-setup-contract'
+} from '@/domains/sessions/contract/ipc/contract'
+import type {
+  DriveFailure,
+  SessionDriveAdapter,
+} from '@/domains/sessions/main/drive/session-drive-adapter'
 
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
   return { error: error instanceof ClaudeSessionDriverError ? error.code : fallback }

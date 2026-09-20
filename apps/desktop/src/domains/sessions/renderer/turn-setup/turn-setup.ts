@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
-import type { SessionSetup } from '@/domains/sessions/contract/models'
+import type { SessionSetup } from '@/domains/sessions/contract/model/models'
 import {
   type ComposerIdentity,
   composerIdentityKey,

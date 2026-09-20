@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { FeedGallery, FeedImage } from '@/domains/sessions/renderer/feed/content/feed-images'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
 import type { SessionEvidence, SessionFeedRow } from '@/domains/sessions/renderer/types'

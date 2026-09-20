@@ -1,5 +1,5 @@
 import { messageRecord } from '@/agents/codex/sessions/message-record'
-import type { TranscriptRecord } from '@/domains/sessions/contract/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { isRecord } from '@/shared/validation'
 
 // Codex writes each summary as a Markdown headline (`**Reading the plan**`); the Feed draws a

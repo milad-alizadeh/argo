@@ -2,10 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-import { AccountsPanel } from '@/domains/accounts/renderer/components/accounts-dialog'
+import { AccountsPanel } from '@/domains/accounts/renderer/port'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { ConnectSourceFields } from '@/domains/tickets/renderer/components/connect-source-form'
-import { STATUSES } from '@/domains/tickets/renderer/components/status-fixtures'
+import { ConnectSourceFields } from '@/domains/tickets/renderer/connection/connect-source-form'
 import {
   backlog,
   connection,
@@ -14,10 +13,11 @@ import {
   octocat,
   standalone,
   ticketsView,
-} from '@/domains/tickets/renderer/components/ticket-fixtures'
-import { TicketsSidebarContent } from '@/domains/tickets/renderer/components/tickets-sidebar'
+} from '@/domains/tickets/renderer/detail/ticket-fixtures'
 import type { TicketsScreenProps } from '@/domains/tickets/renderer/hooks/use-tickets-view'
 import { TicketsScreen } from '@/domains/tickets/renderer/screens/tickets-screen-view'
+import { TicketsSidebarContent } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
+import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the

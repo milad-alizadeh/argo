@@ -1,11 +1,14 @@
 import type { LiveMessage } from '@/agents/codex/drive/codex-session-driver'
 import type { PendingCodexQuestion } from '@/agents/codex/drive/question-protocol'
-import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/contract'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/models'
-import { askRow } from '@/domains/sessions/contract/tool-feed'
-import { discoverRoster } from '@/domains/sessions/main/discover-roster'
-import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/reader'
-import type { SessionIndex } from '@/domains/sessions/main/session-index/contract'
+import type {
+  SessionRenameReply,
+  SessionRenameRequest,
+} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { askRow } from '@/domains/sessions/contract/model/tool-feed'
+import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
+import type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/reader'
 import {
   backfillTick,
   clearFullRecords,
@@ -73,7 +76,10 @@ function combinedOverlay(
   return (rows) => {
     const drafts = draftRows(rows, live)
     const asks = pending === null ? [] : [questionRow(pending)]
-    return { rows: [...rows, ...drafts, ...asks], changes: [...drafts, ...asks] }
+    return {
+      rows: [...rows, ...drafts, ...asks],
+      changes: { rows: [...drafts, ...asks], aliases: [] },
+    }
   }
 }
 
@@ -144,6 +150,7 @@ export function codexSessionSource(root: string, options?: ReaderOptions): Sessi
       return readSubagentTokens(root, subagentIds)
     },
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
+    readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: options?.roster,
     isLockedElsewhere: options?.isLockedElsewhere,
     rename: options?.rename,

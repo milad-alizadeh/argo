@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { ClaudePermissionDecision } from '@/agents/claude/drive/permission-gate'
 import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter.ts'
-import type { ClaudePermission } from '@/domains/sessions/contract/contract'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
 import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
 
 test('reads the pending Permission the driver holds, mapped onto the shared Permission shape', async () => {

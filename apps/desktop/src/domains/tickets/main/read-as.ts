@@ -2,20 +2,15 @@
 // that fails named as the Ticket error the Connection shows.
 
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { AccountAccess } from '@/domains/accounts/main/access'
-import { providerOf } from '@/domains/accounts/main/registry'
-import { asAccount, type TokenFailure } from '@/domains/accounts/main/tokens'
+import { providerOf } from '@/domains/accounts/contract/provider'
+import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/accounts/main/port'
+import type { ConnectionPort } from '@/domains/connections/main/port'
 import {
   type TicketError,
   type TicketErrorCode,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import {
-  type Reader,
-  type SourceRead,
-  TICKET_SOURCES,
-  type TicketSource,
-} from '@/domains/tickets/main/sources'
+import type { Reader, SourceRead, TicketSource } from '@/domains/tickets/main/sources'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',
@@ -25,7 +20,13 @@ const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, Ti
   'grant-unreadable': 'grant-unreadable',
 }
 
-export type Call = { access: AccountAccess; requestId: string; projectId: string }
+export type Call = {
+  access: AccountAccess
+  connections: ConnectionPort
+  requestId: string
+  projectId: string
+  sources: Record<Provider, TicketSource>
+}
 
 type Read<T> = { ok: true; value: T; provider: Provider } | { ok: false; error: TicketError }
 
@@ -40,7 +41,7 @@ export async function readAs<T>(
 ): Promise<Read<T>> {
   const provider = providerOf(accountId)
   if (!provider) return failure(call, 'missing-account')
-  const source = TICKET_SOURCES[provider]
+  const source = call.sources[provider]
   const outcome = await asAccount(call.access, accountId, {
     call: (token) => read(source, { endpoints: call.access.endpoints, token }),
     refused: (reply) => !reply.ok && reply.failure === 'refused',

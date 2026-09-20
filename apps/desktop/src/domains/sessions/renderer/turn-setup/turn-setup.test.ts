@@ -5,7 +5,7 @@ import {
   CLAUDE_MODELS,
   CLAUDE_MODES,
   claudeTurnSetupSchema,
-} from '@/agents/claude/drive/turn-setup-contract'
+} from '@/domains/sessions/contract/ipc/contract'
 import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
 import {
   refusalOf,

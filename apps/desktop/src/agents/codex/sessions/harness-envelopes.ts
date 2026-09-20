@@ -3,7 +3,7 @@ import type {
   ContentBlock,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/transcript'
+} from '@/domains/sessions/contract/model/transcript'
 import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
 import { withoutChannelTag } from './realtime-replies'
 

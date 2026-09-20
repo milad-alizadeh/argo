@@ -1,5 +1,5 @@
 import type { Wait } from '@/agents/claude/drive/deliver-turn'
-import type { QuestionAnswer } from '@/domains/sessions/contract/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 
 export type AnswerTarget = { process: { write: (text: string) => void } }
 

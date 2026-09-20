@@ -13,7 +13,7 @@ import {
   Unplug,
 } from 'lucide-react'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { ConnectionSummary, TicketErrorCode } from '@/domains/tickets/contract/contract'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import { i18n } from '@/platform/renderer/i18n/i18n'

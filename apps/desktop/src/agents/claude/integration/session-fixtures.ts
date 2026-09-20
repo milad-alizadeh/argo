@@ -5,9 +5,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions.ts'
 import { readTranscriptFile } from '@/agents/claude/sessions/transcript-file.ts'
-import { stitchChains } from '@/domains/sessions/contract/chains.ts'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { projectRosterRow } from '@/domains/sessions/main/roster.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
 import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
 
 export const unscopedListing = {

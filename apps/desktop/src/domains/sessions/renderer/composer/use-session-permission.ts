@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type {
   Permission,
   SessionPermissionDecisionRequest,
-} from '@/domains/sessions/contract/contract'
+} from '@/domains/sessions/contract/ipc/contract'
 import {
   type SessionContractError,
   throwSessionContractError,

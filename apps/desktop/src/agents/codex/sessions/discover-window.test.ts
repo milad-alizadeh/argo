@@ -6,9 +6,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/discover-transcript-sessions'
-import { createSessionReader } from '@/domains/sessions/main/reader'
-import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/window-proof-helpers'
+import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/observation/window-proof-helpers'
 
 function codexMessage(text: string, updatedAt: string) {
   return `${JSON.stringify({
