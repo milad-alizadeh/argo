@@ -10,17 +10,17 @@ export function applyTasksFor(state: OnboardingState): OnboardingApplyTask[] {
   if (state.method === 'manual') return []
   return [
     {
-      detail: onboardingText('applyTask.write.detail'),
+      detail: onboardingText('onboarding.applyTask.write.detail'),
       id: 'write-setup',
       kind: 'prepare',
-      label: onboardingText('applyTask.write.label'),
+      label: onboardingText('onboarding.applyTask.write.label'),
     },
     ...repositoryTasks(state.repositoryRecommendations),
     {
-      detail: onboardingText('applyTask.verifyProject.detail'),
+      detail: onboardingText('onboarding.applyTask.verifyProject.detail'),
       id: 'verify-repository-setup',
       kind: 'verify',
-      label: onboardingText('applyTask.verifyProject.label'),
+      label: onboardingText('onboarding.applyTask.verifyProject.label'),
     },
     ...state.targets.flatMap(targetTasks),
   ]
@@ -47,7 +47,7 @@ function targetTasks(target: OnboardingTarget): OnboardingApplyTask[] {
         detail: recommendationText(recommendation, 'reason'),
         id: `install-${target.id}-${recommendation.id}`,
         kind: 'install' as const,
-        label: onboardingText('applyTask.installForTarget', {
+        label: onboardingText('onboarding.applyTask.installForTarget', {
           target: target.name,
           tool: recommendationText(recommendation, 'label'),
         }),
@@ -55,21 +55,21 @@ function targetTasks(target: OnboardingTarget): OnboardingApplyTask[] {
         targetId: target.id,
       })),
     {
-      detail: onboardingText('applyTask.runCommand', {
-        command: target.buildCommand || onboardingText('applyTask.buildCommand'),
+      detail: onboardingText('onboarding.applyTask.runCommand', {
+        command: target.buildCommand || onboardingText('onboarding.applyTask.buildCommand'),
       }),
       id: `build-${target.id}`,
       kind: 'verify' as const,
-      label: onboardingText('applyTask.buildTarget', { target: target.name }),
+      label: onboardingText('onboarding.applyTask.buildTarget', { target: target.name }),
       targetId: target.id,
     },
     {
-      detail: onboardingText('applyTask.runCommand', {
-        command: target.testCommand || onboardingText('applyTask.testCommand'),
+      detail: onboardingText('onboarding.applyTask.runCommand', {
+        command: target.testCommand || onboardingText('onboarding.applyTask.testCommand'),
       }),
       id: `test-${target.id}`,
       kind: 'verify' as const,
-      label: onboardingText('applyTask.testTarget', { target: target.name }),
+      label: onboardingText('onboarding.applyTask.testTarget', { target: target.name }),
       targetId: target.id,
     },
   ]

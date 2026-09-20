@@ -85,5 +85,7 @@ function projectSetupSummary(
   const count = recommendations.filter(
     (recommendation) => recommendation.accepted && recommendation.group === group.id,
   ).length
-  return count ? onboardingText(`repositoryGroups.${group.copyKey}.summary`, { count }) : null
+  return count
+    ? onboardingText(`onboarding.repositoryGroups.${group.copyKey}.summary`, { count })
+    : null
 }

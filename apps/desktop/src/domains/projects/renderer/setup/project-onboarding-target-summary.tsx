@@ -57,7 +57,7 @@ export function CommandFact({ label, value }: { label: string; value: string }) 
   return (
     <span>
       <small>{label}</small>
-      <code>{value || onboardingText('notSet')}</code>
+      <code>{value || onboardingText('onboarding.notSet')}</code>
     </span>
   )
 }
@@ -66,7 +66,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <span className="onboarding-found-fact">
       <small>{label}</small>
-      <strong>{value || onboardingText('notSet')}</strong>
+      <strong>{value || onboardingText('onboarding.notSet')}</strong>
     </span>
   )
 }

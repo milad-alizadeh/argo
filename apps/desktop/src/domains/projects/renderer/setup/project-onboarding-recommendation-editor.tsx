@@ -35,7 +35,7 @@ export function RecommendationEditor({
           <OptionRow
             action={
               <Switch
-                aria-label={onboardingText('action.acceptRecommendation', {
+                aria-label={onboardingText('onboarding.action.acceptRecommendation', {
                   label: recommendationText(recommendation, 'label'),
                 })}
                 checked={recommendation.accepted}

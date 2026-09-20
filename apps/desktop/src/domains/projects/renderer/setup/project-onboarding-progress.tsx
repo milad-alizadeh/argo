@@ -7,12 +7,15 @@ import { onboardingText, runnableTargetCount } from './project-onboarding-copy'
 const progressStages: Array<{ ids: OnboardingStage[]; label: string }> = [
   {
     ids: ['method', 'no-default', 'harness', 'manual'],
-    label: onboardingText('progress.method'),
+    label: onboardingText('onboarding.progress.method'),
   },
-  { ids: ['analyzing'], label: onboardingText('progress.analyze') },
-  { ids: ['recommendations', 'customize'], label: onboardingText('progress.targets') },
-  { ids: ['project-setup'], label: onboardingText('progress.project') },
-  { ids: ['applying', 'apply-failed', 'starting'], label: onboardingText('progress.apply') },
+  { ids: ['analyzing'], label: onboardingText('onboarding.progress.analyze') },
+  { ids: ['recommendations', 'customize'], label: onboardingText('onboarding.progress.targets') },
+  { ids: ['project-setup'], label: onboardingText('onboarding.progress.project') },
+  {
+    ids: ['applying', 'apply-failed', 'starting'],
+    label: onboardingText('onboarding.progress.apply'),
+  },
 ]
 
 export function SetupProgress({ stage }: { stage: OnboardingStage }) {
@@ -78,7 +81,7 @@ export function SetupEvidence({ controller }: { controller: OnboardingController
       <EvidenceRow
         icon={<Settings2 />}
         label={t('onboarding.evidence.lastAction')}
-        value={onboardingText(`event.${state.event}`)}
+        value={onboardingText(`onboarding.event.${state.event}`)}
       />
     </div>
   )
@@ -100,19 +103,19 @@ export function AgentTimeline({ controller }: { controller: OnboardingController
   const { state } = controller
   const applying = ['applying', 'apply-failed', 'starting', 'complete'].includes(state.stage)
   const items = [
-    { complete: state.stage !== 'folder', label: onboardingText('timeline.folder') },
-    { complete: Boolean(state.method), label: onboardingText('timeline.method') },
+    { complete: state.stage !== 'folder', label: onboardingText('onboarding.timeline.folder') },
+    { complete: Boolean(state.method), label: onboardingText('onboarding.timeline.method') },
     {
       complete: !['folder', 'method', 'no-default', 'harness', 'analyzing'].includes(state.stage),
-      label: onboardingText('timeline.plan'),
+      label: onboardingText('onboarding.timeline.plan'),
     },
-    { complete: applying, label: onboardingText('timeline.approved') },
+    { complete: applying, label: onboardingText('onboarding.timeline.approved') },
     {
       complete: state.stage === 'complete',
       label:
         state.method === 'manual' || state.skippedSetup
-          ? onboardingText('timeline.opened')
-          : onboardingText('timeline.started'),
+          ? onboardingText('onboarding.timeline.opened')
+          : onboardingText('onboarding.timeline.started'),
     },
   ]
   return (

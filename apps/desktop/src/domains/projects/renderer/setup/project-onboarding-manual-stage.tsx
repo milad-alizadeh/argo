@@ -95,7 +95,7 @@ function ManualTargetSummary({ target }: { target: OnboardingTarget }) {
   )
 }
 function manualStatus(targets: OnboardingTarget[] | null, validated: boolean) {
-  if (!targets) return onboardingText('manual.status.invalid')
-  if (validated) return onboardingText('manual.status.valid')
-  return onboardingText('manual.status.found', { targets: targetCount(targets.length) })
+  if (!targets) return onboardingText('onboarding.manual.status.invalid')
+  if (validated) return onboardingText('onboarding.manual.status.valid')
+  return onboardingText('onboarding.manual.status.found', { targets: targetCount(targets.length) })
 }
