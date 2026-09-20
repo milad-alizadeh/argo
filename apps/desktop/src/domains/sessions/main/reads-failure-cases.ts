@@ -29,6 +29,7 @@ export function owningSource(capabilities: Partial<SessionSource> = {}): Session
       historyComplete: true,
     }),
     readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: () => [
       managedRow(SESSION_ID, {
         cli: 'claude',
@@ -77,10 +78,6 @@ export const DECLARATIONS: Declaration[] = [
     operation: 'shellOutput',
     fields: { sessionId: SESSION_ID, shellId: 'sh-call-build' },
     withoutSource: (reply) => assert.equal(reply.code, 'missing-session'),
-    withoutCapability: (reply) => {
-      assert.equal(reply.type, 'session.shell.output.read')
-      assert.equal(reply.output, null)
-    },
     throwing: {
       readShellOutput: async () => {
         throw denied()

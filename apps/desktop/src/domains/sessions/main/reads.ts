@@ -45,13 +45,14 @@ export const skillFileRead = fromNothing(
 )
 
 // The two reads about a Session's background work (#1582): what one Shell has written, and what
-// each Subagent spent. An adapter that records neither answers with nothing rather than an error.
+// each Subagent spent. A Shell's declaration is adapter-owned, so shared code never infers it
+// from a missing source method.
 export const shellOutputRead = fromOwner(
   'session.shell.output.read',
   async (owner: SessionSource, request: SessionShellOutputRequest) => ({
     sessionId: request.sessionId,
     shellId: request.shellId,
-    output: (await owner.readShellOutput?.(request.sessionId, request.shellId)) ?? null,
+    output: await owner.readShellOutput(request.sessionId, request.shellId),
   }),
 )
 
