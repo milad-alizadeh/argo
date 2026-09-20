@@ -229,13 +229,6 @@
       "title": "Setup review",
       "disclosure": "Setup review and progress"
     },
-    "progress": {
-      "method": "1 · Setup method",
-      "analyze": "2 · Analyze",
-      "targets": "3 · Targets",
-      "project": "4 · Project setup",
-      "apply": "5 · Apply"
-    },
     "timeline": {
       "folder": "Project folder selected",
       "method": "Setup method chosen",
