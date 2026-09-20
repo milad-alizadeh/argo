@@ -202,28 +202,28 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   {
     accepted: true,
     effect:
-      'Preserve Project-owned automation, update Argo setup capabilities, remove obsolete copies, and record lock changes.',
+      'Update Argo-managed setup files and remove obsolete generated copies. Keep Project-owned files unchanged.',
     id: 'argo-skill-bundle',
     kind: 'action',
-    label: 'Argo setup toolkit',
-    reason: 'Keep setup tools current without replacing Project-owned automation.',
+    label: 'Argo Project setup',
+    reason:
+      'Install Argo’s setup skills, commands, and agent instructions so every Session follows this Project’s rules.',
   },
   {
     accepted: true,
-    effect:
-      'Keep tracked automation visible, restore name collisions, and avoid ignore rules that would hide Project-owned files.',
+    effect: 'Resolve name conflicts and remove ignore rules that hide tracked automation.',
     id: 'owned-skills',
     kind: 'action',
-    label: 'Protect Project-owned automation',
-    reason: 'Prevent bundled tools from hiding Project-owned automation.',
+    label: 'Preserve Project automation',
+    reason: 'Keep existing agent scripts, skills, and configuration visible and in control.',
   },
   {
     accepted: true,
-    effect: 'Seed Bun-aware RTK filters without replacing the Project-owned filter file.',
+    effect: 'Add Bun-aware RTK filters. Keep the Project’s existing filters.',
     id: 'rtk-filters',
     kind: 'action',
-    label: 'RTK filters',
-    reason: 'Reduce noisy command output, so agents focus on useful results.',
+    label: 'RTK command filters',
+    reason: 'Shorten noisy command output so agents can find errors faster.',
   },
   {
     accepted: true,
@@ -253,12 +253,11 @@ const INITIAL_REPOSITORY_RECOMMENDATIONS: PrototypeRecommendation[] = [
   },
   {
     accepted: true,
-    effect:
-      'Install the descriptor, commands, worktree rules, and generated Claude and Codex hook projections.',
+    effect: 'Add one shared hook file and generate the configuration for each harness.',
     id: 'guardrail-hooks',
     kind: 'action',
-    label: 'Guardrail hooks',
-    reason: 'Apply the same safety rules across Claude Code and Codex.',
+    label: 'Safety hooks for agents',
+    reason: 'Enforce the same worktree and push rules in Claude Code and Codex.',
   },
   {
     accepted: true,
@@ -382,14 +381,13 @@ const VARIANTS = Object.keys(VARIANT_NAMES) as PrototypeVariant[]
 export const ANALYSIS_TASKS = [
   {
     label: 'Inspect the Project folder',
-    detail: 'Read manifests, Project files, and Project rules.',
+    detail: 'Read manifests, README files, AGENTS.md, and CI configuration.',
   },
   { label: 'Identify Targets', detail: 'Find each runnable Target inside the Project.' },
   { label: 'Resolve commands', detail: 'Find start, build, and test commands for every Target.' },
   {
     label: 'Audit Project setup',
-    detail:
-      'Detect harnesses, owned automation, CI, linters, UI, worktrees, and Project conventions.',
+    detail: 'Detect automation, linters, UI tools, worktree rules, and Project conventions.',
   },
   {
     label: 'Recommend setup capabilities',

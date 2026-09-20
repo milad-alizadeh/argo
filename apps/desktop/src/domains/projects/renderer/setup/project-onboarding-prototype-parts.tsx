@@ -640,11 +640,11 @@ function PlanningTaskList({ current }: { current: number }) {
         const status = planningTaskStatus(index, current)
         return (
           <li data-status={status} key={task.label}>
-            <TaskStatusIcon status={status} />
-            <span>
-              <strong>{task.label}</strong>
-              <small>{task.detail}</small>
-            </span>
+            <OptionRow
+              detail={task.detail}
+              icon={<TaskStatusIcon status={status} />}
+              title={task.label}
+            />
           </li>
         )
       })}
@@ -820,47 +820,20 @@ function CommandFact({ label, value }: { label: string; value: string }) {
   )
 }
 
-const REPOSITORY_FOUND_FACTS = [
-  { label: 'Harnesses', value: 'Codex · Claude Code' },
-  { label: 'Project type', value: 'Bun monorepo' },
-  { label: 'Quality', value: 'Biome · GitHub Actions' },
-  { label: 'UI surface', value: 'Electron desktop' },
-  { label: 'Workflow', value: 'Named worktrees' },
-] as const
-
-function RepositoryFoundFacts() {
-  return (
-    <SectionCard
-      className="prototype-repository-card"
-      icon={<GitBranch />}
-      title="Found in this Project"
-    >
-      <div className="prototype-repository-facts">
-        {REPOSITORY_FOUND_FACTS.map((fact) => (
-          <Fact key={fact.label} label={fact.label} value={fact.value} />
-        ))}
-      </div>
-    </SectionCard>
-  )
-}
-
 function RepositorySummary({ recommendations }: { recommendations: PrototypeRecommendation[] }) {
   const acceptedRecommendations = recommendations.filter(({ accepted }) => accepted)
   return (
-    <div className="space-y-3">
-      <RepositoryFoundFacts />
-      <SectionCard
-        className="prototype-repository-card"
-        icon={<Sparkles />}
-        title="The agent will add"
-      >
-        <div className="prototype-suggestions-area">
-          {acceptedRecommendations.map((recommendation) => (
-            <SuggestionFact key={recommendation.id} recommendation={recommendation} />
-          ))}
-        </div>
-      </SectionCard>
-    </div>
+    <SectionCard
+      className="prototype-repository-card"
+      icon={<Sparkles />}
+      title="The agent will add"
+    >
+      <div className="prototype-suggestions-area">
+        {acceptedRecommendations.map((recommendation) => (
+          <SuggestionFact key={recommendation.id} recommendation={recommendation} />
+        ))}
+      </div>
+    </SectionCard>
   )
 }
 
@@ -986,7 +959,6 @@ function ProjectSetupStage({ controller }: { controller: PrototypeController }) 
         4 · Customize Project setup
       </StageHeading>
       <div className="mt-7 space-y-5">
-        <RepositoryFoundFacts />
         <RepositoryRecommendationGroups
           onToggle={actions.toggleRepositoryRecommendation}
           recommendations={state.repositoryRecommendations}
