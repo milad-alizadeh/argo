@@ -8,7 +8,10 @@ import {
   ticketContextSchema,
 } from '@/domains/sessions/renderer/composer/composer-ticket-context'
 import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import { SESSION_CLIS, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import {
+  SESSION_HARNESSES,
+  type SessionHarness,
+} from '@/domains/sessions/renderer/harness/harnesses'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 export type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/composer-ticket-context'
@@ -47,14 +50,14 @@ const pendingTurnSchema = z
 // What a composer keeps across leaving the page and relaunching: each composer's unsent draft and
 // attachments, and the harness the last new Session was set to, app-wide.
 export type ComposerState = {
-  harness: SessionCli
+  harness: SessionHarness
   drafts: Record<string, string>
   attachments: Record<string, ComposerAttachment[]>
   tickets: Record<string, ComposerTicketContext[]>
   pendingTurns: Record<string, PendingTurn[]>
   markers: Record<string, TurnMarkerEntry>
   setup: Record<string, TurnSetup>
-  chooseHarness: (harness: SessionCli) => void
+  chooseHarness: (harness: SessionHarness) => void
   setDraft: (composerKey: string, text: string) => void
   addAttachments: (composerKey: string, paths: string[]) => void
   removeAttachment: (composerKey: string, id: string) => void
@@ -73,7 +76,7 @@ export type ComposerState = {
 
 const storedSchema = z
   .object({
-    harness: z.enum(SESSION_CLIS),
+    harness: z.enum(SESSION_HARNESSES),
     drafts: z.record(z.string(), z.string()),
     attachments: z.record(z.string(), z.array(attachmentSchema)),
     pendingTurns: z.record(z.string(), z.array(pendingTurnSchema)),

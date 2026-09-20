@@ -17,7 +17,7 @@ import {
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 
-test('reads a Session setup off the CLI words its transcript wrote', () => {
+test('reads a Session setup off the Harness words its transcript wrote', () => {
   expect(
     setupFromReading(CLAUDE_TURN_SETUP, {
       model: 'claude-sonnet-5',

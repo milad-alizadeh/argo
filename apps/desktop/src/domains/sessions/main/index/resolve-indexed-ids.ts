@@ -1,10 +1,10 @@
 // Resolving ids a caller already holds — archived, or asked for by restore — straight against the
-// Session index's persisted resume graph (#2374). No discovery window to grow: an id this CLI's
+// Session index's persisted resume graph (#2374). No discovery window to grow: an id this Harness's
 // index has never named for want of backfill (#2373) comes back unresolved rather than falling
 // through to a directory scan.
 //
 // The bounded window's own read (`indexed-window.ts`) revalidates every file it returns against a
-// fresh `stat` on every call, which is what keeps an *active* Session's row live while its CLI
+// fresh `stat` on every call, which is what keeps an *active* Session's row live while its Harness
 // writes to it. Background reconcile does the same for the rest of the tree, but pauses while a
 // Feed is open (`session-background-indexing.ts`) so it never races the file that Feed is reading.
 // An id resolved here can name exactly that open Session, so this resolution stats the chains it
@@ -38,7 +38,7 @@ export async function resolveIndexedIds(
   ids: readonly string[],
 ): Promise<ResolvedIndexedIds> {
   await bound.ensureHydrated()
-  const { history, cli } = bound.pass.source
+  const { history, harness } = bound.pass.source
   const chainIds = new Set<string>()
   const unresolvedIds: string[] = []
   for (const id of ids) {
@@ -47,7 +47,7 @@ export async function resolveIndexedIds(
   }
   let indexedChainIds = chainIds
   if (chainIds.size > 0) {
-    const known = await index.filesOfChains(cli, [...chainIds])
+    const known = await index.filesOfChains(harness, [...chainIds])
     indexedChainIds = new Set(known.map((file) => file.chainId))
     for (const id of ids) {
       const chainId = rootOf(id, history.parents)
@@ -58,6 +58,7 @@ export async function resolveIndexedIds(
     )
     await reindexCandidates(bound.pass, identities, identities)
   }
-  const rows = indexedChainIds.size === 0 ? [] : await index.rowsOfChains(cli, [...indexedChainIds])
+  const rows =
+    indexedChainIds.size === 0 ? [] : await index.rowsOfChains(harness, [...indexedChainIds])
   return { rows, unresolvedIds }
 }

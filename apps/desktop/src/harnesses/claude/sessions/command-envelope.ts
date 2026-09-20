@@ -1,0 +1,118 @@
+import type {
+  TranscriptEventKind,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model/transcript'
+import { taggedField, taggedText } from '@/harnesses/envelope-tags'
+import { isRecord } from '@/shared/validation'
+import { readableCommandOutput } from './command-output'
+import { readTaskDelivery } from './task-notification'
+
+function envelopeText(content: unknown): string | null {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return null
+  const first = content[0]
+  return isRecord(first) && first.type === 'text' && typeof first.text === 'string'
+    ? first.text
+    : null
+}
+
+// These envelopes configure the harness only, so they become hidden traces. They still mark a
+// real delivery boundary: Tool Calls either side must not be summarised as one run.
+const HIDDEN_HARNESS_ENVELOPES = new Set([
+  'apps_instructions',
+  'collaboration_mode',
+  'local-command-caveat',
+  'permissions',
+  'plugins_instructions',
+  'recommended_plugins',
+  'skills_instructions',
+])
+
+const HARNESS_EVENTS: Record<
+  string,
+  { event: TranscriptEventKind; text: (body: string) => string | null; requiresText?: true }
+> = {
+  'app-context': { event: 'context', text: () => null },
+  environment_context: { event: 'context', text: () => null },
+  realtime_delegation: {
+    event: 'command',
+    text: (body) => taggedField(body, 'input'),
+    requiresText: true,
+  },
+  status: { event: 'status', text: (body) => body.trim() || null },
+  transcript_delta: { event: 'transcript', text: () => null },
+  transcript_tail_flush: { event: 'transcript', text: () => null },
+}
+
+type HarnessEvent = Extract<TranscriptRecord, { kind: 'event' | 'trace' }>
+
+function envelopeName(text: string): string | null {
+  const name = /^\s*<([a-z][a-z0-9_-]*)(?:\s[^>]*)?>/i.exec(text)?.[1]
+  return name?.toLowerCase() ?? null
+}
+
+function isHarnessDelivery(record: Record<string, unknown>): boolean {
+  return record.userType === 'external' && typeof record.sourceToolAssistantUUID === 'string'
+}
+
+function completeEnvelope(text: string, name: string): string | null {
+  return (
+    new RegExp(`^\\s*<${name}(?:\\s[^>]*)?>([\\s\\S]*)</${name}>\\s*$`, 'i').exec(text)?.[1] ?? null
+  )
+}
+
+function harnessEvent(record: Record<string, unknown>, text: string): HarnessEvent | null {
+  const name = envelopeName(text)
+  if (!isHarnessDelivery(record) || name === null) return null
+  const body = completeEnvelope(text, name)
+  if (body === null) return null
+  if (HIDDEN_HARNESS_ENVELOPES.has(name)) return { kind: 'trace', uuid: '', boundary: true }
+  const presentation = Object.hasOwn(HARNESS_EVENTS, name) ? HARNESS_EVENTS[name] : undefined
+  if (presentation === undefined) return null
+  const eventText = presentation.text(body)
+  if (presentation.requiresText && eventText === null) return { kind: 'trace', uuid: '' }
+  return { kind: 'event', uuid: '', event: presentation.event, text: eventText }
+}
+
+function readCommandPrompt(text: string): string | null | undefined {
+  if (!text.startsWith('<command-name>') && !text.startsWith('<command-message>')) return undefined
+  const name = taggedText(text, 'command-name')
+  const command = name ?? taggedText(text, 'command-message')
+  if (command === null) return null
+  const argumentsText = taggedText(text, 'command-args') ?? ''
+  return name === null || argumentsText.length === 0 ? command : `${name} ${argumentsText}`
+}
+
+function readCommandOutput(message: TranscriptMessage, text: string): TranscriptRecord {
+  const output = readableCommandOutput(taggedText(text, 'local-command-stdout') ?? '')
+  if (output === '') return { kind: 'trace', uuid: message.uuid }
+  return { kind: 'command-output', uuid: message.uuid, timestamp: message.timestamp, text: output }
+}
+
+export function readCommandEnvelope(
+  record: Record<string, unknown>,
+  message: TranscriptMessage,
+): TranscriptRecord | null {
+  const content = isRecord(record.message) ? record.message.content : null
+  const text = envelopeText(content)
+  if (text === null) return null
+  const event = harnessEvent(record, text)
+  if (event !== null)
+    return event.kind === 'trace'
+      ? { ...event, uuid: message.uuid }
+      : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
+  if (text.startsWith('<local-command-stdout>')) return readCommandOutput(message, text)
+  if (text.startsWith('<task-notification>')) return readTaskDelivery(record, message, text)
+  // The harness re-delivers the compaction summary as a synthetic user turn so the model can
+  // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows
+  // rather than letting it fall through to a prose prompt bubble (#2206).
+  if (text.startsWith('This session is being continued from a previous conversation'))
+    return { kind: 'compaction-summary', uuid: message.uuid, text }
+  const prompt = readCommandPrompt(text)
+  if (prompt === undefined) return null
+  // The Harness echoes `/compact` after the boundary; the person's own `/compact` prompt precedes it.
+  if (prompt === null || prompt.split(' ')[0] === '/compact')
+    return { kind: 'trace', uuid: message.uuid }
+  return { ...message, blocks: [{ shape: 'event', event: 'command', text: prompt }] }
+}

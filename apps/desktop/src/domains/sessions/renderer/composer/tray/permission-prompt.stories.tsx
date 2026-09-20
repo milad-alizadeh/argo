@@ -16,7 +16,7 @@ const permission: Permission = {
 const meta = {
   title: 'Sessions/Permission Prompt',
   component: PermissionPrompt,
-  args: { cli: 'claude', permission, onDecide: fn(async () => true) },
+  args: { harness: 'claude', permission, onDecide: fn(async () => true) },
   decorators: [
     (Story) => (
       <div className="mx-auto w-full max-w-(--size-session-column) pt-6">
@@ -70,7 +70,7 @@ export const AllowSimilar: Story = {
 }
 
 export const AllowAll: Story = {
-  args: { cli: 'codex' },
+  args: { harness: 'codex' },
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'More ways to allow' }))
     await expect(await screen.findByRole('menuitem', { name: 'Allow all' })).toBeInTheDocument()

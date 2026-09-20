@@ -34,8 +34,8 @@ async function openPackageReadEvidence(page) {
 }
 
 // The whole vertical flow for a background Shell (#1582): the header button counts the commands a
-// Session that runs no Subagent has, its list names the command the CLI was given, picking it opens
-// the inspector on what the recorded output file holds, and the CLI's completion notification ends
+// Session that runs no Subagent has, its list names the command the Harness was given, picking it opens
+// the inspector on what the recorded output file holds, and the Harness's completion notification ends
 // the running state.
 export async function proveBackgroundShell(page, { writeOutput, complete }) {
   await writeOutput('watching for changes\nrebuilt in 240ms\n')

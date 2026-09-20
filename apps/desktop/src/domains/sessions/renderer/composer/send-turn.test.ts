@@ -60,7 +60,7 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
   )
   expect(sent).toBe(true)
   expect(start.calls).toEqual([
-    { cli: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
+    { harness: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
   ])
   expect(navigated).toEqual([['/sessions/session-new', { replace: true, state: 'focus-composer' }]])
 })
@@ -95,7 +95,7 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
   )
   const marker = turnMarker()
   const deps: DraftSendDeps = {
-    cli: 'claude',
+    harness: 'claude',
     cockpit: COCKPIT,
     navigate: () => undefined as never,
     queryClient: new QueryClient(),
@@ -122,7 +122,7 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
   const started: string[] = []
   const marker = turnMarker()
   const deps: DraftSendDeps = {
-    cli: 'claude',
+    harness: 'claude',
     cockpit: COCKPIT,
     navigate: () => undefined as never,
     queryClient: new QueryClient(),

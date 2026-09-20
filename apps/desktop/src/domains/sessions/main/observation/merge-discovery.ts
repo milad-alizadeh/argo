@@ -1,4 +1,4 @@
-// Combining every CLI source's discovery into one Roster reply (#2025).
+// Combining every Harness source's discovery into one Roster reply (#2025).
 import {
   type SessionError,
   type SessionListReply,
@@ -36,8 +36,8 @@ export function combineDiscoveries(
   }
   const cursors: RosterCursorMap = {}
   for (const [index, reading] of discovered.entries()) {
-    const cli = clis[index]
-    if (cli !== undefined && !isDiscoveryError(reading)) cursors[cli] = reading.nextCursor
+    const harness = clis[index]
+    if (harness !== undefined && !isDiscoveryError(reading)) cursors[harness] = reading.nextCursor
   }
   return {
     version: 1,

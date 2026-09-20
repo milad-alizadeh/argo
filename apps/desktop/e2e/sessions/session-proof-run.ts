@@ -1,31 +1,31 @@
 // Each Session case declares its state with `test.use` and launches against its own root (#2326).
 import type { TestInfo } from '@playwright/test'
 import type { BrowserContext } from 'playwright-core'
-import { createMockSessionCliBackend } from '../../mocks/sessions/mock-session-cli-backend'
+import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
 import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
-import { createRealSessionCliBackend } from './real-cli/real-session-cli-backend'
+import { createRealSessionHarnessBackend } from './real-harness/real-session-harness-backend'
 import type { SessionBackendOptions } from './session-backend-option'
-import type { SessionCliBackend, SessionFixture } from './session-cli-backend'
+import type { SessionFixture, SessionHarnessBackend } from './session-harness-backend'
 
 const BACKENDS = {
-  mock: createMockSessionCliBackend,
-  real: createRealSessionCliBackend,
-} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionCliBackend>
+  mock: createMockSessionHarnessBackend,
+  real: createRealSessionHarnessBackend,
+} satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionHarnessBackend>
 
 export type SessionOptions = {
   // The Roster shows only for a selected Project (#2307), so every case but the empty-window one wants it.
   projectSelected: boolean
-  // A CLI that holds its reply, so a case can read the app waiting on a Turn (#2119).
+  // A Harness that holds its reply, so a case can read the app waiting on a Turn (#2119).
   slowReply: boolean
-  // Replays the mock CLI's seeded jitter, split bytes and failures.
+  // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
 }
 
 export type SessionFixtures = SessionOptions & {
-  backend: SessionCliBackend
+  backend: SessionHarnessBackend
   sessionFixture: SessionFixture
   session: PackagedSession
 }

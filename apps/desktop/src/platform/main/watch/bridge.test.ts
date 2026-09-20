@@ -52,7 +52,7 @@ async function armed(host: ReturnType<typeof mockWindow>, file: string) {
 }
 
 describe('telling a window its data changed', () => {
-  test('names the topic whose tree a CLI wrote under', async () => {
+  test('names the topic whose tree a Harness wrote under', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'argo-bridge-wrote-'))
     const host = mockWindow()
     try {

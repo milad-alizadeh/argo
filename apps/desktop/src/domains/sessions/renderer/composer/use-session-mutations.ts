@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -41,7 +41,7 @@ function useAcceptedMutation(call: (sessionId: string) => Promise<SessionAccepte
   })
 }
 
-// One mutation hook for every CLI (#2030): each adapter validates its own Turn-setup shape at
+// One mutation hook for every Harness (#2030): each adapter validates its own Turn-setup shape at
 // its own boundary, so this hook passes `setup` through rather than choosing a schema for it.
 export function useSessionMutations() {
   const compact = useAcceptedMutation((sessionId) => window.argo.compactSession({ sessionId }))
@@ -61,11 +61,11 @@ export function useSessionMutations() {
   const start = useMutation<
     SessionStarted,
     SessionContractError,
-    Turn & { cli: SessionCli; cwd: string }
+    Turn & { harness: SessionHarness; cwd: string }
   >({
-    mutationFn: async ({ cli, cwd, prompt, setup, attachments }) => {
+    mutationFn: async ({ harness, cwd, prompt, setup, attachments }) => {
       const reply = await window.argo.startSession({
-        cli,
+        harness,
         cwd,
         prompt,
         setup: setup ?? undefined,

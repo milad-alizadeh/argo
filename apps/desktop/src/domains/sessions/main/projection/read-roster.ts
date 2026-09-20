@@ -1,5 +1,5 @@
 // The active Roster read: every adapter's window merged into one list, then joined with the two
-// pieces of Session state that are Argo's own rather than any CLI's — the Ticket link and the
+// pieces of Session state that are Argo's own rather than any Harness's — the Ticket link and the
 // archive flag (#2315).
 
 import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/ipc/contract'
@@ -52,7 +52,7 @@ async function withoutArchived<Row extends { id: string; retiredIds: string[] }>
 
 export async function listReply(
   sources: SessionSource[],
-  ownership: { rememberDiscoveries: (sessions: { id: string; cli: string }[]) => void },
+  ownership: { rememberDiscoveries: (sessions: { id: string; harness: string }[]) => void },
   {
     ticketLinks,
     archive,
@@ -69,12 +69,12 @@ export async function listReply(
   const discovered = await Promise.all(
     sources.map((source) =>
       discoverFromSource(source, request.requestId, {
-        cursor: cursors[source.cli] ?? null,
+        cursor: cursors[source.harness] ?? null,
         projectRoot: request.projectRoot,
       }),
     ),
   )
-  const clis = sources.map((source) => source.cli)
+  const clis = sources.map((source) => source.harness)
   const reply = combineDiscoveries(discovered, clis, request.requestId)
   if (reply.type !== 'session.listed') return reply
   ownership.rememberDiscoveries(reply.sessions)
@@ -83,7 +83,7 @@ export async function listReply(
   const observed = await unread.project(reply.sessions)
   const active = await withoutArchived(observed, archive)
   // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
-  // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
+  // in here rather than in any one Harness's discovery (CONTEXT.md L1 · Session → Ticket).
   const sessions = await Promise.all(
     active.map(async (session) => ({
       ...session,

@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
 
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/agents/codex/compaction/compaction'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/contract/codex-compaction'
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'

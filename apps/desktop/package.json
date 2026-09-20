@@ -34,7 +34,7 @@
     "test:node": "vitest run --project=node",
     "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir=coverage/bun",
     "test:coverage:storybook": "vitest run --project=storybook-dark --coverage",
-    "test:feed": "bun test src/domains/sessions/contract src/domains/sessions/main src/agents/claude/sessions src/agents/claude/integration src/agents/codex/sessions mocks/sessions src/domains/sessions/renderer/feed"
+    "test:feed": "bun test src/domains/sessions/contract src/domains/sessions/main src/harnesses/claude/sessions src/harnesses/claude/integration src/harnesses/codex/sessions mocks/sessions src/domains/sessions/renderer/feed"
   },
   "dependencies": {
     "@codemirror/language": "^6.12.4",

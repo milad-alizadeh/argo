@@ -5,7 +5,7 @@ export function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRos
   return {
     id: 'session-one',
     retiredIds: [],
-    cli: 'claude',
+    harness: 'claude',
     posture: 'managed',
     title: null,
     status: 'idle',

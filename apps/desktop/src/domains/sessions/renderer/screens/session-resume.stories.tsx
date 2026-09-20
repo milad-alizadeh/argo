@@ -97,7 +97,7 @@ export const ResumesOnSend: Story = {
   },
 }
 
-// Every refusal draws the same lock card, whatever CLI or message caused it (#2092 AC #4/#9).
+// Every refusal draws the same lock card, whatever Harness or message caused it (#2092 AC #4/#9).
 const REFUSAL: DriveSessionErrorCode = 'held-elsewhere'
 
 // A Session open in another app cannot take a Turn: the refusal replaces the composer with a

@@ -62,7 +62,7 @@ export function readTranscriptFile(
   for (const line of lines) {
     const record = parse(line)
     if (record === null) continue
-    // The CLI writes the compaction summary as the very next record after the boundary it
+    // The Harness writes the compaction summary as the very next record after the boundary it
     // belongs to; fold it there instead of letting it stand as its own record (#2206).
     const boundary = records.at(-1)
     if (record.kind === 'compaction-summary' && boundary?.kind === 'compaction') {

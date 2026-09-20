@@ -1,0 +1,92 @@
+import {
+  type CodexTurnSetup,
+  codexTurnSetupSchema,
+} from '@/domains/sessions/contract/codex-turn-setup'
+import type {
+  DriveFailure,
+  SessionDriveAdapter,
+} from '@/domains/sessions/contract/session-drive-adapter'
+import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+
+// `codex app-server` refuses a thread already active in another process (its own client or the
+// standalone Codex app) with a JSON-RPC error naming that fact; every other refusal falls back to
+// the caller's own code. The exact wording still needs a live repro against a held Session (#2053)
+// to replace this heuristic with the real one.
+const ACTIVE_ELSEWHERE = /already active|in use|held by|another (client|session|instance)/i
+
+function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
+  if (error instanceof CodexSessionDriverError) return { error: error.code }
+  const message = error instanceof Error ? error.message : ''
+  if (ACTIVE_ELSEWHERE.test(message)) return { error: 'held-elsewhere' }
+  return { error: fallback }
+}
+
+export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
+  return {
+    harness: 'codex',
+    turnSetupSchema: codexTurnSetupSchema,
+    async start({ cwd, prompt, setup, attachments }) {
+      try {
+        return {
+          sessionId: await driver.start({
+            attachments,
+            cwd,
+            prompt,
+            setup: setup as CodexTurnSetup,
+          }),
+        }
+      } catch (error) {
+        return failureOf(error, 'launch-failed')
+      }
+    },
+    async send({ sessionId, prompt, setup, attachments }) {
+      try {
+        await driver.send({ sessionId, text: prompt, setup: setup as CodexTurnSetup, attachments })
+        return { ok: true }
+      } catch (error) {
+        console.error('Argo could not send to Codex Session', sessionId, error)
+        return failureOf(error, 'not-drivable')
+      }
+    },
+    async interrupt({ sessionId }) {
+      try {
+        await driver.interrupt(sessionId)
+        return { ok: true }
+      } catch (error) {
+        console.error('Argo could not interrupt Codex Session', sessionId, error)
+        return failureOf(error, 'not-drivable')
+      }
+    },
+    async compact({ sessionId }) {
+      try {
+        await driver.compact(sessionId)
+        return { ok: true }
+      } catch (error) {
+        console.error('Argo could not compact Codex Session', sessionId, error)
+        return failureOf(error, 'not-drivable')
+      }
+    },
+    async handoff() {
+      return { error: 'not-drivable' }
+    },
+    // Codex Permissions are #1841, still out of scope: there is never a pending Permission to
+    // read, and a decision always answers that it is no longer waiting.
+    async readPermission() {
+      return { permission: null }
+    },
+    async decidePermission() {
+      return { error: 'stale-permission' }
+    },
+    async decideQuestion({ sessionId, questionId, answers }) {
+      try {
+        if (!driver.decideQuestion(sessionId, questionId, answers)) {
+          return { error: 'stale-question' }
+        }
+        return { ok: true }
+      } catch (error) {
+        return failureOf(error, 'not-drivable')
+      }
+    },
+  }
+}

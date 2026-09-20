@@ -1,48 +1,50 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { SessionIndexWrite } from '@/domains/sessions/main/index/session-index/contract'
 
-export function writePass(database: DatabaseSync, cli: string, pass: SessionIndexWrite) {
+export function writePass(database: DatabaseSync, harness: string, pass: SessionIndexWrite) {
   const insertFile = database.prepare(
-    `INSERT OR REPLACE INTO transcript_file (cli, path, session_id, written_at, size, chain_id) VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO transcript_file (harness, path, session_id, written_at, size, chain_id) VALUES (?, ?, ?, ?, ?, ?)`,
   )
   const insertChain = database.prepare(
-    `INSERT OR REPLACE INTO session_chain (cli, chain_id, updated_at, origin_unread, row_json) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO session_chain (harness, chain_id, updated_at, origin_unread, row_json) VALUES (?, ?, ?, ?, ?)`,
   )
-  const dropSearch = database.prepare('DELETE FROM session_search WHERE cli = ? AND chain_id = ?')
+  const dropSearch = database.prepare(
+    'DELETE FROM session_search WHERE harness = ? AND chain_id = ?',
+  )
   const insertSearch = database.prepare(
-    'INSERT INTO session_search (cli, chain_id, text) VALUES (?, ?, ?)',
+    'INSERT INTO session_search (harness, chain_id, text) VALUES (?, ?, ?)',
   )
-  const dropChain = database.prepare('DELETE FROM session_chain WHERE cli = ? AND chain_id = ?')
+  const dropChain = database.prepare('DELETE FROM session_chain WHERE harness = ? AND chain_id = ?')
   const insertLink = database.prepare(
-    'INSERT OR REPLACE INTO chain_link (cli, session_id, parent_session_id) VALUES (?, ?, ?)',
+    'INSERT OR REPLACE INTO chain_link (harness, session_id, parent_session_id) VALUES (?, ?, ?)',
   )
-  const dropFile = database.prepare('DELETE FROM transcript_file WHERE cli = ? AND path = ?')
+  const dropFile = database.prepare('DELETE FROM transcript_file WHERE harness = ? AND path = ?')
   const dropChainFiles = database.prepare(
-    'DELETE FROM transcript_file WHERE cli = ? AND chain_id = ?',
+    'DELETE FROM transcript_file WHERE harness = ? AND chain_id = ?',
   )
   database.exec('BEGIN')
   try {
     for (const chain of pass.chains) {
-      dropChainFiles.run(cli, chain.chainId)
-      dropSearch.run(cli, chain.chainId)
+      dropChainFiles.run(harness, chain.chainId)
+      dropSearch.run(harness, chain.chainId)
     }
-    for (const path of pass.removedPaths) dropFile.run(cli, path)
+    for (const path of pass.removedPaths) dropFile.run(harness, path)
     for (const chainId of pass.retiredChainIds) {
-      dropChain.run(cli, chainId)
-      dropSearch.run(cli, chainId)
+      dropChain.run(harness, chainId)
+      dropSearch.run(harness, chainId)
     }
     for (const file of pass.files)
-      insertFile.run(cli, file.path, file.sessionId, file.writtenAt, file.size, file.chainId)
+      insertFile.run(harness, file.path, file.sessionId, file.writtenAt, file.size, file.chainId)
     for (const chain of pass.chains)
       insertChain.run(
-        cli,
+        harness,
         chain.chainId,
         chain.updatedAt,
         chain.originUnread ? 1 : 0,
         JSON.stringify(chain.row),
       )
-    for (const chain of pass.chains) insertSearch.run(cli, chain.chainId, chain.searchText)
-    for (const link of pass.links) insertLink.run(cli, link.sessionId, link.parentSessionId)
+    for (const chain of pass.chains) insertSearch.run(harness, chain.chainId, chain.searchText)
+    for (const link of pass.links) insertLink.run(harness, link.sessionId, link.parentSessionId)
     database.exec('COMMIT')
   } catch (error) {
     database.exec('ROLLBACK')

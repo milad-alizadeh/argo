@@ -29,7 +29,7 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
   const queryClient = useQueryClient()
   const query = useQuery(sessionRosterQuery(enabled, { projectRoot, cursor }))
 
-  // A Session written by a CLI outside Argo appears because the transcript trees are watched. The
+  // A Session written by a Harness outside Argo appears because the transcript trees are watched. The
   // roster used to notice it only by re-reading every file twice a second, and only while a Session
   // was selected, so a reader just looking at the list saw a stale roster indefinitely.
   useWatchedTopic('sessions', () => {
@@ -72,7 +72,7 @@ export function useSessions(
   } = useRosterQuery(rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
-  // The open Session's transcript lives under the same watched trees as every other, whether a CLI
+  // The open Session's transcript lives under the same watched trees as every other, whether a Harness
   // outside Argo writes it or a Turn Argo drives does.
   useWatchedQueries('sessions', [feedQuery.queryKey])
 

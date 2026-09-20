@@ -25,7 +25,7 @@ type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps
 const WIDE_ONLY = 'hidden @[36rem]:inline'
 
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
-  const harnessLabel = HARNESSES[harness.cli].label
+  const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
   const body = <SetupBody harness={harness} setup={setup} />
   return (
@@ -39,7 +39,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
           />
         }
       >
-        <HarnessLogo cli={harness.cli} />
+        <HarnessLogo harness={harness.harness} />
         <span className="min-w-0 truncate">
           {/* The logo names the harness, so its word waits for room; the Model and Effort never do. */}
           <span className={WIDE_ONLY}>{harnessLabel}</span>
@@ -59,7 +59,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         side="top"
         className="w-(--size-session-menu) gap-0 overflow-hidden p-0"
       >
-        <HarnessTabs cli={harness.cli} onChange={harness.onChange}>
+        <HarnessTabs harness={harness.harness} onChange={harness.onChange}>
           {body}
         </HarnessTabs>
       </PopoverContent>
@@ -79,7 +79,7 @@ function SetupBody({ harness, setup }: RunSetupMenuProps) {
   if (setup === null)
     return (
       <p className="p-3.5 type-meta text-muted-foreground">
-        {t('composer.setup.ownSettings', { harness: HARNESSES[harness.cli].label })}
+        {t('composer.setup.ownSettings', { harness: HARNESSES[harness.harness].label })}
       </p>
     )
   return (

@@ -13,7 +13,7 @@ import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import { promptOf, stageFor } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
@@ -29,7 +29,7 @@ export type TurnInput = {
 export { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
 
 export function sendToNewSession(request: {
-  cli: SessionCli
+  harness: SessionHarness
   cockpit: Cockpit
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
@@ -44,7 +44,7 @@ export function sendToNewSession(request: {
   onStarted?: (sessionId: string) => void
 }) {
   const {
-    cli,
+    harness,
     cockpit,
     identity,
     navigate,
@@ -58,7 +58,7 @@ export function sendToNewSession(request: {
   } = request
   const { prompt, setup, attachments } = turn
   return startNewSession(
-    { cli, cockpit, identity, prompt, setup, attachments, start, setFailure },
+    { harness, cockpit, identity, prompt, setup, attachments, start, setFailure },
     {
       onSubmitted: () => onSubmitted?.(),
       afterStart: (sessionId) => {
@@ -75,7 +75,7 @@ export function sendToNewSession(request: {
 }
 
 export type SendDeps = {
-  cli: SessionCli
+  harness: SessionHarness
   cockpit: Cockpit
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>

@@ -7,7 +7,19 @@ import {
 // next bounded discovery, while this index read treats it as absent.
 export function storedRosterRow(rowJson: string | null): SessionRosterRow | null {
   try {
-    const parsed = sessionRosterRowSchema.safeParse(JSON.parse(rowJson ?? 'null'))
+    const value = JSON.parse(rowJson ?? 'null')
+    const migrated =
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      'cli' in value &&
+      !('harness' in value)
+        ? (() => {
+            const { cli, ...row } = value as { cli: unknown }
+            return { ...row, harness: cli }
+          })()
+        : value
+    const parsed = sessionRosterRowSchema.safeParse(migrated)
     return parsed.success ? parsed.data : null
   } catch {
     return null

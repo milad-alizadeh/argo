@@ -23,7 +23,7 @@ test('answers a chain with the Roster projection that was written for it', async
   expect(store.rowsOfChains('claude', ['one'])).toEqual([row])
 })
 
-test('keeps one CLI’s rows out of another CLI’s answers', async () => {
+test('keeps one Harness’s rows out of another Harness’s answers', async () => {
   const { store } = await stores.open()
   const claude = rowFor('shared', '2026-09-17T10:00:00.000Z')
 
@@ -150,7 +150,7 @@ test('finds a chain by its current id and by a retired id', async () => {
   expect(store.searchChains('claude', 'retired')).toEqual([row])
 })
 
-test('keeps one CLI’s rows out of another CLI’s search', async () => {
+test('keeps one Harness’s rows out of another Harness’s search', async () => {
   const { store } = await stores.open()
   writeChain(store, rowFor('shared', '2026-09-17T10:00:00.000Z'))
 

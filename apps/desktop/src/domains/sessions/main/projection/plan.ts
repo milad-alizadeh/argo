@@ -1,5 +1,5 @@
 // The Session's current Plan (CONTEXT.md L3 · Plan), replayed from the changes each adapter read
-// off its CLI's records. Shared code knows the changes, never the tools that wrote them.
+// off its Harness's records. Shared code knows the changes, never the tools that wrote them.
 
 import {
   PLAN_ENTRY_STATUSES,
@@ -29,7 +29,7 @@ function readStep(item: { content: unknown; status: unknown }): PlanStep | null 
   return { content: item.content, status }
 }
 
-// A whole list the CLI wrote at once. One unreadable entry makes the whole write unreadable.
+// A whole list the Harness wrote at once. One unreadable entry makes the whole write unreadable.
 export function readPlanSnapshot(items: { content: unknown; status: unknown }[]): PlanChange {
   const steps = items.map(readStep)
   return steps.every((step) => step !== null)
@@ -42,7 +42,7 @@ function applyChange(plan: PlanReplay, change: PlanChange): PlanReplay {
     case 'replace':
       plan.seen = true
       plan.readable = true
-      // Keyed apart from any id a CLI names, so a later keyed change cannot reach a replaced step.
+      // Keyed apart from any id a Harness names, so a later keyed change cannot reach a replaced step.
       plan.steps = new Map(change.entries.map((entry, index) => [`snapshot:${index}`, entry]))
       return plan
     case 'unreadable':

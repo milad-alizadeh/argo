@@ -10,11 +10,11 @@ import type { Failure } from '@/domains/sessions/renderer/composer/use-session-c
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { promptOf } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 
 export type DraftSendDeps = {
-  cli: SessionCli
+  harness: SessionHarness
   cockpit: Cockpit
   marker: TurnMarkerApi
   navigate: NavigateFunction
@@ -30,13 +30,22 @@ export async function sendToDraftIdentity(
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>,
   turn: TurnInput,
 ) {
-  const { cli, cockpit, marker, navigate, onStarted, queryClient, setFailure, start, watchTurn } =
-    deps
+  const {
+    harness,
+    cockpit,
+    marker,
+    navigate,
+    onStarted,
+    queryClient,
+    setFailure,
+    start,
+    watchTurn,
+  } = deps
   const key = composerIdentityKey(identity)
   // A duplicate Enter that the row drops must leave the first Send's Marker alone (#2229).
   let began = false
   const sent = await sendToNewSession({
-    cli,
+    harness,
     cockpit,
     identity,
     navigate,

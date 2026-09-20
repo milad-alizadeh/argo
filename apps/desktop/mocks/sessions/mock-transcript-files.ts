@@ -29,7 +29,7 @@ export async function fixtureLines(name, fixtures = FIXTURES) {
   return text.split('\n').filter((line) => line.length > 0)
 }
 
-// A transcripts root shaped the way the CLI writes one: a directory per project holding one
+// A transcripts root shaped the way the Harness writes one: a directory per project holding one
 // `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering the Roster
 // reads is the argument order reversed.
 const PROJECT = 'project-one'
@@ -76,7 +76,7 @@ export async function writeFixtureTree(root, names, options = {}) {
       path.join(inside, `${name}.jsonl`),
       inProofProject ? placeInProofProject(text, root) : text,
     )
-    // The Subagent transcripts the CLI keeps in a folder beside the Session's own file, for the
+    // The Subagent transcripts the Harness keeps in a folder beside the Session's own file, for the
     // fixtures that have them. Copied as-is, so the tree matches the layout the reader walks.
     await cp(path.join(fixtures, '..', 'subagents', name), path.join(inside, name, 'subagents'), {
       recursive: true,
@@ -86,7 +86,7 @@ export async function writeFixtureTree(root, names, options = {}) {
 }
 
 // Argo's own archive document (#2315): one portable file under the fixture's `userData`, keyed
-// by the CLI Session id, the same shape `domains/sessions/main/archive/archive-store.ts` reads and writes.
+// by the Harness Session id, the same shape `domains/sessions/main/archive/archive-store.ts` reads and writes.
 export async function writeArchiveStore(userData, names) {
   const file = sessionArchivePath(userData)
   await mkdir(path.dirname(file), { recursive: true })

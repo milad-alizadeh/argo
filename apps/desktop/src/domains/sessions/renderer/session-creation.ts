@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 // A tempId names the Roster row before the backend has ever heard of it, so a reader can tell it
 // apart from a real Session id on sight (`isOptimisticSessionId`).
@@ -23,18 +23,24 @@ export type PendingSession =
   | {
       stage: 'draft'
       id: string
-      cli: SessionCli
+      harness: SessionHarness
       cwd: string
       submitting: boolean
       prompt: string | null
     }
-  | { stage: 'reconciling'; id: string; cli: SessionCli; cwd: string; prompt: string | null }
+  | {
+      stage: 'reconciling'
+      id: string
+      harness: SessionHarness
+      cwd: string
+      prompt: string | null
+    }
 
 type SessionCreationState = {
   pending: PendingSession | null
   // Idempotent: a second activation while one is already pending returns the same row rather than
   // starting a second one (#2109).
-  begin: (cli: SessionCli, cwd: string) => PendingSession
+  begin: (harness: SessionHarness, cwd: string) => PendingSession
   // Claims the one `start` submission for a draft row. Returns false when a submission for it is
   // already in flight, which is the dedup signal a caller no-ops on.
   startSubmission: (id: string, prompt: string) => boolean
@@ -56,13 +62,13 @@ function promptTitle(prompt: string): string | null {
 
 export const useSessionCreationStore = create<SessionCreationState>()((set, get) => ({
   pending: null,
-  begin: (cli, cwd) => {
+  begin: (harness, cwd) => {
     const existing = get().pending
     if (existing !== null) return existing
     const created: PendingSession = {
       stage: 'draft',
       id: `${TEMP_ID_PREFIX}${crypto.randomUUID()}`,
-      cli,
+      harness,
       cwd,
       submitting: false,
       prompt: null,
@@ -85,7 +91,7 @@ export const useSessionCreationStore = create<SessionCreationState>()((set, get)
       pending: {
         stage: 'reconciling',
         id: realId,
-        cli: current.cli,
+        harness: current.harness,
         cwd: current.cwd,
         prompt: current.prompt,
       },
@@ -117,11 +123,11 @@ export function mergeOptimisticRow(
 // The "+" action's own dedup: a repeat activation while one row is already pending refocuses it
 // rather than starting a second Session (#2109 AC: N rapid clicks still produce exactly one).
 // `cwd` is the last-used Project's path; with none open yet there is nothing to create on.
-export function newSessionTarget(cli: SessionCli, cwd: string | null): string | null {
+export function newSessionTarget(harness: SessionHarness, cwd: string | null): string | null {
   const existing = useSessionCreationStore.getState().pending
   if (existing !== null) return existing.id
   if (cwd === null) return null
-  return useSessionCreationStore.getState().begin(cli, cwd).id
+  return useSessionCreationStore.getState().begin(harness, cwd).id
 }
 
 // The Roster row a pending Session renders as, until the reader reports its real one. Every field
@@ -130,7 +136,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
   return {
     id: pending.id,
     retiredIds: [],
-    cli: pending.cli,
+    harness: pending.harness,
     posture: 'managed',
     title: pending.prompt === null ? null : { text: pending.prompt, source: 'first-prompt' },
     ticket: null,

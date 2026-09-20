@@ -50,13 +50,13 @@ test('resolving moves the row to the real Session id, still pending confirmation
   expect(useSessionCreationStore.getState().pending).toEqual({
     stage: 'reconciling',
     id: 'session-real',
-    cli: 'claude',
+    harness: 'claude',
     cwd: '/argo',
     prompt: 'hello',
   })
 })
 
-test('the row is named by the first line of the prompt sent, until the CLI names it', () => {
+test('the row is named by the first line of the prompt sent, until the Harness names it', () => {
   const created = useSessionCreationStore.getState().begin('claude', '/argo')
   expect(optimisticSessionRow(created).title).toBeNull()
   useSessionCreationStore

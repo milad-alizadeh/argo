@@ -4,8 +4,6 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { claudeSessionSource } from '@/agents/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
@@ -14,11 +12,13 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 // A Project's own reply only ever names its own Sessions, whatever the other Project's history
 // holds (#2239): scope is applied inside each adapter's own discovery, before the reader ever
 // merges the replies together.
-test("scopes each CLI's reply to the requested Project rather than merging every Project's Sessions first", async (context) => {
+test("scopes each Harness's reply to the requested Project rather than merging every Project's Sessions first", async (context) => {
   const claudeRoot = await tempRoot(context)
   const codexRoot = await tempRoot(context)
   await writeClaudeTranscript({

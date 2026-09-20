@@ -19,7 +19,7 @@ const IMAGE_URL = new RegExp(`${DATA_URL.source}|^${ATTACHMENT_SCHEME}://${ATTAC
 
 export const feedImageUrlSchema = z.string().regex(IMAGE_URL)
 
-// Only the builders below make one, so an image block never holds a CLI's own string.
+// Only the builders below make one, so an image block never holds a Harness's own string.
 const builtImageUrlSchema = feedImageUrlSchema.brand<'FeedImageUrl'>()
 export type FeedImageUrl = z.infer<typeof builtImageUrlSchema>
 
@@ -32,7 +32,7 @@ export function dataImageUrl(mediaType: string, data: string): FeedImageUrl | nu
   return checkedDataImageUrl(`data:${mediaType};base64,${data}`)
 }
 
-// A data URL a CLI wrote whole, kept only when it holds an image.
+// A data URL a Harness wrote whole, kept only when it holds an image.
 export function checkedDataImageUrl(url: string): FeedImageUrl | null {
   return DATA_URL.test(url) ? built(url) : null
 }

@@ -65,7 +65,7 @@ export function unchangedReply(value: SessionFeedRequest, held: HeldFeed) {
   }
 }
 
-// A Session its CLI is still writing never gives two stat readings that agree, so the wait for a
+// A Session its Harness is still writing never gives two stat readings that agree, so the wait for a
 // quiet chain is bounded. Past the bound the last read is kept and stamped as of before it: those
 // stamps are older than the file, and cover the files the chain held before it, so the next
 // poll's fresh `stableChain` call reads it as stale and reads again, rather than this one

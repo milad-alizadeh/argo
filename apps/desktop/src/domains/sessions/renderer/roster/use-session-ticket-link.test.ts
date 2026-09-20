@@ -77,7 +77,7 @@ test('connecting a Ticket while a Turn is running links but does not send a rena
   expect(result.invalidate).toBe(true)
 })
 
-test('a link write that the CLI refuses never calls rename', async () => {
+test('a link write that the Harness refuses never calls rename', async () => {
   const argo = mockArgo({
     connectSessionTicket: { type: 'session.error', code: 'unavailable', message: 'no ticket' },
   })
@@ -87,16 +87,16 @@ test('a link write that the CLI refuses never calls rename', async () => {
   expect(result.invalidate).toBe(false)
 })
 
-test('a rename the CLI refuses leaves the link in place and reports the failure', async () => {
+test('a rename the Harness refuses leaves the link in place and reports the failure', async () => {
   const argo = mockArgo({
-    renameSession: { type: 'session.error', code: 'unavailable', message: 'CLI busy' },
+    renameSession: { type: 'session.error', code: 'unavailable', message: 'Harness busy' },
   })
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
   expect(argo.calls.connectSessionTicket).toHaveLength(1)
   expect(result.outcome).toEqual({
     renamed: false,
     needsRenameConfirmation: false,
-    renameFailure: 'CLI busy',
+    renameFailure: 'Harness busy',
   })
   // The link write already happened above and is never undone by the rename failing.
   expect(result.invalidate).toBe(true)

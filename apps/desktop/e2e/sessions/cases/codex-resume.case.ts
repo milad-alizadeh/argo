@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { createSessionByClick, openSessionByClick } from '../gestures'
-import type { SessionCliBackend } from '../session-cli-backend'
+import type { SessionHarnessBackend } from '../session-harness-backend'
 
 type Restart = () => Promise<Page>
 
@@ -34,20 +34,20 @@ async function managedRosterRow(page: Page, sessionId: string, budgetMs: number)
 
 export async function provePackagedCodexResume(
   page: Page,
-  { backend, restart }: { backend: SessionCliBackend; restart: Restart },
+  { backend, restart }: { backend: SessionHarnessBackend; restart: Restart },
 ) {
-  const sessionId = await createSessionByClick(page, { cli: 'codex', prompt: OPENING_PROMPT })
+  const sessionId = await createSessionByClick(page, { harness: 'codex', prompt: OPENING_PROMPT })
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
-  await backend.waitForReply(relaunched, { cli: 'codex', prompt: OPENING_PROMPT })
+  await backend.waitForReply(relaunched, { harness: 'codex', prompt: OPENING_PROMPT })
 
   await sendFromComposer(relaunched, RESUMING_PROMPT)
   await backend
-    .waitForReply(relaunched, { cli: 'codex', prompt: RESUMING_PROMPT })
+    .waitForReply(relaunched, { harness: 'codex', prompt: RESUMING_PROMPT })
     .catch(async (error) => {
       const rows = await history.locator('[data-feed-row]').allTextContents()
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()

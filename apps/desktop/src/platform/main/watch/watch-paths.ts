@@ -2,12 +2,12 @@ import { watch } from 'node:fs'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 // How long a burst of filesystem events is allowed to settle before one change is announced.
-// A CLI writing a transcript emits an event per appended chunk, so without this the renderer would
+// A Harness writing a transcript emits an event per appended chunk, so without this the renderer would
 // be told to read again several times a second while a Session is being written to.
 export const SETTLE_MS = 400
 
 // How long to wait before opening a root again, by attempt. The last entry repeats forever, because
-// a root that does not exist is not a failure: a reader who installs a CLI after Argo started gets
+// a root that does not exist is not a failure: a reader who installs a Harness after Argo started gets
 // the watch on that tree within this delay rather than on the next restart.
 export const REOPEN_DELAYS_MS = [50, 250, 1_000, 5_000, 30_000] as const
 

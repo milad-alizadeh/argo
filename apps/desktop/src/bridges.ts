@@ -2,7 +2,6 @@
 // per-function line cap: one driver setup, then one `attach*` call per domain.
 import os from 'node:os'
 import { app, type BrowserWindow, shell } from 'electron'
-import { attachCodexCompactionBridge } from '@/agents/codex/compaction/bridge'
 import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
@@ -11,14 +10,15 @@ import { attachProjectBridge } from '@/domains/projects/main/bridge'
 import { createProjectPort } from '@/domains/projects/main/port'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { attachTicketBridge } from '@/domains/tickets/main/bridge'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
 import {
   attachSessions,
   closeSessionDrivers,
   createSessionDrivers,
   watchClaudeCompactions,
-} from '@/domains/sessions/main/composition/session-bridges'
-import { attachTicketBridge } from '@/domains/tickets/main/bridge'
-import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+} from '@/harnesses/composition/session-bridges'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { accountProviders, ticketSources } from '@/providers/composition'
@@ -49,7 +49,7 @@ export function attachBridges(
   } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
-  const drivers = createSessionDrivers(userData, home, proofEnabled)
+  const drivers = createSessionDrivers({ userData, home, proofEnabled })
   // A proof or acceptance run leaves the person's hooks and compaction starts alone.
   const compactionStarts =
     proofEnabled || request.acceptance ? undefined : watchClaudeCompactions(home)

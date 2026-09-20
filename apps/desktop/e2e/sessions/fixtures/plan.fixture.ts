@@ -18,7 +18,7 @@ function taskCall(cwd: string, link: Link, call: { id: string; name: string; inp
   }
 }
 
-// A current CLI adds the step with TaskCreate, whose result names its id, then starts it.
+// A current Harness adds the step with TaskCreate, whose result names its id, then starts it.
 export async function updatePlan(transcripts) {
   const cwd = proofCwd(transcripts, 'proj')
   const records = [

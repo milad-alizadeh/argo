@@ -1,5 +1,5 @@
 // Which Sessions the reader has archived (#2315). Argo owns this flag: one document under
-// `<userData>/portable-v1`, keyed by the CLI Session id, so archiving works for every harness,
+// `<userData>/portable-v1`, keyed by the Harness Session id, so archiving works for every harness,
 // on a machine with no other agent app installed, and for a Session Argo has never discovered.
 import { z } from 'zod'
 import {

@@ -14,7 +14,7 @@ type RosterDiscovery = {
   discovery: TranscriptDiscovery
   managed: SessionRosterRow[]
   joins: {
-    // What the CLI recorded, so the held row's tie-break still sees it as the observed side.
+    // What the Harness recorded, so the held row's tie-break still sees it as the observed side.
     observed?: readonly RosterJoin[]
     // Facts that read a row's posture, which only the merge settles.
     merged?: readonly RosterJoin[]

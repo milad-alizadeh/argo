@@ -1,4 +1,4 @@
-// The active roster merges rows from every CLI adapter (#2025), so one reply's cursor is not one
+// The active roster merges rows from every Harness adapter (#2025), so one reply's cursor is not one
 // adapter's own but a small map of them (#2239): each adapter pages its own window independently,
 // and the wire cursor is the opaque encoding of all of them together. A caller never reads inside
 // it — it only ever echoes a cursor a reply already gave it back on the next request.

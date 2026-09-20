@@ -3,26 +3,26 @@ import { useTranslation } from 'react-i18next'
 import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
 import {
   HARNESSES,
-  SESSION_CLIS,
-  type SessionCli,
+  SESSION_HARNESSES,
+  type SessionHarness,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/renderer/components/ui/tabs'
 
 export function HarnessTabs({
-  cli,
+  harness,
   onChange,
   children,
 }: {
-  cli: SessionCli
-  onChange?: (cli: SessionCli) => void
+  harness: SessionHarness
+  onChange?: (harness: SessionHarness) => void
   children: ReactNode
 }) {
   const { t } = useTranslation('sessions')
   return (
     <Tabs
-      value={cli}
+      value={harness}
       onValueChange={(value) => {
-        const chosen = SESSION_CLIS.find((option) => option === value)
+        const chosen = SESSION_HARNESSES.find((option) => option === value)
         if (chosen) onChange?.(chosen)
       }}
       className="gap-0"
@@ -32,22 +32,22 @@ export function HarnessTabs({
           aria-label={t('harness.label')}
           className="grid w-full grid-cols-2 gap-1 p-1 group-data-horizontal/tabs:h-auto"
         >
-          {SESSION_CLIS.map((option) => (
+          {SESSION_HARNESSES.map((option) => (
             <TabsTrigger
               key={option}
               disabled={onChange === undefined}
-              tabIndex={onChange === undefined || option !== cli ? -1 : 0}
+              tabIndex={onChange === undefined || option !== harness ? -1 : 0}
               value={option}
               className="h-8 gap-2 px-3 type-control text-muted-foreground data-active:bg-card"
             >
-              <HarnessLogo cli={option} />
+              <HarnessLogo harness={option} />
               {HARNESSES[option].label}
             </TabsTrigger>
           ))}
         </TabsList>
       </div>
       {/* Base UI makes a panel a Tab stop; this one's first control is the stop instead. */}
-      <TabsContent value={cli} tabIndex={-1}>
+      <TabsContent value={harness} tabIndex={-1}>
         {children}
       </TabsContent>
     </Tabs>

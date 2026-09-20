@@ -2,7 +2,7 @@ import { FileText, type LucideIcon, Plug, TriangleAlert, WandSparkles } from 'lu
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { InlineContext } from '@/domains/sessions/renderer/composer/references/inline-context'
-import { HARNESSES, type SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
 
@@ -11,9 +11,9 @@ export type SessionReference = {
   kind: SessionReferenceKind
   label: string
   source: string
-  // Every CLI supports a reference unless this names the closed set that does; a plugin invoking
+  // Every Harness supports a reference unless this names the closed set that does; a plugin invoking
   // Claude's own permission system has no Codex equivalent to name.
-  cli?: readonly SessionCli[]
+  harness?: readonly SessionHarness[]
 }
 
 export const sessionReferences = [
@@ -38,7 +38,7 @@ export const sessionReferences = [
     kind: 'plugin',
     label: 'Argo Session plugin',
     source: '@argo-plugin',
-    cli: ['claude'],
+    harness: ['claude'],
   },
 ] as const satisfies readonly SessionReference[]
 
@@ -70,12 +70,15 @@ export function referenceBySource(source: string) {
   return sessionReferences.find((reference) => reference.source === source)
 }
 
-export function referenceSupportsCli(reference: SessionReference, cli: SessionCli | null) {
-  return cli === null || reference.cli === undefined || reference.cli.includes(cli)
+export function referenceSupportsHarness(
+  reference: SessionReference,
+  harness: SessionHarness | null,
+) {
+  return harness === null || reference.harness === undefined || reference.harness.includes(harness)
 }
 
-export function cliLabel(cli: SessionCli | null) {
-  return cli ? HARNESSES[cli].label : 'this CLI'
+export function harnessLabel(harness: SessionHarness | null) {
+  return harness ? HARNESSES[harness].label : 'this Harness'
 }
 
 export function referenceInText(text: string) {
@@ -92,21 +95,21 @@ export function referenceInText(text: string) {
 }
 
 export function SessionReferenceBadge({
-  cli = null,
+  harness = null,
   source,
 }: {
-  cli?: SessionCli | null
+  harness?: SessionHarness | null
   source: string
 }) {
   const { t } = useTranslation('sessions')
   const reference = referenceBySource(source)
-  const unsupported = reference !== undefined && !referenceSupportsCli(reference, cli)
+  const unsupported = reference !== undefined && !referenceSupportsHarness(reference, harness)
   return (
     <span className={unsupported ? 'mx-0.5 opacity-60' : 'mx-0.5'}>
       <InlineContext icon={renderReferenceIcon(unsupported, reference)} text={source} />
       {unsupported ? (
         <span className="sr-only">
-          {t('composer.references.badgeUnavailable', { cli: cliLabel(cli) })}
+          {t('composer.references.badgeUnavailable', { harness: harnessLabel(harness) })}
         </span>
       ) : null}
     </span>
@@ -114,10 +117,10 @@ export function SessionReferenceBadge({
 }
 
 export function SessionReferenceText({
-  cli = null,
+  harness = null,
   text,
 }: {
-  cli?: SessionCli | null
+  harness?: SessionHarness | null
   text: string
 }) {
   const fragments: ReactNode[] = []
@@ -127,7 +130,7 @@ export function SessionReferenceText({
     if (cursor < match.start) fragments.push(text.slice(cursor, match.start))
     fragments.push(
       <SessionReferenceBadge
-        cli={cli}
+        harness={harness}
         key={`${match.start}:${match.source}`}
         source={match.source}
       />,

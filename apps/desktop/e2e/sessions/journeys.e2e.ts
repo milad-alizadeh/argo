@@ -65,7 +65,7 @@ test.describe('with seeded transcripts', () => {
   })
 })
 
-test.describe('with a slow CLI', () => {
+test.describe('with a slow Harness', () => {
   test.use({ slowReply: true })
 
   test('session-reply-wait', async ({ session, backend }) => {

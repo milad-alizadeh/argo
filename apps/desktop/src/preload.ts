@@ -1,9 +1,9 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
-import { createCodexCompactionClient } from '@/agents/codex/compaction/compaction'
 import { createAccountClient } from '@/domains/accounts/preload/client'
 import { createProjectClient } from '@/domains/projects/preload/client'
-import { createSessionClient } from '@/domains/sessions/preload/client'
+import { createCodexCompactionClient } from '@/domains/sessions/contract/codex-compaction'
+import { createSessionHarnessent } from '@/domains/sessions/preload/client'
 import { createTicketClient } from '@/domains/tickets/preload/client'
 import { createPlatformClient } from '@/platform/preload/client'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('argo', {
   ...createProjectClient(invoke),
   ...createAccountClient(invoke),
   ...createTicketClient(invoke),
-  ...createSessionClient(invoke),
+  ...createSessionHarnessent(invoke),
   ...createCodexCompactionClient(invoke),
   ...createPlatformClient({
     invoke,

@@ -89,7 +89,7 @@ async function readLinks(path: string): Promise<Record<string, LinkedTicket>> {
   return parsed.success ? parsed.data : {}
 }
 
-// A caller that does not care about the Session → Ticket link at all — a single-CLI reader built
+// A caller that does not care about the Session → Ticket link at all — a single-Harness reader built
 // for a fixture or a test of unrelated behaviour — gets this rather than a required file path.
 export function createInMemorySessionTicketLinkStore(): SessionTicketLinkStore {
   const links = new Map<string, LinkedTicket>()

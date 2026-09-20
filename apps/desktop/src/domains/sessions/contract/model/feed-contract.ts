@@ -99,7 +99,7 @@ export type SessionFeedUnchanged = z.infer<typeof sessionFeedUnchangedSchema>
 
 // The rows a poll's revision already covers stay unsent: the caller already holds the leading
 // `unchangedRowCount` rows of its own last reply, under `revision`, and keeps them in place; only
-// the rows a CLI's append could still touch travel here, replacing everything after that point.
+// the rows a Harness's append could still touch travel here, replacing everything after that point.
 export const sessionFeedAppendedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.feed.appended'),
