@@ -1,0 +1,109 @@
+@media (max-width: 980px) {
+  .onboarding-dev-chrome {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .onboarding-switcher {
+    grid-column: 1;
+    justify-self: start;
+    min-width: min(270px, 100%);
+  }
+
+  .onboarding-state-panel {
+    grid-column: 2;
+    width: auto;
+    max-width: min(286px, 100%);
+  }
+
+  .onboarding-state-panel[open] {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    max-width: none;
+  }
+
+  .onboarding-state-panel[open] + .onboarding-switcher {
+    grid-row: 2;
+  }
+
+  .onboarding-runway__workspace,
+  .onboarding-inspector__workspace,
+  .onboarding-briefing__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-runway__steps,
+  .onboarding-inspector__evidence,
+  .onboarding-briefing__artifact {
+    display: none;
+  }
+
+  .onboarding-briefing__artifact-disclosure {
+    display: block;
+    max-width: 760px;
+    margin: 18px 0 0 44px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+    border-radius: var(--radius-xl);
+    background: var(--sidebar);
+  }
+
+  .onboarding-briefing__artifact-disclosure > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-size: var(--text-body);
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .onboarding-briefing__artifact-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .onboarding-briefing__artifact-disclosure > summary:focus-visible {
+    border-radius: var(--radius-lg);
+    outline: 2px solid var(--ring);
+    outline-offset: -3px;
+  }
+
+  .onboarding-briefing__artifact-disclosure > summary svg {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--duration-control);
+  }
+
+  .onboarding-briefing__artifact-disclosure[open] > summary svg {
+    transform: rotate(180deg);
+  }
+
+  .onboarding-briefing__artifact-disclosure-body {
+    border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+    padding: 14px;
+  }
+
+  .onboarding-method-grid,
+  .onboarding-recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-briefing__response {
+    margin-left: 0;
+  }
+
+  .onboarding-briefing__artifact-disclosure {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-folder-choice,
+  .onboarding-method-choice {
+    transition: none;
+  }
+}

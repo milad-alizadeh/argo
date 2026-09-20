@@ -1,0 +1,69 @@
+.onboarding-recommendation-grid {
+  display: grid;
+  align-items: start;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
+}
+
+.onboarding-agent-note {
+  border-left: 2px solid var(--foreground);
+  padding: 3px 0 3px 15px;
+}
+
+.onboarding-setting-section {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+.onboarding-task-list {
+  display: grid;
+  gap: 8px;
+}
+
+.onboarding-task-list li {
+  min-height: 58px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+
+.onboarding-task-list li[data-status="running"] {
+  border-color: color-mix(in srgb, var(--foreground) 30%, var(--border));
+  color: var(--foreground);
+  box-shadow: var(--shadow-surface);
+}
+
+.onboarding-task-list li[data-status="waiting"] {
+  border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  background: color-mix(in srgb, var(--muted) 34%, var(--card));
+  color: var(--foreground);
+}
+
+.onboarding-task-list li[data-status="passed"] {
+  color: var(--foreground);
+}
+
+.onboarding-task-list li[data-status="failed"] {
+  border-color: color-mix(in srgb, var(--destructive) 48%, var(--border));
+  color: var(--destructive);
+}
+
+.onboarding-task-list strong,
+.onboarding-task-list small {
+  display: block;
+}
+
+.onboarding-task-list strong {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.onboarding-task-list small {
+  margin-top: 2px;
+  color: var(--muted-foreground);
+  font-size: var(--text-control);
+}
