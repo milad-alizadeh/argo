@@ -36,13 +36,30 @@ ${resumeSection}
 
 ${STEP_PROTOCOL}
 
-When you are done, print the line "${PLAN_MARKER}" and then, in one fenced json block, the complete result. It is exactly one of these three shapes:
+When you are done, print the line "${PLAN_MARKER}" and then, in one fenced json block, the complete result. It is exactly one of these three shapes, field-for-field — never rename a field or invent your own:
 
 1. { "status": "needs-user-input", "revision": "${request.planRevision}", "questions": [{ "id": "...", "prompt": "...", "context": "..." }] }
-2. { "status": "ready-for-review", "revision": "${request.planRevision}", "plan": { "source": {...}, "inventory": {...}, "targets": [...], "capabilities": [...], "toolRecommendations": [...], "repositoryActions": [...], "targetActions": [...], "verification": [...], "risks": [...], "handoff": {...} } }
+
+2. {
+  "status": "ready-for-review",
+  "revision": "${request.planRevision}",
+  "plan": {
+    "source": { "projectId": "<kebab-id>", "projectRoot": "${request.projectRoot}", "skillRevision": "${request.skillRevision}", "planRevision": "${request.planRevision}", "fingerprints": { "<inspected file path>": "<hash or mtime you read>" } },
+    "inventory": { "instructions": ["..."], "manifests": ["..."], "packageManagers": ["..."], "workspaces": ["..."], "existingTools": ["..."], "currentConfiguration": {} },
+    "targets": [{ "id": "<kebab-id>", "name": "...", "path": "...", "isDefault": true, "evidence": "...", "packageManager": "...", "framework": "...", "commands": { "setup": "...", "run": "...", "build": "...", "test": "...", "componentExplorer": "..." }, "readinessRule": "...", "dependencies": [], "risks": [] }],
+    "capabilities": [{ "id": "<kebab-id>", "name": "...", "scope": "repository|target", "targetIds": ["<a target id above, or [] for repository scope>"], "disposition": "recommended|optional|not-applicable|already-satisfied", "evidence": "...", "reason": "...", "effects": { "files": [], "dependencies": [], "generatedFiles": [], "machineWide": false }, "consent": { "required": false, "personalOrMachineWide": false }, "applicationSteps": [{ "id": "<kebab-id>", "description": "...", "prerequisiteIds": [] }] }],
+    "toolRecommendations": [{ "id": "<kebab-id>", "scope": "repository|target", "targetIds": [], "recommendedChoice": "...", "iconUrl": "https://... (omit the whole field when no hosted logo exists)", "packageNames": [], "links": ["https://..."], "alternatives": [], "reason": "...", "dependencyChanges": [], "fileEffects": [], "recommendationVersion": "1" }],
+    "repositoryActions": [{ "id": "<kebab-id>", "scope": "repository", "reason": "...", "evidence": "...", "fileCategories": [], "command": "...", "prerequisiteIds": [], "rollbackNote": "..." }],
+    "targetActions": [{ "id": "<kebab-id>", "scope": "target", "targetId": "<a target id above>", "reason": "...", "evidence": "...", "fileCategories": [], "command": "...", "prerequisiteIds": [], "rollbackNote": "..." }],
+    "verification": [{ "id": "<kebab-id>", "targetId": "<a target id above>", "capabilityId": "<a capability id above, omit if none>", "command": "...", "readinessRule": "...", "prerequisiteIds": [], "expectedResult": "...", "timeoutSeconds": 60, "required": true }],
+    "risks": [{ "id": "<kebab-id>", "kind": "assumption|uncertain-merge|destructive|secret-boundary|machine-wide", "description": "..." }],
+    "handoff": { "mutationBoundary": "setup worktree", "acceptanceState": "pending-review", "applicationOrder": ["<ids above, in the order they must apply>"] }
+  }
+}
+
 3. { "status": "cannot-plan", "revision": "${request.planRevision}", "reason": "inaccessible-project|ambiguous-boundary|unsupported-workspace|skill-unavailable", "evidence": "...", "recoveryAction": "..." }
 
-A ready-for-review plan is complete only once every found target is retained, renamed, or removed, and every retained target and every recommended capability has a verification step. Arrays can be empty; no field is ever absent.`
+A ready-for-review plan is complete only once every found target is retained, renamed, or removed, and every retained target and every recommended capability has a verification step naming its id. Every id (target, capability, application step, tool recommendation, action, verification step, risk) is a unique kebab-case string; every targetIds/targetId/prerequisiteIds value names an id that exists elsewhere in the plan, a step never lists itself as its own prerequisite, and prerequisites never cycle. Exactly one target has "isDefault": true when targets is nonempty. Fields shown above as "..." or [] are required and present even when empty; only the fields explicitly marked "omit" above may be left out.`
 }
 
 export function applicationAgentPrompt(request: {

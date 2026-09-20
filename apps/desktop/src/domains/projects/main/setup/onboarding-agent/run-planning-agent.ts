@@ -1,5 +1,6 @@
 import { setupPlanningResultSchema, type SetupPlanningResult } from '@/domains/projects/contract/setup-plan'
 import type { SetupPlanningProgressEvent } from '@/domains/projects/contract/setup-progress'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import { PLAN_MARKER, planningAgentPrompt } from './prompts'
 import type { OnboardingAgentDriver } from './run-onboarding-agent'
 import { runOnboardingAgent } from './run-onboarding-agent'
@@ -20,6 +21,8 @@ export async function runPlanningAgent(
     planRevision: string
     priorPlanJson?: string
     onStepEvent?: (event: SetupPlanningProgressEvent) => void
+    model?: ClaudeTurnSetup['model']
+    effort?: ClaudeTurnSetup['effort']
     pollIntervalMs?: number
     timeoutMs?: number
   },
@@ -30,6 +33,8 @@ export async function runPlanningAgent(
     prompt: planningAgentPrompt(request),
     mode: 'plan',
     marker: PLAN_MARKER,
+    model: request.model,
+    effort: request.effort,
     pollIntervalMs: request.pollIntervalMs,
     timeoutMs: request.timeoutMs,
     onProgress: (text) => {

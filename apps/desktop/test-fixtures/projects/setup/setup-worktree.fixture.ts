@@ -32,5 +32,5 @@ export async function setupWorktreeFixture(context: {
   await run('git', ['-C', project, 'remote', 'add', 'origin', remote])
   await run('git', ['-C', project, 'push', '--quiet', '-u', 'origin', 'main'])
   await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', 'refs/heads/main'])
-  return { project }
+  return { project, claudeConfigPath: path.join(root, 'claude.json') }
 }

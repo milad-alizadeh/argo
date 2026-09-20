@@ -12,6 +12,8 @@ function fakeDriver(script: string[]): OnboardingAgentDriver {
       return [{ id: 'message-1', text }]
     },
     interrupt: () => {},
+    pendingPermission: () => null,
+    decidePermission: () => false,
   }
 }
 
@@ -45,6 +47,8 @@ test('times out and interrupts the Session when the marker never appears', async
     interrupt: (sessionId: string) => {
       interrupted = sessionId
     },
+    pendingPermission: () => null,
+    decidePermission: () => false,
   }
   const outcome = await runOnboardingAgent(driver, {
     cwd: '/repo',
@@ -56,4 +60,35 @@ test('times out and interrupts the Session when the marker never appears', async
   })
   assert.equal(outcome.outcome, 'timed-out')
   assert.equal(interrupted, 'session-2')
+})
+
+test('auto-approves a pending permission with no human to answer it', async () => {
+  const decisions: Array<{ sessionId: string; permissionId: string; decision: string }> = []
+  let permissionPending = true
+  const driver: OnboardingAgentDriver = {
+    start: () => 'session-3',
+    liveMessages: () =>
+      permissionPending
+        ? [{ id: 'message-1', text: 'still thinking' }]
+        : [{ id: 'message-1', text: 'ARGO_DONE\n```json\n{}\n```' }],
+    interrupt: () => {},
+    pendingPermission: (sessionId: string) =>
+      permissionPending ? { id: 'permission-1', sessionId, toolName: 'Bash', input: {} } : null,
+    decidePermission: (sessionId: string, permissionId: string, decision: string) => {
+      decisions.push({ sessionId, permissionId, decision })
+      permissionPending = false
+      return true
+    },
+  }
+  const outcome = await runOnboardingAgent(driver, {
+    cwd: '/repo',
+    prompt: 'plan it',
+    mode: 'plan',
+    marker: 'ARGO_DONE',
+    pollIntervalMs: 1,
+  })
+  assert.equal(outcome.outcome, 'completed')
+  assert.deepEqual(decisions, [
+    { sessionId: 'session-3', permissionId: 'permission-1', decision: 'allowSimilar' },
+  ])
 })

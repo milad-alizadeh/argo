@@ -1,13 +1,19 @@
 import { execFile } from 'node:child_process'
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { trustSetupWorktree } from './trust-setup-worktree'
 
 const run = promisify(execFile)
 const SETUP_WORKTREE_DIRECTORY = ['.argo', 'worktrees']
 
-export async function prepareSetupWorktree(project: { id: string; path: string }): Promise<string> {
+export async function prepareSetupWorktree(
+  project: { id: string; path: string },
+  claudeConfigPath: string = path.join(os.homedir(), '.claude.json'),
+): Promise<string> {
   const worktree = path.join(project.path, ...SETUP_WORKTREE_DIRECTORY, `setup-${project.id}`)
+  await trustSetupWorktree(claudeConfigPath, worktree)
   if (await isWorktree(worktree)) return worktree
   await ignoreSetupWorktrees(project.path)
   await run('git', ['-C', project.path, 'fetch', 'origin'])

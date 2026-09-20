@@ -6,7 +6,10 @@
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 
-export type OnboardingAgentDriver = Pick<ClaudeSessionDriver, 'start' | 'liveMessages' | 'interrupt'>
+export type OnboardingAgentDriver = Pick<
+  ClaudeSessionDriver,
+  'start' | 'liveMessages' | 'interrupt' | 'pendingPermission' | 'decidePermission'
+>
 
 export type RunOnboardingAgentRequest = {
   cwd: string
@@ -56,6 +59,10 @@ export async function runOnboardingAgent(
 
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+    // No human watches this Session, so it must self-answer its own tool permission prompts: the
+    // turn runs inside a disposable setup worktree the caller already prepared for exactly this.
+    const pending = driver.pendingPermission(sessionId)
+    if (pending) driver.decidePermission(sessionId, pending.id, 'allowSimilar')
     const text = driver
       .liveMessages(sessionId)
       .map((message) => message.text)

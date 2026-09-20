@@ -13,6 +13,8 @@ function driverEmitting(...frames: string[]): OnboardingAgentDriver {
       return [{ id: 'message-1', text }]
     },
     interrupt: () => {},
+    pendingPermission: () => null,
+    decidePermission: () => false,
   }
 }
 
