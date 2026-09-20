@@ -6,7 +6,7 @@ import {
   ComposerReferenceNode,
 } from '@/domains/sessions/renderer/composer/references/composer-reference-node'
 import { referenceInText } from '@/domains/sessions/renderer/composer/references/session-reference'
-import type { SessionCli } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 function referenceMatch(text: string): EntityMatch | null {
   const match = referenceInText(text)
@@ -14,9 +14,9 @@ function referenceMatch(text: string): EntityMatch | null {
   return { end: match.end, start: match.start }
 }
 
-export function ComposerReferencePlugin({ cli = null }: { cli?: SessionCli | null }) {
+export function ComposerReferencePlugin({ harness = null }: { harness?: SessionHarness | null }) {
   useLexicalTextEntity(referenceMatch, ComposerReferenceNode, (textNode: TextNode) =>
-    $createComposerReferenceNode(textNode.getTextContent(), cli),
+    $createComposerReferenceNode(textNode.getTextContent(), harness),
   )
   return null
 }

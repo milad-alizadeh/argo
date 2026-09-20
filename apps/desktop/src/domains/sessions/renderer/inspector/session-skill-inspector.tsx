@@ -4,7 +4,7 @@ import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-mark
 import { formatSkillLabel } from '@/domains/sessions/renderer/prompt/prompt-segments'
 import type { SessionSkillEvidence } from '@/domains/sessions/renderer/types'
 
-// A skill file opens with YAML frontmatter for the CLI; the reader wants the instructions below.
+// A skill file opens with YAML frontmatter for the Harness; the reader wants the instructions below.
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/
 
 function useSkillContent(path: string) {

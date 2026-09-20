@@ -34,7 +34,7 @@ export const FIXTURES = [
   'setupAnswered',
   // Current Claude harness records: the first visible name must be the reconstructed command.
   'harnessNoise',
-  // Two background Shells, one still running and one the CLI already notified about (#1582).
+  // Two background Shells, one still running and one the Harness already notified about (#1582).
   'shellRunning',
   // One Subagent with a transcript of its own beside the Session's file, whose Feed the header
   // opens in the inspector beside the Session's (#1582).
@@ -45,7 +45,7 @@ export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 // The Sessions Argo's own archive document says the reader archived.
 const ARCHIVED = ['plannedWork']
 
-// One more turn on a Session already measured, written the way the CLI writes one: appended to
+// One more turn on a Session already measured, written the way the Harness writes one: appended to
 // the file it belongs to.
 const grownTurn = (transcripts) =>
   `${JSON.stringify({

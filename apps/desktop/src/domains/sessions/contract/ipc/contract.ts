@@ -1,5 +1,5 @@
 // The Session IPC contract: two read operations every renderer holds for observed Sessions, and
-// the one shared drive operation table every CLI answers through (ADR-0024, #2030). Named
+// the one shared drive operation table every Harness answers through (ADR-0024, #2030). Named
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/drive/attachments-contract'
@@ -7,7 +7,7 @@ import { permissionSchema, READER_DECISIONS } from '@/domains/sessions/contract/
 import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
 
-export * from '@/agents/claude/drive/turn-setup-contract'
+export * from '@/domains/sessions/contract/claude-turn-setup'
 export * from '@/domains/sessions/contract/drive/attachments-contract'
 export * from '@/domains/sessions/contract/drive/handoff-contract'
 export * from '@/domains/sessions/contract/drive/permission'
@@ -22,14 +22,14 @@ export * from '@/domains/sessions/contract/model/file-contract'
 export * from '@/domains/sessions/contract/model/session-error'
 export * from '@/domains/sessions/contract/ticket-link-contract'
 
-// One drive request table for every CLI (#2030): `start` names its CLI, and every other drive
+// One drive request table for every Harness (#2030): `start` names its Harness, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.
 export const sessionStartRequestSchema = z
   .strictObject({
     version: z.literal(1),
     type: z.literal('session.start'),
     requestId: identifierSchema,
-    cli: z.string().min(1),
+    harness: z.string().min(1),
     cwd: z.string().min(1),
     prompt: z.string(),
     setup: z.unknown().optional(),

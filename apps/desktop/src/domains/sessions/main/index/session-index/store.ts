@@ -20,15 +20,15 @@ import { writePass } from '@/domains/sessions/main/index/session-index/store-wri
 import { storedRosterRow } from '@/domains/sessions/main/index/session-index/stored-row'
 
 export type SessionIndexStore = {
-  filesAt: (cli: string, paths: readonly string[]) => IndexedTranscriptFile[]
-  filesOfChains: (cli: string, chainIds: readonly string[]) => IndexedTranscriptFile[]
-  rowsOfChains: (cli: string, chainIds: readonly string[]) => SessionRosterRow[]
-  searchChains: (cli: string, query: string) => SessionRosterRow[]
-  chainLinks: (cli: string) => { sessionId: string; parentSessionId: string | null }[]
-  strandedChains: (cli: string) => string[]
-  write: (cli: string, pass: SessionIndexWrite) => void
-  backfillProgress: (cli: string) => BackfillProgress
-  setBackfillProgress: (cli: string, progress: BackfillProgress) => void
+  filesAt: (harness: string, paths: readonly string[]) => IndexedTranscriptFile[]
+  filesOfChains: (harness: string, chainIds: readonly string[]) => IndexedTranscriptFile[]
+  rowsOfChains: (harness: string, chainIds: readonly string[]) => SessionRosterRow[]
+  searchChains: (harness: string, query: string) => SessionRosterRow[]
+  chainLinks: (harness: string) => { sessionId: string; parentSessionId: string | null }[]
+  strandedChains: (harness: string) => string[]
+  write: (harness: string, pass: SessionIndexWrite) => void
+  backfillProgress: (harness: string) => BackfillProgress
+  setBackfillProgress: (harness: string, progress: BackfillProgress) => void
   close: () => void
 }
 function placeholders(count: number): string {
@@ -77,7 +77,7 @@ function indexedFile(record: FileRecord): IndexedTranscriptFile {
 export function createSessionIndexStore(databasePath: string): SessionIndexStore {
   const database = openIndex(databasePath)
   let open = true
-  function filesBy(column: 'path' | 'chain_id', cli: string, values: readonly string[]) {
+  function filesBy(column: 'path' | 'chain_id', harness: string, values: readonly string[]) {
     if (values.length === 0) return []
     const qualifiedColumn = { path: 'file.path', chain_id: 'file.chain_id' }[column]
     const rows = database
@@ -86,52 +86,52 @@ export function createSessionIndexStore(databasePath: string): SessionIndexStore
                 chain.row_json
          FROM transcript_file AS file
          LEFT JOIN session_chain AS chain
-           ON chain.cli = file.cli AND chain.chain_id = file.chain_id
-         WHERE file.cli = ? AND ${qualifiedColumn} IN (${placeholders(values.length)})`,
+           ON chain.harness = file.harness AND chain.chain_id = file.chain_id
+         WHERE file.harness = ? AND ${qualifiedColumn} IN (${placeholders(values.length)})`,
       )
-      .all(cli, ...values) as FileRecord[]
+      .all(harness, ...values) as FileRecord[]
     return rows.flatMap((record) => {
       const unowned = record.chain_id === NO_CHAIN
       return unowned || storedRosterRow(record.row_json) !== null ? [indexedFile(record)] : []
     })
   }
   return {
-    filesAt: (cli, paths) => filesBy('path', cli, paths),
-    filesOfChains: (cli, chainIds) => filesBy('chain_id', cli, chainIds),
-    rowsOfChains(cli, chainIds) {
+    filesAt: (harness, paths) => filesBy('path', harness, paths),
+    filesOfChains: (harness, chainIds) => filesBy('chain_id', harness, chainIds),
+    rowsOfChains(harness, chainIds) {
       if (chainIds.length === 0) return []
       const records = database
         .prepare(
           `SELECT row_json FROM session_chain
-           WHERE cli = ? AND chain_id IN (${placeholders(chainIds.length)})
+           WHERE harness = ? AND chain_id IN (${placeholders(chainIds.length)})
            ORDER BY updated_at DESC`,
         )
-        .all(cli, ...chainIds) as { row_json: string }[]
+        .all(harness, ...chainIds) as { row_json: string }[]
       return records.flatMap((record) => {
         const row = storedRosterRow(record.row_json)
         return row === null ? [] : [row]
       })
     },
-    searchChains: (cli, query) => searchChainsOf(database, cli, query),
-    strandedChains(cli) {
+    searchChains: (harness, query) => searchChainsOf(database, harness, query),
+    strandedChains(harness) {
       const records = database
-        .prepare('SELECT chain_id FROM session_chain WHERE cli = ? AND origin_unread = 1')
-        .all(cli) as { chain_id: string }[]
+        .prepare('SELECT chain_id FROM session_chain WHERE harness = ? AND origin_unread = 1')
+        .all(harness) as { chain_id: string }[]
       return records.map((record) => record.chain_id)
     },
-    chainLinks(cli) {
+    chainLinks(harness) {
       const records = database
-        .prepare('SELECT session_id, parent_session_id FROM chain_link WHERE cli = ?')
-        .all(cli) as { session_id: string; parent_session_id: string | null }[]
+        .prepare('SELECT session_id, parent_session_id FROM chain_link WHERE harness = ?')
+        .all(harness) as { session_id: string; parent_session_id: string | null }[]
       return records.map((record) => ({
         sessionId: record.session_id,
         parentSessionId: record.parent_session_id,
       }))
     },
-    write: (cli, pass) => writePass(database, cli, pass),
+    write: (harness, pass) => writePass(database, harness, pass),
 
-    backfillProgress: (cli) => backfillProgressOf(database, cli),
-    setBackfillProgress: (cli, progress) => writeBackfillProgress(database, cli, progress),
+    backfillProgress: (harness) => backfillProgressOf(database, harness),
+    setBackfillProgress: (harness, progress) => writeBackfillProgress(database, harness, progress),
 
     close() {
       if (!open) return

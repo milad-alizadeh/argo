@@ -40,9 +40,11 @@ export function createIndexedReadHarness() {
 
   return {
     harness: async (adapter: IndexedAdapter) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-read-${adapter.cli}-`))
+      const root = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-read-${adapter.harness}-`))
       cleanUp.push(() => rm(root, { recursive: true, force: true }))
-      const userData = await mkdtemp(path.join(os.tmpdir(), `argo-indexed-store-${adapter.cli}-`))
+      const userData = await mkdtemp(
+        path.join(os.tmpdir(), `argo-indexed-store-${adapter.harness}-`),
+      )
       cleanUp.push(() => rm(userData, { recursive: true, force: true }))
       const index = openSessionIndex(path.join(root, 'sessions.db'))
       cleanUp.push(() => index.close())

@@ -2,7 +2,7 @@
 // computes a Session's status goes through, instead of each restating its own fragment of the
 // honesty-tier rule. It takes the transcript-derived floor (`readExternalStatus` in status.ts),
 // the Session's posture, and one already-derived managed reading, and returns the one
-// SessionStatus. The reading is a SessionStatus too: each adapter translates its own CLI's words
+// SessionStatus. The reading is a SessionStatus too: each adapter translates its own Harness's words
 // into that closed set in its own directory, so no wire vocabulary reaches this module.
 //
 // The tie-break is the degrade-down rule made concrete: `permission` is DIRECT and managed-only,

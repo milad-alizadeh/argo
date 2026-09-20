@@ -1,7 +1,7 @@
 // #2134: connecting a Ticket renames the Session through the same `session.rename` path a person's
 // manual rename takes. Proved against the packaged app and the real mock `claude` process, so the
 // bracketed-paste `/rename` command and the `custom-title` record it writes are both exercised —
-// never a stub standing in for the CLI's own read-back.
+// never a stub standing in for the Harness's own read-back.
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -12,7 +12,7 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
   const started = await page.evaluate(
     ({ cwd, prompt }) =>
       window.argo.startSession({
-        cli: 'claude',
+        harness: 'claude',
         cwd,
         prompt,
         setup: { model: 'opus', effort: 'medium', mode: 'manual' },
@@ -22,7 +22,7 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
   assert.equal(started.type, 'session.started')
   const sessionId = started.sessionId
   const transcript = path.join(transcripts, 'mock-claude', `${sessionId}.jsonl`)
-  await waitFor(() => backend.recorded({ cli: 'claude', prompt }))
+  await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
 
   const [beforeRename] = await rosterRow(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })

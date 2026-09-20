@@ -21,7 +21,7 @@ const MARKER_LABEL: Record<MarkerRow['marker'], 'marks.compacted' | 'marks.inter
 }
 
 // A transcript boundary, drawn as a divider rather than a bubble so a reader never mistakes it
-// for something either party said (#2206). A compaction boundary can carry the summary the CLI
+// for something either party said (#2206). A compaction boundary can carry the summary the Harness
 // wrote to resume from, the only surviving record of what the compacted history held; a reader
 // expands it to see that text rather than losing it entirely.
 export function FeedMarker({ row }: { row: MarkerRow }) {

@@ -12,7 +12,7 @@ import { rosterHarness } from '@/domains/sessions/main/index/session-index/roste
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)
 
-describe.each(indexedAdapters)('the $cli Roster read through the Session index', (adapter) => {
+describe.each(indexedAdapters)('the $harness Roster read through the Session index', (adapter) => {
   test('opens no transcript file on a second read of an unchanged window', async () => {
     const { root, list } = await rosters.listing(adapter)
     await adapter.write(root, manyTranscripts(3))
@@ -58,12 +58,12 @@ describe.each(indexedAdapters)('the $cli Roster read through the Session index',
       title: changed?.title?.text,
       updatedAt: changed?.updatedAt,
       cwd: changed?.cwd,
-      cli: changed?.cli,
+      harness: changed?.harness,
     }).toEqual({
       title: 'Rewritten.',
       updatedAt: '2026-09-13T18:00:00.000Z',
       cwd: '/moved',
-      cli: adapter.cli,
+      harness: adapter.harness,
     })
     expect(after.sessions[0]?.id).toBe(moved)
     expect(after.filesParsed).toBe(1)

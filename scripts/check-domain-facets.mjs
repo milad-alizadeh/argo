@@ -16,7 +16,8 @@ async function sourceFiles(directory) {
       /\.[cm]?[jt]sx?$/.test(entry.name) &&
       !entry.name.includes('.test.') &&
       !entry.name.includes('.stories.') &&
-      entry.name !== 'harness-fixtures.ts'
+      entry.name !== 'harness-fixtures.ts' &&
+      entry.name !== 'roster-fixtures.ts'
     ) {
       files.push({
         path: normalized(path.relative(process.cwd(), entryPath)),

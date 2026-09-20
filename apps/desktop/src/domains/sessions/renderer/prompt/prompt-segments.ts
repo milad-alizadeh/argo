@@ -1,4 +1,4 @@
-// A stored prompt can carry a CLI's own markdown-link mention syntax, `[$skill](path)`, and plain
+// A stored prompt can carry a Harness's own markdown-link mention syntax, `[$skill](path)`, and plain
 // or markdown-wrapped URLs. This turns that raw text into segments the Feed, Roster and the
 // composer draw the same way (#2049): a skill badge, a clean link, or plain text.
 import { isExternalLink } from '@/platform/shared/urls'

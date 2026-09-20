@@ -73,7 +73,7 @@ export function rowsOfRecord(
   if (record.kind === 'event')
     return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text, raw: null }]
   if (record.kind === 'subagent') return [subagentRow(record)]
-  // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
+  // A subagent's turn is not this Session's history. The Harness nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   const calls = new Map(record.toolCalls.map((call) => [call.id, call] as const))

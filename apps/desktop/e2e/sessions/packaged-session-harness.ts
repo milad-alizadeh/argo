@@ -9,11 +9,11 @@ import {
 } from '../../src/domains/sessions/main/composition/proof-protocol'
 import { appExecutable } from '../packaged-app'
 import type {
-  SessionCliBackend,
-  SessionCliLaunch,
-  SessionCliRun,
   SessionFixture,
-} from './session-cli-backend'
+  SessionHarnessBackend,
+  SessionHarnessLaunch,
+  SessionHarnessRun,
+} from './session-harness-backend'
 
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
 
@@ -32,7 +32,7 @@ function keepRecentConsole(page: Page, lines: string[]) {
 
 // Unset leaves the shipped app reading the machine's own transcript roots under HOME, which is
 // what a backend running the real CLIs asks for.
-function transcriptEnv(transcripts: SessionCliRun['transcripts']): Record<string, string> {
+function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<string, string> {
   if (transcripts === null) return {}
   return {
     [SESSION_CLAUDE_TRANSCRIPTS_ENV]: transcripts.claude,
@@ -40,7 +40,7 @@ function transcriptEnv(transcripts: SessionCliRun['transcripts']): Record<string
   }
 }
 
-function launchEnvironment(run: SessionCliRun, launch: SessionCliLaunch) {
+function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch) {
   const environment = {
     ...process.env,
     ...transcriptEnv(run.transcripts),
@@ -59,8 +59,8 @@ export type PackagedSession = Awaited<ReturnType<typeof createPackagedSessionHar
 export async function createPackagedSessionHarness(request: {
   root: string
   fixture: SessionFixture
-  backend: SessionCliBackend
-  launch: SessionCliLaunch
+  backend: SessionHarnessBackend
+  launch: SessionHarnessLaunch
   // Runs once per process the harness opens, before the window is sized.
   launched: (application: ElectronApplication, page: Page) => Promise<void>
   // Runs before a restart closes the process.

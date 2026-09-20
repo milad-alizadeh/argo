@@ -18,7 +18,7 @@ function denied() {
 // body that throws is reached rather than swallowed by the owner lookup's own catch.
 export function owningSource(capabilities: Partial<SessionSource> = {}): SessionSource {
   return {
-    cli: 'claude',
+    harness: 'claude',
     discoverSessions: async () => ({
       rows: [],
       filesFound: 0,
@@ -32,7 +32,7 @@ export function owningSource(capabilities: Partial<SessionSource> = {}): Session
     readShellOutput: async () => ({ state: 'absent' }),
     managedSessions: () => [
       managedRow(SESSION_ID, {
-        cli: 'claude',
+        harness: 'claude',
         cwd: '/work',
         status: 'running',
         setup: { model: null, effort: null, mode: null },

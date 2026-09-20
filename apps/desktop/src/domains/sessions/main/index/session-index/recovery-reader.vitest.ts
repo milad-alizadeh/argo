@@ -21,8 +21,8 @@ function testInvalidRow(adapter: IndexedAdapter) {
     await list()
     const database = new DatabaseSync(databasePath)
     database
-      .prepare('UPDATE session_chain SET row_json = ? WHERE cli = ? AND chain_id = ?')
-      .run('{"not":"a Session row"}', adapter.cli, sessionIdAt(1))
+      .prepare('UPDATE session_chain SET row_json = ? WHERE harness = ? AND chain_id = ?')
+      .run('{"not":"a Session row"}', adapter.harness, sessionIdAt(1))
     database.close()
     const recovered = await list()
     expect(recovered.sessions.map((session) => session.id)).toContain(sessionIdAt(1))
@@ -118,7 +118,7 @@ function testUnavailableIndex(adapter: IndexedAdapter) {
   )
 }
 
-describe.each(indexedAdapters)('the $cli reader recovering its Session index', (adapter) => {
+describe.each(indexedAdapters)('the $harness reader recovering its Session index', (adapter) => {
   testInvalidRow(adapter)
   testBusyFallback(adapter)
   testBusyAuthority(adapter)

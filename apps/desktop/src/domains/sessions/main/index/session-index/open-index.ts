@@ -30,19 +30,22 @@ export function openSessionIndex(databasePath: string): SessionIndex {
   mkdirSync(path.dirname(databasePath), { recursive: true })
   const store = createSessionIndexStore(databasePath)
   return {
-    filesAt: async (cli, paths) => recoverableIndexOperation(() => store.filesAt(cli, paths)),
-    filesOfChains: async (cli, chainIds) =>
-      recoverableIndexOperation(() => store.filesOfChains(cli, chainIds)),
-    rowsOfChains: async (cli, chainIds) =>
-      recoverableIndexOperation(() => store.rowsOfChains(cli, chainIds)),
-    searchChains: async (cli, query) =>
-      recoverableIndexOperation(() => store.searchChains(cli, query)),
-    chainLinks: async (cli) => recoverableIndexOperation(() => store.chainLinks(cli)),
-    strandedChains: async (cli) => recoverableIndexOperation(() => store.strandedChains(cli)),
-    write: async (cli, pass) => recoverableIndexOperation(() => store.write(cli, pass)),
-    backfillProgress: async (cli) => recoverableIndexOperation(() => store.backfillProgress(cli)),
-    setBackfillProgress: async (cli, progress) =>
-      recoverableIndexOperation(() => store.setBackfillProgress(cli, progress)),
+    filesAt: async (harness, paths) =>
+      recoverableIndexOperation(() => store.filesAt(harness, paths)),
+    filesOfChains: async (harness, chainIds) =>
+      recoverableIndexOperation(() => store.filesOfChains(harness, chainIds)),
+    rowsOfChains: async (harness, chainIds) =>
+      recoverableIndexOperation(() => store.rowsOfChains(harness, chainIds)),
+    searchChains: async (harness, query) =>
+      recoverableIndexOperation(() => store.searchChains(harness, query)),
+    chainLinks: async (harness) => recoverableIndexOperation(() => store.chainLinks(harness)),
+    strandedChains: async (harness) =>
+      recoverableIndexOperation(() => store.strandedChains(harness)),
+    write: async (harness, pass) => recoverableIndexOperation(() => store.write(harness, pass)),
+    backfillProgress: async (harness) =>
+      recoverableIndexOperation(() => store.backfillProgress(harness)),
+    setBackfillProgress: async (harness, progress) =>
+      recoverableIndexOperation(() => store.setBackfillProgress(harness, progress)),
     close: async () => store.close(),
   }
 }

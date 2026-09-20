@@ -75,8 +75,8 @@ export function useAttachmentTransfer(attach: (paths: string[]) => void) {
 
 // Every attached path is checked again right before it leaves the composer: a file removed since
 // it was attached is caught here rather than reaching a Turn as a reference to nothing (an
-// "unsupported" attachment, AC4). What a readable path becomes on the wire is each CLI's own
-// adapter's call (agents/<cli>/), so this hands back the draft text and the attachments untouched
+// "unsupported" attachment, AC4). What a readable path becomes on the wire is each Harness's own
+// adapter's call (agents/<harness>/), so this hands back the draft text and the attachments untouched
 // rather than folding them into the prompt itself (#1886).
 export async function resolveAttachments(
   draft: string,

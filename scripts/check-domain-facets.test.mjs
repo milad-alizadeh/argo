@@ -17,7 +17,6 @@ test('allows every runtime facet to depend on its Project contract', () => {
 
   assert.deepEqual(domainFacetViolations(files), [])
 })
-
 test('refuses imports that point away from the Project contract', () => {
   const files = [
     projectFile('contract', 'messages', "import '../main/store'"),
@@ -103,6 +102,34 @@ test('refuses a domain facet importing an application composition root', () => {
   assert.deepEqual(
     domainFacetViolations(files).map(({ kind }) => kind),
     ['composition-root'],
+  )
+})
+
+test('refuses a harness adapter importing Sessions main code', () => {
+  const files = [
+    {
+      path: 'apps/desktop/src/harnesses/claude/drive/session-drive-adapter.ts',
+      source: "import '@/domains/sessions/main/drive/drive'",
+    },
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['harness', 'main']],
+  )
+})
+
+test('refuses a Sessions renderer importing a harness adapter', () => {
+  const files = [
+    {
+      path: 'apps/desktop/src/domains/sessions/renderer/view.tsx',
+      source: "import '@/harnesses/codex/drive/session-drive-adapter'",
+    },
+  ]
+
+  assert.deepEqual(
+    domainFacetViolations(files).map(({ sourceFacet, targetFacet }) => [sourceFacet, targetFacet]),
+    [['renderer', 'harness']],
   )
 })
 

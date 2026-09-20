@@ -14,7 +14,7 @@ async function tempFile(context: { after: (cleanup: () => Promise<void>) => void
 }
 
 // `readRecords` always probes the unfinished tail after a full line, empty or not, so an empty
-// line is not counted: it is not a line the CLI wrote and never carries a real parse cost.
+// line is not counted: it is not a line the Harness wrote and never carries a real parse cost.
 function countingParser(counts: { calls: number }) {
   return (line: string): TranscriptRecord | null => {
     if (line === '') return null
@@ -33,7 +33,7 @@ test('a file read once already held is resumed, not reparsed, on the next read',
   await readRecords(file)
   assert.equal(counts.calls, 1)
 
-  // The CLI appends, and the Feed opens the same file next.
+  // The Harness appends, and the Feed opens the same file next.
   await appendFile(file, 'second\n')
   await readRecords(file)
 

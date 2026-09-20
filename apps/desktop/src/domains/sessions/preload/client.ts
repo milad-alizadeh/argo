@@ -23,9 +23,9 @@ import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
 import type { RosterStatus } from '@/domains/sessions/contract/ipc/search-contract'
 import { createDomainClient } from '@/shared/ipc/client'
 
-export type SessionClient = {
+export type SessionHarnessent = {
   startSession(request: {
-    cli: string
+    harness: string
     cwd: string
     prompt: string
     setup?: unknown
@@ -92,9 +92,9 @@ export type SessionClient = {
   statSessionAttachments(request: { paths: string[] }): Promise<SessionStatAttachmentsReply>
 }
 
-export function createSessionClient(
+export function createSessionHarnessent(
   invoke: (channel: string, request: unknown) => Promise<unknown>,
-): SessionClient {
+): SessionHarnessent {
   const client = createDomainClient(SESSION_OPERATIONS, invoke, sessionError)
   return {
     startSession: (request) => client.start(request),

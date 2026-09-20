@@ -6,13 +6,13 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionCli } from '../../src/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
 
-// The harness tab labels, typed against SessionCli so a new CLI cannot be left out. The strings
+// The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
 // themselves live in the renderer's turn setup (claude-turn-setup.ts, codex-turn-setup.ts), which
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
-const HARNESS_TABS: Record<SessionCli, string> = { claude: 'Claude Code', codex: 'Codex' }
+const HARNESS_TABS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const FILTER = 'button[aria-label="Filter Sessions"]'
@@ -21,11 +21,11 @@ const ROW_TIMEOUT = 30_000
 const POLL_MS = 25
 
 export type CreateRequest = {
-  cli: SessionCli
+  harness: SessionHarness
   prompt: string
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
-  // row a managed Session stands on must not wait for the CLI to write (managed-row.ts).
-  cliWrote?: () => Promise<boolean>
+  // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
+  harnessWrote?: () => Promise<boolean>
 }
 
 type CreatedRow = { id: string; label: string; newRows: number }
@@ -85,10 +85,10 @@ export async function deselectSession(page: Page) {
 }
 
 // The harness tabs inside the run setup popover, dismissed the way a person dismisses it.
-export async function chooseHarness(page: Page, cli: SessionCli) {
+export async function chooseHarness(page: Page, harness: SessionHarness) {
   await page.locator(RUN_SETUP).click()
   // Keyboard tab selection remains valid while the run-setup surface re-renders its controls.
-  await page.getByRole('tab', { name: HARNESS_TABS[cli] }).press('Enter')
+  await page.getByRole('tab', { name: HARNESS_TABS[harness] }).press('Enter')
   await page.keyboard.press('Escape')
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
@@ -134,11 +134,11 @@ async function waitForCreatedRow(
   for (;;) {
     const created = await readCreatedRow(page, known, request.prompt)
     if (created !== null) return created
-    if (request.cliWrote !== undefined) {
+    if (request.harnessWrote !== undefined) {
       assert.equal(
-        await request.cliWrote(),
+        await request.harnessWrote(),
         false,
-        'the CLI wrote before the new Session reached the Roster',
+        'the Harness wrote before the new Session reached the Roster',
       )
     }
     if (Date.now() > deadline) throw new Error('Sending from the new Session composer made no row.')
@@ -151,7 +151,7 @@ async function waitForCreatedRow(
 export async function createSessionByClick(page: Page, request: CreateRequest): Promise<string> {
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
-  await chooseHarness(page, request.cli)
+  await chooseHarness(page, request.harness)
   const composer = page.getByRole('textbox', { name: 'Message' })
   await composer.click()
   await expect(composer).toHaveText('')

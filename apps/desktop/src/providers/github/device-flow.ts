@@ -1,7 +1,11 @@
 // GitHub's device flow in two calls: the challenge the person is shown, then the wait for their
 // answer. Nothing here opens a browser; that is the main process's own authority.
 import { setTimeout as sleep } from 'node:timers/promises'
-import { GITHUB_CLIENT_ID, GITHUB_SCOPES, type GitHubEndpoints } from '@/providers/github/endpoints'
+import {
+  GITHUB_HARNESSENT_ID,
+  GITHUB_SCOPES,
+  type GitHubEndpoints,
+} from '@/providers/github/endpoints'
 import { failed, type GitHubRead, get, postForm } from '@/providers/github/http'
 import { type GrantOutcome, grantedScopes, type Identity } from '@/providers/grant'
 import { isRecord } from '@/shared/validation'
@@ -35,7 +39,7 @@ export async function requestChallenge(
   endpoints: GitHubEndpoints,
 ): Promise<GitHubRead<DeviceChallenge>> {
   const reply = await postForm(`${endpoints.web}/login/device/code`, {
-    client_id: GITHUB_CLIENT_ID,
+    client_id: GITHUB_HARNESSENT_ID,
     scope: GITHUB_SCOPES.join(' '),
   })
   if (!reply.ok) return reply
@@ -70,7 +74,7 @@ async function poll(
   interval: number,
 ): Promise<Poll> {
   const reply = await postForm(`${endpoints.web}/login/oauth/access_token`, {
-    client_id: GITHUB_CLIENT_ID,
+    client_id: GITHUB_HARNESSENT_ID,
     device_code: challenge.deviceCode,
     grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
   })

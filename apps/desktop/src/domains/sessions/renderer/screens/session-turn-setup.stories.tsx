@@ -11,7 +11,7 @@ const SESSION_ID = 'managed-turn-setup'
 const OPENING_TURN = '2026-09-13T10:00:00.000Z'
 const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
-// A managed Claude Session whose next Turn runs on whatever `reply` says the CLI used.
+// A managed Claude Session whose next Turn runs on whatever `reply` says the Harness used.
 function managedSession(reply: SessionSetup, sent: unknown[]) {
   const row = sessionRosterRow({
     id: SESSION_ID,

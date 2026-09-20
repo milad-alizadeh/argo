@@ -48,7 +48,7 @@ export function storeHarness() {
 export function rowFor(id: string, updatedAt: string, cwd = '/work/one'): SessionRosterRow {
   return {
     ...managedRow(id, {
-      cli: 'claude',
+      harness: 'claude',
       cwd,
       status: 'idle',
       setup: { model: null, effort: null, mode: null },

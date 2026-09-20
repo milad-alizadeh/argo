@@ -17,7 +17,7 @@ function realSessionRow(id: string): SessionRosterRow {
     ...optimisticSessionRow({
       stage: 'draft',
       id,
-      cli: 'claude',
+      harness: 'claude',
       cwd: '/argo',
       submitting: false,
       prompt: null,
@@ -38,7 +38,7 @@ test('puts the optimistic row first, once, above the real Roster', () => {
   const pending = {
     stage: 'draft',
     id: 'optimistic:1',
-    cli: 'codex',
+    harness: 'codex',
     cwd: '/argo',
     submitting: false,
     prompt: null,
@@ -52,7 +52,7 @@ test('never duplicates the row once the real Session appears under the reconcile
   const pending = {
     stage: 'reconciling',
     id: 'session-new',
-    cli: 'codex',
+    harness: 'codex',
     cwd: '/argo',
     prompt: null,
   } as const
@@ -82,13 +82,13 @@ test('the Roster row for a pending Session is a fresh, untouched Session on the 
   const row = optimisticSessionRow({
     stage: 'draft',
     id: 'optimistic:1',
-    cli: 'codex',
+    harness: 'codex',
     cwd: '/argo',
     submitting: false,
     prompt: null,
   })
   expect(row.id).toBe('optimistic:1')
-  expect(row.cli).toBe('codex')
+  expect(row.harness).toBe('codex')
   expect(row.cwd).toBe('/argo')
   expect(row.status).toBe('starting')
   expect(row.title).toBeNull()

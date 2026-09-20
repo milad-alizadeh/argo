@@ -129,7 +129,7 @@ export const CommandWithDescriptionLabel = {
             ...command,
             id: 'described-command',
             label: 'Listing changed files and scanning them for leftovers',
-            text: 'RTK_DISABLED=1 git diff --name-only 5911f4e89~1 HEAD -- apps/desktop/src/agents/claude',
+            text: 'RTK_DISABLED=1 git diff --name-only 5911f4e89~1 HEAD -- apps/desktop/src/harnesses/claude',
           },
         ],
       }}

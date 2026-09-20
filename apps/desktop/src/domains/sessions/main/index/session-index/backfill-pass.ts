@@ -1,5 +1,5 @@
 // Indexing older history a bounded batch at a time (#2373). The recent window is kept warm by
-// every Roster read; backfill is what carries the rest of a CLI's history into the index without
+// every Roster read; backfill is what carries the rest of a Harness's history into the index without
 // ever reading the whole tree in one pass. A batch never repeats a file another batch already
 // covered and never skips one, because "already covered" is a place in the newest-first order
 // (a written time and a path), not a position in an array that new Sessions keep shifting.

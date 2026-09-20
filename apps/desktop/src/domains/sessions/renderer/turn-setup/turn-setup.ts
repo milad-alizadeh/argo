@@ -15,7 +15,7 @@ export const turnSetupSchema = z.strictObject({
 })
 export type TurnSetup = z.infer<typeof turnSetupSchema>
 
-// `reads` says whether a word the CLI wrote to its transcript means this choice.
+// `reads` says whether a word the Harness wrote to its transcript means this choice.
 export type SetupChoice = {
   value: string
   label: string
@@ -115,7 +115,7 @@ export function turnSettled(
   return row.status !== 'running' || (row.setup.model !== null && row.setup.effort !== null)
 }
 
-// A choice the reading contradicts goes back to what the CLI used, and the message says which.
+// A choice the reading contradicts goes back to what the Harness used, and the message says which.
 export function refusalOf(
   choices: TurnSetupChoices,
   requested: TurnSetup,

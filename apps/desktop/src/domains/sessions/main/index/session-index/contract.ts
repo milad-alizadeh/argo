@@ -1,5 +1,5 @@
 // What the Session index answers, and what one indexing pass writes back. Shared Session code and
-// the CLI adapters speak only this; the SQL that serves it lives behind one worker (#2372).
+// the Harness adapters speak only this; the SQL that serves it lives behind one worker (#2372).
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 
 // A transcript file addressed for parsing: where it is, and the Session it belongs to.
@@ -44,7 +44,7 @@ export type SessionIndexWrite = {
   retiredChainIds: string[]
 }
 
-// How far background backfill has walked into a CLI's older history: the newest file it has not
+// How far background backfill has walked into a Harness's older history: the newest file it has not
 // yet reached, in the same newest-first order the recent window reads (written time, then path to
 // break a tie). `null` means backfill has not started. `complete` once no file on disk is older
 // than the boundary (#2373).
@@ -53,24 +53,24 @@ export type BackfillProgress = {
   complete: boolean
 }
 
-// The asynchronous port shared Session code reads the index through. One CLI's rows are addressed
-// by `cli` throughout, so shared code stays free of CLI branches (ADR-0024).
+// The asynchronous port shared Session code reads the index through. One Harness's rows are addressed
+// by `harness` throughout, so shared code stays free of Harness branches (ADR-0024).
 export type SessionIndex = {
-  filesAt: (cli: string, paths: readonly string[]) => Promise<IndexedTranscriptFile[]>
-  filesOfChains: (cli: string, chainIds: readonly string[]) => Promise<IndexedTranscriptFile[]>
-  rowsOfChains: (cli: string, chainIds: readonly string[]) => Promise<SessionRosterRow[]>
+  filesAt: (harness: string, paths: readonly string[]) => Promise<IndexedTranscriptFile[]>
+  filesOfChains: (harness: string, chainIds: readonly string[]) => Promise<IndexedTranscriptFile[]>
+  rowsOfChains: (harness: string, chainIds: readonly string[]) => Promise<SessionRosterRow[]>
   // Every chain a title, current id, or retired id matches, newest first (#2375).
-  searchChains: (cli: string, query: string) => Promise<SessionRosterRow[]>
-  chainLinks: (cli: string) => Promise<{ sessionId: string; parentSessionId: string | null }[]>
+  searchChains: (harness: string, query: string) => Promise<SessionRosterRow[]>
+  chainLinks: (harness: string) => Promise<{ sessionId: string; parentSessionId: string | null }[]>
   // Every chain standing under a retired id for want of its origin.
-  strandedChains: (cli: string) => Promise<string[]>
-  write: (cli: string, pass: SessionIndexWrite) => Promise<void>
-  backfillProgress: (cli: string) => Promise<BackfillProgress>
-  setBackfillProgress: (cli: string, progress: BackfillProgress) => Promise<void>
+  strandedChains: (harness: string) => Promise<string[]>
+  write: (harness: string, pass: SessionIndexWrite) => Promise<void>
+  backfillProgress: (harness: string) => Promise<BackfillProgress>
+  setBackfillProgress: (harness: string, progress: BackfillProgress) => Promise<void>
   close: () => Promise<void>
 }
 
 // A transcript file with no Message record belongs to no Session yet (CONTEXT.md L2 · Transcript
-// file). Its identity is still recorded, so the pass stops re-reading it until the CLI writes
+// file). Its identity is still recorded, so the pass stops re-reading it until the Harness writes
 // that first Message and its size changes.
 export const NO_CHAIN = ''

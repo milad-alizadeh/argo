@@ -40,7 +40,7 @@ export function newSessionDeps(
   navigate: NewSessionDeps['navigate'] = () => {},
 ): NewSessionDeps {
   return {
-    cli: 'claude',
+    harness: 'claude',
     cockpit: COCKPIT,
     identity,
     navigate,

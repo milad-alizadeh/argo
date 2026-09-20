@@ -140,8 +140,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     // The question call's own id, so a decision names exactly the call it answers.
     id: identifierSchema,
     questions: z.array(questionSchema).min(1),
-    // The CLI's own answered-questions text, verbatim; null while the call is still pending.
-    // Nothing here is summarised — a row that cannot show the CLI's own words shows none.
+    // The Harness's own answered-questions text, verbatim; null while the call is still pending.
+    // Nothing here is summarised — a row that cannot show the Harness's own words shows none.
     answer: z.string().nullable(),
     // Why this row cannot be answered through the shared form (Codex's `isSecret`, #1841); null
     // when every question here has an honest answer in the shared Question shape.

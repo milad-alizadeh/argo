@@ -14,7 +14,7 @@ export type ConnectTicketInput = {
   state: 'open' | 'closed'
 }
 
-// A Turn in progress owns the CLI's input; a rename must never compete with it (issue #2134).
+// A Turn in progress owns the Harness's input; a rename must never compete with it (issue #2134).
 const TURN_IN_PROGRESS = new Set(['running', 'permission', 'asking'])
 
 export type ConnectOutcome = {

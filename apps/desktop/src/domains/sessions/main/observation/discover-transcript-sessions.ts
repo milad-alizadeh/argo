@@ -101,7 +101,7 @@ function createChainReader(parts: {
 }) {
   return async function readSessionFiles(root: string, sessionId: string) {
     // Every chain id and retired id is some file's own id, so an id no file is named for resolves
-    // nowhere. A Session its CLI has not written yet is answered from the listing alone (#2356).
+    // nowhere. A Session its Harness has not written yet is answered from the listing alone (#2356).
     const named = await parts.source.transcriptPaths(root)
     if (!named.some((file) => file.sessionId === sessionId)) return null
     let windowSize = ROSTER_PAGE_SIZE
@@ -128,10 +128,10 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
   const sessionChains = createChainCache(chainHistory)
   const strongestTitle = createTitleLedger()
   const presented = (rows: SessionRosterRow[]) => presentedRows(strongestTitle, rows)
-  const projectChain = (chain: SessionChain) => projectRosterRow(chain, source.cli)
+  const projectChain = (chain: SessionChain) => projectRosterRow(chain, source.harness)
 
   const windowSource = {
-    cli: source.cli,
+    harness: source.harness,
     identities: (root: string) => transcriptIdentities(metadataSource, root),
     // The roster projection stays metadata-only, but the rebuildable index also carries the Feed
     // text search projection. It therefore parses the same normalized records the Feed reader
@@ -165,9 +165,9 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     reconcileAll: background.reconcileAll,
     resolveIds: (index: SessionIndex, ids: readonly string[]) =>
       resolveIdsAgainst(indexedWindowFor, index, ids),
-    historyComplete: (index: SessionIndex) => historyCompleteFor(source.cli, index),
+    historyComplete: (index: SessionIndex) => historyCompleteFor(source.harness, index),
     searchIndexed: (index: SessionIndex, query: string) =>
-      searchAgainst({ index, cli: source.cli, query, presented }),
+      searchAgainst({ index, harness: source.harness, query, presented }),
   }
 }
 

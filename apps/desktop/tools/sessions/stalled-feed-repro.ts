@@ -12,8 +12,8 @@ import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { claudeSessionSource } from '../../src/agents/claude/sessions/read-sessions'
 import { createSessionReader } from '../../src/domains/sessions/main/reader'
+import { claudeSessionSource } from '../../src/harnesses/claude/sessions/read-sessions'
 
 const SESSION = 'external-live'
 const LINES = Number(process.env.LINES ?? '100000')

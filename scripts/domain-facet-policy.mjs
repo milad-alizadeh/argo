@@ -10,12 +10,13 @@ export const ALLOWED_TARGETS = {
   main: new Set(['contract', 'main', 'shared']),
   preload: new Set(['contract', 'preload', 'shared']),
   renderer: new Set(['contract', 'renderer', 'shared']),
+  harness: new Set(['contract', 'shared']),
 }
 
 // The only top-level homes under src/; anything else is a legacy root.
 export const SOURCE_ROOTS = new Set([
-  'agents',
   'domains',
+  'harnesses',
   'platform',
   'providers',
   'renderer',
@@ -80,5 +81,11 @@ export const FACET_POLICIES = {
       'apps/desktop/src/platform/main/storage',
       'apps/desktop/src/providers',
     ],
+  },
+  harness: {
+    refusesNode: false,
+    refusesElectron: false,
+    refusesReact: false,
+    privilegedRoots: [],
   },
 }

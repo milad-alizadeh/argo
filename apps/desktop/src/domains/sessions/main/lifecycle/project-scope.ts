@@ -40,7 +40,7 @@ async function mainWorktreeRoots(projectRoot: string): Promise<string[]> {
   return path.basename(common) === '.git' ? pathForms(path.dirname(common)) : []
 }
 
-// A Project's root as registered and as the CLI records it: a CLI's cwd has symlinks resolved
+// A Project's root as registered and as the Harness records it: a Harness's cwd has symlinks resolved
 // (macOS `/var` is `/private/var`). `null` means no Project is open, so nothing is filtered out.
 export async function projectRootsOf(
   projectRoot: string | null | undefined,

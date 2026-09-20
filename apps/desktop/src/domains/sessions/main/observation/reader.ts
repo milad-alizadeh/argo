@@ -1,6 +1,6 @@
 import {
   driveSessionError,
-  isDriveCli,
+  isDriveHarness,
   type SessionRenameRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
@@ -42,14 +42,15 @@ type ReaderState = SessionArchiveStore & { unread?: SessionUnreadStore }
 
 function createOwnerResolver(sources: SessionSource[]) {
   const owners = new Map<string, SessionSource>()
-  const lastDiscoveredCli = new Map<string, string>()
+  const lastDiscoveredHarness = new Map<string, string>()
   const managedOwner = (sessionId: string) =>
     sources.find((source) => source.managedSessions?.().some(({ id }) => id === sessionId))
   const ownerFor = async (sessionId: string) => {
     const managed = managedOwner(sessionId)
     if (managed !== undefined) return managed
-    const cli = lastDiscoveredCli.get(sessionId)
-    const discovered = cli === undefined ? undefined : sources.find((source) => source.cli === cli)
+    const harness = lastDiscoveredHarness.get(sessionId)
+    const discovered =
+      harness === undefined ? undefined : sources.find((source) => source.harness === harness)
     if (discovered !== undefined) return discovered
     const known = owners.get(sessionId)
     if (known !== undefined) return known
@@ -61,10 +62,12 @@ function createOwnerResolver(sources: SessionSource[]) {
     }
     return undefined
   }
-  const rememberDiscoveries = (sessions: { id: string; cli: string }[]) => {
-    lastDiscoveredCli.clear()
+  const rememberDiscoveries = (sessions: { id: string; harness: string }[]) => {
+    lastDiscoveredHarness.clear()
     for (const session of sessions) {
-      if (!lastDiscoveredCli.has(session.id)) lastDiscoveredCli.set(session.id, session.cli)
+      if (!lastDiscoveredHarness.has(session.id)) {
+        lastDiscoveredHarness.set(session.id, session.harness)
+      }
     }
   }
   return {
@@ -78,14 +81,14 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
   const owner = await ownerFor(request.sessionId)
   if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
-    const cli = isDriveCli(owner.cli) ? owner.cli : 'claude'
-    return driveSessionError('not-drivable', cli, request.requestId)
+    const harness = isDriveHarness(owner.harness) ? owner.harness : 'claude'
+    return driveSessionError('not-drivable', harness, request.requestId)
   }
   return owner.rename(request)
 }
 
 // The reader learns a Session's owner from three facts, in this order: a managed Session a
-// driver reports, the `cli` of the Session's row in the most recent discovery, and, if neither
+// driver reports, the `harness` of the Session's row in the most recent discovery, and, if neither
 // knows the Session, the first adapter whose chain read finds it. Once known, the owner is kept.
 export function createSessionReader(
   sources: SessionSource[],
@@ -101,9 +104,9 @@ export function createSessionReader(
   const reads: ReadContext = { sources, ownerFor: ownership.ownerFor, archive, unread }
 
   return {
-    async ownerCliFor(sessionId) {
+    async ownerHarnessFor(sessionId) {
       const owner = await ownership.ownerFor(sessionId)
-      return owner?.cli
+      return owner?.harness
     },
     listSessions: (request) =>
       listReply(sources, ownership, { ticketLinks, archive, unread, request }),

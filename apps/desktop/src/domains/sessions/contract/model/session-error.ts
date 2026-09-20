@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 
-// Codes a CLI cannot cause: reading the Roster, an untrusted caller, a stale contract version.
+// Codes a Harness cannot cause: reading the Roster, an untrusted caller, a stale contract version.
 const SHARED_SESSION_ERRORS = {
   'missing-session': 'Argo cannot find this Session.',
   'invalid-request': 'The Session request is invalid.',
@@ -14,9 +14,9 @@ const SHARED_SESSION_ERRORS = {
   cancelled: 'Argo cancelled this Session read.',
 } as const
 
-// One failure kind, the same code for every CLI (#2030); only the message names which CLI failed.
+// One failure kind, the same code for every Harness (#2030); only the message names which Harness failed.
 const DRIVE_SESSION_ERRORS = {
-  'cli-unavailable': {
+  'harness-unavailable': {
     claude: 'Claude Code is not available. Run claude doctor to repair it.',
     codex: 'Codex is not available. Run codex doctor to repair it.',
   },
@@ -45,17 +45,17 @@ const DRIVE_SESSION_ERRORS = {
 export type SharedSessionErrorCode = keyof typeof SHARED_SESSION_ERRORS
 export type DriveSessionErrorCode = keyof typeof DRIVE_SESSION_ERRORS
 export type SessionErrorCode = SharedSessionErrorCode | DriveSessionErrorCode
-export type DriveCli = keyof (typeof DRIVE_SESSION_ERRORS)['cli-unavailable']
+export type DriveHarness = keyof (typeof DRIVE_SESSION_ERRORS)['harness-unavailable']
 
 const DRIVE_CODES = new Set<string>(Object.keys(DRIVE_SESSION_ERRORS))
-const DRIVE_CLIS = new Set<string>(Object.keys(DRIVE_SESSION_ERRORS['cli-unavailable']))
+const DRIVE_HARNESSES = new Set<string>(Object.keys(DRIVE_SESSION_ERRORS['harness-unavailable']))
 
 function isDriveCode(code: SessionErrorCode): code is DriveSessionErrorCode {
   return DRIVE_CODES.has(code)
 }
 
-export function isDriveCli(value: string): value is DriveCli {
-  return DRIVE_CLIS.has(value)
+export function isDriveHarness(value: string): value is DriveHarness {
+  return DRIVE_HARNESSES.has(value)
 }
 
 export const sessionErrorSchema = z
@@ -67,17 +67,17 @@ export const sessionErrorSchema = z
       SessionErrorCode,
       ...SessionErrorCode[],
     ]),
-    // The CLI a drive failure names; absent for a shared, CLI-agnostic code (nullish so a caller
+    // The Harness a drive failure names; absent for a shared, Harness-agnostic code (nullish so a caller
     // that predates this field still parses as one).
-    cli: z.string().nullish(),
+    harness: z.string().nullish(),
     message: z.string(),
   })
-  .refine(({ code, cli, message }) => {
+  .refine(({ code, harness, message }) => {
     if (isDriveCode(code)) {
       const messages: Record<string, string> = DRIVE_SESSION_ERRORS[code]
-      return typeof cli === 'string' && message === messages[cli]
+      return typeof harness === 'string' && message === messages[harness]
     }
-    return (cli ?? null) === null && message === SHARED_SESSION_ERRORS[code]
+    return (harness ?? null) === null && message === SHARED_SESSION_ERRORS[code]
   })
 export type SessionError = z.infer<typeof sessionErrorSchema>
 
@@ -87,15 +87,15 @@ export function sessionError(code: SharedSessionErrorCode, requestId: string | n
     type: 'session.error',
     requestId,
     code,
-    cli: null,
+    harness: null,
     message: SHARED_SESSION_ERRORS[code],
   }
 }
 
-// One failure kind for every CLI; the CLI it names picks the message (#2030).
+// One failure kind for every Harness; the Harness it names picks the message (#2030).
 export function driveSessionError(
   code: DriveSessionErrorCode,
-  cli: DriveCli,
+  harness: DriveHarness,
   requestId: string | null,
 ): SessionError {
   return {
@@ -103,8 +103,8 @@ export function driveSessionError(
     type: 'session.error',
     requestId,
     code,
-    cli,
-    message: DRIVE_SESSION_ERRORS[code][cli],
+    harness,
+    message: DRIVE_SESSION_ERRORS[code][harness],
   }
 }
 

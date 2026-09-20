@@ -1,16 +1,16 @@
-// Confirms both CLI adapters satisfy the widened SessionDriveAdapter port (#2076): a Permission
-// reaches shared code in the neutral shape, whichever CLI raised it, and every word the shared
+// Confirms both Harness adapters satisfy the widened SessionDriveAdapter port (#2076): a Permission
+// reaches shared code in the neutral shape, whichever Harness raised it, and every word the shared
 // decision vocabulary defines type-checks through each adapter's decidePermission.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createClaudeDriveAdapter } from '@/agents/claude/drive/session-drive-adapter'
-import { createCodexDriveAdapter } from '@/agents/codex/drive/session-drive-adapter'
 import {
   PERMISSION_DECISIONS,
   PERMISSION_DECISIONS_BY_CLI,
   permissionSchema,
 } from '@/domains/sessions/contract/drive/permission'
-import type { SessionDriveAdapter } from '@/domains/sessions/main/drive/session-drive-adapter'
+import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
+import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
 
 function mockClaudeAdapter(): SessionDriveAdapter {
   return createClaudeDriveAdapter({
@@ -54,7 +54,7 @@ function mockCodexAdapter(): SessionDriveAdapter {
   })
 }
 
-test('the Claude adapter reads its pending Permission in the shared, CLI-neutral shape', async () => {
+test('the Claude adapter reads its pending Permission in the shared, Harness-neutral shape', async () => {
   const { permission } = await mockClaudeAdapter().readPermission({ sessionId: 'session-1' })
   assert.equal(permissionSchema.safeParse(permission).success, true)
 })
@@ -64,7 +64,7 @@ test('the Codex adapter reads no pending Permission, in the same shared shape', 
   assert.deepEqual(result, { permission: null })
 })
 
-test('names which decision words each CLI actually answers with', () => {
+test('names which decision words each Harness actually answers with', () => {
   assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.claude, ['allow', 'deny', 'allowForSession'])
   assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.codex, [
     'allow',
@@ -76,7 +76,7 @@ test('names which decision words each CLI actually answers with', () => {
 
 for (const adapterName of ['claude', 'codex'] as const) {
   // Claude's mock driver always grants; Codex's stub always refuses (#1841) — every shared word
-  // still type-checks through decidePermission, whichever outcome the CLI answers with.
+  // still type-checks through decidePermission, whichever outcome the Harness answers with.
   const expected = adapterName === 'claude' ? { ok: true } : { error: 'stale-permission' }
   for (const decision of PERMISSION_DECISIONS) {
     test(`the ${adapterName} adapter's decidePermission accepts the shared word "${decision}"`, async () => {

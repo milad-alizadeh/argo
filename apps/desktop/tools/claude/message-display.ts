@@ -6,12 +6,12 @@ import { execFileSync } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSystemClaudeSessionDriver } from '../../src/agents/claude/drive/system-claude-session-driver'
-import { claudeSessionSource } from '../../src/agents/claude/sessions/read-sessions'
-import { claudeTranscriptsRoot } from '../../src/agents/claude/sessions/roots'
 import type { ClaudeTurnSetup } from '../../src/domains/sessions/contract/contract'
 import type { SessionReader } from '../../src/domains/sessions/main/bridge'
 import { createSessionReader } from '../../src/domains/sessions/main/reader'
+import { createSystemClaudeSessionDriver } from '../../src/harnesses/claude/drive/system-claude-session-driver'
+import { claudeSessionSource } from '../../src/harnesses/claude/sessions/read-sessions'
+import { claudeTranscriptsRoot } from '../../src/harnesses/claude/sessions/roots'
 
 type Row = { id: string; shape: string; role?: string; text?: string }
 type Reader = SessionReader

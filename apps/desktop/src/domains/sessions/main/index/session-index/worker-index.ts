@@ -109,15 +109,15 @@ export function createWorkerSessionIndex(
   }
 
   return {
-    filesAt: (cli, paths) => call('filesAt', cli, paths),
-    filesOfChains: (cli, chainIds) => call('filesOfChains', cli, chainIds),
-    rowsOfChains: (cli, chainIds) => call('rowsOfChains', cli, chainIds),
-    searchChains: (cli, query) => call('searchChains', cli, query),
-    chainLinks: (cli) => call('chainLinks', cli),
-    strandedChains: (cli) => call('strandedChains', cli),
-    write: (cli, pass) => call('write', cli, pass),
-    backfillProgress: (cli) => call('backfillProgress', cli),
-    setBackfillProgress: (cli, progress) => call('setBackfillProgress', cli, progress),
+    filesAt: (harness, paths) => call('filesAt', harness, paths),
+    filesOfChains: (harness, chainIds) => call('filesOfChains', harness, chainIds),
+    rowsOfChains: (harness, chainIds) => call('rowsOfChains', harness, chainIds),
+    searchChains: (harness, query) => call('searchChains', harness, query),
+    chainLinks: (harness) => call('chainLinks', harness),
+    strandedChains: (harness) => call('strandedChains', harness),
+    write: (harness, pass) => call('write', harness, pass),
+    backfillProgress: (harness) => call('backfillProgress', harness),
+    setBackfillProgress: (harness, progress) => call('setBackfillProgress', harness, progress),
     close: async () => {
       if (closed) return
       closed = true

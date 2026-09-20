@@ -1,9 +1,8 @@
-// A poll while a CLI appends must not resend rows the renderer already holds (#2145): a poll that
+// A poll while a Harness appends must not resend rows the renderer already holds (#2145): a poll that
 // finds nothing new still gets `session.feed.unchanged`, and one that finds only an append gets
 // `session.feed.appended` naming how much of the caller's own copy is still good.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexSessionSource } from '@/agents/codex/sessions/read-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   appendCodexTranscript,
@@ -12,6 +11,7 @@ import {
   tempRoot,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'incremental'
 

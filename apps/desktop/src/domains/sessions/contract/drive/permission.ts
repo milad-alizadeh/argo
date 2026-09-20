@@ -1,4 +1,4 @@
-// The CLI-neutral Permission every SessionDriveAdapter answers in (ADR-0024, #2076). A Permission
+// The Harness-neutral Permission every SessionDriveAdapter answers in (ADR-0024, #2076). A Permission
 // states only what shared code needs to know a pending one exists and describe it; a tool call's
 // own vocabulary (Claude's `toolName`/`input`, Codex's `itemId`/request kind) stays behind each
 // adapter's own seam and never reaches this type.
@@ -21,7 +21,7 @@ export const READER_DECISIONS = ['allow', 'deny', 'allowForSession'] as const
 export const PERMISSION_DECISIONS = [...READER_DECISIONS, 'cancel'] as const
 export type PermissionDecision = (typeof PERMISSION_DECISIONS)[number]
 
-// Which of the four words each CLI's Permission actually answers with, so a decision word one CLI
+// Which of the four words each Harness's Permission actually answers with, so a decision word one Harness
 // needs but another doesn't stays representable rather than silently unsupported.
 export const PERMISSION_DECISIONS_BY_CLI: Record<string, readonly PermissionDecision[]> = {
   claude: READER_DECISIONS,

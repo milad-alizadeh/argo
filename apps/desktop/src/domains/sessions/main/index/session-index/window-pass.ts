@@ -26,7 +26,7 @@ export function isUnchanged(
 }
 
 // An indexed file addressed the way a parser wants it. The adapter supplied its Session id when
-// it discovered the file, so shared code needs no knowledge of the CLI's file name shape.
+// it discovered the file, so shared code needs no knowledge of the Harness's file name shape.
 export function pathOfIndexed(file: IndexedTranscriptFile) {
   return { path: file.path, sessionId: file.sessionId }
 }

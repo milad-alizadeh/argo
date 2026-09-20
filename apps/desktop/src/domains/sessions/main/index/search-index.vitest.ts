@@ -26,7 +26,7 @@ async function search(
   return reply.type === 'session.searched' ? reply : Promise.reject(new Error(reply.type))
 }
 
-describe.each(indexedAdapters)('the $cli search read through the Session index', (adapter) => {
+describe.each(indexedAdapters)('the $harness search read through the Session index', (adapter) => {
   test('finds reader-visible Feed prose and returns its bounded excerpt', async () => {
     const { root, source, reader } = await harness(adapter)
     await adapter.write(root, [

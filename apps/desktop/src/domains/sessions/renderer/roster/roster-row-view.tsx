@@ -41,7 +41,7 @@ function sameRowView(left: RosterRowViewProps, right: RosterRowViewProps): boole
 // Memoized, because a read of the open Session re-renders an ancestor the roster shares with it, and
 // without this every mounted row re-rendered with it: 185291 renders in a 13-second idle recording,
 // when those reads still polled at 500ms. Nothing re-reads on a timer now (#2299, #2303), so the
-// reads are a CLI's writes, but a Session being driven writes several times a second.
+// reads are a Harness's writes, but a Session being driven writes several times a second.
 export const RosterRowView = memo(function RosterRowView({
   checked,
   onFocus,

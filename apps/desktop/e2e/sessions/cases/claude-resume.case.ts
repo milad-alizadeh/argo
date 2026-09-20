@@ -18,8 +18,8 @@ async function sendFromComposer(page, text) {
 }
 
 export async function provePackagedResume(page, { backend, project, restart, transcripts }) {
-  const opened = { cli: 'claude', prompt: 'Open the resume proof.' }
-  const sessionId = await createSessionByClick(page, { cli: 'claude', prompt: opened.prompt })
+  const opened = { harness: 'claude', prompt: 'Open the resume proof.' }
+  const sessionId = await createSessionByClick(page, { harness: 'claude', prompt: opened.prompt })
   await waitFor(() => backend.recorded(opened))
 
   const relaunched = await restart()
@@ -32,7 +32,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
   await backend
-    .waitForReply(relaunched, { cli: 'claude', prompt: 'Carry on after the restart.' })
+    .waitForReply(relaunched, { harness: 'claude', prompt: 'Carry on after the restart.' })
     .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
@@ -55,7 +55,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
   await sendFromComposer(relaunched, 'Take this one over.')
   await backend
-    .waitForReply(relaunched, { cli: 'claude', prompt: 'Take this one over.' })
+    .waitForReply(relaunched, { harness: 'claude', prompt: 'Take this one over.' })
     .catch((error) =>
       reportStalledResume({ error, page: relaunched, sessionId: 'externalBasic', transcripts }),
     )
