@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"ur-a"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"ur-p","message":{"role":"user","content":"Go."}}
+{not valid json at all
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"ur-a","message":{"role":"assistant","stop_reason":"end_turn","content":[{"type":"text","text":"Done."}]}}

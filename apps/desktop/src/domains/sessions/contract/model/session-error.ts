@@ -6,7 +6,7 @@ const SHARED_SESSION_ERRORS = {
   'missing-session': 'Argo cannot find this Session.',
   'invalid-request': 'The Session request is invalid.',
   'unsupported-version': 'This Session contract version is not supported.',
-  'transcripts-unavailable': 'Argo cannot read the Claude transcript folder.',
+  'transcripts-unavailable': 'Argo cannot read this Harness transcript folder.',
   'access-denied': 'Argo cannot access these Sessions.',
   'internal-error': 'Argo could not read these Sessions.',
   'invalid-response': 'Argo received an invalid Session response.',
@@ -15,47 +15,23 @@ const SHARED_SESSION_ERRORS = {
 } as const
 
 // One failure kind, the same code for every Harness (#2030); only the message names which Harness failed.
-const DRIVE_SESSION_ERRORS = {
-  'harness-unavailable': {
-    claude: 'Claude Code is not available. Run claude doctor to repair it.',
-    codex: 'Codex is not available. Run codex doctor to repair it.',
-  },
-  'launch-failed': {
-    claude: 'Argo could not start Claude Code.',
-    codex: 'Argo could not start Codex.',
-  },
-  'not-drivable': {
-    claude: 'Argo no longer holds this Claude Session.',
-    codex: 'Argo no longer holds this Codex Session.',
-  },
-  'held-elsewhere': {
-    claude: 'Another Argo window is driving this Claude Session.',
-    codex: 'Another Argo window is driving this Codex Session.',
-  },
-  'stale-permission': {
-    claude: 'This Claude permission is no longer waiting.',
-    codex: 'This Codex permission is no longer waiting.',
-  },
-  'stale-question': {
-    claude: 'This Claude question is no longer waiting.',
-    codex: 'This Codex question is no longer waiting.',
-  },
-} as const
+const DRIVE_SESSION_ERROR_CODES = [
+  'harness-unavailable',
+  'launch-failed',
+  'not-drivable',
+  'held-elsewhere',
+  'stale-permission',
+  'stale-question',
+] as const
 
 export type SharedSessionErrorCode = keyof typeof SHARED_SESSION_ERRORS
-export type DriveSessionErrorCode = keyof typeof DRIVE_SESSION_ERRORS
+export type DriveSessionErrorCode = (typeof DRIVE_SESSION_ERROR_CODES)[number]
 export type SessionErrorCode = SharedSessionErrorCode | DriveSessionErrorCode
-export type DriveHarness = keyof (typeof DRIVE_SESSION_ERRORS)['harness-unavailable']
 
-const DRIVE_CODES = new Set<string>(Object.keys(DRIVE_SESSION_ERRORS))
-const DRIVE_HARNESSES = new Set<string>(Object.keys(DRIVE_SESSION_ERRORS['harness-unavailable']))
+const DRIVE_CODES = new Set<string>(DRIVE_SESSION_ERROR_CODES)
 
 function isDriveCode(code: SessionErrorCode): code is DriveSessionErrorCode {
   return DRIVE_CODES.has(code)
-}
-
-export function isDriveHarness(value: string): value is DriveHarness {
-  return DRIVE_HARNESSES.has(value)
 }
 
 export const sessionErrorSchema = z
@@ -63,7 +39,7 @@ export const sessionErrorSchema = z
     version: z.literal(1),
     type: z.literal('session.error'),
     requestId: identifierSchema.nullable(),
-    code: z.enum([...Object.keys(SHARED_SESSION_ERRORS), ...Object.keys(DRIVE_SESSION_ERRORS)] as [
+    code: z.enum([...Object.keys(SHARED_SESSION_ERRORS), ...DRIVE_SESSION_ERROR_CODES] as unknown as [
       SessionErrorCode,
       ...SessionErrorCode[],
     ]),
@@ -74,8 +50,7 @@ export const sessionErrorSchema = z
   })
   .refine(({ code, harness, message }) => {
     if (isDriveCode(code)) {
-      const messages: Record<string, string> = DRIVE_SESSION_ERRORS[code]
-      return typeof harness === 'string' && message === messages[harness]
+      return typeof harness === 'string' && message.length > 0
     }
     return (harness ?? null) === null && message === SHARED_SESSION_ERRORS[code]
   })
@@ -92,11 +67,12 @@ export function sessionError(code: SharedSessionErrorCode, requestId: string | n
   }
 }
 
-// One failure kind for every Harness; the Harness it names picks the message (#2030).
+// One failure kind for every Harness; the Harness supplies the reader-facing message at its edge.
 export function driveSessionError(
   code: DriveSessionErrorCode,
-  harness: DriveHarness,
+  harness: string,
   requestId: string | null,
+  message = `Argo could not drive this ${harness} Session.`,
 ): SessionError {
   return {
     version: 1,
@@ -104,7 +80,7 @@ export function driveSessionError(
     requestId,
     code,
     harness,
-    message: DRIVE_SESSION_ERRORS[code][harness],
+    message,
   }
 }
 

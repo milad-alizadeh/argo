@@ -15,7 +15,7 @@ import {
   type SessionStartRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
-import { driveSessionError, isDriveHarness } from '@/domains/sessions/contract/model/session-error'
+import { driveSessionError } from '@/domains/sessions/contract/model/session-error'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,
@@ -28,9 +28,13 @@ export type OwnerContext = {
 }
 type Owned = { adapter: SessionDriveAdapter; harness: string }
 
-function driveFailureReply(harness: string, failure: DriveFailureCode, requestId: string) {
+function driveFailureReply(
+  adapter: SessionDriveAdapter,
+  failure: DriveFailureCode,
+  requestId: string,
+) {
   if (failure === 'missing-session') return sessionError('missing-session', requestId)
-  return driveSessionError(failure, isDriveHarness(harness) ? harness : 'claude', requestId)
+  return driveSessionError(failure, adapter.harness, requestId, adapter.failureMessage(failure))
 }
 
 async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<Owned | undefined> {
@@ -51,7 +55,7 @@ async function ownedAccepted<T>(
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await run(owned)
   if (result !== null && typeof result === 'object' && 'error' in result) {
-    return driveFailureReply(owned.harness, result.error, request.requestId)
+    return driveFailureReply(owned.adapter, result.error, request.requestId)
   }
   return {
     version: 1,
@@ -76,7 +80,7 @@ export async function startSession(
     setup: request.setup,
     attachments: request.attachments ?? [],
   })
-  if ('error' in result) return driveFailureReply(request.harness, result.error, request.requestId)
+  if ('error' in result) return driveFailureReply(adapter, result.error, request.requestId)
   return {
     version: 1,
     type: 'session.started',

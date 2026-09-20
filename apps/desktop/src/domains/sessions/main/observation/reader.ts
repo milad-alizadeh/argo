@@ -1,9 +1,4 @@
-import {
-  driveSessionError,
-  isDriveHarness,
-  type SessionRenameRequest,
-  sessionError,
-} from '@/domains/sessions/contract/ipc/contract'
+import { driveSessionError, type SessionRenameRequest, sessionError } from '@/domains/sessions/contract/ipc/contract'
 import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive/archive-reads'
 import {
   createInMemorySessionArchiveStore,
@@ -81,8 +76,7 @@ async function renameReply(ownerFor: OwnerFor, request: SessionRenameRequest) {
   const owner = await ownerFor(request.sessionId)
   if (owner === undefined) return sessionError('missing-session', request.requestId)
   if (owner.rename === undefined) {
-    const harness = isDriveHarness(owner.harness) ? owner.harness : 'claude'
-    return driveSessionError('not-drivable', harness, request.requestId)
+    return driveSessionError('not-drivable', owner.harness, request.requestId)
   }
   return owner.rename(request)
 }

@@ -13,12 +13,7 @@ import { compactSession, sendSession } from '@/domains/sessions/main/drive/drive
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { fixtureHarness, unusedIndex } from '@/harnesses/composition/harness-registration.fixture'
-import {
-  closeSessionDrivers,
-  createSessionDrivers,
-  harnessWatchedSources,
-} from '@/harnesses/composition/session-bridges'
-import { sessionSources } from '@/harnesses/composition/session-sources'
+import { harnessWatchedSources } from '@/harnesses/composition/session-bridges'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { WATCHED_CHANGED_CHANNEL } from '@/platform/shared/watch'
 
@@ -27,26 +22,25 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
   const harnesses = [harness]
 
   // Driver setup.
-  const drivers = createSessionDrivers(
-    { userData: '/unused-userData', home: '/unused-home', proofEnabled: false },
-    harnesses,
+  const runtimes = harnesses.map((harness) =>
+    harness.start({
+      userData: '/unused-userData',
+      home: '/unused-home',
+      proofEnabled: false,
+      acceptance: false,
+      index: unusedIndex,
+    }),
   )
-  assert.equal(drivers.fixture, driver)
+  assert.equal(runtimes[0]?.harness, 'fixture')
 
   // Observation.
-  const sources = sessionSources({
-    home: '/unused-home',
-    drivers,
-    compactionStarts: undefined,
-    index: unusedIndex,
-    harnesses,
-  })
+  const sources = runtimes.map((runtime) => runtime.source)
   const reader = createSessionReader(sources)
   const reply = await listed(reader)
   assert.ok(reply?.sessions.some((row) => row.id === 'fixture-1'))
 
   // Drive routing.
-  const adapters: SessionDriveAdapters = { [harness.harness]: harness.createDriveAdapter(driver) }
+  const adapters: SessionDriveAdapters = { [harness.harness]: runtimes[0]!.driveAdapter }
   const context = { adapters, ownerHarnessFor: reader.ownerHarnessFor }
   const sendReply = await sendSession(
     {
@@ -68,7 +62,7 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
   assert.deepEqual(driver.compacted, ['fixture-1'])
 
   // Watcher registration.
-  const watched = harnessWatchedSources(drivers, harnesses)
+  const watched = harnessWatchedSources(runtimes)
   assert.equal(watched.sessions.length, 1)
   const sent: unknown[] = []
   const closedListeners: (() => void)[] = []
@@ -89,6 +83,6 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
   for (const listener of closedListeners) listener()
 
   // Shutdown.
-  await closeSessionDrivers(drivers, harnesses)
+  await Promise.all(runtimes.map((runtime) => runtime.close()))
   assert.equal(driver.closed, true)
 })

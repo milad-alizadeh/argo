@@ -16,27 +16,6 @@ function mockDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
 
-test('accepts the Codex Turn setup the adapter declares', () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
-  assert.equal(
-    adapter.turnSetupSchema.safeParse({
-      model: 'gpt-5.6-sol',
-      effort: 'high',
-      mode: 'workspace-write',
-    }).success,
-    true,
-  )
-  assert.equal(adapter.turnSetupSchema.safeParse(undefined).success, true)
-  assert.equal(
-    adapter.turnSetupSchema.safeParse({
-      model: 'gpt-5.6-luna',
-      effort: 'ultra',
-      mode: 'workspace-write',
-    }).success,
-    false,
-  )
-})
-
 test('starts a Codex Session', async () => {
   const started: Array<{ attachments: unknown[]; cwd: string; prompt: string }> = []
   const adapter = createCodexDriveAdapter(

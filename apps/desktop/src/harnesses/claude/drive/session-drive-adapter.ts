@@ -1,7 +1,6 @@
 import type { Permission, PermissionDecision } from '@/domains/sessions/contract/drive/permission'
 import {
   type ClaudePermission,
-  type ClaudeTurnSetup,
   claudeTurnSetupSchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import type {
@@ -15,6 +14,15 @@ import {
 import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
 import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
 import type { ClaudePermissionDecision } from '@/harnesses/claude/drive/permission-gate'
+
+const FAILURE_MESSAGES = {
+  'harness-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',
+  'launch-failed': 'Argo could not start Claude Code.',
+  'not-drivable': 'Argo no longer holds this Claude Session.',
+  'held-elsewhere': 'Another Argo window is driving this Claude Session.',
+  'stale-permission': 'This Claude permission is no longer waiting.',
+  'stale-question': 'This Claude question is no longer waiting.',
+} as const
 
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
   return { error: error instanceof ClaudeSessionDriverError ? error.code : fallback }
@@ -39,14 +47,17 @@ const CLAUDE_DECISIONS: Record<PermissionDecision, ClaudePermissionDecision> = {
 export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDriveAdapter {
   return {
     harness: 'claude',
+    failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: claudeTurnSetupSchema,
     async start({ cwd, prompt, setup, attachments }) {
+      const parsedSetup = claudeTurnSetupSchema.safeParse(setup)
+      if (!parsedSetup.success) return { error: 'launch-failed' }
       try {
         return {
           sessionId: driver.start({
             cwd,
             prompt: embedAttachments(prompt, await mentionableAttachments(attachments)),
-            setup: setup as ClaudeTurnSetup,
+            setup: parsedSetup.data,
           }),
         }
       } catch (error) {
@@ -54,10 +65,12 @@ export function createClaudeDriveAdapter(driver: ClaudeSessionDriver): SessionDr
       }
     },
     async send({ sessionId, prompt, setup, attachments }) {
+      const parsedSetup = claudeTurnSetupSchema.safeParse(setup)
+      if (!parsedSetup.success) return { error: 'not-drivable' }
       try {
         await driver.send(sessionId, {
           prompt: embedAttachments(prompt, await mentionableAttachments(attachments)),
-          setup: setup as ClaudeTurnSetup,
+          setup: parsedSetup.data,
         })
         return { ok: true }
       } catch (error) {

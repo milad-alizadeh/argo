@@ -5,7 +5,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   PERMISSION_DECISIONS,
-  PERMISSION_DECISIONS_BY_CLI,
   permissionSchema,
 } from '@/domains/sessions/contract/drive/permission'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
@@ -62,16 +61,6 @@ test('the Claude adapter reads its pending Permission in the shared, Harness-neu
 test('the Codex adapter reads no pending Permission, in the same shared shape', async () => {
   const result = await mockCodexAdapter().readPermission({ sessionId: 'session-1' })
   assert.deepEqual(result, { permission: null })
-})
-
-test('names which decision words each Harness actually answers with', () => {
-  assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.claude, ['allow', 'deny', 'allowForSession'])
-  assert.deepEqual(PERMISSION_DECISIONS_BY_CLI.codex, [
-    'allow',
-    'deny',
-    'allowForSession',
-    'cancel',
-  ])
 })
 
 for (const adapterName of ['claude', 'codex'] as const) {

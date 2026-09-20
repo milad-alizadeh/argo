@@ -5,7 +5,7 @@ import { claudeHarness } from '@/harnesses/claude/drive/session-harness'
 import { codexHarness } from '@/harnesses/codex/drive/session-harness'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 
-export const sessionHarnesses: readonly HarnessRegistration<unknown>[] = [
+export const sessionHarnesses: readonly HarnessRegistration[] = [
   claudeHarness,
   codexHarness,
 ]
