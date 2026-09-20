@@ -1,8 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import {
-  type SessionWork,
-  subagentWorkState,
-} from '@/domains/sessions/renderer/work/session-work'
+import { type SessionWork, subagentWorkState } from '@/domains/sessions/renderer/work/session-work'
 import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.

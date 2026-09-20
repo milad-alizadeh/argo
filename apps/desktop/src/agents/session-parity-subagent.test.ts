@@ -1,8 +1,8 @@
 // The parity suite (#2443) for a Subagent: the same lifecycle read from a Claude and a Codex transcript.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { delegationEntries } from '@/domains/sessions/renderer/work/session-work-entries'
 import { delegationFacts } from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import { delegationEntries } from '@/domains/sessions/renderer/work/session-work-entries'
 import { i18n } from '@/renderer/i18n'
 import { read } from './session-parity-harnesses'
 

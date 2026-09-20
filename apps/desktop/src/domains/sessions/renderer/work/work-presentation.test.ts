@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { i18n } from '@/renderer/i18n'
-import { type DelegationPhase, delegationFacts } from '../../feed/delegation/delegation-facts'
+import { type DelegationPhase, delegationFacts } from '../feed/delegation/delegation-facts'
 import { delegationEntries } from './session-work-entries'
 import { workPresentation } from './work-presentation'
 
