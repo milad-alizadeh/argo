@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { appendFile, copyFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
@@ -34,15 +34,8 @@ test('does not list transcripts without messages, but counts and re-reads them',
   context.after(() => rm(root, { recursive: true, force: true }))
   const day = path.join(root, '2026', '09', '12')
   await mkdir(day, { recursive: true })
-  const fixtures = path.join(
-    process.cwd(),
-    'apps',
-    'desktop',
-    'mocks',
-    'cli',
-    'codex',
-    'fixtures',
-    'sessions',
+  const fixtures = fileURLToPath(
+    new URL('../../../../mocks/cli/codex/fixtures/sessions/', import.meta.url),
   )
   const empty = path.join(day, 'emptyTranscript.jsonl')
   await copyFile(path.join(fixtures, 'emptyTranscript.jsonl'), empty)
