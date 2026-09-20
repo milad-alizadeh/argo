@@ -19,6 +19,15 @@ retired: see git history for `docs/designs/cockpit-domain-model.md`.
 Persisting a derived join is the drift bug **ADR-0008 killed the SQLite mirror to avoid** —
 hence the Hub holds the join as a throwaway in-memory projection rather than writing it down.
 
+**ProjectSetup, not Setup Workflow.** The process is a domain fact owned by one Project, while
+workflow and actor name implementation mechanisms. Joining the words keeps it distinct from the
+existing setup action and setup document in code. Project registration creates the Project first;
+folder selection is not part of ProjectSetup.
+
+**ProjectSetup Attempt, not Run.** Run already collides with the L3 vocabulary and commonly names
+a lower-level agent execution. Attempt names one retryable planning-and-application cycle without
+making the ProjectSetup itself disposable.
+
 ## L1
 
 **Account and Connection are two levels, not one.** The model said a Project "carries a Ticket
