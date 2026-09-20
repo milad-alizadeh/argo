@@ -54,7 +54,7 @@ test.describe('session-adversarial-permission', () => {
     })
     const composer = page.getByRole('textbox', { name: 'Message' })
     // Under parallel workers the seeded Claude start alone measured past the 5s default.
-    await expect(page.getByRole('region', { name: 'Allow this?' })).toBeVisible({
+    await expect(page.getByRole('region', { name: 'Permission needed' })).toBeVisible({
       timeout: 15_000,
     })
     await composer.click()

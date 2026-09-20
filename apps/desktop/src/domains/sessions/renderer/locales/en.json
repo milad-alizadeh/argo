@@ -32,7 +32,7 @@
     "retry": "Retry"
   },
   "question": {
-    "needed": "Your input is needed",
+    "needed": "Answer the agent's question",
     "writeAnother": "Write another answer",
     "writeAnotherPlaceholder": "Or write another answer…",
     "send": "Send answer",
@@ -258,6 +258,7 @@
   "unableToLoadArchivedSessions": "Unable to load archived Sessions",
   "noSearchResults": "No Sessions match your search",
   "searchingSessions": "Searching Sessions",
+  "needsInput": "Needs input",
   "loadingMoreSearchResults": "Loading more matches",
   "unableToSearchSessions": "Unable to search Sessions",
   "searchStillIndexing": "Still indexing older Sessions",
@@ -340,7 +341,7 @@
     "unavailable": "This file could not be read."
   },
   "permission": {
-    "title": "Allow this?",
+    "title": "Permission needed",
     "deny": "Deny",
     "allow": "Allow",
     "more": "More ways to allow",
