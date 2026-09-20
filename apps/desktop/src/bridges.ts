@@ -13,6 +13,7 @@ import type { SetupDocumentSource } from '@/domains/projects/main/setup/setup-bu
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   attachSessions,
+  closeSessionDrivers,
   createSessionDrivers,
   watchClaudeCompactions,
 } from '@/domains/sessions/main/composition/session-bridges'
@@ -87,6 +88,6 @@ export function attachBridges(
   app.once('before-quit', (event) => {
     event.preventDefault()
     ticketLinks.close()
-    void Promise.all([drivers.claude.close(), drivers.codex.close()]).then(() => app.quit())
+    void closeSessionDrivers(drivers).then(() => app.quit())
   })
 }
