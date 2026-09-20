@@ -64,7 +64,9 @@ export async function reconcileIndexedSources(
 
 export function reconcileSessions(sources: readonly SessionSource[], reader: SessionReader) {
   if (reader.isFeedReadActive()) return
-  reconcileIndexedSources(sources).catch((error) => console.error('Session reconcile failed', error))
+  reconcileIndexedSources(sources).catch((error) =>
+    console.error('Session reconcile failed', error),
+  )
 }
 
 export function withReconcile(

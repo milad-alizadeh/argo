@@ -24,10 +24,7 @@ import {
   SESSION_CODEX_EXECUTABLE_ENV,
 } from '@/domains/sessions/main/proof-protocol'
 import { createSessionReader } from '@/domains/sessions/main/reader'
-import {
-  startBackfill,
-  withReconcile,
-} from '@/domains/sessions/main/session-background-indexing'
+import { startBackfill, withReconcile } from '@/domains/sessions/main/session-background-indexing'
 import { sessionIndexPath } from '@/domains/sessions/main/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/session-index/worker-index'
 import { sessionSources } from '@/domains/sessions/main/session-sources'
