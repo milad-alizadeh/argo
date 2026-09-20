@@ -16,7 +16,7 @@ The TypeScript server has a first-class file-rename command. A language service 
 
 The TypeScript language service also exposes `getEditsForFileRename(oldFilePath, newFilePath, formatOptions, preferences)`, which returns file text changes. Source: [TypeScript `types.ts`, language service interface](https://github.com/microsoft/TypeScript/blob/main/src/services/types.ts).
 
-VS Code's TypeScript extension calls the TypeScript server through typed requests such as `getEditsForFileRename`, then converts returned file edits into a VS Code workspace edit. Source: [VS Code TypeScript service request map](https://github.com/microsoft/vscode/blob/main/extensions/typescript-language-features/src/typescriptService.ts) and [VS Code TypeScript refactor conversion to `WorkspaceEdit`](https://github.com/microsoft/vscode/blob/main/extensions/typescript-language-features/src/languageFeatures/refactor.ts).
+VS Code's TypeScript extension calls the TypeScript server through typed requests such as `getEditsForFileRename`, then applies returned file edits during a path rename. Source: [VS Code TypeScript service request map](https://github.com/microsoft/vscode/blob/main/extensions/typescript-language-features/src/typescriptService.ts) and [VS Code path-rename update](https://github.com/microsoft/vscode/blob/main/extensions/typescript-language-features/src/languageFeatures/updatePathsOnRename.ts).
 
 Language servers are the portable layer for many editor operations. The Language Server Protocol, or LSP, lets tools reuse one language-aware process for features such as definition, references, completion, and rename. Source: [Language Server Protocol overview](https://microsoft.github.io/language-server-protocol/). VS Code maps programmatic language features such as rename, references, code actions, and refactoring to language servers or extension APIs. Source: [VS Code Programmatic Language Features](https://code.visualstudio.com/api/language-extensions/programmatic-language-features).
 
@@ -24,7 +24,7 @@ Module boundaries need compiler support, not only import rewrites. TypeScript pr
 
 Codex can connect to third-party MCP servers. OpenAI documents local STDIO and HTTP MCP servers for the ChatGPT desktop app, Codex CLI, and the Codex IDE extension. Source: [OpenAI MCP documentation](https://learn.chatgpt.com/docs/extend/mcp).
 
-The current public Codex source does not establish a native TypeScript server or LSP integration. A search of `openai/codex` at `5c5308fc9a9ee789049d646ef11e5400384b9c6f` did not establish a Codex LSP manager, a TypeScript server integration, or a file-rename refactor operation. The public protocol document describes user input, model requests, commands, and patches. It does not document an LSP channel. Source: [OpenAI Codex protocol v1](https://github.com/openai/codex/blob/main/codex-rs/docs/protocol_v1.md).
+This research did not establish a native Codex TypeScript server or LSP integration. The public protocol document describes user input, model requests, commands, and patches. It does not document an LSP channel. Source: [OpenAI Codex protocol v1](https://github.com/openai/codex/blob/main/codex-rs/docs/protocol_v1.md).
 
 Community MCP servers can give Codex TypeScript refactor tools. For example, `ts-mcp-server` documents `renameFileOrDirectory`, which forwards to TypeScript's `getEditsForFileRename-full`. This is a third-party project, not a server maintained by OpenAI or TypeScript. Source: [ts-mcp-server](https://github.com/AndyLiner13/ts-mcp-server).
 
@@ -64,8 +64,6 @@ The AI must not start by scanning strings and replacing paths. Text replacement 
 Argo can expose a `semantic move` operation to agents. It accepts a list of old and new paths, then delegates to per-language backends.
 
 For TypeScript and JavaScript, the backend calls the TypeScript server command `GetEditsForFileRename`, the language service method `getEditsForFileRename`, or the LSP wrapper command `_typescript.applyRenameFile` when the client exposes it. The operation also runs organize imports after the move.
-
-For other languages, the backend uses that language's LSP rename, code action, or file-operation support when it exists. If a language has no safe operation, Argo marks that part as manual and requires validation from build and tests.
 
 The operation returns a structured report:
 
