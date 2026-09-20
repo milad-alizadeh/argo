@@ -175,7 +175,7 @@ fifth ground.
 
 This was an ADR and not a design because nothing rendered `apps/desktop` for visual review
 ([#1758](https://github.com/milad-alizadeh/argo/issues/1758)) and a design drawn then could be
-checked against nothing. #1828 opened that route: `apps/desktop/scripts/render-design-page.mjs`
+checked against nothing. #1828 opened that route: `apps/desktop/scripts/render-design-page.mts`
 draws a design page and `apps/desktop/scripts/capture-cockpit.mjs` captures the packaged app.
 This table is what both are checked against.
 

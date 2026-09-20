@@ -48,7 +48,7 @@ jobs:
           # A release with no assets at all downloads nothing and is not an error here: it is the
           # `verdict missing` case, which is exactly what this workflow exists to catch.
           gh release download "$TAG" --dir "$RUNNER_TEMP/assets" --clobber || true
-          node apps/desktop/scripts/audit-release.mjs "$RUNNER_TEMP/assets" > "$RUNNER_TEMP/audit.json"
+          node apps/desktop/scripts/audit-release.mts "$RUNNER_TEMP/assets" > "$RUNNER_TEMP/audit.json"
           {
             echo "case=$(jq -r .case "$RUNNER_TEMP/audit.json")"
           } >> "$GITHUB_OUTPUT"

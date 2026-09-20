@@ -42,7 +42,7 @@ Contract code cannot import Electron, Node, React, storage, providers, or render
 code cannot import Electron, Node, main implementations, or preload implementations. A domain
 facet cannot import an application composition root.
 
-`scripts/check-domain-facets.mjs` enforces this matrix. The quality gate and CI run
+`scripts/check-domain-facets.mts` enforces this matrix. The quality gate and CI run
 the checker. Tests stay beside the facet that owns the behavior.
 
 Every domain lives in this layout. `src/` holds `domains`, `platform`, `shared`, `harnesses`,

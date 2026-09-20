@@ -26,7 +26,7 @@ blocked by the gate working.
 and it sets `resetAdHocDarwinSignature` for `darwin && !osxSign`. So a package built on a Mac
 without an identity carries an **ad-hoc** signature — real, with no certificate and no team behind
 it — while the same package built on Linux carries none at all, because that re-signature shells
-out to `codesign`. `signing-readback.mjs` calls neither of them signed: its `signed` boolean
+out to `codesign`. `signing-readback.mts` calls neither of them signed: its `signed` boolean
 requires a Developer ID authority.
 
 **Gatekeeper rejects the better of those two.** Measured on this machine, macOS 26.5.1 (build
@@ -48,7 +48,7 @@ ADR-0036's asset rules never come into play.
 
 **An ad-hoc build also carries no entitlements.** The set #1771 chose is applied through
 `osxSign.optionsForFile`, which exists only when the identity does. There is nothing to read back,
-and `release-assertions.mjs` says so rather than reading: with `signed` false, its entitlements
+and `release-assertions.mts` says so rather than reading: with `signed` false, its entitlements
 assertion returns `ran: false` and the failure `the app is not signed`.
 
 **Nothing built leaves CI today.** Neither `ci.yml` job uploads an artifact. The macOS job

@@ -1,0 +1,6 @@
+engine biome(1.0)
+language js(typescript, jsx)
+
+$program where {
+  register_diagnostic(span=$program, message="A `.mjs` file is generated, never written by hand. Write the source as `.mts` (#2503).")
+}

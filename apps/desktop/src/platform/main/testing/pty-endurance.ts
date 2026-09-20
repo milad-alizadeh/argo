@@ -10,7 +10,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { PtySession } from '@/platform/main/testing/pty-session'
-import { CYCLES } from '../../../../scripts/acceptance-protocol.mjs'
+import { CYCLES } from '../../../../scripts/acceptance-protocol.mts'
 
 const execFileAsync = promisify(execFile)
 

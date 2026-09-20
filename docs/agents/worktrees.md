@@ -3,7 +3,7 @@
 Implementation work runs in a git worktree under `.claude/worktrees/`, never the shared main
 checkout — multiple agent sessions run concurrently, and isolating each unit of work on its own
 tree and branch keeps them from clobbering each other's files. One `PreToolUse` hook
-(`hooks/worktree-guard.mjs`) enforces both halves: it blocks every agent change to the main
+(`hooks/worktree-guard.mts`) enforces both halves: it blocks every agent change to the main
 checkout from outside a worktree, and it enforces the naming below at creation. This file is the
 *how* it cites: naming, resuming an interrupted worktree, recovering a deleted one. It applies to
 all implementation work, not just `/implement` runs, and is self-contained so it stands alone
@@ -45,7 +45,7 @@ the numberless slug may not itself begin with a number, because `argo/901-naming
 
 ### Everything is guarded, and a write through the shell is a write
 
-`hooks/worktree-guard.mjs` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit`, `Bash` and
+`hooks/worktree-guard.mts` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit`, `Bash` and
 `EnterWorktree`. Its `decideEdit()` half answers where the work runs. From outside a worktree it
 refuses:
 

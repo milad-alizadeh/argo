@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/pr-ownership-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/pr-ownership-guard.mts\""
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/task-list-nudge.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/task-list-nudge.mts\""
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/hooks/worktree-gc.sh\"",
+            "command": "sh \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh\"",
             "timeout": 60,
             "statusMessage": "Reaping landed worktrees"
           }

@@ -5,10 +5,10 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 import { FusesPlugin } from '@electron-forge/plugin-fuses'
 import { VitePlugin } from '@electron-forge/plugin-vite'
 import type { ForgeConfig } from '@electron-forge/shared-types'
-import { assertPackagedPty } from './scripts/assert-packaged-pty.mjs'
-import { entitlementsPlistFor } from './scripts/entitlements.mjs'
-import { PRODUCTION_FUSE_PROFILE } from './scripts/fuse-profile.mjs'
-import { productionInstall } from './scripts/production-install.mjs'
+import { assertPackagedPty } from './scripts/assert-packaged-pty.mts'
+import { entitlementsPlistFor } from './scripts/entitlements.mts'
+import { PRODUCTION_FUSE_PROFILE } from './scripts/fuse-profile.mts'
+import { productionInstall } from './scripts/production-install.mts'
 
 // Forge owns the whole desktop lifecycle: start, package, make, sign, publish. Not the native
 // rebuild — see `rebuildConfig` below, which turns it off. Decision: "Choose the Electron desktop
@@ -48,7 +48,7 @@ const APP_NAME = 'Argo'
 // `app.asar.unpacked` in it, so the helper has to be unpacked too. AutoUnpackNativesPlugin only
 // knows about `**/*.node`, and `spawn-helper` has no extension: under the plugin alone the
 // rewritten path points at a file that is not there, and every `pty.spawn` fails silently. This
-// unpacks the whole module. `assert-packaged-pty.mjs` reads the result back off the package,
+// unpacks the whole module. `assert-packaged-pty.mts` reads the result back off the package,
 // because whether the plugin merges with this list or overwrites it is not a promise it makes.
 const UNPACK_GLOB = '**/node_modules/node-pty/**'
 
@@ -136,7 +136,7 @@ const config: ForgeConfig = {
       ],
       renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
     }),
-    // Production hardening. `scripts/prove-packaged-pty.mjs` launches the shipped binary with
+    // Production hardening. `scripts/prove-packaged-pty.mts` launches the shipped binary with
     // these fuses exactly as a user gets them, so nothing here is relaxed for testing.
     new FusesPlugin({
       version: FuseVersion.V1,

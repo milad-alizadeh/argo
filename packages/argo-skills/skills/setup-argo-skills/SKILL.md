@@ -153,7 +153,7 @@ does not share them is the failure this table exists to prevent.
 Then project the descriptor per agent, from the project root:
 
 ```sh
-node <argo-clone>/packages/argo-skills/bin/hooks-sync.mjs
+node <argo-clone>/packages/argo-skills/bin/hooks-sync.mts
 ```
 
 It regenerates `.claude/settings.json` and `.codex/hooks.json`. Those blocks are generated, so

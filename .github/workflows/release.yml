@@ -77,7 +77,7 @@ jobs:
       # lets a release be rebuilt without retyping them; `/release-argo` (#1808) writes it.
       - name: Read the release notes
         shell: bash
-        run: node apps/desktop/scripts/changelog-entry.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+        run: node apps/desktop/scripts/changelog-entry.mts "$VERSION" > "$RUNNER_TEMP/release-notes.md"
         env:
           VERSION: ${{ inputs.version }}
 

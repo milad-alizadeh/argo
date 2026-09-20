@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
 import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
-import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
+import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import {
   PROJECT_PROOF_STORE_ENV,
   SETUP_DOCUMENT_PROOF_URL_ENV,

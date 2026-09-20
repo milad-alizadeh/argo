@@ -11,7 +11,7 @@ third-party ones plus Argo's own, kept in this package's `skills/`), and the
 a scaffolder of its own; it is gone, and everything it did beyond the install is now written down
 as steps in [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md) for an agent to follow.
 
-The one file left in `bin/` is `hooks-sync.mjs`, which projects the repo-root `hooks.json` into
+The one file left in `bin/` is `hooks-sync.mts`, which projects the repo-root `hooks.json` into
 each harness. It is not an installer.
 
 ## Project-agnostic by design — set up per project

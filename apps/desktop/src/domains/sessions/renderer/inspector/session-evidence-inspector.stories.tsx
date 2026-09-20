@@ -122,7 +122,7 @@ export const ReadDocument: Story = {
       evidence: {
         kind: 'document',
         title:
-          '/Users/milad/Developer/argo/.claude/worktrees/ticket-2202-concrete-refusal/hooks/worktree-names.mjs',
+          '/Users/milad/Developer/argo/.claude/worktrees/ticket-2202-concrete-refusal/hooks/worktree-names.mts',
         source:
           'export function recipeFor(name) {\n  if (!rules.named) return null\n  return name\n}',
       },
@@ -130,7 +130,7 @@ export const ReadDocument: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/worktree-names\.mjs/)).toBeVisible()
+    await expect(canvas.getByText(/worktree-names\.mts/)).toBeVisible()
     // The highlighter loads its grammar on first use, which takes over a second under a full run.
     await waitFor(
       () => expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
