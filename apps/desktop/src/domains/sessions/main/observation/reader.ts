@@ -9,6 +9,10 @@ import {
   createInMemorySessionArchiveStore,
   type SessionArchiveStore,
 } from '@/domains/sessions/main/archive/archive-store'
+import {
+  createInMemorySessionUnreadStore,
+  type SessionUnreadStore,
+} from '@/domains/sessions/main/unread/unread-store'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
 import type { OwnerFor, ReadContext } from '@/domains/sessions/main/observation/read-declaration'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
@@ -85,19 +89,20 @@ export function createSessionReader(
   sources: SessionSource[],
   ticketLinks: SessionTicketLinkStore = createInMemorySessionTicketLinkStore(),
   archive: SessionArchiveStore = createInMemorySessionArchiveStore(),
+  unread: SessionUnreadStore = createInMemorySessionUnreadStore(),
 ): SessionReader {
   const feeds = new Map<string, HeldFeed>()
   const projections = new Map<string, FeedProjectionState>()
   const ownership = createOwnerResolver(sources)
   const feedReader = createFeedReader(ownership, feeds, projections)
-  const reads: ReadContext = { sources, ownerFor: ownership.ownerFor, archive }
+  const reads: ReadContext = { sources, ownerFor: ownership.ownerFor, archive, unread }
 
   return {
     async ownerCliFor(sessionId) {
       const owner = await ownership.ownerFor(sessionId)
       return owner?.cli
     },
-    listSessions: (request) => listReply(sources, ownership, { ticketLinks, archive, request }),
+    listSessions: (request) => listReply(sources, ownership, { ticketLinks, archive, unread, request }),
     connectTicket: (request) => connectTicketReply(ticketLinks, request),
     disconnectTicket: (request) => disconnectTicketReply(ticketLinks, request),
     archiveList: (request) => archiveListRead(reads, request),

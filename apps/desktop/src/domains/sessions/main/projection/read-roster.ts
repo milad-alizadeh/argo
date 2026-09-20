@@ -13,6 +13,7 @@ import { readFailure } from '@/domains/sessions/main/observation/read-declaratio
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import { decodeRosterCursor } from '@/domains/sessions/main/projection/roster-cursor'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
+import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a
@@ -55,10 +56,12 @@ export async function listReply(
   {
     ticketLinks,
     archive,
+    unread,
     request,
   }: {
     ticketLinks: SessionTicketLinkStore
     archive: SessionArchiveStore
+    unread: SessionUnreadStore
     request: SessionListRequest
   },
 ) {
@@ -77,7 +80,8 @@ export async function listReply(
   ownership.rememberDiscoveries(reply.sessions)
   // An archived Session is never in the active list (#1593): the Archive page asks for one
   // instead, on demand. The flag is Argo's own, so every harness's rows drop out the same way.
-  const active = await withoutArchived(reply.sessions, archive)
+  const observed = await unread.project(reply.sessions)
+  const active = await withoutArchived(observed, archive)
   // The Session → Ticket link is Argo's own owned state, never a transcript fact, so it joins
   // in here rather than in any one CLI's discovery (CONTEXT.md L1 · Session → Ticket).
   const sessions = await Promise.all(

@@ -31,6 +31,10 @@ import { sessionIndexPath } from '@/domains/sessions/main/index/session-index/op
 import { createWorkerSessionIndex } from '@/domains/sessions/main/index/session-index/worker-index'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { sessionSources } from '@/domains/sessions/main/observation/session-sources'
+import {
+  createSessionUnreadStore,
+  sessionUnreadPath,
+} from '@/domains/sessions/main/unread/unread-store'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
@@ -92,11 +96,12 @@ export function attachSessions(
   const { claude, codex } = drivers
   // Argo's own archive flag, for every harness at once (#2315).
   const archive = createSessionArchiveStore(sessionArchivePath(userData))
+  const unread = createSessionUnreadStore(sessionUnreadPath(userData))
   // Both adapters read their bounded window through one index, so a warm Roster reopens no
   // transcript the last pass already projected (#2372).
   const index = indexForWindow(window, userData)
   const sources = sessionSources({ home, drivers, compactionStarts, index })
-  const reader = createSessionReader(sources, ticketLinks, archive)
+  const reader = createSessionReader(sources, ticketLinks, archive, unread)
   attachSessionBridge(window, {
     reader,
     adapters: {

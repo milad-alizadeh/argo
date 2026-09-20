@@ -20,59 +20,54 @@ const LOADER_SIZES = [
 
 const ROWS = [
   {
-    session: sessionRosterRow({
+    session: { ...sessionRosterRow({
       id: 'running-read',
       cli: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'running',
       title: { text: 'Implement unread Session notifications', source: 'first-prompt' },
-    }),
-    unread: false,
+    }), unread: false },
   },
   {
-    session: sessionRosterRow({
+    session: { ...sessionRosterRow({
       id: 'running-unread',
       cli: 'claude',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'running',
       title: { text: 'Review the state model', source: 'summarised' },
-    }),
-    unread: true,
+    }), unread: true },
   },
   {
-    session: sessionRosterRow({
+    session: { ...sessionRosterRow({
       id: 'idle-unread',
       cli: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'idle',
       title: { text: 'Refine Session filters', source: 'summarised' },
-    }),
-    unread: true,
+    }), unread: true },
   },
   {
-    session: sessionRosterRow({
+    session: { ...sessionRosterRow({
       id: 'idle-read',
       cli: 'claude',
       cwd: '/Users/milad/Developer/argo',
       posture: 'external',
       status: 'idle',
       title: { text: 'Prepare release notes', source: 'summarised' },
-    }),
-    unread: false,
+    }), unread: false },
   },
   {
-    session: sessionRosterRow({
+    session: { ...sessionRosterRow({
       id: 'blocked-unread',
       cli: 'codex',
       cwd: '/Users/milad/Developer/argo',
       posture: 'managed',
       status: 'asking',
       title: { text: 'Choose how to continue', source: 'summarised' },
-    }),
-    unread: true,
+    }), unread: true },
   },
 ] as const
 
@@ -100,7 +95,7 @@ function PrototypeRoster() {
           status="active"
         />
         <div className="min-h-0 flex-1 overflow-hidden py-1">
-          {ROWS.map(({ session, unread }, index) => (
+          {ROWS.map(({ session }, index) => (
             <SessionRosterItem
               archived={false}
               checked={false}
@@ -108,7 +103,6 @@ function PrototypeRoster() {
               onFocus={() => undefined}
               onSelect={() => undefined}
               onToggleSelect={() => undefined}
-              prototypeUnread={unread}
               selectable={false}
               selected={index === 0}
               session={session}

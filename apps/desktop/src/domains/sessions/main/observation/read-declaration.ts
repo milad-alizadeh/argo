@@ -6,6 +6,7 @@
 
 import { sessionError } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionArchiveStore } from '@/domains/sessions/main/archive/archive-store'
+import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import { isRecord } from '@/shared/validation'
 
@@ -16,6 +17,7 @@ export type ReadContext = {
   ownerFor: OwnerFor
   // Argo's own Session state, shared by every adapter rather than resolved from one (#2315).
   archive: SessionArchiveStore
+  unread: SessionUnreadStore
 }
 
 // A filesystem failure, said in the contract's own words.
