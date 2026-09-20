@@ -17,6 +17,7 @@ import {
   watchClaudeCompactions,
 } from '@/domains/sessions/main/composition/session-bridges'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { providerEndpoints } from '@/providers/endpoints'
@@ -29,13 +30,22 @@ export function attachBridges(
     accountData: string
     connectionData: string
     projects: ProjectStore
+    ticketLinks: SessionTicketLinkStore
     rendererURL: string
     proofEnabled: boolean
     setupDocumentSource: SetupDocumentSource
     acceptance: boolean
   },
 ) {
-  const { userData, accountData, connectionData, projects, rendererURL, proofEnabled } = request
+  const {
+    userData,
+    accountData,
+    connectionData,
+    projects,
+    ticketLinks,
+    rendererURL,
+    proofEnabled,
+  } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   const drivers = createSessionDrivers(userData, home, proofEnabled)
@@ -48,7 +58,7 @@ export function attachBridges(
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
   })
-  attachSessions(window, { rendererURL, home, userData, drivers, compactionStarts })
+  attachSessions(window, { rendererURL, home, userData, drivers, ticketLinks, compactionStarts })
   attachAppearanceBridge(window, { userData, rendererURL })
   attachCodexCompactionBridge(window, { home, rendererURL })
   const access = createAccountAccess({
@@ -69,6 +79,7 @@ export function attachBridges(
     sources: ticketSources,
   })
   app.once('before-quit', () => {
+    ticketLinks.close()
     drivers.claude.close()
     drivers.codex.close()
   })

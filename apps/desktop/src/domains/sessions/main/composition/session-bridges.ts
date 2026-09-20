@@ -23,12 +23,12 @@ import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
 } from '@/domains/sessions/main/composition/proof-protocol'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { startBackfill, withReconcile } from '@/domains/sessions/main/index/session-background-indexing'
 import { sessionIndexPath } from '@/domains/sessions/main/index/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/index/session-index/worker-index'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { sessionSources } from '@/domains/sessions/main/observation/session-sources'
-import { createSessionTicketLinkStore } from '@/domains/tickets/main/port'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -81,14 +81,12 @@ export function attachSessions(
     home: string
     userData: string
     drivers: ReturnType<typeof createSessionDrivers>
+    ticketLinks: SessionTicketLinkStore
     compactionStarts?: string
   },
 ) {
-  const { rendererURL, home, userData, drivers, compactionStarts } = request
+  const { rendererURL, home, userData, drivers, ticketLinks, compactionStarts } = request
   const { claude, codex } = drivers
-  const ticketLinks = createSessionTicketLinkStore(
-    path.join(userData, 'portable-v1', 'session-tickets.json'),
-  )
   // Argo's own archive flag, for every harness at once (#2315).
   const archive = createSessionArchiveStore(sessionArchivePath(userData))
   // Both adapters read their bounded window through one index, so a warm Roster reopens no
