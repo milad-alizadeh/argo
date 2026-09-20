@@ -381,8 +381,8 @@ export const RosterStructure: Story = {
   },
 }
 
-// The dot beside a blocked Session is already `bg-warn` for both statuses; the badge is what
-// names which one it is (#2088).
+// The dot beside a blocked Session is already `bg-warn` for both statuses; the badge names the
+// shared action the reader must take (#2509).
 export const PendingBadges: Story = {
   beforeEach: () =>
     withRosterHost(async () =>
@@ -409,13 +409,36 @@ export const PendingBadges: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const wantsAnswer = await canvas.findByRole('button', { name: /A question is waiting/ })
-    await expect(within(wantsAnswer).getByText('Answer')).toBeVisible()
+    await expect(within(wantsAnswer).getByText('Needs input')).toBeVisible()
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
-    const permissionBadge = within(wantsPermission).getByText('Permission Approval')
+    const permissionBadge = within(wantsPermission).getByText('Needs input')
     await expect(permissionBadge).toHaveStyle({ fontSize: '13px', height: '16px' })
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
-    await expect(within(idle).queryByText('Answer')).toBeNull()
-    await expect(within(idle).queryByText('Permission Approval')).toBeNull()
+    await expect(within(idle).queryByText('Needs input')).toBeNull()
+  },
+}
+
+export const NeedsInputClearsAfterResolution: Story = {
+  beforeEach: () => {
+    sessionsHost = withSessionsHost([
+      {
+        ...session,
+        id: 'waiting-for-permission',
+        status: 'permission',
+        title: { text: 'Approve the command', source: 'first-prompt' },
+      },
+    ])
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
+    await expect(within(waiting).getByText('Needs input')).toBeVisible()
+    sessionsHost?.repoll([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
+    await waitFor(() => expect(within(waiting).queryByText('Needs input')).toBeNull())
   },
 }
 

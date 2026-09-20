@@ -35,7 +35,7 @@ type Story = StoryObj<typeof meta>
 export const Pending: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Allow this?' })).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeInTheDocument()
     await expect(canvas.getByText(/bun test/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Allow' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'Deny' })).toBeEnabled()
@@ -94,7 +94,7 @@ export const AboveTheQueue: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const prompt = canvas.getByRole('region', { name: 'Allow this?' }).getBoundingClientRect()
+    const prompt = canvas.getByRole('region', { name: 'Permission needed' }).getBoundingClientRect()
     const queue = canvas.getByRole('region', { name: 'Pending Turns' }).getBoundingClientRect()
     await expect(prompt.bottom).toBeLessThanOrEqual(queue.top)
     await expect(prompt.width).toBe(queue.width)
@@ -119,8 +119,9 @@ export const LeavesTheTray: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Allow' }))
-    await expect(canvas.getByRole('heading', { name: 'Allow this?' })).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeInTheDocument()
     await waitFor(() => expect(canvas.queryByText(/bun test/)).toBeNull())
+    await expect(canvas.queryByRole('heading', { name: 'Permission needed' })).toBeNull()
   },
 }
 

@@ -1,4 +1,5 @@
 import { Lock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
 import { Badge } from '@/platform/renderer/components/ui/badge'
@@ -27,11 +28,15 @@ export const STATUS_LABELS: Record<Session['status'], string> = {
   unknown: 'Unknown',
 }
 
-// The two blocking statuses the dot already colours `bg-warn` for, named so a reader can tell
-// which one without opening the Session (#2088). Every other status shows no badge.
-const BLOCKED_BADGE_LABELS: Partial<Record<Session['status'], string>> = {
-  asking: 'Answer',
-  permission: 'Permission Approval',
+const NEEDS_INPUT: Record<Session['status'], boolean> = {
+  asking: true,
+  ended: false,
+  idle: false,
+  permission: true,
+  running: false,
+  starting: false,
+  stopped: false,
+  unknown: false,
 }
 
 // An `asking` Session whose posture locks the answer affordance (#2205) cannot take an answer
@@ -41,12 +46,11 @@ function unanswerableHere(session: Session): boolean {
 }
 
 export function SessionBlockedBadge({ session }: { session: Session }) {
-  if (unanswerableHere(session)) return null
-  const label = BLOCKED_BADGE_LABELS[session.status]
-  if (label === undefined) return null
+  const { t } = useTranslation('sessions')
+  if (!NEEDS_INPUT[session.status]) return null
   return (
     <Badge className="border-warn/40 text-warn" size="compact" variant="outline">
-      {label}
+      {t('needsInput')}
     </Badge>
   )
 }

@@ -60,6 +60,7 @@ type Story = StoryObj<typeof meta>
 export const SingleSelect: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
+    await expect(canvas.getByText("Answer the agent's question")).toBeVisible()
     await expect(canvas.getByText('Which ink should the plotter load?')).toBeInTheDocument()
     const submit = canvas.getByRole('button', { name: 'Send answer' })
     await expect(submit).toBeDisabled()
@@ -179,6 +180,7 @@ export const Answered: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Sepia')).toBeInTheDocument()
+    await expect(canvas.queryByText("Answer the agent's question")).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Send answer' })).not.toBeInTheDocument()
   },
 }
