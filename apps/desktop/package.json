@@ -9,6 +9,7 @@
     "dev:status": "node scripts/dev-control.mts status",
     "dev:stop": "node scripts/dev-control.mts stop",
     "dev:prove-isolation": "node scripts/prove-dev-instance-isolation.mts",
+    "database:generate": "drizzle-kit generate --config drizzle.config.ts",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "storybook": "storybook dev -p 6006",

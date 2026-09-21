@@ -41,15 +41,3 @@ export function readSetupCheckpoint(
     documentRevision: parsed.document_revision,
   }
 }
-
-export function migrateSetupCheckpoints(database: ProjectDatabase) {
-  for (const column of ['configuration_source', 'document_revision']) {
-    try {
-      database.exec(
-        `ALTER TABLE project_setup_checkpoint ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`,
-      )
-    } catch {
-      // A new database creates each column in the table definition.
-    }
-  }
-}

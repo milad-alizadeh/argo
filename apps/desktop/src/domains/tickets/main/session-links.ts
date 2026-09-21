@@ -49,19 +49,6 @@ type SQLiteDatabase = {
   close: () => void
 }
 
-const LINK_SCHEMA = `
-CREATE TABLE IF NOT EXISTS session_ticket_link (
-  session_id TEXT PRIMARY KEY,
-  project_id TEXT NOT NULL,
-  ticket_key TEXT NOT NULL,
-  title TEXT NOT NULL,
-  state TEXT NOT NULL CHECK (state IN ('open', 'closed')),
-  created_at TEXT NOT NULL
-) STRICT;
-CREATE INDEX IF NOT EXISTS session_ticket_link_ticket
-  ON session_ticket_link (project_id, ticket_key, created_at DESC);
-`
-
 const storedLinkSchema = z.strictObject({
   project_id: identifierSchema,
   ticket_key: ticketKey,
@@ -137,7 +124,6 @@ export function createSQLiteSessionTicketLinkStore(
   database: SQLiteDatabase,
   afterWrite: () => Promise<void> = async () => {},
 ): SessionTicketLinkStore {
-  database.exec(LINK_SCHEMA)
   const linkFor = database.prepare(
     'SELECT project_id, ticket_key, title, state, created_at FROM session_ticket_link WHERE session_id = ?',
   )

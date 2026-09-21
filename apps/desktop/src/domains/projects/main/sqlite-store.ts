@@ -1,11 +1,7 @@
 import path from 'node:path'
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import {
-  migrateSetupCheckpoints,
-  readSetupCheckpoint,
-  type SetupCheckpoint,
-} from './setup-checkpoint-store'
+import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
 
 export type { SetupCheckpoint } from './setup-checkpoint-store'
 
@@ -43,25 +39,6 @@ export type ProjectStore = {
   close: () => void
 }
 
-const PROJECT_SCHEMA = `
-CREATE TABLE IF NOT EXISTS project (
-  id TEXT PRIMARY KEY,
-  path TEXT NOT NULL,
-  common_directory TEXT NOT NULL UNIQUE
-) STRICT;
-CREATE TABLE IF NOT EXISTS project_selection (
-  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-  project_id TEXT REFERENCES project(id)
-) STRICT;
-CREATE TABLE IF NOT EXISTS project_setup_checkpoint (
-  project_id TEXT PRIMARY KEY REFERENCES project(id),
-  worktree_path TEXT NOT NULL,
-  phase TEXT NOT NULL CHECK (phase IN ('editing', 'validating', 'ready', 'failed', 'cancelled')),
-  configuration_source TEXT NOT NULL,
-  document_revision TEXT NOT NULL
-) STRICT;
-`
-
 const projectRowSchema = z.strictObject({
   id: identifierSchema,
   path: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
@@ -95,8 +72,6 @@ export function createProjectStore(
   database: ProjectDatabase,
   afterWrite: () => void = () => {},
 ): ProjectStore {
-  database.exec(PROJECT_SCHEMA)
-  migrateSetupCheckpoints(database)
   const insert = database.prepare(
     'INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)',
   )

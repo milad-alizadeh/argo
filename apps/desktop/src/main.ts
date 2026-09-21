@@ -1,13 +1,13 @@
 import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
 import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
@@ -27,14 +27,13 @@ import { installMenu } from '@/platform/main/menu'
 import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
 import {
   backupSharedDatabase,
+  openSharedDatabase,
   sharedDatabaseBackupPath,
   sharedDatabasePath,
 } from '@/platform/main/storage/shared-database'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
-// Registering a privileged scheme is only valid before the app is ready (Electron's own
-// constraint), so this runs at module load, ahead of every other side effect below.
 protocol.registerSchemesAsPrivileged([
   {
     scheme: ATTACHMENT_SCHEME,
@@ -42,7 +41,6 @@ protocol.registerSchemesAsPrivileged([
   },
 ])
 
-// Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
 declare const MAIN_WINDOW_VITE_NAME: string
 
@@ -65,28 +63,27 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
-// The launch wrapper supplies these only for Forge's Vite development server. A packaged app
-// never reads them, so production keeps its normal application state and window identity.
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
 
 function openDurableStores(projectData: string) {
-  const databasePath = sharedDatabasePath(projectData)
   const backupPath = sharedDatabaseBackupPath(projectData)
   return recoverDurableStore({
-    databasePath,
+    databasePath: sharedDatabasePath(projectData),
     backupPath,
     open: () => {
-      const projects = openProjectStore(projectData)
-      const ticketLinkDatabase = new DatabaseSync(databasePath)
-      const ticketLinks = createSQLiteSessionTicketLinkStore(ticketLinkDatabase, () =>
-        backupSharedDatabase(ticketLinkDatabase, backupPath),
+      const database = openSharedDatabase(projectData)
+      const backup = () => backupSharedDatabase(database, backupPath)
+      const projects = createProjectStore(database, () => void backup().catch(console.error))
+      const ticketLinks = createSQLiteSessionTicketLinkStore(database, () =>
+        backup().catch(console.error),
       )
-      return { projects, ticketLinks }
+      return { projects, ticketLinks, close: () => database.close() }
     },
   })
 }
+
 let SETUP_DOCUMENT_SOURCE: 'proof' | 'development' | 'production' = 'production'
 if (DEVELOPMENT_INSTANCE) SETUP_DOCUMENT_SOURCE = 'development'
 if (PROOF_ENABLED) SETUP_DOCUMENT_SOURCE = 'proof'
@@ -107,7 +104,7 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { projects, ticketLinks } = openDurableStores(projectData)
+  const { projects, ticketLinks, close } = openDurableStores(projectData)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -136,7 +133,7 @@ function createWindow(): void {
         setupDocumentSource: SETUP_DOCUMENT_SOURCE,
         acceptance: ACCEPTANCE_ENABLED,
       })
-      window.once('closed', () => projects.close())
+      window.once('closed', close)
       installMenu(window)
     },
     loaded: (window) => {
