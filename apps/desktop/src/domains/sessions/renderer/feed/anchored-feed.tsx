@@ -51,7 +51,8 @@ export function AnchoredFeed({
     // Only follow an append while the reader is already at the tail. Keeping
     // this enabled while they are inspecting history makes a streamed row pull
     // them back to the end before the Jump to latest control can be used.
-    followOnAppend: following ? 'smooth' : false,
+    // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
+    followOnAppend: following,
     getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
     getScrollElement: () => viewport,
     onChange: tailFollow.onChange,
