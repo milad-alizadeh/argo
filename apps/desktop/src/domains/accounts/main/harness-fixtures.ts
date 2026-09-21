@@ -2,6 +2,7 @@
 // the other just to name a project id.
 import type {
   ProjectRegistry,
+  ProjectSetupRecord,
   ProjectStore,
   SetupCheckpoint,
 } from '@/domains/projects/main/sqlite-store'
@@ -17,6 +18,7 @@ export function projectStore(projectId: string): ProjectStore {
     selectedId: projectId,
   }
   let checkpoint: SetupCheckpoint | null = null
+  let projectSetup: ProjectSetupRecord | null = null
   return {
     read: () => registry,
     replace: (next) => {
@@ -39,6 +41,10 @@ export function projectStore(projectId: string): ProjectStore {
     readSetupCheckpoint: (id) => (checkpoint?.projectId === id ? checkpoint : null),
     writeSetupCheckpoint: (next) => {
       checkpoint = next
+    },
+    readProjectSetup: (id) => (projectSetup?.projectId === id ? projectSetup : null),
+    writeProjectSetup: (next) => {
+      projectSetup = next
     },
     close: () => undefined,
   }

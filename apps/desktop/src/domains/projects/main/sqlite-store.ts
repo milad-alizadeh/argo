@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { z } from 'zod'
+import type { ProjectSetupRecord } from '@/domains/projects/main/setup/project-setup-registry'
+import { projectSetupStore } from '@/domains/projects/main/setup/project-setup-sqlite-store'
 import { identifierSchema } from '@/shared/validation'
 import {
   migrateSetupCheckpoints,
@@ -7,6 +9,7 @@ import {
   type SetupCheckpoint,
 } from './setup-checkpoint-store'
 
+export type { ProjectSetupRecord } from '@/domains/projects/main/setup/project-setup-registry'
 export type { SetupCheckpoint } from './setup-checkpoint-store'
 
 export type ProjectRegistration = {
@@ -40,6 +43,8 @@ export type ProjectStore = {
   updateProjectPath: (projectId: string, projectPath: string) => void
   readSetupCheckpoint: (projectId: string) => SetupCheckpoint | null
   writeSetupCheckpoint: (checkpoint: SetupCheckpoint) => void
+  readProjectSetup: (projectId: string) => ProjectSetupRecord | null
+  writeProjectSetup: (record: ProjectSetupRecord) => void
   close: () => void
 }
 
@@ -59,6 +64,15 @@ CREATE TABLE IF NOT EXISTS project_setup_checkpoint (
   phase TEXT NOT NULL CHECK (phase IN ('editing', 'validating', 'ready', 'failed', 'cancelled')),
   configuration_source TEXT NOT NULL,
   document_revision TEXT NOT NULL
+) STRICT;
+CREATE TABLE IF NOT EXISTS project_setup_actor (
+  project_id TEXT PRIMARY KEY REFERENCES project(id),
+  checkpoint_version INTEGER NOT NULL CHECK (checkpoint_version = 1),
+  machine_version INTEGER NOT NULL CHECK (machine_version > 0),
+  revision INTEGER NOT NULL CHECK (revision >= 0),
+  persisted_snapshot TEXT NOT NULL,
+  receipts TEXT NOT NULL,
+  saved_at TEXT NOT NULL
 ) STRICT;
 `
 
@@ -107,16 +121,8 @@ export function createProjectStore(
     'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision',
   )
   const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
-
   return {
-    read: () => {
-      const registered = projects(database)
-      const selected = selectedId(database)
-      return {
-        projects: registered,
-        selectedId: registered.some((project) => project.id === selected) ? selected : null,
-      }
-    },
+    read: () => readRegistry(database),
 
     replace(registry) {
       database.exec('BEGIN')
@@ -163,6 +169,17 @@ export function createProjectStore(
       afterWrite()
     },
 
+    ...projectSetupStore(database, afterWrite),
+
     close: () => database.close(),
+  }
+}
+
+function readRegistry(database: ProjectDatabase): ProjectRegistry {
+  const registered = projects(database)
+  const selected = selectedId(database)
+  return {
+    projects: registered,
+    selectedId: registered.some((project) => project.id === selected) ? selected : null,
   }
 }

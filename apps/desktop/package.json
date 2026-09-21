@@ -54,6 +54,7 @@
     "node-pty": "1.2.0-beta.15",
     "react-day-picker": "^10.0.1",
     "recharts": "^3.8.0",
+    "xstate": "^5",
     "zod": "^4.6.4"
   },
   "devDependencies": {

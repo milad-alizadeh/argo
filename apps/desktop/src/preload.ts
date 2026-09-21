@@ -21,7 +21,7 @@ const subscribe = (channel: string, listener: (value: unknown) => void) => {
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
-  ...createProjectClient(invoke),
+  ...createProjectClient(invoke, subscribe),
   ...createOnboardingClient(invoke),
   ...createAccountClient(invoke),
   ...createTicketClient(invoke),

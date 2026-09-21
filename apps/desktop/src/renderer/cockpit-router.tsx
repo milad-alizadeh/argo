@@ -45,10 +45,12 @@ export function CockpitRouteLayout() {
     null,
   )
 
-  if (matches.some((match) => match.id === 'project-onboarding')) return <Outlet />
+  if (matches.some((match) => match.id === 'project-onboarding' || match.id === 'project-setup')) {
+    return <Outlet />
+  }
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   if (cockpit.status === 'setup' && cockpit.project) {
-    return <ProjectSetupWindow project={cockpit.project} />
+    return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
   }
   return (
     <CockpitShell
@@ -67,6 +69,7 @@ export const cockpitRouter = createHashRouter([
     children: [
       { index: true, element: <Navigate replace to="/sessions" /> },
       { id: 'project-onboarding', path: '/projects/new', element: <ProjectOnboarding /> },
+      { id: 'project-setup', path: '/projects/:projectId/setup', element: <ProjectSetupScreen /> },
       {
         path: '/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
@@ -93,3 +96,9 @@ export const cockpitRouter = createHashRouter([
     ],
   },
 ])
+
+function ProjectSetupScreen() {
+  const [cockpit] = useProjects()
+  if (!cockpit.project) return <Navigate replace to="/sessions" />
+  return <ProjectSetupWindow project={cockpit.project} />
+}

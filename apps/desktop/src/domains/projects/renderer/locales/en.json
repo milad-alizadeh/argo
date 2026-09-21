@@ -382,16 +382,29 @@
   },
   "setup": {
     "label": "Set up {{name}}",
-    "title": "Set up {{name}} before starting Sessions",
-    "description": "Choose the recommended plan, customize it, or configure the Project manually.",
     "configurationLabel": "Project configuration",
-    "saved": "Config saved.",
-    "valid": "All Project commands passed validation.",
-    "invalid": "A Project command failed. Make sure that the working path exists and each command exits successfully.",
     "testing": "Testing config…",
-    "invalidJson": "Fix JSON syntax before testing the config.",
-    "invalidSetupDocument": "GitHub returned an invalid Project setup document.",
-    "setupNetworkUnavailable": "Argo could not download Project setup from GitHub.",
+    "actor": {
+      "choosing-method": {
+        "title": "Choose setup for {{name}}",
+        "description": "Choose manual setup now or finish setup later."
+      },
+      "manual": {
+        "title": "Manual setup",
+        "description": "Save valid Project JSON without changing Project files.",
+        "action": "Save manual setup"
+      },
+      "deferred": {
+        "title": "Setup deferred",
+        "description": "The Project is open. You can finish setup when ready.",
+        "action": "Finish setup"
+      },
+      "ready": {
+        "title": "Setup ready",
+        "description": "Manual Project details are saved.",
+        "action": "Repair or upgrade"
+      }
+    },
     "document": {
       "apply": "Apply setup",
       "applying": "Applying setup…",
@@ -406,20 +419,13 @@
       "included": "{{label}}",
       "notIncluded": "No {{label}}",
       "notSet": "Not set",
-      "preparing": "Preparing setup",
-      "preparingDescription": "Retrieving the setup skill and generating a plan…",
-      "preparingTitle": "Preparing this Project for agents",
       "readyDescription": "Argo inspected the repository and prepared the smallest useful setup. No files change until you apply it.",
       "readyTitle": "Ready this Project for agents",
       "recommended": "Recommended plan",
-      "retry": "Try again",
       "summaryDescription": "Review what Argo will apply, customize it, or import an existing configuration.",
       "summaryTitle": "Setup summary",
       "testConfiguration": "Test configuration",
-      "testSetup": "Test setup",
-      "unavailable": "Setup unavailable",
-      "unavailableDescription": "Argo could not prepare this Project setup.",
-      "unavailableTitle": "Project setup could not start"
+      "testSetup": "Test setup"
     }
   }
 }

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { setupDocumentSchema } from './setup-document'
 
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),
@@ -28,67 +27,46 @@ export const projectSetupRequiredSchema = z.strictObject({
 })
 export type ProjectSetupRequired = z.infer<typeof projectSetupRequiredSchema>
 
-export const projectSetupBeginRequestSchema = z.strictObject({
+const projectSetupScreenSchema = z.enum(['choosing-method', 'manual', 'deferred', 'ready'])
+const projectSetupCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('choose-manual') }),
+  z.strictObject({ type: z.literal('defer') }),
+  z.strictObject({ type: z.literal('back') }),
+  z.strictObject({ type: z.literal('save-manual'), source: z.string().min(1).max(100_000) }),
+  z.strictObject({ type: z.literal('resume-setup') }),
+  z.strictObject({ type: z.literal('start-repair-or-upgrade') }),
+])
+export type ProjectSetupCommand = z.infer<typeof projectSetupCommandSchema>
+
+export const projectSetupCommandRequestSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('project.setup.begin'),
+  type: z.literal('project.setup.command'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+  commandId: identifierSchema,
+  expectedRevision: z.number().int().nonnegative(),
+  command: projectSetupCommandSchema,
+})
+export type ProjectSetupCommandRequest = z.infer<typeof projectSetupCommandRequestSchema>
+
+export const projectSetupSnapshotRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.snapshot'),
   requestId: identifierSchema,
   projectId: identifierSchema,
 })
-export type ProjectSetupBeginRequest = z.infer<typeof projectSetupBeginRequestSchema>
+export type ProjectSetupSnapshotRequest = z.infer<typeof projectSetupSnapshotRequestSchema>
 
-export const projectSetupSaveRequestSchema = z.strictObject({
+export const projectSetupSnapshotSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('project.setup.save'),
+  type: z.literal('project.setup.snapshot'),
   requestId: identifierSchema,
   projectId: identifierSchema,
-  source: z.string().min(1).max(100_000),
+  revision: z.number().int().nonnegative(),
+  screen: projectSetupScreenSchema,
+  manualSource: z.string(),
 })
-export type ProjectSetupSaveRequest = z.infer<typeof projectSetupSaveRequestSchema>
-
-export const projectSetupValidateRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.validate'),
-  requestId: identifierSchema,
-  projectId: identifierSchema,
-  source: z.string(),
-})
-export type ProjectSetupValidateRequest = z.infer<typeof projectSetupValidateRequestSchema>
-
-export const projectSetupEditingSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.editing'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-  source: z.string(),
-  document: setupDocumentSchema,
-  saved: z.boolean(),
-})
-export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
-
-export const projectSetupValidatedSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.validated'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-  valid: z.boolean(),
-})
-export type ProjectSetupValidated = z.infer<typeof projectSetupValidatedSchema>
-
-export const projectSetupCancelledSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.cancelled'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-})
-export type ProjectSetupCancelled = z.infer<typeof projectSetupCancelledSchema>
-
-export const projectSetupCancelRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.cancel'),
-  requestId: identifierSchema,
-  projectId: identifierSchema,
-})
-export type ProjectSetupCancelRequest = z.infer<typeof projectSetupCancelRequestSchema>
+export type ProjectSetupSnapshot = z.infer<typeof projectSetupSnapshotSchema>
 
 export const PROJECT_ERRORS = {
   'missing-project': 'This Project is not registered.',
@@ -126,11 +104,7 @@ export const projectErrorSchema = z
   .refine(({ code, message }) => message === PROJECT_ERRORS[code])
 export type ProjectError = z.infer<typeof projectErrorSchema>
 export type ProjectOpenReply = ProjectOpened | ProjectSetupRequired | ProjectError
-export type ProjectSetupReply =
-  | ProjectSetupEditing
-  | ProjectSetupValidated
-  | ProjectSetupCancelled
-  | ProjectError
+export type ProjectSetupReply = ProjectSetupSnapshot | ProjectError
 
 export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
   return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }

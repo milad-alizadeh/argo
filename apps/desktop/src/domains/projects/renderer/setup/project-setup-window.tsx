@@ -1,104 +1,83 @@
-import { Save } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type {
+  ProjectSetupCommand,
+  ProjectSetupSnapshot,
+} from '@/domains/projects/contract/contract'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import type { SetupDocument } from '@/domains/projects/contract/setup-document'
-import { ConfigurationPanel } from '@/domains/projects/renderer/setup/project-setup-configuration'
-import {
-  type ProjectSetupMessage,
-  useProjectSetup,
-} from '@/domains/projects/renderer/setup/use-project-setup'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { Button } from '@/platform/renderer/components/ui/button'
+import { useProjectSetup } from './use-project-setup'
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
-  const { t } = useTranslation('projects')
-  const messages = useMemo(
-    () => ({
-      valid: t('setup.valid'),
-      invalid: t('setup.invalid'),
-      invalidJson: t('setup.invalidJson'),
-      invalidSetupDocument: t('setup.invalidSetupDocument'),
-      saved: t('setup.saved'),
-      setupNetworkUnavailable: t('setup.setupNetworkUnavailable'),
-    }),
-    [t],
-  )
-  const setup = useProjectSetup(project.id, messages)
-  return <ProjectSetupView project={project} {...setup} />
-}
-
-export type ProjectSetupViewProps = {
-  document: SetupDocument | null
-  message: ProjectSetupMessage | null
-  applyConfiguration: () => Promise<void>
-  loading: boolean
-  retry: () => void
-  saving: 'apply' | 'test' | null
-  source: string
-  testConfiguration: () => Promise<void>
-  updateSource: (source: string) => void
+  const setup = useProjectSetup(project.id)
+  if (setup.loading || !setup.snapshot) return <main aria-busy="true" />
+  return <ProjectSetupView project={project} snapshot={setup.snapshot} command={setup.command} />
 }
 
 export function ProjectSetupView({
+  command,
   project,
-  document,
-  message,
-  applyConfiguration,
-  loading,
-  retry,
-  saving,
-  source,
-  testConfiguration,
-  updateSource,
-}: { project: ProjectSummary } & ProjectSetupViewProps) {
+  snapshot,
+}: {
+  command: (command: ProjectSetupCommand) => Promise<void>
+  project: ProjectSummary
+  snapshot: ProjectSetupSnapshot
+}) {
   const { t } = useTranslation('projects')
-  const { add } = useToastManager()
-  const setup = {
-    applyConfiguration,
-    document,
-    loading,
-    message,
-    retry,
-    saving,
-    source,
-    testConfiguration,
-    updateSource,
-  }
-  useEffect(() => {
-    if (!message) return
-    add({ priority: 'high', title: message.text, type: message.tone })
-  }, [add, message])
+  const [source, setSource] = useState(snapshot.manualSource)
+  useEffect(() => setSource(snapshot.manualSource), [snapshot.manualSource])
   return (
     <main
       aria-label={t('setup.label', { name: project.name })}
-      className="flex h-full min-h-0 flex-col bg-background"
-      data-component="ProjectSetupWindow"
+      className="flex h-full flex-col p-8"
     >
-      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
-      <SetupWorkspace project={project} {...setup} />
+      <h1 className="type-title font-heading">
+        {t(`setup.actor.${snapshot.screen}.title`, { name: project.name })}
+      </h1>
+      <p className="mt-2 type-body text-muted-foreground">
+        {t(`setup.actor.${snapshot.screen}.description`)}
+      </p>
+      {snapshot.screen === 'choosing-method' ? (
+        <div className="mt-6 flex gap-3">
+          <Button onClick={() => void command({ type: 'choose-manual' })}>
+            {t('setup.actor.manual.action')}
+          </Button>
+          <Button onClick={() => void command({ type: 'defer' })} variant="outline">
+            {t('setup.actor.deferred.action')}
+          </Button>
+        </div>
+      ) : null}
+      {snapshot.screen === 'manual' ? (
+        <div className="mt-6 grid gap-3">
+          <textarea
+            aria-label={t('setup.configurationLabel')}
+            className="min-h-64 rounded-md border p-3 font-mono"
+            onChange={(event) => setSource(event.target.value)}
+            value={source}
+          />
+          <div className="flex gap-3">
+            <Button onClick={() => void command({ type: 'save-manual', source })}>
+              {t('setup.actor.manual.action')}
+            </Button>
+            <Button onClick={() => void command({ type: 'back' })} variant="outline">
+              {t('setup.document.back')}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {snapshot.screen === 'deferred' ? (
+        <Button className="mt-6 w-fit" onClick={() => void command({ type: 'resume-setup' })}>
+          {t('setup.actor.deferred.action')}
+        </Button>
+      ) : null}
+      {snapshot.screen === 'ready' ? (
+        <Button
+          className="mt-6 w-fit"
+          onClick={() => void command({ type: 'start-repair-or-upgrade' })}
+        >
+          {t('setup.actor.ready.action')}
+        </Button>
+      ) : null}
     </main>
-  )
-}
-
-function SetupWorkspace({
-  project,
-  ...setup
-}: { project: ProjectSummary } & ProjectSetupViewProps) {
-  const { t } = useTranslation('projects')
-  return (
-    <section className="mx-auto grid w-full max-w-7xl flex-1 grid-rows-[auto_minmax(0,1fr)] gap-6 overflow-y-auto px-6 py-8">
-      <header className="flex min-w-0 items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted text-foreground">
-          <Save aria-hidden="true" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="type-title font-heading text-foreground">
-            {t('setup.title', { name: project.name })}
-          </h1>
-          <p className="mt-1 max-w-2xl type-body text-muted-foreground">{t('setup.description')}</p>
-        </div>
-      </header>
-      <ConfigurationPanel {...setup} />
-    </section>
   )
 }

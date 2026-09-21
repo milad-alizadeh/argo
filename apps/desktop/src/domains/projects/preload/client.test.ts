@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createProjectClient } from '@/domains/projects/preload/client'
-import { setupDocumentFixture } from '../../../../test-fixtures/projects/setup-document.fixture'
 
 const opened = {
   version: 1,
@@ -95,37 +94,32 @@ test('every action that can change the known set reads the same replies', async 
   )
 })
 
-test('sends manual setup through the Project contract', async () => {
-  const document = setupDocumentFixture({ progress: { current: 1, total: 1 } })
+test('sends revisioned setup commands through the Project contract', async () => {
   const client = createProjectClient(async (operation, request: { requestId: string }) => {
-    if (operation === 'argo:project:setup:validate') {
-      return {
-        version: 1,
-        type: 'project.setup.validated',
-        requestId: request.requestId,
-        project: { id: 'project-1', name: 'example' },
-        valid: true,
-      }
-    }
+    assert.equal(operation, 'argo:project:setup:command')
     return {
       version: 1,
-      type: 'project.setup.editing',
+      type: 'project.setup.snapshot',
       requestId: request.requestId,
-      project: { id: 'project-1', name: 'example' },
-      source: '{"version":1}\n',
-      document,
-      saved: true,
+      projectId: 'project-1',
+      revision: 1,
+      screen: 'manual',
+      manualSource: '',
     }
   })
-
-  const began = await client.beginProjectSetup({ projectId: 'project-1' })
-  const saved = await client.saveProjectSetup({ projectId: 'project-1', source: '{"version":1}\n' })
-  const validated = await client.validateProjectSetup({
+  const reply = await client.sendProjectSetupCommand({
     projectId: 'project-1',
-    source: '{"version":1}\n',
+    commandId: 'manual-command',
+    expectedRevision: 0,
+    command: { type: 'choose-manual' },
   })
-  assert.equal(began.type, 'project.setup.editing')
-  assert.equal(saved.type, 'project.setup.editing')
-  assert.deepEqual(began.type === 'project.setup.editing' ? began.document : null, document)
-  assert.equal(validated.type, 'project.setup.validated')
+  assert.deepEqual(reply, {
+    version: 1,
+    type: 'project.setup.snapshot',
+    requestId: reply.requestId,
+    projectId: 'project-1',
+    revision: 1,
+    screen: 'manual',
+    manualSource: '',
+  })
 })

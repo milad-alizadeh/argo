@@ -7,12 +7,6 @@ import { openProject } from '@/domains/projects/main/open-project'
 import { registerProject, relocateProject } from '@/domains/projects/main/register-project'
 import { selectProject } from '@/domains/projects/main/select-project'
 import {
-  beginManualSetup,
-  cancelManualSetup,
-  saveManualSetup,
-  validateManualSetup,
-} from '@/domains/projects/main/setup/manual-setup'
-import {
   onboardingApplyStatus,
   onboardingPlanStatus,
   startOnboardingApply,
@@ -20,6 +14,7 @@ import {
 } from '@/domains/projects/main/setup/onboarding-agent/onboarding-handlers'
 import { createOnboardingRunStore } from '@/domains/projects/main/setup/onboarding-agent/onboarding-run-store'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/run-onboarding-agent'
+import { createProjectSetupBridge } from '@/domains/projects/main/setup/project-setup-bridge'
 import {
   loadSetupDocument,
   type SetupDocumentSource,
@@ -63,17 +58,20 @@ export function attachProjectBridge(
     exclusive: createWriteQueue(),
     loadSetupDocument: setupDocument,
   }
+  const projectSetup = createProjectSetupBridge(window, storage.projects)
   registerDomainHandlers({
     window,
     rendererURL: storage.rendererURL,
     operations: PROJECT_OPERATIONS,
-    context: store,
+    context: {
+      ...store,
+      projectSetup: { snapshot: projectSetup.actorSnapshot },
+      setupBridge: projectSetup,
+    },
     handlers: {
       open: (request, context) => openProject(request, context),
-      setupBegin: (request, context) => beginManualSetup(request, context),
-      setupSave: (request, context) => saveManualSetup(request, context),
-      setupValidate: (request, context) => validateManualSetup(request, context),
-      setupCancel: (request, context) => cancelManualSetup(request, context),
+      setupCommand: (request, context) => context.setupBridge.command(request),
+      setupSnapshot: (request, context) => context.setupBridge.snapshot(request),
       list: (request, context) => listProjects(request, context),
       register: registerProject,
       relocate: relocateProject,

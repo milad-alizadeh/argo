@@ -1,23 +1,9 @@
-import { parseSetupDocument } from '../src/domains/projects/contract/setup-document'
 import type { ProjectClient } from '../src/domains/projects/preload/client'
 
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
   { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
 ]
-
-const setupDocument = parseSetupDocument({
-  version: 1,
-  revision: '2026-09-18.1',
-  requiredCapabilities: ['fields', 'recommendations', 'plan'],
-  locales: {
-    en: { title: 'Set up this Project', description: 'Review the plan.', fields: {}, plan: {} },
-  },
-  progress: { current: 1, total: 1 },
-  fields: [],
-  configuration: { version: 1, targets: {} },
-  plan: [],
-})
 
 function listed(selectedId: string) {
   return {
@@ -38,41 +24,27 @@ export const storybookProjectBridge: ProjectClient = {
       requestId: 'storybook-project',
       project: { id: 'storybook-project', name: 'argo' },
     }),
-  beginProjectSetup: ({ projectId }) =>
+  projectSetupSnapshot: ({ projectId }) =>
     Promise.resolve({
       version: 1,
-      type: 'project.setup.editing' as const,
+      type: 'project.setup.snapshot' as const,
       requestId: 'storybook-setup',
-      project: { id: projectId, name: 'argo' },
-      source: '',
-      document: setupDocument,
-      saved: false,
+      projectId,
+      revision: 0,
+      screen: 'choosing-method' as const,
+      manualSource: '',
     }),
-  saveProjectSetup: ({ projectId, source }) =>
+  sendProjectSetupCommand: ({ projectId }) =>
     Promise.resolve({
       version: 1,
-      type: 'project.setup.editing' as const,
+      type: 'project.setup.snapshot' as const,
       requestId: 'storybook-setup',
-      project: { id: projectId, name: 'argo' },
-      source,
-      document: setupDocument,
-      saved: true,
+      projectId,
+      revision: 0,
+      screen: 'choosing-method' as const,
+      manualSource: '',
     }),
-  validateProjectSetup: ({ projectId }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.setup.validated' as const,
-      requestId: 'storybook-setup',
-      project: { id: projectId, name: 'argo' },
-      valid: true,
-    }),
-  cancelProjectSetup: ({ projectId }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.setup.cancelled' as const,
-      requestId: 'storybook-setup',
-      project: { id: projectId, name: 'argo' },
-    }),
+  subscribeProjectSetup: () => () => {},
   registerProject: () => Promise.resolve(listed('storybook-worktree')),
   relocateProject: () => Promise.resolve(listed('storybook-worktree')),
   selectProject: ({ projectId }) => Promise.resolve(listed(projectId)),
