@@ -48,8 +48,8 @@ test('defines one app type scale without surface-specific aliases', () => {
   expect(tokens).toContain('--text-control--line-height: var(--text-body--line-height)')
   expect(tokens).toContain('--text-badge: var(--text-meta)')
   expect(button).toContain('px-2.5 text-xs in-data-[slot=button-group]')
-  expect(tokens).toContain('--text-heading: 13px')
-  expect(tokens).toContain('--text-prose: 13px')
+  expect(tokens).toContain('--text-heading: 14px')
+  expect(tokens).toContain('--text-prose: 14px')
   expect(components.tailwind.cssVariables).toBe(true)
   expect(tokens).not.toMatch(
     /--text-(session|ticket|composer)-(title|heading|body|meta|code|section)/,
@@ -58,10 +58,10 @@ test('defines one app type scale without surface-specific aliases', () => {
 })
 
 test('keeps feed prose and tool summaries on the dominant rung', () => {
-  expect(tokens).toContain('--text-body: 13px')
-  expect(tokens).toContain('--text-body--line-height: 19px')
-  expect(tokens).toContain('--text-prose: 13px')
-  expect(tokens).toContain('--text-prose--line-height: 19px')
+  expect(tokens).toContain('--text-body: 14px')
+  expect(tokens).toContain('--text-body--line-height: 20px')
+  expect(tokens).toContain('--text-prose: 14px')
+  expect(tokens).toContain('--text-prose--line-height: 20px')
   expect(feedTools).toContain('type-body')
   expect(feedMarkdown).toContain('type-prose')
 })

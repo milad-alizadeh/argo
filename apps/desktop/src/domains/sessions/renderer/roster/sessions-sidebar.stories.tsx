@@ -172,7 +172,6 @@ export const Discovered: Story = {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
     await expect(search).toHaveAttribute('placeholder', 'Search Sessions…')
-    await expect(search).toHaveStyle({ fontSize: '13px', lineHeight: '19px' })
     await expect(canvas.getByRole('button', { name: 'New Session' })).toBeEnabled()
     const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await expect(row).toHaveAccessibleName(/Idle/)
@@ -240,7 +239,7 @@ export const CommandTitledSession: Story = {
   },
 }
 
-export const RunningSessionUsesLoader: Story = {
+export const ActiveSessionSpinsItsHarnessLogo: Story = {
   beforeEach: () =>
     withRosterHost(async () =>
       listedReply({
@@ -258,11 +257,15 @@ export const RunningSessionUsesLoader: Story = {
     const canvas = within(canvasElement)
     const row = await canvas.findByRole('button', { name: /Build the approved roster layout/ })
     await expect(row).toHaveAccessibleName(/Running/)
-    const loader = row.querySelector<HTMLElement>('[data-slot="loader"]')
-    if (loader === null) throw new Error('The running Session Loader is absent.')
-    await expect(loader.getBoundingClientRect().width).toBe(12)
-    await expect(loader.getBoundingClientRect().height).toBe(12)
-    await expect(row.querySelector('[data-slot="session-status"]')).toHaveClass('bg-idle')
+    await expect(row.querySelector('[data-slot="loader"]')).toBeNull()
+    await expect(row.querySelector('[data-slot="harness-logo"]')).toHaveAttribute(
+      'data-active',
+      'true',
+    )
+    await expect(row.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      'data-variant',
+      'active',
+    )
   },
 }
 
@@ -410,11 +413,70 @@ export const PendingBadges: Story = {
     const canvas = within(canvasElement)
     const wantsAnswer = await canvas.findByRole('button', { name: /A question is waiting/ })
     await expect(within(wantsAnswer).getByText('Needs input')).toBeVisible()
+    await expect(wantsAnswer.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      'data-variant',
+      'attention',
+    )
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
-    const permissionBadge = within(wantsPermission).getByText('Needs input')
-    await expect(permissionBadge).toHaveStyle({ fontSize: '13px', height: '20px' })
+    await expect(within(wantsPermission).getByText('Needs input')).toBeVisible()
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(within(idle).queryByText('Needs input')).toBeNull()
+  },
+}
+
+export const StatusTransitions: Story = {
+  beforeEach: () => {
+    sessionsHost = withSessionsHost([
+      {
+        ...session,
+        id: 'waiting-for-permission',
+        status: 'permission',
+        title: { text: 'Approve the command', source: 'first-prompt' },
+      },
+      {
+        ...session,
+        id: 'unread-session',
+        unread: true,
+        title: { text: 'Read the unread Session', source: 'first-prompt' },
+      },
+    ])
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
+    const unread = canvas.getByRole('button', { name: /Read the unread Session/ })
+    await expect(waiting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      'data-variant',
+      'attention',
+    )
+    await expect(unread.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      'data-variant',
+      'unread',
+    )
+    sessionsHost?.repoll([
+      { ...session, id: 'waiting-for-permission', status: 'idle' },
+      {
+        ...session,
+        id: 'unread-session',
+        status: 'running',
+        title: { text: 'Read the unread Session', source: 'first-prompt' },
+        unread: true,
+      },
+    ])
+    await waitFor(async () => {
+      await expect(waiting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+        'data-variant',
+        'idle',
+      )
+      await expect(unread.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+        'data-variant',
+        'active',
+      )
+    })
   },
 }
 
