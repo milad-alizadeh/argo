@@ -5,16 +5,22 @@ import {
   sessionFeedQuery,
 } from '@/domains/sessions/renderer/feed/session-feed-query'
 
-test('reads a newly started Session by its real identifier', async () => {
-  const readSessionFeed = vi.fn().mockResolvedValue({
+function feedReply(sessionId: string, requestId: string, revision: string) {
+  return {
     version: 1,
-    type: 'session.feed.read',
-    requestId: 'new-session-feed',
-    sessionId: 'session-new',
-    chainId: 'session-new',
-    revision: 'initial',
+    type: 'session.feed.read' as const,
+    requestId,
+    sessionId,
+    chainId: sessionId,
+    revision,
     rows: [],
-  })
+  }
+}
+
+test('reads a newly started Session by its real identifier', async () => {
+  const readSessionFeed = vi
+    .fn()
+    .mockResolvedValue(feedReply('session-new', 'new-session-feed', 'initial'))
   const originalWindow = globalThis.window
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
@@ -54,15 +60,10 @@ describe('caching and retrying the Session feed read', () => {
   test('starts a new read when retrying a pending Feed with no cached data', async () => {
     const client = new QueryClient()
     const pendingRead = new Promise<never>(() => {})
-    const readSessionFeed = vi.fn().mockResolvedValueOnce(pendingRead).mockResolvedValueOnce({
-      version: 1,
-      type: 'session.feed.read',
-      requestId: 'recovered-feed',
-      sessionId: 'session-a',
-      chainId: 'session-a',
-      revision: 'recovered',
-      rows: [],
-    })
+    const readSessionFeed = vi
+      .fn()
+      .mockResolvedValueOnce(pendingRead)
+      .mockResolvedValueOnce(feedReply('session-a', 'recovered-feed', 'recovered'))
     const originalWindow = globalThis.window
     Object.defineProperty(globalThis, 'window', {
       configurable: true,
