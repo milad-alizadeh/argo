@@ -37,7 +37,7 @@ async function fixture(context: TestContext) {
   migrate(drizzle({ client: database }), {
     migrationsFolder: path.resolve(import.meta.dirname, '../drizzle'),
   })
-  const projects = createProjectStore(database)
+  const projects = createProjectStore(drizzle({ client: database }))
   projects.replace({
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },

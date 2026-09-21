@@ -1,6 +1,12 @@
+import { eq } from 'drizzle-orm'
 import type { ProjectSetupActor } from '@/domains/projects/main/setup/project-setup-actor'
 import { PROJECT_SETUP_MACHINE_VERSION } from '@/domains/projects/main/setup/project-setup-machine'
 import type { ProjectDatabase } from '@/domains/projects/main/sqlite-store'
+import {
+  projectSetupActor,
+  projectSetupEffect,
+  projectSetupRecovery,
+} from '@/platform/main/storage/database-schema'
 import {
   persistedSetupContext,
   projectSetupRecordFromDatabase,
@@ -11,38 +17,51 @@ import type {
   ProjectSetupStore,
 } from './project-setup-registry'
 
-type WriteStatement = { run: (...values: string[]) => unknown }
-
 export function projectSetupStore(
   database: ProjectDatabase,
   afterWrite: () => void,
 ): ProjectSetupStore {
-  const read = database.prepare(
-    'SELECT checkpoint_version, machine_version, revision, persisted_snapshot, receipts, saved_at FROM project_setup_actor WHERE project_id = ?',
-  )
-  const write = database.prepare(
-    'INSERT INTO project_setup_actor (project_id, checkpoint_version, machine_version, revision, persisted_snapshot, receipts, saved_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET checkpoint_version = excluded.checkpoint_version, machine_version = excluded.machine_version, revision = excluded.revision, persisted_snapshot = excluded.persisted_snapshot, receipts = excluded.receipts, saved_at = excluded.saved_at',
-  )
-  const writeEffect = database.prepare(
-    'INSERT INTO project_setup_effect (project_id, intent_json, result_json, saved_at) VALUES (?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET intent_json = excluded.intent_json, result_json = excluded.result_json, saved_at = excluded.saved_at',
-  )
-  const writeRecovery = database.prepare(
-    'INSERT INTO project_setup_recovery (project_id, raw_record, reason, saved_at) VALUES (?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET raw_record = excluded.raw_record, reason = excluded.reason, saved_at = excluded.saved_at',
-  )
   const writeRecord = (record: ProjectSetupRecord) => {
-    writeProjectSetupRecord({ database, record, write, writeEffect })
+    writeProjectSetupRecord(database, record)
     afterWrite()
   }
   return {
     readProjectSetup(projectId) {
-      const row = read.get(projectId)
+      const row = database
+        .select({
+          checkpointVersion: projectSetupActor.checkpointVersion,
+          machineVersion: projectSetupActor.machineVersion,
+          revision: projectSetupActor.revision,
+          persistedSnapshot: projectSetupActor.persistedSnapshot,
+          receipts: projectSetupActor.receipts,
+          savedAt: projectSetupActor.savedAt,
+        })
+        .from(projectSetupActor)
+        .where(eq(projectSetupActor.projectId, projectId))
+        .get()
       try {
-        if (row === undefined || row === null) return null
+        if (!row) return null
         const parsed = projectSetupRecordFromDatabase(projectId, row)
         if (parsed.migrated) writeRecord(parsed.record)
         return parsed.record
       } catch (error) {
-        writeRecovery.run(projectId, JSON.stringify(row), String(error), new Date().toISOString())
+        database
+          .insert(projectSetupRecovery)
+          .values({
+            projectId,
+            rawRecord: JSON.stringify(row),
+            reason: String(error),
+            savedAt: new Date().toISOString(),
+          })
+          .onConflictDoUpdate({
+            target: projectSetupRecovery.projectId,
+            set: {
+              rawRecord: JSON.stringify(row),
+              reason: String(error),
+              savedAt: new Date().toISOString(),
+            },
+          })
+          .run()
         return null
       }
     },
@@ -74,46 +93,41 @@ export function saveProjectSetupRecord({
   })
 }
 
-function writeProjectSetupRecord({
-  database,
-  record,
-  write,
-  writeEffect,
-}: {
-  database: ProjectDatabase
-  record: ProjectSetupRecord
-  write: WriteStatement
-  writeEffect: WriteStatement
-}): void {
+function writeProjectSetupRecord(database: ProjectDatabase, record: ProjectSetupRecord): void {
   const context = persistedSetupContext(JSON.parse(JSON.stringify(record.persistedSnapshot)))
-  database.exec('BEGIN')
-  try {
-    write.run(
-      record.projectId,
-      String(record.checkpointVersion),
-      String(record.machineVersion),
-      String(record.revision),
-      JSON.stringify(record.persistedSnapshot),
-      JSON.stringify(record.receipts),
-      record.savedAt,
-    )
-    writeEffect.run(
-      record.projectId,
-      JSON.stringify({
-        effect: context.activeEffect,
-        attemptNumber: context.attemptNumber,
-        applicationSessionId: context.applicationSessionId,
-        planningSessionId: context.planningSessionId,
-      }),
-      JSON.stringify({
-        finalDiff: context.finalDiff,
-        recoveryMessage: context.recoveryMessage,
-      }),
-      record.savedAt,
-    )
-    database.exec('COMMIT')
-  } catch (error) {
-    database.exec('ROLLBack')
-    throw error
+  const actor = {
+    projectId: record.projectId,
+    checkpointVersion: record.checkpointVersion,
+    machineVersion: record.machineVersion,
+    revision: record.revision,
+    persistedSnapshot: JSON.stringify(record.persistedSnapshot),
+    receipts: JSON.stringify(record.receipts),
+    savedAt: record.savedAt,
   }
+  const effect = {
+    projectId: record.projectId,
+    intentJson: JSON.stringify({
+      effect: context.activeEffect,
+      attemptNumber: context.attemptNumber,
+      applicationSessionId: context.applicationSessionId,
+      planningSessionId: context.planningSessionId,
+    }),
+    resultJson: JSON.stringify({
+      finalDiff: context.finalDiff,
+      recoveryMessage: context.recoveryMessage,
+    }),
+    savedAt: record.savedAt,
+  }
+  database.transaction((transaction) => {
+    transaction
+      .insert(projectSetupActor)
+      .values(actor)
+      .onConflictDoUpdate({ target: projectSetupActor.projectId, set: actor })
+      .run()
+    transaction
+      .insert(projectSetupEffect)
+      .values(effect)
+      .onConflictDoUpdate({ target: projectSetupEffect.projectId, set: effect })
+      .run()
+  })
 }

@@ -6,11 +6,17 @@ export function startDesktopApplication(request: {
   ready: () => Promise<void> | void
   willQuit: () => void
 }): void {
-  void app.whenReady().then(async () => {
-    setPlatformLanguage(app.getLocale())
-    applyStoredAppearance(await readAppearance(app.getPath('userData')))
-    await request.ready()
-  })
+  void app
+    .whenReady()
+    .then(async () => {
+      setPlatformLanguage(app.getLocale())
+      applyStoredAppearance(await readAppearance(app.getPath('userData')))
+      await request.ready()
+    })
+    .catch((error: unknown) => {
+      console.error(error)
+      app.exit(1)
+    })
   app.on('window-all-closed', () => app.quit())
   app.on('will-quit', request.willQuit)
 }

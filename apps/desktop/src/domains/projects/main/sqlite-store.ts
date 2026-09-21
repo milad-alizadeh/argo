@@ -1,38 +1,27 @@
 import path from 'node:path'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
+import {
+  project,
+  projectSelection,
+  projectSetupCheckpoint,
+} from '@/platform/main/storage/database-schema'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
+import { createWorkspaceStore, type WorkspaceStore } from './workspace-store'
 
 export type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 export type { SetupCheckpoint } from './setup-checkpoint-store'
+export type { ManagedWorkspaceRecovery, WorkspaceKind, WorkspaceRecord } from './workspace-store'
 
-export type ProjectRegistration = {
-  id: string
-  path: string
-  commonDirectory: string
-}
-
-export type ProjectRegistry = {
-  projects: ProjectRegistration[]
-  selectedId: string | null
-}
-
-type Statement = {
-  all: (...values: string[]) => unknown[]
-  get: (...values: string[]) => unknown
-  run: (...values: string[]) => unknown
-}
-
-export type ProjectDatabase = {
-  exec: (source: string) => void
-  prepare: (source: string) => Statement
-  close: () => void
-}
-
-export type ProjectStore = {
+export type ProjectRegistration = { id: string; path: string; commonDirectory: string }
+export type ProjectRegistry = { projects: ProjectRegistration[]; selectedId: string | null }
+export type ProjectDatabase = DurableDatabase
+export type ProjectStore = WorkspaceStore & {
   read: () => ProjectRegistry
   replace: (registry: ProjectRegistry) => void
   insertProject: (project: ProjectRegistration) => void
@@ -49,108 +38,74 @@ export type ProjectStore = {
 const projectRowSchema = z.strictObject({
   id: identifierSchema,
   path: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
-  common_directory: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
+  commonDirectory: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
 })
-const selectedRowSchema = z.strictObject({ project_id: identifierSchema.nullable() })
-export function isProjectStoreInvalid(error: unknown): boolean {
-  return error instanceof z.ZodError
-}
 
-function projects(database: ProjectDatabase): ProjectRegistration[] {
-  const rows = projectRowSchema
-    .array()
-    .parse(database.prepare('SELECT id, path, common_directory FROM project ORDER BY rowid').all())
-  return rows.map((row) => ({
-    id: row.id,
-    path: row.path,
-    commonDirectory: row.common_directory,
-  }))
-}
-
-function selectedId(database: ProjectDatabase): string | null {
-  const result = database
-    .prepare('SELECT project_id FROM project_selection WHERE singleton = 1')
-    .get()
-  if (result === undefined || result === null) return null
-  return selectedRowSchema.parse(result).project_id
-}
+export const isProjectStoreInvalid = (error: unknown): boolean => error instanceof z.ZodError
 
 export function createProjectStore(
   database: ProjectDatabase,
   afterWrite: () => void = () => {},
 ): ProjectStore {
-  const insert = database.prepare(
-    'INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)',
-  )
-  const select = database.prepare(
-    'INSERT INTO project_selection (singleton, project_id) VALUES (1, ?) ON CONFLICT(singleton) DO UPDATE SET project_id = excluded.project_id',
-  )
-  const writeCheckpoint = database.prepare(
-    'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision',
-  )
-  const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
-  const promoteSetupWorktree = createSetupWorktreePromotion({ afterWrite, database, updatePath })
+  const writeSelection = (projectId: string) =>
+    database
+      .insert(projectSelection)
+      .values({ singleton: 1, projectId })
+      .onConflictDoUpdate({ target: projectSelection.singleton, set: { projectId } })
+      .run()
   return {
     read: () => readRegistry(database),
-
     replace(registry) {
-      database.exec('BEGIN')
-      try {
-        database.exec('DELETE FROM project_selection')
-        database.exec('DELETE FROM project')
-        for (const project of registry.projects) {
-          insert.run(project.id, project.path, project.commonDirectory)
-        }
-        if (registry.selectedId !== null) select.run(registry.selectedId)
-        database.exec('COMMIT')
-        afterWrite()
-      } catch (error) {
-        database.exec('ROLLBACK')
-        throw error
-      }
-    },
-
-    insertProject: (project) => {
-      insert.run(project.id, project.path, project.commonDirectory)
+      database.transaction((transaction) => {
+        transaction.delete(projectSelection).run()
+        transaction.delete(project).run()
+        if (registry.projects.length) transaction.insert(project).values(registry.projects).run()
+        if (registry.selectedId !== null)
+          transaction
+            .insert(projectSelection)
+            .values({ singleton: 1, projectId: registry.selectedId })
+            .run()
+      })
       afterWrite()
     },
-
+    insertProject: (registration) => {
+      database.insert(project).values(registration).run()
+      afterWrite()
+    },
     selectProject: (projectId) => {
-      select.run(projectId)
+      writeSelection(projectId)
       afterWrite()
     },
-
     updateProjectPath: (projectId, projectPath) => {
-      updatePath.run(projectPath, projectId)
+      database.update(project).set({ path: projectPath }).where(eq(project.id, projectId)).run()
       afterWrite()
     },
-
-    promoteSetupWorktree,
-
+    promoteSetupWorktree: createSetupWorktreePromotion({ afterWrite, database }),
     readSetupCheckpoint: (projectId) => readSetupCheckpoint(database, projectId),
-
-    writeSetupCheckpoint: ({
-      projectId,
-      worktreePath,
-      phase,
-      configurationSource,
-      documentRevision,
-    }) => {
-      writeCheckpoint.run(projectId, worktreePath, phase, configurationSource, documentRevision)
+    writeSetupCheckpoint: (checkpoint) => {
+      database
+        .insert(projectSetupCheckpoint)
+        .values(checkpoint)
+        .onConflictDoUpdate({ target: projectSetupCheckpoint.projectId, set: checkpoint })
+        .run()
       afterWrite()
     },
-
+    ...createWorkspaceStore(database, afterWrite),
     ...projectSetupStore(database, afterWrite),
-
-    close: () => database.close(),
+    close: () => database.$client.close(),
   }
 }
 
 function readRegistry(database: ProjectDatabase): ProjectRegistry {
-  const registered = projects(database)
-  const selected = selectedId(database)
+  const registered = projectRowSchema.array().parse(database.select().from(project).all())
+  const selected =
+    database
+      .select({ projectId: projectSelection.projectId })
+      .from(projectSelection)
+      .where(eq(projectSelection.singleton, 1))
+      .get()?.projectId ?? null
   return {
     projects: registered,
-    selectedId: registered.some((project) => project.id === selected) ? selected : null,
+    selectedId: registered.some((entry) => entry.id === selected) ? selected : null,
   }
 }

@@ -4,6 +4,7 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, test, vi } from 'vitest'
 import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import {
   backupSharedDatabase,
   openSharedDatabase,
@@ -25,7 +26,7 @@ vi.mock('electron', () => ({
 }))
 
 const roots: string[] = []
-const migrationsFolder = path.resolve(import.meta.dirname, '../../../../drizzle')
+const migrationsFolder = databaseMigrationsFolder()
 
 afterEach(async () => {
   electron.exit.mockReset()

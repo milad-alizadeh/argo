@@ -49,6 +49,6 @@ test('recovers a completed worktree promotion without promoting it twice after a
 
 function createStore(databasePath: string) {
   const database = new Database(databasePath)
-  migrateTestDatabase(database, projectMigrationsFolder(import.meta.dirname))
+  migrateTestDatabase(database, projectMigrationsFolder())
   return createProjectStore(database)
 }

@@ -1,3 +1,4 @@
+import { mkdtempSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -7,12 +8,11 @@ import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed-images'
-import { createSQLiteSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -24,13 +24,6 @@ import {
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { installMenu } from '@/platform/main/menu'
-import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
-import {
-  backupSharedDatabase,
-  openSharedDatabase,
-  sharedDatabaseBackupPath,
-  sharedDatabasePath,
-} from '@/platform/main/storage/shared-database'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
@@ -53,6 +46,10 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // the `lsof` call are split into a chunk the ordinary launch never touches. A static import would
 // put all of it on the path of every user who opens the app.
 const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
+const acceptanceUserData = ACCEPTANCE_ENABLED
+  ? mkdtempSync(path.join(os.tmpdir(), 'argo-pty-acceptance-'))
+  : null
+if (acceptanceUserData) app.setPath('userData', acceptanceUserData)
 
 // The Project proof (#1825, extended by #1828) drives the SHIPPED app against its own application
 // data, for the same reason the acceptance harness above lives here: a registry write is only
@@ -66,23 +63,6 @@ if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStor
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
-
-function openDurableStores(projectData: string) {
-  const backupPath = sharedDatabaseBackupPath(projectData)
-  return recoverDurableStore({
-    databasePath: sharedDatabasePath(projectData),
-    backupPath,
-    open: () => {
-      const database = openSharedDatabase(projectData)
-      const backup = () => backupSharedDatabase(database, backupPath)
-      const projects = createProjectStore(database, () => void backup().catch(console.error))
-      const ticketLinks = createSQLiteSessionTicketLinkStore(database, () =>
-        backup().catch(console.error),
-      )
-      return { projects, ticketLinks, close: () => database.close() }
-    },
-  })
-}
 
 let SETUP_DOCUMENT_SOURCE: 'proof' | 'development' | 'production' = 'production'
 if (DEVELOPMENT_INSTANCE) SETUP_DOCUMENT_SOURCE = 'development'
@@ -104,7 +84,7 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { projects, ticketLinks, close } = openDurableStores(projectData)
+  const { projects, ticketLinks, close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -176,5 +156,6 @@ startDesktopApplication({
   ready,
   willQuit: () => {
     if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
+    if (acceptanceUserData) void rm(acceptanceUserData, { recursive: true, force: true })
   },
 })

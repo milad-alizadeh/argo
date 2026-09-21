@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import {
   openSharedDatabase,
   rebuildSharedDatabaseIndexes,
@@ -11,7 +12,7 @@ async function temporaryUserData(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), 'argo-shared-database-startup-'))
 }
 
-const migrationsFolder = path.resolve(import.meta.dirname, '../../../../drizzle')
+const migrationsFolder = databaseMigrationsFolder()
 
 test('starts a clean database with every ordered migration', async () => {
   const userData = await temporaryUserData()
@@ -29,6 +30,9 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'project_setup_actor' },
         { name: 'project_setup_effect' },
         { name: 'project_setup_recovery' },
+        { name: 'workspace' },
+        { name: 'project_workspace_selection' },
+        { name: 'managed_workspace_recovery' },
         { name: 'session_ticket_link' },
       ]),
     )
@@ -42,6 +46,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921153755_session_search' },
       { name: '20260921160623_sharp_silver_samurai' },
       { name: '20260921164243_aberrant_thundra' },
+      { name: '20260921173714_demonic_meteorite' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
@@ -87,12 +92,32 @@ test('rebuilds disposable full-text search without deleting durable rows', async
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
       .run('project-1', '/tmp/project', '/tmp/project/.git')
     database
+      .prepare(
+        'INSERT INTO workspace (id, project_id, kind, display_name, path, base_ref) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        'workspace-1',
+        'project-1',
+        'managed',
+        'Argo work',
+        '/tmp/project/.argo/worktrees/argo-work',
+        'origin/main',
+      )
+    database
+      .prepare(
+        'INSERT INTO managed_workspace_recovery (workspace_id, checkout_removed_at) VALUES (?, ?)',
+      )
+      .run('workspace-1', '2026-09-21T17:37:14.000Z')
+    database
       .prepare('INSERT INTO session_search (harness, session_id, content) VALUES (?, ?, ?)')
       .run('codex', 'session-1', 'A disposable search record')
 
     rebuildSharedDatabaseIndexes(database, migrationsFolder)
 
     expect(database.prepare('SELECT id FROM project').all()).toEqual([{ id: 'project-1' }])
+    expect(database.prepare('SELECT workspace_id FROM managed_workspace_recovery').all()).toEqual([
+      { workspace_id: 'workspace-1' },
+    ])
     expect(database.prepare('SELECT content FROM session_search').all()).toEqual([])
     database.close()
   } finally {

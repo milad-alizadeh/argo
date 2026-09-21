@@ -6,6 +6,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 import { createProjectStore } from './sqlite-store'
 
@@ -14,7 +15,7 @@ test('promotes the approved worktree and its checkpoint in one store transition'
   context.after(() => rm(directory, { recursive: true, force: true }))
   const database = new Database(path.join(directory, 'argo.sqlite'))
   migrate(drizzle({ client: database }), {
-    migrationsFolder: path.resolve(import.meta.dirname, '../../../../drizzle'),
+    migrationsFolder: databaseMigrationsFolder(),
   })
   const store = createProjectStore(database)
   const worktreePath = '/tmp/project/.argo/worktrees/setup-project-1'

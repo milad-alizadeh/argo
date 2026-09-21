@@ -1,6 +1,8 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 
 type DatabaseSync = import('node:sqlite').DatabaseSync
 
@@ -13,17 +15,14 @@ function sqliteRuntime() {
 }
 
 function migrateDatabase(database: DatabaseSync, migrationsFolder: string): void {
-  const { drizzle } = nodeRequire(
-    'drizzle-orm/node-sqlite',
-  ) as typeof import('drizzle-orm/node-sqlite')
   const { migrate } = nodeRequire(
     'drizzle-orm/node-sqlite/migrator',
   ) as typeof import('drizzle-orm/node-sqlite/migrator')
-  migrate(drizzle({ client: database }), { migrationsFolder })
+  migrate(createDurableDatabase(database), { migrationsFolder })
 }
 
 function packagedMigrationsFolder(): string {
-  return path.resolve(import.meta.dirname, '..', '..', 'drizzle')
+  return databaseMigrationsFolder()
 }
 
 export function sharedDatabasePath(userData: string): string {

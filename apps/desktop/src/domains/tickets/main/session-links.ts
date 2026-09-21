@@ -3,8 +3,12 @@
 // owned state, never committed. A Session links to at most one Ticket, so the document is keyed
 // by sessionId; content (title, state) is a cached echo, never authoritative (CONTEXT.md L1 ·
 // Ticket), read fresh from the provider whenever a caller needs more than the cached fields.
+
+import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { sessionTicketLink } from '@/platform/main/storage/database-schema'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import {
   createWriteQueue,
   readDocument,
@@ -37,35 +41,23 @@ export type SessionTicketLinkStore = {
   close: () => void
 }
 
-type SQLiteStatement = {
-  all: (...values: string[]) => unknown[]
-  get: (...values: string[]) => unknown
-  run: (...values: string[]) => unknown
-}
-
-type SQLiteDatabase = {
-  exec: (source: string) => void
-  prepare: (source: string) => SQLiteStatement
-  close: () => void
-}
-
 const storedLinkSchema = z.strictObject({
-  project_id: identifierSchema,
-  ticket_key: ticketKey,
+  projectId: identifierSchema,
+  ticketKey: ticketKey,
   title: z.string(),
   state: z.enum(['open', 'closed']),
-  created_at: z.iso.datetime(),
+  createdAt: z.iso.datetime(),
 })
 
 function linkedTicket(record: unknown): LinkedTicket | null {
   if (record === null || record === undefined) return null
   const parsed = storedLinkSchema.parse(record)
   return {
-    projectId: parsed.project_id,
-    key: parsed.ticket_key,
+    projectId: parsed.projectId,
+    key: parsed.ticketKey,
     title: parsed.title,
     state: parsed.state,
-    createdAt: parsed.created_at,
+    createdAt: parsed.createdAt,
   }
 }
 
@@ -120,35 +112,55 @@ export function createSessionTicketLinkStore(path: string): SessionTicketLinkSto
   }
 }
 
-export function createSQLiteSessionTicketLinkStore(
-  database: SQLiteDatabase,
+export function createSessionTicketLinkStoreFromDatabase(
+  database: DurableDatabase,
   afterWrite: () => Promise<void> = async () => {},
 ): SessionTicketLinkStore {
-  const linkFor = database.prepare(
-    'SELECT project_id, ticket_key, title, state, created_at FROM session_ticket_link WHERE session_id = ?',
-  )
-  const linkedSessions = database.prepare(
-    'SELECT session_id FROM session_ticket_link WHERE project_id = ? AND ticket_key = ? ORDER BY created_at DESC',
-  )
-  const connect = database.prepare(
-    'INSERT INTO session_ticket_link (session_id, project_id, ticket_key, title, state, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET project_id = excluded.project_id, ticket_key = excluded.ticket_key, title = excluded.title, state = excluded.state, created_at = excluded.created_at',
-  )
-  const disconnect = database.prepare('DELETE FROM session_ticket_link WHERE session_id = ?')
-
   return {
-    linkFor: async (sessionId) => linkedTicket(linkFor.get(sessionId)),
+    linkFor: async (sessionId) =>
+      linkedTicket(
+        database
+          .select({
+            projectId: sessionTicketLink.projectId,
+            ticketKey: sessionTicketLink.ticketKey,
+            title: sessionTicketLink.title,
+            state: sessionTicketLink.state,
+            createdAt: sessionTicketLink.createdAt,
+          })
+          .from(sessionTicketLink)
+          .where(eq(sessionTicketLink.sessionId, sessionId))
+          .get(),
+      ),
     linkedSessions: async (projectId, key) =>
-      linkedSessions
-        .all(projectId, key)
-        .map((row) => z.strictObject({ session_id: identifierSchema }).parse(row).session_id),
+      database
+        .select({ sessionId: sessionTicketLink.sessionId })
+        .from(sessionTicketLink)
+        .where(
+          and(eq(sessionTicketLink.projectId, projectId), eq(sessionTicketLink.ticketKey, key)),
+        )
+        .orderBy(desc(sessionTicketLink.createdAt))
+        .all()
+        .map((row) => row.sessionId),
     connect: async (sessionId, ticket, createdAt) => {
-      connect.run(sessionId, ticket.projectId, ticket.key, ticket.title, ticket.state, createdAt)
+      const link = {
+        sessionId,
+        projectId: ticket.projectId,
+        ticketKey: ticket.key,
+        title: ticket.title,
+        state: ticket.state,
+        createdAt,
+      }
+      database
+        .insert(sessionTicketLink)
+        .values(link)
+        .onConflictDoUpdate({ target: sessionTicketLink.sessionId, set: link })
+        .run()
       await afterWrite()
     },
     disconnect: async (sessionId) => {
-      disconnect.run(sessionId)
+      database.delete(sessionTicketLink).where(eq(sessionTicketLink.sessionId, sessionId)).run()
       await afterWrite()
     },
-    close: () => database.close(),
+    close: () => database.$client.close(),
   }
 }

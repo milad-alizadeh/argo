@@ -143,5 +143,5 @@ async function temporarySetup(context: TestContext) {
 }
 
 function migrateDatabase(database: Database): void {
-  migrateTestDatabase(database, projectMigrationsFolder(import.meta.dirname))
+  migrateTestDatabase(database, projectMigrationsFolder())
 }
