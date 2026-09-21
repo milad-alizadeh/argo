@@ -439,6 +439,12 @@ export const StatusTransitions: Story = {
         unread: true,
         title: { text: 'Read the unread Session', source: 'first-prompt' },
       },
+      {
+        ...session,
+        id: 'starting-session',
+        status: 'starting',
+        title: { text: 'New Session', source: 'first-prompt' },
+      },
     ])
     return () => {
       sessionsHost?.restore()
@@ -449,6 +455,10 @@ export const StatusTransitions: Story = {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
     const unread = canvas.getByRole('button', { name: /Read the unread Session/ })
+    const starting = canvas
+      .getAllByRole('button')
+      .find((button) => button.dataset.sessionId === 'starting-session')
+    if (starting === undefined) throw new Error('The starting Session row is absent.')
     await expect(waiting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
       'data-variant',
       'attention',
@@ -456,6 +466,14 @@ export const StatusTransitions: Story = {
     await expect(unread.querySelector('[data-slot="session-status"]')).toHaveAttribute(
       'data-variant',
       'unread',
+    )
+    await expect(starting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      'data-variant',
+      'idle',
+    )
+    await expect(starting.querySelector('[data-slot="harness-logo"]')).toHaveAttribute(
+      'data-active',
+      'false',
     )
     sessionsHost?.repoll([
       { ...session, id: 'waiting-for-permission', status: 'idle' },

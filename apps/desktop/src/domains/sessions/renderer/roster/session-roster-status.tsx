@@ -6,14 +6,13 @@ import { Badge } from '@/platform/renderer/components/ui/badge'
 
 export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
 
-// A Session running now is the Roster's active state, which outranks the unread marker from its
-// last settled Turn (#2514). The dot's variant is one render fact so its CSS can transition
-// between the semantic states without a second competing mark (#2526).
+// A working Session outranks its unread result; `starting` keeps its idle mark until a Turn works.
 export function statusVariantOf(session: Pick<Session, 'status' | 'unread'>): SessionStatusVariant {
   switch (session.status) {
     case 'running':
-    case 'starting':
       return 'active'
+    case 'starting':
+      return 'idle'
     case 'asking':
     case 'permission':
       return 'attention'
