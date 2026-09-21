@@ -1,5 +1,9 @@
 # Persistence: files only; the derived layer is the only durable state
 
+> **Superseded in part by ADR-0043 and ADR-0047 · 2026-09-21:** one SQLite database owns Argo's
+> durable per-machine state and disposable indexes. Vendor interfaces replace transcript discovery,
+> resume-chain construction, file-derived liveness, and transcript-built Roster and Feed data.
+
 **Context.** ADR-0005 (since deleted with the Electron runtime — ADR-0023) originally specified a `better-sqlite3` mirror for the "durable subset (session history, outcomes)." That reimported argo-v2's shape (v2 used a Drizzle SQL DB) and was challenged: a database for what is essentially "remember what Argo derived" is over-intrusive, and the stock CLIs already persist the authoritative session content as files.
 
 Facts on the ground: `claude` writes one JSONL transcript per session under `~/.claude/projects/<project>/`; `codex` writes one JSONL per session under `~/.codex/sessions/<yyyy>/<mm>/<dd>/rollout-*.jsonl` (plus `archived_sessions/`), each opening with a `session_meta` line carrying a stable session UUID and `cwd`. Both CLIs already own the transcript-on-disk, keyed by a stable id.

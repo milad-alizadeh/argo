@@ -2,6 +2,11 @@
 
 Status: accepted (#2381, #2393) · 2026-09-21
 
+> **Superseded in part by ADR-0047 · 2026-09-21:** one Attempt uses the same Harness and Session
+> for read-only planning and sandboxed application. Routine worktree effects do not need approval.
+> Final diff acceptance authorizes commit, push, and draft pull-request creation. Remote
+> default-branch validation decides completion.
+
 Project setup uses one XState v5 actor for each registered Project. The actor runs in the Electron
 main process, selects every onboarding page, owns every durable transition, and survives renderer
 reloads and application restarts. React renders validated snapshots and sends validated commands.

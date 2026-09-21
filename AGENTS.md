@@ -242,6 +242,9 @@ constraint got here; a bare `#412` on the constraint line is enough.
 
 - **Assert what happened, never that a function was called.** A refactor that preserves
   behaviour leaves the suite green.
+- **Model XState paths.** Test a bounded state machine with model-based paths generated through
+  `xstate/graph`. Assert observable outcomes along those paths, and add focused tests for
+  behaviour that path generation cannot express.
 - **Mock only what you don't control and can't afford live**: a paid API, a clock, a network
   CI can't reach. Everything you own runs for real.
 - **Name the claim in the domain's words** (`rejects an expired token`), one behaviour per

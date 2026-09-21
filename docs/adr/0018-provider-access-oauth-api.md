@@ -94,6 +94,13 @@ Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-0
 >
 > This is the **code host** only. The Ticket poll is the same shape and has no measurement yet.
 
+> **Ticket observation is pushed when possible and always reconciled** (ADR-0047) · 2026-09-21 ·
+> GitHub's webhook-forwarder socket can also invalidate Ticket reads. It remains an optional fast
+> path because GitHub documents it for testing and development, not as a production desktop
+> service. A conditional provider API read is still the correctness floor. Linear has HTTPS
+> webhooks but no public desktop WebSocket, so it remains polled until Argo has a secure cloud
+> relay. A push event never writes Ticket truth directly.
+
 > **GitHub's grant is an OAuth App + device flow, scope `repo`** — the first of the two options
 > the Decision below left to verify, settled in #367 and shipped by #256. It is the grant that
 > feeds both ports from one consent, and its non-expiring user token is why no refresh path

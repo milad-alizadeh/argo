@@ -1,197 +1,83 @@
 ## L2 · Session
 
-- **Session** — the observation unit: one **logical resume-chain**, keyed by a stable chain id
-  (one-or-more transcript files stitched by `leafUuid`, or — where a relocation left no shared
-  record — by the origin `session_id` they all name, #735). The only stored classification is
-  **`managed | external`** — no kinds (ADR-0013), and no third posture. `managed` = Argo holds a
-  live channel to it right now (PTY for Claude, app-server thread for Codex), companion plugin
-  loaded → drivable + carries CONVENTION-tier facts. `external` = discovered from transcripts,
-  read-only, no live channel. **All sessions are observed** (transcript-tailing is the floor);
-  managed is *external + a live channel + CONVENTION channel* layered on top. v1 ranks external
-  lower (read-only awareness), ships managed-first.
+- **Session** — one vendor conversation, keyed by **Harness + native Session ID** (ADR-0047). A
+  Claude Session and a Codex Session never merge, even if their titles or Project match. A fork is
+  a separate Session with its own native ID.
 
-  **A live channel is not durable across an Argo restart; a Session is** (ADR-0026, ADR-0040).
-  The PTY/app-server channel dies with the owning process and cannot be re-adopted, so a `managed`
-  Session whose owner is gone reads **`external`** — the same posture as one Argo never drove, and
-  read-only *now* only because there is no live channel. It is not read-only forever: a Session is
-  a resume-chain, and `claude --resume` (or a fresh Codex thread) continues one in a new process,
-  so the channel is **re-opened rather than re-adopted**. The next Turn sent to it resumes it and
-  it is `managed` again; CONVENTION comes back with the plugin the resume loads. Selecting it only
-  opens its Feed and composer.
+  A Session has one current posture: **`managed | watched`**. `managed` means Argo owns its live
+  channel and can drive it through the Harness adapter. `watched` means Argo owns no live channel;
+  the Session is readable but not drivable. A live channel is not durable across an Argo restart,
+  so every surviving Session starts watched and can become managed through native resume.
 
-  **Origin never gates a resume** (ADR-0040): whether Argo started a Session plays no part in
-  whether it can be resumed. What decides is whether another process runs it live right now.
-  **Locked** is that reading on an `external` row. The Roster marks the row locked and hides its
-  composer. Three readings lock a Session:
-  - Another live Argo window holds its channel. A per-machine, never-committed ledger records the
-    Session id each running window holds, graded **`resumable | held-here | held-elsewhere`**.
-    `held-elsewhere` is also the one case Send refuses at drive time.
-  - A live `claude` process names the Session in its `~/.claude/sessions/<pid>.json` file. The
-    process locks it at its prompt as much as in a Turn.
-  - A Codex rollout's newest Turn opened (`task_started`) and did not end (`task_complete` or
-    `turn_aborted`), and the rollout was written in the last 30 minutes. The row also reads
-    `running`. Past 30 minutes of silence, the open Turn is one a client that quit or crashed
-    left behind.
+  Vendor history is the source of Feed truth for both postures. Managed vendor events add immediate
+  updates. For watched Sessions, a filesystem watcher can signal that history changed, but the
+  adapter reads the change through the vendor interface. A transcript or rollout file is never an
+  Argo domain object or input.
 
-  A `managed` row is never locked, because this Argo holds it. An `external` Session that no
-  process runs stays resumable. The ledger is not a roster and never promotes a Session to a
-  stored third posture: the roster is still rebuilt from the transcripts every launch (ADR-0004,
-  ADR-0008).
+  Origin does not gate resume (ADR-0040). A SQLite lease stops two Argo windows from managing the
+  same `(Harness, native Session ID)`. The lease does not prove that an external client is absent,
+  so the adapter checks vendor liveness before resume. A watched Session that cannot be resumed
+  stays readable and reports the vendor reason.
 
-  A Session **is the root Agent** (`parentId: null`). Key attributes: **`harness`**
-  (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of
-  every L1-triangle derivation and of external liveness matching).
+  A Session **is the root Agent** (`parentId: null`). Key attributes are **`harness`**
+  (`claude | codex | …`), native ID, Project, and **`cwd`**. Managed facts are DIRECT when Argo
+  observes them through its channel. Watched facts are vendor-sourced.
 
-- **retired id** — an id a Session WAS published under and is not any more. The chain id above is
-  stable for a Session, but the id a ROW carries can change: a resume file read before its origin
-  stands alone until the sweep folds it in, a spawn stands under its claim until its CLI writes a
-  record (#361), and a moved transcript keeps its UUID while its path changes (#1703). Every
-  Session carries the ids it has retired, so a surface holding one follows it to the row that took
-  it rather than reading the Session as ended (#1481). A retired id is never re-used and never
-  names a second Session.
-
-- **Transcript file** — the *physical* per-file CLI record (owned by the CLI). One Session
-  stitches one or more. Never itself called a "Session."
-
-  A Transcript file with no Message records is not a Session and produces no Roster row. It still
-  counts as a file the discovery pass found and read, and joins a Session on the next pass once the
-  CLI writes its first Message.
-
-  **A relocation opens one** (#735). `EnterWorktree` closes the file and opens a fresh one under
-  the worktree's own project directory, sharing no `uuid`, `requestId`, `messageId` or `promptId`
-  with what came before. The only shared key is the snake_case `session_id` every message-bearing
-  record carries, which names the chain's **origin** rather than its predecessor — so it groups a
-  chain, and `leafUuid` still owns the immediate link where there is one. The relocated half is the
-  live one, so the merged Session's `cwd` and `branch` are the worktree's.
-
-  **Or it MOVES one** (#770), which is the shape seen in practice. The file keeps its uuid and is
-  moved into the worktree's own project directory, so one Session is one uuid under two paths and
-  the path it left is never written to again. A Session is KEYED by that path — by the roster and
-  by the ownership ledger both — so ownership follows the file: the claim that named the transcript
-  re-keys to the new path. A claim that stayed behind renders a Session Argo is steering right now
-  as one it never spawned, which is #942.
-
-- **CLI title** — a name for the Session that the agent CLI itself holds, and that every surface
-  the CLI draws already shows. DERIVED: Argo reads it off the transcript, or for Codex off the
-  Codex app's own state (ADR-0042), and never owns it. Two kinds, and the reader's outranks the
-  summariser's whichever order they arrive in (#1623):
-  - **summarised** — the CLI's own summariser wrote it, off the conversation. The `ai-title`
-    record, and the thread name Codex Desktop keeps.
-  - **custom** — a person typed it at the CLI's prompt. The `custom-title` record `/rename` writes,
-    and what Argo's own mirror leaves behind when it types there (#1494).
+- **CLI title** — a name for the Session that the Harness itself holds, and that every surface
+  the Harness draws already shows. DERIVED: Argo reads it through the vendor interface and never
+  owns it. Two kinds, and the reader's outranks the summariser's whichever order they arrive in
+  (#1623):
+  - **summarised** — the Harness's own summariser wrote it from the conversation.
+  - **custom** — a person entered it through the Harness or Argo's native rename operation.
 
   The first prompt is an Argo-derived name: the first thing the Session was asked, without the
   text the harness injects around it. A name that a reader enters in Argo travels to the CLI.
   It replaces a derived name because the reader chose it.
 
-  Claude records a custom title after `/rename`. Codex 0.147.0 accepts `thread/name/set` and sends
-  `thread/name/updated`. Both CLIs therefore provide a native custom title. Codex keeps that name
-  in the same place as its own, so after a restart Argo reads it as `summarised` (ADR-0042).
+  Claude and Codex provide native rename operations through their adapters. A rename becomes
+  visible only after the vendor accepts it.
 
   **Connecting a Ticket can rename the Session** (#2134), the same way a reader's own typed name
-  does: Argo sends the Ticket's title through the existing rename path, and the CLI's own
-  `custom-title`/`thread/name/updated` record is what Argo reads back, so the result is
-  indistinguishable from a person having typed it. The honesty tier decides whether Argo asks
+  does: Argo sends the Ticket's title through the native rename path and reads the accepted title
+  back, so the result is indistinguishable from a person having typed it. The honesty tier decides
+  whether Argo asks
   first: a `first-prompt` or `summarised` title cost the reader nothing to make, so it is replaced
   without asking; a `custom` title is a reader's own word and is only replaced with their
   confirmation. A rename the CLI refuses leaves the link in place — the link and the rename are
   two separate outcomes, and the link is never undone by a refused or skipped rename.
 
-- **Session status** — a DERIVED rollup on the Session, with one DIRECT value beside it:
-  - **starting** — Argo started the process and it has not written to the PTY yet. **DIRECT and
-    managed-only**, and the only value read off no record at all: the CLI writes none until its
-    first prompt. It ends on the child's FIRST BYTES — witnessed on a descriptor Argo owns — and
-    never on a clock or on "nothing written yet", which would stand over a booted agent for the
-    rest of the window's life (#587). First byte is the honest FLOOR: a CLI that prints a banner
-    before it is ready ends the claim early, which under-reports the boot rather than over-claiming
-    it, and anything stricter would mean recognising a prompt in a TUI's own bytes — a guess in an
-    observation's clothes.
-  - **running** — a Turn is in progress. **DERIVED**, except for the window between a Turn ARGO
-    ITSELF submitted to a managed Session and the record answering it, which is **DIRECT**: Argo
-    wrote the words to a PTY it owns, so nothing has to corroborate that a Turn opened (#1048).
-    Tier-gated by posture the way `asking` already is, and for the same reason — the channel exists
-    on one posture only. It is also adapter-gated in practice: only the `claude` adapter types at a
-    PTY, so a managed `codex` Session reports over its own drive port instead.
+- **Session status** — the adapter's validated rollup of vendor lifecycle facts:
+  - **starting** — Argo accepted a start or resume command and the managed channel is opening.
+  - **running** — the vendor reports an active Turn.
+  - **permission** — the managed Session waits for a permission decision.
+  - **asking** — the Session waits for a structured answer.
+  - **idle** — the vendor reports no active Turn.
+  - **stopped** — the vendor ended the Turn with a stop reason such as a limit or refusal.
+  - **ended** — the managed channel closed normally or after cancellation.
+  - **unknown** — the vendor interface does not establish a more specific state.
 
-    **What corroborates a Turn is posture-split** (#1261). For a `managed` Session it is the PTY
-    Argo holds: that posture IS the claim that the process Argo started has not reported its exit,
-    and the exit is the one thing about it Argo witnesses first-hand. The process table is asked
-    about no managed row, and could not answer for one honestly — it joins on a working directory,
-    which two agents in one worktree share and neither owns, and it is corroborated by a record
-    write that a long tool call leaves untouched past the recency window. `external` has no such
-    process to ask about, so it stays on what the machine can be observed to say.
+  `starting` and `permission` require a managed channel. Watched status is only as specific as the
+  vendor history and liveness interface allows. Argo never infers liveness from file age, process
+  working directory, or an unfinished transcript record. An unsupported vendor value becomes
+  `unknown`, not the nearest familiar value.
 
-    That claim ends where Argo can WITNESS it ending, never on a clock: **the record growing at
-    all** — the CLI has spoken, so what the Session is doing is the record's to say from then on —
-    the delivery watch reporting a Turn the CLI never heard (#682), or the process behind the PTY
-    going. It never comes back, and that is deliberate: holding it across the whole Turn would mean
-    deciding WHICH open Turn is the one Argo submitted, and the only rule available would read a
-    Turn typed at the dock terminal as one of Argo's own. So the claim is the honest FLOOR, exactly
-    as `starting`'s first byte is — it under-reports the Turn rather than standing on it, and the
-    record plus liveness carry the rest. An **external** Session reaches none of it: the submission
-    is filed against a claim, and a Session Argo holds no claim on is one it cannot type at.
-  - **permission** — blocked on an agent `request_permission` prompt.
-  - **asking** — blocked on a structured `AskUserQuestion`.
-  - **idle** — a Turn that ENDED `end_turn`, or one that ended with no live signal since;
-    **includes an agent's free-form question** (indistinguishable from idle in the record — never
-    fabricated as `asking`). An **open** Turn nothing corroborates is `unknown` and never this
-    (#1261): `idle` is the word a finished Session spends, so spending it on a Turn the record says
-    was started and never finished hides a wrong liveness rather than showing it.
-  - **stopped** — Turn ended on `max_tokens · max_turn_requests · refusal`.
-  - **ended** — session terminated (`cancelled` or process exit).
-
-  Honesty-gated: `permission` is DIRECT, **managed-only**. `asking` is **CONVENTION for managed,
-  DERIVED for external** — but only when "pending" is **confirmable** from the record (a
-  resolved question reads as `idle`). `stopped` needs a stop-reason an external transcript may
-  not carry — where the record **does** carry one it is read DERIVED and rendered; where it
-  carries none, or one outside the vocabulary, the status is **`unknown`**, never the nearest
-  guess. **External floors at `running · asking? · idle · unknown`**; managed `permission` collapses
-  to `idle` when observed externally, and `ended` needs an exit Argo witnessed, which no external
-  posture has.
-
-  `starting` is unreachable for every other posture, and for a `managed` Session it is unreachable
-  once anything at all has spoken: a Permission, a question, a drive report or a companion report
-  is itself proof the CLI is up, and each of them outranks it.
-
-  An **eighth value, `unknown`**, is the degrade-down rule made reachable. Two readings land on
-  it: a Session whose record carries no Turn boundary at all — nothing observed is a different
-  claim from observed to be quiet — and a Session whose record carries an OPEN Turn that no
-  liveness corroborates, where the boundary before it belongs to the previous Turn and says
-  nothing about this one (#1261).
-
-- **Entry** — how the process behind a Session was STARTED: **`interactive`**, a person at a
-  terminal, or **`headless`**, a program started it and nobody is at it (`claude -p` and everything
-  the SDK runs). **DERIVED**: Argo reads the CLI's own `entrypoint` field out of a transcript it
-  does not own, and the word is matched rather than interpreted — `sdk-cli` is `headless`, and that
-  is the whole list.
-
-  **Degrade-down is the whole of the rule.** An absent word, an unread file and a word this list
-  does not carry all read `interactive`, so a value nobody has seen before can never make a Session
-  the reader is driving look like output nobody can drive. The error the rule prevents is one-way:
-  reading a headless run as interactive costs a Roster row, and reading an interactive one as
-  headless folds a Session somebody is steering out of sight.
-
-  A chain is `headless` only where EVERY link is. A resume opened at a terminal continues the work
-  a `-p` run started, and what is happening to it NOW is the fact the Roster draws.
+- **Entry** — optional vendor metadata describing how the Session started: **`interactive`** or
+  **`headless`**. Absence represents unknown; Argo does not infer it
+  from a transcript or hide the Session because of it.
 
 - **Session Mode** — the Session's *standing autonomy stance*; defined once in the Autonomy
   cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT for managed, tier-gated
-  for external.
+  for watched.
 
-- **Model** and **Effort** — the CLI's OWN two knobs, which Argo states and sets and never
-  interprets: which model the Session runs on, and how hard it is told to think. **DERIVED** on the
-  way in — `model` off an assistant record, `effort` off a top-level record field — and rendered
-  VERBATIM either way: a model id Argo's readable table has never heard of is a model, not an
-  error, and an effort word off the scale is a level a newer CLI grew.
+- **Model** and **Effort** — the Harness's own two knobs, which Argo states and sets and never
+  interprets: which model the Session runs on, and how hard it is told to think. The adapter reads
+  accepted values through the vendor interface and renders them VERBATIM. A model ID Argo's
+  readable table has never heard of is a model, not an error. The same rule applies to a new
+  effort value.
 
-  A **launch value** is the one exception, and it is DIRECT (#1175): Argo spelled both on the argv
-  of the process it started, so a managed Session states what it was started at from the moment it
-  exists rather than `unknown`. It is the OPENING reading and never more: the first record's own
-  reading supersedes it verbatim, including a value Argo did not ask for, which is what a `/model`
-  typed at the prompt looks like from outside. An external Session has no argv to read, and a CLI
-  that takes neither flag is given neither — a default that could not be applied would be a value
-  stated about a Session nothing put it on. Unread and unlaunched is still `unknown`, never a
-  plausible value.
+  A managed Session can show the launch value Argo sent until the vendor reports the accepted
+  value. A watched Session shows only a value the vendor interface supplies. Missing remains
+  `unknown`; Argo never fills it with a plausible default.
 
   The last chosen harness is remembered app-wide. Each harness remembers its own Model and Effort
   pair, using that harness's available choices when a new composer opens. A new composer is an
