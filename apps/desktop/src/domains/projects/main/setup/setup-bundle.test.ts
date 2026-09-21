@@ -5,6 +5,7 @@ import {
   ARGO_SETUP_DOCUMENT_URL,
   loadSetupDocument,
   SetupDocumentLoadError,
+  setupDocumentRequest,
   setupDocumentURL,
 } from './setup-bundle'
 
@@ -42,6 +43,26 @@ test('reports when GitHub cannot return the Setup document', async () => {
     }),
     (error) => error instanceof SetupDocumentLoadError && error.reason === 'network-unavailable',
   )
+})
+
+test('uses the published document when an unpublished development branch is unavailable', async () => {
+  const requested: string[] = []
+  const request = setupDocumentRequest('development', async (url) => {
+    requested.push(url)
+    return new Response(JSON.stringify(document), { status: requested.length === 1 ? 404 : 200 })
+  })
+
+  const loaded = await loadSetupDocument({
+    documentURL:
+      'https://raw.githubusercontent.com/milad-alizadeh/argo/argo/%232381/project-setup.json',
+    request,
+  })
+
+  assert.equal(loaded.revision, document.revision)
+  assert.deepEqual(requested, [
+    'https://raw.githubusercontent.com/milad-alizadeh/argo/argo/%232381/project-setup.json',
+    ARGO_SETUP_DOCUMENT_URL,
+  ])
 })
 
 test('rejects an invalid Setup document from GitHub', async () => {

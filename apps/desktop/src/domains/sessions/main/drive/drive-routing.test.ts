@@ -14,6 +14,7 @@ import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-a
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const setup = { model: null, effort: null, mode: null } as const
+const noOp = async () => {}
 
 function mockClaudeDriver() {
   const sent: Array<{ sessionId: string; prompt: string }> = []
@@ -52,14 +53,14 @@ function mockCodexDriver() {
       send: async ({ sessionId, text }: { sessionId: string; text: string }) => {
         sent.push({ sessionId, prompt: text })
       },
-      interrupt: async () => {},
-      compact: async () => {},
+      interrupt: noOp,
+      compact: noOp,
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
       pendingQuestion: () => null,
       decideQuestion: () => true,
-      close: () => {},
+      close: noOp,
     },
   }
 }

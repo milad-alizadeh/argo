@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { ProjectSetupRecord } from '@/domains/projects/main/setup/project-setup-registry'
 import { projectSetupStore } from '@/domains/projects/main/setup/project-setup-sqlite-store'
 import { identifierSchema } from '@/shared/validation'
+import { createSetupWorktreePromotion } from './project-store-promotion'
 import {
   migrateSetupCheckpoints,
   readSetupCheckpoint,
@@ -41,6 +42,7 @@ export type ProjectStore = {
   insertProject: (project: ProjectRegistration) => void
   selectProject: (projectId: string) => void
   updateProjectPath: (projectId: string, projectPath: string) => void
+  promoteSetupWorktree: (projectId: string, worktreePath: string) => void
   readSetupCheckpoint: (projectId: string) => SetupCheckpoint | null
   writeSetupCheckpoint: (checkpoint: SetupCheckpoint) => void
   readProjectSetup: (projectId: string) => ProjectSetupRecord | null
@@ -72,6 +74,18 @@ CREATE TABLE IF NOT EXISTS project_setup_actor (
   revision INTEGER NOT NULL CHECK (revision >= 0),
   persisted_snapshot TEXT NOT NULL,
   receipts TEXT NOT NULL,
+  saved_at TEXT NOT NULL
+) STRICT;
+CREATE TABLE IF NOT EXISTS project_setup_effect (
+  project_id TEXT PRIMARY KEY REFERENCES project(id),
+  intent_json TEXT NOT NULL,
+  result_json TEXT NOT NULL,
+  saved_at TEXT NOT NULL
+) STRICT;
+CREATE TABLE IF NOT EXISTS project_setup_recovery (
+  project_id TEXT PRIMARY KEY REFERENCES project(id),
+  raw_record TEXT NOT NULL,
+  reason TEXT NOT NULL,
   saved_at TEXT NOT NULL
 ) STRICT;
 `
@@ -121,6 +135,7 @@ export function createProjectStore(
     'INSERT INTO project_setup_checkpoint (project_id, worktree_path, phase, configuration_source, document_revision) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET worktree_path = excluded.worktree_path, phase = excluded.phase, configuration_source = excluded.configuration_source, document_revision = excluded.document_revision',
   )
   const updatePath = database.prepare('UPDATE project SET path = ? WHERE id = ?')
+  const promoteSetupWorktree = createSetupWorktreePromotion({ afterWrite, database, updatePath })
   return {
     read: () => readRegistry(database),
 
@@ -155,6 +170,8 @@ export function createProjectStore(
       updatePath.run(projectPath, projectId)
       afterWrite()
     },
+
+    promoteSetupWorktree,
 
     readSetupCheckpoint: (projectId) => readSetupCheckpoint(database, projectId),
 

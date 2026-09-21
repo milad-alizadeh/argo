@@ -92,6 +92,14 @@ test('restores a revisioned ProjectSetup actor from SQLite', async (context) => 
     revision: 1,
     screen: 'deferred',
     manualSource: '',
+    attempt: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
+    activeEffect: null,
+    recoveryMessage: null,
   })
   reopenedStore.close()
 })

@@ -38,6 +38,15 @@ export function projectStore(projectId: string): ProjectStore {
         ),
       }
     },
+    promoteSetupWorktree: (projectId, worktreePath) => {
+      registry = {
+        ...registry,
+        projects: registry.projects.map((project) =>
+          project.id === projectId ? { ...project, path: worktreePath } : project,
+        ),
+      }
+      if (checkpoint?.projectId === projectId) checkpoint = { ...checkpoint, phase: 'ready' }
+    },
     readSetupCheckpoint: (id) => (checkpoint?.projectId === id ? checkpoint : null),
     writeSetupCheckpoint: (next) => {
       checkpoint = next

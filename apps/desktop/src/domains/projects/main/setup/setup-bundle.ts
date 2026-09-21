@@ -45,6 +45,16 @@ type SetupDocumentRequest = {
   request: (url: string) => Promise<Response | null>
 }
 
+type SetupDocumentFetcher = (url: string) => Promise<Response | null>
+
+export function setupDocumentRequest(source: SetupDocumentSource, fetch: SetupDocumentFetcher) {
+  return async (url: string): Promise<Response | null> => {
+    const response = await fetch(url)
+    if (response?.status !== 404 || source !== 'development') return response
+    return fetch(setupDocumentURL('production'))
+  }
+}
+
 export class SetupDocumentLoadError extends Error {
   readonly reason: 'network-unavailable' | 'document-invalid'
 

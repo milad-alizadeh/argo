@@ -15,6 +15,27 @@ function listed(selectedId: string) {
   }
 }
 
+function setupSnapshot(projectId: string) {
+  return {
+    version: 1 as const,
+    type: 'project.setup.snapshot' as const,
+    requestId: 'storybook-setup',
+    projectId,
+    revision: 0,
+    screen: 'choosing-method' as const,
+    manualSource: '',
+    attempt: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
+    activeEffect: null,
+    recoveryMessage: null,
+    pendingApproval: null,
+  }
+}
+
 export const storybookProjectBridge: ProjectClient = {
   listProjects: () => Promise.resolve(listed('storybook-project')),
   openProject: () =>
@@ -24,26 +45,8 @@ export const storybookProjectBridge: ProjectClient = {
       requestId: 'storybook-project',
       project: { id: 'storybook-project', name: 'argo' },
     }),
-  projectSetupSnapshot: ({ projectId }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.setup.snapshot' as const,
-      requestId: 'storybook-setup',
-      projectId,
-      revision: 0,
-      screen: 'choosing-method' as const,
-      manualSource: '',
-    }),
-  sendProjectSetupCommand: ({ projectId }) =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.setup.snapshot' as const,
-      requestId: 'storybook-setup',
-      projectId,
-      revision: 0,
-      screen: 'choosing-method' as const,
-      manualSource: '',
-    }),
+  projectSetupSnapshot: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
+  sendProjectSetupCommand: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
   subscribeProjectSetup: () => () => {},
   registerProject: () => Promise.resolve(listed('storybook-worktree')),
   relocateProject: () => Promise.resolve(listed('storybook-worktree')),

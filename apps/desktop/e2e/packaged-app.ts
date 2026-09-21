@@ -2,7 +2,7 @@
 // Shared by every packaged proof: the copy, the flip and the assertion that the flip reached the
 // copy and nothing else are the same work whatever the proof then reads.
 import assert from 'node:assert/strict'
-import { cp, realpath } from 'node:fs/promises'
+import { cp, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
@@ -16,7 +16,9 @@ function packagedApp(arch: string) {
 
 export async function packagedTestCopy(root: string, arch = 'arm64') {
   const application = path.join(root, 'Argo.app')
-  await cp(packagedApp(arch), application, { recursive: true, verbatimSymlinks: true })
+  const source = packagedApp(arch)
+  await waitForPackagedApp(source)
+  await cp(source, application, { recursive: true, verbatimSymlinks: true })
   const copiedRoot = await realpath(application)
   assert.equal(
     (await realpath(pathToFuseFile(application))).startsWith(`${copiedRoot}${path.sep}`),
@@ -35,6 +37,18 @@ export async function packagedTestCopy(root: string, arch = 'arm64') {
     ['EnableNodeCliInspectArguments'],
   )
   return application
+}
+
+async function waitForPackagedApp(application: string): Promise<void> {
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    try {
+      if ((await stat(application)).isDirectory()) return
+    } catch {
+      // Forge finishes the app bundle after its CLI process returns on some local macOS runs.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  await stat(application)
 }
 
 // The shipped artifact itself must be untouched by the copy: the proof read a copy, and what

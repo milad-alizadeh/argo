@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { acceptedPlanFixture, planFixture } from '@/domains/projects/contract/setup-plan.fixture'
 import {
   createProjectSetupRegistry,
   type ProjectSetupRecord,
@@ -16,6 +17,18 @@ function memoryStore() {
   }
 }
 
+const emptyDetails = {
+  attempt: null,
+  questions: [],
+  plan: null,
+  acceptedPlan: null,
+  progress: [],
+  finalDiff: null,
+  activeEffect: null,
+  recoveryMessage: null,
+  pendingApproval: null,
+}
+
 test('returns one revisioned actor snapshot to stale and repeated commands', () => {
   const registry = createProjectSetupRegistry(memoryStore())
 
@@ -30,6 +43,7 @@ test('returns one revisioned actor snapshot to stale and repeated commands', () 
     revision: 1,
     screen: 'manual',
     manualSource: '',
+    ...emptyDetails,
   })
 
   const stale = registry.command({
@@ -65,6 +79,7 @@ test('restores a deferred ProjectSetup from its durable actor snapshot', () => {
     revision: 1,
     screen: 'deferred',
     manualSource: '',
+    ...emptyDetails,
   })
 })
 
@@ -111,6 +126,27 @@ test('stores empty manual targets for later completion', () => {
       revision: 2,
       screen: 'ready',
       manualSource: '{"version":1,"targets":{}}',
+      ...emptyDetails,
     },
   )
+})
+
+test('refuses an accepted plan that drifted from the reviewed plan', () => {
+  const registry = createProjectSetupRegistry(memoryStore())
+  const plan = planFixture()
+  registry.transition('project-1', { type: 'CHOOSE_AGENT', harness: 'claude' })
+  registry.transition('project-1', { type: 'PREFLIGHT_PASSED' })
+  registry.transition('project-1', { type: 'PLAN_VALIDATED', plan })
+  const before = registry.snapshot('project-1')
+  const result = registry.commandWithStatus({
+    commandId: 'accept-drifted-plan',
+    event: {
+      type: 'ACCEPT_PLAN',
+      acceptedPlan: { ...acceptedPlanFixture(plan), sourceRevision: 'stale-plan' },
+    },
+    expectedRevision: before.revision,
+    projectId: 'project-1',
+  })
+  assert.equal(result.accepted, false)
+  assert.deepEqual(result.snapshot, before)
 })

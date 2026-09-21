@@ -7,10 +7,19 @@ import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-se
 
 export type OnboardingAgentDriver = {
   start(request: { cwd: string; prompt: string; setup: ClaudeTurnSetup }): string
+  send(sessionId: string, turn: { prompt: string; setup: ClaudeTurnSetup }): Promise<void>
   liveMessages(sessionId: string): Array<{ text: string }>
-  interrupt(sessionId: string): void
-  pendingPermission(sessionId: string): { id: string } | null
-  decidePermission(sessionId: string, permissionId: string, decision: 'allowSimilar'): boolean
+  interrupt(sessionId: string): void | Promise<void>
+  hasSession?(sessionId: string): boolean
+  waitForStop?(sessionId: string): Promise<void>
+  pendingPermission(
+    sessionId: string,
+  ): { id: string; description?: string; input?: Record<string, unknown>; toolName?: string } | null
+  decidePermission(
+    sessionId: string,
+    permissionId: string,
+    decision: 'allowSimilar' | 'deny',
+  ): boolean
 }
 
 export type RunOnboardingAgentRequest = {
@@ -24,6 +33,9 @@ export type RunOnboardingAgentRequest = {
   timeoutMs?: number
   pollIntervalMs?: number
   onProgress?: (text: string) => void
+  onStarted?: (sessionId: string) => void
+  onPermission?: (permission: { id: string; description: string }) => void
+  sessionId?: string
 }
 
 export type RunOnboardingAgentOutcome =
@@ -45,42 +57,90 @@ export async function runOnboardingAgent(
   driver: OnboardingAgentDriver,
   request: RunOnboardingAgentRequest,
 ): Promise<RunOnboardingAgentOutcome> {
-  const sessionId = driver.start({
-    cwd: request.cwd,
-    prompt: request.prompt,
-    setup: {
-      model: request.model ?? 'opus',
-      effort: request.effort ?? 'high',
-      mode: request.mode,
-    },
-  })
+  const setup = {
+    model: request.model ?? 'opus',
+    effort: request.effort ?? 'high',
+    mode: request.mode,
+  } as const
+  const sessionId =
+    request.sessionId ?? driver.start({ cwd: request.cwd, prompt: request.prompt, setup })
+  if (request.sessionId === undefined) request.onStarted?.(sessionId)
+  else await driver.send(sessionId, { prompt: request.prompt, setup })
 
+  const observed = await observeOnboardingTurn(driver, request, sessionId)
+  if (observed.payload !== null)
+    return { outcome: 'completed', sessionId, payload: observed.payload }
+
+  try {
+    await driver.interrupt(sessionId)
+  } catch {
+    // The Session may already have exited on its own; nothing left to interrupt.
+  }
+  return { outcome: 'timed-out', sessionId, lastText: observed.lastText }
+}
+
+async function observeOnboardingTurn(
+  driver: OnboardingAgentDriver,
+  request: RunOnboardingAgentRequest,
+  sessionId: string,
+): Promise<{ lastText: string; payload: string | null }> {
   const deadline = Date.now() + (request.timeoutMs ?? DEFAULT_TIMEOUT_MS)
   const pollIntervalMs = request.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS
   let lastText = ''
-
+  let pendingPermissionId: string | null = null
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
-    // No human watches this Session, so it must self-answer its own tool permission prompts: the
-    // turn runs inside a disposable setup worktree the caller already prepared for exactly this.
-    const pending = driver.pendingPermission(sessionId)
-    if (pending) driver.decidePermission(sessionId, pending.id, 'allowSimilar')
-    const text = driver
-      .liveMessages(sessionId)
-      .map((message) => message.text)
-      .join('\n\n')
+    pendingPermissionId = reportPendingPermission({
+      driver,
+      request,
+      sessionId,
+      previousPermissionId: pendingPermissionId,
+    })
+    const text = liveText(driver, sessionId)
     if (text !== lastText) {
       lastText = text
       request.onProgress?.(text)
     }
     const payload = extractMarkedPayload(text, request.marker)
-    if (payload !== null) return { outcome: 'completed', sessionId, payload }
+    if (payload !== null) return { lastText, payload }
   }
+  return { lastText, payload: null }
+}
 
-  try {
-    driver.interrupt(sessionId)
-  } catch {
-    // The Session may already have exited on its own; nothing left to interrupt.
-  }
-  return { outcome: 'timed-out', sessionId, lastText }
+function reportPendingPermission({
+  driver,
+  request,
+  sessionId,
+  previousPermissionId,
+}: {
+  driver: OnboardingAgentDriver
+  request: RunOnboardingAgentRequest
+  sessionId: string
+  previousPermissionId: string | null
+}): string | null {
+  const pending = driver.pendingPermission(sessionId)
+  if (!pending) return null
+  if (pending.id !== previousPermissionId)
+    request.onPermission?.({ id: pending.id, description: permissionDescription(pending) })
+  return pending.id
+}
+
+function permissionDescription({
+  description,
+  input,
+  toolName,
+}: {
+  description?: string
+  input?: Record<string, unknown>
+  toolName?: string
+}): string {
+  if (description !== undefined) return description
+  return toolName === undefined ? 'Agent tool action' : `${toolName} ${JSON.stringify(input ?? {})}`
+}
+
+function liveText(driver: OnboardingAgentDriver, sessionId: string): string {
+  return driver
+    .liveMessages(sessionId)
+    .map((message) => message.text)
+    .join('\n\n')
 }

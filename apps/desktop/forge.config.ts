@@ -38,6 +38,7 @@ const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/node_modules($|\/)/]
 // cannot see, and 72 KB is not worth a rule that guesses.
 const DROPPED_FROM_PACKAGE = [
   /^\/node_modules\/\.cache($|\/)/,
+  /\.d\.(?:m)?ts$/,
   /^\/node_modules\/node-pty\/prebuilds\/(?!darwin-)/,
   /^\/node_modules\/node-pty\/(src|deps|third_party|scripts|bin|build)($|\/)/,
 ]

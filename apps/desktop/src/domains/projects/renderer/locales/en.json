@@ -381,13 +381,19 @@
     }
   },
   "setup": {
+    "harnessUnavailable": {
+      "claude": "Claude guided setup is not available in this Argo version.",
+      "codex": "Codex guided setup is not available in this Argo version."
+    },
     "label": "Set up {{name}}",
     "configurationLabel": "Project configuration",
     "testing": "Testing config…",
     "actor": {
       "choosing-method": {
         "title": "Choose setup for {{name}}",
-        "description": "Choose manual setup now or finish setup later."
+        "description": "Choose agent-led setup, manual setup, or finish setup later.",
+        "agentAction": "Plan with Claude",
+        "codexAction": "Plan with Codex"
       },
       "manual": {
         "title": "Manual setup",
@@ -403,7 +409,87 @@
         "title": "Setup ready",
         "description": "Manual Project details are saved.",
         "action": "Repair or upgrade"
-      }
+      },
+      "preflight": {
+        "title": "Check the selected agent",
+        "description": "Argo is checking whether the selected agent is available."
+      },
+      "planning-unavailable": {
+        "title": "Agent setup is unavailable",
+        "description": "Try again, use manual setup, or finish later.",
+        "retry": "Check again"
+      },
+      "planning": {
+        "title": "Plan Project setup",
+        "description": "The agent is inspecting the Project without changing files."
+      },
+      "questions": {
+        "title": "Answer setup questions",
+        "description": "Answer the focused questions to continue the same plan.",
+        "continue": "Continue planning"
+      },
+      "reviewing-plan": {
+        "title": "Review the setup plan",
+        "description": "Review the complete plan before Argo applies it.",
+        "planLabel": "Proposed Targets",
+        "feedbackLabel": "Plan change feedback",
+        "changeAction": "Request plan change",
+        "acceptAction": "Accept plan"
+      },
+      "invalid-plan": {
+        "title": "The setup plan needs revision",
+        "description": "Request a plan change and keep this Attempt as evidence.",
+        "feedbackLabel": "Plan revision feedback",
+        "changeAction": "Request revision"
+      },
+      "applying": {
+        "title": "Apply the accepted setup plan",
+        "description": "The agent is applying only the reviewed plan in the setup worktree."
+      },
+      "reviewing-diff": {
+        "title": "Review the observed changes",
+        "description": "Review the final diff before Project setup can finish.",
+        "diffLabel": "Observed Project file changes",
+        "approveAction": "Approve final diff",
+        "rejectAction": "Reject final diff"
+      },
+      "cancelling": {
+        "title": "Stopping Project setup",
+        "description": "Argo is waiting for the active agent Session to stop."
+      },
+      "cancel-failed": {
+        "title": "Project setup may still be running",
+        "description": "Argo could not confirm that the active agent Session stopped.",
+        "label": "Project setup stop failed",
+        "action": "Try stopping setup again"
+      },
+      "awaiting-approval": {
+        "title": "Approve agent action",
+        "description": "Review the proposed agent action before Argo continues the same Session.",
+        "label": "Proposed agent action",
+        "approve": "Approve action",
+        "reject": "Reject action"
+      },
+      "finalizing": {
+        "title": "Finish Project setup",
+        "description": "Argo is promoting the approved setup worktree."
+      },
+      "review-required": {
+        "title": "Review Project changes",
+        "description": "Project source changed after the plan was accepted.",
+        "label": "Project source review",
+        "action": "Return to plan review"
+      },
+      "interrupted": {
+        "title": "Project setup was interrupted",
+        "description": "Reconcile the same Attempt before resuming, or start a new Attempt.",
+        "label": "Interrupted Project setup",
+        "resume": "Resume setup",
+        "restart": "Start a new Attempt"
+      },
+      "progressLabel": "Setup progress",
+      "cancelAction": "Cancel setup",
+      "busy": "Working…"
     },
     "document": {
       "apply": "Apply setup",

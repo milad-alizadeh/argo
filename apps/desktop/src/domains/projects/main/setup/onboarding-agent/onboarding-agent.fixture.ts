@@ -4,6 +4,7 @@ export function driverEmitting(...frames: string[]): OnboardingAgentDriver {
   let index = 0
   return {
     start: () => 'session-1',
+    send: async () => {},
     liveMessages: () => {
       const text = frames[Math.min(index, frames.length - 1)] ?? ''
       index += 1

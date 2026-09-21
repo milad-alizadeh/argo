@@ -66,12 +66,17 @@ export function validateAcceptedSetupPlan(
 
 function validationIssues(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan): string[] {
   const issues = revisionIssues(sourcePlan, acceptedPlan)
-  const sourceIds = collectionIds(sourcePlan)
-  for (const [name, items, allowed] of boundedCollections(acceptedPlan, sourceIds)) {
-    for (const item of items) {
-      if (!allowed.has(item.id)) {
+  for (const [name, acceptedItems, sourceItems] of boundedCollections(sourcePlan, acceptedPlan)) {
+    const sourceById = new Map(sourceItems.map((item) => [item.id, item]))
+    for (const acceptedItem of acceptedItems) {
+      const sourceItem = sourceById.get(acceptedItem.id)
+      if (!sourceItem) {
         issues.push(
-          `Accepted ${name} entry "${item.id}" is not present in the reviewed source plan.`,
+          `Accepted ${name} entry "${acceptedItem.id}" is not present in the reviewed source plan.`,
+        )
+      } else if (!sameContent(sourceItem, acceptedItem)) {
+        issues.push(
+          `Accepted ${name} entry "${acceptedItem.id}" does not match the reviewed source plan.`,
         )
       }
     }
@@ -89,42 +94,27 @@ function revisionIssues(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan):
   if (acceptedPlan.projectRoot !== sourcePlan.source.projectRoot) {
     issues.push('Accepted plan project root does not match the source plan.')
   }
-  for (const [path, hash] of Object.entries(acceptedPlan.fingerprints)) {
-    if (sourcePlan.source.fingerprints[path] !== hash)
-      issues.push(`Fingerprint for "${path}" does not match the source plan.`)
+  if (!sameContent(sourcePlan.source.fingerprints, acceptedPlan.fingerprints)) {
+    issues.push('Fingerprint set does not retain the complete source fingerprint set.')
   }
   return issues
 }
 
-type PlanCollection =
-  | 'targets'
-  | 'capabilities'
-  | 'toolRecommendations'
-  | 'repositoryActions'
-  | 'targetActions'
-  | 'verification'
-
-function collectionIds(plan: SetupPlan): Record<PlanCollection, Set<string>> {
-  return {
-    targets: new Set(plan.targets.map((item) => item.id)),
-    capabilities: new Set(plan.capabilities.map((item) => item.id)),
-    toolRecommendations: new Set(plan.toolRecommendations.map((item) => item.id)),
-    repositoryActions: new Set(plan.repositoryActions.map((item) => item.id)),
-    targetActions: new Set(plan.targetActions.map((item) => item.id)),
-    verification: new Set(plan.verification.map((item) => item.id)),
-  }
+function boundedCollections(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan) {
+  return [
+    ['targets', acceptedPlan.targets, sourcePlan.targets],
+    [
+      'capabilities',
+      acceptedPlan.capabilities,
+      sourcePlan.capabilities.map(({ disposition: _disposition, ...capability }) => capability),
+    ],
+    ['toolRecommendations', acceptedPlan.toolRecommendations, sourcePlan.toolRecommendations],
+    ['repositoryActions', acceptedPlan.repositoryActions, sourcePlan.repositoryActions],
+    ['targetActions', acceptedPlan.targetActions, sourcePlan.targetActions],
+    ['verification', acceptedPlan.verification, sourcePlan.verification],
+  ] as const
 }
 
-function boundedCollections(
-  acceptedPlan: AcceptedSetupPlan,
-  sourceIds: Record<PlanCollection, Set<string>>,
-) {
-  return [
-    ['targets', acceptedPlan.targets, sourceIds.targets],
-    ['capabilities', acceptedPlan.capabilities, sourceIds.capabilities],
-    ['toolRecommendations', acceptedPlan.toolRecommendations, sourceIds.toolRecommendations],
-    ['repositoryActions', acceptedPlan.repositoryActions, sourceIds.repositoryActions],
-    ['targetActions', acceptedPlan.targetActions, sourceIds.targetActions],
-    ['verification', acceptedPlan.verification, sourceIds.verification],
-  ] as const
+function sameContent(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
 }

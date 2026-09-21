@@ -36,7 +36,7 @@ ${resumeSection}
 
 ${STEP_PROTOCOL}
 
-When you are done, print the line "${PLAN_MARKER}" and then, in one fenced json block, the complete result. It is exactly one of these three shapes, field-for-field — never rename a field or invent your own:
+When you are done, print the line "${PLAN_MARKER}" and then, in one fenced json block, the complete result. It is exactly one of these two shapes, field-for-field — never rename a field or invent your own:
 
 1. { "status": "needs-user-input", "revision": "${request.planRevision}", "questions": [{ "id": "...", "prompt": "...", "context": "..." }] }
 
@@ -56,8 +56,6 @@ When you are done, print the line "${PLAN_MARKER}" and then, in one fenced json 
     "handoff": { "mutationBoundary": "setup worktree", "acceptanceState": "pending-review", "applicationOrder": ["<ids above, in the order they must apply>"] }
   }
 }
-
-3. { "status": "cannot-plan", "revision": "${request.planRevision}", "reason": "inaccessible-project|ambiguous-boundary|unsupported-workspace|skill-unavailable", "evidence": "...", "recoveryAction": "..." }
 
 A ready-for-review plan is complete only once every found target is retained, renamed, or removed, and every retained target and every recommended capability has a verification step naming its id. Every id (target, capability, application step, tool recommendation, action, verification step, risk) is a unique kebab-case string; every targetIds/targetId/prerequisiteIds value names an id that exists elsewhere in the plan, a step never lists itself as its own prerequisite, and prerequisites never cycle. Exactly one target has "isDefault": true when targets is nonempty. Fields shown above as "..." or [] are required and present even when empty; only the fields explicitly marked "omit" above may be left out.`
 }

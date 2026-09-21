@@ -103,11 +103,13 @@ function isOnboardingAgentDriver(driver: unknown): driver is OnboardingAgentDriv
     typeof driver === 'object' &&
     driver !== null &&
     'start' in driver &&
+    'send' in driver &&
     'liveMessages' in driver &&
     'interrupt' in driver &&
     'pendingPermission' in driver &&
     'decidePermission' in driver &&
     typeof driver.start === 'function' &&
+    typeof driver.send === 'function' &&
     typeof driver.liveMessages === 'function' &&
     typeof driver.interrupt === 'function' &&
     typeof driver.pendingPermission === 'function' &&

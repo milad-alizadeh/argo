@@ -42,7 +42,7 @@ function leafKeys(catalog: object, prefix = ''): string[] {
 // every segment is a hole names nothing in particular, or a `${a}.${b}` written for some other
 // purpose would answer for the whole catalog.
 function keyPatterns(source: string): RegExp[] {
-  const literals = source.match(/(['`])[\w.:${}[\]]+?\1/g) ?? []
+  const literals = source.match(/(['`])[\w.:${}[\]-]+?\1/g) ?? []
   return literals.flatMap((literal) => {
     const body = literal.slice(1, -1).replace(/\$\{[^}]*\}/g, HOLE)
     const segments = body.split('.')

@@ -29,6 +29,17 @@ test('returns the durable worktree when setup resumes', async (context) => {
   )
 })
 
+test('recovers a setup branch left behind before its worktree was created', async (context) => {
+  const { project, claudeConfigPath } = await setupWorktreeFixture(context)
+  await run('git', ['-C', project, 'branch', 'argo/setup-project-1', 'origin/main'])
+
+  const worktree = await prepareSetupWorktree({ id: 'project-1', path: project }, claudeConfigPath)
+
+  assert.equal(worktree, path.join(project, '.argo', 'worktrees', 'setup-project-1'))
+  const branch = await run('git', ['-C', worktree, 'branch', '--show-current'])
+  assert.equal(branch.stdout.trim(), 'argo/setup-project-1')
+})
+
 test('trusts the setup worktree so claude skips its first-launch dialog', async (context) => {
   const { project, claudeConfigPath } = await setupWorktreeFixture(context)
   const worktree = await prepareSetupWorktree({ id: 'project-1', path: project }, claudeConfigPath)

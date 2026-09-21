@@ -17,19 +17,39 @@ export async function prepareSetupWorktree(
   if (await isWorktree(worktree)) return worktree
   await ignoreSetupWorktrees(project.path)
   await run('git', ['-C', project.path, 'fetch', 'origin'])
-  const branch = await remoteDefaultBranch(project.path)
   await mkdir(path.dirname(worktree), { recursive: true })
-  await run('git', [
-    '-C',
-    project.path,
-    'worktree',
-    'add',
-    '-b',
-    `argo/setup-${project.id}`,
-    worktree,
-    `origin/${branch}`,
-  ])
+  const branch = `argo/setup-${project.id}`
+  if (await localBranchExists(project.path, branch)) {
+    await run('git', ['-C', project.path, 'worktree', 'add', worktree, branch])
+  } else {
+    const defaultBranch = await remoteDefaultBranch(project.path)
+    await run('git', [
+      '-C',
+      project.path,
+      'worktree',
+      'add',
+      '-b',
+      branch,
+      worktree,
+      `origin/${defaultBranch}`,
+    ])
+  }
   return worktree
+}
+
+export async function reconcileSetupWorktree(
+  project: { id: string; path: string },
+  worktreePath: string,
+): Promise<{ kind: 'current' } | { kind: 'drifted'; reason: string }> {
+  const expectedPath = path.join(project.path, ...SETUP_WORKTREE_DIRECTORY, `setup-${project.id}`)
+  if (path.resolve(worktreePath) !== path.resolve(expectedPath))
+    return {
+      kind: 'drifted',
+      reason: 'The recorded setup worktree no longer belongs to this Project.',
+    }
+  if (!(await isWorktree(worktreePath)))
+    return { kind: 'drifted', reason: 'The recorded setup worktree is unavailable.' }
+  return { kind: 'current' }
 }
 
 async function isWorktree(directory: string): Promise<boolean> {
@@ -47,6 +67,15 @@ async function exists(file: string): Promise<boolean> {
     () => true,
     () => false,
   )
+}
+
+async function localBranchExists(projectPath: string, branch: string): Promise<boolean> {
+  try {
+    await run('git', ['-C', projectPath, 'show-ref', '--verify', '--quiet', `refs/heads/${branch}`])
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function ignoreSetupWorktrees(projectPath: string): Promise<void> {

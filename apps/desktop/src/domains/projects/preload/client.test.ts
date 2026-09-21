@@ -105,6 +105,12 @@ test('sends revisioned setup commands through the Project contract', async () =>
       revision: 1,
       screen: 'manual',
       manualSource: '',
+      attempt: null,
+      questions: [],
+      plan: null,
+      acceptedPlan: null,
+      progress: [],
+      finalDiff: null,
     }
   })
   const reply = await client.sendProjectSetupCommand({
@@ -121,5 +127,11 @@ test('sends revisioned setup commands through the Project contract', async () =>
     revision: 1,
     screen: 'manual',
     manualSource: '',
+    attempt: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
   })
 })

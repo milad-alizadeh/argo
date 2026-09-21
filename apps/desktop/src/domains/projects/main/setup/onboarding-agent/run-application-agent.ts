@@ -2,9 +2,9 @@ import { z } from 'zod'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
 import type { SetupApplicationProgressEvent } from '@/domains/projects/contract/setup-progress'
 import { parseAgentOutput } from './parse-agent-output'
-import { forwardProgress } from './progress-forwarder'
 import { APPLY_MARKER, applicationAgentPrompt } from './prompts'
-import { type OnboardingAgentDriver, runOnboardingAgent } from './run-onboarding-agent'
+import { runMarkedAgent } from './run-marked-agent'
+import type { OnboardingAgentDriver } from './run-onboarding-agent'
 import { parseApplicationStepEvents } from './step-events'
 
 const applicationReportSchema = z.object({
@@ -32,25 +32,33 @@ export async function runApplicationAgent(
     setupWorktreePath: string
     acceptedPlan: AcceptedSetupPlan
     onStepEvent?: (event: SetupApplicationProgressEvent) => void
+    onStarted?: (sessionId: string) => void
+    onPermission?: (permission: { id: string; description: string }) => void
+    sessionId?: string
     pollIntervalMs?: number
     timeoutMs?: number
   },
 ): Promise<ApplicationRunOutcome> {
-  const outcome = await runOnboardingAgent(driver, {
-    cwd: request.setupWorktreePath,
-    prompt: applicationAgentPrompt({
-      projectRoot: request.projectRoot,
-      setupWorktreePath: request.setupWorktreePath,
-      acceptedPlanJson: JSON.stringify(request.acceptedPlan),
-    }),
-    mode: 'acceptEdits',
-    marker: APPLY_MARKER,
-    pollIntervalMs: request.pollIntervalMs,
-    timeoutMs: request.timeoutMs,
-    onProgress: forwardProgress(
-      (text) => parseApplicationStepEvents(text, request.acceptedPlan.sourceRevision),
-      request.onStepEvent,
-    ),
+  const outcome = await runMarkedAgent({
+    driver,
+    request: {
+      cwd: request.setupWorktreePath,
+      prompt: applicationAgentPrompt({
+        projectRoot: request.projectRoot,
+        setupWorktreePath: request.setupWorktreePath,
+        acceptedPlanJson: JSON.stringify(request.acceptedPlan),
+      }),
+      mode: 'acceptEdits',
+      marker: APPLY_MARKER,
+      pollIntervalMs: request.pollIntervalMs,
+      timeoutMs: request.timeoutMs,
+      onProgress: request.onStepEvent,
+      parseProgress: (text) =>
+        parseApplicationStepEvents(text, request.acceptedPlan.sourceRevision),
+      onStarted: request.onStarted,
+      onPermission: request.onPermission,
+      sessionId: request.sessionId,
+    },
   })
 
   if (outcome.outcome === 'timed-out') return { kind: 'timed-out' }
