@@ -40,11 +40,28 @@ async function settledRolloutRoot(context: { after: (cleanup: () => Promise<void
 function readerFor(
   root: string,
   listOpenFiles: () => Promise<string>,
-  roster?: () => SessionRosterRow[],
+  {
+    roster,
+    isLockedElsewhere = () => false,
+  }: {
+    roster?: () => SessionRosterRow[]
+    isLockedElsewhere?: (sessionId: string) => boolean
+  } = {},
 ) {
   return createSessionReader([
-    codexSessionSource(root, { roster, isLockedElsewhere: () => false, listOpenFiles }),
+    codexSessionSource(root, { roster, isLockedElsewhere, listOpenFiles }),
   ])
+}
+
+function managedThread() {
+  return managedRow(THREAD, {
+    harness: 'codex',
+    cwd: '/projects/argo',
+    status: 'idle',
+    setup: { model: null, effort: null, mode: null },
+    prompt: 'Run the Codex check',
+    startedAt: '2026-09-15T21:55:19.000Z',
+  })
 }
 
 test('reads the thread id off every rollout a Codex process holds open', () => {
@@ -84,21 +101,23 @@ test('leaves every thread resumable when the open file table cannot be read', as
 
 test('never locks a thread this Argo holds, whose own app-server is the process holding it', async (context) => {
   const { root, rollout } = await settledRolloutRoot(context)
-  const held = managedRow(THREAD, {
-    harness: 'codex',
-    cwd: '/projects/argo',
-    status: 'idle',
-    setup: { model: null, effort: null, mode: null },
-    prompt: 'Run the Codex check',
-    startedAt: '2026-09-15T21:55:19.000Z',
-  })
+  const held = managedThread()
+  assert.deepEqual(
+    await rows(readerFor(root, async () => listing(rollout), { roster: () => [held] })),
+    [{ id: THREAD, posture: 'managed', status: 'idle', locked: false }],
+  )
+})
+
+test('never re-locks a thread this Argo manages when the ownership ledger is stale', async (context) => {
+  const { root } = await settledRolloutRoot(context)
+  const held = managedThread()
+
   assert.deepEqual(
     await rows(
-      readerFor(
-        root,
-        async () => listing(rollout),
-        () => [held],
-      ),
+      readerFor(root, async () => listing(), {
+        roster: () => [held],
+        isLockedElsewhere: () => true,
+      }),
     ),
     [{ id: THREAD, posture: 'managed', status: 'idle', locked: false }],
   )
