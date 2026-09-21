@@ -33,6 +33,7 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'workspace' },
         { name: 'project_workspace_selection' },
         { name: 'managed_workspace_recovery' },
+        { name: 'managed_session_lease' },
         { name: 'session_ticket_link' },
       ]),
     )
@@ -47,6 +48,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921160623_sharp_silver_samurai' },
       { name: '20260921164243_aberrant_thundra' },
       { name: '20260921173714_demonic_meteorite' },
+      { name: '20260921194635_worried_gargoyle' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
