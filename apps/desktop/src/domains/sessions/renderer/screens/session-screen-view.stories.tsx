@@ -231,11 +231,13 @@ function ReviewInspector({
       activeEvidenceId={null}
       delegation={delegation}
       delegationFeed={delegation === null ? null : delegationFeedFor(delegation)}
+      delegationFeedError={null}
       evidence={null}
       sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
+      onRetryDelegationFeed={() => {}}
       shell={shell}
       shellOutput={shellOutput}
     />

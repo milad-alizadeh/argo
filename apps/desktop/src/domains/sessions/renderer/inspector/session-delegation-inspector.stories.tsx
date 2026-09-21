@@ -14,6 +14,14 @@ const DELEGATION = sessionSubagent({
   startedAt: '2026-09-02T08:00:00.000Z',
 })
 
+const COMPLETED_DELEGATION = sessionSubagent({
+  id: 'call-review',
+  label: 'Interface review',
+  state: 'completed',
+  startedAt: '2026-09-02T08:00:00.000Z',
+  endedAt: '2026-09-02T08:05:00.000Z',
+})
+
 const FEED = {
   version: 1,
   type: 'session.feed.read',
@@ -82,9 +90,12 @@ export const RunningSubagent: Story = {
     activeEvidenceId: null,
     delegation: DELEGATION,
     feed: FEED,
+    failure: null,
     now: NOW,
     onOpenEvidence: () => {},
     onOpenSession: () => {},
+    onRetryFeed: () => {},
+    sessionId: 'composer-review',
   },
   render: (args) => <InspectorStory args={args} tokens={4200} />,
   play: async ({ canvasElement }) => {
@@ -103,5 +114,41 @@ export const RunningSubagent: Story = {
     const inspector = canvas.getByLabelText('Subagent')
     const history = canvas.getByLabelText('Session history')
     expect(history.getBoundingClientRect().bottom).toBe(inspector.getBoundingClientRect().bottom)
+  },
+}
+
+export const LoadingSubagent: Story = {
+  args: {
+    activeEvidenceId: null,
+    delegation: DELEGATION,
+    feed: null,
+    failure: null,
+    onOpenEvidence: () => {},
+    onOpenSession: () => {},
+    onRetryFeed: () => {},
+    sessionId: 'composer-review',
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByLabelText('Loading this Session')).toBeVisible()
+  },
+}
+
+export const CompletedSubagent: Story = {
+  args: {
+    activeEvidenceId: null,
+    delegation: COMPLETED_DELEGATION,
+    feed: FEED,
+    failure: null,
+    onOpenEvidence: () => {},
+    onOpenSession: () => {},
+    onRetryFeed: () => {},
+    sessionId: 'composer-review',
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText('Interface review sent a reply to the main Session'),
+    ).toBeVisible()
   },
 }
