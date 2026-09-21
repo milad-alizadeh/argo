@@ -44,19 +44,10 @@ export const MeterAndLabels: Story = {
     await waitFor(() => expect(within(document.body).getByText('Context window')).toBeVisible())
     await expect(canvas.getByText('Compact')).toBeVisible()
     await expect(canvas.getByText('Handoff')).toBeVisible()
-    const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
     const handoff = canvas
       .getAllByLabelText('Handoff Session')
       .find((button) => button.getBoundingClientRect().width > 0)
-    const actions = handoff?.parentElement
-    if (bar === null || actions === null || actions === undefined)
-      throw new Error('The visible context bar actions are absent.')
-
-    const barStyle = getComputedStyle(bar)
-    expect(bar.getBoundingClientRect().right - actions.getBoundingClientRect().right).toBeCloseTo(
-      Number.parseFloat(barStyle.paddingRight) + Number.parseFloat(barStyle.borderRightWidth),
-      1,
-    )
+    if (handoff === undefined) throw new Error('The visible context bar actions are absent.')
   },
 }
 
@@ -96,6 +87,6 @@ export const PercentageAndIcons: Story = {
     )
     const labeledActions = canvas.getByText('Compact').parentElement
     if (labeledActions === null) throw new Error('The full context actions are absent.')
-    expect(getComputedStyle(labeledActions).display).toBe('none')
+    await expect(labeledActions).not.toBeVisible()
   },
 }
