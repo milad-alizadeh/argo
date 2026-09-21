@@ -8,6 +8,7 @@ import { useRosterFocus } from '@/domains/sessions/renderer/roster/use-roster-fo
 import { useRosterSelection } from '@/domains/sessions/renderer/roster/use-roster-selection'
 import { useSessionSearch } from '@/domains/sessions/renderer/roster/use-session-search'
 import type {
+  Session,
   SessionError,
   SessionId,
   SessionRoster,
@@ -16,6 +17,14 @@ import type {
 
 const NO_SESSIONS: SessionsListed['sessions'] = []
 const NO_TITLES: Record<string, string> = {}
+
+export function rosterTitledSearchResults(
+  searched: readonly Session[],
+  roster: readonly Session[],
+): Session[] {
+  const rosterById = new Map(roster.map((session) => [session.id, session]))
+  return searched.map((session) => rosterById.get(session.id) ?? session)
+}
 
 // A renamed title is shown locally, keyed by session id, until a roster read carries the same
 // title back through the transcript. Keying on the roster array's identity instead let a read
@@ -61,7 +70,10 @@ export function useSidebarRoster({
   const sessions = roster?.sessions ?? NO_SESSIONS
   const searching = search.trim() !== ''
   const searched = useSessionSearch(search, projectRoot, status)
-  const visible = searching ? searched.sessions : sessions
+  const visible = useMemo(
+    () => (searching ? rosterTitledSearchResults(searched.sessions, sessions) : sessions),
+    [searched.sessions, searching, sessions],
+  )
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)
