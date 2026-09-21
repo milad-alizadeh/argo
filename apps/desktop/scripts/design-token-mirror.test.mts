@@ -57,7 +57,7 @@ test('the mirror includes desktop tokens in declaration order', () => {
     '--color-traffic-light-close: #ff5f57;',
     '--color-traffic-light-minimize: #febc2e;',
     '--color-traffic-light-zoom: #28c840;',
-    '--text-body: 13px;',
+    '--text-body: 14px;',
     '--text-control: var(--text-body);',
   ]) {
     assert.equal(mirror.includes(declaration), true, declaration)
