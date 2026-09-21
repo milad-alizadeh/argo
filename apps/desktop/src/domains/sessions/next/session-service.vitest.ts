@@ -1,9 +1,11 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, test } from 'vitest'
 import { createSessionService } from '@/domains/sessions/next/main/session-service'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { openSharedDatabase } from '@/platform/main/storage/shared-database'
 
 const folders: string[] = []
 
@@ -14,11 +16,16 @@ afterEach(async () => {
 async function serviceHarness() {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-session-service-'))
   folders.push(folder)
-  const database = new DatabaseSync(path.join(folder, 'argo.sqlite'))
+  const client = openSharedDatabase(folder, databaseMigrationsFolder())
+  const database = createDurableDatabase(client)
+  let now = 100
   return {
-    close: () => database.close(),
+    close: () => client.close(),
+    setNow: (value: number) => {
+      now = value
+    },
     service: (windowId: string) =>
-      createSessionService({ database, windowId, now: () => 100, leaseDurationMs: 10 }),
+      createSessionService({ database, windowId, now: () => now, leaseDurationMs: 10 }),
   }
 }
 
@@ -56,6 +63,20 @@ test('releases a managed Session lease for another Argo window', async () => {
 
     first.acquire(session)
     first.release(session)
+
+    expect(harness.service('window-b').acquire(session)).toEqual({ posture: 'managed' })
+  } finally {
+    harness.close()
+  }
+})
+
+test('acquires an expired managed Session lease for another Argo window', async () => {
+  const harness = await serviceHarness()
+  try {
+    const session = { harness: 'codex' as const, nativeId: 'native-1' }
+
+    expect(harness.service('window-a').acquire(session)).toEqual({ posture: 'managed' })
+    harness.setNow(110)
 
     expect(harness.service('window-b').acquire(session)).toEqual({ posture: 'managed' })
   } finally {

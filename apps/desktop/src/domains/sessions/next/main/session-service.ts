@@ -1,10 +1,12 @@
-import type { DatabaseSync } from 'node:sqlite'
+import { and, eq, lte, or } from 'drizzle-orm'
 import { createActor, setup } from 'xstate'
 import {
   type SessionIdentity,
   type SessionPosture,
   sessionIdentitySchema,
 } from '@/domains/sessions/next/contract/session-contract'
+import { managedSessionLease } from '@/platform/main/storage/database-schema'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 
 type ManagedSessionLease = {
   acquire: (request: {
@@ -38,44 +40,51 @@ const leaseMachine = setup({
   },
 })
 
-function createManagedSessionLease(database: DatabaseSync): ManagedSessionLease {
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS managed_session_lease (
-      harness TEXT NOT NULL,
-      native_id TEXT NOT NULL,
-      window_id TEXT NOT NULL,
-      expires_at INTEGER NOT NULL,
-      PRIMARY KEY (harness, native_id)
-    ) STRICT;
-  `)
-  const acquire = database.prepare(`
-    INSERT INTO managed_session_lease (harness, native_id, window_id, expires_at)
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT (harness, native_id) DO UPDATE SET
-      window_id = excluded.window_id,
-      expires_at = excluded.expires_at
-    WHERE managed_session_lease.window_id = excluded.window_id
-      OR managed_session_lease.expires_at <= ?
-    RETURNING window_id
-  `)
-  const renew = database.prepare(`
-    UPDATE managed_session_lease
-    SET expires_at = ?
-    WHERE harness = ? AND native_id = ? AND window_id = ?
-    RETURNING window_id
-  `)
-  const release = database.prepare(`
-    DELETE FROM managed_session_lease
-    WHERE harness = ? AND native_id = ? AND window_id = ?
-  `)
-
+function createManagedSessionLease(database: DurableDatabase): ManagedSessionLease {
   return {
     acquire: ({ session, windowId, now, expiresAt }) =>
-      acquire.get(session.harness, session.nativeId, windowId, expiresAt, now) !== undefined,
+      database
+        .insert(managedSessionLease)
+        .values({
+          harness: session.harness,
+          nativeId: session.nativeId,
+          windowId,
+          expiresAt,
+        })
+        .onConflictDoUpdate({
+          target: [managedSessionLease.harness, managedSessionLease.nativeId],
+          set: { windowId, expiresAt },
+          setWhere: or(
+            eq(managedSessionLease.windowId, windowId),
+            lte(managedSessionLease.expiresAt, now),
+          ),
+        })
+        .returning({ windowId: managedSessionLease.windowId })
+        .get() !== undefined,
     renew: (session, windowId, expiresAt) =>
-      renew.get(expiresAt, session.harness, session.nativeId, windowId) !== undefined,
+      database
+        .update(managedSessionLease)
+        .set({ expiresAt })
+        .where(
+          and(
+            eq(managedSessionLease.harness, session.harness),
+            eq(managedSessionLease.nativeId, session.nativeId),
+            eq(managedSessionLease.windowId, windowId),
+          ),
+        )
+        .returning({ windowId: managedSessionLease.windowId })
+        .get() !== undefined,
     release: (session, windowId) => {
-      release.run(session.harness, session.nativeId, windowId)
+      database
+        .delete(managedSessionLease)
+        .where(
+          and(
+            eq(managedSessionLease.harness, session.harness),
+            eq(managedSessionLease.nativeId, session.nativeId),
+            eq(managedSessionLease.windowId, windowId),
+          ),
+        )
+        .run()
     },
   }
 }
@@ -87,7 +96,7 @@ export type SessionService = {
 }
 
 export function createSessionService(options: {
-  database: DatabaseSync
+  database: DurableDatabase
   windowId: string
   now: () => number
   leaseDurationMs: number
