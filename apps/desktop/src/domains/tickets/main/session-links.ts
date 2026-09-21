@@ -161,6 +161,9 @@ export function createSessionTicketLinkStoreFromDatabase(
       database.delete(sessionTicketLink).where(eq(sessionTicketLink.sessionId, sessionId)).run()
       await afterWrite()
     },
-    close: () => database.$client.close(),
+    // The shared database's lifecycle belongs to whoever opened it (`openDurableStores`), not to
+    // this store: closing `$client` here raced its other close call and threw "database is not
+    // open" during app quit (#2607).
+    close: () => {},
   }
 }

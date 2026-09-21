@@ -60,6 +60,12 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
+// A window that never shows still stands up a GPU/compositor process to paint it, and closing
+// that process is where Chromium's shutdown occasionally stalls tens of seconds past a CI
+// runner's launch timeout before the SIGKILL that ends #2607's packaged-app hang. Nothing here
+// paints a frame a person will see, so there is no compositor to hang on.
+if (ACCEPTANCE_ENABLED || PROOF_ENABLED) app.disableHardwareAcceleration()
+
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
