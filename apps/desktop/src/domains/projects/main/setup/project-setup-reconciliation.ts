@@ -27,3 +27,28 @@ export async function reconcileProjectSetupApplication({
   if (!checkpoint) return { kind: 'drifted', reason: 'application-drift' }
   return reconcileSetupWorktree(project, checkpoint.worktreePath)
 }
+
+export async function findProjectSetupApplicationDrift({
+  acceptedPlan,
+  driver,
+  projectId,
+  projectPath,
+  projects,
+  sessionId,
+}: Omit<Parameters<typeof reconcileProjectSetupApplication>[0], 'sessionId'> & {
+  projectPath: string
+  sessionId?: string
+}) {
+  if (sessionId) {
+    const reconciliation = await reconcileProjectSetupApplication({
+      acceptedPlan,
+      driver,
+      projectId,
+      projects,
+      sessionId,
+    })
+    if (reconciliation.kind === 'drifted') return reconciliation.reason
+  }
+  const source = await observeSourceFingerprints(projectPath, acceptedPlan.fingerprints)
+  return source.kind === 'drifted' ? source.reason : null
+}

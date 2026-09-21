@@ -1,8 +1,8 @@
-import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/project-setup-recovery'
 import type {
   ProjectSetupAnswer,
   ProjectSetupQuestion,
 } from '@/domains/projects/contract/project-setup-question'
+import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/project-setup-recovery'
 import type { AcceptedSetupPlan, SetupPlan } from '@/domains/projects/contract/setup-plan'
 import type { SetupStepStatus } from '@/domains/projects/contract/setup-progress'
 

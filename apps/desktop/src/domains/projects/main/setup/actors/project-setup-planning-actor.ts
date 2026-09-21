@@ -113,40 +113,35 @@ async function runPlanning({
         sendBack({ type: 'Progress received', progress }),
       ),
     })
-    sendPlanningResult(result, sendBack)
+    sendBack(planningResultEvent(result))
   } catch (error) {
     console.error('Project setup planning failed.', error)
     sendBack({ type: 'Effect interrupted', reason: 'interrupted' })
   }
 }
 
-function sendPlanningResult(
+function planningResultEvent(
   result: Awaited<ReturnType<typeof runPlanningAgent>>,
-  sendBack: (event: ProjectSetupEvent) => void,
-): void {
+): ProjectSetupEvent {
   if (result.kind !== 'result') {
-    sendBack({
+    return {
       type: 'Invalid output',
       issues:
         result.kind === 'invalid-output'
           ? result.issues
           : ['The planning result timed out before it was complete.'],
-    })
-    return
+    }
   }
   switch (result.result.status) {
     case 'needs-user-input':
-      sendBack({ type: 'Questions received', questions: result.result.questions })
-      break
+      return { type: 'Questions received', questions: result.result.questions }
     case 'ready-for-review':
-      sendBack({ type: 'Plan validated', plan: result.result.plan })
-      break
+      return { type: 'Plan validated', plan: result.result.plan }
     case 'cannot-plan':
-      sendBack({
+      return {
         type: 'Invalid output',
         issues: [result.result.reason, result.result.evidence, result.result.recoveryAction],
-      })
-      break
+      }
   }
 }
 

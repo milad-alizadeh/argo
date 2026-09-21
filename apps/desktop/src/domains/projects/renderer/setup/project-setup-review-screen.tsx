@@ -5,14 +5,11 @@ import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
-import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { projectSetupDiffFiles } from './project-setup-diff-files'
-import {
-  ProjectSetupPlanConfiguration,
-  ProjectSetupPlanReview,
-} from './project-setup-plan-review'
+import { ProjectSetupPlanConfiguration, ProjectSetupPlanReview } from './project-setup-plan-review'
 import { projectSetupRecoveryText } from './project-setup-recovery-text'
 
 type ReviewScreenProps = {
@@ -160,7 +157,7 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
         </h2>
         <FileDiffList
           accessibleName={t('setup.actor.reviewing-diff.diffLabel')}
-          className="max-h-[36rem]"
+          className="max-h-144"
           files={projectSetupDiffFiles(snapshot.finalDiff)}
           markViewedLabel={(path) => t('setup.actor.reviewing-diff.markViewed', { path })}
           viewedLabel={t('setup.actor.reviewing-diff.viewed')}
@@ -222,9 +219,7 @@ function selectableIds(snapshot: ProjectSetupSnapshot) {
     ...plan.capabilities
       .filter(({ disposition }) => disposition !== 'not-applicable')
       .map(({ id }) => id),
-    ...plan.toolRecommendations
-      .filter(({ scope }) => scope === 'repository')
-      .map(({ id }) => id),
+    ...plan.toolRecommendations.filter(({ scope }) => scope === 'repository').map(({ id }) => id),
     ...plan.repositoryActions.map(({ id }) => id),
     ...plan.targetActions.map(({ id }) => id),
   ])

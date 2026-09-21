@@ -53,11 +53,7 @@ function Questions({ command, snapshot }: InputScreenProps) {
     event.preventDefault()
     void command({ type: 'answer-questions', answers: completed })
   }
-  const items = snapshot.questions.map(({ id, suggestions }) => ({
-    name: id,
-    required: true,
-    choices: suggestions.map((value) => ({ value })),
-  }))
+  const items = questionItems(snapshot)
   return (
     <Questionnaire
       className="mt-7 rounded-xl border bg-card p-5"
@@ -115,14 +111,27 @@ function Questions({ command, snapshot }: InputScreenProps) {
           <QuestionnaireError>{t('setup.actor.questions.chooseAnswer')}</QuestionnaireError>
         </QuestionnaireItem>
       ))}
-      <QuestionnaireActions>
-        <QuestionnairePrevious>{t('setup.actor.questions.previous')}</QuestionnairePrevious>
-        <QuestionnaireNext>{t('setup.actor.questions.next')}</QuestionnaireNext>
-        <QuestionnaireSubmit>
-          {t('setup.actor.questions.continue')}
-        </QuestionnaireSubmit>
-      </QuestionnaireActions>
+      <QuestionActions />
     </Questionnaire>
+  )
+}
+
+function questionItems(snapshot: ProjectSetupSnapshot) {
+  return snapshot.questions.map(({ id, suggestions }) => ({
+    name: id,
+    required: true,
+    choices: suggestions.map((value) => ({ value })),
+  }))
+}
+
+function QuestionActions() {
+  const { t } = useTranslation('projects')
+  return (
+    <QuestionnaireActions>
+      <QuestionnairePrevious>{t('setup.actor.questions.previous')}</QuestionnairePrevious>
+      <QuestionnaireNext>{t('setup.actor.questions.next')}</QuestionnaireNext>
+      <QuestionnaireSubmit>{t('setup.actor.questions.continue')}</QuestionnaireSubmit>
+    </QuestionnaireActions>
   )
 }
 

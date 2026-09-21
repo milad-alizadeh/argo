@@ -4,12 +4,11 @@ import { fromCallback } from 'xstate'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
 import { runApplicationAgent } from '@/domains/projects/main/setup/onboarding-agent/application/run-application-agent'
 import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
-import { observeSourceFingerprints } from '@/domains/projects/main/setup/preparation/source-fingerprints'
 import type {
   ProjectSetupContext,
   ProjectSetupEvent,
 } from '@/domains/projects/main/setup/project-setup-machine-types'
-import { reconcileProjectSetupApplication } from '@/domains/projects/main/setup/project-setup-reconciliation'
+import { findProjectSetupApplicationDrift } from '@/domains/projects/main/setup/project-setup-reconciliation'
 import { startProjectSetupActorTask } from './project-setup-actor-task'
 import type { ProjectSetupServices } from './project-setup-actors'
 import {
@@ -91,18 +90,18 @@ async function applyProjectSetup(
   const project = services.projects.read().projects.find((candidate) => candidate.id === projectId)
   if (input.harness !== 'claude' || !project)
     return sendBack({ type: 'Invalid output', issues: ['The selected agent cannot apply setup.'] })
-  const reconciliation = await applicationReconciliation(services, projectId, input)
-  if (reconciliation?.kind === 'drifted')
+  const drift = await findProjectSetupApplicationDrift({
+    acceptedPlan: input.acceptedPlan,
+    driver: services.driver,
+    projectId,
+    projectPath: project.path,
+    projects: services.projects,
+    sessionId: input.sessionId,
+  })
+  if (drift)
     return sendBack({
       type: 'Application drift',
-      reason: reconciliation.reason,
-      finalDiff: await projectDiff(project.path),
-    })
-  const source = await observeSourceFingerprints(project.path, input.acceptedPlan.fingerprints)
-  if (source.kind === 'drifted')
-    return sendBack({
-      type: 'Application drift',
-      reason: source.reason,
+      reason: drift,
       finalDiff: await projectDiff(project.path),
     })
   const setupWorktreePath = await prepareSetupWorktree(project)
@@ -149,19 +148,4 @@ async function projectDiff(projectRoot: string) {
   } catch {
     return ''
   }
-}
-
-async function applicationReconciliation(
-  services: ProjectSetupServices,
-  projectId: string,
-  input: ProjectSetupApplicationInput,
-): Promise<{ kind: 'current' } | { kind: 'drifted'; reason: 'application-drift' } | null> {
-  if (!input.sessionId || !input.acceptedPlan) return null
-  return reconcileProjectSetupApplication({
-    acceptedPlan: input.acceptedPlan,
-    driver: services.driver,
-    projectId,
-    projects: services.projects,
-    sessionId: input.sessionId,
-  })
 }

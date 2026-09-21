@@ -3,8 +3,8 @@ import {
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
 } from '@/domains/projects/contract/project-setup-approval'
-import { projectSetupRecoveryCodeSchema } from '@/domains/projects/contract/project-setup-recovery'
 import { projectSetupQuestionSchema } from '@/domains/projects/contract/project-setup-question'
+import { projectSetupRecoveryCodeSchema } from '@/domains/projects/contract/project-setup-recovery'
 import { acceptedSetupPlanSchema, setupPlanSchema } from '@/domains/projects/contract/setup-plan'
 import { PROJECT_SETUP_MACHINE_VERSION } from '@/domains/projects/main/setup/project-setup-machine'
 import type { ProjectSetupRecord } from './project-setup-registry'

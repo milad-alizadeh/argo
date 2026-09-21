@@ -18,8 +18,8 @@ export function Recovery({
   review: boolean
   snapshot: ProjectSetupSnapshot
 }) {
-  if (review) return <ReviewRequired command={command} snapshot={snapshot} />
   const { t } = useTranslation('projects')
+  if (review) return <ReviewRequired command={command} snapshot={snapshot} />
   const action = {
     type: snapshot.attempt?.applicationSessionId
       ? ('resume-application' as const)
@@ -27,20 +27,13 @@ export function Recovery({
   }
   const recoveryText = projectSetupRecoveryText(t, snapshot.recoveryMessage)
   return (
-    <section
-      className="mt-6 grid gap-3"
-      aria-label={t('setup.actor.interrupted.label')}
-    >
+    <section className="mt-6 grid gap-3" aria-label={t('setup.actor.interrupted.label')}>
       {recoveryText ? <p className="type-body">{recoveryText}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <SetupCommandButton command={command} value={action}>
           {t('setup.actor.interrupted.resume')}
         </SetupCommandButton>
-        <SetupCommandButton
-          command={command}
-          value={{ type: 'restart-attempt' }}
-          variant="outline"
-        >
+        <SetupCommandButton command={command} value={{ type: 'restart-attempt' }} variant="outline">
           {t('setup.actor.interrupted.restart')}
         </SetupCommandButton>
       </div>
@@ -55,7 +48,7 @@ function ReviewRequired({ command, snapshot }: Omit<Parameters<typeof Recovery>[
       <p className="type-body">{projectSetupRecoveryText(t, snapshot.recoveryMessage)}</p>
       <FileDiffList
         accessibleName={t('setup.actor.review-required.diffLabel')}
-        className="max-h-[36rem]"
+        className="max-h-144"
         files={projectSetupDiffFiles(snapshot.finalDiff)}
         markViewedLabel={(path) => t('setup.actor.reviewing-diff.markViewed', { path })}
         viewedLabel={t('setup.actor.reviewing-diff.viewed')}

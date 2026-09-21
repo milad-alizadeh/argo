@@ -5,12 +5,9 @@ import {
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
 } from './project-setup-approval'
+import { projectSetupAnswerSchema, projectSetupQuestionSchema } from './project-setup-question'
 import { projectSetupRecoveryCodeSchema } from './project-setup-recovery'
 import { projectSetupScreenSchema } from './project-setup-screen'
-import {
-  projectSetupAnswerSchema,
-  projectSetupQuestionSchema,
-} from './project-setup-question'
 
 export {
   PROJECT_ERROR_CODES,
