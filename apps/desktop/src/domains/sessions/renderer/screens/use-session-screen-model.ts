@@ -10,6 +10,7 @@ import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-s
 import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-session-question'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import type { WorkSelection } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
 import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
 import { readableSessionId } from '@/domains/sessions/renderer/session-creation'
@@ -92,6 +93,7 @@ export function useSessionScreenModel() {
   const permission = useSessionPermission(readableSessionId(selectedSessionId))
   const question = useSessionQuestion(readableSessionId(selectedSessionId))
   const artifacts = useWorkArtifacts(session, selectedSessionId, work)
+  const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
   return {
     selectedSessionId,
     feed,
@@ -108,7 +110,7 @@ export function useSessionScreenModel() {
     question,
     work,
     pick,
-    workReveal,
+    workReveal: inspectorReveal,
     ...artifacts,
   }
 }
