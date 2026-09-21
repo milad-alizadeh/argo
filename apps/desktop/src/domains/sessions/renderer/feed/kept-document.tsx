@@ -24,8 +24,10 @@ export type KeptDocumentShared = {
   liveFacts: FeedLiveFacts
   activeEvidenceId: string | null
   failure: SessionError | null
+  initialScrollPosition: (sessionId: string) => number | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
+  onScrollPositionChange: (sessionId: string, position: number) => void
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
@@ -38,8 +40,10 @@ export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptD
   const actions: FeedDocumentContext = {
     active: shared.failure === null && id === shared.selectedSessionId,
     activeEvidenceId: shared.activeEvidenceId,
+    initialScrollPosition: shared.initialScrollPosition(id),
     onJumpToLatestChange: shared.onJumpToLatestChange,
     onOpenSession: shared.onOpenSession,
+    onScrollPositionChange: shared.onScrollPositionChange,
     onOpenEvidence: shared.onOpenEvidence,
     onAnswerQuestion: shared.onAnswerQuestion,
     answeringQuestionId: shared.answeringQuestionId,

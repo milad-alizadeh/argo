@@ -10,6 +10,7 @@ import {
   type ManagedSessionOptions,
   managedRoster,
 } from '@/harnesses/codex/drive/managed-session'
+import { decidePendingPermission } from '@/harnesses/codex/drive/permission-protocol'
 import { readSteeredTurn } from '@/harnesses/codex/drive/protocol'
 import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { readRename } from '@/harnesses/codex/drive/rename-protocol'
@@ -130,6 +131,9 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
     isLockedElsewhere: (sessionId) => driver.ownership?.standing(sessionId) === 'held-elsewhere',
     pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
+    pendingPermission: (sessionId) => held(sessionId)?.pendingPermission ?? null,
+    decidePermission: (sessionId, permissionId, decision) =>
+      decidePendingPermission(held(sessionId), permissionId, decision),
     decideQuestion(sessionId, questionId, answers) {
       const session = held(sessionId)
       if (session === undefined || session.pendingQuestion === null) return false

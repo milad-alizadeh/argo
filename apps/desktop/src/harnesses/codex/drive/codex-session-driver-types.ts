@@ -4,6 +4,7 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { CodexProcess } from '@/harnesses/codex/drive/codex-channel'
 import type { LiveMessage, LiveMessages } from '@/harnesses/codex/drive/live-messages'
+import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 
 export type { CodexProcess, LiveMessage, LiveMessages }
@@ -34,6 +35,12 @@ export type CodexSessionDriver = {
   liveMessages: (sessionId: string) => LiveMessage[]
   isLockedElsewhere: (sessionId: string) => boolean
   pendingQuestion: (sessionId: string) => PendingCodexQuestion | null
+  pendingPermission: (sessionId: string) => PendingCodexPermission | null
+  decidePermission: (
+    sessionId: string,
+    permissionId: string,
+    decision: 'allow' | 'deny' | 'allowForSession' | 'cancel',
+  ) => boolean
   decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
 }
@@ -50,5 +57,7 @@ export type CodexSessionDrive = Pick<
   | 'liveMessages'
   | 'pendingQuestion'
   | 'decideQuestion'
+  | 'pendingPermission'
+  | 'decidePermission'
   | 'close'
 >

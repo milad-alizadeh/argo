@@ -94,8 +94,14 @@ export function useSessions(
   useEffect(() => {
     if (pending?.stage !== 'reconciling') return
     if (rosterData?.sessions.some((session) => session.id === pending.id) !== true) return
+    if (feed.data === undefined || feed.data === null) return
     useSessionCreationStore.getState().confirmed(pending.id)
-  }, [pending, rosterData])
+  }, [feed.data, pending, rosterData])
+  // A new Codex Session is navigable as soon as its drive channel returns an id, before its
+  // first transcript record makes the Session discoverable to the Feed reader. Keep that
+  // expected gap loading; the failed Feed query already retries until the record arrives.
+  const isReconcilingSelection = pending?.stage === 'reconciling' && pending.id === selectedFeedId
+  const feedError = isReconcilingSelection || feed.failureCount <= 1 ? null : feed.error
 
   return {
     roster: mergedRoster,
@@ -105,7 +111,7 @@ export function useSessions(
     // actively driven Session races the same writer every other poll does (#2053, #2071).
     // `failureCount` is consecutive failed fetches and resets to 0 on the next success.
     feed: feed.data ?? null,
-    feedError: feed.failureCount > 1 ? feed.error : null,
+    feedError,
     hasMoreSessions,
     isFetchingMoreSessions,
     fetchMoreSessions,
