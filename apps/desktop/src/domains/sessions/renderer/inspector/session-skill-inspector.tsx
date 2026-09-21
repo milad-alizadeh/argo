@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
-import { formatSkillLabel } from '@/domains/sessions/renderer/prompt/prompt-segments'
 import type { SessionSkillEvidence } from '@/domains/sessions/renderer/types'
 
 // A skill file opens with YAML frontmatter for the Harness; the reader wants the instructions below.
@@ -37,11 +36,6 @@ export function SessionSkillInspector({ evidence }: { evidence: SessionSkillEvid
   const { t } = useTranslation('sessions')
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('skill.inspector')}>
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
-        <span className="block truncate type-body font-semibold">
-          {formatSkillLabel(evidence.name)}
-        </span>
-      </header>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <SkillBody path={evidence.path} />
       </div>
