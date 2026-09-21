@@ -13,4 +13,5 @@ export const electronStandIn = {
   // Never called: no Session read opens the attachment chooser, and an untrusted frame is refused
   // before the Project bridge's folder chooser runs.
   dialog: {},
+  net: { fetch: async () => new Response() },
 }

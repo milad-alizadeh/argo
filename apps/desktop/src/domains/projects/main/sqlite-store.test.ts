@@ -100,6 +100,7 @@ test('restores a revisioned ProjectSetup actor from SQLite', async (context) => 
     finalDiff: null,
     activeEffect: null,
     recoveryMessage: null,
+    pendingApproval: null,
   })
   reopenedStore.close()
 })

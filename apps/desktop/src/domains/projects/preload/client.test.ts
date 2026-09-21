@@ -9,6 +9,27 @@ const opened = {
   project: { id: 'project-1', name: 'example' },
 }
 
+function manualSetupSnapshot(requestId: string) {
+  return {
+    version: 1,
+    type: 'project.setup.snapshot',
+    requestId,
+    projectId: 'project-1',
+    revision: 1,
+    screen: 'manual',
+    manualSource: '',
+    attempt: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
+    activeEffect: null,
+    recoveryMessage: null,
+    pendingApproval: null,
+  } as const
+}
+
 test('refuses malformed or unrelated presentation data at the renderer boundary', async () => {
   for (const reply of [
     null,
@@ -97,21 +118,7 @@ test('every action that can change the known set reads the same replies', async 
 test('sends revisioned setup commands through the Project contract', async () => {
   const client = createProjectClient(async (operation, request: { requestId: string }) => {
     assert.equal(operation, 'argo:project:setup:command')
-    return {
-      version: 1,
-      type: 'project.setup.snapshot',
-      requestId: request.requestId,
-      projectId: 'project-1',
-      revision: 1,
-      screen: 'manual',
-      manualSource: '',
-      attempt: null,
-      questions: [],
-      plan: null,
-      acceptedPlan: null,
-      progress: [],
-      finalDiff: null,
-    }
+    return manualSetupSnapshot(request.requestId)
   })
   const reply = await client.sendProjectSetupCommand({
     projectId: 'project-1',
@@ -119,19 +126,5 @@ test('sends revisioned setup commands through the Project contract', async () =>
     expectedRevision: 0,
     command: { type: 'choose-manual' },
   })
-  assert.deepEqual(reply, {
-    version: 1,
-    type: 'project.setup.snapshot',
-    requestId: reply.requestId,
-    projectId: 'project-1',
-    revision: 1,
-    screen: 'manual',
-    manualSource: '',
-    attempt: null,
-    questions: [],
-    plan: null,
-    acceptedPlan: null,
-    progress: [],
-    finalDiff: null,
-  })
+  assert.deepEqual(reply, manualSetupSnapshot(reply.requestId))
 })
