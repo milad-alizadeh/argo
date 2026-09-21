@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 import { i18n } from '@/renderer/i18n'
-import { type DelegationPhase, delegationFacts } from '../feed/delegation/delegation-facts'
+import {
+  DELEGATION_PHASE_WORK_STATES,
+  type DelegationPhase,
+} from '../feed/delegation/delegation-facts'
 import { delegationEntries } from './session-work-entries'
 import { workPresentation } from './work-presentation'
 
@@ -66,12 +69,12 @@ test.each([
   ['failed', 'failed'],
   ['interrupted', 'interrupted'],
 ] as const)('gives the Feed row and Roster entry the same Subagent text for %s', (state, phase) => {
-  const feed = delegationFacts(
+  const feed = workPresentation(
     {
+      kind: 'subagent',
       id: 'review-feed-call',
       name: 'review_feed',
-      phase: phase satisfies DelegationPhase,
-      line: null,
+      state: DELEGATION_PHASE_WORK_STATES[phase satisfies DelegationPhase],
       durationMs: 12_000,
       tokens: 2_700,
       model: 'gpt-6',
