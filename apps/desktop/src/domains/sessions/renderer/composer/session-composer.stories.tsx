@@ -219,6 +219,25 @@ function QueuedComposerStory() {
   )
 }
 
+function SteeredQueuedComposerStory() {
+  const [steered, setSteered] = useState<string | null>(null)
+
+  return (
+    <>
+      <SessionComposer
+        isRunning
+        onSend={async () => true}
+        onSteer={async (text) => {
+          setSteered(text)
+          return true
+        }}
+        sessionId="steered-queued-session"
+      />
+      <output data-testid="steered-message">{steered}</output>
+    </>
+  )
+}
+
 function FailedQueuedComposerStory() {
   const [running, setRunning] = useState(true)
 
@@ -236,7 +255,7 @@ function FailedQueuedComposerStory() {
   )
 }
 
-// The send never settles, so the composer is read before a successful send clears it (#1999).
+// The send never settles, so the composer proves that an optimistic prompt clears at once.
 function UnsettledSendStory() {
   const [sent, setSent] = useState<string[]>([])
 
@@ -451,7 +470,7 @@ export const CompactionStarts: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
     const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
-    await expect(interrupt).toHaveFocus()
+    await expect(interrupt).toBeDisabled()
     await expect(canvas.getByText('Compacting conversation…')).toBeVisible()
     await expect(canvas.getByText('22%')).toBeVisible()
   },
@@ -533,7 +552,7 @@ export const EnterSends: Story = {
     await userEvent.keyboard('{Enter}')
 
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
-    await expect(composer.innerText).toBe('Send this once.')
+    await expect(composer.innerText).toBe('\n')
   },
 }
 
@@ -911,6 +930,21 @@ export const QueuedTurn: Story = {
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
       'Then prepare the release notes.',
     )
+  },
+}
+
+export const SteeredQueuedTurn: Story = {
+  render: () => <SteeredQueuedComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const message = 'Steer this queued message.'
+
+    await sendDraft(canvas, message)
+    await userEvent.click(canvas.getByRole('button', { name: `Steer queued message: ${message}` }))
+
+    await expect(canvas.getByTestId('steered-message')).toHaveTextContent(message)
+    await expect(canvas.queryByRole('listitem')).toBeNull()
+    await expect(canvas.getByLabelText('Message')).not.toHaveTextContent(message)
   },
 }
 

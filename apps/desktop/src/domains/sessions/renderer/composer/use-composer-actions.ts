@@ -13,6 +13,7 @@ import type { Failure } from '@/domains/sessions/renderer/composer/use-session-c
 import {
   useCompactWithInvalidate,
   useInterrupt,
+  useSteer,
 } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
@@ -59,9 +60,10 @@ export function useComposerActions(options: {
     setFailure,
     queryClient,
   } = options
-  const { compact, handoff, interrupt } = mutations
+  const { compact, handoff, interrupt, steer } = mutations
   const onCompact = useCompactWithInvalidate({ compact, sessionId, setFailure, queryClient })
   const onInterruptBase = useInterrupt(interrupt, sessionId, setFailure)
+  const onSteer = useSteer(steer, sessionId, setFailure)
   const isHandingOff = (selectedRow?.handoffStartedAt ?? null) !== null
   const onHandoff = useHandoff(handoff, sessionId, setFailure)
   useHandoffCompletion({ isHandingOff, selectedRow, selectedSessionId: sessionId, setFailure })
@@ -79,6 +81,7 @@ export function useComposerActions(options: {
     onCompact: sessionSelected ? onCompact : undefined,
     onHandoff: harness === 'claude' && sessionSelected ? onHandoff : undefined,
     onInterrupt,
+    onSteer,
     markerView,
     optimisticRow,
     settledPromptRow,

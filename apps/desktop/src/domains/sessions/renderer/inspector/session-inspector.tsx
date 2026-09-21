@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { SessionShellOutput } from '@/domains/sessions/contract/model/background-work-contract'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
-import type { SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
+import type { SessionError, SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'
 import { SessionShellInspector } from './session-shell-inspector'
@@ -21,23 +21,27 @@ export function SessionInspector({
   activeEvidenceId,
   delegation,
   delegationFeed,
+  delegationFeedError,
   evidence,
   sessionId,
   handoff,
   onOpenEvidence,
   onOpenSession,
+  onRetryDelegationFeed,
   shell,
   shellOutput,
 }: {
   activeEvidenceId: string | null
   delegation: SessionSubagent | null
   delegationFeed: SessionFeed | null
+  delegationFeedError: SessionError | null
   evidence: SessionEvidence | null
   sessionId: string | null
   // The Sessions this one was handed off to or from, drawn when nothing else is open.
   handoff: ReactNode
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
+  onRetryDelegationFeed: () => void
   shell: SessionShellCommand | null
   shellOutput: SessionShellOutput | null
 }) {
@@ -52,8 +56,11 @@ export function SessionInspector({
         activeEvidenceId={activeEvidenceId}
         delegation={delegation}
         feed={delegationFeed}
+        failure={delegationFeedError}
         onOpenEvidence={onOpenEvidence}
         onOpenSession={onOpenSession}
+        onRetryFeed={onRetryDelegationFeed}
+        sessionId={sessionId}
       />
     )
   }

@@ -57,6 +57,7 @@ export const PROJECT_PROOF_SURFACE = [
   'startOnboardingPlan',
   'startSession',
   'statSessionAttachments',
+  'steerSession',
   'updatePriority',
   'updateStatus',
   'validateProjectSetup',

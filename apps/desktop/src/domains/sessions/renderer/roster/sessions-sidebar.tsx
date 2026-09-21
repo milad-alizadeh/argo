@@ -6,6 +6,7 @@ import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/r
 import { useOrderedSessions } from '@/domains/sessions/renderer/roster/roster-order'
 import { SessionTicketLinkDialog } from '@/domains/sessions/renderer/roster/session-ticket-link-dialog'
 import { UnreadMarkerPrototypeSwitcher } from '@/domains/sessions/renderer/roster/unread-marker-prototype'
+import { useDerivedTicketLink } from '@/domains/sessions/renderer/roster/use-derived-ticket-link'
 import { useArchiveSelected } from '@/domains/sessions/renderer/roster/use-session-archive-mutation'
 import { useSessionTicketLink } from '@/domains/sessions/renderer/roster/use-session-ticket-link'
 import {
@@ -51,6 +52,11 @@ export function SessionsSidebar() {
     projectPath: projectRoot,
   })
   useRestoreSelectedSession({ sessionId, roster, rosterError, navigate })
+  useDerivedTicketLink({
+    projectId: project?.id ?? null,
+    sessions: roster?.sessions ?? [],
+    connect: ticketLink.connect,
+  })
 
   const actions: RosterActions = {
     onArchiveSelected: archiveSelected,

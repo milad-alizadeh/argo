@@ -60,7 +60,7 @@ test('refusing the rename on a custom title keeps the name', async () => {
   expect(argo.calls.renameSession).toEqual([])
 })
 
-test('connecting a Ticket while a Turn is running links but does not send a rename', async () => {
+test('connecting a Ticket while a Turn is running renames the Session', async () => {
   const argo = mockArgo()
   const result = await connectTicket({
     argo,
@@ -68,11 +68,11 @@ test('connecting a Ticket while a Turn is running links but does not send a rena
     ticket: TICKET,
   })
   expect(argo.calls.connectSessionTicket).toHaveLength(1)
-  expect(argo.calls.renameSession).toEqual([])
+  expect(argo.calls.renameSession).toEqual([{ sessionId: 'session-1', name: TICKET.title }])
   expect(result.outcome).toEqual({
-    renamed: false,
+    renamed: true,
     needsRenameConfirmation: false,
-    renameFailure: 'Argo will not rename a Session while a Turn is running.',
+    renameFailure: null,
   })
   expect(result.invalidate).toBe(true)
 })

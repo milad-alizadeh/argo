@@ -56,6 +56,7 @@ stays `*.test.ts` beside the rest of the suite.
 
 For rendered UI work, use a Storybook `play` function as the TDD seam. The function operates the
 story through visible controls and asserts the resulting screen behavior.
+Assert reader-visible behavior and accessible semantics. Do not assert CSS classes or computed styles.
 
 ## Shortcuts (#1786)
 

@@ -39,6 +39,31 @@ export function useInterrupt(
   }, [interrupt, sessionId, setFailure])
 }
 
+export function useSteer(
+  steer: ReturnType<typeof useSessionMutations>['steer'],
+  sessionId: string | null,
+  setFailure: (failure: Failure | null) => void,
+) {
+  return useCallback(
+    async (prompt: string, attachments: SessionAttachmentInput[]) => {
+      if (sessionId === null) return false
+      try {
+        await steer.mutateAsync({ prompt, sessionId, attachments })
+        setFailure(null)
+        return true
+      } catch (error) {
+        setFailure({
+          sessionId,
+          message: messageFrom(error, 'Argo could not steer this Session.'),
+          code: codeFrom(error),
+        })
+        return false
+      }
+    },
+    [sessionId, setFailure, steer],
+  )
+}
+
 export function useCompact(
   compact: ReturnType<typeof useSessionMutations>['compact'],
   sessionId: string | null,

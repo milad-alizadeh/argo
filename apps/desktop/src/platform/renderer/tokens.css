@@ -109,7 +109,9 @@
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
-  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  /* The editor reserves the plan control width, so its first line does not pass under the control. */
+  --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --inset-composer-plan: var(--size-composer-plan-trigger);
   /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
   --size-session-menu: 23rem;
   /* A wider popover carrying prose and a meter: context and usage. */
@@ -179,7 +181,7 @@
   --text-prose-weight: 400;
   --text-meta-weight: 400;
   --text-code-weight: 400;
-  --text-control-weight: 500;
+  --text-control-weight: 400;
   --text-title-tracking: normal;
   --text-heading-tracking: normal;
   --text-body-tracking: normal;

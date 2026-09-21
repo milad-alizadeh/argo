@@ -36,6 +36,7 @@ export function messageRecord(
     role: 'user' | 'assistant'
     originSessionId: string | null
     blocks: ContentBlock[]
+    cwd?: string | null
     toolCalls?: ToolCall[]
     toolResults?: ToolResult[]
   },
@@ -48,7 +49,7 @@ export function messageRecord(
     originSessionId: message.originSessionId,
     role: message.role,
     sidechain: false,
-    cwd: null,
+    cwd: message.cwd ?? null,
     branch: null,
     timestamp: typeof record.timestamp === 'string' ? record.timestamp : null,
     entry: 'interactive',
